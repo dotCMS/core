@@ -12,6 +12,7 @@ import static com.dotcms.storage.StoragePersistenceProvider.DEFAULT_STORAGE_TYPE
 import static com.dotcms.storage.model.Metadata.CUSTOM_PROP_PREFIX;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -51,6 +52,7 @@ import java.util.SortedSet;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -80,11 +82,25 @@ public class FileMetadataAPITest {
     }
 
     /**
+     * Simple test to verify that what we're getting via the contentlet map property is actually a map
+     * @throws Exception
+     */
+    @Test
+    public void Test_Get_Metadata_Property() throws Exception {
+        prepareIfNecessary();
+
+            final Contentlet fileAssetContent = getFileAssetContent(true, 1, TestFile.PDF);
+            assertTrue(fileAssetContent.get(FileAssetAPI.META_DATA_FIELD) instanceof Map);
+    }
+
+
+    /**
      * This test evaluates both basic vs full MD
      * Given scenarios: We're testing metadata api against different types of asset-files
      * Expected Results: we should get full and basic md for every type. Basic metadata must be included within the fm
      * @throws IOException
      */
+    
     @Test
     @UseDataProvider("getFileAssetMetadataTestCases")
     public void Test_Generate_Metadata_From_FileAssets(final TestCase testCase) throws Exception {
@@ -134,6 +150,7 @@ public class FileMetadataAPITest {
      * @param testCase
      * @throws Exception
      */
+    
     @Test
     @UseDataProvider("getFileAssetMetadataTestCases")
     public void Test_Force_Set_Metadata(final TestCase testCase) throws Exception {
@@ -306,6 +323,7 @@ public class FileMetadataAPITest {
      * Expected Results:
      * @throws IOException
      */
+    
     @Test
     @UseDataProvider("getStorageType")
     public void Test_Generate_Metadata_From_ContentType_With_Multiple_Binary_Fields(final StorageType storageType) throws Exception {
@@ -372,6 +390,7 @@ public class FileMetadataAPITest {
      * Expected Results: After calling findBinaryFields I should get a tuple with one file
      * candidate for the full MD generation and the rest in the second component of the tuple
      */
+    
     @Test
     public void Test_Get_First_Indexed_Binary_Field() throws Exception {
         prepareIfNecessary();
@@ -402,6 +421,7 @@ public class FileMetadataAPITest {
      * @param storageType
      * @throws IOException
      */
+    
     @Test
     @UseDataProvider("getStorageType")
     public void Test_Get_Metadata_No_Cache(final StorageType storageType) throws Exception {
@@ -417,8 +437,8 @@ public class FileMetadataAPITest {
 
             Metadata fileAssetMeta = fileMetadataAPI
                     .getFullMetadataNoCache(fileAssetContent, FILE_ASSET);
-            //Expect metadata it's generation is forced in case it doesn't exist.
-            assertNotNull(fileAssetMeta);
+            //Expect No metadata it's generated until generateContentletMetadata is called
+            assertNull(fileAssetMeta);
 
             final ContentletMetadata metadata = fileMetadataAPI
                     .generateContentletMetadata(fileAssetContent);
@@ -453,6 +473,7 @@ public class FileMetadataAPITest {
      * @param storageType
      * @throws IOException
      */
+    
     @Test
     @UseDataProvider("getStorageType")
     public void Test_Get_Metadata_No_Cache_Force_Generate(final StorageType storageType) throws Exception {
@@ -468,8 +489,8 @@ public class FileMetadataAPITest {
 
             Metadata fileAssetMD = fileMetadataAPI
                     .getFullMetadataNoCache(fileAssetContent, FILE_ASSET);
-            //Expect metadata it has been generated right out of the box
-            assertNotNull(fileAssetMD);
+            //Expect No metadata it hasn't been generated right out of the box
+            assertNull(fileAssetMD);
 
             fileAssetMD = fileMetadataAPI
                     .getFullMetadataNoCacheForceGenerate(fileAssetContent, FILE_ASSET);
@@ -501,6 +522,7 @@ public class FileMetadataAPITest {
      * @param storageType
      * @throws IOException
      */
+    
     @Test
     @UseDataProvider("getStorageType")
     public void Test_GetMetadata(final StorageType storageType) throws Exception {
@@ -518,12 +540,15 @@ public class FileMetadataAPITest {
             final File file = (File) fileAssetContent.get(FILE_ASSET);
             removeAnyMetadata(file);
 
-            Metadata fileAssetMD = fileMetadataAPI
+            //So this returns the metadata only if it has been generated already.
+            final Metadata fileAssetMD = fileMetadataAPI
                     .getMetadata(fileAssetContent, FILE_ASSET);
+            assertNull(fileAssetMD);
 
+             //While this forces the generation if it hasn't occurred yet
             final Metadata meta = fileAssetContent.getBinaryMetadata(FILE_ASSET);
 
-            assertEquals(fileAssetMD, meta);
+            assertNotNull(meta);
 
             final Map<String, Serializable> metadataMap = meta.getFieldsMeta();
             assertNotNull(metadataMap);
@@ -547,6 +572,7 @@ public class FileMetadataAPITest {
      * @param storageType
      * @throws IOException
      */
+    
     @Test
     @UseDataProvider("getStorageType")
     public void Test_GetMetadata_ForceGenerate(final StorageType storageType) throws Exception {
@@ -564,10 +590,10 @@ public class FileMetadataAPITest {
             final File file = (File) fileAssetContent.get(FILE_ASSET);
             removeAnyMetadata(file);
 
-            Metadata fileAssetMD = fileMetadataAPI
-                    .getMetadata(fileAssetContent, FILE_ASSET);
-            assertNotNull(fileAssetMD);
-
+            //Once again this method does not force it's generation. it returns the md if it's already available
+            Metadata fileAssetMD = fileMetadataAPI.getMetadata(fileAssetContent, FILE_ASSET);
+            assertNull(fileAssetMD);
+            ///Now we should be getting the generated md
             final Metadata meta = fileMetadataAPI.getMetadataForceGenerate(fileAssetContent, FILE_ASSET);
             assertNotNull(meta);
 
@@ -594,6 +620,7 @@ public class FileMetadataAPITest {
      * @param storageType
      * @throws IOException
      */
+    
     @Test
     @UseDataProvider("getStorageType")
     public void Test_Add_Custom_Attributes_FileAssets(final StorageType storageType)
@@ -658,6 +685,7 @@ public class FileMetadataAPITest {
      * @param storageType
      * @throws Exception
      */
+    
     @Test
     @UseDataProvider("getStorageType")
     public void Test_Copy_Metadata(final StorageType storageType) throws Exception {
@@ -721,6 +749,7 @@ public class FileMetadataAPITest {
      * @param storageType
      * @throws Exception
      */
+    
     @Test
     @UseDataProvider("getStorageType")
     public void Test_Generate_Metadata_Should_Not_Override_Custom_Attributes(final StorageType storageType) throws Exception {
@@ -772,12 +801,67 @@ public class FileMetadataAPITest {
     }
 
     /**
+     * Method to test: {@link FileMetadataAPIImpl#putCustomMetadataAttributes(Contentlet, Map)}
+     * combined with {@link FileMetadataAPIImpl#generateContentletMetadata(Contentlet)}
+     * Given scenario: We have a file asset then we set custom attributes then we generate the file Metadata by calling {@link FileMetadataAPIImpl#generateContentletMetadata(Contentlet)}
+     * Expected Result: We must have the combined metadata straight from disk no cache.. this to ensure that both were saved.
+     * @param storageType
+     * @throws Exception
+     */
+    @Test
+    @UseDataProvider("getStorageType")
+    public void Test_Write_Custom_Metadata_Then_Generate_Metadata_Expect_All_Metadata(final StorageType storageType) throws Exception {
+        prepareIfNecessary();
+        final String stringProperty = Config.getStringProperty(DEFAULT_STORAGE_TYPE);
+        //disconnect the MD generation on indexing so we can test directly here.
+        final boolean defaultValue = Config.getBooleanProperty(WRITE_METADATA_ON_REINDEX, true);
+        try {
+            Config.setProperty(WRITE_METADATA_ON_REINDEX, false);
+            Config.setProperty(DEFAULT_STORAGE_TYPE, storageType.name());
+            final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+            final Contentlet source = getFileAssetContent(true, langId, TestFile.GIF);
+
+            assertNull(" Must not have metadata",
+                 fileMetadataAPI.getMetadata(source, FILE_ASSET)
+            );
+
+            fileMetadataAPI.putCustomMetadataAttributes(source, ImmutableMap
+                    .of(
+                       FILE_ASSET, ImmutableMap.of("foo", "bar", "bar", "foo")
+                    )
+            );
+
+            final ContentletMetadata contentletMetadata = fileMetadataAPI
+                    .generateContentletMetadata(source);
+            assertNotNull(contentletMetadata);
+
+            //Now verify that the MD has been really merged and stored in disk
+            final Metadata fullMetadataNoCache = fileMetadataAPI
+                    .getFullMetadataNoCache(source, FILE_ASSET);
+
+            assertNotNull(fullMetadataNoCache);
+
+            validateCustomMetadata(fullMetadataNoCache.getCustomMeta());
+
+            validateFull(fullMetadataNoCache);
+            validateBasic(fullMetadataNoCache);
+
+
+        } finally {
+            Config.setProperty(DEFAULT_STORAGE_TYPE, stringProperty);
+            Config.setProperty(WRITE_METADATA_ON_REINDEX, defaultValue);
+        }
+
+    }
+
+    /**
      * This Method uses the file system to store metadata linked to a temp file.
      * Method to test: {@link FileMetadataAPIImpl#putCustomMetadataAttributes(String, Map)}
      * Given scenario: We create a temp file to get a valid temp-resource-id we attach some random meta
      * Expected result: When we request such info using the same id the results we get must match the originals
      * @throws Exception
      */
+    
     @Test
     public void Test_Add_Then_Recover_Temp_Resource_Metadata() throws Exception {
         prepareIfNecessary();
@@ -812,6 +896,7 @@ public class FileMetadataAPITest {
          StorageType.DB
         };
     }
+    
     @Test
     public void TestMetadataModel() {
 

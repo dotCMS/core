@@ -2,6 +2,7 @@ package com.dotcms.storage;
 
 import static com.dotmarketing.util.UtilMethods.isSet;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
@@ -18,6 +19,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.util.StringPool;
@@ -104,7 +106,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
         final boolean alwaysRegenerateMetadata = Config
                 .getBooleanProperty(ALWAYS_REGENERATE_METADATA_ON_REINDEX, false);
 
-        Logger.info(this, ()-> "Generating the metadata for contentlet, id = " + contentlet.getIdentifier());
+        Logger.debug(this, ()-> "Generating the metadata for contentlet, id = " + contentlet.getIdentifier());
 
         // Full MD is stored in disc (FS or DB)
         final Map<String, Metadata> fullMetadata = generateFullMetadata(contentlet,
@@ -180,7 +182,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                 builder.put(binaryFieldName, new Metadata( binaryFieldName, metadataMap));
             } else {
                //We're dealing with a  non required neither set binary field. No need to throw an exception. Just continue processing.
-               Logger.warn(FileMetadataAPIImpl.class,String.format("The Contentlet named `%s` references a binary field: `%s` that is null, does not exists or can not be access.", contentlet.getTitle(), binaryFieldName));
+               Logger.debug(FileMetadataAPIImpl.class,String.format("The Contentlet named `%s` references a binary field: `%s` that is null, does not exists or can not be access.", contentlet.getTitle(), binaryFieldName));
             }
         }
         return builder.build();
@@ -230,7 +232,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
 
                 builder.put(binaryFieldName, new Metadata(binaryFieldName, metadataMap));
             } else {
-                Logger.warn(FileMetadataAPIImpl.class,String.format("The Contentlet named `%s` references a binary field: `%s` that is null, does not exists or can not be access.", contentlet.getTitle(), binaryFieldName));
+                Logger.debug(FileMetadataAPIImpl.class,String.format("The Contentlet named `%s` references a binary field: `%s` that is null, does not exists or can not be access.", contentlet.getTitle(), binaryFieldName));
             }
         }
         return builder.build();
@@ -243,6 +245,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @return
      */
     @VisibleForTesting
+    @CloseDBIfOpened
     Set<String> getMetadataFields (final String fieldIdentifier) {
 
         final Optional<FieldVariable> customIndexMetaDataFieldsOpt =
@@ -335,7 +338,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     private Metadata getMetadata(final Contentlet contentlet, final String fieldVariableName, final boolean forceGenerate)
             throws DotDataException {
 
-        if(null != contentlet.get(fieldVariableName)) {
+        if(null != contentlet.get(fieldVariableName) && UtilMethods.isSet(contentlet.getInode())) {
             final StorageType storageType = StoragePersistenceProvider.getStorageType();
             final String metadataBucketName = Config
                     .getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);

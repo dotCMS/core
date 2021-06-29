@@ -4,7 +4,6 @@ import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.PublisherConfig;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.FileUtil;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -23,7 +22,7 @@ public class DirectoryBundleOutput extends BundleOutput {
 
     public DirectoryBundleOutput(final PublisherConfig publisherConfig) {
         super(publisherConfig);
-        directoryRootPath = BundlerUtil.getBundleRoot( publisherConfig );
+        directoryRootPath = BundlerUtil.getBundleRoot(publisherConfig);
     }
 
     @VisibleForTesting
@@ -54,15 +53,19 @@ public class DirectoryBundleOutput extends BundleOutput {
     }
 
     @Override
-    public OutputStream addFile(final String filePath) throws IOException {
+    public OutputStream addFile(final String filePath) throws FileCreationException {
         final File fileAbsolute = getRealFile(filePath);
         fileAbsolute.getParentFile().mkdirs();
 
-        if (!fileAbsolute.exists()) {
-            fileAbsolute.createNewFile();
-        }
+        try {
+            if (!fileAbsolute.exists()) {
+                fileAbsolute.createNewFile();
+            }
 
-        return Files.newOutputStream( fileAbsolute.toPath());
+            return Files.newOutputStream(fileAbsolute.toPath());
+        } catch (IOException e) {
+            throw new FileCreationException(e, filePath);
+        }
     }
 
     private File getRealFile(final String path) {

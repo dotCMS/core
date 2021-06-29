@@ -3,6 +3,7 @@ package com.dotmarketing.business.jgroups;
 import com.dotcms.cluster.bean.Server;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.cache.transport.CacheTransportException;
+import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -26,7 +27,7 @@ public class NullTransport implements CacheTransport {
 
   @Override
   public boolean shouldReinit() {
-    return true;
+    return false;
   }
 
   @Override
@@ -41,12 +42,6 @@ public class NullTransport implements CacheTransport {
     
   }
 
-  @Override
-  public Map<String, Boolean> validateCacheInCluster(String dateInMillis, int numberServers, int maxWaitSeconds)
-      throws CacheTransportException {
-    // TODO Auto-generated method stub
-    return null;
-  }
 
   @Override
   public void shutdown() throws CacheTransportException {
@@ -106,6 +101,12 @@ public class NullTransport implements CacheTransport {
       }
     };
   }
+
+@Override
+public Map<String, Serializable> validateCacheInCluster(int maxWaitSeconds) {
+    // TODO Auto-generated method stub
+    return null;
+}
 
 
 }

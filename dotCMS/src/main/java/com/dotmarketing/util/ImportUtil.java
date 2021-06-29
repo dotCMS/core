@@ -377,7 +377,7 @@ public class ImportUtil {
 
         //Importing headers and storing them in a hashmap to be reused later in the whole import process
         final List<Field> fields = FieldsCache.getFieldsByStructureInode(contentType.getInode());
-        final List<Relationship> contentTypeRelationships = FactoryLocator.getRelationshipFactory()
+        final List<Relationship> contentTypeRelationships = APILocator.getRelationshipAPI()
                 .byContentType(contentType);
         final Map<String, Relationship> contentTypeRelationshipsMap = new LowerKeyMap<>();
         final List<String> requiredFields = new ArrayList<>();

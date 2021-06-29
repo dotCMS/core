@@ -109,6 +109,7 @@ class CommitListenerCacheWrapper implements DotCacheAdministrator {
         return dotcache.getTransport();
     }
 
+
     @Override
     public void invalidateCacheMesageFromCluster(String message) {
         dotcache.invalidateCacheMesageFromCluster(message);

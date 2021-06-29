@@ -91,7 +91,6 @@ public class PublisherQueueJob implements StatefulJob {
 
 	public static final Integer MAX_NUM_TRIES = Config.getIntProperty("PUBLISHER_QUEUE_MAX_TRIES", 3);
 
-	private Client restClient;
 	private PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
 	private PublishingEndPointAPI endpointAPI = APILocator.getPublisherEndPointAPI();
 	private PublisherAPI pubAPI = PublisherAPI.getInstance();
@@ -101,7 +100,7 @@ public class PublisherQueueJob implements StatefulJob {
 	/**
 	 * Reads from the publishing queue table and depending of the publish date
 	 * will send a bundle to publish (see
-	 * {@link com.dotcms.publishing.PublisherAPI#publish(PublisherConfig, BundleOutput)}).
+	 * {@link com.dotcms.publishing.PublisherAPI#publish(PublisherConfig)}}).
 	 *
 	 * @param jobExecutionContext
 	 *            - Context Containing the current job context information (the
@@ -183,8 +182,8 @@ public class PublisherQueueJob implements StatefulJob {
 						pconf = setUpConfigForPublisher(pconf);
 						PushPublishLogger.log(this.getClass(), "Pre-publish work complete.");
 
-						try (final DirectoryBundleOutput bundlerOutput = new DirectoryBundleOutput(pconf)){
-							APILocator.getPublisherAPI().publish(pconf, bundlerOutput);
+						try {
+							APILocator.getPublisherAPI().publish(pconf);
 						} catch (final DotPublishingException e) {
 							/*
 							If we are getting errors creating the bundle we should stop trying to publish it, this is not just a connection error,
@@ -262,6 +261,9 @@ public class PublisherQueueJob implements StatefulJob {
 		final Map<String, Map<String, EndpointDetail>> endpointTrackingMap = new HashMap<>();
 		final PublishAuditHistory localHistory = bundleAudit.getStatusPojo();
 		final Map<String, Map<String, EndpointDetail>> endpointsMap = localHistory.getEndpointsMap();
+
+		final Client client = getRestClient();
+
 		// For each group (environment)
 		for (final String groupID : endpointsMap.keySet() ) {
 			final Map<String, EndpointDetail> endpointsGroup = endpointsMap.get(groupID);
@@ -276,7 +278,8 @@ public class PublisherQueueJob implements StatefulJob {
 						try {
 							// Try to get the status of the remote end-points to
 							// update the local history
-							final PublishAuditHistory remoteHistory = getRemoteHistoryFromEndpoint(bundleAudit, targetEndpoint);
+							final PublishAuditHistory remoteHistory = getRemoteHistoryFromEndpoint(
+									bundleAudit, targetEndpoint, client);
 							if (remoteHistory != null) {
 								updateLocalPublishDatesFromRemote(localHistory, remoteHistory);
 								endpointTrackingMap.putAll(remoteHistory.getEndpointsMap());
@@ -560,8 +563,9 @@ public class PublisherQueueJob implements StatefulJob {
 	 * @return The {@link PublishAuditHistory} of the bundle in the specified end-point.
 	 */
 	private PublishAuditHistory getRemoteHistoryFromEndpoint(final  PublishAuditStatus bundleAudit,
-															 final PublishingEndPoint targetEndpoint) {
-		final WebTarget webTarget = getRestClient().target(targetEndpoint.toURL() + "/api/auditPublishing");
+															 final PublishingEndPoint targetEndpoint,
+															 final Client client) {
+		final WebTarget webTarget = client.target(targetEndpoint.toURL() + "/api/auditPublishing");
 		return PublishAuditHistory.getObjectFromString(
 				webTarget
 						.path("get")
@@ -698,10 +702,7 @@ public class PublisherQueueJob implements StatefulJob {
 	 * @return The REST {@link Client}.
 	 */
 	private Client getRestClient() {
-		if (null == this.restClient) {
-			this.restClient = RestClientBuilder.newClient();
-		}
-		return this.restClient;
+		return RestClientBuilder.newClient();
 	}
 
 }

@@ -1,5 +1,10 @@
 package com.dotcms.datagen;
 
+
+import static com.dotmarketing.business.ModDateTestUtil.updateContentletModeDate;
+import static com.dotmarketing.business.ModDateTestUtil.updateTemplateModeDate;
+import static com.dotmarketing.business.ModDateTestUtil.updateTemplateVersionDate;
+
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
@@ -48,6 +53,7 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
     private static final TemplateAPI templateAPI = APILocator.getTemplateAPI();
     private static final String type = "template";
     private boolean setBodyAsNull = false;
+    private Date modDate;
 
     /**
      * Sets body property to the TemplateDataGen instance. This will be used when a new {@link
@@ -299,6 +305,10 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
             final Template savedTemplate = save(template, host);
             APILocator.getVersionableAPI().setLive(savedTemplate);
 
+            if (modDate != null) {
+                updateTemplateModeDate(savedTemplate, modDate);
+                updateTemplateVersionDate(savedTemplate, modDate);
+            }
             return savedTemplate;
         } catch (DotDataException | DotSecurityException e) {
             throw new RuntimeException(e);
@@ -332,6 +342,11 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
 
     public TemplateDataGen setBodyAsNull() {
         this.setBodyAsNull = true;
+        return this;
+    }
+
+    public TemplateDataGen modDate(Date modDate) {
+        this.modDate = modDate;
         return this;
     }
 }

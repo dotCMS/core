@@ -24,7 +24,7 @@ import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
-import com.dotcms.publisher.util.DependencyManager;
+import com.dotcms.publisher.util.dependencies.DependencyManager;
 import com.dotcms.publisher.util.PublisherUtil;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.BundlerUtil;
@@ -33,7 +33,6 @@ import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.IBundler;
 import com.dotcms.publishing.Publisher;
-import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.util.CollectionsUtils;
@@ -77,8 +76,8 @@ import org.junit.Assert;
  */
 public class PushPublishBundleGeneratorTest extends IntegrationTestBase {
 
-    private static User systemUser;
-    private static String defaultFilterKey = "Intelligent.yml";
+    private static User systemUser = APILocator.systemUser();
+    static String defaultFilterKey = "Intelligent.yml";
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -89,7 +88,6 @@ public class PushPublishBundleGeneratorTest extends IntegrationTestBase {
 
         createFilter();
 
-        systemUser = APILocator.getUserAPI().getSystemUser();
         createFilterDescriptor(defaultFilterKey,true,true,false,null,null,null,null,true);
     }
 
@@ -99,7 +97,7 @@ public class PushPublishBundleGeneratorTest extends IntegrationTestBase {
      * @return a bundle
      * @throws DotDataException
      */
-    private static Bundle createBundle (final String bundleName, final boolean forcePush,final String filterKey)
+    static Bundle createBundle (final String bundleName, final boolean forcePush, final String filterKey)
             throws DotDataException {
 
         final BundleAPI bundleAPI         = APILocator.getBundleAPI();

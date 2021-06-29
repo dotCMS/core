@@ -9,17 +9,13 @@ on:
 jobs:
   run-unit-tests-job:
     name: Unit Tests
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     env:
-      DOT_CICD_BRANCH: 19756-java-11
-      DOT_CICD_CLOUD_PROVIDER: github
-      DOT_CICD_TARGET: core
+      DOT_CICD_BRANCH: master
       EXPORT_REPORTS: true
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GITHUB_USER: dotcmsbuild
-      GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
+      GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
-      DEBUG: false
     steps:
       - name: GITHUB CONTEXT
         env:
@@ -34,16 +30,16 @@ jobs:
       - name: Set Common Vars
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            CURRENT_BRANCH="${{ github.head_ref }}"
+            BUILD_ID="${{ github.head_ref }}"
           else
-            CURRENT_BRANCH=$(basename "${{ github.ref }}")
+            BUILD_ID=$(basename "${{ github.ref }}")
           fi
 
           COMMIT_MESSG="${{ steps.get-commit-message.outputs.commit_message }}"
           echo "COMMIT_MESSG: ${COMMIT_MESSG}"
-          echo "CURRENT_BRANCH=${CURRENT_BRANCH}" >> $GITHUB_ENV
+          echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
 
-          if [[ "${{ github.event_name }}" == "pull_request" || ${CURRENT_BRANCH} =~ master|^release-.*|^test-.* || ${COMMIT_MESSG} =~ run-all|run-unit ]]; then
+          if [[ "${{ github.event_name }}" == "pull_request" || ${BUILD_ID} =~ master|^release-.*|^test-.* || ${COMMIT_MESSG} =~ run-all|run-unit ]]; then
             echo "jobRun=true" >> $GITHUB_ENV
           else
             echo "jobRun=false" >> $GITHUB_ENV
@@ -52,37 +48,21 @@ jobs:
         run: |
           sh -c "$(curl -fsSL https://raw.githubusercontent.com/dotCMS/dot-cicd/${DOT_CICD_BRANCH}/seed/install-dot-cicd.sh)"
         if: env.jobRun == 'true'
-      - name: Check Provider
+      - name: Run Unit Tests
         run: |
-          dotcicd/library/checkProvider.sh github
-        if: env.jobRun == 'true'
-      - name: Fail provider
-        run: |
-          echo "jobRun=false" >> $GITHUB_ENV
-        if: env.jobRun == 'true' && failure()
-      - name: Build Tests Base Image
-        run: |
-          dotcicd/library/pipeline.sh buildTestsBase
+          ../dotcicd/library/pipeline.sh runUnit
         env:
           LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
         if: env.jobRun == 'true'
-      - name: Run Unit Tests
-        run: |
-          dotcicd/library/pipeline.sh runUnit
-        if: env.jobRun == 'true'
   run-curl-tests-job:
     name: Curl Tests
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     env:
-      DOT_CICD_BRANCH: 19756-java-11
-      DOT_CICD_CLOUD_PROVIDER: github
-      DOT_CICD_TARGET: core
+      DOT_CICD_BRANCH: master
       EXPORT_REPORTS: true
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GITHUB_USER: dotcmsbuild
-      GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
+      GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
-      DEBUG: false
     steps:
       - name: GITHUB CONTEXT
         env:
@@ -103,47 +83,31 @@ jobs:
           fi
 
           if [[ ${IS_PR} == true ]]; then
-            CURRENT_BRANCH="${{ github.head_ref }}"
+            BUILD_ID="${{ github.head_ref }}"
           else
-            CURRENT_BRANCH=$(basename "${{ github.ref }}")
+            BUILD_ID=$(basename "${{ github.ref }}")
           fi
 
           COMMIT_MESSG="${{ steps.get-commit-message.outputs.commit_message }}"
           echo "COMMIT_MESSG: ${COMMIT_MESSG}"
-          echo "CURRENT_BRANCH=${CURRENT_BRANCH}" >> $GITHUB_ENV
+          echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
 
-          if [[ ${CURRENT_BRANCH} =~ master|^release-.*|^test-.* ]]; then
-            SPECIAL_BRANCH=true
-          else
-            SPECIAL_BRANCH=false
-          fi
+          [[ ${BUILD_ID} =~ master|^release-.*|^test-.* ]] && SPECIAL_BRANCH=true
 
-          if [[ ${IS_PR} == true || ${SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ run-all|run-curl ]]; then
+          if [[ ${IS_PR} == true || "${SPECIAL_BRANCH}" == 'true' || ${COMMIT_MESSG} =~ run-all|run-curl ]]; then
             echo "jobRun=true" >> $GITHUB_ENV
           else
             echo "jobRun=false" >> $GITHUB_ENV
           fi
+      - name: Checkout core
+        uses: actions/checkout@v2
       - name: Prepare dot-cicd
         run: |
           sh -c "$(curl -fsSL https://raw.githubusercontent.com/dotCMS/dot-cicd/${DOT_CICD_BRANCH}/seed/install-dot-cicd.sh)"
         if: env.jobRun == 'true'
-      - name: Check Provider
-        run: |
-          dotcicd/library/checkProvider.sh github
-        if: env.jobRun == 'true'
-      - name: Fail provider
-        run: |
-          echo "jobRun=false" >> $GITHUB_ENV
-        if: env.jobRun == 'true' && failure()
-      - name: Build DotCMS Image
-        run: |
-          dotcicd/library/pipeline.sh buildBase
-        env:
-          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
-        if: env.jobRun == 'true'
       - name: Run Curl Tests - postgres
         run: |
-          dotcicd/library/pipeline.sh runCurl
+          ../dotcicd/library/pipeline.sh runCurl
         env:
           LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
           databaseType: postgres
@@ -152,22 +116,18 @@ jobs:
         if: success() && env.jobRun == 'true'
   run-integration-tests-job:
     name: Integration Tests
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
         databaseType: [ postgres, mysql, oracle, mssql ]
     env:
-      DOT_CICD_BRANCH: 19756-java-11
-      DOT_CICD_CLOUD_PROVIDER: github
-      DOT_CICD_TARGET: core
+      DOT_CICD_BRANCH: master
       EXPORT_REPORTS: true
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GITHUB_USER: dotcmsbuild
-      GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
+      GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
-      DEBUG: false
     steps:
       - name: GITHUB CONTEXT
         env:
@@ -188,96 +148,55 @@ jobs:
           fi
 
           if [[ ${IS_PR} == true ]]; then
-            CURRENT_BRANCH="${{ github.head_ref }}"
+            BUILD_ID="${{ github.head_ref }}"
           else
-            CURRENT_BRANCH=$(basename "${{ github.ref }}")
+            BUILD_ID=$(basename "${{ github.ref }}")
           fi
 
           COMMIT_MESSG="${{ steps.get-commit-message.outputs.commit_message }}"
           echo "COMMIT_MESSG: ${COMMIT_MESSG}"
-          echo "CURRENT_BRANCH=${CURRENT_BRANCH}" >> $GITHUB_ENV
+          echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
 
-          if [[ ${CURRENT_BRANCH} =~ master|^release-.*|^test-.* ]]; then
-            SPECIAL_BRANCH=true
+          [[ ${IS_PR} == false && ${BUILD_ID} =~ master|^release-.*|^test-.* ]] && SPECIAL_BRANCH=true
+
+          # Evaluate postgres
+          [[ ((! ${COMMIT_MESSG} =~ run-mysql|run-oracle|run-mssql) || ${COMMIT_MESSG} =~ run-all|run-postgres) \
+            && "${{ matrix.databaseType }}" == 'postgres' ]] && RUN_POSTGRES=true
+          # Evaluate mysql
+          [[ ("${SPECIAL_BRANCH}" == 'true' || ${COMMIT_MESSG} =~ run-all|run-mysql) \
+            && "${{ matrix.databaseType }}" == 'mysql' ]] && RUN_MYSQL=true
+          # Evaluate oracle
+          [[ ("${SPECIAL_BRANCH}" == 'true' || ${COMMIT_MESSG} =~ run-all|run-oracle) \
+            && "${{ matrix.databaseType }}" == 'oracle' ]] && RUN_ORACLE=true && echo "WAIT_DB_FOR=60" >> $GITHUB_ENV
+          # Evaluate mssql
+          [[ ("${SPECIAL_BRANCH}" == 'true' || ${COMMIT_MESSG} =~ run-all|run-mssql) \
+            && "${{ matrix.databaseType }}" == 'mssql' ]] && RUN_MSSQL=true
+
+          if [[ "${RUN_POSTGRES}" == 'true' || "${RUN_MYSQL}" == 'true' || "${RUN_ORACLE}" == 'true' || "${RUN_MSSQL}" == 'true' ]]; then
+            JOB_RUN=true
           else
-            SPECIAL_BRANCH=false
-          fi
-
-          if [[ ${IS_PR} == false && ${SPECIAL_BRANCH} == true ]]; then
-            PUSH_AND_SPECIAL_BRANCH=true
-          else
-            PUSH_AND_SPECIAL_BRANCH=false
-          fi
-
-          if [[ (! ${COMMIT_MESSG} =~ run-mysql|run-oracle|run-mssql) || ${COMMIT_MESSG} =~ run-all|run-postgres ]]; then
-            RUN_POSTGRES=true
-          else
-            RUN_POSTGRES=false
-          fi
-          echo "runPostgres=${RUN_POSTGRES}" >> $GITHUB_ENV
-
-          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ run-all|run-mysql ]]; then
-            RUN_MYSQL=true
-          else
-            RUN_MYSQL=false
-          fi
-          echo "runMysql=${RUN_MYSQL}" >> $GITHUB_ENV
-
-          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ run-all|run-oracle ]]; then
-            RUN_ORACLE=true
-          else
-            RUN_ORACLE=false
-          fi
-          echo "runOracle=${RUN_ORACLE}" >> $GITHUB_ENV
-
-          if [[ ${PUSH_AND_SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ run-all|run-mssql ]]; then
-            RUN_MSSQL=true
-          else
-            RUN_MSSQL=false
-          fi
-          echo "runMssql=${RUN_MSSQL}" >> $GITHUB_ENV
-
-          JOB_RUN=false
-          echo "jobRun=false" >> $GITHUB_ENV
-          if [[ ${IS_PR} == true || ${SPECIAL_BRANCH} == true || ${COMMIT_MESSG} =~ run-all|run-postgres|run-mysql|run-oracle|run-mssql|run-unit ]]; then
-            if [[ (${RUN_POSTGRES} == true && "${{ matrix.databaseType }}" == "postgres") || (${RUN_MYSQL} == true && "${{ matrix.databaseType }}" == "mysql") || (${RUN_ORACLE}  == true && "${{ matrix.databaseType }}" == "oracle") || (${RUN_MSSQL} == true && "${{ matrix.databaseType }}" == "mssql") ]]; then
-              JOB_RUN=true
-            fi
+            JOB_RUN=false
           fi
           echo "jobRun=${JOB_RUN}" >> $GITHUB_ENV
       - name: Prepare dot-cicd
         run: |
           sh -c "$(curl -fsSL https://raw.githubusercontent.com/dotCMS/dot-cicd/${DOT_CICD_BRANCH}/seed/install-dot-cicd.sh)"
         if: env.jobRun == 'true'
-      - name: Check Provider
-        run: |
-          dotcicd/library/checkProvider.sh github
-        if: env.jobRun == 'true'
-      - name: Fail provider
-        run: |
-          echo "jobRun=false" >> $GITHUB_ENV
-        if: env.jobRun == 'true' && failure()
-      - name: Build Tests Base Image
-        run: |
-          dotcicd/library/pipeline.sh buildTestsBase
-        env:
-          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
-        if: env.jobRun == 'true'
       - name: Run Integration Tests - ${{ matrix.databaseType }}
         run: |
-          dotcicd/library/pipeline.sh runIntegration
+          ../dotcicd/library/pipeline.sh runIntegration
         env:
           databaseType: ${{ matrix.databaseType }}
+          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
         if: success() && env.jobRun == 'true'
   slack-notification:
     name: Notification
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     env:
       DOT_CICD_TARGET: core
-      GITHUB_USER: dotcmsbuild
-      GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
+      GITHUB_USER: victoralfaro-dotcms
+      GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
-      DEBUG: false
     if: success() || failure()
     needs: [run-unit-tests-job, run-curl-tests-job, run-integration-tests-job]
     steps:
@@ -289,9 +208,9 @@ jobs:
       - name: Set Common Vars
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "CURRENT_BRANCH=${{ github.head_ref }}" >> $GITHUB_ENV
+            echo "BUILD_ID=${{ github.head_ref }}" >> $GITHUB_ENV
           else
-            echo "CURRENT_BRANCH=$(basename ${{ github.ref }})" >> $GITHUB_ENV
+            echo "BUILD_ID=$(basename ${{ github.ref }})" >> $GITHUB_ENV
           fi
       - name: Notify through CI/CD slack action
         env:
@@ -299,5 +218,4 @@ jobs:
         uses: dotcms/cicd-slack-action@master
         with:
           github-user: ${{ github.actor }}
-          branch: ${{ env.CURRENT_BRANCH }}
-
+          branch: ${{ env.BUILD_ID }}

@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.content.business.DotMappingException;
+import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
@@ -291,22 +292,17 @@ public abstract class ContentletFactory {
 	 */
 	protected abstract List<Contentlet> findAllVersions(Identifier identifier, boolean bringOldVersions) throws DotDataException, DotSecurityException;
 
-	/**
-	 * Converts a "fat" (legacy) contentlet into a new contentlet.
-	 * @param Fat contentlet to be converted.
-	 * @return A "light" contentlet.
-	 * @throws DotDataException
-	 * @throws DotSecurityException 
-	 */
-	public abstract Contentlet convertFatContentletToContentlet (com.dotmarketing.portlets.contentlet.business.Contentlet fatty) throws DotDataException, DotSecurityException;
-	
-	/**
-	 * Converts a "light" contentlet into a "fat" (legacy) contentlet.
-	 * @param A "light" contentlet to be converted.
-	 * @return Fat contentlet.
-	 * @throws DotDataException
-	 */
-	public abstract com.dotmarketing.portlets.contentlet.business.Contentlet convertContentletToFatContentlet (Contentlet cont, com.dotmarketing.portlets.contentlet.business.Contentlet fatty) throws DotDataException;
+    /**
+     * Retrieves all versions for a contentlet identifier.
+     * @param identifier
+     * @param bringOldVersions Include old versions of contents, so it will return only live/working
+     * versions of contents, regardless of their languages
+     * @param maxResults
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public abstract List<Contentlet> findAllVersions(Identifier identifier, boolean bringOldVersions, final Integer maxResults) throws DotDataException, DotSecurityException;
 
 	/**
 	 * 
@@ -402,13 +398,13 @@ public abstract class ContentletFactory {
 	protected abstract void removeFolderReferences(Folder folder) throws DotDataException, DotSecurityException;
 
     protected abstract Object loadField(String inode, String fieldContentlet) throws DotDataException;
-    
+
     protected abstract long indexCount(String query);
 
     /**
      * Gets the top viewed contents identifier and numberOfViews for a particular structure for a specified date interval
      * 
-     * @param structureName
+     * @param structureInode
      * @param startDate
      * @param endDate
      * @param user
@@ -434,4 +430,9 @@ public abstract class ContentletFactory {
 
     public abstract Optional<Contentlet> findInDb(String inode) ;
 
+	public static void rebuildRestHighLevelClientIfNeeded(final Exception e) {
+		if(e != null && e.getMessage().contains("reactor status: STOPPED")) {
+			RestHighLevelClientProvider.getInstance().rebuildClient();
+		}
+	}
 }

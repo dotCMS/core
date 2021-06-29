@@ -2,7 +2,9 @@ package com.dotmarketing.business;
 
 import static com.dotcms.util.CollectionsUtils.set;
 
+import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -11,6 +13,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -194,27 +197,37 @@ public class VersionableFactoryImpl extends VersionableFactory {
 			throw new DotDataException("identifier:" + identifier +" not found");
 		}
 
-		final Class<?> clazz = InodeUtils.getClassByDBType(identifier.getAssetType());
-		if(clazz.equals(Inode.class)) {
+		if ("contentlet".equals(identifier.getAssetType())){
+            try {
+                return Collections.unmodifiableList(FactoryLocator.getContentletFactory()
+                        .findAllVersions(identifier, true, maxResults.isPresent()?maxResults.get():null));
+            } catch (DotSecurityException e) {
+                throw new DotDataException("Cannot get versions for contentlet with identifier:" + identifier);
+            }
+        } else{
+            final Class<?> clazz = InodeUtils.getClassByDBType(identifier.getAssetType());
+            if(clazz.equals(Inode.class)) {
 
-			return new ArrayList<Versionable>(1);
-		}
-		if(clazz.equals(Template.class)){
-			final List<Versionable> templateAllVersions = new ArrayList<>();
-			templateAllVersions.addAll(FactoryLocator.getTemplateFactory().findAllVersions(identifier,true));
-			return templateAllVersions;
-		}
+                return new ArrayList<Versionable>(1);
+            }
+            if(clazz.equals(Template.class)){
+                final List<Versionable> templateAllVersions = new ArrayList<>();
+                templateAllVersions.addAll(FactoryLocator.getTemplateFactory().findAllVersions(identifier,true));
+                return templateAllVersions;
+            }
 
-		final HibernateUtil dh = new HibernateUtil(clazz);
-		dh.setQuery("from inode in class " + clazz.getName() + " where inode.identifier = ? and inode.type='" + identifier.getAssetType() + "' order by mod_date desc");
-		dh.setParam(id);
+            final HibernateUtil dh = new HibernateUtil(clazz);
 
-		if (maxResults.isPresent()) {
-			dh.setMaxResults(maxResults.get());
-		}
+            dh.setQuery("from inode in class " + clazz.getName() + " where inode.identifier = ? and inode.type='" + identifier.getAssetType() + "' order by mod_date desc");
+            dh.setParam(id);
 
-		Logger.debug(this.getClass(), "findAllVersions query: " + dh.getQuery());
-		return (List<Versionable>) dh.list();
+            if (maxResults.isPresent()) {
+                dh.setMaxResults(maxResults.get());
+            }
+
+            Logger.debug(this.getClass(), "findAllVersions query: " + dh.getQuery());
+            return (List<Versionable>) dh.list();
+        }
 	}
 
     @Override

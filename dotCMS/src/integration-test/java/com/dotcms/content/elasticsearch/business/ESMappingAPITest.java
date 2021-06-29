@@ -2,9 +2,11 @@ package com.dotcms.content.elasticsearch.business;
 
 import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.INCLUDE_DOTRAW_METADATA_FIELDS;
 import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.INDEX_DOTRAW_METADATA_FIELDS;
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.NO_METADATA;
 import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.TEXT;
 import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.WRITE_METADATA_ON_REINDEX;
 import static com.dotcms.datagen.TestDataUtils.getCommentsLikeContentType;
+import static com.dotcms.datagen.TestDataUtils.getFileAssetContent;
 import static com.dotcms.datagen.TestDataUtils.getMultipleImageBinariesContent;
 import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
 import static com.dotcms.datagen.TestDataUtils.relateContentTypes;
@@ -24,6 +26,7 @@ import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
+import com.dotcms.contenttype.model.field.ImmutableHiddenField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.RelationshipField;
@@ -39,6 +42,7 @@ import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -154,6 +158,43 @@ public class ESMappingAPITest {
         assertEquals(4, contentletMap.get("metadata.filesize"));
         assertTrue( contentletMap.get("metadata.content").toString().contains("lol!"));
 
+    }
+
+    /**
+     * Method to test: {@link ESMappingAPIImpl#toMap(Contentlet)}
+     * Given Scenario: When a hidden field is a date, it should be mapped as
+     * a string with a datetime format
+     * ExpectedResult: The result map should contain the hidden date field with the right format
+     */
+    @Test
+    public void test_toMap_hidden_date_fields_shouldSuccess() throws Exception {
+
+        final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        Field hiddenField = ImmutableHiddenField.builder()
+                .name("MyHiddenField")
+                .variable("MyHiddenField")
+                .contentTypeId(contentType.id())
+                .dataType(DataTypes.DATE)
+                .indexed(true)
+                .build();
+
+        hiddenField = fieldAPI.save(hiddenField, user);
+        final Date hiddenDate = new Date();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .setProperty(hiddenField.variable(), hiddenDate).nextPersisted();
+
+        final Map<String, Object> contentletMap = esMappingAPI.toMap(contentlet);
+
+        assertNotNull(contentletMap);
+
+        final String fullFieldKey =
+                contentType.variable().toLowerCase() + "." + hiddenField.variable().toLowerCase();
+        assertTrue(contentletMap.get(fullFieldKey) instanceof String);
+        assertEquals(ESMappingAPIImpl.elasticSearchDateTimeFormat.format(hiddenDate).toLowerCase(),
+                contentletMap.get(fullFieldKey));
     }
 
     /**
@@ -412,7 +453,7 @@ public class ESMappingAPITest {
         assertEquals(320, contentletMap.get("metadata.width"));
         assertEquals(235, contentletMap.get("metadata.height"));
         assertEquals(true, contentletMap.get("metadata.isimage"));
-        assertTrue( contentletMap.get("metadata.content").toString().trim().isEmpty());
+        assertTrue( contentletMap.get("metadata.content").toString().trim().equals(NO_METADATA));
 
     }
 
@@ -457,29 +498,24 @@ public class ESMappingAPITest {
             //Test that with the dotRaw fields generated are part of the list of inclusions
             Assert.assertTrue(includedDotRawFields.containsAll(dotRawMetaList));
 
-            //Now lets set an empty list to force skipping the defaults
-            Config.setProperty(INCLUDE_DOTRAW_METADATA_FIELDS, "");
-            final Map<String, Object> contentletMapIncludingNone = esMappingAPI
-                    .toMap(multipleBinariesContent);
-
-            //Now lets get the list of metadata keys
-            final List<String> dotRawMetaListForceNoneExclusion = contentletMapIncludingNone.keySet()
-                    .stream()
-                    .filter(s -> s.startsWith("metadata") && s.endsWith("dotraw"))
-                    .collect(Collectors.toList());
-
-            Assert.assertTrue(dotRawMetaListForceNoneExclusion.isEmpty());
-
-            //Now lets set a list with entries to exclude
-            Config.setProperty(INCLUDE_DOTRAW_METADATA_FIELDS, "isImage,content");
+            final Contentlet fileAssetContent = getFileAssetContent(true, 1L, TestFile.PDF);
             final Map<String, Object> contentletMapCustomInclude = esMappingAPI
-                    .toMap(multipleBinariesContent);
+                    .toMap(fileAssetContent);
 
-            assertTrue(contentletMapCustomInclude.containsKey("metadata.isimage"));
-            assertTrue(contentletMapCustomInclude.containsKey("metadata.isimage_dotraw"));
+            assertTrue(contentletMapCustomInclude.containsKey("metadata.name"));
+            assertTrue(contentletMapCustomInclude.containsKey("metadata.name_dotraw"));
 
-            assertTrue(contentletMapCustomInclude.containsKey("metadata.content"));
-            assertTrue(contentletMapCustomInclude.containsKey("metadata.content_dotraw"));
+            assertTrue(contentletMapCustomInclude.containsKey("metadata.path"));
+            assertTrue(contentletMapCustomInclude.containsKey("metadata.path_dotraw"));
+
+            assertTrue(contentletMapCustomInclude.containsKey("metadata.title"));
+            assertTrue(contentletMapCustomInclude.containsKey("metadata.title_dotraw"));
+
+            assertTrue(contentletMapCustomInclude.containsKey("metadata.moddate"));
+            assertTrue(contentletMapCustomInclude.containsKey("metadata.moddate_dotraw"));
+
+            assertTrue(contentletMapCustomInclude.containsKey("metadata.filesize"));
+            assertTrue(contentletMapCustomInclude.containsKey("metadata.filesize_dotraw"));
 
             //Test disconnecting the dot raw fields generation
             Config.setProperty(INDEX_DOTRAW_METADATA_FIELDS, false);

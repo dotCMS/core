@@ -15,8 +15,10 @@ import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.util.dependencies.DependencyManager;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.FilterDescriptor;
+import com.dotcms.publishing.PublisherAPIImplTest;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -37,16 +39,9 @@ import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
 import java.util.Date;
 import java.util.Map;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
-import com.liferay.portal.model.User;
-import java.util.Date;
-import java.util.HashSet;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -55,8 +50,6 @@ import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * @author nollymar
@@ -72,7 +65,6 @@ public class DependencyManagerTest {
 
     @BeforeClass
     public static void prepare() throws Exception {
-
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
 
@@ -96,7 +88,6 @@ public class DependencyManagerTest {
     @Test
     public void test_dependencyManager_shouldIncludeSelfRelationships()
             throws DotSecurityException, DotBundleException, DotDataException {
-
         final PushPublisherConfig config = new PushPublisherConfig();
         final ContentType contentType = getContentTypeWithSelfJoinRelationship();
         final ContentletDataGen dataGen = new ContentletDataGen(contentType.id());
@@ -147,6 +138,7 @@ public class DependencyManagerTest {
 
         //The dependency manager should include parent and child contentlets in the bundle
         validateDependencies(blogContentParent, blogContentChild, relationship, dependencyManager);
+
     }
 
     /**
@@ -220,7 +212,7 @@ public class DependencyManagerTest {
 
         //The dependency manager should include parent and child contentlets in the bundle
         validateDependencies(blogContentParent, commentContentChild, relationship, dependencyManager);
-    }
+   }
 
     /**
      * <b>Method to test:</b> {@link DependencyManager#setDependencies()} <p>
@@ -291,7 +283,8 @@ public class DependencyManagerTest {
             DependencyManager dependencyManager = new DependencyManager(DependencyManagerTest.user, config);
             dependencyManager.setDependencies();
 
-//            assertEquals(4, dependencyManager.getContents().size());
+            final List<Contentlet> languageVariables = PublisherAPIImplTest.getLanguageVariables();
+            assertEquals(languageVariables.size() + 4, dependencyManager.getContents().size());
             assertTrue(dependencyManager.getContents().contains(htmlPageAsset_1.getIdentifier()));
             assertTrue(dependencyManager.getContents().contains(htmlPageAsset_2.getIdentifier()));
             assertTrue(dependencyManager.getContents().contains(theme_1.getIdentifier()));
@@ -418,7 +411,10 @@ public class DependencyManagerTest {
                 .findFileAssetsByFolder(rootFolder, APILocator.systemUser(), false);
 
         for (final FileAsset fileAsset : fileAssetsByFolder) {
-            assertTrue("fileAsset: " + fileAsset.getIdentifier() + "Contents: " +dependencyManager.getContents().toString(),dependencyManager.getContents().contains(htmlPageAsset.getIdentifier()));
+                assertTrue(
+                        "fileAsset: " + fileAsset.getIdentifier() + "Contents: " + dependencyManager.getContents().toString(),
+                        dependencyManager.getContents().contains(fileAsset.getIdentifier())
+                );
         }
 
     }
@@ -495,13 +491,18 @@ public class DependencyManagerTest {
      * Validates the dependency manager includes relationship and both contentlets
      */
     private void validateDependencies(final Contentlet parentContent, final Contentlet childContent,
-            final Relationship relationship, final DependencyManager dependencyManager) {
+            final Relationship relationship, final DependencyManager dependencyManager)
+            throws DotSecurityException, DotDataException {
         assertNotNull(dependencyManager.getRelationships());
         assertEquals(1, dependencyManager.getRelationships().size());
         assertEquals(relationship.getInode(),
                 dependencyManager.getRelationships().iterator().next());
         assertNotNull(dependencyManager.getContents());
-//        assertEquals(2, dependencyManager.getContents().size());
+
+
+        final List<Contentlet> languageVariables = PublisherAPIImplTest.getLanguageVariables();
+        assertEquals(languageVariables.size() + 2, dependencyManager.getContents().size());
+
         assertTrue(dependencyManager.getContents().contains(parentContent.getIdentifier())
                 && dependencyManager.getContents().contains(childContent.getIdentifier()));
     }

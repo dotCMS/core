@@ -41,7 +41,7 @@ public class StringPool {
 
 	public static final String BLANK = "";
 
-	public static final String CLOSE_BRACKET = "[";
+	public static final String CLOSE_BRACKET = "]";
 
 	public static final String CLOSE_CURLY_BRACE = "}";
 

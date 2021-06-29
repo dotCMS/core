@@ -77,7 +77,7 @@ public final class LuceneQueryDateTimeFormatter {
      * @param query
      * @return
      */
-    static String findAndReplaceQueryDates(final String query) {
+    public static String findAndReplaceQueryDates(final String query) {
         String queryResult = RegEX.replaceAll(query, " ", "\\s{2,}");
 
         //delete additional blank spaces on date range

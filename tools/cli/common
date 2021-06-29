@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+cli_log() {
+  script_name=${0##*/}
+  timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+  echo "== $script_name $timestamp $1"
+}
+
+timestamp() {
+  date -u +"%Y-%m-%dT%H:%M:%SZ"
+}
+
+# https://misc.flogisoft.com/bash/tip_colors_and_formatting
+NC='\033[0m' # No Color
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+LIGHT_BLUE='\033[0;94m'
+CYAN='\033[0;36m'
+LIGHT_CYAN='\033[0;96m'

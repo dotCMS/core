@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.transform.strategy;
 
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.AVOID_MAP_SUFFIX_FOR_VIEWS;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
@@ -21,7 +22,6 @@ import io.vavr.control.Try;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -56,9 +56,12 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
         if (!binaries.isEmpty()) {
             for (final Field field : binaries) {
                 try {
-                    map.put(field.variable() + "Map", transform(field, contentlet));
+                    final String sufix = options.contains(AVOID_MAP_SUFFIX_FOR_VIEWS)
+                            ? "" : "Map";
+
+                    map.put(field.variable() + sufix, transform(field, contentlet));
                     final Metadata metadata = contentlet.getBinaryMetadata(field.variable());
-                    if (metadata != null) {
+                    if (!options.contains(AVOID_MAP_SUFFIX_FOR_VIEWS) && metadata != null) {
                         //This clearly replaces the binary by a string which is the expected output on BinaryToMapTransformer.
                         map.put(field.variable(), metadata.getName());
                     }
@@ -115,10 +118,16 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
                         + (contentLanguageSize > 1 ? "?language_id=" + contentlet.getLanguageId()
                         : StringPool.BLANK));
         map.put("name", assetName);
-        map.put("size", metadata.getLength());
+        map.put("size", metadata.getSize());
         map.put("mime", metadata.getContentType());
         map.put("isImage", metadata.isImage());
-
+        map.put("width", metadata.getWidth());
+        map.put("height", metadata.getHeight());
+        map.put("path", metadata.getPath());
+        map.put("title", metadata.getTitle());
+        map.put("sha256", metadata.getSha256());
+        map.put("modDate", metadata.getModDate());
+        map.put("focalPoint",  Try.of(()->  metadata.getCustomMeta().get("focalPoint").toString()).getOrElse("0.0"));
         return map;
     }
 }

@@ -147,6 +147,7 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
 /**
  * Created by Jonathan Gamba.
@@ -1926,30 +1927,6 @@ public class ContentletAPITest extends ContentletBaseTest {
     }
 
     /**
-     * Testing {@link ContentletAPI#getNextReview(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)}
-     *
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @see ContentletAPI
-     * @see Contentlet
-     */
-    @Test
-    public void getNextReview () throws DotSecurityException, DotDataException {
-
-        //Getting a known structure
-        Structure structure = structures.iterator().next();
-
-        //Search the contentlet for this structure
-        List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
-
-        //Getting the next review date
-        Date nextReview = contentletAPI.getNextReview( contentletList.iterator().next(), user, false );
-
-        //Validations
-        assertNotNull( nextReview );
-    }
-
-    /**
      * Tests method {@link ContentletAPI#getContentletReferences(Contentlet, User, boolean)}.
      * <p>
      * Checks that expected containers and pages (in the correct language) are returned by the method.
@@ -2260,7 +2237,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             //Reorder Relationships
             relationshipListMap.put(relationship,CollectionsUtils.list(contentletChild3,contentletChild1,contentletChild2));
-            contentletParent.setInode("");
+            contentletParent = contentletAPI.checkout(contentletParent.getInode(), user, false);
             contentletParent = contentletAPI.checkin(contentletParent,relationshipListMap,user,false);
 
             //Get All Relationships of the parent contentlet
@@ -2324,7 +2301,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             //Reorder Relationships
             relationshipListMap.put(relationship,CollectionsUtils.list(contentletChild3,contentletChild1,contentletChild2));
-            contentletParent.setInode("");
+            contentletParent = contentletAPI.checkout(contentletParent.getInode(), user, false);
             contentletParent = contentletAPI.checkin(contentletParent,relationshipListMap,user,false);
 
             //Get All Relationships of the parent contentlet
@@ -3358,7 +3335,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                         false);
             }
 
-            Boolean hasParent = FactoryLocator.getRelationshipFactory()
+            Boolean hasParent = APILocator.getRelationshipAPI()
                     .isParent(testRelationship, parentContentlet.getStructure());
 
             //Now test this delete
@@ -3536,7 +3513,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                     .relateContent(parentContentlet, testRelationship, contentRelationships, user,
                             false);
 
-            final List<Relationship> relationships = FactoryLocator.getRelationshipFactory()
+            final List<Relationship> relationships = APILocator.getRelationshipAPI()
                     .byContentType(testStructure);
             //Validations
             assertTrue(relationships != null && !relationships.isEmpty());
@@ -3662,10 +3639,10 @@ public class ContentletAPITest extends ContentletBaseTest {
                     .relateContent(parentContentlet, testRelationship, contentRelationships, user,
                             false);
 
-            final boolean hasParent = FactoryLocator.getRelationshipFactory()
+            final boolean hasParent = APILocator.getRelationshipAPI()
                     .isParent(testRelationship, parentContentlet.getStructure());
 
-            final List<Relationship> relationships = FactoryLocator.getRelationshipFactory()
+            final List<Relationship> relationships = APILocator.getRelationshipAPI()
                     .byContentType(testStructure);
             //Validations
             assertTrue(relationships != null && !relationships.isEmpty());
@@ -3707,7 +3684,6 @@ public class ContentletAPITest extends ContentletBaseTest {
         Contentlet cont=new Contentlet();
         cont.setStructureInode(testStructure.getInode());
         cont.setStringProperty(field.getVelocityVarName(), "a value");
-        cont.setReviewInterval( "1m" );
         cont.setStructureInode( testStructure.getInode() );
         cont.setHost( defaultHost.getIdentifier() );
 
@@ -3913,7 +3889,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",true);
 
         HttpServletRequest requestProxy = new MockInternalRequest().request();
-        HttpServletResponse responseProxy = new BaseResponse().response();
+        HttpServletResponse responseProxy = Mockito.mock(HttpServletResponse.class);
 
         initMessages();
 
@@ -4054,7 +4030,6 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         // ENGLISH CONTENT
         Contentlet englishContent = new Contentlet();
-        englishContent.setReviewInterval( "1m" );
         englishContent.setStructureInode( testStructure.getInode() );
         englishContent.setLanguageId(1);
 
@@ -4069,7 +4044,6 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         // SPANISH CONTENT
 		Contentlet spanishContent = new Contentlet();
-		spanishContent.setReviewInterval("1m");
 		spanishContent.setStructureInode(testStructure.getInode());
         spanishContent.setLanguageId(spanishLanguage.getId());
 		spanishContent.setIdentifier(englishContent.getIdentifier());
@@ -4122,7 +4096,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     	Contentlet fileAsset = fileAssetDataGen.languageId(english).nextPersisted();
   	  
     	Contentlet contentletSpanish = contentletAPI.findContentletByIdentifier(fileAsset.getIdentifier(), false, english, user, false);
-    	contentletSpanish.setInode("");
+    	contentletSpanish = contentletAPI.checkout(contentletSpanish.getInode(), user, false);
     	contentletSpanish.setLanguageId(spanish);
     	contentletSpanish = contentletAPI.checkin(contentletSpanish, user, false);
   	  
@@ -4166,15 +4140,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                
         //We need to create a new copy of pages for Spanish.
         for(HTMLPageAsset liveHTMLPage : liveHTMLPages){
-            Contentlet htmlPageContentlet = APILocator.getContentletAPI().find( liveHTMLPage.getInode(), user, false );
-
-            //As a copy we need to remove this info to do a clean checkin.
-            htmlPageContentlet.getMap().remove("modDate");
-            htmlPageContentlet.getMap().remove("lastReview");
-            htmlPageContentlet.getMap().remove("owner");
-            htmlPageContentlet.getMap().remove("modUser");
-
-            htmlPageContentlet.getMap().put("inode", "");
+            Contentlet htmlPageContentlet = APILocator.getContentletAPI().checkout( liveHTMLPage.getInode(), user, false );
             htmlPageContentlet.getMap().put("languageId", new Long(spanish));
 
             //Checkin and Publish.
@@ -4274,12 +4240,10 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             contentletEnglish = new ContentletDataGen(contentType.id()).languageId(english).nextPersisted();
             //new Version
-            contentletEnglish = contentletAPI.find(contentletEnglish.getInode(),user,false);
-            contentletEnglish.setInode("");
+            contentletEnglish = contentletAPI.checkout(contentletEnglish.getInode(),user,false);
             contentletEnglish = contentletAPI.checkin(contentletEnglish,user,false);
             //new Version
-            contentletEnglish = contentletAPI.find(contentletEnglish.getInode(),user,false);
-            contentletEnglish.setInode("");
+            contentletEnglish = contentletAPI.checkout(contentletEnglish.getInode(),user,false);
             contentletEnglish = contentletAPI.checkin(contentletEnglish,user,false);
 
             Identifier contentletIdentifier = APILocator.getIdentifierAPI().find(contentletEnglish.getIdentifier());
@@ -4288,18 +4252,15 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             assertEquals(3,quantityVersions);
 
-            contentletSpanish = contentletAPI.find(contentletEnglish.getInode(),user,false);
-            contentletSpanish.setInode("");
+            contentletSpanish = contentletAPI.checkout(contentletEnglish.getInode(),user,false);
             contentletSpanish.setLanguageId(spanish);
             contentletSpanish = contentletAPI.checkin(contentletSpanish, user, false);
             //new Version
-            contentletSpanish = contentletAPI.find(contentletSpanish.getInode(),user,false);
-            contentletSpanish.setInode("");
+            contentletSpanish = contentletAPI.checkout(contentletSpanish.getInode(),user,false);
             contentletSpanish.setLanguageId(spanish);
             contentletSpanish = contentletAPI.checkin(contentletSpanish, user, false);
             //new Version
-            contentletSpanish = contentletAPI.find(contentletSpanish.getInode(),user,false);
-            contentletSpanish.setInode("");
+            contentletSpanish = contentletAPI.checkout(contentletSpanish.getInode(),user,false);
             contentletSpanish.setLanguageId(spanish);
             contentletSpanish = contentletAPI.checkin(contentletSpanish, user, false);
 
@@ -5167,7 +5128,6 @@ public class ContentletAPITest extends ContentletBaseTest {
 
 
             contentlet = contentletAPI.checkout(contentlet.getInode(),user,false);
-            contentlet.setInode("");
             contentlet.setStringProperty(field.variable(),fieldValueWorking);
             contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
             contentletAPI.checkin(contentlet, user, false);
@@ -5397,9 +5357,9 @@ public class ContentletAPITest extends ContentletBaseTest {
      * Test checkin with a non-existing contentlet identifier, that should fail
      *
      */
-    @Test(expected = DotHibernateException.class)
+    @Test(expected = DotDataException.class)
     public void testCheckin_Non_Existing_Identifier_With_Validate_Should_FAIL()
-            throws DotDataException, DotSecurityException {
+            throws DotDataException {
         Contentlet newsContent = null;
 
         try {
@@ -5416,9 +5376,9 @@ public class ContentletAPITest extends ContentletBaseTest {
             fail("Should throw a constrain exception for an unexisting id");
         } catch (Exception e) {
 
-            if (e instanceof DotHibernateException || ExceptionUtil.causedBy(e, DotHibernateException.class)) {
+            if (e instanceof DotDataException || ExceptionUtil.causedBy(e, DotDataException.class)) {
 
-                throw new DotHibernateException(e.getMessage());
+                throw new DotDataException(e.getMessage());
             }
 
             fail("The exception catch should: DotHibernateException and is: " + e.getClass() );
@@ -6482,7 +6442,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                     relationshipRecords.get(relationship).get(0).getIdentifier());
 
             //creates a new version of the child
-            childContent.setInode("");
+            childContent = contentletAPI.checkout(childContent.getInode(), user, false);
             childContent = contentletAPI
                     .checkin(childContent, (ContentletRelationships) null, null, null,
                             user, false);
@@ -6536,7 +6496,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             assertEquals(childContent.getIdentifier(), relatedContent.get(0).getIdentifier());
 
             //creates a new version of the child
-            childContent.setInode("");
+            childContent = contentletAPI.checkout(childContent.getInode(), user, false);
             childContent = contentletAPI
                     .checkin(childContent, (ContentletRelationships) null, null, null,
                             user, false);
@@ -6598,7 +6558,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                     relationshipRecords.get(relationship).get(0).getIdentifier());
 
             //creates a new version of the child
-            parentContent.setInode("");
+            parentContent = contentletAPI.checkout(parentContent.getInode(), user, false);
             parentContent = contentletAPI
                     .checkin(parentContent, (ContentletRelationships) null, null, null,
                             user, false);
@@ -6659,7 +6619,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             assertEquals(parentContent.getIdentifier(), relatedContent.get(0).getIdentifier());
 
             //creates a new version of the parent
-            parentContent.setInode("");
+            parentContent = contentletAPI.checkout(parentContent.getInode(), user, false);
             parentContent = contentletAPI
                     .checkin(parentContent, (ContentletRelationships) null, null, null,
                             user, false);
@@ -6683,9 +6643,6 @@ public class ContentletAPITest extends ContentletBaseTest {
         final Contentlet beforeTouch = TestDataUtils.getGenericContentContent(true,
                 languageAPI.getDefaultLanguage().getId());
         assertNotNull(beforeTouch);
-
-        //We need to evict the contentlet from hibernate's cache so we can see our changes once we pull-it out from db.
-        HibernateUtil.evict(HibernateUtil.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, beforeTouch.getInode()));
 
         final Set<String> inodes = Stream.of(beforeTouch).map(Contentlet::getInode).collect(Collectors.toSet());
         contentletAPI.updateModDate(inodes, user);

@@ -8,48 +8,84 @@ jobs:
     runs-on: ubuntu-18.04
     env:
       DOT_CICD_BRANCH: master
-      DOT_CICD_CLOUD_PROVIDER: github
-      DOT_CICD_TARGET: core
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GITHUB_USER: dotcmsbuild
-      GITHUB_USER_TOKEN: ${{ secrets.USER_TOKEN }}
+      GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
       REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
       REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      SSH_RSA_KEY: ${{ secrets.EE_RSA_KEY }}
-      DEBUG: false
     steps:
       - name: GITHUB CONTEXT
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "${GITHUB_CONTEXT}"
         if: env.DEBUG == 'true'
+      - name: Checkout core
+        uses: actions/checkout@v2
       - name: Set Common Vars
         run: |
-          BRANCH=$(basename "${{ github.ref }}")
-
-          if [[ ${BRANCH} =~ ^release-.*|^v[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$ ]]; then
-            IS_RELEASE='true'
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            IS_PR=true
           else
-            IS_RELEASE='false'
+            IS_PR=false
           fi
 
-          echo "BRANCH=${BRANCH}" >> $GITHUB_ENV
-          echo "EE_BRANCH=${BRANCH}" >> $GITHUB_ENV
-          echo "BASE_FOLDER=$(pwd)" >> $GITHUB_ENV
+          if [[ ${IS_PR} == true ]]; then
+            BUILD_ID="${{ github.head_ref }}"
+          else
+            BUILD_ID=$(basename "${{ github.ref }}")
+          fi
+
+          BUILD_HASH=$(git log -1 --pretty=%h)
+          eval $(cat dotCMS/gradle.properties| grep dotcmsReleaseVersion)
+          DOTCMS_VERSION="${dotcmsReleaseVersion}"
+
+          if [[ ${BUILD_ID} =~ ^release-.*|^v[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$ ]]; then
+            IS_RELEASE='true'
+            DRY_RUN='false'
+          else
+            IS_RELEASE='false'
+            DRY_RUN='true'
+          fi
+
+          echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
+          echo "EE_BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
+          echo "BUILD_HASH=${BUILD_HASH}" >> $GITHUB_ENV
+          echo "DOTCMS_VERSION=${DOTCMS_VERSION}" >> $GITHUB_ENV
           echo "IS_RELEASE=${IS_RELEASE}" >> $GITHUB_ENV
       - name: Prepare dot-cicd
         run: |
           sh -c "$(curl -fsSL https://raw.githubusercontent.com/dotCMS/dot-cicd/${DOT_CICD_BRANCH}/seed/install-dot-cicd.sh)"
-      - name: Build DotCMS Release Docker Image
-        run: |
-          dotcicd/library/pipeline.sh buildRelease
-        if: env.IS_RELEASE != 'true'
       - name: Run DotCMS Release Docker Image
         run: |
-          dotcicd/library/pipeline.sh runRelease
-      - name: Publish Docker Multiarch Image
-        run: |
-          dotcicd/library/pipeline.sh publishDockerImage ${{ env.GITHUB_USER }} ${{ secrets.USER_TOKEN }} ${{ env.BRANCH }} ${{ env.IS_RELEASE }} ${{ secrets.DOCKER_USERNAME }} ${{ secrets.DOCKER_TOKEN }}
+          ../dotcicd/library/pipeline.sh runRelease
+      - name: Discover docker tags
+        id: discover-docker-tags
+        uses: dotcms/discover-docker-tags-action@main
+        with:
+          version: ${{ ENV.DOTCMS_VERSION }}
+          hash: ${{ env.BUILD_HASH }}
+          updateStable: true
+      - name: Publish docker image
+        id: publish-docker-image
+        uses: dotcms/publish-docker-image-action@main
+        with:
+          dot_cicd_branch: ${{ env.DOT_CICD_BRANCH }}
+          build_id: ${{ env.BUILD_ID }}
+          tags: ${{ steps.discover-docker-tags.outputs.discovered_tags }}
+          github_user_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+          docker_hub_username: ${{ secrets.DOCKER_USERNAME }}
+          docker_hub_token: ${{ secrets.DOCKER_TOKEN }}
+          dry_run: ${{ env.DRY_RUN }}
+      - name: Slack Notification
+        if: success() && env.IS_RELEASE == 'true'
+        uses: rtCamp/action-slack-notify@master
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_USERNAME: dotcms-bot
+          SLACK_TITLE: "Important news!"
+          SLACK_MSG_AUTHOR: " "
+          MSG_MINIMAL: true
+          SLACK_FOOTER: ""
+          SLACK_ICON: https://avatars.slack-edge.com/2021-02-18/1760490973606_047c511fc4610eab31e5_88.png
+          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of dotCMS - dotCMS ${{ env.BUILD_ID }} :tada:"

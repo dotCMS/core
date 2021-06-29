@@ -8,10 +8,12 @@ import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
+import com.dotcms.dotpubsub.PostgresPubSubImplTest;
 import com.dotcms.ema.EMAWebInterceptorTest;
 import com.dotcms.enterprise.HTMLDiffUtilTest;
 import com.dotcms.enterprise.cluster.ClusterFactoryTest;
 import com.dotcms.enterprise.publishing.remote.PushPublishBundleGeneratorTest;
+import com.dotcms.enterprise.publishing.remote.StaticPushPublishBundleGeneratorTest;
 import com.dotcms.enterprise.publishing.remote.bundler.ContainerBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentTypeBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.DependencyBundlerTest;
@@ -30,6 +32,7 @@ import com.dotcms.publisher.bundle.business.BundleAPITest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
 import com.dotcms.publisher.util.DependencyManagerTest;
+import com.dotcms.publisher.util.DependencyModDateUtilTest;
 import com.dotcms.publishing.PublisherAPIImplTest;
 import com.dotcms.publishing.PublisherFilterImplTest;
 import com.dotcms.publishing.PushPublishFiltersInitializerTest;
@@ -55,6 +58,7 @@ import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
 import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
+import com.dotmarketing.business.DeterministicIdentifierAPITest;
 import com.dotmarketing.business.helper.PermissionHelperTest;
 import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
 import com.dotmarketing.common.db.DBTimeZoneCheckTest;
@@ -64,6 +68,7 @@ import com.dotmarketing.osgi.GenericBundleActivatorTest;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
 import com.dotmarketing.portlets.containers.business.ContainerFactoryImplTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
+import com.dotmarketing.portlets.contentlet.business.ContentletCacheImplTest;
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPIImplIntegrationTest;
 import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegrationTest;
@@ -94,10 +99,15 @@ import com.dotmarketing.startup.runonce.Task201102UpdateColumnSitelicTableTest;
 import com.dotmarketing.startup.runonce.Task210218MigrateUserProxyTableTest;
 import com.dotmarketing.startup.runonce.Task210319CreateStorageTableTest;
 import com.dotmarketing.startup.runonce.Task210321RemoveOldMetadataFilesTest;
+import com.dotmarketing.startup.runonce.Task210506UpdateStorageTableTest;
+import com.dotmarketing.startup.runonce.Task210527DropReviewFieldsFromContentletTableTest;
+import com.dotmarketing.startup.runonce.Task210520UpdateAnonymousEmailTest;
+import com.dotmarketing.startup.runonce.Task210510UpdateStorageTableDropMetadataColumnTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.TestConfig;
 import com.liferay.portal.language.LanguageUtilTest;
+import org.apache.velocity.tools.view.tools.CookieToolTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
 
@@ -105,6 +115,8 @@ import org.junit.runners.Suite.SuiteClasses;
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+        PushPublishBundleGeneratorTest.class,
+        RuleBundlerTest.class,
         com.dotcms.content.elasticsearch.business.ESMappingAPITest.class,
         org.apache.velocity.runtime.parser.node.SimpleNodeTest.class,
         com.liferay.portal.ejb.UserLocalManagerTest.class,
@@ -129,7 +141,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.auth.providers.jwt.JsonWebTokenUtilsIntegrationTest.class,
         com.dotcms.auth.providers.jwt.factories.ApiTokenAPITest.class,
         com.dotcms.auth.providers.jwt.services.JsonWebTokenServiceIntegrationTest.class,
-        com.dotcms.publisher.util.DependencySetTest.class,
+        DependencyModDateUtilTest.class,
         com.dotcms.publisher.business.PublisherTest.class,
         com.dotcms.publisher.endpoint.bean.PublishingEndPointTest.class,
         com.dotcms.publisher.endpoint.business.PublishingEndPointAPITest.class,
@@ -333,7 +345,6 @@ import org.junit.runners.Suite.SuiteClasses;
         FileAssetAPIImplIntegrationTest.class,
         FileAssetFactoryIntegrationTest.class,
         UserResourceIntegrationTest.class,
-        SiteSearchJobImplTest.class,
         IntegrationResourceLinkTest.class,
         HTMLDiffUtilTest.class,
         HashBuilderTest.class,
@@ -341,7 +352,6 @@ import org.junit.runners.Suite.SuiteClasses;
         LanguageUtilTest.class,
         FolderResourceTest.class,
         Task05225RemoveLoadRecordsToIndexTest.class,
-        PushPublishBundleGeneratorTest.class,
         BundleFactoryTest.class,
         PublisherFilterImplTest.class,
         PushPublishFiltersInitializerTest.class,
@@ -350,6 +360,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task05305AddPushPublishFilterColumnTest.class,
         CMSMaintenanceFactoryTest.class,
         Task05350AddDotSaltClusterColumnTest.class,
+        PostgresPubSubImplTest.class,
         DotParseTest.class,
         TestWorkflowAction.class,
         SamlConfigurationServiceTest.class,
@@ -395,7 +406,6 @@ import org.junit.runners.Suite.SuiteClasses;
         FolderBundlerTest.class,
         HostBundlerTest.class,
         LinkBundlerTest.class,
-        RuleBundlerTest.class,
         TemplateBundlerTest.class,
         WorkflowBundlerTest.class,
         PublisherAPIImplTest.class,
@@ -409,7 +419,17 @@ import org.junit.runners.Suite.SuiteClasses;
         DBTimeZoneCheckTest.class,
         ContentHandlerTest.class,
         ESIndexAPITest.class,
-        FileAssetTemplateUtilTest.class
+        FileAssetTemplateUtilTest.class,
+        SiteSearchJobImplTest.class,
+        Task210506UpdateStorageTableTest.class,
+        StaticPushPublishBundleGeneratorTest.class,
+        Task210520UpdateAnonymousEmailTest.class,
+        Task210510UpdateStorageTableDropMetadataColumnTest.class,
+        StaticPushPublishBundleGeneratorTest.class,
+        CookieToolTest.class,
+        DeterministicIdentifierAPITest.class,
+        Task210527DropReviewFieldsFromContentletTableTest.class,
+        ContentletCacheImplTest.class
 })
 public class MainSuite {
 

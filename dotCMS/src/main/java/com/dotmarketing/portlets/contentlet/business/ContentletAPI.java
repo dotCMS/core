@@ -47,6 +47,21 @@ import java.util.Set;
 public interface ContentletAPI {
 
 	/**
+	 * Default formats for contentlets including timezones
+	 */
+	public static final String[] DEFAULT_DATE_FORMATS = new String[] {
+			// time zone
+			"yyyy-MM-dd HH:mm:ss z Z", "d-MMM-yy z Z", "dd-MMM-yyyy z Z", "MM/dd/yy HH:mm:ss z Z",
+			"MM/dd/yy hh:mm:ss z Z", "MMMM dd, yyyy z Z", "M/d/y z Z", "MM/dd/yyyy z Z", "yyyy-MM-dd z Z",
+
+			"yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "d-MMM-yy", "MMM-yy", "MMMM-yy", "d-MMM", "dd-MMM-yyyy",
+			"MM/dd/yyyy hh:mm:ss aa", "MM/dd/yyyy hh:mm aa", "MM/dd/yy HH:mm:ss", "MM/dd/yy HH:mm:ss", "MM/dd/yy HH:mm",
+			"MM/dd/yy hh:mm:ss aa", "MM/dd/yy hh:mm:ss", "MM/dd/yyyy HH:mm:ss", "MM/dd/yyyy HH:mm", "MMMM dd, yyyy",
+			"M/d/y", "M/d", "EEEE, MMMM dd, yyyy", "MM/dd/yyyy",
+			"hh:mm:ss aa", "hh:mm aa", "HH:mm:ss", "HH:mm", "yyyy-MM-dd"
+	};
+
+	/**
 	 * Use to retrieve all version of all content in the database.  This is not a common method to use. 
 	 * Only use if you need to do maintenance tasks like search and replace something in every piece 
 	 * of content.  Doesn't respect permissions.
@@ -409,15 +424,6 @@ public interface ContentletAPI {
 	 */
 	public void cleanHostField(Structure structure, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotMappingException;
 
-	/**
-	 * Finds the next date that a contentlet must be reviewed
-	 * @param content 
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return Date
-	 * @throws DotSecurityException
-	 */
-	public Date getNextReview(Contentlet content, User user, boolean respectFrontendRoles) throws DotSecurityException;
 
 	/**
 	 * Retrieves all references for a Contentlet. The result is an ArrayList of type Map whose key will 
@@ -1676,23 +1682,6 @@ public interface ContentletAPI {
 	 */
 	public boolean isFieldTypeFloat(Field field);
 
-	/**
-	 * Converts a "fat" (legacy) contentlet into a new contentlet.
-	 * @param fatty Fat contentlet to be converted.
-	 * @return A "light" contentlet.
-	 * @throws DotDataException
-	 * @throws DotSecurityException 
-	 */
-	public Contentlet convertFatContentletToContentlet (com.dotmarketing.portlets.contentlet.business.Contentlet fatty) throws DotDataException, DotSecurityException;
-	
-	/**
-	 * Converts a "light" contentlet into a "fat" (legacy) contentlet.
-	 * @param cont A "light" contentlet to be converted.
-	 * @return fatty Fat contentlet.
-	 * @throws DotDataException
-	 */
-	public com.dotmarketing.portlets.contentlet.business.Contentlet convertContentletToFatContentlet (Contentlet cont, com.dotmarketing.portlets.contentlet.business.Contentlet fatty) throws DotDataException;
-    
    /**
     * Delete old versions contents that are older than a given date
 	* Used by the Drop Old Assets Version Tool. For regular deletion

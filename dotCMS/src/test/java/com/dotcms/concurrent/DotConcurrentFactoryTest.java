@@ -2,15 +2,98 @@ package com.dotcms.concurrent;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.concurrent.DotConcurrentFactory.SubmitterConfigBuilder;
+import com.dotcms.content.elasticsearch.business.ElasticReadOnlyCommand;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.json.JSONException;
 
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 public class DotConcurrentFactoryTest extends UnitTestBase {
+
+    /**
+     * Method to test: {@link DotSubmitter#submit(Runnable)}
+     * Given Scenario: Just running task to see if works
+     * ExpectedResult: The executeCheck should be called
+     *
+     */
+    @Test
+    public void testSubmit_Single_Submitter_Config() throws JSONException, ExecutionException, InterruptedException {
+
+        final ElasticReadOnlyCommand esReadOnlyMonitor = mock(ElasticReadOnlyCommand.class);
+        final DotConcurrentFactory dotConcurrentFactory =
+                DotConcurrentFactory.getInstance();
+        final DotSubmitter submitter =
+                dotConcurrentFactory.getSingleSubmitter();
+        submitter.submit(()-> esReadOnlyMonitor.executeCheck()).get();
+
+        DateUtil.sleep(DateUtil.SECOND_MILLIS);
+
+        verify(esReadOnlyMonitor).executeCheck();
+    }
+
+    /**
+     * Method to test: {@link DotSubmitter#submit(Runnable)}
+     * Given Scenario: Running several task into a single thread executor
+     * ExpectedResult: All the threads should be called
+     *
+     */
+    @Test
+    public void testDefaultOne_Single_Submitter_Config() throws JSONException, ExecutionException, InterruptedException {
+
+        final String submitterName = "testsinglesubmitter";
+        final DotConcurrentFactory dotConcurrentFactory =
+                DotConcurrentFactory.getInstance();
+
+        final DotSubmitter submitter =
+                dotConcurrentFactory.getSingleSubmitter(submitterName);
+        final List<Future> futures = new ArrayList<>();
+        System.out.println(submitter);
+
+        IntStream.range(0, 10).forEach(
+                n -> {
+                    futures.add(submitter.submit(new PrintTask("Thread" + n)));
+                }
+        );
+
+        //check active thread, if zero then shut down the thread pool
+        for (final Future future : futures) {
+
+            future.get();
+        }
+
+        System.out.print("Staring a new one submitter");
+
+        final DotSubmitter submitter2 =
+                dotConcurrentFactory.getSingleSubmitter(submitterName);
+
+        System.out.println(submitter2);
+
+        assertTrue(submitter == submitter2);
+
+        final List<Future> futures2 = new ArrayList<>();
+        IntStream.range(0, 10).forEach(
+                n -> {
+                    futures2.add(submitter2.submit(new PrintTask("Thread" + n)));
+                }
+        );
+
+        //check active thread, if zero then shut down the thread pool
+        for (final Future future : futures2) {
+
+            future.get();
+        }
+    }
 
     @Test
     public void testDefaultOne_Submitter_Config() throws JSONException{

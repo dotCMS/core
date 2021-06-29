@@ -8,7 +8,6 @@ import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.content.elasticsearch.business.ESReadOnlyMonitor;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
@@ -288,21 +287,17 @@ public class PublishFactory {
 			}
 		}
 
+		final ContentletLoader contentletLoader = new ContentletLoader();
 		if (webAsset instanceof Link) {
-			List contentlets = InodeFactory.getParentsOfClass(webAsset, com.dotmarketing.portlets.contentlet.business.Contentlet.class);
-			Iterator it = contentlets.iterator();
-			while (it.hasNext()) {
-				com.dotmarketing.portlets.contentlet.business.Contentlet cont = (com.dotmarketing.portlets.contentlet.business.Contentlet) it.next();
-			    if (cont.isLive()) {
-			    	try {
-			    		com.dotmarketing.portlets.contentlet.model.Contentlet newFormatContentlet =
-							conAPI.convertFatContentletToContentlet(cont);
-			    		    new ContentletLoader().invalidate(newFormatContentlet);
-					} catch (DotDataException e) {
-						throw new WebAssetException(e.getMessage(), e);
-					}
-			    }
-			}
+            FactoryLocator.getMenuLinkFactory()
+                    .getParentContentlets(webAsset.getInode()).stream().filter(contentlet -> {
+                try {
+                    return contentlet.isLive();
+                } catch (DotDataException | DotSecurityException  e) {
+                    throw new DotRuntimeException(e);
+                }
+			}).forEach( contentlet -> contentletLoader.invalidate(contentlet));
+
 			// Removes static menues to provoke all possible dependencies be generated.
 			Folder parentFolder = (Folder)APILocator.getFolderAPI().findParentFolder((Treeable) webAsset,user,false);
 			Host host = (Host) hostAPI.findParentHost(parentFolder, APILocator.getUserAPI().getSystemUser(), respectFrontendRoles);
@@ -337,13 +332,14 @@ public class PublishFactory {
 		final Set<Contentlet> futureContentlets = new HashSet<>();
 		final Set<Contentlet> expiredContentlets = new HashSet<>();
 
+        final ContentletLoader contentletLoader = new ContentletLoader();
         //Publishing related pieces of content
         for ( Object asset : relatedNotPublished ) {
             if ( asset instanceof Contentlet ) {
                 Logger.debug( PublishFactory.class, "*****I'm an HTML Page -- Publishing my Contentlet Child=" + ((Contentlet) asset).getInode() );
                 try {
                     contentletAPI.publish( (Contentlet) asset, user, false );
-                    new ContentletLoader().invalidate(asset);
+                    contentletLoader.invalidate(asset);
 
                 } catch ( DotSecurityException e ) {
                     //User has no permission to publish the content in the page so we just skip it
@@ -589,7 +585,7 @@ public class PublishFactory {
 
 			Logger.warn(PublishFactory.class, message);
 		} catch (final  LanguageException  e) {
-			Logger.warn(ESReadOnlyMonitor.class, () -> e.getMessage());
+			Logger.warn(PublishFactory.class, () -> "messageKey:" + messageKey + ", msg:" + e.getMessage());
 		}
 	}
 }

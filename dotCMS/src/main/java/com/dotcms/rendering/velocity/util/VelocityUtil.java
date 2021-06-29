@@ -4,7 +4,7 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
 import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
@@ -262,7 +262,7 @@ public class VelocityUtil {
         .getOrElse(APILocator.systemHost());
     
     final HttpServletRequest requestProxy= (HttpServletRequestThreadLocal.INSTANCE.getRequest() != null) ? HttpServletRequestThreadLocal.INSTANCE.getRequest()
-        : new MockHttpRequest(host.getHostname(), null).request();
+        : new FakeHttpRequest(host.getHostname(), null).request();
     
     
     
@@ -491,7 +491,7 @@ public class VelocityUtil {
             return null;
         }
         // don't cache posts
-        if (!"GET".equalsIgnoreCase(request.getMethod())) {
+        if (!"GET".equalsIgnoreCase(request.getMethod()) && !"HEAD".equalsIgnoreCase(request.getMethod()) ) {
             return null;
         }
         // nocache passed either as a session var, as a request var or as a

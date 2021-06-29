@@ -52,7 +52,8 @@ public class CookieServletResponse extends HttpServletResponseWrapper {
         if ( SEND_COOKIES_SECURE_ALWAYS || this.requestIsSecure && SEND_COOKIES_SECURE_WHEN_HTTPS){
             cookie.setSecure(true);
         }
-        
+
+        cookie.setPath(CookieUtil.URI);
 
         super.addCookie(cookie);
     }

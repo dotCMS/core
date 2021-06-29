@@ -508,15 +508,32 @@ public class BrowserAPITest extends IntegrationTestBase {
         return testCases;
         
     }
-    
-    
 
-    
-    
-    
-    
-    
-    
-    
+    /**
+     * Method to test: getFolderContent
+     * Given Scenario: Create a parent folder and a couple of subfolders, get the content of the parent folder.
+     * ExpectedResult: The subfolders should be sort by name not by title.
+     *
+     */
+    @Test
+    public void test_getFolderContent_folderOrderedByName() throws Exception{
+        final Host site = new SiteDataGen().nextPersisted();
+
+        final Folder parentFolder = new FolderDataGen().site(site).nextPersisted();
+        final Folder childFolder1 = new FolderDataGen().name("barn").title("barn")
+                .parent(parentFolder).nextPersisted();
+        final Folder childFolder2 = new FolderDataGen().name("xray").title("baby")
+                .parent(parentFolder).nextPersisted();
+        final Map<String, Object> parentFolderContent = browserAPI.getFolderContent(BrowserQuery.builder()
+                .withHostOrFolderId(parentFolder.getIdentifier())
+                .showFolders(true)
+                .build());
+        assertNotNull(parentFolderContent);
+        assertEquals(2L, parentFolderContent.get("total"));
+        List<Map<String, Object>> results = (List<Map<String, Object>>)parentFolderContent.get("list");
+        assertEquals(childFolder1.getIdentifier(),results.get(0).get("identifier"));
+        assertEquals(childFolder2.getIdentifier(),results.get(1).get("identifier"));
+
+    }
     
 }

@@ -432,7 +432,10 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
             final Map<String, Object> sourceMap = transformedList1.get(i);
             final Map<String, Object> copyMap = transformedList2.get(i);
 
-            assertTrue(String.format(" baseType `%s` should have same (or more) number of properties " ,baseTypeName),copyMap.size() >= sourceMap.size());
+            final String missingKeys = sourceMap.keySet().stream()
+                    .filter(key -> !copyMap.containsKey(key)).collect(Collectors.joining(","));
+
+            assertTrue(String.format(" baseType `%s` should have same (or more) number of properties. Missing properties %s" ,baseTypeName, missingKeys),copyMap.size() >= sourceMap.size());
             final String assertMessage =  " contentType:`%s` , id: `%s` ,  key: `%s` ";
 
             for (final String propertyName : sourceMap.keySet()) {
@@ -447,14 +450,9 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
                 if(object1 instanceof File){
                     //Binaries are now formatted to their /dA/ path form.
-                    final File conBinary = (File)object1;
-
-                    final Identifier identifier = APILocator.getIdentifierAPI().find(original.getIdentifier());
-
-                    final String dAPath = "/dA/%s/%s/%s";
-                    final String binaryPath = String.format(dAPath, sourceMap.get("identifier"),propertyName,identifier.getAssetName());
-                    assertEquals(String.format(assertMessage,
-                            baseTypeName, original.getIdentifier(), propertyName), binaryPath, object2);
+                    final String dAPath = "/dA/%s/%s/";
+                    final String binaryPath = String.format(dAPath, sourceMap.get("identifier"),propertyName);
+                    assertTrue(String.format(assertMessage, baseTypeName, original.getIdentifier(), propertyName), object2.toString().contains(binaryPath));
                     continue;
                 }
 
@@ -489,12 +487,9 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
                 if(object1 instanceof File){
                     //Binaries are now formatted to their /dA/ path form.
-                    final File conBinary = (File)object1;
-                    final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet1.getIdentifier());
-                    final String dAPath = "/dA/%s/%s/%s";
-                    final String binaryPath = String.format(dAPath, contentlet1.getMap().get("identifier"),propertyName,identifier.getAssetName());
-                    assertEquals(String.format(" contentType:`%s` , id: `%s` ,  key: `%s` ",
-                            baseTypeName, contentlet1.getIdentifier(), propertyName), binaryPath, object2);
+                    final String dAPath = "/dA/%s/%s/";
+                    final String binaryPath = String.format(dAPath, contentlet1.getMap().get("identifier"),propertyName);
+                    assertTrue(String.format(" contentType:`%s` , id: `%s` ,  key: `%s` ", baseTypeName, contentlet1.getIdentifier(), propertyName), object2.toString().contains(binaryPath));
                     continue;
                 }
 
