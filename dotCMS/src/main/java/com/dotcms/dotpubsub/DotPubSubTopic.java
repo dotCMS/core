@@ -14,6 +14,12 @@ public interface DotPubSubTopic extends EventSubscriber<DotPubSubEvent>, KeyFilt
         return -1;
     }
 
+    default String getTopic() {
+        return String.valueOf(this.getKey());
+    }
+    
+    
+    
     default long messagesReceived() {
         return -1;
     }
