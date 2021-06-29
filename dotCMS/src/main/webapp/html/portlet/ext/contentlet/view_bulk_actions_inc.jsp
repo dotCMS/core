@@ -43,7 +43,6 @@
      *
      */
     function renderSingleAction(action){
-        console.log('action.workflowAction', action.workflowAction);
         var actionSingleTemplate
             = '<tr class="workflowActionsOption"> '
             + '   <td style="">&nbsp;&nbsp;'+action.workflowAction.name+'</td> '
@@ -251,7 +250,7 @@
         if(!popupRequired){
            return false;
         }
-
+        debugger
         var actionId = dojo.attr(buttonElement, 'data-acction-id');
 
         var inode = null;
