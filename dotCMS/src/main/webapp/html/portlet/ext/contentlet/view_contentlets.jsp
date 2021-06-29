@@ -534,7 +534,22 @@
     })
 
     function initialLoad() {
-        doSearch(<%= currpage %>, "<%=orderBy%>");
+        var urlParams = new URLSearchParams(window.location.href);
+        var portletId = urlParams.get('angularCurrentPortlet');
+        var xhrArgs = {
+            url : "/api/v1/portlet/" + portletId,
+            handleAs : "json",
+            sync: true,
+            load : function(data) {
+                var viewDisplayMode = data.entity.response.initParams.dataViewMode;
+                doSearch(<%= currpage %>, "<%=orderBy%>", viewDisplayMode);
+            },
+            error : function(error) {
+                console.log("An unexpected error occurred: " + error);
+            }
+        }
+        dojo.xhrGet(xhrArgs);
+
         dijit.byId("searchButton").attr("disabled", false);
         dijit.byId("clearButton").setAttribute("disabled", false);
 

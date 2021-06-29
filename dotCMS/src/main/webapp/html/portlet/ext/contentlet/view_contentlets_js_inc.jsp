@@ -1368,12 +1368,17 @@
         const debouncedSearch = debounce(doSearch1, 250);
 
         var currentPage;
-        function doSearch (page, sortBy) {
+        function doSearch (page, sortBy, viewDisplayMode) {
           if (page) {
               currentPage = page;
           } else {
               page = currentPage;
           }
+
+          if (viewDisplayMode) {
+              changeView(viewDisplayMode);
+          }
+
           // Wait for the "HostFolderFilteringSelect" widget to end the values updating process before proceeding with the search, if necessary.
           if (
               dijit.byId('FolderHostSelector') &&
@@ -1775,8 +1780,10 @@
                 dijit.byId('checkbox' + i).setValue(selectedInodes.includes(item.value));
             })
 
-            card.style.display = 'none';
-            list.style.display = '';
+            try {
+                card.style.display = 'none';
+                list.style.display = '';
+            } catch (error) {}
 
           } else {
 
