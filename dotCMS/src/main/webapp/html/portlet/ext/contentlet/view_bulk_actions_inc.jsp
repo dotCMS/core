@@ -250,7 +250,6 @@
         if(!popupRequired){
            return false;
         }
-        debugger
         var actionId = dojo.attr(buttonElement, 'data-acction-id');
 
         var inode = null;
