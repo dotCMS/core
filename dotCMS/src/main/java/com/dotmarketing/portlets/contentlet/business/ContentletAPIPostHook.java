@@ -1600,10 +1600,33 @@ public interface ContentletAPIPostHook {
 
     }
 
+	/**
+	 * Post Hook Move
+	 * @param contentlet
+	 * @param user
+	 * @param hostAndFolderPath
+	 * @param respectFrontendRoles
+	 */
     default void move(Contentlet contentlet, User user, String hostAndFolderPath, boolean respectFrontendRoles) {}
 
+	/**
+	 * Post Hook Move
+	 * @param contentlet
+	 * @param user
+	 * @param host
+	 * @param folderFolderPath
+	 * @param respectFrontendRoles
+	 */
 	default void move(Contentlet contentlet, User user, Host host, String folderFolderPath, boolean respectFrontendRoles) {}
 
+	/**
+	 * Post Hook Move
+	 * @param contentlet
+	 * @param user
+	 * @param host
+	 * @param folder
+	 * @param respectFrontendRoles
+	 */
 	default void move(final Contentlet contentlet, User user, Host host, Folder folder, boolean respectFrontendRoles) {}
 
 }

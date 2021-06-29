@@ -4,7 +4,6 @@ import com.dotcms.util.TreeableNameComparator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -15,6 +14,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
  */
 public class FolderHelper {
 
+    private static final int SUB_FOLDER_SIZE_DEFAULT_LIMIT = 20;
     private final HostAPI hostAPI;
     private final FolderAPI folderAPI;
 
@@ -173,7 +174,7 @@ public class FolderHelper {
             } else{
                 final List<Host> siteList = APILocator.getHostAPI().findAll(user,false);
                 for(final Host site : siteList){
-                    if(subFolders.size() < 20) {
+                    if(subFolders.size() < SUB_FOLDER_SIZE_DEFAULT_LIMIT) {
                         subFolders.addAll(findSubfoldersUnderHost(site.getIdentifier(), pathToSearch, user));
                     }
                     continue;
@@ -186,7 +187,7 @@ public class FolderHelper {
             } else {
                 final List<Host> siteList = APILocator.getHostAPI().findAll(user,false);
                 for(final Host site : siteList){
-                    if(subFolders.size() < 20) {
+                    if(subFolders.size() < SUB_FOLDER_SIZE_DEFAULT_LIMIT) {
                         subFolders.addAll(findSubfoldersUnderFolder(site.getIdentifier(), pathToSearch, user));
                     }
                     continue;
@@ -210,7 +211,7 @@ public class FolderHelper {
         final List<Folder> subFoldersOfRootPath = APILocator.getFolderAPI()
                 .findSubFolders(host, user, false);
         subFoldersOfRootPath.stream().filter(folder -> folder.getPath().startsWith(pathToSearch))
-                .limit(20).forEach(
+                .limit(SUB_FOLDER_SIZE_DEFAULT_LIMIT).forEach(
                 folder -> subFolders.add(new FolderSearchResultView(folder.getPath(), host.getHostname(),
                         Try.of(() -> APILocator.getPermissionAPI().doesUserHavePermission(folder,
                                 PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user)).getOrElse(false))));
@@ -239,7 +240,7 @@ public class FolderHelper {
             subFoldersOfLastValidPath.stream()
                     .filter(folder -> folder.getPath()
                             .startsWith(pathToSearch))
-                    .limit(20).forEach(folder -> subFolders
+                    .limit(SUB_FOLDER_SIZE_DEFAULT_LIMIT).forEach(folder -> subFolders
                     .add(new FolderSearchResultView(folder.getPath(), host.getHostname(),
                             Try.of(() -> APILocator.getPermissionAPI().doesUserHavePermission(folder,
                                     PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user)).getOrElse(false))));

@@ -654,11 +654,11 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 			}
 		}
 
-		final Contentlet c = conAPI.move(contentlet, user, hostAndFolderPath, respectFrontendRoles);
+		final Contentlet resultContentlet = conAPI.move(contentlet, user, hostAndFolderPath, respectFrontendRoles);
 		for(ContentletAPIPostHook post : postHooks){
 			post.move(contentlet, user, hostAndFolderPath, respectFrontendRoles);
 		}
-		return c;
+		return resultContentlet;
 	}
 
 	@Override
