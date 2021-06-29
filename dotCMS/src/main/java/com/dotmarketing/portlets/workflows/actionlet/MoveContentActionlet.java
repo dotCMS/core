@@ -29,6 +29,7 @@ import java.util.Map;
 
 /**
  * This Actionlet allows to the user to move a contentlet to another place
+ * The user may set a path into the actionlet params, if the hosts exists but not the path it can be created.
  * @author jsanca
  */
 public class MoveContentActionlet extends WorkFlowActionlet {

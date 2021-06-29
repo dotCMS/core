@@ -84,6 +84,10 @@ public interface ContentletAPI {
 	/**
 	 * Move the contentlet to a host path for instance //demo.dotcms.com/application
 	 * Indexing will be based on the {@link Contentlet#getIndexPolicy()}
+	 *
+	 * It has to start with // and the host has to exists.
+	 * If the folderPath does not exists, will try to create it (if enough grants)
+	 *
 	 * @param contentlet {@link Contentlet} existing contentlet
 	 * @param user   {@link User} user that does the action
 	 * @param hostAndFolderPath {@link String} host and path to move the content, throw and exception if do not exists or can not write in there
@@ -99,6 +103,9 @@ public interface ContentletAPI {
 	/**
 	 * Move the contentlet to a particular host and path for instance /application on the demo.dotcms.com
 	 * Indexing will be based on the {@link Contentlet#getIndexPolicy()}
+	 *
+	 * If the folderPath does not exists, will try to create it (if enough grants)
+	 *
 	 * @param contentlet {@link Contentlet} existing contentlet
 	 * @param user   {@link User} user that does the action
 	 * @param host   {@link Host} host to move
@@ -114,6 +121,7 @@ public interface ContentletAPI {
 	/**
 	 * Move the contentlet to a particular host and path
 	 * Indexing will be based on the {@link Contentlet#getIndexPolicy()}
+	 *
 	 * @param contentlet {@link Contentlet} existing contentlet
 	 * @param user   {@link User} user that does the action
 	 * @param host   {@link Host} host to move
