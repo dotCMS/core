@@ -51,7 +51,6 @@ public class MasterReplicaLettuceClient<K, V> implements LettuceClient<K, V> {
         GenericObjectPoolConfig config = new GenericObjectPoolConfig();
         config.setMinIdle(2);
         config.setMaxTotal(maxConnections);
-
         final DefaultClientResources clientResources =
                         DefaultClientResources.builder().dnsResolver(new DirContextDnsResolver()) // Does not cache DNS
                                                                                                   // lookups
