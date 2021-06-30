@@ -1,0 +1,99 @@
+name: Publish to Dotcms UI
+on:
+    push:
+        branches:
+            - release-*
+            - master
+jobs:
+    changes:
+        runs-on: ubuntu-latest
+        outputs:
+            dotcms-ui: ${{ steps.filter.outputs.dotcms-ui }}
+        steps:
+            - name: Checkout core-web
+              uses: actions/checkout@v2
+              with:
+                  fetch-depth: 1
+                  path: 'core-web'
+
+            - name: Get specific changed files
+              uses: dorny/paths-filter@v2
+              id: filter
+              with:
+                  base: ${{ github.ref }}
+                  list-files: 'json'
+                  working-directory: 'core-web'
+                  filters: |
+                      dotcms-ui:
+                        - 'apps/dotcms-ui/src/**'
+                        - 'libs/!(dotcms-webcomponents/**)/**'
+
+            - name: Changes found
+              if: steps.filter.outputs.dotcms-ui == 'true'
+              run: |
+                  echo "Found Dotcms-UI files changed."
+                  echo ${{ steps.filter.outputs.dotcms-ui }}
+
+            - name: No changes found
+              if: steps.filter.outputs.dotcms-ui == 'false'
+              run: |
+                  echo "No changes found in Dotcms-UI"
+
+    publish:
+        needs: changes
+        if: ${{ needs.changes.outputs.dotcms-ui == 'true' }}
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout core-web
+              uses: actions/checkout@v2
+              with:
+                  fetch-depth: 1
+                  path: 'core-web'
+            - name: Configuring Node.js
+              uses: actions/setup-node@v2-beta
+              with:
+                  node-version: '10.15.3'
+            - name: Installing dependencies
+              run: |
+                  cd core-web
+                  npm install
+            - name: 'Automated Version Bump - dotcms-ui - is Release branch'
+              id: version-bump-release
+              if: ${{contains(github.ref, 'release-')}}
+              uses: 'phips28/gh-action-bump-version@master'
+              with:
+                  commit-message: 'CI: bumps version to {{version}} [skip ci]'
+                  skip-tag: 'true'
+                  default: prerelease
+                  preid: 'rc'
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  PACKAGEJSON_DIR: 'core-web'
+            - name: 'Automated Version Bump - dotcms-ui - is Master branch'
+              id: version-bump-master
+              if: ${{contains(github.ref, 'master')}}
+              uses: 'phips28/gh-action-bump-version@master'
+              with:
+                  commit-message: 'CI: bumps version to {{version}} [skip ci]'
+                  skip-tag: 'true'
+                  default: prerelease
+                  preid: 'next'
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  PACKAGEJSON_DIR: 'core-web'
+            - name: Build dotcms-ui with deps
+              run: |
+                  cd core-web
+                  npm run nx build dotcms-ui -- --with-deps --prod
+                  cp package.json ./dist/apps/dotcms-ui/package.json
+            - name: 'publish to npm'
+              run: |
+                  cd core-web
+                  npm set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
+                  cd dist/apps/dotcms-ui
+                  if [[ $(basename "${{ github.ref }}") =~ ^release-.* ]]; then
+                    npm publish --tag rc
+                  fi
+                  if [[ $(basename "${{ github.ref }}") =~ ^master ]]; then
+                    npm publish --tag next
+                  fi
