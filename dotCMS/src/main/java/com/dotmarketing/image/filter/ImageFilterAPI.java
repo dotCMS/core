@@ -55,18 +55,6 @@ public interface ImageFilterAPI {
     Dimension getWidthHeight(File image);
 
     /**
-     * subsampling resizes an image by streaming the larger image and collecting every X pixel resulting
-     * in a scaled image that also maintains the aspect ratio. Because it is a stream, subsampling can
-     * resize very large images without causing the memory pressures of resizing. If the width and/or
-     * height is greater than the original image, the original image will be returned.
-     * 
-     * @param image
-     * @param width
-     * @param height
-     * @return
-     */
-
-    /**
      * resizing an image is a slower, more memory intensive operation than subsampling but produces
      * better looking thumbnails and results in a scaled image that also maintains the aspect ratio..
      * Resizing should only be done on smaller images (say less than 2000px) as very large images can
@@ -111,6 +99,17 @@ public interface ImageFilterAPI {
     
     BufferedImage resizeImage(File imageFile, int width, int height, int resampleOption);
 
+    /**
+     * subsampling resizes an image by streaming the larger image and collecting every X pixel resulting
+     * in a scaled image that also maintains the aspect ratio. Because it is a stream, subsampling can
+     * resize very large images without causing the memory pressures of resizing. If the width and/or
+     * height is greater than the original image, the original image will be returned.
+     *
+     * @param image
+     * @param width
+     * @param height
+     * @return
+     */
     BufferedImage subsampleImage(File image, int width, int height);
 
     BufferedImage intelligentResize(File incomingImage, int width, int height, int resampleOption);
