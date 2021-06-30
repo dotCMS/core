@@ -85,7 +85,7 @@ public class HostBundlerTest {
 
         final PushPublisherConfig config = new PushPublisherConfig();
 
-        hosts.stream().forEach(host -> config.add(host, PusheableAsset.SITE));
+        hosts.stream().forEach(host -> config.add(host, PusheableAsset.SITE, ""));
         config.setOperation(PublisherConfig.Operation.PUBLISH);
 
         final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config);

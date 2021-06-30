@@ -74,7 +74,7 @@ public class WorkflowBundlerTest {
         final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
 
         final PushPublisherConfig config = new PushPublisherConfig();
-        config.add(workflowScheme, PusheableAsset.WORKFLOW);
+        config.add(workflowScheme, PusheableAsset.WORKFLOW, "");
         config.setOperation(PublisherConfig.Operation.PUBLISH);
 
         final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config);

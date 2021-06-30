@@ -85,7 +85,7 @@ public class LinkBundlerTest {
         final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
 
         final PushPublisherConfig config = new PushPublisherConfig();
-        config.add(links.get(0), PusheableAsset.LINK);
+        config.add(links.get(0), PusheableAsset.LINK, "");
         config.setOperation(PublisherConfig.Operation.PUBLISH);
 
         final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config);

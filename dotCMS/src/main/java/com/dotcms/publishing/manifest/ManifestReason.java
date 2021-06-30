@@ -8,7 +8,9 @@ import java.util.stream.Collectors;
 
 public enum ManifestReason {
     INCLUDE_BY_USER ("Add directly by User"),
-    DEPENDENCY_FROM("Dependency from: %s", argument -> DependencyManager.getBundleKey(argument));
+    DEPENDENCY_FROM("Dependency from: %s", argument -> String.class.isInstance(argument) ?
+            argument : DependencyManager.getBundleKey(argument)),
+    AUTOMATIC_BY_DOTCMS("Add Automatic by dotcms");
 
     private String messageTemplate;
     private Function<Object, Object> transformer = argument -> argument;

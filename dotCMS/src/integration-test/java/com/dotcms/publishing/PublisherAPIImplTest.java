@@ -486,11 +486,11 @@ public class PublisherAPIImplTest {
 
             while ((line = csvReader.readLine()) != null) {
                 System.out.println("line = " + line);
-                /*if (nLines == 0) {
+                if (nLines == 0) {
                     assertEquals(MANIFEST_HEADERS, line);
                 } else {
-                    assertTrue(manifestItems.contains(line));
-                }*/
+                    assertTrue(manifestItems + ""manifestItems.contains(line));
+                }
 
                 nLines++;
             }

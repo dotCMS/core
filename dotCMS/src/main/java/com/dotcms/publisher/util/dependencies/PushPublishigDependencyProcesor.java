@@ -137,11 +137,14 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
         try {
             // Template dependencies
             tryToAddAllAndProcessDependencies(PusheableAsset.TEMPLATE,
-                    pushPublishigDependencyProvider.getTemplatesByHost(host));
+                    pushPublishigDependencyProvider.getTemplatesByHost(host),
+                    ManifestReason.INCLUDE_BY_USER.toString(host));
 
             // Container dependencies
             tryToAddAllAndProcessDependencies(PusheableAsset.CONTAINER,
-                    pushPublishigDependencyProvider.getContainersByHost(host));
+                    pushPublishigDependencyProvider.getContainersByHost(host),
+                    ManifestReason.INCLUDE_BY_USER.toString(host));
+
             pushPublishigDependencyProvider.getFileContainersByHost(host).stream()
                     .forEach(fileContainer -> dependencyProcessor.addAsset(fileContainer,
                             PusheableAsset.CONTAINER));
@@ -149,19 +152,23 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
             // Content dependencies
             tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET,
                     pushPublishigDependencyProvider.getContentletByLuceneQuery(
-                            "+conHost:" + host.getIdentifier()));
+                            "+conHost:" + host.getIdentifier()),
+                    ManifestReason.INCLUDE_BY_USER.toString(host));
 
             // Structure dependencies
             tryToAddAllAndProcessDependencies(PusheableAsset.CONTENT_TYPE,
-                    pushPublishigDependencyProvider.getContentTypeByHost(host));
+                    pushPublishigDependencyProvider.getContentTypeByHost(host),
+                    ManifestReason.INCLUDE_BY_USER.toString(host));
 
             // Folder dependencies
             tryToAddAllAndProcessDependencies(PusheableAsset.FOLDER,
-                    pushPublishigDependencyProvider.getFoldersByHost(host));
+                    pushPublishigDependencyProvider.getFoldersByHost(host),
+                    ManifestReason.INCLUDE_BY_USER.toString(host));
 
             // Rule dependencies
             tryToAddAllAndProcessDependencies(PusheableAsset.RULE,
-                    pushPublishigDependencyProvider.getRulesByHost(host));
+                    pushPublishigDependencyProvider.getRulesByHost(host),
+                    ManifestReason.INCLUDE_BY_USER.toString(host));
 
         } catch (DotSecurityException | DotDataException e) {
             Logger.error(this, e.getMessage(),e);
@@ -184,23 +191,28 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
             final Folder parentFolder = pushPublishigDependencyProvider.getParentFolder(folder);
 
             if(UtilMethods.isSet(parentFolder)) {
-                tryToAddSilently(PusheableAsset.FOLDER, parentFolder);
+                tryToAddSilently(PusheableAsset.FOLDER, parentFolder,
+                        ManifestReason.INCLUDE_BY_USER.toString(folder));
             }
 
             tryToAddSilently(PusheableAsset.SITE,
-                    pushPublishigDependencyProvider.getHostById(folder.getHostId()));
+                    pushPublishigDependencyProvider.getHostById(folder.getHostId()),
+                    ManifestReason.INCLUDE_BY_USER.toString(folder));
 
             // Content dependencies
             tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET,
-                    pushPublishigDependencyProvider.getContentletByLuceneQuery("+conFolder:" + folder.getInode()));
+                    pushPublishigDependencyProvider.getContentletByLuceneQuery("+conFolder:" + folder.getInode()),
+                    ManifestReason.INCLUDE_BY_USER.toString(folder));
 
             // Menu Link dependencies
             tryToAddAllAndProcessDependencies(PusheableAsset.LINK,
-                    pushPublishigDependencyProvider.getLinksByFolder(folder));
+                    pushPublishigDependencyProvider.getLinksByFolder(folder),
+                    ManifestReason.INCLUDE_BY_USER.toString(folder));
 
             // Structure dependencies
             tryToAddAllAndProcessDependencies(PusheableAsset.CONTENT_TYPE,
-                    pushPublishigDependencyProvider.getContentTypeByFolder(folder));
+                    pushPublishigDependencyProvider.getContentTypeByFolder(folder),
+                    ManifestReason.INCLUDE_BY_USER.toString(folder));
 
             //Add the default structure of this folder
             tryToAddAsDependency(PusheableAsset.CONTENT_TYPE,
@@ -209,7 +221,8 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
 
             // SubFolders
             tryToAddAllAndProcessDependencies(PusheableAsset.FOLDER,
-                    APILocator.getFolderAPI().findSubFolders(folder, user, false));
+                    APILocator.getFolderAPI().findSubFolders(folder, user, false),
+                    ManifestReason.INCLUDE_BY_USER.toString(folder));
         } catch (DotSecurityException | DotDataException e) {
             Logger.error(this, e.getMessage(),e);
         }
@@ -226,7 +239,8 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
 
             // Host dependency
             tryToAddSilently(PusheableAsset.SITE,
-                    pushPublishigDependencyProvider.getHostByTemplate(workingTemplate));
+                    pushPublishigDependencyProvider.getHostByTemplate(workingTemplate),
+                    ManifestReason.INCLUDE_BY_USER.toString(template));
 
             addContainerByTemplate(workingTemplate);
 
@@ -257,7 +271,8 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
         tryToAddAllAndProcessDependencies(PusheableAsset.CONTAINER,
                 containerByTemplate.stream()
                         .filter(container -> !FileAssetContainer.class.isInstance(container))
-                        .collect(Collectors.toList())
+                        .collect(Collectors.toList()),
+                ManifestReason.INCLUDE_BY_USER.toString(workingTemplate)
         );
 
         containerByTemplate.stream()
@@ -282,14 +297,17 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
 
             // Host Dependency
             tryToAddSilently(PusheableAsset.SITE,
-                    pushPublishigDependencyProvider.getHostByContainer(containerById));
+                    pushPublishigDependencyProvider.getHostByContainer(containerById),
+                    ManifestReason.INCLUDE_BY_USER.toString(container));
 
             // Content Type Dependencies
             tryToAddAllAndProcessDependencies(PusheableAsset.CONTENT_TYPE,
-                    pushPublishigDependencyProvider.getContentTypeByWorkingContainer(containerId));
+                    pushPublishigDependencyProvider.getContentTypeByWorkingContainer(containerId),
+                    ManifestReason.INCLUDE_BY_USER.toString(container));
 
             tryToAddAllAndProcessDependencies(PusheableAsset.CONTENT_TYPE,
-                    pushPublishigDependencyProvider.getContentTypeByLiveContainer(containerId));
+                    pushPublishigDependencyProvider.getContentTypeByLiveContainer(containerId),
+                    ManifestReason.INCLUDE_BY_USER.toString(container));
 
             if (containerById instanceof FileAssetContainer) {
                 // Process FileAssetContainer
@@ -316,23 +334,28 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
         try{
             // Host Dependency
             tryToAddSilently(PusheableAsset.SITE,
-                    pushPublishigDependencyProvider.getHostById(structure.getHost()));
+                    pushPublishigDependencyProvider.getHostById(structure.getHost()),
+                    ManifestReason.INCLUDE_BY_USER.toString(structure));
 
             // Folder Dependencies
             tryToAddSilently(PusheableAsset.FOLDER,
-                    pushPublishigDependencyProvider.getFolderById(structure.getFolder()));
+                    pushPublishigDependencyProvider.getFolderById(structure.getFolder()),
+                    ManifestReason.INCLUDE_BY_USER.toString(structure));
 
             // Workflows Dependencies
             tryToAddAll(PusheableAsset.WORKFLOW,
-                    pushPublishigDependencyProvider.getWorkflowSchemasByContentType(structure));
+                    pushPublishigDependencyProvider.getWorkflowSchemasByContentType(structure),
+                    ManifestReason.INCLUDE_BY_USER.toString(structure));
 
             // Categories Dependencies
             tryToAddAll(PusheableAsset.CATEGORY, APILocator.getCategoryAPI()
-                    .findCategories(new StructureTransformer(structure).from(), user));
+                    .findCategories(new StructureTransformer(structure).from(), user),
+                    ManifestReason.INCLUDE_BY_USER.toString(structure));
 
             // Related structures
             tryToAddAllAndProcessDependencies(PusheableAsset.RELATIONSHIP,
-                    APILocator.getRelationshipAPI().byContentType(structure));
+                    APILocator.getRelationshipAPI().byContentType(structure),
+                    ManifestReason.INCLUDE_BY_USER.toString(structure));
 
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, e.getMessage(),e);
@@ -354,15 +377,18 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
 
             // Folder Dependencies
             tryToAddSilently(PusheableAsset.FOLDER,
-                    pushPublishigDependencyProvider.getFolderByParentIdentifier(ident));
+                    pushPublishigDependencyProvider.getFolderByParentIdentifier(ident),
+                    ManifestReason.INCLUDE_BY_USER.toString(link));
 
             // Host Dependencies
             tryToAddSilently(PusheableAsset.SITE,
-                    pushPublishigDependencyProvider.getHostById(ident.getHostId()));
+                    pushPublishigDependencyProvider.getHostById(ident.getHostId()),
+                    ManifestReason.INCLUDE_BY_USER.toString(link));
 
             // Content Dependencies
             tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET,
-                    pushPublishigDependencyProvider.getContentletsByLink(linkId));
+                    pushPublishigDependencyProvider.getContentletsByLink(linkId),
+                    ManifestReason.INCLUDE_BY_USER.toString(link));
         } catch (Exception e) {
             Logger.error(this, "can't load menuLink deps "+linkId,e);
         }
@@ -393,7 +419,8 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
 
                 // Host Dependency
                 tryToAddSilently(PusheableAsset.SITE,
-                        pushPublishigDependencyProvider.getHostById(contentletVersion.getHost()));
+                        pushPublishigDependencyProvider.getHostById(contentletVersion.getHost()),
+                        ManifestReason.INCLUDE_BY_USER.toString(contentlet));
 
                 contentsToProcess.add(contentletVersion);
 
@@ -401,7 +428,8 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
                 final Map<Relationship, List<Contentlet>> contentRelationships = APILocator
                         .getContentletAPI().findContentRelationships(contentletVersion, user);
 
-                tryToAddAllAndProcessDependencies(PusheableAsset.RELATIONSHIP, contentRelationships.keySet());
+                tryToAddAllAndProcessDependencies(PusheableAsset.RELATIONSHIP,
+                        contentRelationships.keySet(), ManifestReason.INCLUDE_BY_USER.toString(contentlet));
 
                 if(publisherFilter.isRelationships()) {
                     contentRelationships.values().stream()
@@ -413,7 +441,8 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
             for (final Contentlet contentletToProcess : contentsToProcess) {
                 // Host Dependency
                 tryToAddSilently(PusheableAsset.SITE,
-                        pushPublishigDependencyProvider.getHostById(contentletToProcess.getHost()));
+                        pushPublishigDependencyProvider.getHostById(contentletToProcess.getHost()),
+                        ManifestReason.INCLUDE_BY_USER.toString(contentlet));
 
                 contentsWithDependenciesToProcess.add(contentletToProcess);
                 //Copy asset files to bundle folder keeping original folders structure
@@ -445,14 +474,17 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
             for (final Contentlet contentletWithDependenciesToProcess : contentsWithDependenciesToProcess) {
                 // Host Dependency
                 tryToAddSilently(PusheableAsset.SITE,
-                        pushPublishigDependencyProvider.getHostById(contentletWithDependenciesToProcess.getHost()));
+                        pushPublishigDependencyProvider.getHostById(contentletWithDependenciesToProcess.getHost()),
+                        ManifestReason.INCLUDE_BY_USER.toString(contentlet));
 
                 // Content Dependency
-                tryToAddSilently(PusheableAsset.CONTENTLET, contentletWithDependenciesToProcess);
+                tryToAddSilently(PusheableAsset.CONTENTLET, contentletWithDependenciesToProcess,
+                        ManifestReason.INCLUDE_BY_USER.toString(contentlet));
 
                 // Folder Dependency
                 tryToAddSilently(PusheableAsset.FOLDER,
-                        pushPublishigDependencyProvider.getFolderById(contentletWithDependenciesToProcess.getFolder()));
+                        pushPublishigDependencyProvider.getFolderById(contentletWithDependenciesToProcess.getFolder()),
+                        ManifestReason.INCLUDE_BY_USER.toString(contentlet));
 
                 // Language Dependency
                 tryToAddAsDependency(PusheableAsset.LANGUAGE,
@@ -468,7 +500,8 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
                                 .find(contentletWithDependenciesToProcess.getFolder(), user, false);
 
                         tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET,
-                                pushPublishigDependencyProvider.getHTMLPages(contFolder));
+                                pushPublishigDependencyProvider.getHTMLPages(contFolder),
+                                ManifestReason.INCLUDE_BY_USER.toString(contentlet));
                     }
                 } catch (Exception e) {
                     Logger.debug(this, e.toString());
@@ -485,7 +518,8 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
 
                 // Evaluate all the categories from this  to include as dependency.
                 tryToAddAll(PusheableAsset.CATEGORY, APILocator.getCategoryAPI()
-                                .getParents(contentletWithDependenciesToProcess, APILocator.systemUser(), false)
+                                .getParents(contentletWithDependenciesToProcess, APILocator.systemUser(), false),
+                        ManifestReason.INCLUDE_BY_USER.toString(contentlet)
                 );
 
             }
@@ -519,9 +553,11 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
 
                 if (parent.isHost()) {
                     tryToAddSilently(PusheableAsset.SITE,
-                            hostAPI.find(rule.getParent(), this.user, false));
+                            hostAPI.find(rule.getParent(), this.user, false),
+                            ManifestReason.INCLUDE_BY_USER.toString(rule));
                 } else if (parent.isHTMLPage()) {
-                    tryToAddSilently(PusheableAsset.CONTENTLET, parent);
+                    tryToAddSilently(PusheableAsset.CONTENTLET, parent,
+                            ManifestReason.INCLUDE_BY_USER.toString(rule));
                 } else {
                     throw new DotDataException("The parent ID [" + parent.getIdentifier() + "] is a non-valid parent.");
                 }
@@ -541,11 +577,13 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
             final String keyValueQuery = "+contentType:" + LanguageVariableAPI.LANGUAGEVARIABLE + " +languageId:" + lang;
             final List<Contentlet> listKeyValueLang = APILocator.getContentletAPI()
                     .search(keyValueQuery,0, -1, StringPool.BLANK, user, false);
-            tryToAddAll(PusheableAsset.CONTENTLET, listKeyValueLang);
+            tryToAddAll(PusheableAsset.CONTENTLET, listKeyValueLang,
+                    ManifestReason.INCLUDE_BY_USER.toString(language));
 
             final String contentTypeId = listKeyValueLang.get(0).getContentTypeId();
             tryToAddSilently(PusheableAsset.CONTENT_TYPE,
-                    CacheLocator.getContentTypeCache().getStructureByInode(contentTypeId));
+                    CacheLocator.getContentTypeCache().getStructureByInode(contentTypeId),
+                    ManifestReason.INCLUDE_BY_USER.toString(language));
 
         } catch (Exception e) {
             throw new DotBundleException(this.getClass().getName() + " : " + "generate()"
@@ -593,11 +631,13 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
 
             // Host dependency
             tryToAddSilently(PusheableAsset.SITE,
-                    pushPublishigDependencyProvider.getHostById(identifier.getHostId()));
+                    pushPublishigDependencyProvider.getHostById(identifier.getHostId()),
+                    ManifestReason.INCLUDE_BY_USER.toString(pageId));
 
             // Folder dependencies
             tryToAddSilently(PusheableAsset.FOLDER,
-                    pushPublishigDependencyProvider.getFolderByParentIdentifier(identifier));
+                    pushPublishigDependencyProvider.getFolderByParentIdentifier(identifier),
+                    ManifestReason.INCLUDE_BY_USER.toString(pageId));
 
             // looking for working version (must exists)
             final IHTMLPage workingPage = Try.of(
@@ -649,12 +689,14 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
 
             // Contents dependencies
             tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET,
-                    pushPublishigDependencyProvider.getContentletsByPage(workingPage));
+                    pushPublishigDependencyProvider.getContentletsByPage(workingPage),
+                    ManifestReason.INCLUDE_BY_USER.toString(pageId));
 
 
             // Rule dependencies
             tryToAddAllAndProcessDependencies(PusheableAsset.RULE,
-                    pushPublishigDependencyProvider.getRuleByPage(workingPage));
+                    pushPublishigDependencyProvider.getRuleByPage(workingPage),
+                    ManifestReason.INCLUDE_BY_USER.toString(pageId));
         } catch (DotSecurityException | DotDataException e) {
             Logger.error(this, e.getMessage(),e);
         }
@@ -681,12 +723,12 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
     }
 
     private <T> void tryToAddAllAndProcessDependencies(
-            final PusheableAsset pusheableAsset, final Collection<T> assets)
+            final PusheableAsset pusheableAsset, final Collection<T> assets, final String reason)
             throws DotDataException, DotSecurityException {
 
         assets.stream().forEach(asset -> {
             try {
-                tryToAdd(pusheableAsset, asset);
+                tryToAdd(pusheableAsset, asset, reason);
                 dependencyProcessor.addAsset(asset, pusheableAsset);
             } catch (AssetExcludeByFilterException e) {
                 //ignore
@@ -696,15 +738,15 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
         });
     }
 
-    private <T> Collection<T> tryToAddAll(
-            final PusheableAsset pusheableAsset, final Collection<T> assets)
+    private <T> Collection<T> tryToAddAll(final PusheableAsset pusheableAsset,
+            final Collection<T> assets, final String reason)
             throws DotDataException, DotSecurityException {
 
         if (assets != null) {
             return assets.stream()
                     .filter(asset -> {
                         try {
-                            return tryToAdd(pusheableAsset, asset);
+                            return tryToAdd(pusheableAsset, asset, reason);
                         } catch (AssetExcludeException e) {
                             return false;
                         }
@@ -727,7 +769,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
             final T asset, final String reason) {
         if (UtilMethods.isSet(asset)) {
             try {
-                tryToAdd(pusheableAsset, asset);
+                tryToAdd(pusheableAsset, asset, reason);
                 config.addWithDependencies(asset, pusheableAsset, reason);
             } catch (AssetExcludeByFilterException e) {
                 //ignore
@@ -738,16 +780,17 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
     }
 
     private <T> boolean tryToAddSilently (
-            final PusheableAsset pusheableAsset, final T asset)
+            final PusheableAsset pusheableAsset, final T asset, final String reason)
             throws DotDataException, DotSecurityException{
         try {
-            return tryToAdd(pusheableAsset, asset);
+            return tryToAdd(pusheableAsset, asset, reason);
         } catch (AssetExcludeException e) {
             return false;
         }
     }
 
-    private synchronized <T> boolean tryToAdd(final PusheableAsset pusheableAsset, final T asset)
+    private synchronized <T> boolean tryToAdd(final PusheableAsset pusheableAsset, final T asset,
+            final String reason)
             throws AssetExcludeException {
 
         if (!UtilMethods.isSet(asset)) {
@@ -782,7 +825,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
         if (!shouldCheckModDate(asset) ||
                 !dependencyModDateUtil.excludeByModDate(asset, pusheableAsset)) {
 
-            return add(pusheableAsset, asset);
+            return add(pusheableAsset, asset, reason);
         } else {
             throw new AssetExcludeException(String.format("Exclude by Moddate"));
         }
@@ -808,7 +851,8 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
             final String langVarsQuery = "+contentType:" + LanguageVariableAPI.LANGUAGEVARIABLE ;
             final List<Contentlet> langVariables = contentletAPI.search(langVarsQuery, 0, -1, StringPool.BLANK, user, false);
 
-            tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET, langVariables);
+            tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET, langVariables,
+                    ManifestReason.AUTOMATIC_BY_DOTCMS.toString());
         }catch (Exception e){
             Logger.error(this, e.getMessage(),e);
         }

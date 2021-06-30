@@ -86,7 +86,7 @@ public class FolderBundlerTest {
         final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
 
         final PushPublisherConfig config = new PushPublisherConfig();
-        config.add(folder, PusheableAsset.FOLDER);
+        config.add(folder, PusheableAsset.FOLDER, "");
         config.setOperation(PublisherConfig.Operation.PUBLISH);
 
         new BundleDataGen()

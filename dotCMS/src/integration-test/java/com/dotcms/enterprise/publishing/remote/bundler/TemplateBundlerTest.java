@@ -102,7 +102,7 @@ public class TemplateBundlerTest {
         final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
 
         final PushPublisherConfig config = new PushPublisherConfig();
-        config.add(template, PusheableAsset.TEMPLATE);
+        config.add(template, PusheableAsset.TEMPLATE, "");
         config.setOperation(PublisherConfig.Operation.PUBLISH);
 
         final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config);
