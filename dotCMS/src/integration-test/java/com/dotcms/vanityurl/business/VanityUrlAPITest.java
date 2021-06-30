@@ -482,8 +482,7 @@ public class VanityUrlAPITest {
 
         assertEquals(englishVanity.get(),vanityFromCache.get());
         
-        vanityURLContentletSpanish = contentletAPI.find(vanityURLContentletEnglish.getInode(), user, false);
-        vanityURLContentletSpanish.setInode("");
+        vanityURLContentletSpanish = contentletAPI.checkout(vanityURLContentletEnglish.getInode(), user, false);
         vanityURLContentletSpanish.setLanguageId(spanish.getId());
         vanityURLContentletSpanish = contentletAPI.checkin(vanityURLContentletSpanish, user, false);
 

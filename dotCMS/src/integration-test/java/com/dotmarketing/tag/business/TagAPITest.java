@@ -620,6 +620,7 @@ public class TagAPITest extends IntegrationTestBase {
 			host.setProperty(Host.HOST_NAME_KEY, hostName);
 			host.setLanguageId(langAPI.getDefaultLanguage().getId());
 			host.setIndexPolicy(IndexPolicy.FORCE);
+			host.setProperty(Host.IS_DEFAULT_KEY, false);
 			host = conAPI.checkin(host, testUser, false);
 			host.setIndexPolicy(IndexPolicy.FORCE);
 			conAPI.publish(host, testUser, false);

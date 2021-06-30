@@ -38,8 +38,6 @@ public class ContentletToMapTransformer {
             .of(Contentlet.NULL_PROPERTIES, 
                 Contentlet.DISABLE_WORKFLOW,
                     Contentlet.DONT_VALIDATE_ME,
-                    Contentlet.LAST_REVIEW_KEY,
-                    Contentlet.REVIEW_INTERNAL_KEY, 
                     Contentlet.DISABLED_WYSIWYG_KEY,
                     Contentlet.DOT_NAME_KEY
             );

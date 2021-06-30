@@ -286,15 +286,6 @@ public interface ContentletAPIPostHook {
 	 * @param respectFrontendRoles
 	 */
 	public default void cleanHostField(Structure structure, User user, boolean respectFrontendRoles){}
-	
-	/**
-	 * Finds the next date that a contentlet must be reviewed
-	 * @param content 
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @param returnValue - value returned by primary API Method 
-	 */
-	public default void getNextReview(Contentlet content, User user, boolean respectFrontendRoles,Date returnValue){}
 
 	/**
 	 * Retrieves all references for a Contentlet. The result is an ArrayList of type Map whose key will 
@@ -613,7 +604,6 @@ public interface ContentletAPIPostHook {
 	 * methods removes old associated content and reset the relatioships based
 	 * on the list of content passed as parameter
 	 * @param contentlet
-	 * @param rel
 	 * @param related
 	 * @param user
 	 * @param respectFrontendRoles
@@ -1033,21 +1023,6 @@ public interface ContentletAPIPostHook {
 	public default void isFieldTypeFloat(Field field,boolean returnValue){}
 
 	/**
-	 * Converts a "fat" (legacy) contentlet into a new contentlet.
-	 * @param fatty contentlet to be converted.
-     * @param returnValue
-	 */
-	public default void convertFatContentletToContentlet (com.dotmarketing.portlets.contentlet.business.Contentlet fatty,Contentlet returnValue){}
-	
-	/**
-	 * Converts a "light" contentlet into a "fat" (legacy) contentlet.
-	 * @param cont "light" contentlet to be converted.
-     * @param fatty
-     * @param returnValue
-	 */
-	public default void convertContentletToFatContentlet (Contentlet cont, com.dotmarketing.portlets.contentlet.business.Contentlet fatty,com.dotmarketing.portlets.contentlet.business.Contentlet returnValue){}
-    
-	/**
 	 * Applies permission to the child contentlets of the structure
 	 * @param structure
 	 * @param user
@@ -1119,7 +1094,7 @@ public interface ContentletAPIPostHook {
 
     /**
      * 
-     * @param structure
+     * @param type
      */
     public default void refresh(ContentType type){}
 
