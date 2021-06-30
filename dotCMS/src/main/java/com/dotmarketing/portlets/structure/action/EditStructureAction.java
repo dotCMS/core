@@ -136,15 +136,6 @@ public class EditStructureAction extends DotPortletAction {
 			}
 			_sendToReferral(req, res, referer);
 			return;
-		} else if ((cmd != null) && cmd.equals(com.dotmarketing.util.Constants.RESET)) {
-			try {
-				_resetIntervals(form, req, res);
-			} catch (Exception ae) {
-				_handleException(ae, req);
-				return;
-			}
-			_sendToReferral(req, res, referer);
-			return;
 		}
 
 		HibernateUtil.closeAndCommitTransaction();
@@ -239,114 +230,6 @@ public class EditStructureAction extends DotPortletAction {
 			if (UtilMethods.isSet(structure.getVelocityVarName())) {
 				structureForm.setVelocityVarName(structure.getVelocityVarName());
 			}
-			/** moved to api
-			// If the structure is fixed the name cannot be changed
-			if (structure.isFixed()) {
-				structureForm.setName(structure.getName());
-			}
-
-		
-			// if I'm editing a structure the structureType couldn't not be
-			// change
-			if (UtilMethods.isSet(structure.getInode()) && InodeUtils.isSet(structure.getInode())) {
-				// reset the structure type to it's original value
-				structureForm.setStructureType(structure.getStructureType());
-			}
-			if (UtilMethods.isSet(structure.getVelocityVarName())) {
-				structureForm.setVelocityVarName(structure.getVelocityVarName());
-			}
-			**/
-			/**
-			if (UtilMethods.isSet(structureForm.getHost())) {
-				if (!structureForm.getHost().equals(Host.SYSTEM_HOST) && hostAPI.findSystemHost().getIdentifier().equals(structureForm.getHost())) {
-					structureForm.setHost(Host.SYSTEM_HOST);
-				}
-				structureForm.setFolder("SYSTEM_FOLDER");
-			} else if (UtilMethods.isSet(structureForm.getFolder())) {
-				structureForm.setHost(folderAPI.find(structureForm.getFolder(), user, false).getHostId());
-			}
-			**/
-			/** 
-			 * moved to ContentTypeAPI
-			 * 
-			if (UtilMethods.isSet(structureForm.getHost()) && (!UtilMethods.isSet(structureForm.getFolder()) || structureForm.getFolder().equals("SYSTEM_FOLDER"))) {
-				Host host = hostAPI.find(structureForm.getHost(), user, false);
-				if (host != null) {
-					if (structure.getStructureType() == Structure.STRUCTURE_TYPE_FORM) {
-						if (!perAPI.doesUserHavePermissions(host, "PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_PUBLISH, user)) {
-							throw new DotDataException(LanguageUtil.get(user, "User-does-not-have-add-children-permission-on-host-folder"));
-						}
-					} else {
-						if (!perAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user)) {
-							throw new DotDataException(LanguageUtil.get(user, "User-does-not-have-add-children-permission-on-host-folder"));
-						}
-					}
-				}
-			}
-
-			if (UtilMethods.isSet(structureForm.getFolder()) && !structureForm.getFolder().equals("SYSTEM_FOLDER")) {
-				Folder folder = folderAPI.find(structureForm.getFolder(), user, false);
-				if (folder != null) {
-					if (structure.getStructureType() == Structure.STRUCTURE_TYPE_FORM) {
-						if (!perAPI.doesUserHavePermissions(folder, "PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_PUBLISH,
-								user)) {
-							throw new DotDataException(LanguageUtil.get(user, "User-does-not-have-add-children-permission-on-host-folder"));
-						}
-					} else {
-						if (!perAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user)) {
-							throw new DotDataException(LanguageUtil.get(user, "User-does-not-have-add-children-permission-on-host-folder"));
-						}
-					}
-				}
-			}
-			
-			//Checks if Publish was updated
-			if (UtilMethods.isSet(structure.getPublishDateVar()) &&
-					UtilMethods.isSet(structureForm.getPublishDateVar())){
-				
-				if (!structure.getPublishDateVar().equals(structureForm.getPublishDateVar())){
-					publishChanged = true;
-				}
-			}else{
-				if(structure.getPublishDateVar() != null ||
-						structureForm.getPublishDateVar() != null)
-					
-					publishChanged = true;
-			}
-			//Checks if Expire was updated
-			if (UtilMethods.isSet(structure.getExpireDateVar()) &&
-					UtilMethods.isSet(structureForm.getExpireDateVar())){
-				
-				if (!structure.getExpireDateVar().equals(structureForm.getExpireDateVar())){
-					expireChanged = true;
-				}
-			}else{
-				if(structure.getExpireDateVar() != null ||
-						structureForm.getExpireDateVar() != null)
-					
-					expireChanged = true;
-			}
-			if(!newStructure && (publishChanged || expireChanged)){
-				 List<Contentlet> results = conAPI.findByStructure(structure, user, true, 0, 0);
-					  for (Contentlet con : results) {
-						if( UtilMethods.isSet(structureForm.getExpireDateVar())){
-							Date pub = (Date)con.getMap().get(structureForm.getPublishDateVar());
-							Date exp = (Date) con.getMap().get(structureForm.getExpireDateVar());
-							if(UtilMethods.isSet(pub) && UtilMethods.isSet(exp)){	
-								if(exp.before(new Date())){
-									throw new PublishStateException("'"+con.getTitle()+"'" + LanguageUtil.get(user, "found-expired-content-please-check-before-continue"));
-								}else if(exp.before(pub)){
-									throw new PublishStateException("'"+con.getTitle()+"'" + LanguageUtil.get(user, "expire-date-should-not-be-less-than-Publish-date-please-check-before-continue"));
-								}else if(con.isLive()  && pub.after(new Date()) && exp.after(new Date())){
-									conAPI.unpublish(con, user, true);  
-								}
-							} 
-						}
-					  }
-				}
-			***/
-			
-			
 			
 			BeanUtils.copyProperties(structure, structureForm);
 			structure.setHost(structureForm.getHost());
@@ -437,27 +320,6 @@ public class EditStructureAction extends DotPortletAction {
 			Logger.error(this.getClass(), ex.toString(),ex);
 			String message = ex.getMessage();
 			SessionMessages.add(req, "error", message);
-		}
-	}
-
-	private void _resetIntervals(ActionForm form, ActionRequest req, ActionResponse res) {
-		try {
-			Structure structure = (Structure) req.getAttribute(WebKeys.Structure.STRUCTURE);
-
-			int limit = 200;
-			int offset = 0;
-			List<Contentlet> contents = conAPI.findByStructure(structure, _getUser(req), false, limit, offset);
-			int size = contents.size();
-			while (size > 0) {
-				for (Contentlet cont : contents) {
-					cont.setReviewInterval(structure.getReviewInterval());
-				}
-				offset += limit;
-				contents = conAPI.findByStructure(structure, _getUser(req), false, limit, offset);
-				size = contents.size();
-			}
-		} catch (Exception ex) {
-			Logger.debug(EditStructureAction.class, ex.toString());
 		}
 	}
 

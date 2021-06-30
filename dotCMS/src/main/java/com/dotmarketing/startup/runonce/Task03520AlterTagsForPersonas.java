@@ -67,19 +67,6 @@ public class Task03520AlterTagsForPersonas extends AbstractJDBCStartupTask {
                 "CREATE INDEX tag_is_persona_index ON tag(persona);";
     }
 
-    /**
-     * The SQL for H2
-     *
-     * @return
-     */
-    @Override
-    public String getH2Script () {
-        return "ALTER TABLE tag ADD persona BOOLEAN DEFAULT FALSE;\n" +
-                "ALTER TABLE tag ADD mod_date TIMESTAMP;\n" +
-                "ALTER TABLE tag_inode ADD mod_date TIMESTAMP;\n" +
-                "CREATE INDEX tag_is_persona_index ON tag(persona);";
-    }
-
     @Override
     protected List<String> getTablesToDropConstraints () {
         return null;

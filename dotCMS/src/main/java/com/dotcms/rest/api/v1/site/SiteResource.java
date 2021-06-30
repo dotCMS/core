@@ -24,6 +24,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.util.HostNameComparator;
+import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -773,7 +774,7 @@ public class SiteResource implements Serializable {
     public Response createNewSite(@Context final HttpServletRequest httpServletRequest,
                                   @Context final HttpServletResponse httpServletResponse,
                                   final SiteForm newSiteForm)
-            throws DotDataException, DotSecurityException{
+            throws DotDataException, DotSecurityException, AlreadyExistException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -961,7 +962,7 @@ public class SiteResource implements Serializable {
         Logger.debug(this, ()-> "Creating new Host: " + newSiteForm);
 
         return Response.ok(new ResponseEntityView(
-                this.toView(this.siteHelper.save(site, user, pageMode.respectAnonPerms)))).build();
+                this.toView(this.siteHelper.update(site, user, pageMode.respectAnonPerms)))).build();
     }
 
     /**
@@ -988,7 +989,7 @@ public class SiteResource implements Serializable {
     public Response copySite(@Context final HttpServletRequest httpServletRequest,
                                   @Context final HttpServletResponse httpServletResponse,
                                   final CopySiteForm copySiteForm)
-            throws DotDataException, DotSecurityException, PortalException, SystemException, ParseException, SchedulerException, ClassNotFoundException {
+            throws DotDataException, DotSecurityException, PortalException, SystemException, ParseException, SchedulerException, ClassNotFoundException, AlreadyExistException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)

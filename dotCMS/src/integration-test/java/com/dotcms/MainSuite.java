@@ -68,6 +68,7 @@ import com.dotmarketing.osgi.GenericBundleActivatorTest;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
 import com.dotmarketing.portlets.containers.business.ContainerFactoryImplTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
+import com.dotmarketing.portlets.contentlet.business.ContentletCacheImplTest;
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPIImplIntegrationTest;
 import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegrationTest;
@@ -99,6 +100,7 @@ import com.dotmarketing.startup.runonce.Task210218MigrateUserProxyTableTest;
 import com.dotmarketing.startup.runonce.Task210319CreateStorageTableTest;
 import com.dotmarketing.startup.runonce.Task210321RemoveOldMetadataFilesTest;
 import com.dotmarketing.startup.runonce.Task210506UpdateStorageTableTest;
+import com.dotmarketing.startup.runonce.Task210527DropReviewFieldsFromContentletTableTest;
 import com.dotmarketing.startup.runonce.Task210520UpdateAnonymousEmailTest;
 import com.dotmarketing.startup.runonce.Task210510UpdateStorageTableDropMetadataColumnTest;
 import com.dotmarketing.util.ConfigTest;
@@ -425,8 +427,9 @@ import org.junit.runners.Suite.SuiteClasses;
         Task210510UpdateStorageTableDropMetadataColumnTest.class,
         StaticPushPublishBundleGeneratorTest.class,
         CookieToolTest.class,
-        DeterministicIdentifierAPITest.class
-
+        DeterministicIdentifierAPITest.class,
+        Task210527DropReviewFieldsFromContentletTableTest.class,
+        ContentletCacheImplTest.class
 })
 public class MainSuite {
 

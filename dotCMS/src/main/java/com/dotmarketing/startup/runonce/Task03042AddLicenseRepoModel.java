@@ -44,10 +44,6 @@ public class Task03042AddLicenseRepoModel extends AbstractJDBCStartupTask {
         return "create table sitelic(id varchar(36) primary key, serverid varchar(100), license text not null, lastping datetime not null)";
     }
 
-    @Override
-    public String getH2Script() {
-        return "create table sitelic(id varchar(36) primary key, serverid varchar(100), license text not null, lastping timestamp not null)";
-    }
 
     @Override
     protected List<String> getTablesToDropConstraints() {

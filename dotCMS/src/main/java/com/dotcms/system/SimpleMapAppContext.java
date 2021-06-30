@@ -2,6 +2,7 @@ package com.dotcms.system;
 
 import com.dotcms.util.CollectionsUtils;
 
+import com.dotmarketing.db.commands.DatabaseCommand.QueryReplacements;
 import java.util.Map;
 
 /**
@@ -30,6 +31,11 @@ public class SimpleMapAppContext implements AppContext {
     public <T> void setAttribute(Enum attribute, T attributeValue) {
 
         this.context.put(attribute.toString(), attributeValue);
+    }
+
+    public boolean doNothingOnConflict(){
+        return (this.getAttribute(QueryReplacements.DO_NOTHING_ON_CONFLICT) != null)
+                && ((Boolean)this.getAttribute(QueryReplacements.DO_NOTHING_ON_CONFLICT));
     }
 
 } // E:O:F:SimpleMapAppContext.

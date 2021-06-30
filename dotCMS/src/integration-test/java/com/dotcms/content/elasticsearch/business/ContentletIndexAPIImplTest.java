@@ -759,7 +759,6 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
 	    	//Creating a test contentlet
 	    	testContent = new Contentlet();
-	    	testContent.setReviewInterval( "1m" );
 	    	testContent.setStructureInode( testStructure.getInode() );
 	    	testContent.setHost( defaultHost.getIdentifier() );
 	    	testContent.setLanguageId(1);

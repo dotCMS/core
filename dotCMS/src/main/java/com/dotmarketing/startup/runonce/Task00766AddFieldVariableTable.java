@@ -69,10 +69,4 @@ public class Task00766AddFieldVariableTable extends AbstractJDBCStartupTask {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
-    @Override
-    public String getH2Script() {
-        return null;
-    }
-
 }

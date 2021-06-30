@@ -26,7 +26,7 @@ public abstract class DashboardDataGenerator {
 			"        case when links.inode=linfo.live_inode then 1 else 0 end as live, case when links.inode=linfo.live_inode then 1 else 0 end as working, linfo.deleted, links.title as name "+
 			" from links join identifier identifier on identifier.id = links.identifier join link_version_info linfo on linfo.identifier=links.identifier "+
 			" )assets where mod_date>(select coalesce(max(mod_date),"
-			+((DbConnectionFactory.isPostgres()||DbConnectionFactory.isH2())?"'1970-01-01 00:00:00')"
+			+((DbConnectionFactory.isPostgres())?"'1970-01-01 00:00:00')"
 					:(DbConnectionFactory.isOracle())?"TO_TIMESTAMP('1970-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'))"
 							:(DbConnectionFactory.isMySql())?"STR_TO_DATE('1970-01-01','%Y-%m-%d'))"
 									:(DbConnectionFactory.isMsSql())?"CAST('1970-01-01' AS DATETIME))":"")+

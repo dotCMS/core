@@ -48,9 +48,4 @@ public class Task00905FixAddFolderAfterDelete extends AbstractJDBCStartupTask {
     protected List<String> getTablesToDropConstraints() {
         return null;
     }
-
-    @Override
-    public String getH2Script() {
-        return null;
-    }
 }

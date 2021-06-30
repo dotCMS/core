@@ -19,12 +19,6 @@ public class Task04110AddColumnsPublishingPushedAssetsTable extends AbstractJDBC
 	}
 
 	@Override
-	public String getH2Script() {
-		return "alter table publishing_pushed_assets add endpoint_ids text;"+
-				"alter table publishing_pushed_assets add publisher text;";
-	}
-
-	@Override
 	public String getPostgresScript() {
 		return "alter table publishing_pushed_assets add endpoint_ids text;"+
 				"alter table publishing_pushed_assets add publisher text;";
