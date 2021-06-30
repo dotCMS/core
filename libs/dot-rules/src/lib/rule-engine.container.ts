@@ -606,8 +606,8 @@ export class RuleEngineContainer implements OnDestroy {
     }
 
     patchAction(rule: RuleModel, ruleAction: ActionModel): void {
-        this.ruleUpdating(rule);
         if (ruleAction.isValid()) {
+            this.ruleUpdating(rule, false);
             if (!ruleAction.isPersisted()) {
                 this._ruleActionService.createRuleAction(rule.key, ruleAction).subscribe(
                     (_) => {
@@ -630,6 +630,7 @@ export class RuleEngineContainer implements OnDestroy {
                 );
             }
         } else {
+            this.ruleUpdating(rule);
             this.ruleUpdated(rule, {
                 invalid: 'Cannot save, action is not valid.'
             });
