@@ -185,7 +185,7 @@ public class SQLUtil {
 			return query;
 		}else{
 		     if(DbConnectionFactory.isPostgres()||
-				DbConnectionFactory.isMySql() || DbConnectionFactory.isH2()){
+				DbConnectionFactory.isMySql()){
 			   query = query +" LIMIT "+limit+" OFFSET " +offSet;
 			   queryString.append(query);
 

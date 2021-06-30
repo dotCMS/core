@@ -60,9 +60,4 @@ public class Task201013AddNewColumnsToIdentifierTable extends AbstractJDBCStartu
         return null;
     }
 
-    @Override
-    public String getH2Script() {
-        return null;
-    }
-
 }

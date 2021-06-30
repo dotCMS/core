@@ -345,11 +345,6 @@ public class Task03540UpdateTagInodesReferences extends AbstractJDBCStartupTask 
 	}
 
 	@Override
-	public String getH2Script() {
-		return null;
-	}
-
-	@Override
 	protected List<String> getTablesToDropConstraints() {
 		return null;
 	}

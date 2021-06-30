@@ -2609,9 +2609,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
             if (DbConnectionFactory.isMySql()) {
                 whereField.append("`").append(field.getFieldContentlet()).append("` IS NOT NULL AND `")
                         .append(field.getFieldContentlet()).append("` != ");
-            } else if (DbConnectionFactory.isH2()) {
-                whereField.append("\"").append(field.getFieldContentlet()).append("\" IS NOT NULL AND \"")
-                        .append(field.getFieldContentlet()).append("\" != ");
             } else if ( DbConnectionFactory.isOracle() ) {
                 whereField.append("'").append(field.getFieldContentlet()).append("' IS NOT NULL AND '")
                         .append(field.getFieldContentlet()).append("' != ");
@@ -2641,7 +2638,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         if (DbConnectionFactory.isMySql()) {
             update.append("`").append(field.getFieldContentlet()).append("`").append(" = ");
-        } else if ( (DbConnectionFactory.isH2() || DbConnectionFactory.isOracle()) && isFloatField ) {
+        } else if ( ( DbConnectionFactory.isOracle()) && isFloatField ) {
             update.append("\"").append(field.getFieldContentlet()).append("\"").append(" = ");
         }else{
             update.append(field.getFieldContentlet()).append(" = ");

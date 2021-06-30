@@ -88,11 +88,6 @@ public class Task04215MySQLMissingConstraints extends AbstractJDBCStartupTask {
     }
 
     @Override
-    public String getH2Script() {
-        return null;
-    }
-
-    @Override
     protected List<String> getTablesToDropConstraints() {
         return null;
     }

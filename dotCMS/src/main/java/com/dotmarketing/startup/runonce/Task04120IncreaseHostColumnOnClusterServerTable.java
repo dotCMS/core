@@ -17,11 +17,6 @@ public class Task04120IncreaseHostColumnOnClusterServerTable extends AbstractJDB
     public boolean forceRun() {
         return true;
     }
-
-    @Override
-    public String getH2Script() {
-        return "ALTER TABLE cluster_server ALTER COLUMN host varchar(255);";
-    }
     
     @Override
     public String getMSSQLScript() {

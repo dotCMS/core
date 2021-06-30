@@ -766,7 +766,7 @@ public class DotConnect {
                     result.append(",");
             }
             result.append(")");
-        } else if (DbConnectionFactory.isPostgres() || DbConnectionFactory.isOracle() || DbConnectionFactory.isH2()) {
+        } else if (DbConnectionFactory.isPostgres() || DbConnectionFactory.isOracle()) {
             for (int i = 0; i < size; i++) {
                 result.append(elements[i]);
                 if (i + 1 < size)

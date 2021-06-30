@@ -192,11 +192,6 @@ public class Task201014UpdateColumnsValuesInIdentifierTable extends AbstractJDBC
     }
 
     @Override
-    public String getH2Script() {
-        return null;
-    }
-
-    @Override
     protected List<String> getTablesToDropConstraints() {
         return null;
     }

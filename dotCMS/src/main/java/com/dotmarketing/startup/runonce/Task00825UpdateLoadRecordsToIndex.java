@@ -139,10 +139,5 @@ public class Task00825UpdateLoadRecordsToIndex extends AbstractJDBCStartupTask {
     protected List<String> getTablesToDropConstraints() {
         return null;
     }
-
-    @Override
-    public String getH2Script() {
-        return null;
-    }
     
 }
