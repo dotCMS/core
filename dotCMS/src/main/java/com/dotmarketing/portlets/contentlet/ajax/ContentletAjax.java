@@ -1460,7 +1460,6 @@ public class ContentletAjax {
                 wfActionMap.put("name", action.getName());
                 wfActionMap.put("id", action.getId());
                 wfActionMap.put("icon", action.getIcon());
-				wfActionMap.put("assignable", action());
                 wfActionMap.put("assignable", action.isAssignable());
                 wfActionMap.put("commentable", action.isCommentable() || UtilMethods.isSet(action.getCondition()));
                 wfActionMap.put("requiresCheckout", action.requiresCheckout());
