@@ -58,6 +58,7 @@ import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
 import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
+import com.dotmarketing.beans.HostTest;
 import com.dotmarketing.business.DeterministicIdentifierAPITest;
 import com.dotmarketing.business.helper.PermissionHelperTest;
 import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
@@ -429,7 +430,8 @@ import org.junit.runners.Suite.SuiteClasses;
         CookieToolTest.class,
         DeterministicIdentifierAPITest.class,
         Task210527DropReviewFieldsFromContentletTableTest.class,
-        ContentletCacheImplTest.class
+        ContentletCacheImplTest.class,
+        HostTest.class
 })
 public class MainSuite {
 
