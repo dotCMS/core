@@ -43,7 +43,7 @@ public class MoveContentActionlet extends WorkFlowActionlet {
     /**
      * This is the parameter if want to override the path from the contentlet map properties
      */
-    public static final String CONTENTLET_PATH_KEY = "_path_to_move";
+    public static final String CONTENTLET_PATH_KEY = Contentlet.PATH_TO_MOVE;
 
     @Override
     public List<WorkflowActionletParameter> getParameters() {

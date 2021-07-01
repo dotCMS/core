@@ -4743,6 +4743,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final String contentWhereToSend = contentlet.getStringProperty(Contentlet.WHERE_TO_SEND);
             final String filterKey = contentlet.getStringProperty(Contentlet.FILTER_KEY);
             final String iWantTo = contentlet.getStringProperty(Contentlet.I_WANT_TO);
+            final String pathToMove = contentlet.getStringProperty(Contentlet.PATH_TO_MOVE);
 
                 /*
                  For HTMLPages get the url of the page sent by the user, we use the Contentlet object to
@@ -5267,6 +5268,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             contentlet.setStringProperty(Contentlet.WHERE_TO_SEND, contentWhereToSend);
             contentlet.setStringProperty(Contentlet.FILTER_KEY, filterKey);
             contentlet.setStringProperty(Contentlet.I_WANT_TO, iWantTo);
+            if (UtilMethods.isSet(pathToMove)) {
+                contentlet.setStringProperty(Contentlet.PATH_TO_MOVE, pathToMove);
+            }
 
             //wapi.
             if(workflow!=null) {
@@ -6013,6 +6017,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 (String) properties.get(Contentlet.WHERE_TO_SEND));
         contentlet.setStringProperty(Contentlet.I_WANT_TO,
                 (String) properties.get(Contentlet.I_WANT_TO));
+        contentlet.setStringProperty(Contentlet.PATH_TO_MOVE,
+                (String) properties.get(Contentlet.PATH_TO_MOVE));
     }
 
     @Override
