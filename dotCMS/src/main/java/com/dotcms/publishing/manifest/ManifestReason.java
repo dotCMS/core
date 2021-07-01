@@ -2,6 +2,7 @@ package com.dotcms.publishing.manifest;
 
 import com.dotcms.publisher.util.dependencies.DependencyManager;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -9,7 +10,7 @@ import java.util.stream.Collectors;
 public enum ManifestReason {
     INCLUDE_BY_USER ("Add directly by User"),
     DEPENDENCY_FROM("Dependency from: %s", argument -> String.class.isInstance(argument) ?
-            argument : DependencyManager.getBundleKey(argument)),
+            argument : ((ManifestItem) argument).getManifestInfo().id()),
     AUTOMATIC_BY_DOTCMS("Add Automatic by dotcms");
 
     private String messageTemplate;
@@ -24,9 +25,9 @@ public enum ManifestReason {
         this.transformer = transformer;
     }
 
-    public String toString(final Object... arguments){
+    public String getMessage(final Object... arguments){
         final List<Object> argumentsTransformed = Arrays.stream(arguments).sequential().map(this.transformer)
                 .collect(Collectors.toList());
-        return String.format(this.messageTemplate, argumentsTransformed);
+        return String.format(this.messageTemplate, argumentsTransformed.toArray());
     }
 }

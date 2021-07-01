@@ -342,7 +342,7 @@ public class DependencyManager {
 
 	private <T> void add(final T asset, final PusheableAsset pusheableAsset) {
 		final boolean added = config.addWithDependencies(asset, pusheableAsset,
-				ManifestReason.INCLUDE_BY_USER.toString());
+				ManifestReason.INCLUDE_BY_USER.getMessage());
 
 		if (added) {
 			pushedAssetUtil.savePushedAssetForAllEnv(asset, pusheableAsset);

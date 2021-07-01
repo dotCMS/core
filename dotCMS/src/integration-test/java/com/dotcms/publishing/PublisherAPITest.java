@@ -73,7 +73,7 @@ public class PublisherAPITest extends IntegrationTestBase {
 
     private static HostAPI hostAPI;
     private static FolderAPI folderAPI;
-    private static UserAPI userAPI;
+    private static  UserAPI userAPI;
     private static RoleAPI roleAPI;
     private static EnvironmentAPI environmentAPI;
     private static PublishingEndPointAPI publisherEndPointAPI;
