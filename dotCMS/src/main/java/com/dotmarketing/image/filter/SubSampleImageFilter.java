@@ -14,9 +14,11 @@ public class SubSampleImageFilter extends ImageFilter {
     }
 
     public File runFilter(final File file, Map<String, String[]> parameters) {
-        int width = parameters.get(getPrefix() + "w") != null ? Integer.parseInt(parameters.get(getPrefix() + "w")[0])
+        final String[] widthParam = parameters.get(getPrefix() + "w");
+        int width = widthParam != null ? Integer.parseInt(widthParam[0])
                         : 0;
-        int height = parameters.get(getPrefix() + "h") != null ? Integer.parseInt(parameters.get(getPrefix() + "h")[0])
+        final String[] heightParam = parameters.get(getPrefix() + "h");
+        int height = heightParam != null ? Integer.parseInt(heightParam[0])
                         : 0;
 
 

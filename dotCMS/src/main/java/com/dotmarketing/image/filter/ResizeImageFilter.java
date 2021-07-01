@@ -17,9 +17,12 @@ public class ResizeImageFilter extends ImageFilter {
 		};
 	}
 	public File runFilter(final File file,    Map<String, String[]> parameters) {
-	    
-		int w = parameters.get(getPrefix() +"w") != null?Integer.parseInt(parameters.get(getPrefix() +"w")[0]):0;
-		int h = parameters.get(getPrefix() +"h") != null?Integer.parseInt(parameters.get(getPrefix() +"h")[0]):0;
+
+		final String[] widthParam = parameters.get(getPrefix() + "w");
+		int w = widthParam != null?Integer.parseInt(widthParam[0]):0;
+
+		final String[] heightParam = parameters.get(getPrefix() + "h");
+		int h = heightParam != null?Integer.parseInt(heightParam[0]):0;
 		final int resampleOpts = Try.of(()-> Integer.parseInt(parameters.get(getPrefix() +"ro")[0])).getOrElse(ImageFilterApiImpl.DEFAULT_RESAMPLE_OPT);
 		
 		if(file.getName().endsWith(".gif")) {

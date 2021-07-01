@@ -14,7 +14,7 @@ import org.apache.commons.collections.IteratorUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class ImageFilterApiImplTest {
+public class ImageFilterAPIImplTest {
 
     final static String[] extensions = new String[] {"webp", "png", "gif", "jpg"};
 
