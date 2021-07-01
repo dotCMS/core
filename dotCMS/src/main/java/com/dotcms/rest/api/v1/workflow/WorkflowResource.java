@@ -2255,6 +2255,11 @@ public class WorkflowResource {
             fireActionFormBuilder.filterKey((String)contentMap.get(Contentlet.I_WANT_TO));
             contentMap.remove(Contentlet.I_WANT_TO);
         }
+
+        if (contentMap.containsKey(Contentlet.PATH_TO_MOVE)) {
+            fireActionFormBuilder.pathToMove((String)contentMap.get(Contentlet.PATH_TO_MOVE));
+            contentMap.remove(Contentlet.PATH_TO_MOVE);
+        }
     }
 
     private Contentlet getContentlet(final String inode,
