@@ -2388,6 +2388,9 @@ public class WorkflowResource {
         contentlet.setStringProperty(Contentlet.WHERE_TO_SEND,   fireActionForm.getWhereToSend());
         contentlet.setStringProperty(Contentlet.FILTER_KEY, fireActionForm.getFilterKey());
         contentlet.setStringProperty(Contentlet.I_WANT_TO, fireActionForm.getFilterKey());
+        if (UtilMethods.isSet(fireActionForm.getPathToMove())) {
+            contentlet.setStringProperty(Contentlet.PATH_TO_MOVE, fireActionForm.getPathToMove());
+        }
 
         for(Field constant : contentlet.getContentType().fields()) {
           if(constant instanceof ConstantField)

@@ -371,15 +371,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @Override
-    public Contentlet move(final Contentlet contentlet, final User user, final Host host, final String folderPath,
+    public Contentlet move(final Contentlet contentlet, final User user, final Host host, final String folderPathParam,
                            final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
-        Logger.debug(this, "Moving contentlet: " + contentlet.getIdentifier() + " to: " + folderPath);
+        Logger.debug(this, "Moving contentlet: " + contentlet.getIdentifier() + " to: " + folderPathParam);
 
-        if (UtilMethods.isNotSet(folderPath) || !folderPath.startsWith(StringPool.SLASH)) {
+        if (UtilMethods.isNotSet(folderPathParam) || !folderPathParam.startsWith(StringPool.SLASH)) {
 
-            throw new IllegalArgumentException("The folder is not valid: " + folderPath);
+            throw new IllegalArgumentException("The folder is not valid: " + folderPathParam);
         }
+
+        // we need a / at the end to check if exits
+        final String folderPath = folderPathParam.endsWith(StringPool.SLASH)?folderPathParam: folderPathParam + StringPool.SLASH;
 
         Folder folder = Try.of(()-> APILocator.getFolderAPI()
                 .findFolderByPath(folderPath, host, user, respectFrontendRoles)).getOrNull();
