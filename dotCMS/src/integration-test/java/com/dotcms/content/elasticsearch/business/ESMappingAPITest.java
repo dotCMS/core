@@ -66,8 +66,12 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
@@ -82,6 +86,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.elasticsearch.action.search.SearchResponse;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -891,13 +896,13 @@ public class ESMappingAPITest {
     /**
      * General purpose is testing that KeyValue fields are indexed correctly.
      * Given scenario: We create a Content type that holds a Key value field.
-     * Expected Results: Then we feed data into such field and use an ES query over the KeyValue to verify the results are coming back.
+     * Expected Results: We feed data into such field and use an ES query over the KeyValue to verify the results are coming through a regular query and also flatten fields of the form key_value
      * @throws DotDataException
      * @throws DotSecurityException
      */
     @Test
     public void Test_Create_ContentType_With_KeyValue_Field_Test_Query_Expect_Success()
-            throws DotDataException, DotSecurityException {
+            throws DotDataException, DotSecurityException, JSONException {
 
         final List<Field> fields = new ArrayList<>();
         final String myKeyValueField = "myKeyValueField";
@@ -916,8 +921,10 @@ public class ESMappingAPITest {
                 .nextPersisted();
 
         new ContentletDataGen(contentType.id()).setProperty(myKeyValueField,
-                "{\"key\":\"key1\", value:\"val\" }").nextPersisted();
-        final String queryString =  String.format("+%s.%s.key:%s*",contentTypeName, myKeyValueField, "val");
+                "{\"key1\":\"val1\", key2:\"val2\" }").nextPersisted();
+
+        //First We're gonna test we can retrieve key values using a regular query
+        final String queryString =  String.format("+%s.%s.key:%s",contentTypeName, myKeyValueField, "key*");
         Logger.info(ESMappingAPITest.class, () -> String.format(" Query: %s ",queryString));
         final String wrappedQuery = String.format("{"
                 + "query: {"
@@ -930,11 +937,43 @@ public class ESMappingAPITest {
         final ESSearchResults searchResults = contentletAPI.esSearch(wrappedQuery, false,  user, false);
         Assert.assertFalse(searchResults.isEmpty());
         for (final Object searchResult : searchResults) {
-           final Contentlet contentlet = (Contentlet) searchResult;
+            final Contentlet contentlet = (Contentlet) searchResult;
             final String json = (String)contentlet.getMap().get("myKeyValueField");
             assertNotNull(json);
             final Map<String, Object> map = KeyValueFieldUtil.JSONValueToHashMap(json);
-            assertTrue(map.containsKey("key"));
+            assertEquals(map.get("key1"),"val1");
+            assertEquals(map.get("key2"),"val2");
+        }
+
+        //Now we're gonna validate that we can retrieve key values through the aggregates
+        final String flattenQueryString =  String.format("+%s.%s.key_value:%s",contentTypeName, myKeyValueField, "*");
+        final String aggregationString =  String.format("%s.%s.key_value",contentTypeName, myKeyValueField);
+        final String wrappedQueryWithAggregations = String.format("{"
+                + "query: {"
+                + "   query_string: {"
+                + "        query: \"%s\""
+                + "     }"
+                + "  },"
+                + " aggs : {"
+                + "        tag : {"
+                + "            terms : {"
+                + "                field : \"%s\""
+                + "            }"
+                + "        }"
+                + "    } "
+                + "}", flattenQueryString, aggregationString);
+
+        final SearchResponse raw = contentletAPI.esSearchRaw(
+                StringUtils.lowercaseStringExceptMatchingTokens(wrappedQueryWithAggregations,
+                        ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX), false, user, false);
+
+        final JSONArray jsonArray = new JSONObject(raw.toString()).getJSONObject("aggregations")
+                .getJSONObject("sterms#tag").getJSONArray("buckets");
+
+        for(int i=0; i < jsonArray.length(); i++){
+            final JSONObject object = (JSONObject)jsonArray.get(i);
+            final int keyVal = i + 1;
+            assertEquals(String.format("key%d_val%d",keyVal, keyVal ),object.get("key"));
         }
     }
 
