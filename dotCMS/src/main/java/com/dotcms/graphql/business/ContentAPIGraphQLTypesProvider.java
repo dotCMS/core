@@ -128,6 +128,15 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         List<ContentType> allTypes = APILocator.getContentTypeAPI(APILocator.systemUser())
                 .search("", null, 100000, 0);
 
+        // let's log if we are including dupe types
+        final Map<String, ContentType> localTypesMap = new HashMap<>();
+        allTypes.forEach((type)-> {
+            if(localTypesMap.containsKey(type.variable())) {
+                Logger.warn(this, "Dupe Content Type detected!: " + type.variable());
+            }
+            localTypesMap.put(type.variable(), type);
+        });
+
         allTypes.forEach((type) -> {
             try {
                 contentAPITypes.add(createType(type));
