@@ -15,6 +15,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import org.glassfish.jersey.server.JSONP;
@@ -27,6 +29,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -232,6 +235,43 @@ public class FolderResource implements Serializable {
         folderPath = !folderPath.startsWith(StringPool.FORWARD_SLASH) ? StringPool.FORWARD_SLASH.concat(folderPath) : folderPath;
 
         return Response.ok(new ResponseEntityView(folderHelper.findSubFoldersPathByParentPath(siteId,folderPath, user))).build(); // 200
+    }
+
+    /**
+     * This endpoint will try to retrieve folder if exists, otherwise 404
+     *
+     * @return Folder
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @GET
+    @Path ("/{folderId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public final Response findFolderById(@Context final HttpServletRequest httpServletRequest,
+                                         @Context final HttpServletResponse httpServletResponse,
+                                         @PathParam("folderId") final String folderId
+    ) throws  DotDataException, DotSecurityException   {
+
+        final InitDataObject initData =
+                new WebResource.InitBuilder(webResource)
+                        .rejectWhenNoUser(true)
+                        .requiredBackendUser(true)
+                        .requiredFrontendUser(false)
+                        .requestAndResponse(httpServletRequest, httpServletResponse)
+                        .init();
+
+        final User user = initData.getUser();
+
+        Logger.debug(this, ()-> "Finding the folder: " + folderId);
+
+        final Folder folder = APILocator.getFolderAPI().find(folderId, user,
+                PageMode.get(httpServletRequest).respectAnonPerms);
+
+        return null == folder || !UtilMethods.isSet(folder.getIdentifier())?
+                Response.status(Response.Status.NOT_FOUND).build():
+                Response.ok(new ResponseEntityView(folder)).build(); // 200
     }
 
 }

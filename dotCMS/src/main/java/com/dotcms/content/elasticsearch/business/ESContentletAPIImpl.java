@@ -357,7 +357,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public Contentlet move(final Contentlet contentlet, final User user, final String hostAndFolderPath,
                            final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
-        Logger.debug(this, "Moving contentlet: " + contentlet.getIdentifier() + " to: " + hostAndFolderPath);
+        Logger.debug(this, ()->"Moving contentlet: " + contentlet.getIdentifier() + " to: " + hostAndFolderPath);
 
         if (UtilMethods.isNotSet(hostAndFolderPath) || !hostAndFolderPath.startsWith(HostUtil.HOST_INDICATOR)) {
 
@@ -374,7 +374,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public Contentlet move(final Contentlet contentlet, final User user, final Host host, final String folderPathParam,
                            final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
-        Logger.debug(this, "Moving contentlet: " + contentlet.getIdentifier() + " to: " + folderPathParam);
+        Logger.debug(this, ()->"Moving contentlet: " + contentlet.getIdentifier() + " to: " + folderPathParam);
 
         if (UtilMethods.isNotSet(folderPathParam) || !folderPathParam.startsWith(StringPool.SLASH)) {
 
@@ -391,7 +391,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             // if the folder does not exists try, let's see if the current user can create it.
             if (this.permissionAPI.doesUserHavePermission(host, PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles)) {
-                Logger.debug(this, "On Moving Contentlet, creating the Folders: " + folderPath);
+                Logger.debug(this, ()->"On Moving Contentlet, creating the Folders: " + folderPath);
 
                 try {
                     // multiple contentlets on a bulk action may require to create the same folder
@@ -405,7 +405,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                                 if (null == testFolder || !UtilMethods.isSet(testFolder.getInode())) {
 
-                                    Logger.info(this, "Creating folders: " + folderPath + ", contentlet: " + contentlet.getIdentifier());
+                                    Logger.debug(this, ()->"Creating folders: " + folderPath + ", contentlet: " + contentlet.getIdentifier());
                                     testFolder = DotConcurrentFactory.getInstance().getSingleSubmitter() // we need to run this in a separated thread, to use a diff conn.
                                             .submit(()->this.createFolder(folderPath, contentlet, host, user, respectFrontendRoles)).get(); // b.c the folder is a pre-requisites
                                 }
@@ -431,7 +431,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private Folder createFolder (final String folderPath, final Contentlet contentlet, final Host host,
                                  final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
-        Logger.info(this, "Creating folders: " + folderPath + ", contentlet: " + contentlet.getIdentifier());
+        Logger.debug(this, ()->"Creating folders: " + folderPath + ", contentlet: " + contentlet.getIdentifier());
         return APILocator.getFolderAPI().createFolders(folderPath, host, user, respectFrontendRoles);
     }
 
@@ -440,7 +440,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public Contentlet move(final Contentlet contentlet, final User incomingUser, final Host host, final Folder folder,
                            final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
-        Logger.info(this, "Moving contentlet: " + contentlet.getIdentifier()
+        Logger.debug(this, ()-> "Moving contentlet: " + contentlet.getIdentifier()
                 + " to host: " + host.getHostname() + " and path: " + folder.getPath() + ", id: " + folder.getIdentifier());
 
         final User user = incomingUser!=null ? incomingUser: APILocator.getUserAPI().getAnonymousUser();
@@ -468,7 +468,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         identifier.setHostId(host.getIdentifier());
         identifier.setParentPath(folder.getPath());
 
-        Logger.info(this, "Updating the identifier: " + identifier);
+        Logger.debug(this, ()->"Updating the identifier: " + identifier);
         // changing the host and path will move the contentlet
         APILocator.getIdentifierAPI().save(identifier);
 
