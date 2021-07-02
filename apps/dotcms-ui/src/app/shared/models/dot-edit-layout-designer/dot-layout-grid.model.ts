@@ -106,12 +106,13 @@ export class DotLayoutGrid {
     }
 
     removeContainer(index: number): void {
+        const classIndex = this.dotLayoutGridBoxs[index].config.row - 1;
         this.dotLayoutGridBoxs.splice(index, 1);
         this.deleteEmptyRows();
-        this.setRowClases();
+        this.setRowClases(classIndex);
     }
 
-    private setRowClases(): void {
+    private setRowClases(classIndex?: number): void {
         const newNRows = this.dotLayoutGridBoxs
             .map((box: DotLayoutGridBox) => box.config.row)
             .reduce((before: number, current: number) => {
@@ -119,7 +120,7 @@ export class DotLayoutGrid {
             }, 0);
 
         if (this.rowClasses.length > newNRows) {
-            this.rowClasses = this.rowClasses.splice(0, this.rowClasses.length - newNRows);
+            this.rowClasses.splice(classIndex, 1);
         } else {
             this.rowClasses = [
                 ...this.rowClasses,
