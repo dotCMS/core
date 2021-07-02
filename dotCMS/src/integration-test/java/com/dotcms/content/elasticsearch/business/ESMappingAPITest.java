@@ -82,7 +82,9 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -1006,4 +1008,37 @@ public class ESMappingAPITest {
         final ESSearchResults searchResults = contentletAPI.esSearch(wrappedQuery, false,  user, false);
         assertFalse(searchResults.isEmpty());
     }
+
+    /**
+     * Here we're testing that the metadata keyValue gets populated on the fileAsset
+     * Also testing that we can get to it via key value "flatten" query
+     * Given scenario: Create a File asset with an image knowing that it has a KeyValue field whose sole purpose is holding the image info then we use a query to bring it back
+     * Expected Results: The Query starts with the content-type "+fileasset.metadata" brings back results
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Test_Create_FileAsset_With_Metadata_KeyValue_Then_Query()
+            throws DotDataException, DotSecurityException {
+
+        final Contentlet imageLikeContent = TestDataUtils.getFileAssetContent(true, 1L, TestFile.JPG);
+        final ContentType contentType = imageLikeContent.getContentType();
+        String contentTypeName = contentType.variable();
+        final Optional<Field> optionalField = contentType.fields(KeyValueField.class).stream().findFirst();
+        assertTrue(optionalField.isPresent());
+        final Field field = optionalField.get();
+        final String keyValueField = field.variable();
+        final String flattenQueryString =  String.format("+%s.%s.key_value:%s",contentTypeName, keyValueField , "contenttype_image\\\\/jpeg");
+        final String wrappedQuery = String.format("{"
+                + "query: {"
+                + "   query_string: {"
+                + "        query: \"%s\""
+                + "     }"
+                + "  } "
+                + "}", flattenQueryString.toLowerCase());
+        final ESSearchResults searchResults = contentletAPI.esSearch(wrappedQuery, false,  user, false);
+        assertFalse(searchResults.isEmpty());
+    }
+
+
 }

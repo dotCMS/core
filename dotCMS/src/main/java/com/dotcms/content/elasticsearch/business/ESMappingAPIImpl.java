@@ -11,6 +11,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 import static com.dotmarketing.util.UtilMethods.isNotSet;
 import static com.liferay.util.StringPool.BLANK;
+import static com.liferay.util.StringPool.COMMA;
 import static com.liferay.util.StringPool.PERIOD;
 
 import com.dotcms.business.CloseDBIfOpened;
@@ -20,6 +21,7 @@ import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
@@ -253,7 +255,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			final StringWriter sw = new StringWriter();
 			final User systemUser = APILocator.getUserAPI().getSystemUser();
 			final Map<String,Object> contentletMap = new HashMap<>();
-			final Map<String,Object> mlowered	   = new HashMap<>();
+			final Map<String,Object> mapLowered	   = new HashMap<>();
 			loadCategories(contentlet, contentletMap);
 			loadFields(contentlet, contentletMap);
 			loadPermissions(contentlet, contentletMap);
@@ -379,10 +381,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 						//for example: when lowerCaseValue=moddate, moddate_dotraw must be created from its moddate_text if exists
 						//when the moddate_text is evaluated.
 						if (!contentletMap.containsKey(entry.getKey() + TEXT)){
-							mlowered.put(lowerCaseKey + DOTRAW, lowerCaseValue);
+							mapLowered.put(lowerCaseKey + DOTRAW, lowerCaseValue);
 						}
 					}else{
-                        mlowered.put(lowerCaseKey.replace(TEXT, DOTRAW), lowerCaseValue);
+                        mapLowered.put(lowerCaseKey.replace(TEXT, DOTRAW), lowerCaseValue);
 					}
 				}
 
@@ -396,20 +398,23 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                     continue;
                 }
 
-                mlowered.put(lowerCaseKey, lowerCaseValue);
+                mapLowered.put(lowerCaseKey, lowerCaseValue);
 			}
 
-			writeMetadata(contentlet, sw, mlowered);
+			//Write Metadata
+			writeMetadata(contentlet, sw, mapLowered);
+			//Populate any KeyValue named metadata with the written metadata. This couldn't have been done earlier since the metadata just got written
+			populateMetadataKeyValueFieldIfAny(contentlet, mapLowered);
 
 			//The url is now stored under the identifier for html pages, so we need to index that also.
 			if (contentlet.getContentType().baseType().getType() == BaseContentType.HTMLPAGE.getType()) {
-				mlowered.put(contentlet.getContentType().variable().toLowerCase() + ".url", contentIdentifier.getAssetName());
-				mlowered.put(contentlet.getContentType().variable().toLowerCase() + ".url_dotraw", contentIdentifier.getAssetName());
+				mapLowered.put(contentlet.getContentType().variable().toLowerCase() + ".url", contentIdentifier.getAssetName());
+				mapLowered.put(contentlet.getContentType().variable().toLowerCase() + ".url_dotraw", contentIdentifier.getAssetName());
 				sw.append(contentIdentifier.getAssetName());
 			}
-			mlowered.put("catchall", sw.toString());
+			mapLowered.put("catchall", sw.toString());
 
-			return mlowered;
+			return mapLowered;
 		} catch (final Exception e) {
             final String errorMsg = String.format("An error occurred when mapping properties of Contentlet with ID " +
                     "'%s': %s", contentlet.getIdentifier(), e.getMessage());
@@ -466,6 +471,61 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 					});
 				}
+			});
+
+		}
+	}
+
+	/**
+	 * This method takes care of populating any KeyValue Field named metadata that might exist on the ContentType definition
+	 * it must be called only once the metadata has been written @see {@link ESMappingAPIImpl#writeMetadata(Contentlet, StringWriter, Map)}
+	 * @param contentlet
+	 * @param mapLowered
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	private void populateMetadataKeyValueFieldIfAny(final Contentlet contentlet, final Map<String,Object> mapLowered)
+			throws DotDataException, DotSecurityException {
+		final Optional<com.dotcms.contenttype.model.field.Field> metadataKeyValueField = contentlet.getContentType()
+				.fields(KeyValueField.class).stream()
+				.filter(field -> FileAssetAPI.META_DATA_FIELD.equals(field.variable())).findFirst();
+        if(metadataKeyValueField.isPresent()  ){
+
+			final com.dotcms.contenttype.model.field.Field field = metadataKeyValueField.get();
+
+			final Map<String, Object> readOnlyMetadata = (Map<String, Object>) contentlet.get(FileAssetAPI.META_DATA_FIELD);
+            if(readOnlyMetadata.isEmpty()){
+            	Logger.warn(ESMappingAPIImpl.class,String.format("No pre-calculated metadata available to populate keyValue field on contentlet with id `%s`.",contentlet.getIdentifier()));
+            	return;
+			}
+
+			final String keyName = (contentlet.getContentType().variable() + PERIOD + field.variable()).toLowerCase();
+
+			final Map<String, Object> metadata = new HashMap<>(readOnlyMetadata);
+
+			Set<String> allowedFields = new HashSet<>();
+			// http://jira.dotmarketing.net/browse/DOTCMS-7243
+			final List<FieldVariable> fieldVariables = APILocator.getFieldAPI().getFieldVariablesForField(
+					field.inode(), APILocator.systemUser(), false);
+			for(final FieldVariable fieldVariable : fieldVariables) {
+				if(fieldVariable.getKey().equals(ESMappingConstants.DOT_INDEX_PATTERN)) {
+
+					final String[] names = fieldVariable.getValue().split(COMMA);
+					allowedFields        = new HashSet<>();
+					for(final String name : names) {
+						allowedFields.add(name.trim().toLowerCase());
+					}
+				}
+			}
+
+			allowedFields.addAll(fileMetadataAPI.getConfiguredMetadataFields());
+
+			fileMetadataAPI.filterMetadataFields(metadata, allowedFields);
+
+			metadata.forEach((k, v) -> {
+				((List)mapLowered.computeIfAbsent(keyName, key -> new ArrayList<>())).add(
+						ImmutableMap.of( "key", k.toLowerCase(), "value", String.valueOf(v),  "key_value", (k + "_" + v).toLowerCase())
+				);
 			});
 
 		}
@@ -728,12 +788,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 								UtilMethods.listToString(valueObj.toString()));
 					}
 				} else if (field.getFieldType().equals(ESMappingConstants.FIELD_TYPE_KEY_VALUE)){
-					final boolean fileMetadata =
-							field.getVelocityVarName().equals(FileAssetAPI.META_DATA_FIELD)
-									&& structure.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET;
+					//final boolean fileMetadata = field.getVelocityVarName().equals(FileAssetAPI.META_DATA_FIELD) && structure.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET;
 					if(LicenseUtil.getLevel()>= LicenseLevel.STANDARD.level) {
 
-						this.loadKeyValueField(contentletMap, keyName, field, valueObj, fileMetadata);
+						this.loadKeyValueField(contentletMap, keyName, field, valueObj);
 					}
 				} else if(field.getFieldType().equals(Field.FieldType.TAG.toString())) {
 
@@ -820,36 +878,15 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	private void loadKeyValueField(final Map<String, Object> contentletMap,
 								   final String keyName,
 								   final Field field,
-								   final Object valueObj,
-								   final boolean fileMetadata) throws DotDataException, DotSecurityException {
-		@SuppressWarnings("unchecked")
+								   final Object valueObj) {
+
+		if(field.getVelocityVarName().equals(FileAssetAPI.META_DATA_FIELD)){
+		  //KeyFields named named Metadata can not be handled here since the metadata hasn't been written yet.
+		  //such logic needs to happen right after writeMetadata has done it's thing
+		  return;
+		}
+
 		final Map<String,Object> keyValueMap = keyValueMap(valueObj);
-
-		Set<String> allowedFields = new HashSet<>();
-
-		if(fileMetadata) {
-			// http://jira.dotmarketing.net/browse/DOTCMS-7243
-			final List<FieldVariable> fieldVariables = APILocator.getFieldAPI().getFieldVariablesForField(
-					field.getInode(), APILocator.getUserAPI().getSystemUser(), false);
-			for(final FieldVariable fieldVariable : fieldVariables) {
-				if(fieldVariable.getKey().equals(ESMappingConstants.DOT_INDEX_PATTERN)) {
-
-					final String[] names = fieldVariable.getValue().split(",");
-					allowedFields        = new HashSet<>();
-					for(final String name : names) {
-						allowedFields.add(name.trim().toLowerCase());
-					}
-				}
-			}
-
-			allowedFields
-					.addAll(fileMetadataAPI.getConfiguredMetadataFields());
-
-			fileMetadataAPI.filterMetadataFields(keyValueMap, allowedFields);
-
-            final String keyValuePrefix = FileAssetAPI.META_DATA_FIELD.toLowerCase();
-            keyValueMap.forEach((k, v) -> contentletMap.put(keyValuePrefix + PERIOD + k, String.valueOf(v)));
-		} 
 
 		keyValueMap.forEach((k, v) -> {
 			((List)contentletMap.computeIfAbsent(keyName, key -> new ArrayList<>())).add(
