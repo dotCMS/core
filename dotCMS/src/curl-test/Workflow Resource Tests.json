@@ -12852,7 +12852,7 @@
 					"response": []
 				},
 				{
-					"name": "SuccessRequest",
+					"name": "CreatesTestingContentlet",
 					"event": [
 						{
 							"listen": "test",
