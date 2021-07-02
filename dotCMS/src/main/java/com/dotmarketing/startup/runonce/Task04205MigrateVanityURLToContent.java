@@ -441,11 +441,6 @@ public class Task04205MigrateVanityURLToContent extends AbstractJDBCStartupTask 
         return null;
     }
 
-    @Override
-    public String getH2Script() {
-        return null;
-    }
-
     /**
      * Remove the virtualLink constraint
      *

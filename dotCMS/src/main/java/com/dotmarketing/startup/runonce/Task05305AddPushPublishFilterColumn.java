@@ -30,11 +30,6 @@ public class Task05305AddPushPublishFilterColumn extends AbstractJDBCStartupTask
     }
 
     @Override
-    public String getH2Script() {
-        return null;
-    }
-
-    @Override
     protected List<String> getTablesToDropConstraints() {
         return null;
     }

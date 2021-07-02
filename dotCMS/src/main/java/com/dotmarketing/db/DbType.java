@@ -9,8 +9,7 @@ public enum DbType {
     MYSQL("MySQL"),
     POSTGRESQL("PostgreSQL"),
     ORACLE("Oracle"),
-    MSSQL("Microsoft SQL Server"),
-    H2("H2");
+    MSSQL("Microsoft SQL Server");
 
     private String type;
 
@@ -25,9 +24,6 @@ public enum DbType {
     public static DbType getDbType(final String dbType) {
         DbType type;
         switch (dbType) {
-            case "PostgreSQL":
-                type = DbType.POSTGRESQL;
-                break;
             case "MySQL":
                 type = DbType.MYSQL;
                 break;
@@ -38,7 +34,7 @@ public enum DbType {
                 type = DbType.ORACLE;
                 break;
             default:
-                type = DbType.H2;
+                type = DbType.POSTGRESQL;
                 break;
         }
         return type;

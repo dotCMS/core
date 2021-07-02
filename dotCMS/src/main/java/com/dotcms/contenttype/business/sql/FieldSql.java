@@ -8,13 +8,6 @@ public abstract class FieldSql {
 		public static FieldSql getInstance() {
 			return instance;
 		}
-	/*
-	 * DbConnectionFactory.isH2() ? new ContentTypeH2DB() :
-	 * DbConnectionFactory.isMySql() ? new ContentTypeMySql() :
-	 * DbConnectionFactory.isPostgres() ? new ContentTypePostgres() :
-	 * DbConnectionFactory.isMsSql() ? new ContentTypeMSSQL() : new
-	 * ContentTypeOracle();
-	 */
 
 	private final String SELECT_ALL_FIELDS = "select structure_inode, field_name, field_type, "
 			+ "field_relation_type, field_contentlet, required, indexed, " + "listed, field.velocity_var_name as velocity_var_name, "

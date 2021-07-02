@@ -220,9 +220,4 @@ public class Task00769UpdateTagDataModel extends AbstractJDBCStartupTask impleme
 		tablesList.add( "tag_inode" );
 		return tablesList;
 	}
-
-    @Override
-    public String getH2Script() {
-        return null;
-    }
 }

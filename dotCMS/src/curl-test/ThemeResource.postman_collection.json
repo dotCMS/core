@@ -9,7 +9,7 @@
 			"name": "findThemes",
 			"item": [
 				{
-					"name": "FindThemes HostId Not Exists NotFound",
+					"name": "FindThemes siteId Not Exists NotFound",
 					"event": [
 						{
 							"listen": "test",
@@ -72,7 +72,7 @@
 					"response": []
 				},
 				{
-					"name": "FindThemes HostId Not Sent BadRequest",
+					"name": "FindThemes SiteId Not Sent BadRequest",
 					"event": [
 						{
 							"listen": "test",
@@ -129,7 +129,7 @@
 					"response": []
 				},
 				{
-					"name": "FindThemes HostId is System Host Success",
+					"name": "FindThemes SiteId is System Host Success",
 					"event": [
 						{
 							"listen": "test",

@@ -37,11 +37,6 @@ public class Task05060CreateApiTokensIssuedTable extends AbstractJDBCStartupTask
     }
 
     @Override
-    public String getH2Script() {
-        return sql.CREATE_TOKEN_TABLE_SCRIPT();
-    }
-
-    @Override
     protected List<String> getTablesToDropConstraints() {
         // TODO Auto-generated method stub
         return null;
