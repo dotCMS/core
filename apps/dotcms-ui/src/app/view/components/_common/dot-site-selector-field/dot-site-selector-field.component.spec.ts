@@ -43,6 +43,8 @@ export class SiteSelectorComponent {
     live: boolean;
     @Input()
     system: boolean;
+    @Input()
+    asField: boolean;
 }
 
 describe('SiteSelectorFieldComponent', () => {
@@ -141,6 +143,7 @@ describe('SiteSelectorFieldComponent', () => {
         expect(siteSelector.componentInstance.archive).toBe(true);
         expect(siteSelector.componentInstance.system).toBe(false);
         expect(siteSelector.componentInstance.live).toBe(false);
+        expect(siteSelector.componentInstance.asField).toBe(true);
     });
 
     it('should not set current site when already hava a value', () => {
