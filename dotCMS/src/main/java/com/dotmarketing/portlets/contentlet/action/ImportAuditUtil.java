@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.contentlet.action;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
@@ -24,7 +23,6 @@ public class ImportAuditUtil {
 	 * Should only be used when the system is starting to clean imports
 	 * that were running when the system restarted itself.
 	 */
-	@CloseDBIfOpened
 	public static void voidValidateAuditTableOnStartup(){
 		DotConnect dc = new DotConnect();
 		dc.setSQL("DELETE FROM import_audit WHERE serverid=? AND (last_inode is null OR last_inode = '')");
@@ -43,7 +41,7 @@ public class ImportAuditUtil {
 		}
 		
 	}
-	@CloseDBIfOpened
+	
 	public static Boolean isImportfinished (Long Id){
 		DotConnect db = new DotConnect();
 		db.setSQL("SELECT coalesce(status,0) as status FROM import_audit where id = ?");
@@ -54,7 +52,7 @@ public class ImportAuditUtil {
 		}
 		return true;
 	}
-	@WrapInTransaction
+	
 	public static void cancelImport(long importId){
 		DotConnect dc = new DotConnect();
 		try {
@@ -67,7 +65,7 @@ public class ImportAuditUtil {
 			Logger.error(ImportAuditUtil.class,e.getMessage(),e);
 		}
 	}
-	@CloseDBIfOpened
+	
 	public static HashMap<String, List<String>> loadImportResults(Long Id){
 		DotConnect db = new DotConnect();
 		db.setSQL("SELECT id,last_inode, warnings, errors, results, messages FROM import_audit where id= ?");
@@ -154,7 +152,6 @@ public class ImportAuditUtil {
 	 * @param total
 	 * @param id
 	 */
-	@WrapInTransaction
 	public static void updateAuditRecord(String lastInode, int total, long id,HashMap <String, List<String>> importResults){
 		DotConnect db = new DotConnect();
 		if(importResults!=null){
@@ -220,7 +217,6 @@ public class ImportAuditUtil {
 	 * @param filename
 	 * @return
 	 */
-	@WrapInTransaction
 	public static long createAuditRecord(String userId, String filename){
 		DotConnect db = new DotConnect();
 		db.setSQL("SELECT max(id) as max FROM import_audit");
@@ -288,7 +284,7 @@ public class ImportAuditUtil {
 			this.otherUsersJobs = otherUsersJobs;
 		}
 	}
-	@WrapInTransaction
+	
 	public static void setAuditRecordCompleted(long id){
 		DotConnect dc = new DotConnect();
 		try {
