@@ -134,11 +134,6 @@ public class Task04300UpdateSystemFolderIdentifier extends AbstractJDBCStartupTa
     }
 
     @Override
-    public String getH2Script() {
-        return null;
-    }
-
-    @Override
     protected List<String> getTablesToDropConstraints() {
         return Collections.emptyList();
     }

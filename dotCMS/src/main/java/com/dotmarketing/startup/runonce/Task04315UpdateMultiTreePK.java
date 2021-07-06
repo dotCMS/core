@@ -39,7 +39,6 @@ public class Task04315UpdateMultiTreePK extends AbstractJDBCStartupTask{
     
     final static String updateRelationTypesSQL =   "update multi_tree set relation_type='" + MultiTree.LEGACY_RELATION_TYPE + "' where relation_type is null or relation_type=''";
 
-    private static final String H2_SET_NOT_NULL_RELATION_TYPE = "ALTER TABLE multi_tree ALTER COLUMN relation_type SET NOT NULL";
     private static final String MSSQL_SET_NOT_NULL_RELATION_TYPE = "ALTER TABLE multi_tree ALTER COLUMN relation_type NVARCHAR(64) NOT NULL";
     private static final String MYSQL_SET_NOT_NULL_RELATION_TYPE = "ALTER TABLE multi_tree MODIFY relation_type VARCHAR(64) NOT NULL";
     private static final String ORACLE_SET_NOT_NULL_RELATION_TYPE = "ALTER TABLE multi_tree MODIFY relation_type VARCHAR2(64) NOT NULL";
@@ -73,9 +72,6 @@ public class Task04315UpdateMultiTreePK extends AbstractJDBCStartupTask{
             db.loadResult(conn);
 
             //Change relation_type to Not null
-            if (DbConnectionFactory.isH2()){
-                db.setSQL(H2_SET_NOT_NULL_RELATION_TYPE);
-            }
             if (DbConnectionFactory.isMySql()){
                 db.setSQL(MYSQL_SET_NOT_NULL_RELATION_TYPE);
             }
@@ -125,12 +121,6 @@ public class Task04315UpdateMultiTreePK extends AbstractJDBCStartupTask{
 
     @Override
     public String getMSSQLScript() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getH2Script() {
         // TODO Auto-generated method stub
         return null;
     }

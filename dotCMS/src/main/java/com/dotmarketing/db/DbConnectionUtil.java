@@ -31,8 +31,6 @@ public class DbConnectionUtil {
             lock = "LOCK TABLE " + tableName + " IN EXCLUSIVE MODE";
         } else if ( DbConnectionFactory.isMsSql() ) {
             lock = "SELECT * FROM " + tableName + " WITH (XLOCK)";
-        } else if ( DbConnectionFactory.isH2() ) {
-            lock = "SELECT * FROM " + tableName + " FOR UPDATE";
         }
 
         Statement statement;
@@ -95,8 +93,6 @@ public class DbConnectionUtil {
         } else if ( DbConnectionFactory.isOracle() ) {
             unlock = "COMMIT";
         } else if ( DbConnectionFactory.isMsSql() ) {
-            unlock = "COMMIT";
-        } else if ( DbConnectionFactory.isH2() ) {
             unlock = "COMMIT";
         }
 

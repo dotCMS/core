@@ -61,10 +61,4 @@ public class Task01085CreateBundleTablesIfNotExists extends AbstractJDBCStartupT
     protected List<String> getTablesToDropConstraints() {
         return null;
     }
-
-	@Override
-	public String getH2Script() {
-		return "";
-	}
-
 }

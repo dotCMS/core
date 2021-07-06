@@ -95,11 +95,6 @@ public class Task04230FixVanityURLInconsistencies extends AbstractJDBCStartupTas
     }
 
     @Override
-    public String getH2Script() {
-        return null;
-    }
-
-    @Override
     protected List<String> getTablesToDropConstraints() {
         return Collections.emptyList();
     }

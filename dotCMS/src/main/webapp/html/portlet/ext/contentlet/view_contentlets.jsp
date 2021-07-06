@@ -199,8 +199,11 @@
     final List<PublishingEndPoint> sendingEndpointsList = pepAPI.getReceivingEndPoints();
     final boolean sendingEndpoints = UtilMethods.isSet(sendingEndpointsList) && !sendingEndpointsList.isEmpty();
     final boolean canReindexContentlets = APILocator.getRoleAPI().doesUserHaveRole(user,APILocator.getRoleAPI().loadRoleByKey(Role.CMS_POWER_USER))|| com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());
-%>
 
+    Map<String, String> initParams = (Map<String, String>) request.getAttribute("initParams");
+    final String dataViewMode = initParams.getOrDefault("dataViewMode", "");
+    
+%>
 
 <jsp:include page="/html/portlet/ext/folders/context_menus_js.jsp" />
 <script type='text/javascript' src='/html/js/scriptaculous/prototype.js'></script>
@@ -536,19 +539,13 @@
     function initialLoad() {
         var urlParams = new URLSearchParams(window.location.href);
         var portletId = urlParams.get('angularCurrentPortlet');
-        var xhrArgs = {
-            url : "/api/v1/portlet/" + portletId,
-            handleAs : "json",
-            sync: true,
-            load : function(data) {
-                var viewDisplayMode = data.entity.response.initParams.dataViewMode;
-                doSearch(<%= currpage %>, "<%=orderBy%>", viewDisplayMode);
-            },
-            error : function(error) {
-                console.log("An unexpected error occurred: " + error);
-            }
+
+        var viewDisplayMode = '<%=dataViewMode%>';
+        if (viewDisplayMode !== '') {
+            doSearch(<%= currpage %>, "<%=orderBy%>", viewDisplayMode);
+        } else {
+            doSearch(<%= currpage %>, "<%=orderBy%>")
         }
-        dojo.xhrGet(xhrArgs);
 
         dijit.byId("searchButton").attr("disabled", false);
         dijit.byId("clearButton").setAttribute("disabled", false);

@@ -90,9 +90,4 @@ public class Task00765AddUserForeignKeys extends AbstractJDBCStartupTask {
 		return true;
 	}
 
-    @Override
-    public String getH2Script() {
-        return null;
-    }
-
 }

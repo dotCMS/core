@@ -24,11 +24,6 @@ public class Task04340TemplateShowOnMenu extends AbstractJDBCStartupTask {
     }
 
     @Override
-    public String getH2Script() {
-        return UPDATE_TEMPLATE;
-    }
-
-    @Override
     public String getPostgresScript() {
         return UPDATE_TEMPLATE;
     }

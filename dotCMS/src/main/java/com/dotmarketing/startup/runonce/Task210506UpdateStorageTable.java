@@ -43,11 +43,6 @@ public class Task210506UpdateStorageTable extends AbstractJDBCStartupTask {
     }
 
     @Override
-    public String getH2Script() {
-        return null;
-    }
-
-    @Override
     protected List<String> getTablesToDropConstraints() {
         return null;
     }

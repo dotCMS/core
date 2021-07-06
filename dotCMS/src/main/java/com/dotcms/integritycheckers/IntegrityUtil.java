@@ -717,11 +717,6 @@ public class IntegrityUtil {
             dc.setSQL("SELECT COUNT(*) as exist FROM sysobjects WHERE name = '" + tableName + "'");
             int existTable = (Integer) dc.loadObjectResults().get(0).get("exist");
             return existTable > 0;
-        } else if (DbConnectionFactory.isH2()) {
-            dc.setSQL("SELECT COUNT(1) as exist FROM information_schema.tables WHERE Table_Name = '"
-                    + tableName.toUpperCase() + "' ");
-            long existTable = (Long) dc.loadObjectResults().get(0).get("exist");
-            return existTable > 0;
         }
 
         return false;

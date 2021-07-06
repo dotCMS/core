@@ -58,16 +58,6 @@ public class Task03700ModificationDateColumnAddedToUserTable extends AbstractJDB
 		return "ALTER TABLE User_ ADD mod_date   datetime null;";
 	}
 
-	/**
-	 * The SQL for H2
-	 *
-	 * @return
-	 */
-	@Override
-	public String getH2Script () {
-		return "ALTER TABLE User_ ADD COLUMN mod_date timestamp null;";
-	}
-
 	@Override
 	protected List<String> getTablesToDropConstraints() {
 		return null;
