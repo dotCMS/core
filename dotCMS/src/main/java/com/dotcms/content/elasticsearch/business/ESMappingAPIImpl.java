@@ -4,8 +4,6 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.PERSONA_KEY_TAG;
 import static com.dotcms.contenttype.model.field.LegacyFieldTypes.CUSTOM_FIELD;
 import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_KEY_TAG_FIELD_VAR;
-import static com.dotcms.storage.model.BasicMetadataFields.IS_IMAGE_META_KEY;
-import static com.dotcms.storage.model.BasicMetadataFields.SHA256_META_KEY;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
@@ -36,7 +34,6 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.cache.FieldsCache;
@@ -66,9 +63,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.ThreadSafeSimpleDateFormat;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.io.IOException;
@@ -404,7 +399,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			//Write Metadata
 			writeMetadata(contentlet, sw, mapLowered);
 			//Populate any KeyValue named metadata with the written metadata. This couldn't have been done earlier since the metadata just got written
-			populateMetadataKeyValueFieldIfAny(contentlet, mapLowered);
+			loadMetadataKeyValueFieldIfAny(contentlet, mapLowered);
 
 			//The url is now stored under the identifier for html pages, so we need to index that also.
 			if (contentlet.getContentType().baseType().getType() == BaseContentType.HTMLPAGE.getType()) {
@@ -484,7 +479,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	private void populateMetadataKeyValueFieldIfAny(final Contentlet contentlet, final Map<String,Object> mapLowered)
+	private void loadMetadataKeyValueFieldIfAny(final Contentlet contentlet, final Map<String,Object> mapLowered)
 			throws DotDataException, DotSecurityException {
 		final Optional<com.dotcms.contenttype.model.field.Field> metadataKeyValueField = contentlet.getContentType()
 				.fields(KeyValueField.class).stream()
