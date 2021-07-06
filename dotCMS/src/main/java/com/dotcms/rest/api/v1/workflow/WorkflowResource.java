@@ -1475,7 +1475,8 @@ public class WorkflowResource {
                     .workflowNeverExpire(fireActionForm.getNeverExpire())
                     .workflowFilterKey(fireActionForm.getFilterKey())
                     .workflowWhereToSend(fireActionForm.getWhereToSend())
-                    .workflowIWantTo(fireActionForm.getIWantTo());
+                    .workflowIWantTo(fireActionForm.getIWantTo())
+                    .workflowPathToMove(fireActionForm.getPathToMove());
         }
 
         if (contentlet.getMap().containsKey(Contentlet.RELATIONSHIP_KEY)) {

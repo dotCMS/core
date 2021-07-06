@@ -3110,6 +3110,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		if(UtilMethods.isSet(dependencies.getWorkflowIWantTo())){
 			contentlet.setStringProperty(Contentlet.I_WANT_TO, dependencies.getWorkflowIWantTo());
 		}
+
+		if(UtilMethods.isSet(dependencies.getWorkflowPathToMove())){
+			contentlet.setStringProperty(Contentlet.PATH_TO_MOVE, dependencies.getWorkflowPathToMove());
+		}
 	}
 
 
