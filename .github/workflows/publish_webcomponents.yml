@@ -5,49 +5,44 @@ on:
             - release-*
             - master
 jobs:
-    # changes:
-    #     runs-on: ubuntu-latest
-    #     outputs:
-    #         dotcms-webcomponents: ${{ steps.filter.outputs.dotcms-webcomponents }}
-    #     steps:
-    #         - name: Checkout core-web
-    #           uses: actions/checkout@v2
-    #           with:
-    #               fetch-depth: 1
-    #               path: 'core-web'
+    changes:
+        runs-on: ubuntu-latest
+        outputs:
+            dotcms-webcomponents: ${{ steps.filter.outputs.dotcms-webcomponents }}
+        steps:
+            - name: Checkout core-web
+              uses: actions/checkout@v2
+              with:
+                  fetch-depth: 1
+                  path: 'core-web'
 
-    #         - name: Get specific changed files
-    #           uses: dorny/paths-filter@v2
-    #           id: filter
-    #           with:
-    #               base: ${{ github.ref }}
-    #               list-files: 'json'
-    #               working-directory: 'core-web'
-    #               filters: |
-    #                   dotcms-webcomponents:
-    #                     - 'libs/dotcms-webcomponents/**'
+            - name: Get specific changed files
+              uses: dorny/paths-filter@v2
+              id: filter
+              with:
+                  base: ${{ github.ref }}
+                  list-files: 'json'
+                  working-directory: 'core-web'
+                  filters: |
+                      dotcms-webcomponents:
+                        - 'libs/dotcms-webcomponents/**'
 
-    #         - name: Changes found
-    #           if: steps.filter.outputs.dotcms-webcomponents == 'true'
-    #           run: |
-    #               echo "Found Dotcms-webcomponent files changed."
-    #               echo ${{ steps.filter.outputs.dotcms-webcomponents_files }}
+            - name: Changes found
+              if: steps.filter.outputs.dotcms-webcomponents == 'true'
+              run: |
+                  echo "Found Dotcms-webcomponent files changed."
+                  echo ${{ steps.filter.outputs.dotcms-webcomponents_files }}
 
-    #         - name: No changes found
-    #           if: steps.filter.outputs.dotcms-webcomponents == 'false'
-    #           run: |
-    #               echo "No changes found in dotcms-webcomponents"
+            - name: No changes found
+              if: steps.filter.outputs.dotcms-webcomponents == 'false'
+              run: |
+                  echo "No changes found in dotcms-webcomponents"
 
     publish:
-        # needs: changes
-        # if: ${{ needs.changes.outputs.dotcms-webcomponents == 'true' }}
+        needs: changes
+        if: ${{ needs.changes.outputs.dotcms-webcomponents == 'true' }}
         runs-on: ubuntu-latest
         steps:
-            # - name: Checkout core-web
-              # uses: actions/checkout@v2
-              # with:
-                  # fetch-depth: 1
-                  # path: 'core-web'
             - name: Checkout core-web
               run: |
                   git clone --depth 1 https://victoralfaro-dotcms:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/dotcms/core-web 
@@ -58,7 +53,7 @@ jobs:
             - name: Installing dependencies
               run: |
                   cd core-web
-                  # npm install
+                  npm install
             - name: Version Bump - dotcms-webcomponents - if it's Master/Release Branch
               run: |
                   # Get Branch Name
@@ -81,9 +76,6 @@ jobs:
                   # Get version from package.json
                   cd libs/dotcms-webcomponents
 
-                  pwd
-                  cat package.json
-
                   pkgVersion=`awk -F'"' '/"version": ".+"/{ print $4; exit; }' package.json`
                   arrIN=(${pkgVersion//./ })
 
@@ -94,10 +86,6 @@ jobs:
                   else
                     pkgVersion="${arrIN[0]}.${arrIN[1]}.0-$preReleaseTag.0"
                   fi
-
-                  echo ******* pkgVersion
-                  echo $pkgVersion
-
                   sed -i -E "s/\"version\": \".*\"/\"version\": \"$pkgVersion\"/g" ./package.json
 
                   # Commits new version
@@ -105,21 +93,20 @@ jobs:
                   git config --global user.name "victoralfaro-dotcms"
 
                   git add package.json
-                  git diff package.json
                   git commit -m "CI: bumps version to $pkgVersion [skip ci]"
-                  # git push https://victoralfaro-dotcms:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/dotcms/core-web
+                  git push https://victoralfaro-dotcms:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/dotcms/core-web
             - name: Build dotcms-webcomponents with deps
               run: |
                   cd core-web
-                  # npm run nx build dotcms-ui -- --with-deps --prod
+                  npm run nx build dotcms-ui -- --with-deps --prod
             - name: 'publish to npm'
               run: |
                   cd core-web
                   npm set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
                   cd dist/libs/dotcms-webcomponents
                   if [[ $(basename "${{ github.ref }}") =~ ^release-.* ]]; then
-                    # npm publish --tag rc
+                    npm publish --tag rc
                   fi
                   if [[ $(basename "${{ github.ref }}") =~ ^master ]]; then
-                    # npm publish --tag next
+                    npm publish --tag next
                   fi
