@@ -57,30 +57,45 @@ jobs:
               run: |
                   cd core-web
                   npm install
-            - name: 'Automated Version Bump - dotcms-ui - is Release branch'
-              id: version-bump-release
-              if: ${{contains(github.ref, 'release-')}}
-              uses: 'phips28/gh-action-bump-version@master'
-              with:
-                  commit-message: 'CI: bumps version to {{version}} [skip ci]'
-                  skip-tag: 'true'
-                  default: prerelease
-                  preid: 'rc'
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  PACKAGEJSON_DIR: 'core-web'
-            - name: 'Automated Version Bump - dotcms-ui - is Master branch'
-              id: version-bump-master
-              if: ${{contains(github.ref, 'master')}}
-              uses: 'phips28/gh-action-bump-version@master'
-              with:
-                  commit-message: 'CI: bumps version to {{version}} [skip ci]'
-                  skip-tag: 'true'
-                  default: prerelease
-                  preid: 'next'
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  PACKAGEJSON_DIR: 'core-web'
+            - name: Version Bump - dotcms-ui - if it's Master/Release Branch
+              run: |
+
+                  # Get Branch Name
+                  if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+                    branchName="${{ github.head_ref }}"
+                  else
+                    branchName=$(basename "${{ github.ref }}")
+                  fi
+
+                  # Checks if branch is release or master
+                  if [[ $branchName == *master* ]]; then
+                    preReleaseTag=next
+                  elif [[ $branchName == *release* ]]; then
+                    preReleaseTag=rc
+                  fi
+
+                  # Get version from package.json
+                  cd core-web
+                  pkgVersion=`awk -F'"' '/"version": ".+"/{ print $4; exit; }' package.json`
+                  arrIN=(${pkgVersion//./ })
+
+                  # Bump version
+                  if [[ $pkgVersion == *$preReleaseTag* ]]; then
+                    preReleaseVersion=${arrIN[-1]}
+                    pkgVersion="${arrIN[0]}.${arrIN[1]}.0-$preReleaseTag.$((preReleaseVersion+1))"
+                  else
+                    pkgVersion="${arrIN[0]}.${arrIN[1]}.0-$preReleaseTag.0"
+                  fi
+                  sed -i -E "s/\"version\": \".*\"/\"version\": \"$pkgVersion\"/g" ./package.json
+
+                  # Commits new version
+                  git config --global user.email "dotcmsbuild@dotcms.com"
+                  git config --global user.name "dotCms build"
+
+                  git add package.json
+                  git commit -m "CI: bumps version to $pkgVersion [skip ci]"
+                  git push https://${{ secrets.GITHUB_TOKEN }}@github.com/dotcms/core-web
+                  
             - name: Build dotcms-ui with deps
               run: |
                   cd core-web
