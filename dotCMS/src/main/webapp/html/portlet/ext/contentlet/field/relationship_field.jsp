@@ -100,7 +100,7 @@
 
     final Map<String, String> specialFields = ImmutableMap.of(
             "title", "Title",
-            "titleImage", "Title Image",
+            "titleImage", "Title-Image",
             "languageId", "Language");
     final com.dotcms.contenttype.model.field.Field relatedField =
             (com.dotcms.contenttype.model.field.Field) request.getAttribute("relatedField");
@@ -192,7 +192,7 @@
 			} else {
                 for (final Tuple2<String, String> field : showFields) {
 %>
-                    <th style="min-width: 80px"><%=field._2()%></th>
+                    <th style="min-width: 80px"><%=LanguageUtil.get(pageContext, field._2())%></th>
 <%
                 }
 			}
