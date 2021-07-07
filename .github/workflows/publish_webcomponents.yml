@@ -79,7 +79,6 @@ jobs:
                   cd core-web/libs/dotcms-webcomponents
 
                   pwd
-                  ls -la
                   cat package.json
 
                   pkgVersion=`awk -F'"' '/"version": ".+"/{ print $4; exit; }' package.json`
