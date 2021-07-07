@@ -75,10 +75,11 @@ jobs:
                     preReleaseTag=rc
                   fi
 
+                  cd core-web
                   git pull origin $branchName
 
                   # Get version from package.json
-                  cd core-web/libs/dotcms-webcomponents
+                  cd libs/dotcms-webcomponents
 
                   pwd
                   cat package.json
