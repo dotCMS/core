@@ -141,8 +141,8 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 
 			@Override
 			public int sortOrder() {
-				final String sortOrder = map.get("sort_order").toString();
-				return UtilMethods.isSet(sortOrder) ? DbConnectionFactory.getInt(sortOrder) : 0;
+				return UtilMethods.isSet(map.get("sort_order")) ?
+						DbConnectionFactory.getInt(map.get("sort_order").toString()) : 0;
 			}
 
 			private Date convertSQLDate(Date d){
