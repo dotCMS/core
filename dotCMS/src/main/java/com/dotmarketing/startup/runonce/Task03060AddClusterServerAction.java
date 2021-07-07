@@ -64,15 +64,6 @@ public class Task03060AddClusterServerAction extends AbstractJDBCStartupTask {
 				+ "time_out_seconds bigint not null,PRIMARY KEY (server_action_id))";
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.startup.AbstractJDBCStartupTask#getH2Script()
-	 */
-	@Override
-	public String getH2Script() {
-		return "create table cluster_server_action(server_action_id varchar(36) not null, originator_id varchar(36) not null, server_id varchar(36) not null, "
-				+ "failed boolean default false, response varchar(2048), action_id varchar(1024) not null,completed boolean default false,"
-				+ " entered_date timestamp not null,time_out_seconds bigint not null,PRIMARY KEY (server_action_id))";
-	}
 
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.startup.AbstractJDBCStartupTask#getTablesToDropConstraints()

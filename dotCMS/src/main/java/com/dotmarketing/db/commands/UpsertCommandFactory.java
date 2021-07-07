@@ -17,7 +17,6 @@ public class UpsertCommandFactory {
     private static Map<DbType, UpsertCommand> commandMap = new ConcurrentHashMap<>();
 
     static {
-        commandMap.put(DbType.H2, new H2UpsertCommand());
         commandMap.put(DbType.POSTGRESQL, new PostgreUpsertCommand());
         commandMap.put(DbType.MYSQL, new MySQLUpsertCommand());
         commandMap.put(DbType.MSSQL, new MSSQLUpsertCommand());

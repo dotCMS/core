@@ -97,8 +97,6 @@ public class ConsoleLogFactoryImpl implements ConsoleLogFactory {
                 db.addParam( enabled );
             } else if ( DbConnectionFactory.isOracle()) {
                 db.addParam( enabled ? 1 : 0 );
-            }else if(DbConnectionFactory.isH2()){
-            	db.addParam( enabled ? 1 : 0 );
             }
 
             db.addParam( r.getLog_name() );

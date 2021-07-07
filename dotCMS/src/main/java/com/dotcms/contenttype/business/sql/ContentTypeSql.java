@@ -8,8 +8,7 @@ public abstract class ContentTypeSql {
 
     public static ContentTypeSql getInstance() {
         if (instance == null){
-            instance = DbConnectionFactory.isH2() ? new ContentTypeH2DB() :
-                DbConnectionFactory.isMySql() ? new ContentTypeMySql() :
+            instance = DbConnectionFactory.isMySql() ? new ContentTypeMySql() :
                     DbConnectionFactory.isPostgres() ? new ContentTypePostgres()
                         : DbConnectionFactory.isMsSql() ? new ContentTypeMSSQL() :
                             new ContentTypeOracle();

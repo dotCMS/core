@@ -61,16 +61,6 @@ public class Task03515AlterPasswordColumnFromUserTable extends AbstractJDBCStart
         return "ALTER TABLE user_ ALTER COLUMN password_ TEXT NULL;";
     }
 
-    /**
-     * The SQL for H2
-     *
-     * @return
-     */
-    @Override
-    public String getH2Script() {
-        return "ALTER TABLE user_ ALTER COLUMN password_ TEXT NULL;";
-    }
-
     @Override
     protected List<String> getTablesToDropConstraints() {
         return null;

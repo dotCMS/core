@@ -60,15 +60,6 @@ public class Task03505PublishingQueueAuditTable extends AbstractJDBCStartupTask 
         return null;
     }
 
-    /**
-     * The SQL for H2
-     *
-     * @return
-     */
-    @Override
-    public String getH2Script() {
-        return null;
-    }
 
     @Override
     protected List<String> getTablesToDropConstraints() {

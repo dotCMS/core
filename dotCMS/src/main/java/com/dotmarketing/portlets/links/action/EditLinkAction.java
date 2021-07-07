@@ -17,6 +17,9 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.factories.WebAssetFactory;
@@ -24,7 +27,6 @@ import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portal.struts.DotPortletActionInterface;
 import com.dotmarketing.portlets.categories.model.Category;
-import com.dotmarketing.portlets.contentlet.business.Contentlet;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -32,6 +34,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.links.factories.LinkFactory;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.links.model.Link.LinkType;
@@ -72,6 +75,7 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
     private IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
     private LanguageAPI langAPI = APILocator.getLanguageAPI();
     private VersionableAPI versionableAPI = APILocator.getVersionableAPI();
+    private MenuLinkAPI menuLinkAPI = APILocator.getMenuLinkAPI();
 
 	/**
 	 * This is the main entry point of the {@link EditLinkAction} class which
@@ -571,10 +575,11 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 		// Get parents of the old version so you can update the working
 		// information to this new version.
 		List<Object> parents = (List<Object>) InodeFactory.getParentsOfClass(currentLink, Category.class);
-		parents.addAll(InodeFactory.getParentsOfClass(currentLink, Contentlet.class));
-
-		List<Inode> children = (List<Inode>) InodeFactory.getChildrenClass(currentLink, Category.class);
-		children.addAll(InodeFactory.getChildrenClass(currentLink, Contentlet.class));
+		menuLinkAPI.getParentContentlets(currentLink.getInode()).forEach(contentlet -> {
+            final Inode inode = new Inode();
+            inode.setInode(contentlet.getInode());
+            parents.add(inode);
+        });
 
 		Iterator<?> parentsIterator = parents.iterator();
 
@@ -693,7 +698,12 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 		// Get parents of the old version so you can update the working
 		// information to this new version.
 		List<Inode> parents = (List<Inode>) InodeFactory.getParentsOfClass(linkVersion, Category.class);
-		parents.addAll(InodeFactory.getParentsOfClass(linkVersion, Contentlet.class));
+
+		menuLinkAPI.getParentContentlets(linkVersion.getInode()).forEach(contentlet -> {
+		    final Inode inode = new Inode();
+		    inode.setInode(contentlet.getInode());
+		    parents.add(inode);
+        });
 
 		Iterator<?> parentsIterator = parents.iterator();
 
@@ -729,17 +739,16 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 		   }
 		}
 
+		final ContentletLoader contentletLoader = new ContentletLoader();
 		//Rewriting the parents contentlets of the link
-		List<Contentlet> contentlets = (List<Contentlet>)InodeFactory.getParentsOfClass(workingLink,
-				Contentlet.class);
+		menuLinkAPI.getParentContentlets(workingLink.getInode()).stream().filter(contentlet -> {
+            try {
+                return contentlet.isWorking();
+            } catch (DotDataException | DotSecurityException e) {
+                throw new DotRuntimeException(e);
+            }
+        }).forEach( contentlet -> contentletLoader.invalidate(contentlet));
 
-		for( Contentlet cont : contentlets ) {
-			if (cont.isWorking()) {
-				com.dotmarketing.portlets.contentlet.model.Contentlet newFormatContentlet = 
-					conAPI.convertFatContentletToContentlet(cont);
-				 new ContentletLoader().invalidate(cont);
-			}
-		}
 	}
 
 	/**

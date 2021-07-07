@@ -1167,8 +1167,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				query.append(" datediff(d,workflow_task.creation_date,GETDATE())>=?");
 			else if(DbConnectionFactory.isOracle())
 				query.append(" floor(sysdate-workflow_task.creation_date)>=?");
-			else if(DbConnectionFactory.isH2())
-				query.append(" datediff('YEAR',current_date(),workflow_task.creation_date)>=?");
 
 			query.append(" and ");
 		}

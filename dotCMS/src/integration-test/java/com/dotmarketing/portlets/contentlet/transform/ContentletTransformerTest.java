@@ -432,7 +432,10 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
             final Map<String, Object> sourceMap = transformedList1.get(i);
             final Map<String, Object> copyMap = transformedList2.get(i);
 
-            assertTrue(String.format(" baseType `%s` should have same (or more) number of properties " ,baseTypeName),copyMap.size() >= sourceMap.size());
+            final String missingKeys = sourceMap.keySet().stream()
+                    .filter(key -> !copyMap.containsKey(key)).collect(Collectors.joining(","));
+
+            assertTrue(String.format(" baseType `%s` should have same (or more) number of properties. Missing properties %s" ,baseTypeName, missingKeys),copyMap.size() >= sourceMap.size());
             final String assertMessage =  " contentType:`%s` , id: `%s` ,  key: `%s` ";
 
             for (final String propertyName : sourceMap.keySet()) {

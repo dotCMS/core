@@ -14,7 +14,9 @@ import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TimeField;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
@@ -36,7 +38,6 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PublishStateException;
@@ -108,17 +109,19 @@ import com.liferay.util.FileUtil;
 import com.liferay.util.LocaleUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
-import java.util.Optional;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
@@ -133,6 +136,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -166,6 +170,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	private UserAPI userAPI;
 	private RoleAPI roleAPI;
 	private EventAPI eventAPI;
+
+	private final boolean DONT_RESPECT_FRONTEND_ROLES = Boolean.FALSE;
 
 	/**
 	 * Default constructor that initializes all the required dotCMS APIs.
@@ -1185,21 +1191,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				}
 			}
 		}
-
-		//Setting review intervals form properties
-		if (contentType.getReviewInterval() != null) {
-			final String interval = contentType.getReviewInterval();
-			final Pattern pattern = Pattern.compile("(\\d+)([dmy])");
-			final Matcher matcher = pattern.matcher(interval);
-			final boolean b = matcher.matches();
-			if (b) {
-				cf.setReviewContent(true);
-				String g1 = matcher.group(1);
-				String g2 = matcher.group(2);
-				cf.setReviewIntervalNum(g1);
-				cf.setReviewIntervalSelect(g2);
-			}
-		}
 	}
 
 	/**
@@ -1344,19 +1335,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 		req.setAttribute(WebKeys.CONTENTLET_EDIT, contentlet);
 
-		if (contentlet.getReviewInterval() != null) {
-			final String interval = contentlet.getReviewInterval();
-			final Pattern pattern = Pattern.compile("(\\d+)([dmy])");
-			final Matcher matcher = pattern.matcher(interval);
-			final boolean matches = matcher.matches();
-			if (matches) {
-				contentletForm.setReviewContent(true);
-				final String g1 = matcher.group(1);
-				final String g2 = matcher.group(2);
-				contentletForm.setReviewIntervalNum(g1);
-				contentletForm.setReviewIntervalSelect(g2);
-			}
-		}
 		if(UtilMethods.isSet(req.getParameter("is_rel_tab"))) {
 			req.setAttribute("is_rel_tab", req.getParameter("is_rel_tab"));
 		}
@@ -1427,7 +1405,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			contentlet.setIdentifier(contentletForm.getIdentifier());
 			contentlet.setInode(contentletForm.getInode());
 			contentlet.setLanguageId(contentletForm.getLanguageId());
-			contentlet.setReviewInterval(contentletForm.getReviewInterval());
 			List<String> disabled = new ArrayList<String>();
 			CollectionUtils.addAll(disabled, contentletForm.getDisabledWysiwyg().split(","));
 			contentlet.setDisabledWysiwyg(disabled);
@@ -1522,19 +1499,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			ae.add(Globals.ERROR_KEY, new ActionMessage("message.contentlet.invalid.form"));
 			req.setAttribute(Globals.ERROR_KEY, ae);
 			throw new DotContentletValidationException(ve.getMessage());
-		}
-
-		//Saving interval review properties
-		if (contentletForm.isReviewContent()) {
-			currentContentlet.setReviewInterval(contentletForm.getReviewIntervalNum() + contentletForm.getReviewIntervalSelect());
-		} else {
-			currentContentlet.setReviewInterval(null);
-		}
-
-		// saving the review dates
-		currentContentlet.setLastReview(new Date ());
-		if (currentContentlet.getReviewInterval() != null) {
-			currentContentlet.setNextReview(conAPI.getNextReview(currentContentlet, user, false));
 		}
 
 		ArrayList<Category> cats = new ArrayList<Category>();
@@ -2009,60 +1973,51 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	 *            - The Struts wrapper for the HTTP Response object.
 	 * @param user
 	 *            - The {@link User} performing this action.
-	 * @param contentletList
+	 * @param contentletsToExport
 	 *            - The list contentlets that will be exported.
 	 * @param contentTypeInode
 	 *            - The Content Type Inode of the contentlets.
 	 * @throws DotSecurityException
 	 *             An error occurred when retrieving contentlet data.
 	 */
-	public void downloadToExcel(HttpServletResponse response, User user, List<Map<String, String>> contentletList, String contentTypeInode) throws DotSecurityException{
+	public void downloadToExcel(final HttpServletResponse response, final User user, final List<Map<String, String>> contentletsToExport, final String contentTypeInode) throws DotSecurityException, DotDataException {
 		PrintWriter writer = null;
-		if(contentletList.size() > 0) {
-			List<Map<String, String>> contentlets = contentletList;
+		if (!contentletsToExport.isEmpty()) {
 			Logger.info(this, String.format("Generating CSV data. Mapping content list of type '%s'", contentTypeInode));
-			final List<String> contentletsInodes = new ArrayList<>();
-			Map<String, String> contentletMap;
-			for (int i = 2; i < contentlets.size(); ++i) {
-				Object map = contentlets.get(i);
-				if(map!=null && map instanceof HashMap){
-					contentletMap = contentlets.get(i);
-					contentletsInodes.add(contentletMap.get("inode"));
+			final List<String> contentletInodes = new ArrayList<>();
+			for (int i = 2; i < contentletsToExport.size(); ++i) {
+				final Object contentletData = contentletsToExport.get(i);
+				if (contentletData != null && contentletData instanceof HashMap) {
+                    final Map<String, String> contentletMap = contentletsToExport.get(i);
+					contentletInodes.add(contentletMap.get("inode"));
 				}
 			}
-
-            final String[] inodes = contentletsInodes.toArray(new String[0]);
-
-			final List<Contentlet> contentletsList2 = new ArrayList<>();
-			for(String inode  : inodes){
-				Contentlet contentlet = new Contentlet();
+			final List<Contentlet> contentletList = new ArrayList<>();
+			for (final String inode : contentletInodes) {
 				try{
-					contentlet = conAPI.find(inode, user, false);
-				}catch (DotDataException ex){
+                    final Contentlet contentlet = this.conAPI.find(inode, user, DONT_RESPECT_FRONTEND_ROLES);
+                    contentletList.add(contentlet);
+				} catch (final DotDataException ex){
 					Logger.warn(this, "Unable to find contentlet with Inode: " + inode);
 				}
-				contentletsList2.add(contentlet);
 			}
-			final NotificationAPI notificationAPI = APILocator.getNotificationAPI();
             int totalSize = 0;
-			// If contentletList.size() then contentletsList2 are not empty
-            final Structure contentType = CacheLocator.getContentTypeCache().getStructureByInode(contentTypeInode);
-            final String csvFileName = contentType.getName() + "_contents_" + UtilMethods.dateToHTMLDate(new java
+            final ContentType contentType = APILocator.getContentTypeAPI(user).find(contentTypeInode);
+            final String csvFileName = contentType.name() + "_contents_" + UtilMethods.dateToHTMLDate(new java
                     .util.Date(), "M_d_yyyy") + ".csv";
 			try {
-				response.setContentType("application/octet-stream; charset=UTF-8");
-				response.setHeader("Content-Disposition", "attachment; filename=\"" + csvFileName +"\"");
+                response.setContentType(MediaType.APPLICATION_OCTET_STREAM + "; " + MediaType.CHARSET_PARAMETER + "="
+                        + StandardCharsets.UTF_8.name());
+                response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + csvFileName +"\"");
 				writer = response.getWriter();
-
-				List<com.dotcms.contenttype.model.field.Field> contentTypeFields =
-						APILocator.getContentTypeFieldAPI().byContentTypeId((contentType.getInode()));
-
 				writer.print("Identifier");
 				writer.print(",languageCode");
 				writer.print(",countryCode");
-				for (com.dotcms.contenttype.model.field.Field field : contentTypeFields) {
-					//we cannot export fields of these types
-					if(isNewFieldTypeAllowedOnImportExport(field)){
+                final List<com.dotcms.contenttype.model.field.Field> contentTypeFields =
+                        APILocator.getContentTypeFieldAPI().byContentTypeId((contentTypeInode));
+				for (final com.dotcms.contenttype.model.field.Field field : contentTypeFields) {
+				    // Exclude fields that are not exportable
+					if (isNewFieldTypeAllowedOnImportExport(field)) {
 						writer.print("," + field.variable());
 					}
 				}
@@ -2070,37 +2025,36 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				writer.print("\r\n");
 				int counter = 0;
 				int loggingPoint = 2000;
-                totalSize = contentletsList2.size();
-				for(Contentlet content :  contentletsList2 ){
+                totalSize = contentletList.size();
+				for (final Contentlet content : contentletList) {
                     counter += 1;
                     if (counter % loggingPoint == 0) {
                         Logger.info(this, String.format("Exporting %d out of %d contentlet(s)", counter, totalSize));
                     }
-					List<Category> catList = catAPI.getParents(content, user, false);
+					final List<Category> catList = this.catAPI.getParents(content, user, DONT_RESPECT_FRONTEND_ROLES);
 					writer.print(content.getIdentifier());
-					Language lang =APILocator.getLanguageAPI().getLanguage(content.getLanguageId());
+					final Language lang = APILocator.getLanguageAPI().getLanguage(content.getLanguageId());
 					writer.print("," +lang.getLanguageCode());
 					writer.print(","+lang.getCountryCode());
 
-					for (com.dotcms.contenttype.model.field.Field field: contentTypeFields) {
+					for (final com.dotcms.contenttype.model.field.Field field: contentTypeFields) {
 						try {
-							//we cannot export fields of these types
-							if(!isNewFieldTypeAllowedOnImportExport(field)){
+							// We don't need to export fields of these types
+							if (!isNewFieldTypeAllowedOnImportExport(field)) {
                                continue;
 							}
 
-							Object value = "";
-							if(conAPI.getFieldValue(content,field) != null) {
-								value = conAPI.getFieldValue(content,field);
+							Object value = StringPool.BLANK;
+							if (this.conAPI.getFieldValue(content,field) != null) {
+								value = this.conAPI.getFieldValue(content,field);
 							}
-							String text = "";
+							String text = StringPool.BLANK;
 							if (field instanceof CategoryField) {
-
-								Category category = catAPI.find(field.values(), user, false);
-								List<Category> children = catList;
-								List<Category> allChildren= catAPI.getAllChildren(category, user, false);
-								if (children.size() >= 1 && catAPI.canUseCategory(category, user, false)) {
-									for(Category cat : children){
+								final Category category = this.catAPI.find(field.values(), user, DONT_RESPECT_FRONTEND_ROLES);
+                                final List<Category> children = catList;
+                                final List<Category> allChildren= this.catAPI.getAllChildren(category, user, DONT_RESPECT_FRONTEND_ROLES);
+								if (children.size() >= 1 && this.catAPI.canUseCategory(category, user, DONT_RESPECT_FRONTEND_ROLES)) {
+									for (final Category cat : children){
 										if(allChildren.contains(cat)){
 											if(UtilMethods.isSet(cat.getKey())){
 												text = text+","+cat.getKey();
@@ -2115,28 +2069,34 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 								}
 							} else if (field instanceof TagField) {
 							    //Get Content Tags per field's Velocity Var Name
-							    List<Tag> tags = tagAPI.getTagsByInodeAndFieldVarName(content.getInode(), field.variable());
-							    if(tags!= null){
-							        for(Tag t:tags){
+                                final List<Tag> tags = this.tagAPI.getTagsByInodeAndFieldVarName(content.getInode(), field.variable());
+							    if (!tags.isEmpty()) {
+							        for (final Tag tag : tags){
 							            if(text.equals(StringPool.BLANK)) {
-							                text = t.getTagName();
+							                text = tag.getTagName();
 							            } else {
-							                text = text + "," + t.getTagName();
+							                text = text + "," + tag.getTagName();
 							            }
 							        }
 							    }
 							} else if (field instanceof RelationshipField) {
 								text = loadRelationships(((ContentletRelationships)value).getRelationshipsRecords());
+                            } else if (BaseContentType.HTMLPAGE.equals(contentType.baseType()) && PageContentType
+                                    .PAGE_URL_FIELD_VAR.equalsIgnoreCase(field.variable())) {
+                                final Identifier id = APILocator.getIdentifierAPI().find(content.getIdentifier());
+                                if (null != id && UtilMethods.isSet(id.getId())) {
+                                    text = id.getPath();
+                                }
 							} else{
 								if (value instanceof Date || value instanceof Timestamp) {
 									if (field instanceof DateField) {
-										SimpleDateFormat formatter = new SimpleDateFormat (WebKeys.DateFormats.EXP_IMP_DATE);
+                                        final SimpleDateFormat formatter = new SimpleDateFormat (WebKeys.DateFormats.EXP_IMP_DATE);
 										text = formatter.format(value);
 									} else if (field instanceof DateTimeField) {
-										SimpleDateFormat formatter = new SimpleDateFormat (WebKeys.DateFormats.EXP_IMP_DATETIME);
+                                        final SimpleDateFormat formatter = new SimpleDateFormat (WebKeys.DateFormats.EXP_IMP_DATETIME);
 										text = formatter.format(value);
 									} else if (field instanceof TimeField) {
-										SimpleDateFormat formatter = new SimpleDateFormat (WebKeys.DateFormats.EXP_IMP_TIME);
+                                        final SimpleDateFormat formatter = new SimpleDateFormat (WebKeys.DateFormats.EXP_IMP_TIME);
 										text = formatter.format(value);
 									}
 								} else {
@@ -2168,7 +2128,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				HibernateUtil.closeSession();
 			} catch (final Exception p) {
                 final String errorMsg = String.format("An error occurred when exporting contents of type '%s' [%s] to" +
-                        " CSV file '%s': %s", contentType.getName(), contentTypeInode, csvFileName, p.getMessage());
+                        " CSV file '%s': %s", contentType.name(), contentTypeInode, csvFileName, p.getMessage());
                 final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder();
                 final SystemMessage systemMessage = systemMessageBuilder.setMessage(errorMsg).setType(MessageType
                         .SIMPLE_MESSAGE).setSeverity(MessageSeverity.ERROR).setLife(10000).create();
@@ -2177,7 +2137,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			}
             final DecimalFormat decimalFormat = new DecimalFormat("###,###");
             final String endMsg = String.format("A total of %s contents of type '%s' [%s] have been successfully " +
-                            "exported to CSV file '%s'", decimalFormat.format(totalSize), contentType.getName(),
+                            "exported to CSV file '%s'", decimalFormat.format(totalSize), contentType.name(),
                     contentTypeInode, csvFileName);
             final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder();
             final SystemMessage systemMessage = systemMessageBuilder.setMessage(endMsg).setType(MessageType

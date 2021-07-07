@@ -50,10 +50,4 @@ public class Task03005CreateModDateForFieldIfNeeded extends AbstractJDBCStartupT
     protected List<String> getTablesToDropConstraints() {
         return null;
     }
-
-    @Override
-    public String getH2Script() {
-        return null;
-    }
-
 }

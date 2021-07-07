@@ -10,24 +10,17 @@ import com.dotcms.contenttype.business.ContentTypeFactory;
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
 import com.dotcms.contenttype.business.FieldAPIImpl;
 import com.dotcms.contenttype.business.FieldFactoryImpl;
-import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.HostFolderField;
-import com.dotcms.contenttype.model.field.ImmutableConstantField;
-import com.dotcms.contenttype.model.field.ImmutableHostFolderField;
-import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
-import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.mock.request.MockAttributeRequest;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -35,7 +28,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,8 +36,6 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Test;
-import org.mockito.Mockito;
 
 public class ContentTypeBaseTest extends IntegrationTestBase {
 
@@ -78,7 +68,7 @@ public class ContentTypeBaseTest extends IntegrationTestBase {
 
 		HttpServletRequest pageRequest = new MockSessionRequest(
 				new MockAttributeRequest(
-						new MockHttpRequest("localhost", "/").request()
+						new MockHttpRequestIntegrationTest("localhost", "/").request()
 						).request())
 				.request();
 		HttpServletRequestThreadLocal.INSTANCE.setRequest(pageRequest);

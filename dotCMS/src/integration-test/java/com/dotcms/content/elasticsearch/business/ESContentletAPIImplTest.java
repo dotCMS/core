@@ -22,6 +22,7 @@ import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.*;
@@ -49,11 +50,13 @@ import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsRequest;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -141,7 +144,6 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             //Spanish version
             newsContentletInSpanish = contentletAPI.checkout(newsContentlet.getInode(), user, false);
             newsContentletInSpanish.setIndexPolicy(IndexPolicy.FORCE);
-            newsContentletInSpanish.setInode("");
             newsContentletInSpanish.setLanguageId(spanishLanguage.getId());
 
             newsContentletInSpanish = contentletAPI.checkin(newsContentletInSpanish,  user, false);
@@ -745,5 +747,78 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                         .cluster()
                         .putSettings(request, RequestOptions.DEFAULT)
         );
+    }
+
+    /**
+     * Method to Test: {@link ESContentletAPIImpl#checkin(Contentlet, User, boolean)}
+     * When:
+     * - Create a Content Type with a MANY_TO_MANY relationship to itself
+     * - Create tree contents: A, B, C
+     * - Related content A with B and C
+     * - Related content B with A and C
+     * - Related content C with A and B
+     * Should: All the related content should be saved right
+     */
+    @Test
+    public void selfRelatedContents() throws DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final ContentType contentType =  new ContentTypeDataGen()
+                .host(host)
+                .nextPersisted();
+
+        final Relationship relationship = new FieldRelationshipDataGen()
+                .child(contentType)
+                .parent(contentType)
+                .nextPersisted();
+
+        Contentlet contentletA = new ContentletDataGen(contentType)
+                .host(host)
+                .nextPersisted();
+
+        Contentlet contentletB = new ContentletDataGen(contentType)
+                .host(host)
+                .nextPersisted();
+
+        Contentlet contentletC = new ContentletDataGen(contentType)
+                .host(host)
+                .nextPersisted();
+
+        contentletA = relateContent(relationship, contentletA, contentletB, contentletC);
+        contentletB = relateContent(relationship, contentletB, contentletA, contentletC);
+        contentletC = relateContent(relationship, contentletC, contentletA, contentletB);
+
+        contentletA.setProperty(relationship.getChildRelationName(), Arrays.asList(contentletB, contentletC));
+
+        contentletA = ContentletDataGen.checkout(contentletA);
+        ContentletDataGen.checkin(contentletA);
+
+        assertRelatedContents(relationship, contentletA, contentletB, contentletC);
+        assertRelatedContents(relationship, contentletB, contentletA, contentletC);
+        assertRelatedContents(relationship, contentletC, contentletA, contentletB);
+
+    }
+
+    private void assertRelatedContents(Relationship relationship, Contentlet contentletParent,
+            Contentlet... contentsRelated) throws DotDataException {
+        final List<String> contentlets = relationshipAPI
+                .dbRelatedContent(relationship, contentletParent, true)
+                .stream()
+                .map(contentlet -> contentlet.getIdentifier())
+                .collect(Collectors.toList());
+
+        assertEquals(contentsRelated.length, contentlets.size());
+
+        for (Contentlet contentletRelated : contentsRelated) {
+            assertTrue(contentlets.contains(contentletRelated.getIdentifier()));
+        }
+    }
+
+    private Contentlet relateContent(
+            Relationship relationship,
+            Contentlet parentContent,
+            Contentlet... contentletChilds) {
+        final Contentlet parentCheckout = ContentletDataGen.checkout(parentContent);
+        parentCheckout.setProperty(relationship.getChildRelationName(), Arrays.asList(contentletChilds));
+        return  ContentletDataGen.checkin(parentCheckout);
     }
 }

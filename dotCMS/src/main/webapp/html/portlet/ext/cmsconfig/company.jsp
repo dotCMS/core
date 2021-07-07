@@ -87,6 +87,7 @@
          const topNavDropZone = getTopNavDropZone();
          const navBarLogoCheckboxWidget = dijit.byId('topNav_logo');
          const navBarLogoCheckbox = dojo.byId('topNav_logo');
+         const topNavDropZone = getTopNavDropZone();
 
          if (navBarLogoCheckbox && navBarLogoCheckbox.checked) {
             topNavDropZone.style.display = "block"

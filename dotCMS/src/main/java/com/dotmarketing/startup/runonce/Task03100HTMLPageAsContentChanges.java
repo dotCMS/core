@@ -47,24 +47,7 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 												 "required,indexed,listed,velocity_var_name,sort_order,field_values,regex_check," +
 												 "hint,default_value,fixed,read_only,searchable,unique_,mod_date) " +
 												 "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW());";
-	
-	// H2
-	private final String H2_STRUCTURE_EXISTS = "SELECT inode FROM structure WHERE inode='c541abb1-69b3-4bc5-8430-5e09e5239cc8';";
-	private final String H2_INSERT_STRUCTURE_INODE = "INSERT INTO inode" +
-		  											 "(inode, owner, idate, type) VALUES " +
-		  											 "(?, 'system', CURRENT_TIME(), 'structure');";
-	private final String H2_INSERT_STRUCTURE = "INSERT INTO structure"+
-											   "(inode,name,description,default_structure,structuretype,system," +
-											   "fixed,velocity_var_name,host,folder,mod_date)VALUES" +
-											   "(?,'Page Asset','Default Structure for Pages',false,5,false,true,'htmlpageasset','SYSTEM_HOST'," +
-											   "'SYSTEM_FOLDER',CURRENT_TIME());";
-	private final String H2_INSERT_FIELD_INODE = "INSERT INTO inode(inode, owner, idate, type) VALUES(?,'', CURRENT_TIME(), 'field');";
-	private final String H2_INSERT_FIELD = "INSERT INTO field " +
-											"(inode,structure_inode,field_name,field_type,field_relation_type,field_contentlet," +
-											"required,indexed,listed,velocity_var_name,sort_order,field_values,regex_check," +
-											"hint,default_value,fixed,read_only,searchable,unique_,mod_date) " +
-											"VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIME());";
-	
+
 	// ORACLE
 	private final String ORACLE_STRUCTURE_EXISTS = "SELECT inode FROM structure WHERE inode='c541abb1-69b3-4bc5-8430-5e09e5239cc8'";
 	private final String ORACLE_INSERT_STRUCTURE_INODE = "INSERT INTO inode" +
@@ -106,8 +89,6 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
     		dc.setSQL(MYSQL_STRUCTURE_EXISTS);
     	else if(DbConnectionFactory.isPostgres())
     		dc.setSQL(POSTGRESQL_STRUCTURE_EXISTS);
-    	else if(DbConnectionFactory.isH2())
-    		dc.setSQL(H2_STRUCTURE_EXISTS);
     	else if(DbConnectionFactory.isOracle())
     		dc.setSQL(ORACLE_STRUCTURE_EXISTS);
     	else if(DbConnectionFactory.isMsSql())
@@ -134,8 +115,6 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 	    		dc.setSQL(MYSQL_INSERT_STRUCTURE_INODE);
 	    	else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_STRUCTURE_INODE);
-	    	else if(DbConnectionFactory.isH2())
-	    		dc.setSQL(H2_INSERT_STRUCTURE_INODE);
 	    	else if(DbConnectionFactory.isOracle())
 	    		dc.setSQL(ORACLE_INSERT_STRUCTURE_INODE);
 	    	else if(DbConnectionFactory.isMsSql())
@@ -148,8 +127,6 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_STRUCTURE);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_STRUCTURE);
-			else if(DbConnectionFactory.isH2())
-	    		dc.setSQL(H2_INSERT_STRUCTURE);
 			else if(DbConnectionFactory.isOracle())
 	    		dc.setSQL(ORACLE_INSERT_STRUCTURE);
 			else if(DbConnectionFactory.isMsSql())
@@ -163,8 +140,6 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD_INODE);
 	        else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD_INODE);
-	        else if(DbConnectionFactory.isH2())
-	    		dc.setSQL(H2_INSERT_FIELD_INODE);
 	        else if(DbConnectionFactory.isOracle())
 	    		dc.setSQL(ORACLE_INSERT_FIELD_INODE);
 	        else if(DbConnectionFactory.isMsSql())
@@ -176,8 +151,6 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD);
-			else if(DbConnectionFactory.isH2())
-	    		dc.setSQL(H2_INSERT_FIELD);
 			else if(DbConnectionFactory.isOracle())
 	    		dc.setSQL(ORACLE_INSERT_FIELD);
 			else if(DbConnectionFactory.isMsSql())
@@ -208,8 +181,6 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD_INODE);
-			else if(DbConnectionFactory.isH2())
-	    		dc.setSQL(H2_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isOracle())
 	    		dc.setSQL(ORACLE_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isMsSql())
@@ -221,8 +192,6 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD);
-			else if(DbConnectionFactory.isH2())
-	    		dc.setSQL(H2_INSERT_FIELD);
 			else if(DbConnectionFactory.isOracle())
 	    		dc.setSQL(ORACLE_INSERT_FIELD);
 			else if(DbConnectionFactory.isMsSql())
@@ -253,8 +222,6 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD_INODE);
-			else if(DbConnectionFactory.isH2())
-	    		dc.setSQL(H2_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isOracle())
 	    		dc.setSQL(ORACLE_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isMsSql())
@@ -266,8 +233,6 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD);
-			else if(DbConnectionFactory.isH2())
-	    		dc.setSQL(H2_INSERT_FIELD);
 			else if(DbConnectionFactory.isOracle())
 	    		dc.setSQL(ORACLE_INSERT_FIELD);
 			else if(DbConnectionFactory.isMsSql())
@@ -298,8 +263,6 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD_INODE);
-			else if(DbConnectionFactory.isH2())
-	    		dc.setSQL(H2_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isOracle())
 	    		dc.setSQL(ORACLE_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isMsSql())
@@ -311,8 +274,6 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD);
-			else if(DbConnectionFactory.isH2())
-	    		dc.setSQL(H2_INSERT_FIELD);
 			else if(DbConnectionFactory.isOracle())
 	    		dc.setSQL(ORACLE_INSERT_FIELD);
 			else if(DbConnectionFactory.isMsSql())
@@ -343,8 +304,6 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD_INODE);
-			else if(DbConnectionFactory.isH2())
-	    		dc.setSQL(H2_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isOracle())
 	    		dc.setSQL(ORACLE_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isMsSql())
@@ -356,8 +315,6 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD);
-			else if(DbConnectionFactory.isH2())
-	    		dc.setSQL(H2_INSERT_FIELD);
 			else if(DbConnectionFactory.isOracle())
 	    		dc.setSQL(ORACLE_INSERT_FIELD);
 			else if(DbConnectionFactory.isMsSql())
@@ -388,8 +345,6 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD_INODE);
-			else if(DbConnectionFactory.isH2())
-	    		dc.setSQL(H2_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isOracle())
 	    		dc.setSQL(ORACLE_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isMsSql())
@@ -401,8 +356,6 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD);
-			else if(DbConnectionFactory.isH2())
-	    		dc.setSQL(H2_INSERT_FIELD);
 			else if(DbConnectionFactory.isOracle())
 	    		dc.setSQL(ORACLE_INSERT_FIELD);
 			else if(DbConnectionFactory.isMsSql())
@@ -433,8 +386,6 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD_INODE);
-			else if(DbConnectionFactory.isH2())
-	    		dc.setSQL(H2_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isOracle())
 	    		dc.setSQL(ORACLE_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isMsSql())
@@ -446,8 +397,6 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD);
-			else if(DbConnectionFactory.isH2())
-	    		dc.setSQL(H2_INSERT_FIELD);
 			else if(DbConnectionFactory.isOracle())
 	    		dc.setSQL(ORACLE_INSERT_FIELD);
 			else if(DbConnectionFactory.isMsSql())
@@ -478,8 +427,6 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD_INODE);
-			else if(DbConnectionFactory.isH2())
-	    		dc.setSQL(H2_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isOracle())
 	    		dc.setSQL(ORACLE_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isMsSql())
@@ -491,8 +438,6 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD);
-			else if(DbConnectionFactory.isH2())
-	    		dc.setSQL(H2_INSERT_FIELD);
 			else if(DbConnectionFactory.isOracle())
 	    		dc.setSQL(ORACLE_INSERT_FIELD);
 			else if(DbConnectionFactory.isMsSql())
@@ -523,8 +468,6 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD_INODE);
 	        else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD_INODE);
-	        else if(DbConnectionFactory.isH2())
-	    		dc.setSQL(H2_INSERT_FIELD_INODE);
 	        else if(DbConnectionFactory.isOracle())
 	    		dc.setSQL(ORACLE_INSERT_FIELD_INODE);
 	        else if(DbConnectionFactory.isMsSql())
@@ -536,8 +479,6 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD);
-			else if(DbConnectionFactory.isH2())
-	    		dc.setSQL(H2_INSERT_FIELD);
 			else if(DbConnectionFactory.isOracle())
 	    		dc.setSQL(ORACLE_INSERT_FIELD);
 			else if(DbConnectionFactory.isMsSql())
@@ -569,8 +510,6 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD_INODE);
-			else if(DbConnectionFactory.isH2())
-	    		dc.setSQL(H2_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isOracle())
 	    		dc.setSQL(ORACLE_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isMsSql())
@@ -582,8 +521,6 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD);
-			else if(DbConnectionFactory.isH2())
-	    		dc.setSQL(H2_INSERT_FIELD);
 			else if(DbConnectionFactory.isOracle())
 	    		dc.setSQL(ORACLE_INSERT_FIELD);
 			else if(DbConnectionFactory.isMsSql())
@@ -615,8 +552,6 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD_INODE);
-			else if(DbConnectionFactory.isH2())
-	    		dc.setSQL(H2_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isOracle())
 	    		dc.setSQL(ORACLE_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isMsSql())
@@ -628,8 +563,6 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD);
-			else if(DbConnectionFactory.isH2())
-	    		dc.setSQL(H2_INSERT_FIELD);
 			else if(DbConnectionFactory.isOracle())
 	    		dc.setSQL(ORACLE_INSERT_FIELD);
 			else if(DbConnectionFactory.isMsSql())
@@ -660,8 +593,6 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD_INODE);
-			else if(DbConnectionFactory.isH2())
-	    		dc.setSQL(H2_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isOracle())
 	    		dc.setSQL(ORACLE_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isMsSql())
@@ -673,8 +604,6 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD);
-			else if(DbConnectionFactory.isH2())
-	    		dc.setSQL(H2_INSERT_FIELD);
 			else if(DbConnectionFactory.isOracle())
 	    		dc.setSQL(ORACLE_INSERT_FIELD);
 			else if(DbConnectionFactory.isMsSql())
@@ -706,8 +635,6 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD_INODE);
-			else if(DbConnectionFactory.isH2())
-	    		dc.setSQL(H2_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isOracle())
 	    		dc.setSQL(ORACLE_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isMsSql())
@@ -719,8 +646,6 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD);
-			else if(DbConnectionFactory.isH2())
-	    		dc.setSQL(H2_INSERT_FIELD);
 			else if(DbConnectionFactory.isOracle())
 	    		dc.setSQL(ORACLE_INSERT_FIELD);
 			else if(DbConnectionFactory.isMsSql())
@@ -752,8 +677,6 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD_INODE);
-			else if(DbConnectionFactory.isH2())
-	    		dc.setSQL(H2_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isOracle())
 	    		dc.setSQL(ORACLE_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isMsSql())
@@ -765,8 +688,6 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD);
-			else if(DbConnectionFactory.isH2())
-	    		dc.setSQL(H2_INSERT_FIELD);
 			else if(DbConnectionFactory.isOracle())
 	    		dc.setSQL(ORACLE_INSERT_FIELD);
 			else if(DbConnectionFactory.isMsSql())

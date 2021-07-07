@@ -42,11 +42,6 @@ public class Task210510UpdateStorageTableDropMetadataColumn extends AbstractJDBC
     }
 
     @Override
-    public String getH2Script() {
-        return null;
-    }
-
-    @Override
     protected List<String> getTablesToDropConstraints() {
         return null;
     }
