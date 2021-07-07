@@ -96,11 +96,16 @@ public class OSGIUtil {
 
         Logger.info(this, () -> "Felix base dir: " + felixDirectory);
 
+        final String felixAutoDeployDirectory = Config.getStringProperty(AUTO_DEPLOY_DIR_PROPERTY,  felixDirectory + File.separator + "bundle") ;
+        final String felixLoadDirectory =       Config.getStringProperty(FELIX_FILEINSTALL_DIR,     felixDirectory + File.separator + "load") ;
+        final String felixUndeployDirectory =   Config.getStringProperty(FELIX_UNDEPLOYED_DIR,      felixDirectory + File.separator + "undeployed") ;
+        final String felixCacheDirectory =      Config.getStringProperty(FELIX_FRAMEWORK_STORAGE,   felixDirectory + File.separator + "felix-cache") ;
+
         felixProps.put(FELIX_BASE_DIR, felixDirectory);
-        felixProps.put(AUTO_DEPLOY_DIR_PROPERTY, felixDirectory + File.separator + "bundle");
-        felixProps.put(FELIX_FRAMEWORK_STORAGE, felixDirectory + File.separator + "felix-cache");
-        felixProps.put(FELIX_FILEINSTALL_DIR, felixDirectory + File.separator + "load");
-        felixProps.put(FELIX_UNDEPLOYED_DIR, felixDirectory + File.separator + "undeployed");
+        felixProps.put(AUTO_DEPLOY_DIR_PROPERTY, felixAutoDeployDirectory);
+        felixProps.put(FELIX_FRAMEWORK_STORAGE, felixCacheDirectory);
+        felixProps.put(FELIX_FILEINSTALL_DIR, felixLoadDirectory);
+        felixProps.put(FELIX_UNDEPLOYED_DIR, felixUndeployDirectory);
 
         felixProps.put("felix.auto.deploy.action", "install,start");
         felixProps.put("felix.fileinstall.start.level", "1");
@@ -301,19 +306,37 @@ public class OSGIUtil {
         Iterator<String> it = Config.getKeys();
         while (it.hasNext()) {
             final String key = it.next();
-            if (key != null && key.startsWith("felix.")) {
-                if (key.equals(FELIX_BASE_DIR)) {
-                    // Allow the property in the file to be felix.base.dir
-                    properties.put(key, Config.getStringProperty(key));
-                    Logger.info(this,
-                            () -> "Found property  " + key + "=" + Config.getStringProperty(key));
-                } else {
-                    String value = (UtilMethods.isSet(Config.getStringProperty(key, null))) ? Config.getStringProperty(key) : null;
-                    String felixKey = key.substring(6);
-                    properties.put(felixKey, value);
-                    Logger.info(OSGIUtil.class, () -> "Found property  " + felixKey + "=" + value);
-                }
+            if(key==null) {
+                continue;
             }
+            if (key.startsWith("felix.")) {
+
+                final String value = (UtilMethods.isSet(Config.getStringProperty(key, null))) ? Config.getStringProperty(key)
+                                : null;
+                String felixKey = key.substring(6);
+                properties.put(felixKey, value);
+                Logger.info(OSGIUtil.class, () -> "Found property  " + felixKey + "=" + value);
+
+            }
+            if (key.startsWith("DOT_FELIX_FELIX")) {
+                final String felixKey = key.replace("DOT_FELIX_FELIX", "FELIX").replace("_", ".").toLowerCase();
+                String value = (UtilMethods.isSet(Config.getStringProperty(key, null))) ? Config.getStringProperty(key)
+                                : null;
+                properties.put(felixKey, value);
+                Logger.info(OSGIUtil.class, () -> "Found property  " + felixKey + "=" + value);
+            }
+            if (key.startsWith("DOT_FELIX_OSGI")) {
+                final String felixKey = key.replace("DOT_FELIX_OSGI", "OSGI").replace("_", ".").toLowerCase();
+                String value = (UtilMethods.isSet(Config.getStringProperty(key, null))) ? Config.getStringProperty(key)
+                                : null;
+                properties.put(felixKey, value);
+                Logger.info(OSGIUtil.class, () -> "Found property  " + felixKey + "=" + value);
+            }
+
+            
+            
+            
+            
         }
         return properties;
     }
