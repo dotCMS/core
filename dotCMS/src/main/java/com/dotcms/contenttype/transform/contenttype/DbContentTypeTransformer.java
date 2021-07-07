@@ -133,6 +133,17 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 				return base;
 			}
 
+			@Override
+			public String icon() {
+				final String icon = (String) map.get("icon");
+				return ( UtilMethods.isSet(icon))  ? icon : null;
+			}
+
+			@Override
+			public int sortOrder() {
+				return DbConnectionFactory.getInt(map.get("sort_order").toString());
+			}
+
 			private Date convertSQLDate(Date d){
 				Date javaDate = new Date();
 				if(d!=null) javaDate.setTime(d.getTime());
