@@ -80,6 +80,7 @@ jobs:
 
                   pwd
                   ls -la
+                  cat package.json
 
                   pkgVersion=`awk -F'"' '/"version": ".+"/{ print $4; exit; }' package.json`
                   arrIN=(${pkgVersion//./ })
@@ -91,10 +92,11 @@ jobs:
                   else
                     pkgVersion="${arrIN[0]}.${arrIN[1]}.0-$preReleaseTag.0"
                   fi
-                  sed -i -E "s/\"version\": \".*\"/\"version\": \"$pkgVersion\"/g" ./package.json
 
                   echo ******* pkgVersion
                   echo $pkgVersion
+
+                  sed -i -E "s/\"version\": \".*\"/\"version\": \"$pkgVersion\"/g" ./package.json
 
                   # Commits new version
                   git config --global user.email "victor.alfaro@dotcms.com"
