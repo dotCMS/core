@@ -56,7 +56,7 @@ jobs:
               run: |
                   cd core-web
                   npm install
-            - name: Version Bump - dotcms-ui - if it's Master/Release Branch
+            - name: Version Bump - dotcms-webcomponents - if it's Master/Release Branch
               run: |
                   # Get Branch Name
                   if [[ "${{ github.event_name }}" == "pull_request" ]]; then
@@ -87,12 +87,12 @@ jobs:
                   sed -i -E "s/\"version\": \".*\"/\"version\": \"$pkgVersion\"/g" ./package.json
 
                   # Commits new version
-                  git config --global user.email "dotcmsbuild@dotcms.com"
-                  git config --global user.name "dotCms build"
+                  git config --global user.email "victor.alfaro@dotcms.com"
+                  git config --global user.name "victoralfaro-dotcms"
 
                   git add package.json
                   git commit -m "CI: bumps version to $pkgVersion [skip ci]"
-                  git push https://${{ secrets.GITHUB_TOKEN }}@github.com/dotcms/core-web
+                  git push https://victoralfaro-dotcms:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/dotcms/core-web
             - name: Build dotcms-webcomponents with deps
               run: |
                   cd core-web
