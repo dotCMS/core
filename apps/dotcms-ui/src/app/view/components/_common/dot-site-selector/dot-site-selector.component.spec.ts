@@ -129,7 +129,7 @@ describe('SiteSelectorComponent', () => {
         const page = 1;
 
         paginatorService.totalRecords = 2;
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([]));
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(sites));
         spyOn<any>(siteService, 'switchSite$').and.returnValue(observableOf({}));
 
         fixture.detectChanges();
@@ -153,8 +153,7 @@ describe('SiteSelectorComponent', () => {
     it('should paginate when the filter change', () => {
         const filter = 'filter';
 
-        paginatorService.totalRecords = 2;
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([]));
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(sites));
         spyOn<any>(siteService, 'switchSite$').and.returnValue(observableOf({}));
 
         fixture.detectChanges();
@@ -173,7 +172,7 @@ describe('SiteSelectorComponent', () => {
     it('should pass class name to searchable dropdown', async () => {
         paginatorService.filter = 'filter';
         paginatorService.totalRecords = 2;
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([]));
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(sites));
 
         comp.cssClass = 'hello';
         fixture.detectChanges();
@@ -186,7 +185,7 @@ describe('SiteSelectorComponent', () => {
     it('should be assign to filter if empty', () => {
         paginatorService.filter = 'filter';
         paginatorService.totalRecords = 2;
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([]));
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(sites));
 
         fixture.detectChanges();
 
@@ -202,7 +201,7 @@ describe('SiteSelectorComponent', () => {
     it('should emit change event', () => {
         paginatorService.filter = 'filter';
         paginatorService.totalRecords = 2;
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([]));
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(sites));
         spyOn(comp, 'handleSitesRefresh');
         fixture.detectChanges();
         const searchableDropdownComponent: DebugElement = de.query(
@@ -281,5 +280,31 @@ describe('SiteSelectorComponent', () => {
             expect(siteService.getSiteById).toHaveBeenCalledWith(sites[0].identifier);
             expect(paginatorService.getCurrentPage).toHaveBeenCalledTimes(1);
         }));
+    });
+
+    it('should display as field', () => {
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(sites));
+        fixture.detectChanges();
+        const searchableDropdownComponent: DebugElement = de.query(
+            By.css('dot-searchable-dropdown')
+        );
+        expect(searchableDropdownComponent).not.toBeNull();
+    });
+
+    it('should display only one result as field', () => {
+        comp.asField = true;
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([sites[0]]));
+        fixture.detectChanges();
+        const searchableDropdownComponent: DebugElement = de.query(
+            By.css('dot-searchable-dropdown')
+        );
+        expect(searchableDropdownComponent).not.toBeNull();
+    });
+
+    it('should display as text if only one result', () => {
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([sites[0]]));
+        fixture.detectChanges();
+        const siteTitle: DebugElement = de.query(By.css('.site-selector__title'));
+        expect(siteTitle).not.toBeNull();
     });
 });

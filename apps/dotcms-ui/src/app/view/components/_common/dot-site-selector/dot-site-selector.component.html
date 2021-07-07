@@ -1,5 +1,5 @@
 <dot-searchable-dropdown
-    *ngIf="paginationService.totalRecords > 1; else hostName"
+    *ngIf="moreThanOneSite || asField; else hostName"
     #searchableDropdown
     (change)="siteChange($event)"
     (filterChange)="handleFilterChange($event)"

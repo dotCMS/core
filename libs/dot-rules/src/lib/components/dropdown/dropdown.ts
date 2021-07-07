@@ -32,6 +32,7 @@ import { SelectItem } from 'primeng/api';
             [required]="minSelections > 0"
             [placeholder]="placeholder"
             [options]="dropdownOptions | async"
+            [editable]="allowAdditions"
             [filter]="true"
             [(ngModel)]="modelValue"
             *ngIf="maxSelections <= 1"
