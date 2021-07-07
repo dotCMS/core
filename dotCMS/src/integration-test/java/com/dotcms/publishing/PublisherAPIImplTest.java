@@ -44,9 +44,7 @@ import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.dependencies.DependencyManager;
-import com.dotcms.publishing.manifest.ManifestBuilder;
 import com.dotcms.publishing.manifest.ManifestItem;
-import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -100,7 +98,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
@@ -478,17 +475,23 @@ public class PublisherAPIImplTest {
 
         if (!Rule.class.isInstance(testAsset.asset)) {
             final TestManifestItemsMap manifestLines = testAsset.manifestLines();
-            getLanguageVariableManifestItem(
+            manifestLines.addExcludes(map("Exclude System Folder/Host",
+                    list(APILocator.getHostAPI().findSystemHost(), APILocator.getFolderAPI().findSystemFolder())));
+
+            addLanguageVariableManifestItem(
                     manifestLines,
                     testAsset.addLanguageVariableDependencies,
                     languageVariablesAddInBundle
             );
 
-            assertManifestFile(extractHere, manifestLines);
+            final String manifestFilePath = extractHere.getAbsolutePath() + File.separator + "manifest.csv";
+            final File manifestFile = new File(manifestFilePath);
+
+            assertManifestFile(manifestFile, manifestLines);
         }
     }
 
-    private void getLanguageVariableManifestItem(
+    public static void addLanguageVariableManifestItem(
             final TestManifestItemsMap manifestLines,
             final boolean addLanguageVariableDependencies,
             final List<Contentlet> languageVariablesAddInBundle)
@@ -508,15 +511,20 @@ public class PublisherAPIImplTest {
             );
         }
 
+        if (!languageVariablesAddInBundle.isEmpty()) {
+            final ContentType languageVariablesContentType = getLanguageVariablesContentType();
 
-        final ContentType languageVariablesContentType = getLanguageVariablesContentType();
-        manifestLines.add(languageVariablesContentType,
-                "Dependency from: " + languageVariablesAddInBundle.get(0).getIdentifier());
+            manifestLines.add(languageVariablesContentType,
+                    "Dependency from: " + languageVariablesAddInBundle.get(0).getIdentifier());
 
-        final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI()
-                .findSystemWorkflowScheme();
-        manifestLines.add(systemWorkflowScheme,
-                "Dependency from: " + languageVariablesContentType.id());
+            final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI()
+                    .findSystemWorkflowScheme();
+            manifestLines.add(systemWorkflowScheme,
+                    "Dependency from: " + languageVariablesContentType.id());
+
+            final Host systemHost = APILocator.getHostAPI().findSystemHost();
+            manifestLines.addExclude(systemHost, "Exclude System Folder/Host");
+        }
     }
 
     private static Collection<Object> getJustOneList(Collection<?>... collections){
@@ -525,11 +533,9 @@ public class PublisherAPIImplTest {
                 .collect(Collectors.toSet());
     }
 
-    private void assertManifestFile(final File rootDirectory,
+    public static void assertManifestFile(final File manifestFile,
             final TestManifestItemsMap  manifestItems) throws IOException {
 
-        final String manifestFilePath = rootDirectory.getAbsolutePath() + File.separator + "manifest.csv";
-        final File manifestFile = new File(manifestFilePath);
         assertTrue(manifestFile.exists());
 
         manifestItems.startCheck();
@@ -768,6 +774,12 @@ public class PublisherAPIImplTest {
         }
     }
 
+    public static Set<Object> getLanguagesVariableDependencies()
+            throws DotDataException, DotSecurityException {
+        return getLanguagesVariableDependencies(
+                true, true, true);
+    }
+
     public static Set<Object> getLanguagesVariableDependencies(
             boolean addLanguageVariableDependencies,
             boolean addRulesDependencies,
@@ -828,7 +840,7 @@ public class PublisherAPIImplTest {
         return list(getLanguageVariablesContentType(), systemWorkflowScheme);
     }
 
-    private static ContentType getLanguageVariablesContentType()
+    public static ContentType getLanguageVariablesContentType()
             throws DotSecurityException, DotDataException {
 
         final User systemUser = APILocator.systemUser();
@@ -977,16 +989,7 @@ public class PublisherAPIImplTest {
             final ManifestItem assetManifestItem = (ManifestItem) asset;
             manifestItemsMap.add(assetManifestItem, "Add directly by User");
 
-            for (Entry<ManifestItem, List<ManifestItem>> dependencyEntry : dependencies.entrySet()) {
-                final String id = dependencyEntry.getKey().getManifestInfo().id();
-                final String dependencyReeason = "Dependency from: " + id;
-
-                final List<ManifestItem> entryDependencies = dependencyEntry.getValue();
-
-                for (ManifestItem entryDependency : entryDependencies) {
-                    manifestItemsMap.add(entryDependency, dependencyReeason);
-                }
-            }
+            manifestItemsMap.addDependencies(dependencies);
 
             return manifestItemsMap;
         }

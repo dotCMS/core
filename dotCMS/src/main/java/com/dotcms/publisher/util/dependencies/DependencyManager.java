@@ -324,9 +324,7 @@ public class DependencyManager {
 		}
 
 		try {
-			if (publisherFilter.isDependencies()) {
-				config.waitUntilResolveAllDependencies();
-			}
+			config.waitUntilResolveAllDependencies();
 		} catch (ExecutionException e) {
 			final Optional<Throwable> causeOptional = ExceptionUtil
 					.getCause(e, set(DotBundleException.class));

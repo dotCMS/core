@@ -1,6 +1,6 @@
 package com.dotcms.publishing;
 
-import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publishing.manifest.CSVManifestBuilder;
 import com.dotcms.publishing.manifest.ManifestBuilder;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -86,7 +86,7 @@ public class PublisherAPIImpl implements PublisherAPI {
                 final boolean bundleExists = BundlerUtil.bundleExists(config);
 
                 try (BundleOutput output = publisher.createBundleOutput();
-                     ManifestBuilder manifestBuilder = new ManifestBuilder()){
+                     ManifestBuilder manifestBuilder = new CSVManifestBuilder()){
 
                     manifestBuilder.create();
                     config.setManifestBuilder(manifestBuilder);

@@ -3,14 +3,10 @@ package com.dotcms.publisher.pusher;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publisher.util.dependencies.DependencyManager;
 import com.dotcms.publisher.util.dependencies.DependencyProcessor;
-import com.dotcms.publishing.manifest.ManifestBuilder;
 import com.dotcms.publishing.manifest.ManifestItem;
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.PublishQueueElement;
@@ -59,6 +55,7 @@ public class PushPublisherConfig extends PublisherConfig {
 	private boolean downloading = false;
 	private DependencyProcessor dependencyProcessor;
 	private BundleAssets bundleAssets = new BundleAssets();
+	private Set<String> excludes = new HashSet<>();
 
 	public PushPublisherConfig() {
 		super();
@@ -230,7 +227,7 @@ public class PushPublisherConfig extends PublisherConfig {
 			this.dependencyProcessor.addAsset(asset, pusheableAsset);
 
 			if (!added) {
-				writeManifestItem(asset, reason);
+				writeIncludeManifestItem(asset, reason);
 			}
 		}
 
@@ -242,16 +239,42 @@ public class PushPublisherConfig extends PublisherConfig {
 
 		if(!bundleAssets.isAdded(key, pusheableAsset)) {
 			bundleAssets.add(key, pusheableAsset);
-			writeManifestItem(asset, reason);
+			writeIncludeManifestItem(asset, reason);
 			return true;
 		} else {
 			return false;
 		}
 	}
 
-	private <T> void writeManifestItem(final T asset, final String reason) {
+	public <T> boolean contains(final T asset, final PusheableAsset pusheableAsset) {
+		final String key = DependencyManager.getBundleKey(asset);
+		return bundleAssets.isAdded(key, pusheableAsset);
+	}
+
+	public <T> boolean exclude(final T asset, final PusheableAsset pusheableAsset, final String reason) {
+		final String key = DependencyManager.getBundleKey(asset);
+
+		if(!excludes.contains(key)) {
+			excludes.add(key);
+			writeExcludeManifestItem(asset, reason);
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	private <T> void writeIncludeManifestItem(final T asset, final String reason) {
 		if (ManifestItem.class.isAssignableFrom(asset.getClass())) {
 			manifestBuilder.include((ManifestItem) asset, reason);
+		} else {
+			Logger.warn(PushPublisherConfig.class,
+					String.format("It is not possible add %s into the manifest", asset));
+		}
+	}
+
+	private <T> void writeExcludeManifestItem(final T asset, final String reason) {
+		if (ManifestItem.class.isAssignableFrom(asset.getClass())) {
+			manifestBuilder.exclude((ManifestItem) asset, reason);
 		} else {
 			Logger.warn(PushPublisherConfig.class,
 					String.format("It is not possible add %s into the manifest", asset));

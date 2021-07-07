@@ -37,14 +37,12 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.util.FileUtil;
 import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -54,7 +52,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
-public class ManifestBuilderTest {
+public class CSVManifestBuilderTest {
 
     private static String headers = "INCLUDE/EXCLUDE,object type, Id, title, site, folder, exclude by, include by";
 
@@ -237,7 +235,7 @@ public class ManifestBuilderTest {
     }
 
     /**
-     * Method to test: {@link ManifestBuilder#getManifestFile()}
+     * Method to test: {@link CSVManifestBuilder#getManifestFile()}
      * when: Create a ManifestBuilder but don't include or exclude anything
      * should: Create the manifest file with just the headers
      */
@@ -245,7 +243,7 @@ public class ManifestBuilderTest {
     public void emptyManifestFile() throws IOException {
         File manifestFile = null;
 
-        try(final ManifestBuilder manifestBuilder = new ManifestBuilder()) {
+        try(final CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
             manifestBuilder.create();
             manifestFile = manifestBuilder.getManifestFile();
         }
@@ -255,21 +253,21 @@ public class ManifestBuilderTest {
     }
 
     /**
-     * Method to test: {@link ManifestBuilder#getManifestFile()}
-     * when: Call the method {@link ManifestBuilder#getManifestFile()} without call
-     * {@link ManifestBuilder#create()}
+     * Method to test: {@link CSVManifestBuilder#getManifestFile()}
+     * when: Call the method {@link CSVManifestBuilder#getManifestFile()} without call
+     * {@link CSVManifestBuilder#create()}
      * should: Throw a {@link IllegalStateException}
      */
     @Test(expected = IllegalStateException.class)
     public void getFileBeforeCreate() throws IOException {
 
-        try(final ManifestBuilder manifestBuilder = new ManifestBuilder()) {
+        try(final CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
             manifestBuilder.getManifestFile();
         }
     }
 
     /**
-     * Method to test: {@link ManifestBuilder#getManifestFile()}
+     * Method to test: {@link CSVManifestBuilder#getManifestFile()}
      * when: Create a ManifestBuilder and include a asset
      * should: Create the manifest file with just the headers
      */
@@ -280,7 +278,7 @@ public class ManifestBuilderTest {
 
         File manifestFile = null;
 
-        try(final ManifestBuilder manifestBuilder = new ManifestBuilder()) {
+        try(final CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
             manifestBuilder.create();
 
             manifestBuilder.include(testCase.asset, includeReason);
@@ -294,7 +292,7 @@ public class ManifestBuilderTest {
     }
 
     /**
-     * Method to test: {@link ManifestBuilder#getManifestFile()}
+     * Method to test: {@link CSVManifestBuilder#getManifestFile()}
      * when: Create a ManifestBuilder and exclude a asset
      * should: Create the manifest file with just the headers
      */
@@ -305,7 +303,7 @@ public class ManifestBuilderTest {
 
         File manifestFile = null;
 
-        try(final ManifestBuilder manifestBuilder = new ManifestBuilder()) {
+        try(final CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
             manifestBuilder.create();
 
             manifestBuilder.exclude(testCase.asset, exludeReason);

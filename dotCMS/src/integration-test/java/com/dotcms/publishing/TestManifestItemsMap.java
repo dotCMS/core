@@ -4,6 +4,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
+import io.vavr.collection.Stream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -15,21 +16,45 @@ import java.util.stream.Collectors;
 
 public class TestManifestItemsMap {
     private Map<String, List<String>> includes = new HashMap<>();
+    private Map<String, List<String>> excludes = new HashMap<>();
     private Set<String> alreadyCheck;
 
-    private static String getLine(final ManifestItem asset, final String reason) {
+
+    private static String getIncludeLine(final ManifestItem asset, final String reason) {
+        return getLine("INCLUDE", asset, reason, "");
+    }
+
+    private static String getExcludeLine(final ManifestItem asset, final String reason) {
+        return getLine("EXCLUDE", asset, "", reason);
+    }
+    
+    private static String getLine(final String includeExclude, final ManifestItem asset, 
+            final String reasonInclude, final String reasonExclude) {
         final ManifestInfo manifestInfo = asset.getManifestInfo();
 
         return list(
-                "INCLUDE",
+                includeExclude,
                 manifestInfo.objectType(),
                 manifestInfo.id(),
                 manifestInfo.title(),
                 manifestInfo.site(),
                 manifestInfo.folder(),
-                "",
-                reason
+                reasonExclude,
+                reasonInclude
         ).stream().collect(Collectors.joining(","));
+    }
+
+    public void addDependencies(final Map<ManifestItem, List<ManifestItem>> dependencies){
+        for (Entry<ManifestItem, List<ManifestItem>> dependencyEntry : dependencies.entrySet()) {
+            final String id = dependencyEntry.getKey().getManifestInfo().id();
+            final String dependencyReeason = "Dependency from: " + id;
+
+            final List<ManifestItem> entryDependencies = dependencyEntry.getValue();
+
+            for (ManifestItem entryDependency : entryDependencies) {
+                add(entryDependency, dependencyReeason);
+            }
+        }
     }
 
     public void add(final ManifestItem assetManifestItem, final String reason) {
@@ -40,12 +65,23 @@ public class TestManifestItemsMap {
             includes.put(assetManifestItem.getManifestInfo().id(), lines);
         }
 
-        lines.add(getLine(assetManifestItem, reason));
+        lines.add(getIncludeLine(assetManifestItem, reason));
 
     }
 
+    public void addExclude(final ManifestItem assetManifestItem, final String reason) {
+        List<String> lines = excludes.get(assetManifestItem.getManifestInfo().id());
+
+        if (lines == null) {
+            lines = new ArrayList<>();
+            excludes.put(assetManifestItem.getManifestInfo().id(), lines);
+        }
+
+        lines.add(getExcludeLine(assetManifestItem, reason));
+    }
+
     public int size() {
-        return includes.size();
+        return includes.size() + excludes.size();
     }
 
     public void startCheck() {
@@ -53,7 +89,15 @@ public class TestManifestItemsMap {
     }
 
     public boolean contains(final String line) {
-        for (Entry<String, List<String>> includeEntry : includes.entrySet()) {
+        if (line.startsWith("INCLUDE")) {
+            return contains(line, includes);
+        } else {
+            return contains(line, excludes);
+        }
+    }
+
+    private boolean contains(final String line, final Map<String, List<String>> map) {
+        for (Entry<String, List<String>> includeEntry : map.entrySet()) {
             final List<String> lines = includeEntry.getValue();
 
             if (lines.contains(line)) {
@@ -71,8 +115,19 @@ public class TestManifestItemsMap {
 
     @Override
     public String toString(){
-        return includes.entrySet().stream()
+        return Stream.concat(includes.entrySet(), excludes.entrySet())
                 .map(entry -> entry.getKey() + " -> " + entry.getValue().stream().collect(Collectors.joining("|")))
                 .collect(Collectors.joining("\n"));
+    }
+
+    public void addExcludes(final Map<String, List<ManifestItem>> excludes) {
+        for (Entry<String, List<ManifestItem>> excludeEntry : excludes.entrySet()) {
+
+            final List<ManifestItem> entryDependencies = excludeEntry.getValue();
+
+            for (ManifestItem assetExclude : entryDependencies) {
+                addExclude(assetExclude, excludeEntry.getKey());
+            }
+        }
     }
 }

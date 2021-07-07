@@ -9,9 +9,11 @@ import com.dotcms.publisher.bundle.business.BundleFactoryImpl;
 import com.dotcms.publisher.endpoint.bean.impl.PushPublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
-import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.*;
 import com.dotcms.publishing.PublisherConfig.Operation;
+import com.dotcms.publishing.manifest.CSVManifestBuilder;
+import com.dotcms.publishing.manifest.ManifestBuilder;
+import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.publishing.output.BundleOutput;
 import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.util.IntegrationTestInitService;
@@ -29,39 +31,43 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageDataGen;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
-import com.dotmarketing.portlets.rules.RuleDataGen;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.google.common.collect.ImmutableMap;
+import com.dotmarketing.util.Config;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import java.io.FileDescriptor;
+import io.vavr.collection.Stream;
+import java.io.File;
+import java.io.Serializable;
+import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
+import static com.dotcms.publishing.PublisherAPIImplTest.getLanguageVariables;
 import static com.dotcms.publishing.PublisherAPIImplTest.getLanguagesVariableDependencies;
 import static com.dotcms.util.CollectionsUtils.*;
 import static java.util.stream.Collectors.*;
 import static org.jgroups.util.Util.assertEquals;
 import static org.jgroups.util.Util.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @RunWith(DataProviderRunner.class)
 public class DependencyBundlerTest {
 
+    private static  Map<String, List<ManifestItem>> excludeSystemFolder;
+
+    public static final String EXCLUDE_SYSTEM_FOLDER_HOST = "Exclude System Folder/Host";
+    private static String FILTER_EXCLUDE_REASON = "Exclude by filter";
+    private static String FILTER_EXCLUDE_BY_OPERATION = "Exclude by Operation: ";
     private BundlerStatus status = null;
 
     private DependencyBundler bundler = null;
@@ -75,6 +81,9 @@ public class DependencyBundlerTest {
 
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
+
+        excludeSystemFolder = map(EXCLUDE_SYSTEM_FOLDER_HOST,
+                list(APILocator.getFolderAPI().findSystemFolder()));
 
         filterDescriptorAllDependencies = new FilterDescriptorDataGen().next();
         filterDescriptorNotDependencies = new FilterDescriptorDataGen()
@@ -106,7 +115,7 @@ public class DependencyBundlerTest {
         all.addAll(createTemplatesTestCase());
         all.addAll(createContainerTestCase());
         all.addAll(createFolderTestCase());
-        all.addAll(createHostTestCase());
+        /*all.addAll(createHostTestCase());
         all.addAll(createLinkTestCase());
         all.addAll(createWorkflowTestCase());
         all.addAll(createLanguageTestCase());
@@ -118,12 +127,12 @@ public class DependencyBundlerTest {
         all.addAll(createFolderWithThirdPartyTestCase());
         all.addAll(createLinkWithThirdPartyTestCase());
         all.addAll(createRuleWithThirdPartyTestCase());
-        all.addAll(createContentletWithThirdPartyTestCase());
+        all.addAll(createContentletWithThirdPartyTestCase());*/
 
         return all.toArray();
     }
 
-    private static Collection<TestData> createContentletWithThirdPartyTestCase()
+    /*private static Collection<TestData> createContentletWithThirdPartyTestCase()
             throws DotDataException, DotSecurityException {
 
         final Host host = createHostWithDependencies();
@@ -148,10 +157,9 @@ public class DependencyBundlerTest {
                 .setProperty(contentType.variable(), list(contentletChild))
                 .nextPersisted();
 
-        final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
 
-        final List<Object> dependencies = list(host, language, contentType, contentletChild, systemFolder, contentTypeChild);
-        dependencies.addAll(contentTypeWithDependencies.dependenciesToAssert);
+        final List<Object> dependencies = list(host, language, contentType, contentletChild, contentTypeChild);
+        dependencies.addAll(contentTypeWithDependencies.dependencies());
 
         final TestData folderWithDependencies = createFolderWithDependencies();
         final Folder folder = (Folder) folderWithDependencies.assetsToAddInBundle ;
@@ -163,7 +171,7 @@ public class DependencyBundlerTest {
                 .nextPersisted();
 
         final List<Object> dependenciesWithFolder = list(folder, folder.getHost(), language, contentType);
-        dependenciesWithFolder.addAll(contentTypeWithDependencies.dependenciesToAssert);
+        dependenciesWithFolder.addAll(contentTypeWithDependencies.dependencies());
 
         return list(
                 new TestData(content, dependencies, filterDescriptorAllDependencies),
@@ -232,8 +240,7 @@ public class DependencyBundlerTest {
 
         final ContentType folderContentType = new StructureTransformer(folderStructure).from();
 
-        final Host systemHost = APILocator.getHostAPI().findSystemHost();
-        final List<Object> dependencies = list(host, folderContentType, systemHost);
+        final List<Object> dependencies = list(host, folderContentType);
         dependencies.addAll(contentTypeWithDependencies.dependenciesToAssert);
 
         return list(
@@ -252,10 +259,9 @@ public class DependencyBundlerTest {
 
         final Contentlet htmlPageAsset = new HTMLPageDataGen(host, template).host(host).languageId(defaultLanguage.getId()).nextPersisted();
         final ContentType htmlPageAssetContentType = htmlPageAsset.getContentType();
-        final Host systemHost = APILocator.getHostAPI().findSystemHost();
 
         return new TestData(htmlPageAsset, list(defaultLanguage, host, contentTypeToPage, container, template,
-                htmlPageAssetContentType, systemHost), null);
+                htmlPageAssetContentType), null);
     }
 
     private static Collection<TestData> createContainerWithThirdPartyTestCase()
@@ -327,10 +333,9 @@ public class DependencyBundlerTest {
                 .nextPersisted();
 
         final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
-        final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
 
         return list(
-                new TestData(contentType, list(host, systemWorkflowScheme, systemFolder), filterDescriptorAllDependencies),
+                new TestData(contentType, list(host, systemWorkflowScheme), filterDescriptorAllDependencies),
                 new TestData(contentTypeWithFolder, list(folderHost, contentTypeFolder, systemWorkflowScheme),
                         filterDescriptorAllDependencies)
         );
@@ -374,19 +379,15 @@ public class DependencyBundlerTest {
                 .host(host)
                 .nextPersisted();
 
-        final Host systemHost = APILocator.getHostAPI().findSystemHost();
         final Structure folderStructure = CacheLocator.getContentTypeCache()
                 .getStructureByInode(folder.getDefaultFileType());
 
         final ContentType folderContentType = new StructureTransformer(folderStructure).from();
 
-        final Folder systemFolder = APILocator.getFolderAPI()
-                .find(folderContentType.folder(), APILocator.systemUser(), false);
-
         final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
 
         return new TestData(folder, list(host, parentFolder, contentType, contentlet, language, link, subFolder,
-                contentlet_2, systemHost, folderContentType, systemFolder, systemWorkflowScheme), null);
+                contentlet_2, folderContentType, systemWorkflowScheme), null);
     }
 
     private static TestData createContentTypeWithDependencies() throws DotDataException, DotSecurityException {
@@ -419,10 +420,9 @@ public class DependencyBundlerTest {
                 .nextPersisted();
 
         final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
-        final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
 
         return new TestData(contentType, list(host, workflowScheme, category, contentTypeChild,
-                systemFolder, systemWorkflowScheme), null);
+                systemWorkflowScheme), null);
     }
 
 
@@ -504,52 +504,49 @@ public class DependencyBundlerTest {
         final Contentlet htmlPageAsset = new HTMLPageDataGen(host, template).host(host).languageId(defaultLanguage.getId()).nextPersisted();
         final ContentType htmlPageAssetContentType = htmlPageAsset.getContentType();
 
-        final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
-
-        final Host systemHost = APILocator.systemHost();
         final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
         return list(
                 new TestData(contentlet,
-                        list(host, contentType, language, systemFolder, systemWorkflowScheme),
+                        list(host, contentType, language, systemWorkflowScheme),
                         filterDescriptorAllDependencies),
                 new TestData(contentlet, list(), filterDescriptorNotDependencies),
                 new TestData(contentlet,
-                        list(host, contentType, language, systemFolder, systemWorkflowScheme),
+                        list(host, contentType, language, systemWorkflowScheme),
                         filterDescriptorNotRelationship),
                 new TestData(contentlet, list(), filterDescriptorNotDependenciesRelationship),
 
-                new TestData(contentletWithFolder, list(host, contentType, language, folder, systemWorkflowScheme, systemFolder),
+                new TestData(contentletWithFolder, list(host, contentType, language, folder, systemWorkflowScheme),
                         filterDescriptorAllDependencies),
                 new TestData(contentletWithFolder, list(), filterDescriptorNotDependencies),
                 new TestData(contentletWithFolder,
-                        list(host, contentType, language, folder, systemWorkflowScheme, systemFolder),
+                        list(host, contentType, language, folder, systemWorkflowScheme),
                         filterDescriptorNotRelationship),
                 new TestData(contentletWithFolder, list(), filterDescriptorNotDependenciesRelationship),
 
                 new TestData(contentletWithRelationship,
                         list(host, contentTypeParent, language, contentletChild, contentTypeChild,
-                                systemFolder, systemWorkflowScheme), filterDescriptorAllDependencies),
+                                systemWorkflowScheme), filterDescriptorAllDependencies),
                 new TestData(contentletWithRelationship, list(), filterDescriptorNotDependencies),
                 new TestData(contentletWithRelationship,
-                        list(host, contentTypeParent, language, systemFolder, systemWorkflowScheme),
+                        list(host, contentTypeParent, language, systemWorkflowScheme),
                         filterDescriptorNotRelationship),
                 new TestData(contentletWithRelationship, list(), filterDescriptorNotDependenciesRelationship),
 
                 new TestData(contentWithCategory,
-                        list(host, contentTypeWithCategory, language, category, systemFolder, systemWorkflowScheme),
+                        list(host, contentTypeWithCategory, language, category, systemWorkflowScheme),
                         filterDescriptorAllDependencies),
                 new TestData(contentWithCategory, list(), filterDescriptorNotDependencies),
                 new TestData(contentWithCategory,
-                        list(host, contentTypeWithCategory, language, category, systemFolder, systemWorkflowScheme),
+                        list(host, contentTypeWithCategory, language, category, systemWorkflowScheme),
                         filterDescriptorNotRelationship),
                 new TestData(contentWithCategory, list(), filterDescriptorNotDependenciesRelationship),
 
                 new TestData(htmlPageAsset, list(host, defaultHost, contentTypeToPage, defaultLanguage,
-                        container, template, htmlPageAssetContentType, systemFolder, systemWorkflowScheme, systemHost),
+                        container, template, htmlPageAssetContentType, systemWorkflowScheme),
                         filterDescriptorAllDependencies),
                 new TestData(htmlPageAsset, list(), filterDescriptorNotDependencies),
                 new TestData(htmlPageAsset, list(host, defaultHost, contentTypeToPage, defaultLanguage,
-                        container, template, htmlPageAssetContentType, systemFolder, systemWorkflowScheme, systemHost),
+                        container, template, htmlPageAssetContentType, systemWorkflowScheme),
                         filterDescriptorNotRelationship),
                 new TestData(htmlPageAsset, list(), filterDescriptorNotDependenciesRelationship)
         );
@@ -631,8 +628,6 @@ public class DependencyBundlerTest {
         final Structure folderStructure = CacheLocator.getContentTypeCache().getStructureByInode(systemFolder.getDefaultFileType());
         final ContentType folderContentType = new StructureTransformer(folderStructure).from();
 
-        final Host systemHost = APILocator.getHostAPI().findSystemHost();
-
         return list(
                 new TestData(host, list(), filterDescriptorAllDependencies),
                 new TestData(host, list(), filterDescriptorNotDependencies),
@@ -649,19 +644,19 @@ public class DependencyBundlerTest {
                 new TestData(hostWithContainer, list(container), filterDescriptorNotRelationship),
                 new TestData(hostWithContainer, list(), filterDescriptorNotDependenciesRelationship),
 
-                new TestData(hostWithContent, list(contentType, contentlet, systemWorkflowScheme,systemFolder, language),
+                new TestData(hostWithContent, list(contentType, contentlet, systemWorkflowScheme, language),
                         filterDescriptorAllDependencies),
                 new TestData(hostWithContent, list(), filterDescriptorNotDependencies),
                 new TestData(hostWithContent,
-                        list(contentType, contentlet, systemWorkflowScheme,systemFolder, language),
+                        list(contentType, contentlet, systemWorkflowScheme, language),
                         filterDescriptorNotRelationship),
                 new TestData(hostWithContent, list(), filterDescriptorNotDependenciesRelationship),
 
-                new TestData(hostWithFolder, list(folder, folderContentType, systemHost, systemFolder, systemWorkflowScheme),
+                new TestData(hostWithFolder, list(folder, folderContentType, systemWorkflowScheme),
                         filterDescriptorAllDependencies),
                 new TestData(hostWithFolder, list(), filterDescriptorNotDependencies),
                 new TestData(hostWithFolder,
-                        list(folder, folderContentType, systemHost, systemFolder, systemWorkflowScheme),
+                        list(folder, folderContentType, systemWorkflowScheme),
                         filterDescriptorNotRelationship),
                 new TestData(hostWithFolder, list(), filterDescriptorNotDependenciesRelationship),
 
@@ -680,14 +675,13 @@ public class DependencyBundlerTest {
                 .hostId(host.getIdentifier())
                 .nextPersisted();
 
-
         return list(
                 new TestData(link, list(host, folder), filterDescriptorAllDependencies),
                 new TestData(link, list(), filterDescriptorNotDependencies),
                 new TestData(link, list(host, folder), filterDescriptorNotRelationship),
                 new TestData(link, list(), filterDescriptorNotDependenciesRelationship)
         );
-    }
+    }*/
 
     private static Collection<TestData> createFolderTestCase() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
@@ -725,72 +719,73 @@ public class DependencyBundlerTest {
                 .host(host)
                 .nextPersisted();
 
-        final Host systemHost = APILocator.getHostAPI().findSystemHost();
         final Structure folderStructure = CacheLocator.getContentTypeCache()
                 .getStructureByInode(folder.getDefaultFileType());
 
         final ContentType folderContentType = new StructureTransformer(folderStructure).from();
 
-        final Folder systemFolder = APILocator.getFolderAPI()
-                .find(folderContentType.folder(), APILocator.systemUser(), false);
-
         final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
+
+        final Map<ManifestItem, List<ManifestItem>> folderIncludes = map(
+                folder, list(host, folderContentType),
+                folderContentType, list(systemWorkflowScheme)
+        );
 
         //Folder with sub folder
         return list(
-                new TestData(folder, list(host, folderContentType, systemHost, systemFolder, systemWorkflowScheme),
-                        filterDescriptorAllDependencies),
-                new TestData(folder, list(), filterDescriptorNotDependencies),
-                new TestData(folder,
-                        list(host, folderContentType, systemHost, systemFolder, systemWorkflowScheme),
+                new TestData(folder, folderIncludes, excludeSystemFolder, filterDescriptorAllDependencies),
+                new TestData(folder, map(), map(FILTER_EXCLUDE_REASON, list(host, folderContentType)),
+                        filterDescriptorNotDependencies)/*,
+                new TestData(folder,1
+                        list(host, folderContentType, systemWorkflowScheme),
                         filterDescriptorNotRelationship),
                 new TestData(folder, list(), filterDescriptorNotDependenciesRelationship),
 
                 //Dependency manager not add Parent Folder, the Parent Folder is added as dependency in FolderBundle
-                new TestData(folderWithParent, list(host, folderContentType, systemHost, systemFolder, systemWorkflowScheme),
+                new TestData(folderWithParent, list(host, folderContentType, systemWorkflowScheme),
                         filterDescriptorAllDependencies),
                 new TestData(folderWithParent, list(), filterDescriptorNotDependencies),
                 new TestData(folderWithParent,
-                        list(host, folderContentType, systemHost, systemFolder, systemWorkflowScheme),
+                        list(host, folderContentType, systemWorkflowScheme),
                         filterDescriptorNotRelationship),
                 new TestData(folderWithParent, list(), filterDescriptorNotDependenciesRelationship),
 
                 new TestData(folderWithContentType,
-                        list(host, folderContentType, systemHost, systemFolder, contentType, systemWorkflowScheme),
+                        list(host, folderContentType, contentType, systemWorkflowScheme),
                         filterDescriptorAllDependencies),
                 new TestData(folderWithContentType, list(), filterDescriptorNotDependencies),
                 new TestData(folderWithContentType,
-                        list(host, folderContentType, systemHost, systemFolder, contentType, systemWorkflowScheme),
+                        list(host, folderContentType, contentType, systemWorkflowScheme),
                         filterDescriptorNotRelationship),
                 new TestData(folderWithContentType, list(), filterDescriptorNotDependenciesRelationship),
 
-                new TestData(folderWithContent, list(host, folderContentType, systemHost, systemFolder, contentlet,
+                new TestData(folderWithContent, list(host, folderContentType, contentlet,
                         systemWorkflowScheme, language), filterDescriptorAllDependencies),
                 new TestData(folderWithContent, list(), filterDescriptorNotDependencies),
                 new TestData(folderWithContent,
-                        list(host, folderContentType, systemHost, systemFolder, contentlet,
+                        list(host, folderContentType, contentlet,
                                 systemWorkflowScheme, language),
                         filterDescriptorNotRelationship),
                 new TestData(folderWithContent, list(), filterDescriptorNotDependenciesRelationship),
 
-                new TestData(folderWithLink, list(host, folderContentType, systemHost, systemFolder, link,
+                new TestData(folderWithLink, list(host, folderContentType, link,
                         systemWorkflowScheme), filterDescriptorAllDependencies),
                 new TestData(folderWithLink, list(), filterDescriptorNotDependencies),
                 new TestData(folderWithLink,
-                        list(host, folderContentType, systemHost, systemFolder, link,
+                        list(host, folderContentType, link,
                                 systemWorkflowScheme),
                         filterDescriptorNotRelationship),
                 new TestData(folderWithLink, list(), filterDescriptorNotDependenciesRelationship),
 
-                new TestData(folderWithSubFolder, list(host, folderContentType, systemHost, systemFolder,
+                new TestData(folderWithSubFolder, list(host, folderContentType,
                         subFolder, contentlet_2, systemWorkflowScheme, language),
                         filterDescriptorAllDependencies),
                 new TestData(folderWithSubFolder, list(), filterDescriptorNotDependencies),
                 new TestData(folderWithSubFolder,
-                        list(host, folderContentType, systemHost, systemFolder,
+                        list(host, folderContentType,
                                 subFolder, contentlet_2, systemWorkflowScheme, language),
                         filterDescriptorNotRelationship),
-                new TestData(folderWithSubFolder, list(), filterDescriptorNotDependenciesRelationship)
+                new TestData(folderWithSubFolder, list(), filterDescriptorNotDependenciesRelationship)*/
         );
     }
 
@@ -808,23 +803,31 @@ public class DependencyBundlerTest {
                 .withContentType(contentType, "")
                 .nextPersisted();
 
-        final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
         final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
 
+        final Map<ManifestItem, List<ManifestItem>> containerWithContentTypeIncludes = map(
+                containerWithContentType, list(host, contentType),
+                contentType, list(systemWorkflowScheme)
+        );
+
         return list(
-                new TestData(containerWithoutContentType, list(host), filterDescriptorAllDependencies),
-                new TestData(containerWithoutContentType, list(), filterDescriptorNotDependencies),
-                new TestData(containerWithoutContentType, list(host), filterDescriptorNotRelationship),
-                new TestData(containerWithoutContentType, list(), filterDescriptorNotDependenciesRelationship),
+                new TestData(containerWithoutContentType, map(containerWithoutContentType, list(host)),
+                        excludeSystemFolder, filterDescriptorAllDependencies),
+                new TestData(containerWithoutContentType, map(), map(FILTER_EXCLUDE_REASON, list(host)),
+                        filterDescriptorNotDependencies),
+                new TestData(containerWithoutContentType, map(containerWithoutContentType, list(host)),
+                        excludeSystemFolder, filterDescriptorNotRelationship),
+                new TestData(containerWithoutContentType,  map(), map(FILTER_EXCLUDE_REASON, list(host)),
+                        filterDescriptorNotDependenciesRelationship),
 
                 new TestData(containerWithContentType,
-                        list(host, contentType, systemWorkflowScheme, systemFolder),
-                        filterDescriptorAllDependencies),
-                new TestData(containerWithContentType, list(), filterDescriptorNotDependencies),
-                new TestData(containerWithContentType,
-                        list(host, contentType, systemWorkflowScheme, systemFolder),
+                        containerWithContentTypeIncludes, excludeSystemFolder, filterDescriptorAllDependencies),
+                new TestData(containerWithContentType, map(), map(FILTER_EXCLUDE_REASON, list(host, contentType)),
+                        filterDescriptorNotDependencies),
+                new TestData(containerWithContentType,containerWithContentTypeIncludes, excludeSystemFolder,
                         filterDescriptorNotRelationship),
-                new TestData(containerWithContentType, list(), filterDescriptorNotDependenciesRelationship)
+                new TestData(containerWithContentType, map(), map(FILTER_EXCLUDE_REASON, list(host, contentType)),
+                 filterDescriptorNotDependenciesRelationship)
         );
     }
 
@@ -855,22 +858,32 @@ public class DependencyBundlerTest {
                 .nextPersisted();
 
         final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
-        final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
+
+        final Map<ManifestItem, List<ManifestItem>> contentTypeParentIncludes = map(
+                templateWithTemplateLayout, list(host, container_1, container_2),
+                container_1, list(contentType),
+                container_2, list(contentType),
+                contentType, list(systemWorkflowScheme)
+        );
 
         return list(
-                new TestData(advancedTemplateWithContainer, list(host), filterDescriptorAllDependencies),
-                new TestData(advancedTemplateWithContainer, list(), filterDescriptorNotDependencies),
-                new TestData(advancedTemplateWithContainer, list(host), filterDescriptorNotRelationship),
-                new TestData(advancedTemplateWithContainer, list(), filterDescriptorNotDependenciesRelationship),
+                new TestData(advancedTemplateWithContainer, map(advancedTemplateWithContainer, list(host)),
+                        excludeSystemFolder, filterDescriptorAllDependencies),
+                new TestData(advancedTemplateWithContainer, map(),  map(FILTER_EXCLUDE_REASON, list(host)),
+                        filterDescriptorNotDependencies),
+                new TestData(advancedTemplateWithContainer, map(advancedTemplateWithContainer, list(host)),
+                        excludeSystemFolder, filterDescriptorNotRelationship),
+                new TestData(advancedTemplateWithContainer, map(),  map(FILTER_EXCLUDE_REASON, list(host)),
+                        filterDescriptorNotDependenciesRelationship),
 
-                new TestData(templateWithTemplateLayout,
-                        list(host, container_1, container_2, contentType, systemWorkflowScheme, systemFolder),
+                new TestData(templateWithTemplateLayout, contentTypeParentIncludes, excludeSystemFolder,
                         filterDescriptorAllDependencies),
-                new TestData(templateWithTemplateLayout, list(), filterDescriptorNotDependencies),
-                new TestData(templateWithTemplateLayout,
-                        list(host, container_1, container_2, contentType, systemWorkflowScheme, systemFolder),
+                new TestData(templateWithTemplateLayout, map(),  map(FILTER_EXCLUDE_REASON, list(host, container_1, container_2)),
+                        filterDescriptorNotDependencies),
+                new TestData(templateWithTemplateLayout, contentTypeParentIncludes, excludeSystemFolder,
                         filterDescriptorNotRelationship),
-                new TestData(templateWithTemplateLayout, list(), filterDescriptorNotDependenciesRelationship)
+                new TestData(templateWithTemplateLayout, map(),  map(FILTER_EXCLUDE_REASON, list(host, container_1, container_2)),
+                        filterDescriptorNotDependenciesRelationship)
         );
     }
 
@@ -907,7 +920,7 @@ public class DependencyBundlerTest {
                 .host(host)
                 .nextPersisted();
 
-        new FieldRelationshipDataGen()
+        final Relationship relationship = new FieldRelationshipDataGen()
                 .child(contentTypeChild)
                 .parent(contentTypeParent)
                 .nextPersisted();
@@ -915,31 +928,72 @@ public class DependencyBundlerTest {
         final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
         final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
 
+        final Map<ManifestItem, List<ManifestItem>> contentTypeWithFolderIncludes = map(
+                contentTypeWithFolder, list(folder, systemWorkflowScheme, folderHost));
+
+        final Map<ManifestItem, List<ManifestItem>> contentTypeWithWorkflowIncludes = map(
+                contentTypeWithWorkflow, list(host, systemWorkflowScheme, workflowScheme));
+
+        final Map<ManifestItem, List<ManifestItem>> contentTypeWithCategoryIncludes = map(
+                contentTypeWithCategory, list(host, systemWorkflowScheme, category));
+
+        final Map<ManifestItem, List<ManifestItem>> contentTypeParentIncludes = map(
+                contentTypeParent, list(host, systemWorkflowScheme, relationship),
+                relationship, list(contentTypeChild)
+        );
+
+        list(host, systemWorkflowScheme, category);
         return list(
-                new TestData(contentType, list(host, systemWorkflowScheme, systemFolder), filterDescriptorAllDependencies),
-                new TestData(contentType, list(), filterDescriptorNotDependencies),
-                new TestData(contentType, list(host, systemWorkflowScheme, systemFolder), filterDescriptorNotRelationship),
-                new TestData(contentType, list(), filterDescriptorNotDependenciesRelationship),
+                new TestData(contentType,
+                        map(contentType, list(host, systemWorkflowScheme)), excludeSystemFolder, filterDescriptorAllDependencies),
 
-                new TestData(contentTypeWithFolder, list(folder, systemWorkflowScheme, folderHost), filterDescriptorAllDependencies),
-                new TestData(contentTypeWithFolder, list(), filterDescriptorNotDependencies),
-                new TestData(contentTypeWithFolder, list(folder, systemWorkflowScheme, folderHost), filterDescriptorNotRelationship),
-                new TestData(contentTypeWithFolder, list(), filterDescriptorNotDependenciesRelationship),
+                new TestData(contentType, map(),
+                        map(
+                            FILTER_EXCLUDE_REASON, list(host, systemWorkflowScheme),
+                            EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)), filterDescriptorNotDependencies),
 
-                new TestData(contentTypeWithWorkflow, list(host, systemWorkflowScheme, workflowScheme, systemFolder), filterDescriptorAllDependencies),
-                new TestData(contentTypeWithWorkflow, list(), filterDescriptorNotDependencies),
-                new TestData(contentTypeWithWorkflow, list(host, systemWorkflowScheme, workflowScheme, systemFolder), filterDescriptorNotRelationship),
-                new TestData(contentTypeWithWorkflow, list(), filterDescriptorNotDependenciesRelationship),
+                new TestData(contentType,
+                        map(contentType, list(host, systemWorkflowScheme)),
+                        excludeSystemFolder, filterDescriptorNotRelationship),
 
-                new TestData(contentTypeWithCategory, list(host, systemWorkflowScheme, category, systemFolder), filterDescriptorAllDependencies),
-                new TestData(contentTypeWithCategory, list(), filterDescriptorNotDependencies),
-                new TestData(contentTypeWithCategory, list(host, systemWorkflowScheme, category, systemFolder), filterDescriptorNotRelationship),
-                new TestData(contentTypeWithCategory, list(), filterDescriptorNotDependenciesRelationship),
+                new TestData(contentType, map(),
+                        map(FILTER_EXCLUDE_REASON, list(host, systemWorkflowScheme),
+                                EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)), filterDescriptorNotDependenciesRelationship),
 
-                new TestData(contentTypeParent, list(host, systemWorkflowScheme, contentTypeChild, systemFolder), filterDescriptorAllDependencies),
-                new TestData(contentTypeParent, list(), filterDescriptorNotDependencies),
-                new TestData(contentTypeParent, list(host, systemWorkflowScheme, systemFolder), filterDescriptorNotRelationship),
-                new TestData(contentTypeParent, list(), filterDescriptorNotDependenciesRelationship)
+                new TestData(contentTypeWithFolder, contentTypeWithFolderIncludes, excludeSystemFolder,
+                        filterDescriptorAllDependencies),
+                new TestData(contentTypeWithFolder, map(),
+                        map(FILTER_EXCLUDE_REASON, list(folder, systemWorkflowScheme, folderHost)), filterDescriptorNotDependencies),
+                new TestData(contentTypeWithFolder, contentTypeWithFolderIncludes, excludeSystemFolder,
+                        filterDescriptorNotRelationship),
+                new TestData(contentTypeWithFolder, map(),
+                        map(FILTER_EXCLUDE_REASON, list(folder, systemWorkflowScheme, folderHost)),
+                        filterDescriptorNotDependenciesRelationship),
+
+                new TestData(contentTypeWithWorkflow, contentTypeWithWorkflowIncludes, excludeSystemFolder, filterDescriptorAllDependencies),
+                new TestData(contentTypeWithWorkflow, map(), map(FILTER_EXCLUDE_REASON, list(host, systemWorkflowScheme, workflowScheme),
+                        EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)), filterDescriptorNotDependencies),
+                new TestData(contentTypeWithWorkflow, contentTypeWithWorkflowIncludes, excludeSystemFolder, filterDescriptorNotRelationship),
+                new TestData(contentTypeWithWorkflow, map(), map(FILTER_EXCLUDE_REASON, list(host, systemWorkflowScheme, workflowScheme),
+                        EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)), filterDescriptorNotDependenciesRelationship),
+
+                new TestData(contentTypeWithCategory, contentTypeWithCategoryIncludes, excludeSystemFolder,
+                        filterDescriptorAllDependencies),
+                new TestData(contentTypeWithCategory, map(), map(FILTER_EXCLUDE_REASON, list(host, systemWorkflowScheme, category),
+                        EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)), filterDescriptorNotDependencies),
+                new TestData(contentTypeWithCategory, contentTypeWithCategoryIncludes, excludeSystemFolder,
+                        filterDescriptorNotRelationship),
+                new TestData(contentTypeWithCategory, map(), map(FILTER_EXCLUDE_REASON, list(host, systemWorkflowScheme, category),
+                        EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)), filterDescriptorNotDependenciesRelationship),
+
+                new TestData(contentTypeParent, contentTypeParentIncludes, excludeSystemFolder, filterDescriptorAllDependencies),
+                new TestData(contentTypeParent, map(), map(FILTER_EXCLUDE_REASON, list(host, systemWorkflowScheme, relationship),
+                        EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)), filterDescriptorNotDependencies),
+                new TestData(contentTypeParent, map(contentTypeParent, list(host, systemWorkflowScheme)),
+                        map(FILTER_EXCLUDE_REASON, list(relationship), EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)),
+                        filterDescriptorNotRelationship),
+                new TestData(contentTypeParent, map(), map(FILTER_EXCLUDE_REASON, list(host, systemWorkflowScheme, relationship),
+                        EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)), filterDescriptorNotDependenciesRelationship)
         );
     }
 
@@ -966,38 +1020,58 @@ public class DependencyBundlerTest {
         APILocator.getPublisherAPI().addFilterDescriptor(testData.filterDescriptor);
 
         final PushPublisherConfig config = new PushPublisherConfig();
-
-        new BundleDataGen()
-                .pushPublisherConfig(config)
-                .addAssets(set(testData.assetsToAddInBundle))
-                .filter(testData.filterDescriptor)
-                .nextPersisted();
-
-        final Set<Object> languagesVariableDependencies = getLanguagesVariableDependencies(
-                true, false, false);
-
+        final BundleOutput bundleOutput = new DirectoryBundleOutput(config);
         final Set<Object> dependencies = new HashSet<>();
 
-        final PublisherFilter publisherFilter = APILocator.getPublisherAPI()
-                .createPublisherFilter(config.getId());
+        try (CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
 
-        if (publisherFilter.isDependencies()) {
-            dependencies.addAll(testData.dependenciesToAssert);
-            dependencies.addAll(languagesVariableDependencies);
-        } else {
+            manifestBuilder.create();
+            config.setManifestBuilder(manifestBuilder);
+
+            new BundleDataGen()
+                    .pushPublisherConfig(config)
+                    .addAssets(set(testData.assetsToAddInBundle))
+                    .filter(testData.filterDescriptor)
+                    .nextPersisted();
+
+            final Set<Object> languagesVariableDependencies = getLanguagesVariableDependencies(
+                    true, false, false);
+
+            final PublisherFilter publisherFilter = APILocator.getPublisherAPI()
+                    .createPublisherFilter(config.getId());
+
+            if (publisherFilter.isDependencies()) {
+                dependencies.addAll(testData.dependencies());
+                dependencies.addAll(languagesVariableDependencies);
+            }
+
             dependencies.add(testData.assetsToAddInBundle);
+
+            bundler.setConfig(config);
+            bundler.generate(bundleOutput, status);
+
+            manifestBuilder.close();
+
+            final TestManifestItemsMap manifestLines = testData.manifestLines();
+
+            if (publisherFilter.isDependencies()) {
+                PublisherAPIImplTest.addLanguageVariableManifestItem(
+                        manifestLines,
+                        true,
+                        PublisherAPIImplTest.getLanguageVariables()
+                );
+            }
+
+            PublisherAPIImplTest.assertManifestFile(manifestBuilder.getManifestFile(), manifestLines);
         }
-
-        final BundleOutput bundleOutput = new DirectoryBundleOutput(config);
-
-        bundler.setConfig(config);
-        bundler.generate(bundleOutput, status);
 
         assertAll(config, dependencies);
     }
 
     @Test
-    public void addLanguageVariableTestCaseInBundle() throws DotSecurityException, DotDataException, DotBundleException {
+    public void addLanguageVariableTestCaseInBundle()
+            throws DotSecurityException, DotDataException, DotBundleException, IOException {
+
         Contentlet contentlet = null;
 
         try {
@@ -1013,12 +1087,15 @@ public class DependencyBundlerTest {
 
             final BundleOutput bundleOutput = new DirectoryBundleOutput(config);
 
-            bundler.setConfig(config);
-            bundler.generate(bundleOutput, status);
+            try (ManifestBuilder manifestBuilder = new TestManifestBuilder()) {
+                config.setManifestBuilder(manifestBuilder);
+                bundler.setConfig(config);
+                bundler.generate(bundleOutput, status);
 
-            final Collection<Object> dependencies = getLanguagesVariableDependencies(
-                    true, false, false);
-            assertAll(config, dependencies);
+                final Collection<Object> dependencies = getLanguagesVariableDependencies(
+                        true, false, false);
+                assertAll(config, dependencies);
+            }
         } finally {
             if (contentlet != null) {
                 ContentletDataGen.archive(contentlet);
@@ -1052,7 +1129,7 @@ public class DependencyBundlerTest {
     @Test
     @UseDataProvider("configs")
     public void excludeContenletChildAssetByModDate(ModDateTestData modDateTestData)
-            throws DotBundleException, DotDataException, DotSecurityException {
+            throws DotBundleException, DotDataException, DotSecurityException, IOException {
 
         PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
         APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptorAllDependencies);
@@ -1063,6 +1140,7 @@ public class DependencyBundlerTest {
         final Language language = (Language) relationShip.get("language");
         final ContentType contentTypeParent =  (ContentType) relationShip.get("contentTypeParent");
         final ContentType contentTypeChild =  (ContentType) relationShip.get("contentTypeChild");
+        final Relationship relationship = (Relationship) relationShip.get("relationship");
 
         final Contentlet contentletChild =  (Contentlet) relationShip.get("contentletChild");
         final Contentlet contentParent = (Contentlet) relationShip.get("contentParent");
@@ -1089,25 +1167,74 @@ public class DependencyBundlerTest {
                 bundle,
                 Publisher.class);
 
-        bundler.setConfig(config);
-        bundler.generate(bundleOutput, status);
-
         final Collection<Object> dependencies = new HashSet<>();
 
-        if (modDateTestData.operation == Operation.PUBLISH) {
-            dependencies.addAll(getLanguagesVariableDependencies(
-                    true, false, false));
+        try (CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
 
-            dependencies.addAll(list(host, language, contentTypeParent, contentTypeChild));
-            dependencies.add(APILocator.getWorkflowAPI().findSystemWorkflowScheme());
-            dependencies.add(APILocator.getFolderAPI().findSystemFolder());
-            dependencies.add(language);
-        }
+            manifestBuilder.create();
+            config.setManifestBuilder(manifestBuilder);
 
-        dependencies.add(contentParent);
+            bundler.setConfig(config);
+            bundler.generate(bundleOutput, status);
 
-        if (modDateTestData.isDownload || modDateTestData.isForcePush) {
-            dependencies.add(contentletChild);
+            final TestManifestItemsMap manifestLines = new TestManifestItemsMap();
+            manifestLines.add(contentParent, "Add directly by User");
+
+            final List<Contentlet> languageVariables = PublisherAPIImplTest.getLanguageVariables();
+            if (modDateTestData.operation == Operation.PUBLISH) {
+                dependencies.addAll(getLanguagesVariableDependencies(
+                        true, false, false));
+
+                dependencies.addAll(list(host, language, contentTypeParent, contentTypeChild));
+                dependencies.add(APILocator.getWorkflowAPI().findSystemWorkflowScheme());
+                dependencies.add(language);
+
+                manifestLines.addDependencies(map(
+                        contentParent, list(host, language, contentTypeParent, contentTypeChild, relationship),
+                        relationship, list(contentTypeChild, contentTypeParent),
+                        contentTypeParent, list(APILocator.getWorkflowAPI().findSystemWorkflowScheme()),
+                        contentTypeChild, list(APILocator.getWorkflowAPI().findSystemWorkflowScheme())
+                ));
+
+                if (!languageVariables.isEmpty()) {
+                    PublisherAPIImplTest.addLanguageVariableManifestItem(
+                            manifestLines,
+                            true,
+                            languageVariables
+                    );
+                }
+
+
+            } else {
+                final String excludeByOperation = FILTER_EXCLUDE_BY_OPERATION + modDateTestData.operation;
+                manifestLines.addExcludes(map(excludeByOperation,
+                        list(host, language, contentTypeParent, contentTypeChild, relationship,
+                                APILocator.getWorkflowAPI().findSystemWorkflowScheme())));
+
+                final List<? extends Serializable> generalLangVarDependencies = list(
+                        PublisherAPIImplTest.getLanguageVariablesContentType(),
+                        APILocator.getWorkflowAPI().findSystemWorkflowScheme());
+
+                Stream.concat(PublisherAPIImplTest.getLanguagesVariableDependencies(),
+                        languageVariables, generalLangVarDependencies).forEach(asset ->
+                        manifestLines.addExclude((ManifestItem) asset, excludeByOperation));
+            }
+
+            dependencies.add(contentParent);
+            manifestLines.addExclude(APILocator.getFolderAPI().findSystemFolder(), EXCLUDE_SYSTEM_FOLDER_HOST);
+            manifestLines.addExclude(APILocator.getHostAPI().findSystemHost(), EXCLUDE_SYSTEM_FOLDER_HOST);
+
+            if (modDateTestData.isDownload || modDateTestData.isForcePush) {
+                dependencies.add(contentletChild);
+                manifestLines.addDependencies(map(contentParent, list(contentletChild)));
+            } else if (modDateTestData.operation == Operation.PUBLISH) {
+                manifestLines.addExclude(contentletChild, "Exclude by mod_date");
+            } else {
+                manifestLines.addExclude(contentletChild, FILTER_EXCLUDE_BY_OPERATION + modDateTestData.operation);
+            }
+
+            manifestBuilder.close();
+            PublisherAPIImplTest.assertManifestFile(manifestBuilder.getManifestFile(), manifestLines);
         }
 
          assertAll(config, dependencies);
@@ -1127,7 +1254,7 @@ public class DependencyBundlerTest {
     @Test
     @UseDataProvider("configs")
     public void includeContenletChildWithSeveralVersionAssetByModDate(ModDateTestData modDateTestData)
-            throws DotBundleException, DotDataException, DotSecurityException {
+            throws DotBundleException, DotDataException, DotSecurityException, IOException {
 
         PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
         APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptorAllDependencies);
@@ -1169,8 +1296,12 @@ public class DependencyBundlerTest {
                 bundle,
                 Publisher.class);
 
-        bundler.setConfig(config);
-        bundler.generate(bundleOutput, status);
+        try (ManifestBuilder manifestBuilder = new TestManifestBuilder()) {
+            config.setManifestBuilder(manifestBuilder);
+
+            bundler.setConfig(config);
+            bundler.generate(bundleOutput, status);
+        }
 
         final Collection<Object> dependencies = new HashSet<>();
 
@@ -1180,7 +1311,6 @@ public class DependencyBundlerTest {
 
             dependencies.addAll(list(host, language, contentTypeParent, contentTypeChild));
             dependencies.add(APILocator.getWorkflowAPI().findSystemWorkflowScheme());
-            dependencies.add(APILocator.getFolderAPI().findSystemFolder());
             dependencies.add(language);
             dependencies.add(anotherLang);
 
@@ -1205,7 +1335,7 @@ public class DependencyBundlerTest {
     @Test
     @UseDataProvider("configs")
     public void notExcludeContenletChildAssetByModDate(ModDateTestData modDateTestData)
-            throws DotBundleException, DotDataException, DotSecurityException {
+            throws DotBundleException, DotDataException, DotSecurityException, IOException {
         PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
         APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptorAllDependencies);
 
@@ -1240,8 +1370,11 @@ public class DependencyBundlerTest {
 
         final BundleOutput bundleOutput = new DirectoryBundleOutput(config);
 
-        bundler.setConfig(config);
-        bundler.generate(bundleOutput, status);
+        try (ManifestBuilder manifestBuilder = new TestManifestBuilder()) {
+            config.setManifestBuilder(manifestBuilder);
+            bundler.setConfig(config);
+            bundler.generate(bundleOutput, status);
+        }
 
         final Collection<Object> dependencies = new HashSet<>();
 
@@ -1252,7 +1385,6 @@ public class DependencyBundlerTest {
                     contentParent));
 
             dependencies.add(APILocator.getWorkflowAPI().findSystemWorkflowScheme());
-            dependencies.add(APILocator.getFolderAPI().findSystemFolder());
             dependencies.add(language);
         }
 
@@ -1371,7 +1503,7 @@ public class DependencyBundlerTest {
     @Test
     @UseDataProvider("configs")
     public void excludeHTMLDependenciesByModDate(ModDateTestData modDateTestData)
-            throws DotBundleException, DotDataException, DotSecurityException {
+            throws DotBundleException, DotDataException, DotSecurityException, IOException {
 
         PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
         APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptorAllDependencies);
@@ -1420,8 +1552,11 @@ public class DependencyBundlerTest {
             publishingEndPoint,
             bundle, Publisher.class);
 
-        bundler.setConfig(config);
-        bundler.generate(bundleOutput, status);
+        try (ManifestBuilder manifestBuilder = new TestManifestBuilder()) {
+            config.setManifestBuilder(manifestBuilder);
+            bundler.setConfig(config);
+            bundler.generate(bundleOutput, status);
+        }
 
         final Host systemHost = APILocator.getHostAPI().findSystemHost();
 
@@ -1436,9 +1571,7 @@ public class DependencyBundlerTest {
             dependencies.add(pageContentType);
 
             dependencies.add(APILocator.getWorkflowAPI().findSystemWorkflowScheme());
-            dependencies.add(APILocator.getFolderAPI().findSystemFolder());
             dependencies.add(APILocator.getLanguageAPI().getDefaultLanguage());
-            dependencies.add(systemHost);
         }
 
         if (modDateTestData.isDownload || modDateTestData.isForcePush) {
@@ -1494,7 +1627,7 @@ public class DependencyBundlerTest {
     @Test
     @UseDataProvider("configs")
     public void includeHTMLDependenciesNoMatterModDate(ModDateTestData modDateTestData)
-            throws DotBundleException, DotDataException, DotSecurityException {
+            throws DotBundleException, DotDataException, DotSecurityException, IOException {
 
         PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
         APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptorAllDependencies);
@@ -1547,8 +1680,11 @@ public class DependencyBundlerTest {
         final BundleFactoryImpl bundleFactory = new BundleFactoryImpl();
         bundleFactory.saveBundleEnvironment(bundle, environment);
 
-        bundler.setConfig(config);
-        bundler.generate(bundleOutput, status);
+        try (ManifestBuilder manifestBuilder = new TestManifestBuilder()) {
+            config.setManifestBuilder(manifestBuilder);
+            bundler.setConfig(config);
+            bundler.generate(bundleOutput, status);
+        }
 
         final Host systemHost = APILocator.getHostAPI().findSystemHost();
 
@@ -1563,9 +1699,7 @@ public class DependencyBundlerTest {
             dependencies.add(pageContentType);
 
             dependencies.add(APILocator.getWorkflowAPI().findSystemWorkflowScheme());
-            dependencies.add(APILocator.getFolderAPI().findSystemFolder());
             dependencies.add(APILocator.getLanguageAPI().getDefaultLanguage());
-            dependencies.add(systemHost);
         }
 
         dependencies.addAll(list(host, container, template));
@@ -1584,7 +1718,7 @@ public class DependencyBundlerTest {
     @Test
     @UseDataProvider("configs")
     public void includeDependenciesEvenWhenAssetExcludeByModDate(ModDateTestData modDateTestData)
-            throws DotBundleException, DotDataException, DotSecurityException {
+            throws DotBundleException, DotDataException, DotSecurityException, IOException {
 
         PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
         APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptorAllDependencies);
@@ -1621,8 +1755,11 @@ public class DependencyBundlerTest {
         final BundleFactoryImpl bundleFactory = new BundleFactoryImpl();
         bundleFactory.saveBundleEnvironment(bundle, environment);
 
-        bundler.setConfig(config);
-        bundler.generate(bundleOutput, status);
+        try (ManifestBuilder manifestBuilder = new TestManifestBuilder()) {
+            config.setManifestBuilder(manifestBuilder);
+            bundler.setConfig(config);
+            bundler.generate(bundleOutput, status);
+        }
 
         final Host systemHost = APILocator.getHostAPI().findSystemHost();
 
@@ -1637,9 +1774,7 @@ public class DependencyBundlerTest {
             dependencies.add(pageContentType);
 
             dependencies.add(APILocator.getWorkflowAPI().findSystemWorkflowScheme());
-            dependencies.add(APILocator.getFolderAPI().findSystemFolder());
             dependencies.add(APILocator.getLanguageAPI().getDefaultLanguage());
-            dependencies.add(systemHost);
 
             dependencies.addAll(list(host, container));
         }
@@ -1663,7 +1798,7 @@ public class DependencyBundlerTest {
     @Test
     @UseDataProvider("configs")
     public void excludeDependenciesWhenAssetExcludeByFilter(ModDateTestData modDateTestData)
-            throws DotBundleException, DotDataException, DotSecurityException {
+            throws DotBundleException, DotDataException, DotSecurityException, IOException {
 
         final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen()
                 .dependencies(true)
@@ -1693,8 +1828,11 @@ public class DependencyBundlerTest {
         final BundleFactoryImpl bundleFactory = new BundleFactoryImpl();
         bundleFactory.saveBundleEnvironment(bundle, environment);
 
-        bundler.setConfig(config);
-        bundler.generate(bundleOutput, status);
+        try (ManifestBuilder manifestBuilder = new TestManifestBuilder()) {
+            config.setManifestBuilder(manifestBuilder);
+            bundler.setConfig(config);
+            bundler.generate(bundleOutput, status);
+        }
 
         final Host systemHost = APILocator.getHostAPI().findSystemHost();
 
@@ -1709,9 +1847,7 @@ public class DependencyBundlerTest {
             dependencies.add(pageContentType);
 
             dependencies.add(APILocator.getWorkflowAPI().findSystemWorkflowScheme());
-            dependencies.add(APILocator.getFolderAPI().findSystemFolder());
             dependencies.add(APILocator.getLanguageAPI().getDefaultLanguage());
-            dependencies.add(systemHost);
 
             dependencies.addAll(list(host));
         }
@@ -1728,7 +1864,7 @@ public class DependencyBundlerTest {
      */
     @Test
     public void includeTemplateUsingTwoEnvironment()
-            throws DotBundleException, DotDataException, DotSecurityException {
+            throws DotBundleException, DotDataException, DotSecurityException, IOException {
 
         PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
         APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptorAllDependencies);
@@ -1784,8 +1920,11 @@ public class DependencyBundlerTest {
         bundleFactory.saveBundleEnvironment(bundle, environment_1);
         bundleFactory.saveBundleEnvironment(bundle, environment_2);
 
-        bundler.setConfig(config);
-        bundler.generate(bundleOutput, status);
+        try (ManifestBuilder manifestBuilder = new TestManifestBuilder()) {
+            config.setManifestBuilder(manifestBuilder);
+            bundler.setConfig(config);
+            bundler.generate(bundleOutput, status);
+        }
 
         final Host systemHost = APILocator.getHostAPI().findSystemHost();
 
@@ -1793,9 +1932,8 @@ public class DependencyBundlerTest {
                 .find(htmlPageAsset.getStructureInode());
 
         final Collection<Object> dependencies = list(
-                pageContentType, systemHost, host, template, htmlPageAsset,
+                pageContentType, host, template, htmlPageAsset,
                 APILocator.getWorkflowAPI().findSystemWorkflowScheme(),
-                APILocator.getFolderAPI().findSystemFolder(),
                 APILocator.getLanguageAPI().getDefaultLanguage()
         );
 
@@ -1829,6 +1967,11 @@ public class DependencyBundlerTest {
         Set<String> alreadyCounts = new HashSet<>();
 
         for (Object asset : dependenciesToAssert) {
+            if ( Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES", false) &&
+                    Relationship.class.isInstance(asset)) {
+                continue;
+            }
+
             final boolean justExactlyClass = Host.class == asset.getClass() || Folder.class == asset.getClass();
             final BundleDataGen.MetaData metaData = BundleDataGen.howAddInBundle.get(asset.getClass(), null, justExactlyClass);
 
@@ -1887,31 +2030,86 @@ public class DependencyBundlerTest {
     }
 
     private static class TestData {
-        Object assetsToAddInBundle;
-        Collection<Object> dependenciesToAssert;
+        ManifestItem assetsToAddInBundle;
+        Map<ManifestItem, List<ManifestItem>> dependenciesToAssert;
         FilterDescriptor filterDescriptor;
+        Map<String, List<ManifestItem>> excludes;
 
         public TestData(
-                final Object assetsToAddInBundle,
-                final Collection<Object> dependenciesToAssert,
+                final ManifestItem assetsToAddInBundle,
+                final Map<ManifestItem, List<ManifestItem>> dependenciesToAssert,
+                final FilterDescriptor filterDescriptor)  {
+            this(assetsToAddInBundle, dependenciesToAssert, null, filterDescriptor);
+        }
+
+        public TestData(
+                final ManifestItem assetsToAddInBundle,
+                final Map<ManifestItem, List<ManifestItem>> dependenciesToAssert,
+                final Map<String, List<ManifestItem>> excludes,
                 final FilterDescriptor filterDescriptor)  {
             this.assetsToAddInBundle = assetsToAddInBundle;
             this.filterDescriptor = filterDescriptor;
+            this.dependenciesToAssert = dependenciesToAssert;
+            this.excludes = excludes;
+        }
 
-            this.dependenciesToAssert = new HashSet<>();
-            this.dependenciesToAssert.addAll(dependenciesToAssert);
-            this.dependenciesToAssert.add(assetsToAddInBundle);
+        public Collection<ManifestItem> dependencies(){
+            return dependenciesToAssert.values().stream()
+                    .flatMap(dependencies -> dependencies.stream())
+                    .collect(Collectors.toSet());
+        }
+
+        public TestManifestItemsMap manifestLines() {
+            final TestManifestItemsMap manifestItemsMap = new TestManifestItemsMap();
+            final ManifestItem assetManifestItem = (ManifestItem) assetsToAddInBundle;
+            manifestItemsMap.add(assetManifestItem, "Add directly by User");
+
+            manifestItemsMap.addDependencies(dependenciesToAssert);
+
+            if (excludes != null) {
+                manifestItemsMap.addExcludes(excludes);
+            }
+
+            return manifestItemsMap;
         }
 
         @Override
         public String toString() {
-            final String dependencies = dependenciesToAssert.stream()
+            final String dependencies = dependenciesToAssert.values().stream()
                     .map(dependecy -> dependecy.getClass().getSimpleName())
                     .collect(joining(","));
 
             return "[assetsToAddInBundle=" + assetsToAddInBundle.getClass().getSimpleName() + "], " +
                     "[dependenciesToAssert=" +  dependencies + "], " +
                     "filterDescriptor=" + (filterDescriptor != null ? filterDescriptor.getFilters() : "null");
+        }
+    }
+
+    class TestManifestBuilder implements ManifestBuilder {
+
+        @Override
+        public void create() throws IOException {
+
+        }
+
+        @Override
+        public <T> void include(ManifestItem manifestItem, String reason) {
+
+        }
+
+        @Override
+        public <T> void exclude(ManifestItem manifestItem, String reason) {
+
+        }
+
+        @Override
+        public File getManifestFile() {
+            return null;
+        }
+
+        @Override
+        public void close() throws IOException {
+
         }
     }
 }
