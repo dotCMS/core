@@ -75,9 +75,9 @@ public interface IBundler {
 				if (o1.equals(defaultLangId) && o2.equals(defaultLangId)) {
 					return 0;
 				} else if (o1.equals(defaultLangId)) {
-					return -1;
-				} else if (o2.equals(defaultLangId)) {
 					return 1;
+				} else if (o2.equals(defaultLangId)) {
+					return -1;
 				} else {
 					return 0;
 				}

@@ -11,6 +11,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.factories.LinkFactory;
 import com.dotmarketing.portlets.links.model.Link;
@@ -35,7 +36,7 @@ public class MenuLinkAPIImpl extends BaseWebAssetAPI implements MenuLinkAPI {
 		}
 
 		if (!permissionAPI.doesUserHavePermission(destination, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
-			throw new DotSecurityException("You don't have permission to wirte in the destination folder.");
+			throw new DotSecurityException("You don't have permission to write in the destination folder.");
 		}
 
 		Link newLink = new Link();
@@ -197,5 +198,10 @@ public class MenuLinkAPIImpl extends BaseWebAssetAPI implements MenuLinkAPI {
 		LinkFactory.updateUserReferences(userId, replacementUserId);
 	}
 
-    
+	@CloseDBIfOpened
+    @Override
+    public List<Contentlet> getParentContentlets(final String childInode) throws DotDataException{
+        return menuLinkFactory.getParentContentlets(childInode);
+    }
+
 }

@@ -1,24 +1,37 @@
+<%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
+
 <%@ include file="/html/portlet/ext/cmsconfig/init.jsp" %>
 <% request.setAttribute("requiredPortletAccess", PortletID.CONFIGURATION.toString()); %>
 <%@ include file="/html/common/uservalidation.jsp"%>
 <%@page import="com.dotcms.rest.api.v1.system.ConfigurationHelper"%>
+
 <%
    final boolean hasAdminRole = user.isAdmin();
    final String screenLogo = company.getCity();
-   final String navLogo = company.getState();
    final boolean screenLogoIsSet = screenLogo.startsWith("/dA");
-   final boolean navLogoIsSet = navLogo.startsWith("/dA");
+   final String navLogo = company.getState();
+
+   final boolean navLogoIsSet = UtilMethods.isSet(navLogo) && navLogo.startsWith("/dA");
+   
+   final boolean enterprise = (LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level);
 %>
 <script type="text/javascript">
 	dojo.require("dojox.widget.ColorPicker");
 	dojo.require("dojo.parser"); // scan page for widgets and instantiate them
-   
-	const topNavDropZone = document.getElementById("topNav__drop-zone");
 
-	const dotAssetDropZones = document.getElementsByTagName("dot-asset-drop-zone");
+    function getTopNavDropZone() {
+        return document.getElementById("topNav__drop-zone");
+    }
 
 	function setNewColor(val) {
-		topNavDropZone.querySelector(".logo").style.backgroundColor = val;
+        const topNavDropZone = getTopNavDropZone();
+
+        const logo = topNavDropZone ? topNavDropZone.querySelector(".logo") : null;
+
+        if (logo) {
+            logo.style.backgroundColor = val;
+        }
 	}
 
 	function bgColorStyler(val) {
@@ -71,14 +84,19 @@
 	(function prepareEventListeners() {
 
       setTimeout(() => {
+         const topNavDropZone = getTopNavDropZone();
          const navBarLogoCheckboxWidget = dijit.byId('topNav_logo');
          const navBarLogoCheckbox = dojo.byId('topNav_logo');
+         const topNavDropZone = getTopNavDropZone();
 
-         if(navBarLogoCheckbox.checked) {
+         if (navBarLogoCheckbox && navBarLogoCheckbox.checked) {
             topNavDropZone.style.display = "block"
          }
 
-         navBarLogoCheckboxWidget.on('change', handleTopNavLogoDisplay)
+         if (navBarLogoCheckboxWidget) {
+            navBarLogoCheckboxWidget.on('change', handleTopNavLogoDisplay)             
+         }
+
       }, 0)
 
       document.addEventListener('click', logoDelete)
@@ -86,6 +104,7 @@
 	})();
 
 	function handleTopNavLogoDisplay(checked) {
+        const topNavDropZone = getTopNavDropZone();
 		topNavDropZone.style.display = checked ? "block" : "none";
 	}
 
@@ -106,28 +125,29 @@
       return asset.match(/[^\\\/]+(?=\.[\w]+$)|[^\\\/]+$/)[0].length > 40;
    }
 
-   function setLogoAndContainerNodes({ dropZone,  logoNode, details, dropZoneLabel }) {
-      const logo = document.createElement("img");
-      // Once we received a response add the image URL to the src attribute
-		logo.src = details.asset;
-		logo.classList.add('logo__image');
+    function setLogoAndContainerNodes({ dropZone,  logoNode, details, dropZoneLabel }) {
+        const topNavDropZone = getTopNavDropZone();
+        const logo = document.createElement("img");
+        // Once we received a response add the image URL to the src attribute
+        logo.src = details.asset;
+        logo.classList.add('logo__image');
 
-		// Grab the previous sibling and append the loo
-		dropZone.previousElementSibling
-			.querySelector(".logo__container")
-			.append(logo);
+        // Grab the previous sibling and append the loo
+        dropZone.previousElementSibling
+        .querySelector(".logo__container")
+        .append(logo);
 
-      // Do we have an error? Remove it as it was a successful upload   
-      if(dropZoneLabel.parentElement.querySelector('.error')) {
-         dropZoneLabel.parentElement.querySelector('.error').remove()  
-      }
+        // Do we have an error? Remove it as it was a successful upload   
+        if(dropZoneLabel.parentElement.querySelector('.error')) {
+        dropZoneLabel.parentElement.querySelector('.error').remove()  
+        }
 
-		// Reset our values
-		logoNode.style.display = "flex";
-		dropZone.style.display = "none";
-		dropZone.parentElement.querySelector('input[data-hidden]').value = details.asset;
-      topNavDropZone.querySelector(".logo__container").style.display = 'flex'
-   }
+        // Reset our values
+        logoNode.style.display = "flex";
+        dropZone.style.display = "none";
+        dropZone.parentElement.querySelector('input[data-hidden]').value = details.asset;
+        topNavDropZone.querySelector(".logo__container").style.display = 'flex'
+    }
 
 	function uploadComplete(event) {
       if(!event.target.matches('dot-asset-drop-zone')) return
@@ -149,8 +169,6 @@
           details,
           dropZoneLabel
       }
-
-      console.log(assetIsMaxLength(details.asset), details.asset)
 
       if(assetIsMaxLength(details.asset)) {
          createMaxLengthError(dropZoneLabel);
@@ -478,6 +496,7 @@
             <p class="hint"><%= LanguageUtil.get(pageContext, "login-logo.hint") %></p>
             </div>
             <br />
+            <% if ( enterprise ) { %>
             <div class="form__group">
                <label for="topNav_logo">
                <input dojoType="dijit.form.CheckBox" type="checkbox" name="topNav" id="topNav_logo" <%= ( navLogoIsSet ? "checked" : "" ) %> />
@@ -508,6 +527,7 @@
                   <p class="hint"><%= LanguageUtil.get(pageContext, "navlogo.hint") %></p>
                </div>
             </div>
+            <% } %>
          </div>
       </td>
    </tr>

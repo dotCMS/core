@@ -44,10 +44,6 @@ public class Task03105HTMLPageGenericPermissions extends AbstractJDBCStartupTask
         return UPDATE_QUERY;
     }
 
-    @Override
-    public String getH2Script () {
-        return UPDATE_QUERY;
-    }
 
     @Override
     protected List<String> getTablesToDropConstraints () {

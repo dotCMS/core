@@ -132,9 +132,6 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
     private static final String ORACLE_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID   = "alter table workflow_action_step add constraint fk_w_action_step_action_id foreign key (action_id) references workflow_action(id)";
     private static final String ORACLE_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID    = "alter table workflow_action_step add constraint fk_w_action_step_step_id   foreign key (step_id)   references workflow_step  (id)";
 
-    private static final String H2_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID       = "alter table workflow_action_step add constraint fk_w_action_step_action_id foreign key (action_id) references workflow_action(id)";
-    private static final String H2_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID        = "alter table workflow_action_step add constraint fk_w_action_step_step_id   foreign key (step_id)   references workflow_step  (id)";
-
     @Override
     public boolean forceRun() {
         return Boolean.TRUE;
@@ -469,14 +466,14 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
 
     private String createIntermediateTableForeignKeyActionId() {
 
-        String sql = H2_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID;
+        String sql;
         if (DbConnectionFactory.isMySql()) {
             sql = MYSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID;
         } else if (DbConnectionFactory.isPostgres()) {
             sql = POSTGRES_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID;
         } else if (DbConnectionFactory.isMsSql()) {
             sql = MSSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID;
-        } else if (DbConnectionFactory.isOracle()) {
+        } else {
             sql = ORACLE_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEY_ACTION_ID;
         }
 
@@ -485,14 +482,14 @@ public class Task04305UpdateWorkflowActionTable implements StartupTask {
 
     private String createIntermediateTableForeignKeyStepId() {
 
-        String sql = H2_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID;
+        String sql;
         if (DbConnectionFactory.isMySql()) {
             sql =  MYSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID;
         } else if (DbConnectionFactory.isPostgres()) {
             sql =  POSTGRES_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID;
         } else if (DbConnectionFactory.isMsSql()) {
             sql =  MSSQL_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID;
-        } else if (DbConnectionFactory.isOracle()) {
+        } else {
             sql =  ORACLE_CREATE_INTERMEDIATE_TABLE_FOREIGN_KEYS_STEP_ID;
         }
 

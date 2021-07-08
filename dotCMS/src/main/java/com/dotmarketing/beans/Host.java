@@ -109,7 +109,7 @@ public class Host extends Contentlet implements Permissionable,Treeable,Parentab
 	}
 
 	public boolean isDefault() {
-		return (Boolean) map.get(IS_DEFAULT_KEY);
+		return (Boolean) map.getOrDefault(IS_DEFAULT_KEY, Boolean.FALSE);
 	}
 
 	public void setDefault(boolean isDefault) {

@@ -1,7 +1,5 @@
 package com.dotmarketing.startup.runonce;
 
-import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
@@ -154,9 +152,6 @@ private boolean validateInternalFieldVelocityVarName(String fieldVelVarName){
 	    if(fieldVelVarName.equals(Contentlet.INODE_KEY)||
 	    		fieldVelVarName.equals(Contentlet.LANGUAGEID_KEY)||
 	    		fieldVelVarName.equals(Contentlet.STRUCTURE_INODE_KEY)||
-	    		fieldVelVarName.equals(Contentlet.LAST_REVIEW_KEY)||
-	    		fieldVelVarName.equals(Contentlet.NEXT_REVIEW_KEY)||
-	    		fieldVelVarName.equals(Contentlet.REVIEW_INTERNAL_KEY)||
 	    		fieldVelVarName.equals(Contentlet.DISABLED_WYSIWYG_KEY)||
 	    		fieldVelVarName.equals(Contentlet.LOCKED_KEY)||
 	    		fieldVelVarName.equals(Contentlet.ARCHIVED_KEY)||

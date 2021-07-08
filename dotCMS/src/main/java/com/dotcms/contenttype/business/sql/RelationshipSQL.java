@@ -6,8 +6,7 @@ public abstract class RelationshipSQL {
 
 
 
-	static RelationshipSQL instance = DbConnectionFactory.isH2() 
-			? new RelationshipMySQL() : DbConnectionFactory.isMySql() 
+	static RelationshipSQL instance = DbConnectionFactory.isMySql()
 					? new RelationshipMySQL() : DbConnectionFactory.isPostgres() 
 							? new RelationshipMySQL()
 								: DbConnectionFactory.isMsSql() 

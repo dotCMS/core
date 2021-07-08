@@ -76,6 +76,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.common.unit.TimeValue;
@@ -1624,34 +1625,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 	}
 
-	/**
-	 * This method let you convert a list of non bit permission to the new  bit kind of permission, so you should
-	 * end up with a compressed list
-	 * @param p permission
-	 * @return boolean
-	 * @version 1.7
-	 * @since 1.7
-	 */
-	@SuppressWarnings("unused")
-	private List<Permission> convertToBitPermissions (List<Permission> nonbitPermissionsList) {
 
-		Map<String, Permission> tempList = new HashMap<String, Permission>();
-
-		for(Permission p : nonbitPermissionsList) {
-			if(!p.isBitPermission()) {
-				Permission pt = tempList.get(p.getInode() + "-" + p.getRoleId());
-				if(pt == null)
-					pt = new Permission(p.getInode(), p.getRoleId(), p.getPermission());
-				else
-					pt = new Permission(p.getInode(), p.getRoleId(), pt.getPermission() | p.getPermission());
-				tempList.put(pt.getInode() + "-" + pt.getRoleId(), pt);
-			} else {
-				tempList.put(p.getInode() + "-" + p.getRoleId(), p);
-			}
-		}
-		return new ArrayList<Permission> (tempList.values());
-
-	}
 
 
   private void dbDeletePermission(Permission p) {
@@ -1751,25 +1725,55 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
   }
 
-  private List<Permission> _loadPermissionsFromDb(final Permissionable permissionable, final String permissionKey) throws DotDataException {
-      return Try.of(() -> lockManager.tryLock(LOCK_PREFIX + permissionKey, () -> {
+  
+  private class ReadPermissionSupplier implements Supplier<List<Permission>> {
+
+      final String permissionKey, permissionId;
+
+      ReadPermissionSupplier(final String permissionKey, final String permissionId) {
+          this.permissionId = permissionId;
+          this.permissionKey = permissionKey;
+      }
+
+      @Override
+      public List<Permission> get() {
+
           List<Permission> bitPermissionsList = permissionCache.getPermissionsFromCache(permissionKey);
           if (bitPermissionsList != null) {
-            return bitPermissionsList;
+              return bitPermissionsList;
           }
           HibernateUtil persistenceService = new HibernateUtil(Permission.class);
-          persistenceService.setSQLQuery(LOAD_PERMISSION_SQL);
-          persistenceService.setParam(permissionable.getPermissionId());
-          persistenceService.setParam(permissionable.getPermissionId());
-          bitPermissionsList = (List<Permission>) persistenceService.list();
-    
+          Try.run(() -> persistenceService.setSQLQuery(LOAD_PERMISSION_SQL));
+          persistenceService.setParam(permissionId);
+          persistenceService.setParam(permissionId);
+          bitPermissionsList = (List<Permission>) Try.of(() -> persistenceService.list())
+                          .getOrElseThrow(e -> new DotRuntimeException(e));
+          bitPermissionsList.forEach(p -> p.setBitPermission(true));
+          
           // adding to cache if found
           if (!bitPermissionsList.isEmpty()) {
-              bitPermissionsList.forEach(p -> p.setBitPermission(true));
               permissionCache.addToPermissionCache(permissionKey, bitPermissionsList);
           }
           return bitPermissionsList;
-      })).getOrElseThrow(e -> new DotDataException(e));
+
+      }
+
+  }
+  
+
+  private List<Permission> _loadPermissionsFromDb(final Permissionable permissionable, final String permissionKey) throws DotDataException {
+      
+      final Supplier<List<Permission>> readPermissions = new ReadPermissionSupplier(permissionKey,permissionable.getPermissionId());
+      
+      if(Config.getBooleanProperty("PERMISSION_LOCK_ON_READ", false)) {
+          return Try.of(() -> lockManager.tryLock(LOCK_PREFIX + permissionKey, () -> {
+              return readPermissions.get();
+          })).getOrElseThrow(e -> new DotRuntimeException(e));
+      }
+      
+      return readPermissions.get();
+      
+
   }
   
   private Tuple2<Permissionable,List<Permission>> _loadParentPermissions(final Permissionable permissionable, final String permissionKey) throws DotDataException {
@@ -2716,118 +2720,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		String getInsertHTMLPageReferencesSQL();
 		String getInsertLinkReferencesSQL();
 		String getInsertTemplateReferencesToAHostSQL();
-	}
-
-	private class H2AssetPermissionReferencesSQLProvider implements AssetPermissionReferencesSQLProvider {
-
-		@Override
-		public String getInsertContainerReferencesToAHostSQL() {
-			return
-		            "insert into permission_reference (asset_id, reference_id, permission_type) " +
-		            "select ident.id, ?, '" + Container.class.getCanonicalName() + "'" +
-		            "	from identifier ident, " +
-		            "		(" + SELECT_CHILD_CONTAINER_SQL +
-		            "			and identifier.id not in (" + 
-		            "				select inode_id from permission " +
-		            "					where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') " + 
-		            "					and identifier.id not in (" +
-		            "						select asset_id " + 
-		            "							from permission_reference " + 
-		            "							where permission_type = '" + Container.class.getCanonicalName() + "')) ids " + 
-		            "	where ident.id = ids.id"
-			;
-		}
-
-		@Override
-		public String getInsertContentReferencesByPathSQL() {
-			return
-		            "insert into permission_reference (asset_id, reference_id, permission_type) " +
-		            "select identifier.id, ?, '" + Contentlet.class.getCanonicalName() + "' " +
-		            "	from identifier where identifier.id in (" +
-		            "		" + SELECT_CHILD_CONTENT_BY_PATH_SQL + " and" +
-		            "		identifier.id not in (" +
-		            "			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
-		            "                                join identifier on (identifier.id=ref_folder.identifier) " +
-		            "			where "+DOT_FOLDER_PATH+"(parent_path,asset_name) like ? and permission_type = '" + Contentlet.class.getCanonicalName() + "'" +
-		            "		) and " +
-		            "		identifier.id not in (" +
-		            "			select inode_id from permission where " +
-		            "			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
-		            "		) " +
-		            "	) " +
-		            "and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
-			;
-		}
-
-
-
-		@Override
-		public String getInsertHTMLPageReferencesSQL() {
-			return
-		            "insert into permission_reference (asset_id, reference_id, permission_type) " +
-		            "select identifier.id, ?, '" + IHTMLPage.class.getCanonicalName() + "' " +
-		            "	from identifier, " +
-		            "		(" + SELECT_CHILD_HTMLPAGE_SQL + " and" +
-		            "		li.id not in (" +
-		            "			select asset_id from " + 
-		            "				permission_reference " +
-		            "				join folder ref_folder on (reference_id = ref_folder.inode)" +
-		            "               join identifier on (ref_folder.identifier=identifier.id) " +
-		            "				where "+DOT_FOLDER_PATH+"(parent_path,asset_name) like ? " + 
-		            "				and permission_type = '" + IHTMLPage.class.getCanonicalName() + "'" +
-		            "		) and " +
-		            "		li.id not in (" +
-		            "			select inode_id " + 
-		            "				from permission " + 
-		            "				where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
-		            "		) " +
-		            "	) ids " +
-		            "	where identifier.id = ids.id " +
-		            "	and not exists (SELECT asset_id " + 
-		            "		from permission_reference " + 
-		            "		where asset_id = identifier.id)"
-			;
-		}
-
-		@Override
-		public String getInsertLinkReferencesSQL() {
-			return
-		            "insert into permission_reference (asset_id, reference_id, permission_type) " +
-		            "select identifier.id, ?, '" + Link.class.getCanonicalName() + "' " +
-		            "	from identifier where identifier.id in (" +
-		            "		" + SELECT_CHILD_LINK_SQL + " and" +
-		            "		identifier.id not in (" +
-		            "			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
-		            "            join identifier ii on (ii.id=ref_folder.identifier) where " +
-		            "			"+DOT_FOLDER_PATH+"(ii.parent_path,ii.asset_name) like ? and permission_type = '" + Link.class.getCanonicalName() + "'" +
-		            "		) and " +
-		            "		identifier.id not in (" +
-		            "			select inode_id from permission where " +
-		            "			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
-		            "		) " +
-		            "	) " +
-		            "and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
-			;
-		}
-
-		@Override
-		public String getInsertTemplateReferencesToAHostSQL() {
-			return
-				    "insert into permission_reference (asset_id, reference_id, permission_type) " +
-				    "select ident.id, ?, '" + Template.class.getCanonicalName() + "'" +
-				    "	from identifier ident, " + 
-				    "		(" + SELECT_CHILD_TEMPLATE_SQL + 
-				    "		and identifier.id not in (" + 
-				    "			select inode_id " + 
-				    "				from permission " +
-				    "				where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') " + 
-				    "				and identifier.id not in (" + 
-				    "					select asset_id " + 
-				    "						from permission_reference " + 
-				    "						where permission_type = '" + Template.class.getCanonicalName() + "')) ids" +
-				    "	where ident.id = ids.id"
-			;
-		}
 	}
 
 	private class MsSqlAssetPermissionReferencesSQLProvider implements AssetPermissionReferencesSQLProvider {

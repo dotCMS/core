@@ -342,13 +342,16 @@ public class ContentletIntegrationTest {
             parentContentlet = validateSetRelated(testCase, parentContentlet, CollectionsUtils.list(childContentlet),
                     field);
 
-            parentContentlet.setInode("");
-
+            if (testCase.checkIn) {
+                parentContentlet = contentletAPI.checkout(parentContentlet.getInode(), user, false);
+            }
             //case: related child is kept when property is set as null
             parentContentlet = validateSetRelated(testCase, parentContentlet, null,
                     field);
 
-            parentContentlet.setInode("");
+            if (testCase.checkIn) {
+                parentContentlet = contentletAPI.checkout(parentContentlet.getInode(), user, false);
+            }
             //case: related child is wiped out when property is set as an empty list
             validateSetRelated(testCase, parentContentlet, Collections.EMPTY_LIST,
                     field);
@@ -393,27 +396,39 @@ public class ContentletIntegrationTest {
             parentContentlet = validateSetRelated(testCase, parentContentlet, CollectionsUtils.list(childContentlet),
                     parentField);
 
-            parentContentlet.setInode("");
+            if (testCase.checkIn) {
+                parentContentlet = contentletAPI.checkout(parentContentlet.getInode(), user, false);
+            }
             //case: related child is kept when property is set as null
             parentContentlet = validateSetRelated(testCase, parentContentlet, null,
                     parentField);
 
-            parentContentlet.setInode("");
+            if (testCase.checkIn) {
+                parentContentlet = contentletAPI.checkout(parentContentlet.getInode(), user, false);
+            }
+
             //case: related child is wiped out when property is set as an empty list
             parentContentlet = validateSetRelated(testCase, parentContentlet, Collections.EMPTY_LIST,
                     parentField);
 
-            childContentlet.setInode("");
+            if (testCase.checkIn) {
+                childContentlet = contentletAPI.checkout(childContentlet.getInode(), user, false);
+            }
+
             //case: related parent is saved
             childContentlet = validateSetRelated(testCase, childContentlet, CollectionsUtils.list(parentContentlet),
                     childField);
 
-            childContentlet.setInode("");
+            if (testCase.checkIn) {
+                childContentlet = contentletAPI.checkout(childContentlet.getInode(), user, false);
+            }
             //case: related parent is kept when property is set as null
             childContentlet = validateSetRelated(testCase, childContentlet, null,
                     childField);
 
-            childContentlet.setInode("");
+            if (testCase.checkIn) {
+                childContentlet = contentletAPI.checkout(childContentlet.getInode(), user, false);
+            }
             //case: related parent is wiped out when property is set as an empty list
             validateSetRelated(testCase, childContentlet, Collections.EMPTY_LIST,
                     childField);

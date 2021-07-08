@@ -369,26 +369,33 @@ dependencies {
     compile group: 'eu.bitwalker', name: 'UserAgentUtils', version:'1.19'
 
 
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-core', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-metadata', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-bmp', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-jpeg', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-tiff', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-pnm', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-psd', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-iff', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-pcx', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-pict', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-tiff', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-sgi', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-tga', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-icns', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-pcx', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-thumbsdb', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-batik', version:'3.3.2'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-clippath', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.servlet', name: 'servlet', version:'3.2.1'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-core', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-metadata', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-bmp', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-jpeg', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-tiff', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-pnm', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-psd', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-iff', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-pcx', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-pdf', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-hdr', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-pict', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-tiff', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-sgi', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-tga', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-icns', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-pcx', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-webp', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-thumbsdb', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-batik', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-clippath', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.servlet', name: 'servlet', version:'3.7.0'
+    
+    
     compile 'com.github.ben-manes.caffeine:caffeine:2.4.0'
+    
+    
     compile (group: 'org.apache.pdfbox', name: 'pdfbox', version: '2.0.1'){
         exclude(group: 'commons-logging')
     }
@@ -478,6 +485,8 @@ dependencies {
         exclude(group: 'com.fasterxml.jackson.core')
         exclude(group: 'com.fasterxml.jackson.datatype')
     }
+
+    compile 'com.graphql-java:graphql-java-extended-scalars:1.0.1'
 
     compile 'net.jodah:failsafe:1.1.1'
     compile 'com.rainerhahnekamp:sneakythrow:1.1.0'

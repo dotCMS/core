@@ -577,9 +577,6 @@ public class Task04330WorkflowTaskAddLanguageIdColumn extends AbstractJDBCStartu
     public String getMSSQLScript() { return null; }
 
     @Override
-    public String getH2Script() { return null; }
-
-    @Override
     protected List<String> getTablesToDropConstraints() { return Collections.emptyList(); }
 
 

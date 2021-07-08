@@ -58,15 +58,6 @@ public class Task03160PublishingPushedAssetsTable extends AbstractJDBCStartupTas
 		return SQL_QUERY;
 	}
 
-	/**
-	 * The SQL for H2
-	 *
-	 * @return
-	 */
-	@Override
-	public String getH2Script() {
-		return SQL_QUERY;
-	}
 
 	@Override
 	protected List<String> getTablesToDropConstraints() {

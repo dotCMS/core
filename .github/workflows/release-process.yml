@@ -21,6 +21,8 @@ jobs:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "${GITHUB_CONTEXT}"
         if: env.DEBUG == 'true'
+      - name: Checkout core
+        uses: actions/checkout@v2
       - name: Set Common Vars
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
@@ -30,19 +32,27 @@ jobs:
           fi
 
           if [[ ${IS_PR} == true ]]; then
-            BRANCH="${{ github.head_ref }}"
+            BUILD_ID="${{ github.head_ref }}"
           else
-            BRANCH=$(basename "${{ github.ref }}")
+            BUILD_ID=$(basename "${{ github.ref }}")
           fi
 
-          if [[ ${BRANCH} =~ ^release-.*|^v[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$ ]]; then
+          BUILD_HASH=$(git log -1 --pretty=%h)
+          eval $(cat dotCMS/gradle.properties| grep dotcmsReleaseVersion)
+          DOTCMS_VERSION="${dotcmsReleaseVersion}"
+
+          if [[ ${BUILD_ID} =~ ^release-.*|^v[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$ ]]; then
             IS_RELEASE='true'
+            DRY_RUN='false'
           else
             IS_RELEASE='false'
+            DRY_RUN='true'
           fi
 
-          echo "BRANCH=${BRANCH}" >> $GITHUB_ENV
-          echo "EE_BRANCH=${BRANCH}" >> $GITHUB_ENV
+          echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
+          echo "EE_BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
+          echo "BUILD_HASH=${BUILD_HASH}" >> $GITHUB_ENV
+          echo "DOTCMS_VERSION=${DOTCMS_VERSION}" >> $GITHUB_ENV
           echo "IS_RELEASE=${IS_RELEASE}" >> $GITHUB_ENV
       - name: Prepare dot-cicd
         run: |
@@ -50,9 +60,24 @@ jobs:
       - name: Run DotCMS Release Docker Image
         run: |
           ../dotcicd/library/pipeline.sh runRelease
-      - name: Publish Docker Multiarch Image
-        run: |
-          ../dotcicd/library/pipeline.sh publishDockerImage ${{ secrets.DOCKER_USERNAME }} ${{ secrets.DOCKER_TOKEN }}
+      - name: Discover docker tags
+        id: discover-docker-tags
+        uses: dotcms/discover-docker-tags-action@main
+        with:
+          version: ${{ ENV.DOTCMS_VERSION }}
+          hash: ${{ env.BUILD_HASH }}
+          updateStable: true
+      - name: Publish docker image
+        id: publish-docker-image
+        uses: dotcms/publish-docker-image-action@main
+        with:
+          dot_cicd_branch: ${{ env.DOT_CICD_BRANCH }}
+          build_id: ${{ env.BUILD_ID }}
+          tags: ${{ steps.discover-docker-tags.outputs.discovered_tags }}
+          github_user_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+          docker_hub_username: ${{ secrets.DOCKER_USERNAME }}
+          docker_hub_token: ${{ secrets.DOCKER_TOKEN }}
+          dry_run: ${{ env.DRY_RUN }}
       - name: Slack Notification
         if: success() && env.IS_RELEASE == 'true'
         uses: rtCamp/action-slack-notify@master
@@ -64,4 +89,4 @@ jobs:
           MSG_MINIMAL: true
           SLACK_FOOTER: ""
           SLACK_ICON: https://avatars.slack-edge.com/2021-02-18/1760490973606_047c511fc4610eab31e5_88.png
-          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of dotCMS - dotCMS ${{ env.BRANCH }} :tada:"
+          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of dotCMS - dotCMS ${{ env.BUILD_ID }} :tada:"

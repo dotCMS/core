@@ -2,9 +2,11 @@ package com.dotmarketing.portlets.contentlet.transform.strategy;
 
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.FILEASSET_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.IDENTIFIER_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.KEY_VALUE_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.RENDER_FIELDS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.SITE_VIEW;
 import static com.google.common.collect.ImmutableMap.of;
 
@@ -68,7 +70,9 @@ public class StrategyResolverImpl implements StrategyResolver {
                  IDENTIFIER_VIEW, () -> new IdentifierViewStrategy(toolBox),
                  LANGUAGE_VIEW,   ()-> new  LanguageViewStrategy(toolBox),
                  KEY_VALUE_VIEW,  ()-> new  KeyValueViewStrategy(toolBox),
-                 SITE_VIEW,       ()-> new  SiteViewStrategy(toolBox)
+                 FILEASSET_VIEW,  ()-> new  FileViewStrategy(toolBox),
+                 SITE_VIEW,       ()-> new  SiteViewStrategy(toolBox),
+                 RENDER_FIELDS,   ()-> new  RenderFieldStrategy(toolBox)
              ),
              ()-> new DefaultTransformStrategy(toolBox)
         );

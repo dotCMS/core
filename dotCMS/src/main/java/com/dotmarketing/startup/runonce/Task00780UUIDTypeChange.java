@@ -1109,8 +1109,4 @@ public class Task00780UUIDTypeChange extends AbstractJDBCStartupTask{
       return true;
 	}
 
-    @Override
-    public String getH2Script() {
-        return null;
-    }
 }

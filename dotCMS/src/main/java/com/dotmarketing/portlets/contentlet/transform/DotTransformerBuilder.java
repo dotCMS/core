@@ -5,11 +5,14 @@ import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformO
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_INFO;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_NAME;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.FILEASSET_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.IDENTIFIER_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CONSTANTS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.KEY_VALUE_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.AVOID_MAP_SUFFIX_FOR_VIEWS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.SITE_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.TAGS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_PROPS;
@@ -81,7 +84,7 @@ public class DotTransformerBuilder {
      * Use to replace the BinaryToMapTransformer
      * @return
      */
-    DotTransformerBuilder binaryToMapTransformer(){
+    public DotTransformerBuilder binaryToMapTransformer(){
        optionsHolder.clear();
        optionsHolder.add(BINARIES_VIEW);
        return this;
@@ -91,7 +94,7 @@ public class DotTransformerBuilder {
      * Use to replace the LanguageToMapTransformer
      * @return
      */
-    DotTransformerBuilder languageToMapTransformer(){
+    public DotTransformerBuilder languageToMapTransformer(){
         optionsHolder.clear();
         optionsHolder.add(LANGUAGE_VIEW);
         return this;
@@ -162,6 +165,23 @@ public class DotTransformerBuilder {
         return this;
     }
 
+    public DotTransformerBuilder hydratedContentMapTransformer(final TransformOptions...transformOptions){
+        optionsHolder.clear();
+        optionsHolder.addAll(EnumSet.of(COMMON_PROPS, CONSTANTS, VERSION_INFO, TAGS));
+        optionsHolder.add(KEY_VALUE_VIEW);
+        optionsHolder.add(LANGUAGE_VIEW);
+        optionsHolder.add(CATEGORIES_VIEW);
+        optionsHolder.add(BINARIES_VIEW);
+        optionsHolder.add(FILEASSET_VIEW);
+        optionsHolder.add(LOAD_META);
+        optionsHolder.add(AVOID_MAP_SUFFIX_FOR_VIEWS);
+        if(transformOptions.length>0) {
+            optionsHolder.addAll(Arrays.asList(transformOptions));
+        }
+
+        return this;
+    }
+
     /**
      * Fine tuned to be used for DotAssets on BrowserAPI
      * @return
@@ -182,6 +202,20 @@ public class DotTransformerBuilder {
         if(allCategoriesInfo){
           optionsHolder.remove(CATEGORIES_NAME);
           optionsHolder.add(CATEGORIES_INFO);
+        }
+        return this;
+    }
+
+    /**
+     * Fine Tuned to be consumed from ContentResource
+     * @return
+     */
+    public DotTransformerBuilder allOptions(final boolean allCategoriesInfo){
+        optionsHolder.clear();
+        optionsHolder.addAll(EnumSet.of(COMMON_PROPS, CONSTANTS, VERSION_INFO, LOAD_META, BINARIES, CATEGORIES_NAME, LANGUAGE_PROPS));
+        if(allCategoriesInfo){
+            optionsHolder.remove(CATEGORIES_NAME);
+            optionsHolder.add(CATEGORIES_INFO);
         }
         return this;
     }

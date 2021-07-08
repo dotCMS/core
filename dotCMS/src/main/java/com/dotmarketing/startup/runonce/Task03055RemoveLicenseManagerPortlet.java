@@ -33,11 +33,6 @@ public class Task03055RemoveLicenseManagerPortlet extends AbstractJDBCStartupTas
     }
 
     @Override
-    public String getH2Script () {
-        return DELETE_QUERY;
-    }
-
-    @Override
     protected List<String> getTablesToDropConstraints () {
         return null;
     }

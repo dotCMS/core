@@ -10,6 +10,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 
@@ -54,11 +55,14 @@ public class ContentletCacheImpl extends ContentletCache {
 	@Override
 	public com.dotmarketing.portlets.contentlet.model.Contentlet add(String key, com.dotmarketing.portlets.contentlet.model.Contentlet content) {
 
+        if(DbConnectionFactory.inTransaction()) {
+            return content;
+        }
+
 		key = primaryGroup + key;
 
 		// Add the key to the cache
 		cache.put(key, content, primaryGroup);
-
 
 		return content;
 
@@ -66,6 +70,11 @@ public class ContentletCacheImpl extends ContentletCache {
 
 	@Override
 	public com.dotmarketing.portlets.contentlet.model.Contentlet get(String key) {
+
+        if(DbConnectionFactory.inTransaction()) {
+            return null;
+        }
+
 		key = primaryGroup + key;
 		com.dotmarketing.portlets.contentlet.model.Contentlet content = null;
 		try{
@@ -110,7 +119,7 @@ public class ContentletCacheImpl extends ContentletCache {
 
 		try {
 
-			content = (com.dotmarketing.portlets.contentlet.model.Contentlet)cache.get(key,primaryGroup);
+			content = (com.dotmarketing.portlets.contentlet.model.Contentlet)cache.get(myKey,primaryGroup);
 
 			if(content != null && content.isVanityUrl()){
 				APILocator.getVanityUrlAPI().invalidateVanityUrl(content);
@@ -130,7 +139,10 @@ public class ContentletCacheImpl extends ContentletCache {
 		if(host != null){
 			CacheLocator.getHostCache().remove(host);
 		}
-		CacheLocator.getHTMLPageCache().remove(key);
+
+		if (content != null && content.getIdentifier() != null)
+		    CacheLocator.getHTMLPageCache().remove(content.getIdentifier());
+
 		new ShortyIdCache().remove(key);
 		
         //Delete query cache when a new content has been reindexed

@@ -22,7 +22,7 @@ public class Task03065AddHtmlPageIR extends AbstractJDBCStartupTask {
      * @return
      */
 
-    private String languageIdColumn = DbConnectionFactory.isH2()||DbConnectionFactory.isMySql()?" language_id bigint "
+    private String languageIdColumn = DbConnectionFactory.isMySql()?" language_id bigint "
             :DbConnectionFactory.isPostgres()?" language_id int8 "
             :DbConnectionFactory.isOracle()?" language_id number(19,0) "
             :DbConnectionFactory.isMsSql()?" language_id numeric(19,0) ":"";
@@ -87,15 +87,6 @@ public class Task03065AddHtmlPageIR extends AbstractJDBCStartupTask {
         return NON_ORACLE_SQL;
     }
 
-    /**
-     * The SQL for H2
-     *
-     * @return
-     */
-    @Override
-    public String getH2Script() {
-        return NON_ORACLE_SQL;
-    }
 
     /**
      * This is a list of tables which will get the constraints dropped prior to the task executing and then get recreated afer the execution of the DB Specific SQL

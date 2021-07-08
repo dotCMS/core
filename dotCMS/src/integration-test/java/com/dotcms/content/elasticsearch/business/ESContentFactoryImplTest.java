@@ -344,55 +344,6 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     }
 
     /**
-     * Tests convertContentletToFatContentlet
-     * In this case the title generated is the identifier, and both should be the same (fatty and model)
-     */
-    @Test
-    public void test_convertContentletToFatContentlet() throws DotDataException {
-
-        final List<Field> fields      = new ArrayList<>();
-        fields.add(new FieldDataGen().name("Title").velocityVarName("title").next());
-        final ContentType contentType = new ContentTypeDataGen().fields(fields).nextPersisted();
-        final String contentTypeId    = contentType.id();
-        final ContentletFactory contentletFactory = FactoryLocator.getContentletFactory();
-        final Contentlet contentlet = new ContentletDataGen(contentTypeId).next();
-        contentlet.setIdentifier(UUIDGenerator.generateUuid());
-
-        final com.dotmarketing.portlets.contentlet.business.Contentlet fatty =
-                new com.dotmarketing.portlets.contentlet.business.Contentlet();
-
-        contentletFactory.convertContentletToFatContentlet(contentlet, fatty);
-
-        assertNotNull(contentlet.getIdentifier(), fatty.getIdentifier());
-        assertNotEquals("", fatty.getTitle());
-        assertNotNull(contentlet.getTitle(), fatty.getTitle());
-    }
-
-    /**
-     * Tests convertContentletToFatContentlet, in this case the title is set into the null props on the model contentlet so empty string as a title is expected on the fatty since it is the default value when not set
-     */
-    @Test
-    public void test_convertContentletToFatContentlet_title_null_props() throws DotDataException {
-
-        final List<Field> fields      = new ArrayList<>();
-        fields.add(new FieldDataGen().name("Title").velocityVarName("title").next());
-        final ContentType contentType = new ContentTypeDataGen().fields(fields).nextPersisted();
-        final String contentTypeId    = contentType.id();
-        final ContentletFactory contentletFactory = FactoryLocator.getContentletFactory();
-        final Contentlet contentlet = new ContentletDataGen(contentTypeId).next();
-        contentlet.setIdentifier(UUIDGenerator.generateUuid());
-        contentlet.setStringProperty(Contentlet.TITTLE_KEY, null);
-
-        final com.dotmarketing.portlets.contentlet.business.Contentlet fatty =
-                new com.dotmarketing.portlets.contentlet.business.Contentlet();
-
-        contentletFactory.convertContentletToFatContentlet(contentlet, fatty);
-
-        assertNotNull(contentlet.getIdentifier(), fatty.getIdentifier());
-        assertEquals("", fatty.getTitle());
-    }
-
-    /**
      * Tests that after removing a particular version of a content, previously assigned permissions
      * are maintained.
      */
