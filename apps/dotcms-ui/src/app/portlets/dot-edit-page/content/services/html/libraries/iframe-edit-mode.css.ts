@@ -458,5 +458,4 @@ export const getEditPageCss = (timestampId: string): string => {
         }
     }
 `;
-
 };
