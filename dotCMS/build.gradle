@@ -1027,8 +1027,10 @@ class NpmArtifactExtractTask extends DefaultTask {
     def extract() {
         project.mkdir(artifactFolder)
         String artifactUrl = "$url/$artifact"
-        String artifactVersion = version == 'latest'
-                ? new JsonSlurper().parse(new URL(artifactUrl))."dist-tags".latest
+        Set<String> knownTags = new HashSet<>(Arrays.asList("latest", "stable", "next", "rc"));
+
+        String artifactVersion = knownTags.contains(version)
+                ? new JsonSlurper().parse(new URL(artifactUrl))."dist-tags"[version]
                 : version
         String versionUrl = "$artifactUrl/-/$artifact-${artifactVersion}.tgz"
         println "Downloading from $versionUrl"
