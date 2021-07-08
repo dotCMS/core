@@ -32,6 +32,7 @@ public class LettucePubSubImpl implements DotPubSubProvider {
     private final LettuceClient<String, String> lettuce;
     private final Map<Comparable<String>, DotPubSubTopic> topicMap = new ConcurrentHashMap<>();
 
+    private final long PUBSUB_THREAD_PAUSE_MS=Config.getLongProperty("PUBSUB_THREAD_PAUSE_MS", 200);
     public LettucePubSubImpl(String serverId, String clusterId, boolean testing) {
         super();
         this.testing = testing;
@@ -56,7 +57,7 @@ public class LettucePubSubImpl implements DotPubSubProvider {
             this.listener.stop();
         }
 
-        this.listener = new StreamListener(topicMap, serverId, clusterId);
+        this.listener = new StreamListener(topicMap, serverId);
 
         DotConcurrentFactory.getInstance().getSingleSubmitter(LettucePubSubImpl.class.getSimpleName())
                         .submit(this.listener);
@@ -69,13 +70,12 @@ public class LettucePubSubImpl implements DotPubSubProvider {
 
         private boolean running = true;
         private final Map<Comparable<String>, DotPubSubTopic> topics;
-        private final String serverId, clusterId;
+        private final String serverId;
 
-        public StreamListener(Map<Comparable<String>, DotPubSubTopic> topics, String serverId, String clusterId) {
+        public StreamListener(Map<Comparable<String>, DotPubSubTopic> topics, String serverId) {
             super();
             this.topics = topics;
             this.serverId = serverId;
-            this.clusterId = clusterId;
         }
 
         public void stop() {
@@ -92,7 +92,7 @@ public class LettucePubSubImpl implements DotPubSubProvider {
                 try {
                     RedisAsyncCommands<String, String> asyncCommands = lettuce.get().async();
                     Logger.info(LettucePubSubImpl.class, "Creating Redis Stream : " + redisTopic);
-                    asyncCommands.xgroupCreate(StreamOffset.latest(redisTopic), serverId,
+                    asyncCommands.xgroupCreate(StreamOffset.lastConsumed(redisTopic), serverId,
                                     XGroupCreateArgs.Builder.mkstream(true));
 
                 } catch (RedisBusyException redisBusyException) {
@@ -118,11 +118,10 @@ public class LettucePubSubImpl implements DotPubSubProvider {
 
             while (running) {
 
-                for (final DotPubSubTopic topic : topics.values()) {
-                    eventsIn(topic);
-                    Try.run(() -> Thread.sleep(100));
-                }
+                // sub the pub
+                topics.values().forEach(v->eventsIn(v));
 
+                Try.run(() -> Thread.sleep(PUBSUB_THREAD_PAUSE_MS));
             }
 
         }

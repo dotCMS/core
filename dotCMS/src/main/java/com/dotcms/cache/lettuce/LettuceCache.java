@@ -102,7 +102,7 @@ public class LettuceCache extends CacheProvider {
             key = loadPrefixFromRedis(); 
         }
         if (PREFIX_UNSET.equals(key)) {
-            key = setIfUnset();
+            key = setOrGet();
         }
         if (PREFIX_UNSET.equals(key)) {
             Logger.warn(this.getClass(), "unable to determine key prefix");
@@ -123,7 +123,8 @@ public class LettuceCache extends CacheProvider {
     
     
     String generateNewKey() {
-        return clusterId + "_" + new SimpleDateFormat("yyyy-MM-dd_hh:mm:ss").format(new Date());
+        return clusterId + "_" + new SimpleDateFormat("yyyy-MM-dd_hh:mm:ss.S"
+                        + "").format(new Date());
     }
 
     /**
@@ -155,7 +156,7 @@ public class LettuceCache extends CacheProvider {
      * @return
      */
     @VisibleForTesting
-    String setIfUnset() {
+    String setOrGet() {
         final String newKey = generateNewKey();
         try (StatefulRedisConnection<String,Object> conn = lettuce.get()) {
             if (!conn.isOpen()) {
