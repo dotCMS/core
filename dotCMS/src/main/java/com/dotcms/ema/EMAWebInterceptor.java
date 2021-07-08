@@ -4,6 +4,7 @@ import com.dotcms.security.apps.AppSecrets;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -99,7 +100,7 @@ public class EMAWebInterceptor  implements WebInterceptor{
                 final ProxyResponse pResponse = proxy.sendPost(proxyUrl.get(), params);
 
                 if (pResponse.getResponseCode() == 200) {
-                    responseStringBuilder.append(new String(pResponse.getResponse()));
+                    responseStringBuilder.append(new String(pResponse.getResponse(), StandardCharsets.UTF_8.name()));
                 }else {
                     responseStringBuilder.append("<html><body>")
                     .append("<h3>Unable to connect with the rendering engine</h3>")
