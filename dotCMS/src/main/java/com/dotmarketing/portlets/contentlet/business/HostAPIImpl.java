@@ -26,6 +26,8 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.business.web.UpdateContainersPathsJob;
+import com.dotmarketing.portlets.contentlet.business.web.UpdatePageTemplatePathJob;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
@@ -430,6 +432,18 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         contentletHost.setIndexPolicy(host.getIndexPolicy());
         contentletHost.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
         contentletHost = APILocator.getContentletAPI().checkin(contentletHost, user, respectFrontendRoles);
+
+        if (!contentletHost.isNew() &&
+                !contentletHost.getTitle().equals(host.get(Host.HOST_NAME_KEY))) {
+            UpdateContainersPathsJob.triggerUpdateContainersPathsJob(
+                    host.get(Host.HOST_NAME_KEY).toString(),
+                    (String) contentletHost.get("hostName")
+            );
+            UpdatePageTemplatePathJob.triggerUpdatePageTemplatePathJob(
+                    host.get(Host.HOST_NAME_KEY).toString(),
+                    (String) contentletHost.get("hostName")
+            );
+        }
 
         if(host.isWorking() || host.isLive()){
             APILocator.getVersionableAPI().setLive(contentletHost);
