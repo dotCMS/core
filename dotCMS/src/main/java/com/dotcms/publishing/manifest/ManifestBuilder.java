@@ -14,9 +14,9 @@ public interface ManifestBuilder extends Closeable {
 
     /**
      * Create the Manifest File
-     * @throws IOException
+     * @throws {@link DotRuntimeException} if any {@link IOException} is thrown
      */
-     void create() throws IOException;
+     void create();
 
 
     /**

@@ -8,7 +8,7 @@ import java.io.IOException;
 public class TestManifestBuilder implements ManifestBuilder {
 
     @Override
-    public void create() throws IOException {
+    public void create() {
 
     }
 

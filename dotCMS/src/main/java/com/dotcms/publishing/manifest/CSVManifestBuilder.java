@@ -43,11 +43,15 @@ public class CSVManifestBuilder implements ManifestBuilder {
 
     private File manifestFile;
 
-    public void create() throws IOException {
-        manifestFile = File.createTempFile("ManifestBuilder_", ".csv");
+    public void create() {
+        try {
+            manifestFile = File.createTempFile("ManifestBuilder_", ".csv");
 
-        csvWriter = new FileWriter(manifestFile);
-        writeLine(HEADERS_LINE);
+            csvWriter = new FileWriter(manifestFile);
+            writeLine(HEADERS_LINE);
+        } catch (IOException e) {
+            throw new DotRuntimeException(e);
+        }
     }
 
     private void writeLine(String headersLine) throws IOException {
