@@ -475,7 +475,7 @@ public class PublisherAPIImplTest {
 
         if (!Rule.class.isInstance(testAsset.asset)) {
             final TestManifestItemsMap manifestLines = testAsset.manifestLines();
-            manifestLines.addExcludes(map("Exclude System Folder/Host",
+            manifestLines.addExcludes(map("Excluded System Folder/Host",
                     list(APILocator.getHostAPI().findSystemHost(), APILocator.getFolderAPI().findSystemFolder())));
 
             addLanguageVariableManifestItem(
@@ -498,7 +498,7 @@ public class PublisherAPIImplTest {
             throws DotDataException, DotSecurityException {
 
         languageVariablesAddInBundle.stream().forEach(
-                contentlet -> manifestLines.add(contentlet, "Add Automatic by dotcms")
+                contentlet -> manifestLines.add(contentlet, "Added Automatically by dotCMS")
         );
 
         for (Contentlet languageVariable : languageVariablesAddInBundle) {
@@ -523,7 +523,7 @@ public class PublisherAPIImplTest {
                     "Dependency from: " + languageVariablesContentType.id());
 
             final Host systemHost = APILocator.getHostAPI().findSystemHost();
-            manifestLines.addExclude(systemHost, "Exclude System Folder/Host");
+            manifestLines.addExclude(systemHost, "Excluded System Folder/Host");
         }
     }
 
@@ -987,7 +987,7 @@ public class PublisherAPIImplTest {
         public TestManifestItemsMap manifestLines() {
             final TestManifestItemsMap manifestItemsMap = new TestManifestItemsMap();
             final ManifestItem assetManifestItem = (ManifestItem) asset;
-            manifestItemsMap.add(assetManifestItem, "Add directly by User");
+            manifestItemsMap.add(assetManifestItem, "Added directly by User");
 
             manifestItemsMap.addDependencies(dependencies);
 

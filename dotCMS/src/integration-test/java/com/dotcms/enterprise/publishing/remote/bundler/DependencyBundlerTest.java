@@ -74,9 +74,9 @@ public class DependencyBundlerTest {
 
     private static  Map<String, List<ManifestItem>> excludeSystemFolder;
 
-    public static final String EXCLUDE_SYSTEM_FOLDER_HOST = "Exclude System Folder/Host";
-    private static String FILTER_EXCLUDE_REASON = "Exclude by filter";
-    private static String FILTER_EXCLUDE_BY_OPERATION = "Exclude by Operation: ";
+    public static final String EXCLUDE_SYSTEM_FOLDER_HOST = "Excluded System Folder/Host";
+    private static String FILTER_EXCLUDE_REASON = "Excluded by filter";
+    private static String FILTER_EXCLUDE_BY_OPERATION = "Excluded by Operation: ";
     private BundlerStatus status = null;
 
     private DependencyBundler bundler = null;
@@ -1395,7 +1395,7 @@ public class DependencyBundlerTest {
 
                 manifestLines.addDependencies(map(contentletChild, list(language)));
             } else if (modDateTestData.operation == Operation.PUBLISH) {
-                manifestLines.addExclude(contentletChild, "Exclude by mod_date");
+                manifestLines.addExclude(contentletChild, "Excluded by mod_date");
 
                 manifestLines.addDependencies(map(contentletChild, list(language)));
             } else {

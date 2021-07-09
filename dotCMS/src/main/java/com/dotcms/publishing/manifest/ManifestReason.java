@@ -12,14 +12,14 @@ import java.util.stream.Collectors;
 
 public enum ManifestReason {
 
-    INCLUDE_BY_USER ("Add directly by User"),
+    INCLUDE_BY_USER ("Added directly by User"),
     INCLUDE_DEPENDENCY_FROM("Dependency from: %s", argument -> String.class.isInstance(argument) ?
             argument : ((ManifestItem) argument).getManifestInfo().id()),
-    INCLUDE_AUTOMATIC_BY_DOTCMS("Add Automatic by dotcms"),
-    EXCLUDE_SYSTEM_OBJECT("Exclude System Folder/Host"),
-    EXCLUDE_BY_FILTER("Exclude by filter"),
-    EXCLUDE_BY_MOD_DATE("Exclude by mod_date"),
-    EXCLUDE_BY_OPERATION("Exclude by Operation: %s", argument -> argument.toString());
+    INCLUDE_AUTOMATIC_BY_DOTCMS("Added Automatically by dotCMS"),
+    EXCLUDE_SYSTEM_OBJECT("Excluded System Folder/Host"),
+    EXCLUDE_BY_FILTER("Excluded by filter"),
+    EXCLUDE_BY_MOD_DATE("Excluded by mod_date"),
+    EXCLUDE_BY_OPERATION("Excluded by Operation: %s", argument -> argument.toString());
 
     private String messageTemplate;
     private Function<Object, Object> transformer = argument -> argument;
