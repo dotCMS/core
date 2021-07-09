@@ -10,6 +10,11 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * Build manifest register reason for INCLUDE or EXCLUDE registers
+ *
+ * @see {@link CSVManifestBuilder}
+ */
 public enum ManifestReason {
 
     INCLUDE_BY_USER ("Added directly by User"),
