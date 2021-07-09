@@ -1587,13 +1587,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 	@Override
 	public ManifestInfo getManifestInfo() {
-		String type = null;
-
-		if (Host.class.isInstance(this.getClass()) || this.isHost()) {
-			type = PusheableAsset.SITE.getType();
-		} else  {
-			type =  PusheableAsset.CONTENTLET.getType();
-		}
+		
+		final String type = Host.class.isInstance(this.getClass()) || this.isHost() ?
+				PusheableAsset.SITE.getType():PusheableAsset.CONTENTLET.getType();
 
 		return new ManifestInfoBuilder()
 			.objectType(type)
