@@ -35,9 +35,4 @@ public class Task00760AddContentletStructureInodeIndex extends AbstractJDBCStart
 		return true;
 	}
 
-    @Override
-    public String getH2Script() {
-        return null;
-    }
-
 }

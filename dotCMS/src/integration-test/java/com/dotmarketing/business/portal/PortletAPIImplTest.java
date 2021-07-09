@@ -62,6 +62,7 @@ public class PortletAPIImplTest {
         initValues.put("name", name);
         initValues.put("baseTypes", baseTypes);
         initValues.put("contentTypes", contentTypes);
+        initValues.put("dataViewMode", "list");
 
         final Portlet newPortlet = portletApi.savePortlet(new DotPortlet(portletId, StrutsPortlet.class.getName(), initValues),systemUser);
 

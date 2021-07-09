@@ -96,8 +96,14 @@ public class CropImageFilter extends ImageFilter {
 			}
 
 			final BufferedImage out = src.getSubimage(x, y, width, height);
-			ImageIO.write(out, FILE_EXT, resultFile);
+			
+            final File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() +".tmp");
+
+            
+			
+			ImageIO.write(out, FILE_EXT, tempResultFile);
 			out.flush();
+			tempResultFile.renameTo(resultFile);
 		} catch (IOException e) {
 			Logger.error(this.getClass(), e.getMessage());
 		}

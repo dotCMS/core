@@ -30,7 +30,7 @@ public abstract class DashboardFactory {
     protected String getSummaryPagesQuery(){
     	StringBuilder queryBuilder = new StringBuilder("");
 
-    	if(DbConnectionFactory.isPostgres() || DbConnectionFactory.isOracle() || DbConnectionFactory.isH2()) {
+    	if(DbConnectionFactory.isPostgres() || DbConnectionFactory.isOracle()) {
 			// Find contentlets type 'html page'
 			queryBuilder.append("SELECT COUNT(*) AS hits, contentlet_version_info.live_inode AS inode, ")
 			.append("(identifier.parent_path || identifier.asset_name) AS uri ")
@@ -73,7 +73,7 @@ public abstract class DashboardFactory {
     };
 
 	protected String getSummaryContentQuery(){
-		return (DbConnectionFactory.isPostgres() || DbConnectionFactory.isOracle() || DbConnectionFactory.isH2()) ?
+		return (DbConnectionFactory.isPostgres() || DbConnectionFactory.isOracle()) ?
 			" select count(*) as hits, identifier.parent_path as uri ,contentlet.identifier as inode, contentlet.title as title  from clickstream_request "+
 			" join identifier on identifier.id = associated_identifier join multi_tree on associated_identifier = parent1 join contentlet on contentlet.identifier = multi_tree.child  "+
 			" where extract(day from timestampper) = ? and extract(month from timestampper) = ? and "+
@@ -107,7 +107,7 @@ public abstract class DashboardFactory {
 				" select links.inode as inode, 'link' as asset_type, mod_user as mod_user_id, identifier.host_inode as host_id, mod_date, links_info.live_inode,links_info.working_inode,links_info.deleted, coalesce(links.title,links.identifier) as name "+
 				" from link_version_info links_info join links on(links_info.identifier= links.identifier) join identifier identifier on (identifier.id = links.identifier) "+
 				" )assets where mod_date>(select coalesce(max(mod_date),"
-				+(DbConnectionFactory.isPostgres()||DbConnectionFactory.isH2()?"'1970-01-01 00:00:00')"
+				+(DbConnectionFactory.isPostgres()?"'1970-01-01 00:00:00')"
 						:(DbConnectionFactory.isOracle())?"TO_TIMESTAMP('1970-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'))"
 								:(DbConnectionFactory.isMySql())?"STR_TO_DATE('1970-01-01','%Y-%m-%d'))"
 										:(DbConnectionFactory.isMsSql())?"CAST('1970-01-01' AS DATETIME))":"")+

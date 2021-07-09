@@ -4,6 +4,7 @@ import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publisher.util.dependencies.DependencyManager;
 import com.dotcms.publisher.util.dependencies.DependencyProcessor;
 import com.dotcms.publishing.manifest.ManifestItem;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -35,7 +36,7 @@ import java.util.concurrent.ExecutionException;
  */
 public class PushPublisherConfig extends PublisherConfig {
 
-	public enum AssetTypes {
+    public enum AssetTypes {
 		TEMPLATES,
 		HTMLPAGES,
 		CONTAINERS,

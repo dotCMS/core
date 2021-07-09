@@ -14,7 +14,7 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
-
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 
 public class JpegImageFilter extends ImageFilter {
@@ -59,23 +59,23 @@ public class JpegImageFilter extends ImageFilter {
 
 			graphics.fillRect(0, 0, src.getWidth(), src.getHeight());
 			graphics.drawImage(src, 0, 0, src.getWidth(), src.getHeight(),null);
-			ImageOutputStream ios = ImageIO.createImageOutputStream(resultFile);
-			writer.setOutput(ios);
-			writer.write(null,new IIOImage(dst,null,null),iwp);
-			ios.flush();
-			writer.dispose();
-			ios.close();
-			//writer.setOutput(output);
-
-		//	IIOImage image = new IIOImage(src, null, null);
-		//	writer.write(null, image, iwp);
-		//	writer.dispose();
 			
+			
+            final File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() +".tmp.jpg");
 
-		} catch (FileNotFoundException e) {
-			Logger.error(this.getClass(), e.getMessage());
-		} catch (IOException e) {
-			Logger.error(this.getClass(), e.getMessage());
+            
+			try(ImageOutputStream ios = ImageIO.createImageOutputStream(tempResultFile)){
+    			writer.setOutput(ios);
+    			writer.write(null,new IIOImage(dst,null,null),iwp);
+    			ios.flush();
+    			writer.dispose();
+			}
+			
+	        tempResultFile.renameTo(resultFile);
+
+
+		} catch (Exception e) {
+			throw new DotRuntimeException("unable to convert file:" +file + " : " +  e.getMessage(),e);
 		}
 		
 		

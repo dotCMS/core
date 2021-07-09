@@ -256,7 +256,7 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 	 */
 	protected enum DbType {
 
-		MYSQL("MySQL"), POSTGRESQL("PostgreSQL"), ORACLE("Oracle"), MSSQL("Microsoft SQL Server"), H2("H2");
+		MYSQL("MySQL"), POSTGRESQL("PostgreSQL"), ORACLE("Oracle"), MSSQL("Microsoft SQL Server");
 
 		private String dbType;
 
@@ -291,14 +291,12 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 			switch (type) {
 			case "MySQL":
 				return DbType.MYSQL;
-			case "PostgreSQL":
-				return DbType.POSTGRESQL;
 			case "Oracle":
 				return DbType.ORACLE;
 			case "Microsoft SQL Server":
 				return DbType.MSSQL;
 			default:
-				return DbType.H2;
+				return DbType.POSTGRESQL;
 			}
 		}
 
@@ -725,8 +723,6 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 				schemaList = SQLUtil.tokenize(getOracleScript());
 			} else if (DbConnectionFactory.isMsSql()) {
 				schemaList = SQLUtil.tokenize(getMSSQLScript());
-			} else {
-				schemaList = SQLUtil.tokenize(getH2Script());
 			}
 			if (schemaList.isEmpty()) {
 				return;
@@ -1573,13 +1569,7 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 	 * @return The SQL statement(s).
 	 */
 	abstract public String getMSSQLScript();
-	
-	/**
-	 * Returns the upgrade SQL query for H2.
-	 * 
-	 * @return The SQL statement(s).
-	 */
-	abstract public String getH2Script();
+
 
 	/**
 	 * Returns the list of database tables whose keys, indexes, and constraints

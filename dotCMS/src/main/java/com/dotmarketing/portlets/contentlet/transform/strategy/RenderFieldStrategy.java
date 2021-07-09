@@ -111,11 +111,11 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
         Try.runRunnable(()-> com.dotmarketing.util.VelocityUtil
                 .getEngine()
                 .evaluate(context, evalResult, "", fieldValueAsStr)).onFailure((error)->
-                Logger.error(RenderFieldStrategy.class, "Unable to render velocity in field: "
+                Logger.warnAndDebug(RenderFieldStrategy.class, "Unable to render velocity in field: "
                         + field.variable(), error)
-                );
+        );
 
-        return evalResult.toString();
+        return UtilMethods.isSet(evalResult.toString()) ? evalResult.toString() : fieldValue;
     }
 
 }

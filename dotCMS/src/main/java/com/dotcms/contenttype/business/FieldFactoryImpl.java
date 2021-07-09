@@ -16,6 +16,7 @@ import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable.Builder;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.model.field.OnePerContentType;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.DbFieldTransformer;
@@ -615,7 +616,10 @@ public class FieldFactoryImpl implements FieldFactory {
   public void deleteByContentType(ContentType type) throws DotDataException {
     List<Field> fields = byContentType(type);
     for (Field field : fields) {
-      deleteFieldInDb(field);
+       //Relationship fields must be handled by ContentTypeFactory#deleteRelationships
+       if(!(field instanceof RelationshipField)){
+         deleteFieldInDb(field);
+       }
     }
   }
 

@@ -51,11 +51,6 @@ public class Task04220RemoveDeleteInactiveClusterServersJob extends AbstractJDBC
     }
 
     @Override
-    public String getH2Script() {
-        return null;
-    }
-
-    @Override
     protected List<String> getTablesToDropConstraints() {
         return null;
     }

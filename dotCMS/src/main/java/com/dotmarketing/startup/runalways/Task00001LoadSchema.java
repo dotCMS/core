@@ -50,9 +50,7 @@ public class Task00001LoadSchema implements StartupTask {
 		if (DbConnectionFactory.isOracle()) {
 			schemaFile = "oracle.sql";
 		}
-		if(DbConnectionFactory.isH2()) {
-		    schemaFile = "h2.sql";
-		}
+
 		final StringBuilder schema = new StringBuilder();
 		int processedStatementCount = 0;
 		

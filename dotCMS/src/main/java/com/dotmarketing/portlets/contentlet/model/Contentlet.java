@@ -98,9 +98,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   public static final String STRUCTURE_NAME_KEY = "stName";
   public static final String CONTENT_TYPE_KEY = "contentType";
   public static final String BASE_TYPE_KEY = "baseType";
-  public static final String LAST_REVIEW_KEY = "lastReview";
-  public static final String NEXT_REVIEW_KEY = "nextReview";
-  public static final String REVIEW_INTERNAL_KEY = "reviewInternal";
   public static final String DISABLED_WYSIWYG_KEY = "disabledWYSIWYG";
   public static final String LOCKED_KEY = "locked";
   public static final String ARCHIVED_KEY = "archived";
@@ -354,11 +351,16 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 					// if it is a binary
 					if (binaryValue == null && Field.FieldType.BINARY.toString().equals(field.getFieldType()) && field.isIndexed()) {
-						binaryValue = this.getBinary(field.getVelocityVarName()).getName();
+					    final File binaryFile = this.getBinary(field.getVelocityVarName());
+					    if (null != binaryFile) {
+                            binaryValue = binaryFile.getName();
+                        }
 					}
 				}
 			} catch(Exception e){
-				Logger.warn(this.getClass(), "unable to get field value " + field.getVelocityVarName() + " " + e, e);
+                Logger.warn(this.getClass(),
+                        "unable to get field value " + field.getVelocityVarName()
+                                + " . Content inode: " + this.getInode() + ". Reason: " + e, e);
 			}
 		}
 
@@ -540,64 +542,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
            hasExtension = (getContentType().baseType() == BaseContentType.HTMLPAGE || getContentType().baseType() == BaseContentType.FILEASSET );
 		}
         return hasExtension;
-    }
-
-    /**
-     *
-     * @return
-     */
-    @Deprecated
-    @JsonIgnore
-    public Date getLastReview() {
-    	return (Date)map.get(LAST_REVIEW_KEY);
-    }
-
-    /**
-     *
-     * @param lastReview
-     */
-    @Deprecated
-    public void setLastReview(Date lastReview) {
-    	map.put(LAST_REVIEW_KEY, lastReview);
-    }
-
-    /**
-     *
-     * @return
-     */
-    @Deprecated
-    @JsonIgnore
-    public Date getNextReview() {
-    	return (Date)map.get(NEXT_REVIEW_KEY);
-    }
-
-    /**
-     *
-     * @param nextReview
-     */
-    @Deprecated
-    public void setNextReview(Date nextReview) {
-    	map.put(NEXT_REVIEW_KEY, nextReview);
-    }
-
-    /**
-     *
-     * @return
-     */
-    @Deprecated
-    @JsonIgnore
-    public String getReviewInterval() {
-    	return (String)map.get(REVIEW_INTERNAL_KEY);
-    }
-
-    /**
-     *
-     * @param reviewInterval
-     */
-    @Deprecated
-    @JsonIgnore
-    public void setReviewInterval(String reviewInterval) {
-    	map.put(REVIEW_INTERNAL_KEY, reviewInterval);
     }
 
     /**
@@ -1414,7 +1358,18 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public boolean isDotAsset() {
 		return getContentType().baseType() == BaseContentType.DOTASSET;
 	}
-
+    /**
+     * It'll tell you if you're dealing with content of type Persona
+     * @return
+     */
+    public boolean isPersona() {
+        return getContentType().baseType() == BaseContentType.PERSONA;
+    }
+    
+    public boolean isForm() {
+        return getContentType().baseType() == BaseContentType.FORM;
+    }
+    
 	/**
 	 * It'll tell you if you're dealing with content of type FileAsset that is used as container
 	 * see Containers as files
@@ -1431,8 +1386,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
     public boolean isHost() {
       
-
-        return getContentType().variable().equals(Host.HOST_VELOCITY_VAR_NAME);
+        ContentType type = getContentType();
+        return type!= null && type.variable().equals(Host.HOST_VELOCITY_VAR_NAME);
     }
 
 	/**

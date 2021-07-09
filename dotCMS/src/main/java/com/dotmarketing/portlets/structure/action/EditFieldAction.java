@@ -509,9 +509,6 @@ public class EditFieldAction extends DotPortletAction {
         if(fieldVelVarName.equals(Contentlet.INODE_KEY)||
                 fieldVelVarName.equals(Contentlet.LANGUAGEID_KEY)||
                 fieldVelVarName.equals(Contentlet.STRUCTURE_INODE_KEY)||
-                fieldVelVarName.equals(Contentlet.LAST_REVIEW_KEY)||
-                fieldVelVarName.equals(Contentlet.NEXT_REVIEW_KEY)||
-                fieldVelVarName.equals(Contentlet.REVIEW_INTERNAL_KEY)||
                 fieldVelVarName.equals(Contentlet.DISABLED_WYSIWYG_KEY)||
                 fieldVelVarName.equals(Contentlet.LOCKED_KEY)||
                 fieldVelVarName.equals(Contentlet.ARCHIVED_KEY)||

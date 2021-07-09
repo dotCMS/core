@@ -939,14 +939,14 @@ public class PublisherAPIImplTest {
 
     private static class TestAsset {
         Object asset;
-        Map<ManifestItem, List<ManifestItem>> dependencies;
+        Map<ManifestItem, Collection<ManifestItem>> dependencies;
         String fileExpectedPath;
         boolean addLanguageVariableDependencies = true;
         Set<Object> otherVersions;
 
         public TestAsset(
                 final Object asset,
-                final Map<ManifestItem, List<ManifestItem>> dependencies,
+                final Map<ManifestItem, Collection<ManifestItem>> dependencies,
                 final Set<Object> otherVersions,
                 final String fileExpectedPath) {
 
@@ -955,7 +955,7 @@ public class PublisherAPIImplTest {
 
         public TestAsset(
                 final Object asset,
-                final Map<ManifestItem, List<ManifestItem>> dependencies,
+                final Map<ManifestItem, Collection<ManifestItem>> dependencies,
                 final String fileExpectedPath) {
 
             this(asset, dependencies, null, fileExpectedPath, true);
@@ -963,7 +963,7 @@ public class PublisherAPIImplTest {
 
         public TestAsset(
                 final Object asset,
-                final Map<ManifestItem, List<ManifestItem>> dependencies,
+                final Map<ManifestItem, Collection<ManifestItem>> dependencies,
                 final String fileExpectedPath,
                 final boolean addLanguageVariableDependencies) {
 
@@ -972,7 +972,7 @@ public class PublisherAPIImplTest {
 
         public TestAsset(
                 final Object asset,
-                final Map<ManifestItem, List<ManifestItem>> dependencies,
+                final Map<ManifestItem, Collection<ManifestItem>> dependencies,
                 final Set<Object> otherVersions,
                 final String fileExpectedPath,
                 final boolean addLanguageVariableDependencies) {

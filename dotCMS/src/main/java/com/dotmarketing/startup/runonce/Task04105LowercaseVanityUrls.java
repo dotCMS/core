@@ -44,10 +44,6 @@ public class Task04105LowercaseVanityUrls extends AbstractJDBCStartupTask {
         return SQL_QUERY;
     }
 
-    @Override
-    public String getH2Script() {
-        return SQL_QUERY;
-    }
 
     @Override
     protected List<String> getTablesToDropConstraints() {

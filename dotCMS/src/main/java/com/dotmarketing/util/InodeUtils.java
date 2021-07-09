@@ -16,7 +16,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.business.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -96,9 +95,7 @@ public class InodeUtils {
 		if (type == null) {
 			return Inode.class;
 		}
-		if (type.equals("contentlet")) {
-			return Contentlet.class;
-		}
+
 		if (type.equals("identifier")) {
 			return Identifier.class;
 		}

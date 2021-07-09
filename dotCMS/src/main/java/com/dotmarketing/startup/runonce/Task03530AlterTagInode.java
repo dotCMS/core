@@ -55,15 +55,6 @@ public class Task03530AlterTagInode extends AbstractJDBCStartupTask {
         return "ALTER TABLE tag_inode ADD field_var_name varchar(255);";
     }
 
-    /**
-     * The SQL for H2
-     *
-     * @return
-     */
-    @Override
-    public String getH2Script () {
-        return "ALTER TABLE tag_inode ADD COLUMN field_var_name varchar(255);";
-    }
 
     @Override
     protected List<String> getTablesToDropConstraints () {

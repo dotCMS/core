@@ -354,7 +354,6 @@ public class NavToolTest extends IntegrationTestBase{
 
             //As a copy we need to remove this info to do a clean checkin.
             htmlPageContentlet.getMap().remove("modDate");
-            htmlPageContentlet.getMap().remove("lastReview");
             htmlPageContentlet.getMap().remove("owner");
             htmlPageContentlet.getMap().remove("modUser");
 

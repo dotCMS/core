@@ -384,9 +384,7 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
      */
     private String getIntegerKeyword() {
         String keyword = null;
-        if (DbConnectionFactory.isH2()) {
-            keyword = "bigint";
-        } else if (DbConnectionFactory.isPostgres()) {
+        if (DbConnectionFactory.isPostgres()) {
             keyword = "int8";
         } else if (DbConnectionFactory.isMySql()) {
             keyword = "bigint";

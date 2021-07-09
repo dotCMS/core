@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "65e5acc7-cbd9-4ee3-bf14-72af0e6315da",
+		"_postman_id": "26eff347-1ce6-496e-bb5d-52901fedbe71",
 		"name": "Site Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -207,8 +207,8 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code should be 400\", function () {",
-							"    pm.response.to.have.status(400);",
+							"pm.test(\"Status code should be 404\", function () {",
+							"    pm.response.to.have.status(404);",
 							"});",
 							"",
 							""
@@ -370,7 +370,7 @@
 							"    pm.expect(jsonData.entity.siteThumbnail).to.include('250px-Bocas2.jpg');",
 							"});",
 							"",
-							"pm.collectionVariables.set(\"hostId\", jsonData.entity.identifier);",
+							"pm.collectionVariables.set(\"siteId\", jsonData.entity.identifier);",
 							""
 						],
 						"type": "text/javascript"
@@ -446,7 +446,7 @@
 							"    pm.expect(jsonData.entity.live).to.eql(true);",
 							"});",
 							"",
-							"pm.collectionVariables.set(\"hostId\", jsonData.entity.identifier);",
+							"pm.collectionVariables.set(\"siteId\", jsonData.entity.identifier);",
 							""
 						],
 						"type": "text/javascript"
@@ -472,7 +472,7 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/site/{{hostId}}/_publish",
+					"raw": "{{serverURL}}/api/v1/site/{{siteId}}/_publish",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -480,7 +480,7 @@
 						"api",
 						"v1",
 						"site",
-						"{{hostId}}",
+						"{{siteId}}",
 						"_publish"
 					]
 				}
@@ -526,7 +526,7 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/site/{{hostId}}/_makedefault",
+					"raw": "{{serverURL}}/api/v1/site/{{siteId}}/_makedefault",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -534,7 +534,7 @@
 						"api",
 						"v1",
 						"site",
-						"{{hostId}}",
+						"{{siteId}}",
 						"_makedefault"
 					]
 				}
@@ -570,7 +570,7 @@
 							"    pm.expect(jsonData.entity.default).to.eql(true);",
 							"});",
 							"",
-							"pm.collectionVariables.set(\"hostId\", jsonData.entity.identifier);",
+							"pm.collectionVariables.set(\"siteId\", jsonData.entity.identifier);",
 							""
 						],
 						"type": "text/javascript"
@@ -596,7 +596,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/site/{{hostId}}",
+					"raw": "{{serverURL}}/api/v1/site/{{siteId}}",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -604,7 +604,7 @@
 						"api",
 						"v1",
 						"site",
-						"{{hostId}}"
+						"{{siteId}}"
 					]
 				}
 			},
@@ -629,7 +629,7 @@
 							"});",
 							"",
 							"pm.collectionVariables.set(\"hostInode\", jsonData.entity.inode);",
-							"pm.collectionVariables.set(\"hostdentifier\", jsonData.entity.identifier);",
+							"pm.collectionVariables.set(\"siteIdentifier\", jsonData.entity.identifier);",
 							""
 						],
 						"type": "text/javascript"
@@ -656,7 +656,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"sitename\":\"default\"\n}",
+					"raw": "{\n    \"siteName\":\"default\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -714,7 +714,7 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/site/{{hostdentifier}}/_makedefault",
+					"raw": "{{serverURL}}/api/v1/site/{{siteIdentifier}}/_makedefault",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -722,7 +722,7 @@
 						"api",
 						"v1",
 						"site",
-						"{{hostdentifier}}",
+						"{{siteIdentifier}}",
 						"_makedefault"
 					]
 				}
@@ -758,7 +758,7 @@
 							"    pm.expect(jsonData.entity.default).to.eql(false);",
 							"});",
 							"",
-							"pm.collectionVariables.set(\"hostId\", jsonData.entity.identifier);",
+							"pm.collectionVariables.set(\"siteId\", jsonData.entity.identifier);",
 							""
 						],
 						"type": "text/javascript"
@@ -769,7 +769,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/site/{{hostId}}",
+					"raw": "{{serverURL}}/api/v1/site/{{siteId}}",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -777,7 +777,7 @@
 						"api",
 						"v1",
 						"site",
-						"{{hostId}}"
+						"{{siteId}}"
 					]
 				}
 			},
@@ -812,7 +812,7 @@
 							"    pm.expect(jsonData.entity.default).to.eql(false);",
 							"});",
 							"",
-							"pm.collectionVariables.set(\"hostId\", jsonData.entity.identifier);",
+							"pm.collectionVariables.set(\"siteId\", jsonData.entity.identifier);",
 							""
 						],
 						"type": "text/javascript"
@@ -838,7 +838,7 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/site/{{hostId}}/_unpublish",
+					"raw": "{{serverURL}}/api/v1/site/{{siteId}}/_unpublish",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -846,7 +846,7 @@
 						"api",
 						"v1",
 						"site",
-						"{{hostId}}",
+						"{{siteId}}",
 						"_unpublish"
 					]
 				}
@@ -883,7 +883,7 @@
 							"    pm.expect(jsonData.entity.default).to.eql(false);",
 							"});",
 							"",
-							"pm.collectionVariables.set(\"hostId\", jsonData.entity.identifier);",
+							"pm.collectionVariables.set(\"siteId\", jsonData.entity.identifier);",
 							""
 						],
 						"type": "text/javascript"
@@ -909,7 +909,7 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/site/{{hostId}}/_archive",
+					"raw": "{{serverURL}}/api/v1/site/{{siteId}}/_archive",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -917,7 +917,7 @@
 						"api",
 						"v1",
 						"site",
-						"{{hostId}}",
+						"{{siteId}}",
 						"_archive"
 					]
 				}
@@ -954,7 +954,7 @@
 							"    pm.expect(jsonData.entity.default).to.eql(false);",
 							"});",
 							"",
-							"pm.collectionVariables.set(\"hostId\", jsonData.entity.identifier);",
+							"pm.collectionVariables.set(\"siteId\", jsonData.entity.identifier);",
 							""
 						],
 						"type": "text/javascript"
@@ -980,7 +980,7 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/site/{{hostId}}/_unarchive",
+					"raw": "{{serverURL}}/api/v1/site/{{siteId}}/_unarchive",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -988,7 +988,7 @@
 						"api",
 						"v1",
 						"site",
-						"{{hostId}}",
+						"{{siteId}}",
 						"_unarchive"
 					]
 				}
@@ -1094,7 +1094,7 @@
 				"method": "DELETE",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/site/{{hostId}}",
+					"raw": "{{serverURL}}/api/v1/site/{{siteId}}",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -1102,7 +1102,7 @@
 						"api",
 						"v1",
 						"site",
-						"{{hostId}}"
+						"{{siteId}}"
 					]
 				}
 			},
@@ -1137,7 +1137,7 @@
 							"    pm.expect(jsonData.entity.default).to.eql(false);",
 							"});",
 							"",
-							"pm.collectionVariables.set(\"hostId\", jsonData.entity.identifier);",
+							"pm.collectionVariables.set(\"siteId\", jsonData.entity.identifier);",
 							""
 						],
 						"type": "text/javascript"
@@ -1163,7 +1163,7 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/site/{{hostId}}/_archive",
+					"raw": "{{serverURL}}/api/v1/site/{{siteId}}/_archive",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -1171,7 +1171,7 @@
 						"api",
 						"v1",
 						"site",
-						"{{hostId}}",
+						"{{siteId}}",
 						"_archive"
 					]
 				}
@@ -1214,7 +1214,7 @@
 				"method": "DELETE",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/site/{{hostId}}",
+					"raw": "{{serverURL}}/api/v1/site/{{siteId}}",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -1222,7 +1222,7 @@
 						"api",
 						"v1",
 						"site",
-						"{{hostId}}"
+						"{{siteId}}"
 					]
 				}
 			},
@@ -1245,7 +1245,7 @@
 							"    pm.expect(jsonData.entity.siteName).to.eql('postman.copy.host.com');",
 							"});",
 							"",
-							"pm.collectionVariables.set(\"hostId\", jsonData.entity.identifier);",
+							"pm.collectionVariables.set(\"siteId\", jsonData.entity.identifier);",
 							""
 						],
 						"type": "text/javascript"
@@ -1272,7 +1272,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"copyFromSiteId\":\"{{hostdentifier}}\",\n    \"copyAll\":true,\n    \"copyTemplatesContainers\":true,\n    \"copyContentOnPages\":true,\n    \"copyFolders\":true,\n    \"copyContentOnSite\":true,\n    \"copyLinks\":true,\n    \"copySiteVariables\":true,\n    \"site\": {\n        \"siteName\":\"postman.copy.host.com\"\n    }\n}",
+					"raw": "{\n    \"copyFromSiteId\":\"{{siteIdentifier}}\",\n    \"copyAll\":true,\n    \"copyTemplatesContainers\":true,\n    \"copyContentOnPages\":true,\n    \"copyFolders\":true,\n    \"copyContentOnSite\":true,\n    \"copyLinks\":true,\n    \"copySiteVariables\":true,\n    \"site\": {\n        \"siteName\":\"postman.copy.host.com\"\n    }\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -1330,7 +1330,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/site/{{hostId}}/setup_progress",
+					"raw": "{{serverURL}}/api/v1/site/{{siteId}}/setup_progress",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -1338,7 +1338,7 @@
 						"api",
 						"v1",
 						"site",
-						"{{hostId}}",
+						"{{siteId}}",
 						"setup_progress"
 					]
 				}
@@ -1402,8 +1402,8 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code should be 400\", function () {",
-							"    pm.response.to.have.status(400);",
+							"pm.test(\"Status code should be 404\", function () {",
+							"    pm.response.to.have.status(404);",
 							"});",
 							""
 						],
@@ -1446,74 +1446,6 @@
 			"response": []
 		},
 		{
-			"name": "Get Site by Name Copy",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"var jsonData = pm.response.json();",
-							"",
-							"pm.test(\"Status code is 200\", () => {",
-							"  pm.expect(pm.response.code).to.eql(200);",
-							"});",
-							"",
-							"pm.test(\"To Check if Value is Null\", function () {",
-							"",
-							"    pm.expect(jsonData.entity.siteName).eq(\"default\");",
-							"});",
-							"",
-							"pm.collectionVariables.set(\"hostInode\", jsonData.entity.inode);",
-							"pm.collectionVariables.set(\"hostdentifier\", jsonData.entity.identifier);",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						}
-					]
-				},
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"sitename\":\"default\"\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/site/_byname",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"site",
-						"_byname"
-					]
-				}
-			},
-			"response": []
-		},
-		{
 			"name": "Archive Site Default Site is not Possible",
 			"event": [
 				{
@@ -1548,7 +1480,7 @@
 				"method": "PUT",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/site/{{hostdentifier}}/_archive",
+					"raw": "{{serverURL}}/api/v1/site/{{siteIdentifier}}/_archive",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -1556,8 +1488,57 @@
 						"api",
 						"v1",
 						"site",
-						"{{hostdentifier}}",
+						"{{siteIdentifier}}",
 						"_archive"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Test Delete Default Site  - Fail expected",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/site/{{siteIdentifier}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"site",
+						"{{siteIdentifier}}"
 					]
 				}
 			},
@@ -1570,8 +1551,8 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code should be 400\", function () {",
-							"    pm.response.to.have.status(400);",
+							"pm.test(\"Status code should be 404\", function () {",
+							"    pm.response.to.have.status(404);",
 							"});",
 							""
 						],
@@ -1614,7 +1595,7 @@
 			"response": []
 		},
 		{
-			"name": "Delete Site wrong site Id Copy",
+			"name": "Delete Site wrong site Id",
 			"event": [
 				{
 					"listen": "test",
@@ -1720,7 +1701,7 @@
 					"script": {
 						"exec": [
 							"pm.test(\"Status code should be 400\", function () {",
-							"    pm.response.to.have.status(400);",
+							"    pm.response.to.have.status(404);",
 							"});"
 						],
 						"type": "text/javascript"
@@ -1767,8 +1748,8 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code should be 400\", function () {",
-							"    pm.response.to.have.status(400);",
+							"pm.test(\"Status code should be 404\", function () {",
+							"    pm.response.to.have.status(404);",
 							"});",
 							""
 						],
@@ -1796,7 +1777,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"sitename\":\"xxxx.com\"\n}",
+					"raw": "{\n    \"siteName\":\"xxxx.com\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -1881,8 +1862,8 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code should be 400\", function () {",
-							"    pm.response.to.have.status(400);",
+							"pm.test(\"Status code should be 404\", function () {",
+							"    pm.response.to.have.status(404);",
 							"});",
 							""
 						],
@@ -1910,7 +1891,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"copyFromHostId\":\"xxxxx\",\n    \"copyAll\":true,\n    \"copyTemplatesContainers\":true,\n    \"copyContentOnPages\":true,\n    \"copyFolders\":true,\n    \"copyContentOnHost\":true,\n    \"copyLinks\":true,\n    \"copyHostVariables\":true,\n    \"host\": {\n        \"hostName\":\"postman.copy.host.com\"\n    }\n}",
+					"raw": "{\n    \"copyFromSiteId\":\"xxxxx\",\n    \"copyAll\":true,\n    \"copyTemplatesContainers\":true,\n    \"copyContentOnPages\":true,\n    \"copyFolders\":true,\n    \"copyContentOnSite\":true,\n    \"copyLinks\":true,\n    \"copySiteVariables\":true,\n    \"site\": {\n        \"siteName\":\"postman.copy.host.com\"\n    }\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -1947,19 +1928,19 @@
 			"value": ""
 		},
 		{
-			"key": "hostId",
-			"value": ""
-		},
-		{
-			"key": "hostInode",
-			"value": ""
-		},
-		{
-			"key": "hostdentifier",
+			"key": "siteInode",
 			"value": ""
 		},
 		{
 			"key": "siteId",
+			"value": ""
+		},
+		{
+			"key": "siteIdentifier",
+			"value": ""
+		},
+		{
+			"key": "hostInode",
 			"value": ""
 		}
 	]

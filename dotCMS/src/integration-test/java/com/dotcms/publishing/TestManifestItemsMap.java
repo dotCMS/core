@@ -6,6 +6,7 @@ import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
 import io.vavr.collection.Stream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -44,12 +45,12 @@ public class TestManifestItemsMap {
         ).stream().collect(Collectors.joining(","));
     }
 
-    public void addDependencies(final Map<ManifestItem, List<ManifestItem>> dependencies){
-        for (Entry<ManifestItem, List<ManifestItem>> dependencyEntry : dependencies.entrySet()) {
+    public void addDependencies(final Map<ManifestItem, Collection<ManifestItem>> dependencies){
+        for (Entry<ManifestItem, Collection<ManifestItem>> dependencyEntry : dependencies.entrySet()) {
             final String id = dependencyEntry.getKey().getManifestInfo().id();
             final String dependencyReeason = "Dependency from: " + id;
 
-            final List<ManifestItem> entryDependencies = dependencyEntry.getValue();
+            final Collection<ManifestItem> entryDependencies = dependencyEntry.getValue();
 
             for (ManifestItem entryDependency : entryDependencies) {
                 add(entryDependency, dependencyReeason);
