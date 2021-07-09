@@ -111,7 +111,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
 public class PublisherAPIImplTest {
-    private static String MANIFEST_HEADERS = "INCLUDE/EXCLUDE,object type, Id, title, site, folder, exclude by, include by";
+    private static String MANIFEST_HEADERS = "INCLUDED/EXCLUDED,object type, Id, title, site, folder, excluded by, included by";
     private static Contentlet languageVariableCreated;
 
     public static void prepare() throws Exception {

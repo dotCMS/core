@@ -22,11 +22,11 @@ public class TestManifestItemsMap {
 
 
     private static String getIncludeLine(final ManifestItem asset, final String reason) {
-        return getLine("INCLUDE", asset, reason, "");
+        return getLine("INCLUDED", asset, reason, "");
     }
 
     private static String getExcludeLine(final ManifestItem asset, final String reason) {
-        return getLine("EXCLUDE", asset, "", reason);
+        return getLine("EXCLUDED", asset, "", reason);
     }
     
     private static String getLine(final String includeExclude, final ManifestItem asset, 

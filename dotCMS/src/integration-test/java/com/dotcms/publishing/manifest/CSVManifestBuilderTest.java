@@ -54,7 +54,7 @@ import org.junit.runner.RunWith;
 @RunWith(DataProviderRunner.class)
 public class CSVManifestBuilderTest {
 
-    private static String headers = "INCLUDE/EXCLUDE,object type, Id, title, site, folder, exclude by, include by";
+    private static String headers = "INCLUDED/EXCLUDED,object type, Id, title, site, folder, excluded by, included by";
 
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();

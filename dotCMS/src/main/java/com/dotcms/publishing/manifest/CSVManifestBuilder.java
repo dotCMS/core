@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
  */
 public class CSVManifestBuilder implements ManifestBuilder {
     private final static String HEADERS_LINE =
-            "INCLUDE/EXCLUDE,object type, Id, title, site, folder, exclude by, include by";
+            "INCLUDED/EXCLUDED,object type, Id, title, site, folder, excluded by, included by";
     private FileWriter csvWriter;
 
     private File manifestFile;
@@ -72,12 +72,12 @@ public class CSVManifestBuilder implements ManifestBuilder {
 
     private String getManifestFileIncludeLine(final ManifestInfo manifestInfo,
             final String includeReason) {
-        return getManifestFileLine("INCLUDE", manifestInfo, includeReason, StringPool.BLANK);
+        return getManifestFileLine("INCLUDED", manifestInfo, includeReason, StringPool.BLANK);
     }
 
     private String getManifestFileExcludeLine(final ManifestInfo manifestInfo,
             final String excludeReason) {
-        return getManifestFileLine("EXCLUDE", manifestInfo, StringPool.BLANK, excludeReason);
+        return getManifestFileLine("EXCLUDED", manifestInfo, StringPool.BLANK, excludeReason);
     }
 
     private String getManifestFileLine(
