@@ -74,7 +74,10 @@ public interface ManifestItem {
         }
 
         public ManifestInfoBuilder folder(Folder folder){
-            this.folderId = folder.getIdentifier();
+            if (UtilMethods.isSet(folder)) {
+                this.folderId = folder.getIdentifier();
+            }
+
             return this;
         }
 
