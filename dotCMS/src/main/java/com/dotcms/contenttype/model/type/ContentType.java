@@ -337,13 +337,13 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   @JsonIgnore
   @Override
   public ManifestInfo getManifestInfo(){
-    return new ManifestInfo(map(
-            "object type", PusheableAsset.CONTENT_TYPE.getType(),
-            "id", this.id(),
-            "title", this.name(),
-            "site", this.host(),
-            "folder", this.folder()
-    ));
+    return new ManifestInfoBuilder()
+        .objectType(PusheableAsset.CONTENT_TYPE.getType())
+        .id(this.id())
+        .title(this.name())
+        .siteId(this.host())
+        .folderId(this.folder())
+        .build();
   }
 
 }

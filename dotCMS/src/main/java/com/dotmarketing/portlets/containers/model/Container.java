@@ -317,10 +317,10 @@ public class Container extends WebAsset implements Serializable, ManifestItem {
 
 	@Override
 	public ManifestInfo getManifestInfo(){
-		return new ManifestInfo(map(
-			"object type", PusheableAsset.CONTAINER.getType(),
-			"id", this.getIdentifier(),
-			"title", this.getTitle()
-		));
+		return new ManifestInfoBuilder()
+			.objectType(PusheableAsset.CONTAINER.getType())
+			.id(this.getIdentifier())
+			.title(this.getTitle())
+			.build();
 	}
 }

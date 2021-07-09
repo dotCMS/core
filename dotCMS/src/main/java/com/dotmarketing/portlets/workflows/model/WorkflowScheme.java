@@ -160,10 +160,10 @@ public class WorkflowScheme implements Serializable, ManifestItem {
 	@JsonIgnore
 	@Override
 	public ManifestInfo getManifestInfo(){
-		return new ManifestInfo(map(
-				"object type", PusheableAsset.WORKFLOW.getType(),
-				"id", this.id,
-				"title", this.name
-		));
+		return new ManifestInfoBuilder()
+			.objectType(PusheableAsset.WORKFLOW.getType())
+			.id(this.id)
+			.title(this.name)
+			.build();
 	}
 }

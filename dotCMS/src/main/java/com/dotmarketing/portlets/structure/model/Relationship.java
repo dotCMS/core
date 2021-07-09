@@ -279,10 +279,10 @@ public class Relationship extends Inode implements ManifestItem {
 	@JsonIgnore
 	@Override
 	public ManifestInfo getManifestInfo(){
-		return new ManifestInfo(map(
-				"object type", PusheableAsset.RELATIONSHIP.getType(),
-				"id", this.inode,
-				"title", this.getTitle()
-		));
+		return new ManifestInfoBuilder()
+			.objectType(PusheableAsset.RELATIONSHIP.getType())
+			.id(this.inode)
+			.title(this.getTitle())
+			.build();
 	}
 }

@@ -129,9 +129,10 @@ public class FileAssetTemplate extends Template {
 
     @Override
     public ManifestInfo getManifestInfo(){
-        return super.getManifestInfo().merge(map(
-                "site", this.getHost(),
-                "path", this.getPath()
-        ));
+        return ManifestInfoBuilder.merge(super.getManifestInfo(),
+                new ManifestInfoBuilder()
+                    .site(this.getHost())
+                    .path(this.getPath())
+                    .build());
     }
 }

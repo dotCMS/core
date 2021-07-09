@@ -365,13 +365,13 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 
 		}
 
-		return new ManifestInfo(map(
-				"object type", PusheableAsset.FOLDER.getType(),
-				"id", this.getIdentifier(),
-				"title", this.getTitle(),
-				"site", this.getHost(),
-				"folder", parent
-		));
+		return new ManifestInfoBuilder()
+			.objectType(PusheableAsset.FOLDER.getType())
+			.id(this.getIdentifier())
+			.title(this.getTitle())
+			.site(this.getHost())
+			.folder(parent)
+			.build();
 	}
 
 }

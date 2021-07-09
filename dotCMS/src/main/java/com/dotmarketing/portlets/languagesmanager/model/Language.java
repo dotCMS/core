@@ -186,11 +186,11 @@ public class Language implements Serializable, ManifestItem {
     @JsonIgnore
     @Override
     public ManifestInfo getManifestInfo(){
-        return new ManifestInfo(map(
-                "object type", PusheableAsset.LANGUAGE.getType(),
-                "id", this.id,
-                "title", this.language
-        ));
+        return new ManifestInfoBuilder()
+                .objectType(PusheableAsset.LANGUAGE.getType())
+                .id(String.valueOf(this.id))
+                .title(this.language)
+                .build();
     }
 
 

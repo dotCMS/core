@@ -330,11 +330,11 @@ public class Link extends WebAsset implements Serializable, Comparable, Manifest
 	@Override
 	public ManifestInfo getManifestInfo(){
 
-		return new ManifestInfo(map(
-			"object type", PusheableAsset.LINK.getType(),
-			"id", this.getIdentifier(),
-			"title", this.getTitle()
-		));
+		return new ManifestInfoBuilder()
+			.objectType(PusheableAsset.LINK.getType())
+			.id(this.getIdentifier())
+			.title(this.getTitle())
+			.build();
 	}
 	
 }

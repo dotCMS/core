@@ -259,11 +259,11 @@ public class Category extends Inode implements Serializable, ManifestItem {
 	@Override
 	public ManifestInfo getManifestInfo() {
 
-		return new ManifestInfo(map(
-				"object type", PusheableAsset.CATEGORY.getType(),
-				"id", this.getInode(),
-				"title", this.getTitle()
-		));
+		return new ManifestInfoBuilder()
+				.objectType(PusheableAsset.CATEGORY.getType())
+				.id(this.getInode())
+				.title(this.getTitle())
+				.build();
 	}
 
 }

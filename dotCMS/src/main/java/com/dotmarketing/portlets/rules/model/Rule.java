@@ -359,12 +359,12 @@ public class Rule implements Permissionable, Serializable, ManifestItem {
     @JsonIgnore
     @Override
     public ManifestInfo getManifestInfo(){
-        return new ManifestInfo(map(
-                "object type", PusheableAsset.RULE.getType(),
-                "id", this.id,
-                "title", this.name,
-                "folder", this.folder
-        ));
+        return new ManifestInfoBuilder()
+                .objectType(PusheableAsset.RULE.getType())
+                .id(this.id)
+                .title(this.name)
+                .folderId(this.folder)
+                .build();
     }
 
     private final class GroupLogicalCondition implements LogicalCondition {

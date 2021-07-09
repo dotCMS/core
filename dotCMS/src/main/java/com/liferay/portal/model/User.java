@@ -422,10 +422,10 @@ public class User extends UserModel implements Recipient, ManifestItem {
 	@JsonIgnore
 	@Override
 	public ManifestInfo getManifestInfo(){
-		return new ManifestInfo(map(
-			"object type", PusheableAsset.USER.getType(),
-			"id", this.getUserId(),
-			"title", this.getFullName()
-		));
+		return new ManifestInfoBuilder()
+				.objectType(PusheableAsset.USER.getType())
+				.id(this.getUserId())
+				.title(this.getFullName())
+				.build();
 	}
 }

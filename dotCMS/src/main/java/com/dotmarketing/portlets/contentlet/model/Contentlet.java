@@ -1595,13 +1595,14 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 			type =  PusheableAsset.CONTENTLET.getType();
 		}
 
-		return new ManifestInfo(map(
-				"object type", type,
-				"id", this.getIdentifier(),
-				"title", this.getTitle(),
-				"site", this.getHost(),
-				"folder", this.getFolder()
-		));
+		return new ManifestInfoBuilder()
+			.objectType(type)
+			.id(this.getIdentifier())
+			.title(this.getTitle())
+			.siteId(this.getHost())
+			.folderId(this.getFolder())
+			.build();
+
 	}
 
 

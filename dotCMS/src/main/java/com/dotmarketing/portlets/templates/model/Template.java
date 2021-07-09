@@ -329,10 +329,10 @@ public class Template extends WebAsset implements Serializable, Comparable, Mani
 
 	@Override
 	public ManifestInfo getManifestInfo(){
-		return new ManifestInfo(map(
-		"object type", PusheableAsset.TEMPLATE.getType(),
-		"id", this.getIdentifier(),
-		"title", this.getTitle()
-		));
+		return new ManifestInfoBuilder()
+			.objectType(PusheableAsset.TEMPLATE.getType())
+			.id(this.getIdentifier())
+			.title(this.getTitle())
+			.build();
 	}
 }
