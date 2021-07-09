@@ -14,6 +14,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.FileUtil;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileWriter;
@@ -66,12 +67,12 @@ public class CSVManifestBuilder implements ManifestBuilder {
 
     private String getManifestFileIncludeLine(final ManifestInfo manifestInfo,
             final String includeReason) {
-        return getManifestFileLine("INCLUDE", manifestInfo, includeReason, "");
+        return getManifestFileLine("INCLUDE", manifestInfo, includeReason, StringPool.BLANK);
     }
 
     private String getManifestFileExcludeLine(final ManifestInfo manifestInfo,
             final String excludeReason) {
-        return getManifestFileLine("EXCLUDE", manifestInfo, "", excludeReason);
+        return getManifestFileLine("EXCLUDE", manifestInfo, StringPool.BLANK, excludeReason);
     }
 
     private String getManifestFileLine(
