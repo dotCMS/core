@@ -196,8 +196,7 @@ public class PushPublisherConfig extends PublisherConfig {
 		return bundleAssets.getHosts();
 	}
 
-	@Override
-	public Set<String> getLanguages() {
+	public Set<String> getIncludedLanguages() {
 		return bundleAssets.getLanguages();
 	}
 

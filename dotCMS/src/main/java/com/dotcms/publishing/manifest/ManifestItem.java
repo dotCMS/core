@@ -7,11 +7,13 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.HashMap;
 import java.util.Map;
 
 public interface ManifestItem {
 
+    @JsonIgnore
     ManifestInfo getManifestInfo();
 
     class ManifestInfo {
