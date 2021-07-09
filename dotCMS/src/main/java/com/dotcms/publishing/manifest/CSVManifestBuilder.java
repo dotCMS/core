@@ -6,6 +6,7 @@ import static com.dotcms.util.CollectionsUtils.map;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -113,11 +114,7 @@ public class CSVManifestBuilder implements ManifestBuilder {
     @Override
     public void close() {
         if (csvWriter != null) {
-            try {
-                csvWriter.close();
-            } catch(IOException e) {
-                //ignore
-            }
+            CloseUtils.closeQuietly(csvWriter);
         }
     }
 
