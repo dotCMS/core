@@ -20,6 +20,7 @@ import com.dotmarketing.portlets.rules.RuleDataGen;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.FileUtil;
+import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -83,7 +84,7 @@ public class RuleBundlerTest {
 
         try (ManifestBuilder manifestBuilder = new TestManifestBuilder()) {
             config.setManifestBuilder(manifestBuilder);
-            config.add(rule, PusheableAsset.RULE, "");
+            config.add(rule, PusheableAsset.RULE, StringPool.BLANK);
             config.setOperation(PublisherConfig.Operation.PUBLISH);
 
             final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config);

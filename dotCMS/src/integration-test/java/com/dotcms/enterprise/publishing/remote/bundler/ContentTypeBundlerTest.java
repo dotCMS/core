@@ -20,6 +20,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.FileUtil;
+import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -114,7 +115,7 @@ public class ContentTypeBundlerTest {
 
         try (ManifestBuilder manifestBuilder = new TestManifestBuilder()) {
             config.setManifestBuilder(manifestBuilder);
-            config.add(contentType, PusheableAsset.CONTENT_TYPE, "");
+            config.add(contentType, PusheableAsset.CONTENT_TYPE, StringPool.BLANK);
             config.setOperation(PublisherConfig.Operation.PUBLISH);
 
             final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config);

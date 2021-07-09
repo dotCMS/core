@@ -19,6 +19,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.FileUtil;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -90,7 +91,7 @@ public class FolderBundlerTest {
 
         try (ManifestBuilder manifestBuilder = new TestManifestBuilder()) {
             config.setManifestBuilder(manifestBuilder);
-            config.add(folder, PusheableAsset.FOLDER, "");
+            config.add(folder, PusheableAsset.FOLDER, StringPool.BLANK);
             config.setOperation(PublisherConfig.Operation.PUBLISH);
 
             new BundleDataGen()
