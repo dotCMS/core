@@ -52,6 +52,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
+import org.eclipse.persistence.internal.oxm.schema.model.Content;
 
 
 public class PushPublishigDependencyProcesor implements DependencyProcessor{
@@ -894,9 +895,9 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
             final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
 
             if (Contentlet.class.isInstance(dependency)){
-                return ((Contentlet) dependency).getIdentifier().equals(systemHost.getIdentifier());
+                return  Contentlet.class.cast(dependency).getIdentifier().equals(systemHost.getIdentifier());
             } else  if (Folder.class.isInstance(dependency)){
-                return ((Folder) dependency).getIdentifier().equals(systemFolder.getIdentifier());
+                return Folder.class.cast(dependency).getIdentifier().equals(systemFolder.getIdentifier());
             } else {
                 return false;
             }
