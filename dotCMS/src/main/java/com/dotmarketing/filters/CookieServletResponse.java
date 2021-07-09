@@ -38,6 +38,8 @@ public class CookieServletResponse extends HttpServletResponseWrapper {
             cookie.setSecure(true);
         }
 
+        cookie.setPath(CookieUtil.URI);
+
         super.addCookie(cookie);
     }
 

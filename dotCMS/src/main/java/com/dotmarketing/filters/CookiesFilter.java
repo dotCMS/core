@@ -43,7 +43,7 @@ public class CookiesFilter implements Filter {
 
     HttpServletRequest req = (HttpServletRequest) request;
     HttpServletResponse res = new CookieServletResponse(response);
-    CookieUtil.setCookiesSecurityHeaders(req, res);
+
     try {
       filterChain.doFilter(req, res);
     } catch (final Exception nse) {
