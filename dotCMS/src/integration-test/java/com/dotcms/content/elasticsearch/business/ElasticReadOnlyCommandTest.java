@@ -67,6 +67,38 @@ public class ElasticReadOnlyCommandTest {
 
     /**
      * Method to Test: {@link ElasticReadOnlyCommand#executeCheck()}
+     * When: If the LIVE and WORKING current index don't exists
+     * Should: not set the index as read only, and not send any large message
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void whenCurrentIndexNotExists() throws DotDataException, IOException {
+
+        final IndiciesInfo currentIndiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
+
+        final IndiciesInfo.Builder notExistIndicesBuilder = new IndiciesInfo.Builder();
+        notExistIndicesBuilder.setLive("NOT_EXISTS_LIVE_INDEX");
+        notExistIndicesBuilder.setWorking("NOT_EXISTS_WORKING_INDEX");
+
+        final IndiciesInfo notExistsIndiciesInfo = new IndiciesInfo(notExistIndicesBuilder);
+
+        try {
+            APILocator.getIndiciesAPI().point(notExistsIndiciesInfo);
+
+            esReadOnlyMonitor.executeCheck();
+
+            verify(systemMessageEventUtilMock, never()).pushLargeMessage(any(), any());
+
+            assertEquals(false, ElasticsearchUtil
+                    .isAnyReadOnly(currentIndiciesInfo.getWorking(), currentIndiciesInfo.getLive()));
+        } finally {
+            APILocator.getIndiciesAPI().point(currentIndiciesInfo);
+        }
+    }
+
+    /**
+     * Method to Test: {@link ElasticReadOnlyCommand#executeCheck()}
      * When: If the LIVE and WORKING current index are not read only
      * Should: not sent large message
      *
