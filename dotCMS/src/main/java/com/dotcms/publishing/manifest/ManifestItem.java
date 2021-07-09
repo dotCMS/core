@@ -8,6 +8,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.liferay.util.StringPool;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -121,7 +122,7 @@ public interface ManifestItem {
                 final Host host = getHost(siteId);
                 return host.getName();
             } else {
-                return "";
+                return StringPool.BLANK;
             }
         }
 
@@ -141,7 +142,7 @@ public interface ManifestItem {
             } else if (UtilMethods.isSet(folderPath)) {
                 return folderPath;
             } else {
-                return "";
+                return StringPool.BLANK;
             }
         }
 
