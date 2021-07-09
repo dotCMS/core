@@ -9,6 +9,7 @@ import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.manifest.ManifestBuilder;
 import com.dotcms.publishing.output.BundleOutput;
 import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.test.util.FileTestUtil;
@@ -110,21 +111,26 @@ public class ContentTypeBundlerTest {
         final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
 
         final PushPublisherConfig config = new PushPublisherConfig();
-        config.add(contentType, PusheableAsset.CONTENT_TYPE, "");
-        config.setOperation(PublisherConfig.Operation.PUBLISH);
 
-        final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config);
+        try (ManifestBuilder manifestBuilder = new TestManifestBuilder()) {
+            config.setManifestBuilder(manifestBuilder);
+            config.add(contentType, PusheableAsset.CONTENT_TYPE, "");
+            config.setOperation(PublisherConfig.Operation.PUBLISH);
 
-        new BundleDataGen()
-                .pushPublisherConfig(config)
-                .addAssets(list(contentType))
-                .filter(filterDescriptor)
-                .nextPersisted();
+            final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config);
 
-        bundler.setConfig(config);
-        bundler.generate(directoryBundleOutput, status);
+            new BundleDataGen()
+                    .pushPublisherConfig(config)
+                    .addAssets(list(contentType))
+                    .filter(filterDescriptor)
+                    .nextPersisted();
 
-        FileTestUtil.assertBundleFile(directoryBundleOutput.getFile(), contentType, testCase.expectedFilePath);
+            bundler.setConfig(config);
+            bundler.generate(directoryBundleOutput, status);
+
+            FileTestUtil.assertBundleFile(directoryBundleOutput.getFile(), contentType,
+                    testCase.expectedFilePath);
+        }
     }
 
     private static class TestCase{

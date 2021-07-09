@@ -7,6 +7,7 @@ import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.manifest.ManifestBuilder;
 import com.dotcms.publishing.output.BundleOutput;
 import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.test.util.FileTestUtil;
@@ -86,26 +87,31 @@ public class FolderBundlerTest {
         final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
 
         final PushPublisherConfig config = new PushPublisherConfig();
-        config.add(folder, PusheableAsset.FOLDER, "");
-        config.setOperation(PublisherConfig.Operation.PUBLISH);
 
-        new BundleDataGen()
-                .pushPublisherConfig(config)
-                .addAssets(list(folder))
-                .filter(filterDescriptor)
-                .nextPersisted();
+        try (ManifestBuilder manifestBuilder = new TestManifestBuilder()) {
+            config.setManifestBuilder(manifestBuilder);
+            config.add(folder, PusheableAsset.FOLDER, "");
+            config.setOperation(PublisherConfig.Operation.PUBLISH);
 
-        final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config);
+            new BundleDataGen()
+                    .pushPublisherConfig(config)
+                    .addAssets(list(folder))
+                    .filter(filterDescriptor)
+                    .nextPersisted();
 
-        bundler.setConfig(config);
-        bundler.generate(directoryBundleOutput, status);
+            final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config);
 
-        final User systemUser = APILocator.systemUser();
+            bundler.setConfig(config);
+            bundler.generate(directoryBundleOutput, status);
 
-        while(folder != null && !folder.isSystemFolder()) {
-            FileTestUtil.assertBundleFile(directoryBundleOutput.getFile(), folder, testCase.expectedFilePath);
+            final User systemUser = APILocator.systemUser();
 
-            folder = APILocator.getFolderAPI().findParentFolder(folder, systemUser, false);
+            while (folder != null && !folder.isSystemFolder()) {
+                FileTestUtil.assertBundleFile(directoryBundleOutput.getFile(), folder,
+                        testCase.expectedFilePath);
+
+                folder = APILocator.getFolderAPI().findParentFolder(folder, systemUser, false);
+            }
         }
     }
 

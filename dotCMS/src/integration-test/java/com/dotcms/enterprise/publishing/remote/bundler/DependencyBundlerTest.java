@@ -2253,32 +2253,4 @@ public class DependencyBundlerTest {
                     "filterDescriptor=" + (filterDescriptor != null ? filterDescriptor.getFilters() : "null");
         }
     }
-
-    class TestManifestBuilder implements ManifestBuilder {
-
-        @Override
-        public void create() throws IOException {
-
-        }
-
-        @Override
-        public <T> void include(ManifestItem manifestItem, String reason) {
-
-        }
-
-        @Override
-        public <T> void exclude(ManifestItem manifestItem, String reason) {
-
-        }
-
-        @Override
-        public File getManifestFile() {
-            return null;
-        }
-
-        @Override
-        public void close() throws IOException {
-
-        }
-    }
 }

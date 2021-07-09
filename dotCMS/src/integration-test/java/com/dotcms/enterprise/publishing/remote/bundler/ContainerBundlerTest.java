@@ -8,6 +8,7 @@ import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.manifest.ManifestBuilder;
 import com.dotcms.publishing.output.BundleOutput;
 import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.test.util.FileTestUtil;
@@ -103,31 +104,38 @@ public class ContainerBundlerTest {
         final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
 
         final PushPublisherConfig config = new PushPublisherConfig();
-        config.add(container, PusheableAsset.CONTAINER, "");
-        config.setOperation(PublisherConfig.Operation.PUBLISH);
 
-        final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config);
+        try (ManifestBuilder manifestBuilder = new TestManifestBuilder()) {
+            config.setManifestBuilder(manifestBuilder);
+            config.add(container, PusheableAsset.CONTAINER, "");
+            config.setOperation(PublisherConfig.Operation.PUBLISH);
 
-        new BundleDataGen()
-                .pushPublisherConfig(config)
-                .addAssets(list(container))
-                .filter(filterDescriptor)
-                .nextPersisted();
+            final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config);
 
-        bundler.setConfig(config);
-        bundler.generate(directoryBundleOutput, status);
+            new BundleDataGen()
+                    .pushPublisherConfig(config)
+                    .addAssets(list(container))
+                    .filter(filterDescriptor)
+                    .nextPersisted();
 
-        final User systemUser = APILocator.systemUser();
-        final Container workingContainer = APILocator.getContainerAPI()
-                .getWorkingContainerById(container.getIdentifier(), systemUser, false);
+            bundler.setConfig(config);
+            bundler.generate(directoryBundleOutput, status);
 
-        FileTestUtil.assertBundleFile(directoryBundleOutput.getFile(), workingContainer, testCase.expectedFilePath);
+            final User systemUser = APILocator.systemUser();
+            final Container workingContainer = APILocator.getContainerAPI()
+                    .getWorkingContainerById(container.getIdentifier(), systemUser, false);
 
-        final Container liveContainer = APILocator.getContainerAPI()
-                .getLiveContainerById(container.getIdentifier(), systemUser, false);
+            FileTestUtil.assertBundleFile(directoryBundleOutput.getFile(), workingContainer,
+                    testCase.expectedFilePath);
 
-        if(liveContainer != null && !liveContainer.getInode().equals(workingContainer.getInode())){
-            FileTestUtil.assertBundleFile(directoryBundleOutput.getFile(), liveContainer, testCase.expectedFilePath);
+            final Container liveContainer = APILocator.getContainerAPI()
+                    .getLiveContainerById(container.getIdentifier(), systemUser, false);
+
+            if (liveContainer != null && !liveContainer.getInode()
+                    .equals(workingContainer.getInode())) {
+                FileTestUtil.assertBundleFile(directoryBundleOutput.getFile(), liveContainer,
+                        testCase.expectedFilePath);
+            }
         }
     }
 
