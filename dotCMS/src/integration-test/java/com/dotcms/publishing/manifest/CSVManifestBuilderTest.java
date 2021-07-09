@@ -205,7 +205,7 @@ public class CSVManifestBuilderTest {
         final Host host = APILocator.getHostAPI()
                 .find(link.getHostId(), APILocator.systemUser(), false);
         final String line = list(PusheableAsset.LINK.getType(), link.getIdentifier(),
-                link.getTitle(), host.getHostname(), "")
+                link.getTitle(), "", "")
                 .stream().collect(Collectors.joining(","));
         return new TestCase(link, line);
     }
@@ -286,7 +286,7 @@ public class CSVManifestBuilderTest {
         }
 
         final List<String> expected = list(headers);
-        expected.add("INCLUDE," + testCase.lineExpected + ",," + includeReason);
+        expected.add("INCLUDED," + testCase.lineExpected + ",," + includeReason);
 
         assertManifestLines(manifestFile, expected);
     }
@@ -311,7 +311,7 @@ public class CSVManifestBuilderTest {
         }
 
         final List<String> expected = list(headers);
-        expected.add("EXCLUDE," + testCase.lineExpected + "," + exludeReason + ",");
+        expected.add("EXCLUDED," + testCase.lineExpected + "," + exludeReason + ",");
 
         assertManifestLines(manifestFile, expected);
     }

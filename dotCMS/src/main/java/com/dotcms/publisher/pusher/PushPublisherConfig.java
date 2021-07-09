@@ -5,6 +5,7 @@ import com.dotcms.publisher.util.dependencies.DependencyManager;
 import com.dotcms.publisher.util.dependencies.DependencyProcessor;
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.UtilMethods;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -265,7 +266,9 @@ public class PushPublisherConfig extends PublisherConfig {
 
 	private <T> void writeIncludeManifestItem(final T asset, final String reason) {
 		if (ManifestItem.class.isAssignableFrom(asset.getClass())) {
-			manifestBuilder.include((ManifestItem) asset, reason);
+			if (UtilMethods.isSet(manifestBuilder)) {
+				manifestBuilder.include((ManifestItem) asset, reason);
+			}
 		} else {
 			Logger.warn(PushPublisherConfig.class,
 					String.format("It is not possible add %s into the manifest", asset));
@@ -274,7 +277,9 @@ public class PushPublisherConfig extends PublisherConfig {
 
 	private <T> void writeExcludeManifestItem(final T asset, final String reason) {
 		if (ManifestItem.class.isAssignableFrom(asset.getClass())) {
-			manifestBuilder.exclude((ManifestItem) asset, reason);
+			if (UtilMethods.isSet(manifestBuilder)) {
+				manifestBuilder.exclude((ManifestItem) asset, reason);
+			}
 		} else {
 			Logger.warn(PushPublisherConfig.class,
 					String.format("It is not possible add %s into the manifest", asset));

@@ -59,7 +59,9 @@ public interface ManifestItem {
         }
 
         public ManifestInfoBuilder site(final Host site){
-            this.siteId = site.getIdentifier();
+            if (UtilMethods.isSet(site)) {
+                this.siteId = site.getIdentifier();
+            }
             return this;
         }
 
