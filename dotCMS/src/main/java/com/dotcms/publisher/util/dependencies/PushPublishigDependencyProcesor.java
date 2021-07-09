@@ -902,6 +902,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
                 return false;
             }
         } catch (DotDataException e) {
+            Logger.debug(PushPublishigDependencyProcesor.class, () -> e.getMessage());
             return false;
         }
     }
