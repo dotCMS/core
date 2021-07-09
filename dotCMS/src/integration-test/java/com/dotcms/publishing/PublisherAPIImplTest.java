@@ -428,7 +428,7 @@ public class PublisherAPIImplTest {
     /**
      * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig)}
      * When: Add different assets into a bundle, and generate it
-     * Should: Create all the files
+     * Should: Create all the files and the Manifest File correctly
      */
     @Test
     @UseDataProvider("publishers")

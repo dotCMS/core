@@ -1175,6 +1175,7 @@ public class DependencyBundlerTest {
      * - Add a {@link WorkflowScheme} into a Bundle
      * - Add a {@link Language} into a Bundle
      * - Add a {@link Rule} into a Bundle
+     * Should:  Add all the dependencies ans created the Manifest file with all the register
      */
     @Test
     @UseDataProvider("assets")
@@ -1290,6 +1291,7 @@ public class DependencyBundlerTest {
      * Should:
      * - Exclude the child contentlet in the bundle when isForPush is false, isDownload is false and Operation is PUBLISH
      * otherwise should include the content child and content child dependencies
+     * - Create the Manifest File
      */
     @Test
     @UseDataProvider("configs")
