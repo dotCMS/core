@@ -5,10 +5,14 @@ on:
       custom_label:
         description: 'Custom label to add as part of the tag'
         required: false
-      updata_stable_tags:
+      update_stable:
         description: 'Update stable tags'
         required: true
         default: 'true'
+      also_latest:
+        description: 'Update also the "latest" tag (depends on update_stable input to be set to true)'
+        required: false
+        default: 'false'
       dry_run:
         description: 'Runs publish image in dry-run mode'
         required: false
@@ -40,10 +44,11 @@ jobs:
         id: discover-docker-tags
         uses: dotcms/discover-docker-tags-action@main
         with:
-          version: ${{ ENV.DOTCMS_VERSION }}
+          version: ${{ env.DOTCMS_VERSION }}
           hash: ${{ env.BUILD_HASH }}
           label: ${{ github.event.inputs.custom_label }}
-          update_stable: ${{ github.event.inputs.updata_stable_tags }}
+          update_stable: ${{ github.event.inputs.update_stable }}
+          also_latest: ${{ github.event.inputs.also_latest }}
       - name: Publish docker image
         id: publish-docker-image
         uses: dotcms/publish-docker-image-action@main
