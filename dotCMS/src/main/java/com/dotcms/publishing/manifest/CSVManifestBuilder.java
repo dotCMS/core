@@ -22,6 +22,18 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * CSV Manifest file builder, creae a manifest file with the headers:
+ *
+ * - INCLUDE/EXCLUDE: if the asset was INCLUDE or EXCLUDE
+ * - object type: Asset's {@link PusheableAsset}
+ * - Id: Asset's id
+ * - title: Asset's Title
+ * - site: Asset's Site
+ * - folder: Asset's Folder
+ * - exclude by: reason why the asset was EXCLUDE, if the asset was INCLUDE then it is blank
+ * - include by: reason why the asset was INCLUDE, if the asset was EXCLUDE then it is blank
+ */
 public class CSVManifestBuilder implements ManifestBuilder {
     private final static String HEADERS_LINE =
             "INCLUDE/EXCLUDE,object type, Id, title, site, folder, exclude by, include by";
