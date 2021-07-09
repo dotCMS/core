@@ -95,7 +95,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -474,7 +473,7 @@ public class PublisherAPIImplTest {
                 extractHere);
 
         if (!Rule.class.isInstance(testAsset.asset)) {
-            final TestManifestItemsMap manifestLines = testAsset.manifestLines();
+            final ManifestItemsMapTest manifestLines = testAsset.manifestLines();
             manifestLines.addExcludes(map("Excluded System Folder/Host",
                     list(APILocator.getHostAPI().findSystemHost(), APILocator.getFolderAPI().findSystemFolder())));
 
@@ -492,7 +491,7 @@ public class PublisherAPIImplTest {
     }
 
     public static void addLanguageVariableManifestItem(
-            final TestManifestItemsMap manifestLines,
+            final ManifestItemsMapTest manifestLines,
             final boolean addLanguageVariableDependencies,
             final List<Contentlet> languageVariablesAddInBundle)
             throws DotDataException, DotSecurityException {
@@ -534,7 +533,7 @@ public class PublisherAPIImplTest {
     }
 
     public static void assertManifestFile(final File manifestFile,
-            final TestManifestItemsMap  manifestItems) throws IOException {
+            final ManifestItemsMapTest manifestItems) throws IOException {
 
         assertTrue(manifestFile.exists());
 
@@ -984,8 +983,8 @@ public class PublisherAPIImplTest {
             this.otherVersions = otherVersions != null ? otherVersions : Collections.EMPTY_SET;
         }
 
-        public TestManifestItemsMap manifestLines() {
-            final TestManifestItemsMap manifestItemsMap = new TestManifestItemsMap();
+        public ManifestItemsMapTest manifestLines() {
+            final ManifestItemsMapTest manifestItemsMap = new ManifestItemsMapTest();
             final ManifestItem assetManifestItem = (ManifestItem) asset;
             manifestItemsMap.add(assetManifestItem, "Added directly by User");
 

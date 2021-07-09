@@ -15,7 +15,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class TestManifestItemsMap {
+public class ManifestItemsMapTest {
     private Map<String, List<String>> includes = new HashMap<>();
     private Map<String, List<String>> excludes = new HashMap<>();
     private Set<String> alreadyCheck;

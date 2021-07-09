@@ -63,7 +63,6 @@ import java.util.*;
 import static com.dotcms.publishing.PublisherAPIImplTest.getLanguageVariables;
 import static com.dotcms.publishing.PublisherAPIImplTest.getLanguagesVariableDependencies;
 import static com.dotcms.util.CollectionsUtils.*;
-import static com.dotmarketing.business.ThemeAPI.THEME_PNG;
 import static java.util.stream.Collectors.*;
 import static org.jgroups.util.Util.assertEquals;
 import static org.jgroups.util.Util.assertTrue;
@@ -1218,7 +1217,7 @@ public class DependencyBundlerTest {
 
             manifestBuilder.close();
 
-            final TestManifestItemsMap manifestLines = testData.manifestLines();
+            final ManifestItemsMapTest manifestLines = testData.manifestLines();
 
             if (publisherFilter.isDependencies()) {
                 PublisherAPIImplTest.addLanguageVariableManifestItem(
@@ -1343,7 +1342,7 @@ public class DependencyBundlerTest {
             bundler.setConfig(config);
             bundler.generate(bundleOutput, status);
 
-            final TestManifestItemsMap manifestLines = new TestManifestItemsMap();
+            final ManifestItemsMapTest manifestLines = new ManifestItemsMapTest();
             manifestLines.add(contentParent, "Add directly by User");
 
             final List<Contentlet> languageVariables = PublisherAPIImplTest.getLanguageVariables();
@@ -2228,8 +2227,8 @@ public class DependencyBundlerTest {
                     .collect(Collectors.toSet());
         }
 
-        public TestManifestItemsMap manifestLines() {
-            final TestManifestItemsMap manifestItemsMap = new TestManifestItemsMap();
+        public ManifestItemsMapTest manifestLines() {
+            final ManifestItemsMapTest manifestItemsMap = new ManifestItemsMapTest();
             final ManifestItem assetManifestItem = (ManifestItem) assetsToAddInBundle;
             manifestItemsMap.add(assetManifestItem, "Add directly by User");
 
