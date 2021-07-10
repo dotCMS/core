@@ -34,7 +34,7 @@
                 value="strInode"
             />
             <div class="sideMenuWrapper">
-                <div dojoAttachPoint="structures_select"></div>
+                <div dojoAttachPoint="content_type_select"></div>
                 <div dojoAttachPoint="search_general">
                     <dl class="vertical">
                         <dt>
