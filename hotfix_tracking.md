@@ -10,3 +10,5 @@ This maintenance release includes the following code fixes:
 3. https://github.com/dotCMS/core/issues/19608 : Contentlets lose inherited permissions until cache is flushed
 
 4. https://github.com/dotCMS/core/issues/19679 : Don't let rule PP fail
+
+5. https://github.com/dotCMS/core/issues/20334 : Setting COOKIES_HTTP_ONLY=TRUE or COOKIES_SECURE_FLAG=always/https causes cookie duplication
