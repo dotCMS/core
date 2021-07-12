@@ -3,7 +3,9 @@ package com.dotmarketing.business;
 import static com.dotmarketing.util.UUIDUtil.isUUID;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
@@ -23,6 +25,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.util.Iterator;
@@ -44,19 +47,23 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
 
     private final FolderAPI folderAPI;
     private final HostAPI hostAPI;
+    private final ContentTypeAPI contentTypeAPI;
     private final Supplier<String> uuidSupplier;
     private final Function<String, String> hashFunction;
 
     DeterministicIdentifierAPIImpl() {
-        this(APILocator.getFolderAPI(), APILocator.getHostAPI(),
+        this(APILocator.getFolderAPI(),
+             APILocator.getHostAPI(),
+             APILocator.getContentTypeAPI(APILocator.systemUser()),
              UUIDGenerator::generateUuid,
              DigestUtils::sha256Hex);
     }
 
     @VisibleForTesting
-    DeterministicIdentifierAPIImpl(final FolderAPI folderAPI, final HostAPI hostAPI, final Supplier<String> uuidSupplier, final Function<String, String> hashFunction) {
+    DeterministicIdentifierAPIImpl(final FolderAPI folderAPI, final HostAPI hostAPI, final ContentTypeAPI contentTypeAPI,final Supplier<String> uuidSupplier, final Function<String, String> hashFunction) {
         this.folderAPI = folderAPI;
         this.hostAPI = hostAPI;
+        this.contentTypeAPI = contentTypeAPI;
         this.uuidSupplier = uuidSupplier;
         this.hashFunction = hashFunction;
     }
@@ -171,11 +178,17 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
         return baseContentType.getAlternateName();
     }
 
+    /**
+     * This method is used by ContentTypes if the CT does not have a predefined variable-name installed on it we rely on the supplier.
+     * @param contentType
+     * @param varName
+     * @return
+     */
     @VisibleForTesting
-    String resolveName(final ContentType contentType, final Supplier<String>contentTypeVarName) {
+    String resolveName(final ContentType contentType, final Supplier<String> varName) {
         String name = contentType.variable();
         if(UtilMethods.isNotSet(name)){
-           name = contentTypeVarName.get();
+            name = varName.get();
         }
         return name;
     }
@@ -183,16 +196,40 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
     /**
      * Generates the seed to the deterministic id
      * @param contentType
-     * @param contentTypeVarName
+     * @param variableName
      * @return
      */
-    private String deterministicIdSeed(final ContentType contentType, final Supplier<String>contentTypeVarName) {
+    private String deterministicIdSeed(final ContentType contentType, final Supplier<String>variableName) {
        final String assetType = resolveAssetType(contentType);
-       final String name = resolveName(contentType, contentTypeVarName);
+       final String name = resolveName(contentType, variableName);
        final String seedId = String.format("%s:%s",assetType, name).toLowerCase();
 
        Logger.debug(DeterministicIdentifierAPIImpl.class, String.format(" contentType: %s, assetName: %s,  seedId: %s", assetType, name, seedId));
        return seedId;
+    }
+
+    /**
+     * This method is used by Fields if the Field does not have a predefined variable-name installed on it we rely on the supplier.
+     * @param field
+     * @param varName
+     * @return
+     */
+    @VisibleForTesting
+    String resolveName(final Field field, final Supplier<String> varName) {
+        String name = varName.get();
+        if(UtilMethods.isNotSet(name)){
+            name = field.variable();
+        }
+        return name;
+    }
+
+    private String deterministicIdSeed(final ContentType contentType, final Field field, final Supplier<String>fieldVariableName) {
+        final String assetType = deterministicIdSeed(contentType, contentType::variable);
+        final String name = resolveName(field, fieldVariableName);
+        final String seedId = String.format("%s:%s", assetType, name).toLowerCase();
+
+        Logger.debug(DeterministicIdentifierAPIImpl.class, String.format(" contentType: %s, assetName: %s,  seedId: %s", assetType, name, seedId));
+        return seedId;
     }
 
     /**
@@ -217,50 +254,29 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
         return hashed;
     }
 
-    @CloseDBIfOpened
-    private String bestEffortDeterministicId(final String hash) {
-
-        final IdentifierFactory identifierFactory = FactoryLocator.getIdentifierFactory();
-        String candidateId = hash;
-
-        for (int i = 1; i <= MAX_ATTEMPTS; i++) {
-            if (!identifierFactory.isIdentifier(candidateId)) {
-                return candidateId;
-            }
-            candidateId = uuidSupplier.get();
-        }
-        Logger.warn(DeterministicIdentifierAPIImpl.class,String.format("Attempt to generate id has failed instead a non deterministic id (%s) was returned.",candidateId));
-        return candidateId;
-    }
-
-    @CloseDBIfOpened
-    private String bestEffortDeterministicContentId(final String hash) {
-
-        String candidateId = hash;
-
-        for (int i = 1; i <= MAX_ATTEMPTS; i++) {
-            if (!isContentTypeInode(candidateId)) {
-                return candidateId;
-            }
-            candidateId = uuidSupplier.get();
-        }
-        Logger.warn(DeterministicIdentifierAPIImpl.class,String.format("Attempt to generate content-type id has failed instead a non deterministic id (%s) was returned.",candidateId));
-        return candidateId;
-    }
-
     /**
-     * Test if the calculated hash has already been used
+     * best effort means we Test the generated identifier against a table to see if it already has been taken previously
+     * if not we use it as the next identifier but if it has been already taken then we rely on the fallback function.
+     * The fallback function basically does what it was done before the introduction of the deterministic identifier api.
      * @param hash
+     * @param testIdentifierFunction
+     * @param fallbackIdentifier
+     * @param <T>
      * @return
      */
     @CloseDBIfOpened
-    private boolean isContentTypeInode(final String hash){
-            return new DotConnect()
-                    .setSQL("select count(*) as test from structure s join inode i on s.inode = i.inode where s.inode =?")
-                    .addParam(hash)
-                    .getInt("test")>0;
-
+    private <T> T bestEffortDeterministicId(final T hash, final Function<T,Boolean> testIdentifierFunction, final Supplier<T> fallbackIdentifier) {
+        T candidateId = hash;
+        for (int i = 1; i <= MAX_ATTEMPTS; i++) {
+            if (!testIdentifierFunction.apply(candidateId)) {
+                return candidateId;
+            }
+            candidateId = fallbackIdentifier.get();
+        }
+        Logger.warn(DeterministicIdentifierAPIImpl.class,String.format("Attempt to generate id has failed instead a non deterministic id (%s) was returned. ",candidateId));
+        return candidateId;
     }
+
 
     /**
      * Entry point for (Contentlets, Host, Persona, Templates, Folders, FileAsset)
@@ -271,8 +287,11 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
     @Override
     public String generateDeterministicIdBestEffort(final Versionable asset,
             final Treeable parent) {
-        return isEnabled() ? bestEffortDeterministicId(hash(deterministicIdSeed(asset, parent)))
-                : uuidSupplier.get();
+
+        final IdentifierFactory identifierFactory = FactoryLocator.getIdentifierFactory();
+        final Function<String, Boolean> testIdentifierFunction = identifierFactory::isIdentifier;
+        return isEnabled() ? bestEffortDeterministicId(hash(deterministicIdSeed(asset, parent)),
+                testIdentifierFunction, uuidSupplier) : uuidSupplier.get();
     }
 
     /**
@@ -285,9 +304,34 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
     @Override
     public String generateDeterministicIdBestEffort(final ContentType contentType,
             final Supplier<String> contentTypeVarName) {
-        return isEnabled() ? bestEffortDeterministicContentId(
-                hash(deterministicIdSeed(contentType, contentTypeVarName)))
-                : uuidSupplier.get();
+
+        return isEnabled() ? bestEffortDeterministicId(
+                hash(deterministicIdSeed(contentType, contentTypeVarName)),
+                this::isContentTypeInode, uuidSupplier) : uuidSupplier.get();
+    }
+
+    /**
+     *
+     * @param throwAwayField
+     * @return
+     */
+    public String generateDeterministicIdBestEffort(final Field throwAwayField,
+            final Supplier<String> fieldVarName) {
+        Preconditions.checkNotNull(throwAwayField.contentTypeId(), "contentTypeRequired");
+        Preconditions.checkNotNull(fieldVarName.get(), "contentTypeVariableRequired");
+
+        if(isEnabled()){
+            final ContentType contentType = Try
+                    .of(() -> contentTypeAPI.find(throwAwayField.contentTypeId()))
+                    .getOrElseThrow(DotRuntimeException::new);
+
+            return bestEffortDeterministicId(
+                    hash(deterministicIdSeed(contentType, throwAwayField, fieldVarName)),
+                    this::isFieldInode, uuidSupplier);
+
+        }
+        return uuidSupplier.get();
+
     }
 
     /**
@@ -297,26 +341,28 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
      */
     @Override
     public long generateDeterministicIdBestEffort(final Language lang) {
-        return isEnabled() ? bestEffortDeterministicLanguageId(
-                simpleHash(hash(deterministicIdSeed(lang)))) : nextLangId();
+
+        return isEnabled() ? bestEffortDeterministicId(simpleHash(hash(deterministicIdSeed(lang))),
+                this::isLanguageId,
+                this::nextLangId) : nextLangId();
     }
 
-    @CloseDBIfOpened
-    private long bestEffortDeterministicLanguageId(final long hash) {
-
-        long candidateId = hash;
-        for (int i = 1; i <= MAX_ATTEMPTS; i++) {
-            if (!isLanguageId(candidateId)) {
-                return candidateId;
-            }
-            candidateId = nextLangId();
-        }
-        Logger.warn(DeterministicIdentifierAPIImpl.class,String.format("Attempt to generate language id has failed instead a non deterministic id (%s) was returned.",candidateId));
-        return candidateId;
-    }
 
     private synchronized long nextLangId(){
         return System.currentTimeMillis();
+    }
+
+    /**
+     * Test if the calculated hash has already been used as a language identifier
+     * @param hash
+     * @return
+     */
+    @CloseDBIfOpened
+    private boolean isLanguageId(final long hash){
+        return new DotConnect()
+                .setSQL("select count(*) as test from language where id =?")
+                .addParam(hash)
+                .getInt("test")>0;
     }
 
     /**
@@ -325,9 +371,23 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
      * @return
      */
     @CloseDBIfOpened
-    private boolean isLanguageId(final long hash){
+    private boolean isContentTypeInode(final String hash){
         return new DotConnect()
-                .setSQL("select count(*) as test from language where id =?")
+                .setSQL("select count(*) as test from structure s join inode i on s.inode = i.inode where s.inode =?")
+                .addParam(hash)
+                .getInt("test")>0;
+
+    }
+
+    /**
+     * Test the calculated hash has already been used as a field identifier or inode
+     * @param hash
+     * @return
+     */
+    @CloseDBIfOpened
+    private boolean isFieldInode(final String hash){
+        return new DotConnect()
+                .setSQL("select count(*) as test from field f join inode i on f.inode = i.inode where i.inode =?")
                 .addParam(hash)
                 .getInt("test")>0;
     }
@@ -345,7 +405,7 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
         final int len = string.length();
         long hash = 0;
         for (int i = 0; i < len; i++) {
-            hash += 131 * (i + 1) * string.charAt(i);
+            hash += 131L * (i + 1) * string.charAt(i);
         }
         return hash;
     }
