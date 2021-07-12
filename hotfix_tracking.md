@@ -12,3 +12,5 @@ This maintenance release includes the following code fixes:
 4. https://github.com/dotCMS/core/issues/19679 : Don't let rule PP fail
 
 5. https://github.com/dotCMS/core/issues/20334 : Setting COOKIES_HTTP_ONLY=TRUE or COOKIES_SECURE_FLAG=always/https causes cookie duplication
+
+6. https://github.com/dotCMS/core/issues/20058 : Enable Tomcat's HttpHeaderSecurityFilter

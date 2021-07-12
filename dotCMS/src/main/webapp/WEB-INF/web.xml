@@ -29,6 +29,23 @@
 		<async-supported>true</async-supported>
 	</filter>
 	<filter>
+		<filter-name>HttpHeaderSecurityFilter</filter-name>
+		<filter-class>org.apache.catalina.filters.HttpHeaderSecurityFilter</filter-class>
+		<async-supported>true</async-supported>
+		<init-param>
+			<param-name>hstsMaxAgeSeconds</param-name>
+			<param-value>3600</param-value>
+		</init-param>
+		<init-param>
+			<param-name>hstsIncludeSubDomains</param-name>
+			<param-value>true</param-value>
+		</init-param>
+		<init-param>
+			<param-name>antiClickJackingOption</param-name>
+			<param-value>SAMEORIGIN</param-value>
+		</init-param>
+	</filter>
+	<filter>
 		<filter-name>CookiesFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.CookiesFilter</filter-class>
 		<async-supported>true</async-supported>
@@ -102,6 +119,10 @@
 		<filter-name>NormalizationFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
+    <filter-mapping>
+        <filter-name>HttpHeaderSecurityFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
 	<filter-mapping>
 		<filter-name>InterceptorFilter</filter-name>
 		<url-pattern>/*</url-pattern>
