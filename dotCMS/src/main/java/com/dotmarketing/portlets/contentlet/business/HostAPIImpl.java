@@ -433,8 +433,9 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         contentletHost.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
         contentletHost = APILocator.getContentletAPI().checkin(contentletHost, user, respectFrontendRoles);
 
-        if (!contentletHost.isNew() &&
-                !contentletHost.getTitle().equals(host.get(Host.HOST_NAME_KEY))) {
+        if (null != contentletHost.get("hostName") && null != host.get(Host.HOST_NAME_KEY) &&
+                !contentletHost.isNew() && !contentletHost.getTitle().equals(host.get(Host.HOST_NAME_KEY))) {
+
             UpdateContainersPathsJob.triggerUpdateContainersPathsJob(
                     host.get(Host.HOST_NAME_KEY).toString(),
                     (String) contentletHost.get("hostName")
