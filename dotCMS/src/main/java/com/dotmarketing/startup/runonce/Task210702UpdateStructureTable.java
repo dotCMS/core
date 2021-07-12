@@ -11,11 +11,13 @@ import java.util.List;
  */
 public class Task210702UpdateStructureTable extends AbstractJDBCStartupTask {
 
+    private final DotDatabaseMetaData dotDatabaseMetaData = new DotDatabaseMetaData();
+
     @Override
     public boolean forceRun() {
         try {
-            return !new DotDatabaseMetaData().hasColumn("structure", "icon") &&
-                    !new DotDatabaseMetaData().hasColumn("structure", "sort_order") ;
+            return !dotDatabaseMetaData.hasColumn("structure", "icon") &&
+                    !dotDatabaseMetaData.hasColumn("structure", "sort_order") ;
         } catch (SQLException e) {
             Logger.error(this, e.getMessage(),e);
             return false;
@@ -31,10 +33,10 @@ public class Task210702UpdateStructureTable extends AbstractJDBCStartupTask {
     public String getPostgresScript() {
         String query = "";
         try {
-            if(!new DotDatabaseMetaData().hasColumn("structure", "icon")) {
+            if(!dotDatabaseMetaData.hasColumn("structure", "icon")) {
                 query += "ALTER TABLE structure ADD icon varchar(255);";
             }
-            if(!new DotDatabaseMetaData().hasColumn("structure", "sort_order")) {
+            if(!dotDatabaseMetaData.hasColumn("structure", "sort_order")) {
                 query += "ALTER TABLE structure ADD sort_order int4;";
             }
         } catch (SQLException e) {
@@ -52,10 +54,10 @@ public class Task210702UpdateStructureTable extends AbstractJDBCStartupTask {
     public String getMySQLScript() {
         String query = "";
         try {
-            if(!new DotDatabaseMetaData().hasColumn("structure", "icon")) {
+            if(!dotDatabaseMetaData.hasColumn("structure", "icon")) {
                 query += "ALTER TABLE structure ADD icon varchar(255);";
             }
-            if(!new DotDatabaseMetaData().hasColumn("structure", "sort_order")) {
+            if(!dotDatabaseMetaData.hasColumn("structure", "sort_order")) {
                 query += "ALTER TABLE structure ADD sort_order integer;";
             }
         } catch (SQLException e) {
@@ -73,10 +75,10 @@ public class Task210702UpdateStructureTable extends AbstractJDBCStartupTask {
     public String getOracleScript() {
         String query = "";
         try {
-            if(!new DotDatabaseMetaData().hasColumn("structure", "icon")) {
+            if(!dotDatabaseMetaData.hasColumn("structure", "icon")) {
                 query += "ALTER TABLE structure ADD icon varchar2(255);";
             }
-            if(!new DotDatabaseMetaData().hasColumn("structure", "sort_order")) {
+            if(!dotDatabaseMetaData.hasColumn("structure", "sort_order")) {
                 query += "ALTER TABLE structure ADD sort_order number(10,0);";
             }
         } catch (SQLException e) {
@@ -94,10 +96,10 @@ public class Task210702UpdateStructureTable extends AbstractJDBCStartupTask {
     public String getMSSQLScript() {
         String query = "";
         try {
-            if(!new DotDatabaseMetaData().hasColumn("structure", "icon")) {
+            if(!dotDatabaseMetaData.hasColumn("structure", "icon")) {
                 query += "ALTER TABLE structure ADD icon NVARCHAR(255) null;";
             }
-            if(!new DotDatabaseMetaData().hasColumn("structure", "sort_order")) {
+            if(!dotDatabaseMetaData.hasColumn("structure", "sort_order")) {
                 query += "ALTER TABLE structure ADD sort_order int null;";
             }
         } catch (SQLException e) {
