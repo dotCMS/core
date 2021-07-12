@@ -899,9 +899,9 @@ public class SiteResource implements Serializable {
             throw new NotFoundException("Site: " + siteIdentifier + " does not exists");
         }
 
-        if (null != site.getMap().get(Contentlet.NULL_PROPERTIES)) {
-            Set.class.cast(site.getMap().get(Contentlet.NULL_PROPERTIES)).clear();
-        }
+        // we need to clean up mostly the null properties when recovery the by identifier
+        site.cleanup();
+
         final PageMode      pageMode      = PageMode.get(httpServletRequest);
         final TempFileAPI tempFileAPI = APILocator.getTempFileAPI();
 
