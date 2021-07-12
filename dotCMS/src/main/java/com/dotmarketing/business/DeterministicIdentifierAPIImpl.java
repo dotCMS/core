@@ -68,6 +68,11 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
         this.hashFunction = hashFunction;
     }
 
+    /**
+     * Resolves the name used to generate a seed for the given params
+     * @param asset
+     * @return
+     */
     @VisibleForTesting
     String resolveAssetName(final Versionable asset) {
 
@@ -133,6 +138,11 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
 
     }
 
+    /**
+     * Resolves the name used to generate a seed for the given params
+     * @param asset
+     * @return
+     */
     @VisibleForTesting
     String resolveAssetType(final Versionable asset) {
 
@@ -145,6 +155,12 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
 
     }
 
+    /**
+     * Generates the seed to the deterministic id for the given set of params
+     * @param asset
+     * @param parent
+     * @return
+     */
     private String deterministicIdSeed(final Versionable asset, final Treeable parent) {
 
         final Host parentHost = (parent instanceof Host) ? (Host) parent : Try.of(
@@ -199,7 +215,7 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
     }
 
     /**
-     * Generates the seed to the deterministic id
+     * Generates the seed to the deterministic id for the given set of params
      * @param contentType
      * @param contentTypeVarName
      * @return
@@ -228,6 +244,13 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
         return name;
     }
 
+    /**
+     * Generates the seed to the deterministic id for the given set of params
+     * @param contentType
+     * @param field
+     * @param fieldVarName
+     * @return
+     */
     private String deterministicIdSeed(final ContentType contentType, final Field field, final Supplier<String>fieldVarName) {
         final String assetType = deterministicIdSeed(contentType, contentType::variable);
         final String name = resolveName(field, fieldVarName);
