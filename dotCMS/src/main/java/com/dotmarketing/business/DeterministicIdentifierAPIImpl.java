@@ -169,6 +169,11 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
 
     }
 
+    /**
+     * calculates a name used to compute the basic seed for a given CT
+     * @param contentType the ContentType
+     * @return the name
+     */
     @VisibleForTesting
     String resolveAssetType(final ContentType contentType) {
         final BaseContentType baseContentType = contentType.baseType();
@@ -181,14 +186,14 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
     /**
      * This method is used by ContentTypes if the CT does not have a predefined variable-name installed on it we rely on the supplier.
      * @param contentType
-     * @param varName
+     * @param contentTypeVarName
      * @return
      */
     @VisibleForTesting
-    String resolveName(final ContentType contentType, final Supplier<String> varName) {
+    String resolveName(final ContentType contentType, final Supplier<String>contentTypeVarName) {
         String name = contentType.variable();
         if(UtilMethods.isNotSet(name)){
-            name = varName.get();
+           name = contentTypeVarName.get();
         }
         return name;
     }
@@ -196,12 +201,12 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
     /**
      * Generates the seed to the deterministic id
      * @param contentType
-     * @param variableName
+     * @param contentTypeVarName
      * @return
      */
-    private String deterministicIdSeed(final ContentType contentType, final Supplier<String>variableName) {
+    private String deterministicIdSeed(final ContentType contentType, final Supplier<String>contentTypeVarName) {
        final String assetType = resolveAssetType(contentType);
-       final String name = resolveName(contentType, variableName);
+       final String name = resolveName(contentType, contentTypeVarName);
        final String seedId = String.format("%s:%s",assetType, name).toLowerCase();
 
        Logger.debug(DeterministicIdentifierAPIImpl.class, String.format(" contentType: %s, assetName: %s,  seedId: %s", assetType, name, seedId));
@@ -211,21 +216,21 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
     /**
      * This method is used by Fields if the Field does not have a predefined variable-name installed on it we rely on the supplier.
      * @param field
-     * @param varName
+     * @param fieldVarName
      * @return
      */
     @VisibleForTesting
-    String resolveName(final Field field, final Supplier<String> varName) {
-        String name = varName.get();
+    String resolveName(final Field field, final Supplier<String> fieldVarName) {
+        String name = fieldVarName.get();
         if(UtilMethods.isNotSet(name)){
             name = field.variable();
         }
         return name;
     }
 
-    private String deterministicIdSeed(final ContentType contentType, final Field field, final Supplier<String>fieldVariableName) {
+    private String deterministicIdSeed(final ContentType contentType, final Field field, final Supplier<String>fieldVarName) {
         final String assetType = deterministicIdSeed(contentType, contentType::variable);
-        final String name = resolveName(field, fieldVariableName);
+        final String name = resolveName(field, fieldVarName);
         final String seedId = String.format("%s:%s", assetType, name).toLowerCase();
 
         Logger.debug(DeterministicIdentifierAPIImpl.class, String.format(" contentType: %s, assetName: %s,  seedId: %s", assetType, name, seedId));
@@ -258,11 +263,11 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
      * best effort means we Test the generated identifier against a table to see if it already has been taken previously
      * if not we use it as the next identifier but if it has been already taken then we rely on the fallback function.
      * The fallback function basically does what it was done before the introduction of the deterministic identifier api.
-     * @param hash
-     * @param testIdentifierFunction
-     * @param fallbackIdentifier
-     * @param <T>
-     * @return
+     * @param hash candidate hash that aspires to become an id
+     * @param testIdentifierFunction Function that tests if the candidate hash is already in use.
+     * @param fallbackIdentifier if the candidate is found to be already in use then we relay on the fallback id generator
+     * @param <T> hash data-type
+     * @return the new identifier ready to be inserted on a db
      */
     @CloseDBIfOpened
     private <T> T bestEffortDeterministicId(final T hash, final Function<T,Boolean> testIdentifierFunction, final Supplier<T> fallbackIdentifier) {
@@ -311,9 +316,9 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
     }
 
     /**
-     *
-     * @param throwAwayField
-     * @return
+     * Entry point for field id generation
+     * @param throwAwayField a field that might or might not has been initialized
+     * @return generated deterministic id
      */
     public String generateDeterministicIdBestEffort(final Field throwAwayField,
             final Supplier<String> fieldVarName) {
@@ -337,7 +342,7 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
     /**
      * Given a Language this will evaluate the code and country code if any then generate a sha256 and finally will hash it out into a long val
      * @param lang
-     * @return
+     * @return generated deterministic id
      */
     @Override
     public long generateDeterministicIdBestEffort(final Language lang) {
