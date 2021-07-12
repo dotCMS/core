@@ -604,10 +604,57 @@ public class TestDataUtils {
 
         return dotAssetType;
     }
-    
-    
-    
-    
+
+    public static ContentType getRichTextLikeContentType() {
+        return getRichTextLikeContentType("RichText" + System.currentTimeMillis(), null);
+    }
+
+    @WrapInTransaction
+    public static ContentType getRichTextLikeContentType(final String contentTypeName, final Set<String> workflowIds) {
+
+        ContentType richTextLike = null;
+        try {
+            try {
+                richTextLike = APILocator.getContentTypeAPI(APILocator.systemUser())
+                        .find(contentTypeName);
+            } catch (NotFoundInDbException e) {
+                //Do nothing...
+            }
+            if (richTextLike == null) {
+
+                List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
+                fields.add(
+                        new FieldDataGen()
+                                .name("Title")
+                                .velocityVarName("title")
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("Site")
+                                .velocityVarName("contentHost")
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("Body")
+                                .velocityVarName("body")
+                                .next()
+                );
+
+                richTextLike = new ContentTypeDataGen()
+                        .name(contentTypeName)
+                        .velocityVarName(contentTypeName)
+                        .fields(fields)
+                        .workflowId(workflowIds)
+                        .nextPersisted();
+            }
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
+
+        return richTextLike;
+    }
     
     
     public static ContentType getWikiLikeContentType() {
@@ -808,6 +855,21 @@ public class TestDataUtils {
                     .setProperty("widgetTitle", null).skipValidation(true).nextPersisted();
         } catch (Exception e) {
             throw new DotRuntimeException(e);
+        }
+    }
+
+    public static Contentlet getRichTextContent(Boolean persist, long languageId, String body) {
+        String contentTypeId = getRichTextLikeContentType().id();
+        ContentletDataGen contentletDataGen = new ContentletDataGen(contentTypeId)
+                .languageId(languageId)
+                .setProperty("title", "Rich Text Title")
+                .setProperty("contentHost", "Some content host")
+                .setProperty("body", body);
+
+        if (persist) {
+            return contentletDataGen.nextPersisted();
+        } else {
+            return contentletDataGen.next();
         }
     }
 
