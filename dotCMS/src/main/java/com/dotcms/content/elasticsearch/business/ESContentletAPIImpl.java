@@ -37,6 +37,8 @@ import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
+import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.portlets.personas.model.Persona;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -1167,20 +1169,38 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         final List<MultiTree> trees = APILocator.getMultiTreeAPI().getMultiTreesByChild(id.getId());
         for (final MultiTree tree : trees) {
-            final IHTMLPage page = APILocator.getHTMLPageAssetAPI()
-                    .findByIdLanguageFallback(tree.getParent1(), contentlet.getLanguageId(), false,
-                            APILocator.getUserAPI().getSystemUser(), false);
+
+            final Contentlet pageContentlet = APILocator.getContentletAPI()
+                    .findContentletByIdentifierAnyLanguage(tree.getHtmlPage());
+            final IHTMLPage page = APILocator.getHTMLPageAssetAPI().fromContentlet(pageContentlet);
+
             final Container container = APILocator.getContainerAPI()
                     .getWorkingContainerById(tree.getParent2(),
                             APILocator.getUserAPI().getSystemUser(), false);
+
             if (InodeUtils.isSet(page.getInode()) && InodeUtils.isSet(container.getInode())) {
-                final Map<String, Object> map = new HashMap<String, Object>();
+
+                final String personaName = getPersonaNameByMultitree(tree);
+                final Map<String, Object> map = new HashMap<>();
                 map.put("page", page);
                 map.put("container", container);
+                map.put("persona", personaName);
                 results.add(map);
             }
         }
         return results;
+    }
+
+    private String getPersonaNameByMultitree(final MultiTree tree) throws DotSecurityException, DotDataException {
+        String personaTag = Try.of(()-> {
+                    String[] personaTokens = tree.getPersonalization().split(":");
+                    return personaTokens[personaTokens.length - 1];
+                }).getOrElse("Default");
+        Optional<Persona> personaOpt = APILocator.getPersonaAPI()
+                .findPersonaByTag(personaTag,
+                        APILocator.systemUser(), false);
+
+        return personaOpt.isPresent()? personaOpt.get().getName(): "Default";
     }
 
     @CloseDBIfOpened
