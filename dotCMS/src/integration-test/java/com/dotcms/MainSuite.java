@@ -108,6 +108,7 @@ import com.dotmarketing.startup.runonce.Task210510UpdateStorageTableDropMetadata
 import com.dotmarketing.startup.runonce.Task210702UpdateStructureTableTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
+import com.dotmarketing.util.MaintenanceUtilTest;
 import com.dotmarketing.util.TestConfig;
 import com.liferay.portal.language.LanguageUtilTest;
 import org.apache.velocity.tools.view.tools.CookieToolTest;
@@ -435,7 +436,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task210527DropReviewFieldsFromContentletTableTest.class,
         ContentletCacheImplTest.class,
         HostTest.class,
-        Task210702UpdateStructureTableTest.class
+        Task210702UpdateStructureTableTest.class,
+        MaintenanceUtilTest.class
 })
 public class MainSuite {
 
