@@ -783,7 +783,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 								UtilMethods.listToString(valueObj.toString()));
 					}
 				} else if (field.getFieldType().equals(ESMappingConstants.FIELD_TYPE_KEY_VALUE)){
-					//final boolean fileMetadata = field.getVelocityVarName().equals(FileAssetAPI.META_DATA_FIELD) && structure.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET;
+					//Load regular key-value fields. Metadata KeyValues are handled once the meta-data gets generated.
 					if(LicenseUtil.getLevel()>= LicenseLevel.STANDARD.level) {
 
 						this.loadKeyValueField(contentletMap, keyName, field, valueObj);
