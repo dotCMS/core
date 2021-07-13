@@ -63,7 +63,6 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
             }
 
             try {
-                Logger.info(JsonWebTokenAuthCredentialProcessorImpl.class, String.format("Token from remote IP: %s", jsonWebToken.trim()));
                 final Optional<JWToken> token = APILocator.getApiTokenAPI().fromJwt(jsonWebToken.trim(), ipAddress);
 
                 if (rejectIfNotApiToken && token.isPresent() && !(token.get() instanceof ApiToken)) {
