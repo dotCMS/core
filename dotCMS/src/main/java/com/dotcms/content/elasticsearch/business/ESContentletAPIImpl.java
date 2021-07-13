@@ -209,6 +209,7 @@ import java.util.stream.Stream;
 import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
 import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
+import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -1196,14 +1197,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private String getPersonaNameByMultitree(final MultiTree tree) throws DotSecurityException, DotDataException {
+        final String defaultPersona = Try.of(()->LanguageUtil.get(DEFAULT_PERSONA_NAME_KEY)).getOrElse("Default Visitor");
         String personaTag = Try.of(()-> tree.getPersonalization()
                 .substring((Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON).length()))
-                .getOrElse("Default");
+                .getOrElse("");
         Optional<Persona> personaOpt = APILocator.getPersonaAPI()
                 .findPersonaByTag(personaTag,
                         APILocator.systemUser(), false);
 
-        return personaOpt.isPresent()? personaOpt.get().getName(): "Default";
+        return personaOpt.isPresent()? personaOpt.get().getName(): defaultPersona;
     }
 
     @CloseDBIfOpened
