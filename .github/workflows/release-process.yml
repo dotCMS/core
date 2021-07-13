@@ -8,7 +8,7 @@ on:
 jobs:
   release-process:
     name: Release Process Automation
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     env:
       DOT_CICD_BRANCH: release-process-several-fixes
       GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
