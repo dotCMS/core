@@ -1177,17 +1177,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 false,
                                 APILocator.getUserAPI().getSystemUser(), false);
 
-                final Container container = APILocator.getContainerAPI()
-                        .getWorkingContainerById(tree.getContainer(),
-                                APILocator.getUserAPI().getSystemUser(), false);
+                if (InodeUtils.isSet(page.getInode())) {
 
-                if (InodeUtils.isSet(page.getInode()) && InodeUtils.isSet(container.getInode())) {
-                    final String personaName = getPersonaNameByMultitree(tree);
-                    final Map<String, Object> map = new HashMap<>();
-                    map.put("page", page);
-                    map.put("container", container);
-                    map.put("persona", personaName);
-                    results.add(map);
+                    final Container container = APILocator.getContainerAPI()
+                            .getWorkingContainerById(tree.getContainer(),
+                                    APILocator.getUserAPI().getSystemUser(), false);
+
+                    if (InodeUtils.isSet(container.getInode())) {
+                        final String personaName = getPersonaNameByMultitree(tree);
+                        final Map<String, Object> map = new HashMap<>();
+                        map.put("page", page);
+                        map.put("container", container);
+                        map.put("persona", personaName);
+                        results.add(map);
+                    }
                 }
             } catch(DoesNotExistException e) {
                 Logger.debug(this, "Page not available in the requested language. This is ok");
@@ -1197,7 +1200,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private String getPersonaNameByMultitree(final MultiTree tree) throws DotSecurityException, DotDataException {
-        final String defaultPersona = Try.of(()->LanguageUtil.get(DEFAULT_PERSONA_NAME_KEY)).getOrElse("Default Visitor");
+        final Supplier<String> defaultPersonaSupplier = () -> Try.of(()->
+                LanguageUtil.get(DEFAULT_PERSONA_NAME_KEY)).getOrElse("Default Visitor");
+
         String personaTag = Try.of(()-> tree.getPersonalization()
                 .substring((Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON).length()))
                 .getOrElse("");
@@ -1205,7 +1210,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 .findPersonaByTag(personaTag,
                         APILocator.systemUser(), false);
 
-        return personaOpt.isPresent()? personaOpt.get().getName(): defaultPersona;
+        return personaOpt.isPresent()? personaOpt.get().getName(): defaultPersonaSupplier.get();
     }
 
     @CloseDBIfOpened
