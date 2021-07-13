@@ -630,7 +630,7 @@ public class BrowserAjax {
 	}
 
 	public Map<String, Object> saveFileAction(String selectedItem,String wfActionAssign,String wfActionId,String wfActionComments, String wfConId, String wfPublishDate,
-			String wfPublishTime, String wfExpireDate, String wfExpireTime, String wfNeverExpire, String whereToSend, String forcePush, String moveToPath) throws  DotSecurityException, ServletException{
+			String wfPublishTime, String wfExpireDate, String wfExpireTime, String wfNeverExpire, String whereToSend, String forcePush, String pathToMove) throws  DotSecurityException, ServletException{
 		WebContext ctx = WebContextFactory.get();
         User user = getUser(ctx.getHttpServletRequest());
 		Contentlet contentlet = null;
@@ -653,8 +653,8 @@ public class BrowserAjax {
 			contentlet.setStringProperty("wfNeverExpire", wfNeverExpire);
 			contentlet.setStringProperty("whereToSend", whereToSend);
 			contentlet.setStringProperty("forcePush", forcePush);
-			if (UtilMethods.isSet(moveToPath)) {
-				contentlet.setProperty(Contentlet.PATH_TO_MOVE, moveToPath);
+			if (UtilMethods.isSet(pathToMove)) {
+				contentlet.setProperty(Contentlet.PATH_TO_MOVE, pathToMove);
 			}
 			contentlet.setTags();
 
