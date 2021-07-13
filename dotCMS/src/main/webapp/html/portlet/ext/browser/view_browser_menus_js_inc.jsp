@@ -951,7 +951,6 @@
     	},
 
     	executeWfAction: function(wfId, assignable, commentable, hasPushPublishActionlet, inode, moveable ){
-
     		this.wfActionId = wfId;
 
     		if(assignable || commentable || hasPushPublishActionlet || moveable){
@@ -975,8 +974,9 @@
 		    		var expireDate 			= "";
 		    		var expireTime 			= "";
 		    		var neverExpire 		= "";
+					var pathToMove 			= "";
 					BrowserAjax.saveFileAction(selectedItem,wfActionAssign,wfActionId,wfActionComments,wfConId, publishDate,
-		    				publishTime, expireDate, expireTime, neverExpire, fileActionCallback
+		    				publishTime, expireDate, expireTime, neverExpire, pathToMove, fileActionCallback
                     );
  			}
 
@@ -985,7 +985,6 @@
     });
 
 	function saveAssignCallBack(actionId, formData) {
-
 	    var pushPublish = formData.pushPublish;
         var assignComment = formData.assignComment;
 
@@ -993,6 +992,7 @@
         var wfConId =  pushPublish.inode;
         var comments = assignComment.comment;
         var assignRole = assignComment.assign;
+		var pathToMove = assignComment.pathToMove;
 
         var whereToSend = pushPublish.whereToSend;
         var publishDate = pushPublish.publishDate;
@@ -1003,7 +1003,7 @@
         var neverExpire = pushPublish.neverExpire;
 
         BrowserAjax.saveFileAction(selectedItem, assignRole, actionId, comments, wfConId, publishDate,
-            publishTime, expireDate, expireTime, neverExpire, whereToSend, forcePush, fileActionCallback
+            publishTime, expireDate, expireTime, neverExpire, whereToSend, forcePush, pathToMove, fileActionCallback
         );
     }
 

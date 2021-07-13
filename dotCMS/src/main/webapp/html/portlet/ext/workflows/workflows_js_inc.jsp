@@ -131,7 +131,6 @@
 	    	},
 
 	    	executeWorkflow : function (wfId, inode){
-
 				dijit.byId('savingContentDialog').show();
 
 				var wfActionAssign 		= "";
@@ -145,9 +144,10 @@
 				var expireTime 			= "";
 				var neverExpire 		= "";
 				var whereToSend 		= "";
+				var pathToMove 			= "";
 
 				BrowserAjax.saveFileAction(selectedItem, wfActionAssign, wfActionId, wfActionComments, wfConId, publishDate,
-					publishTime, expireDate, expireTime, neverExpire, whereToSend, fileActionCallback
+					publishTime, expireDate, expireTime, neverExpire, whereToSend, pathToMove, fileActionCallback
 				);
 	    	}
 
@@ -161,6 +161,7 @@
 		var wfConId =  pushPublish.inode;
 		var comments = assignComment.comment;
 		var assignRole = assignComment.assign;
+		var pathToMove = assignComment.pathToMove;
 
 		var whereToSend = pushPublish.whereToSend;
 		var publishDate = pushPublish.publishDate;
@@ -170,9 +171,10 @@
 		var forcePush   = pushPublish.forcePush;
 		var neverExpire = pushPublish.neverExpire;
 
+
 		BrowserAjax.saveFileAction(selectedItem, assignRole, actionId, comments, wfConId, publishDate,
-			publishTime, expireDate, expireTime, neverExpire, whereToSend, forcePush, fileActionCallback
-		);;
+			publishTime, expireDate, expireTime, neverExpire, whereToSend, forcePush, pathToMove, fileActionCallback
+		);
     }
 
 	function fileActionCallback (response) {
