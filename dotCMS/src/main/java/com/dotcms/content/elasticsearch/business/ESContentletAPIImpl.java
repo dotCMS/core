@@ -1170,32 +1170,35 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final List<MultiTree> trees = APILocator.getMultiTreeAPI().getMultiTreesByChild(id.getId());
         for (final MultiTree tree : trees) {
 
-            final Contentlet pageContentlet = APILocator.getContentletAPI()
-                    .findContentletByIdentifierAnyLanguage(tree.getHtmlPage());
-            final IHTMLPage page = APILocator.getHTMLPageAssetAPI().fromContentlet(pageContentlet);
+            try {
+                final IHTMLPage page = APILocator.getHTMLPageAssetAPI()
+                        .findByIdLanguageFallback(tree.getHtmlPage(), contentlet.getLanguageId(),
+                                false,
+                                APILocator.getUserAPI().getSystemUser(), false);
 
-            final Container container = APILocator.getContainerAPI()
-                    .getWorkingContainerById(tree.getParent2(),
-                            APILocator.getUserAPI().getSystemUser(), false);
+                final Container container = APILocator.getContainerAPI()
+                        .getWorkingContainerById(tree.getContainer(),
+                                APILocator.getUserAPI().getSystemUser(), false);
 
-            if (InodeUtils.isSet(page.getInode()) && InodeUtils.isSet(container.getInode())) {
-
-                final String personaName = getPersonaNameByMultitree(tree);
-                final Map<String, Object> map = new HashMap<>();
-                map.put("page", page);
-                map.put("container", container);
-                map.put("persona", personaName);
-                results.add(map);
+                if (InodeUtils.isSet(page.getInode()) && InodeUtils.isSet(container.getInode())) {
+                    final String personaName = getPersonaNameByMultitree(tree);
+                    final Map<String, Object> map = new HashMap<>();
+                    map.put("page", page);
+                    map.put("container", container);
+                    map.put("persona", personaName);
+                    results.add(map);
+                }
+            } catch(DoesNotExistException e) {
+                Logger.debug(this, "Page not available in the requested language. This is ok");
             }
         }
         return results;
     }
 
     private String getPersonaNameByMultitree(final MultiTree tree) throws DotSecurityException, DotDataException {
-        String personaTag = Try.of(()-> {
-                    String[] personaTokens = tree.getPersonalization().split(":");
-                    return personaTokens[personaTokens.length - 1];
-                }).getOrElse("Default");
+        String personaTag = Try.of(()-> tree.getPersonalization()
+                .substring((Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON).length()))
+                .getOrElse("Default");
         Optional<Persona> personaOpt = APILocator.getPersonaAPI()
                 .findPersonaByTag(personaTag,
                         APILocator.systemUser(), false);
