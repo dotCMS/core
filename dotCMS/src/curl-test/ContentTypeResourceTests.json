@@ -84,7 +84,7 @@
 								"contenttype"
 							]
 						},
-						"description": "Creates a Content Type"
+						"description": "Given a content type payload containing field variables.\nWhen sending a POST.\nExpect that code is 200.\nExpect content type is created with the provided fields.\nExpect that new properties of content types are set (icon and sortOrder)."
 					},
 					"response": []
 				},
@@ -152,7 +152,8 @@
 								"id",
 								"{{contentTypeID}}"
 							]
-						}
+						},
+						"description": "Given a content type ID. \nExpect that code is 200.\nExpect that the new content type properties (icon and sortOrder) are returned."
 					},
 					"response": []
 				},
@@ -229,7 +230,8 @@
 								"id",
 								"{{contentTypeID}}"
 							]
-						}
+						},
+						"description": "Given a content type ID and a payload containing content type properties.\nExpect that code is 200.\nExpect content type is updated without issues.\nExpect that the new properties (icon and sortOrder) are updated with the new values."
 					},
 					"response": []
 				},
@@ -287,7 +289,8 @@
 								"id",
 								"{{contentTypeID}}"
 							]
-						}
+						},
+						"description": "Given a content type ID.\nExpect that code is 200.\nExpect content type is deleted successfully."
 					},
 					"response": []
 				}
