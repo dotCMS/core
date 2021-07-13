@@ -16,7 +16,7 @@ public class Task210702UpdateStructureTable extends AbstractJDBCStartupTask {
     @Override
     public boolean forceRun() {
         try {
-            return !dotDatabaseMetaData.hasColumn("structure", "icon") &&
+            return !dotDatabaseMetaData.hasColumn("structure", "icon") ||
                     !dotDatabaseMetaData.hasColumn("structure", "sort_order") ;
         } catch (SQLException e) {
             Logger.error(this, e.getMessage(),e);
