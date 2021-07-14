@@ -52,7 +52,10 @@ public interface ContentTypeBuilder {
 	ContentTypeBuilder host(String hostIdentifier);
 
 	ContentTypeBuilder folder(String variable);
-	
+
+	ContentTypeBuilder icon(String variable);
+
+	ContentTypeBuilder sortOrder(int variable);
 	
 	public static ContentTypeBuilder builder(ContentType type) throws DotStateException {
 		return builder(type.getClass()).from(type);
