@@ -1,9 +1,53 @@
 package com.dotmarketing.util;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
+import com.dotcms.publishing.BundlerUtil;
+import com.dotcms.repackage.net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.net.sf.hibernate.persister.AbstractEntityPersister;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.beans.Tree;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.DuplicateUserException;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.Layout;
+import com.dotmarketing.business.LayoutsRoles;
+import com.dotmarketing.business.PortletsLayouts;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.UsersRoles;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.logConsole.model.LogMapperRow;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
+import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
+import com.dotmarketing.startup.runalways.Task00004LoadStarter;
+import com.liferay.portal.SystemException;
+import com.liferay.portal.ejb.CompanyManagerUtil;
+import com.liferay.portal.model.Company;
+import com.liferay.portal.model.Image;
+import com.liferay.portal.model.User;
+import com.liferay.util.Base64;
+import com.liferay.util.Encryptor;
+import com.liferay.util.EncryptorException;
+import com.liferay.util.FileUtil;
+import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -27,50 +71,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
 import org.apache.commons.beanutils.BeanUtils;
-import com.dotcms.business.WrapInTransaction;
-import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
-import com.dotcms.publishing.BundlerUtil;
-import com.dotcms.repackage.net.sf.hibernate.HibernateException;
-import com.dotcms.repackage.net.sf.hibernate.persister.AbstractEntityPersister;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.beans.Tree;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.DuplicateUserException;
-import com.dotmarketing.business.Layout;
-import com.dotmarketing.business.LayoutsRoles;
-import com.dotmarketing.business.PortletsLayouts;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.UsersRoles;
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.logConsole.model.LogMapperRow;
-import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.links.model.Link;
-import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
-import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
-import com.dotmarketing.startup.runalways.Task00004LoadStarter;
-import com.liferay.portal.SystemException;
-import com.liferay.portal.ejb.CompanyManagerUtil;
-import com.liferay.portal.model.Company;
-import com.liferay.portal.model.Image;
-import com.liferay.portal.model.User;
-import com.liferay.util.Base64;
-import com.liferay.util.Encryptor;
-import com.liferay.util.EncryptorException;
-import com.liferay.util.FileUtil;
-import io.vavr.control.Try;
 
 
 /**
@@ -152,14 +152,10 @@ public class ImportStarterUtil {
      */
     @WrapInTransaction
     public void doImport() throws Exception {
-
-
-
         Logger.info(this, "Found " + tempFiles.size() + " files to import");
 
-
+        copyAssetDir();
         deleteDotCMS();
-        
 
         for (File file : endsWith("Company.xml")) {
             doXMLFileImport(file);
@@ -387,10 +383,7 @@ public class ImportStarterUtil {
 
 
         cleanUpDBFromImport();
-        Optional<File> assetDir = tempFiles.stream().filter(f -> ("asset".equals(f.getName())||"assets".equals(f.getName())) && f.isDirectory()).findAny();
-        if (assetDir.isPresent()) {
-            copyAssetDir(assetDir.get());
-        }
+
         Logger.info(ImportStarterUtil.class, "Done Importing");
         deleteTempFiles();
 
@@ -466,28 +459,36 @@ public class ImportStarterUtil {
 
     /**
      *
-     * @param fromAssetDir
      * @throws IOException
      */
-    private void copyAssetDir(File fromAssetDir) throws IOException {
-        File ad = new File(assetPath);
+    private void copyAssetDir() throws IOException {
 
-        ad.mkdirs();
-        String[] fileNames = fromAssetDir.list();
-        for (int i = 0; i < fileNames.length; i++) {
-            File f = new File(fromAssetDir.getPath() + File.separator + fileNames[i]);
-            if (f.getName().equals(".svn")) {
-                continue;
-            }
-            if (f.getName().equals("license.dat")) {
-                continue;
-            }
-            if (f.isDirectory()) {
-                FileUtil.copyDirectory(f.getPath(), ad.getPath() + File.separator + f.getName());
-            } else {
-                FileUtil.copyFile(f.getPath(), ad.getPath() + File.separator + f.getName());
+        final Optional<File> assetDir = tempFiles.stream()
+                .filter(f -> ("asset".equals(f.getName()) || "assets".equals(f.getName())) && f
+                        .isDirectory()).findAny();
+        if (assetDir.isPresent()) {
+            final File fromAssetDir = assetDir.get();
+            final File ad = new File(assetPath);
+
+            ad.mkdirs();
+            final String[] fileNames = fromAssetDir.list();
+            for (int i = 0; i < fileNames.length; i++) {
+                final File f = new File(fromAssetDir.getPath() + File.separator + fileNames[i]);
+                if (f.getName().equals(".svn")) {
+                    continue;
+                }
+                if (f.getName().equals("license.dat")) {
+                    continue;
+                }
+                if (f.isDirectory()) {
+                    FileUtil.copyDirectory(f.getPath(),
+                            ad.getPath() + File.separator + f.getName());
+                } else {
+                    FileUtil.copyFile(f.getPath(), ad.getPath() + File.separator + f.getName());
+                }
             }
         }
+
     }
 
     /**
