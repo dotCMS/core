@@ -17,6 +17,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -47,6 +48,58 @@ public class ContentletLoader implements DotLoader {
     private final long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
 
+    private static final String CONTAINER_CONTENTLET_OBJECT_VARIABLE= Config.getStringProperty("CONTAINER_CONTENTLET_OBJECT_VARIABLE","contentlet");
+    
+    
+    
+    public InputStream buildNewVelocity(Contentlet content, PageMode mode, String filePath){
+
+        final ContentType type = content.getContentType();
+        final BaseContentType baseType = content.get("formId") == null ? content.getContentType().baseType() : BaseContentType.FORM;
+        final String contentTypeId = content.get("formId") == null ? content.getContentType().id() : content.get("formId").toString();
+        
+        
+        final StringBuilder sb = new StringBuilder();
+        sb.append("#set( $isWidget = false)");
+        sb.append("#set( $isForm = false)");
+        sb.append("#set( $isFormWidget = "+ type.name().equals(FormAPI.FORM_WIDGET_STRUCTURE_NAME_FIELD_NAME) +")");
+        sb.append("#set( $widgetCode = '')");
+        sb.append("#set( $CONTENT_INODE ='" + content.getInode() + "')");
+        sb.append("#set( $IDENTIFIER_INODE = '" + content.getIdentifier() + "' )");
+        sb.append("#set( $CONTENT_BASE_TYPE='" + baseType + "' )");
+        sb.append("#set( $CONTENT_TYPE_ID='" + contentTypeId + "' )");
+        sb.append("#set( $CONTENT_LANGUAGE='" + content.getLanguageId() + "' )");
+        sb.append("#set( $ContentInode = '" + content.getInode() + "')");
+        sb.append("#set( $ContentIdentifier = '" + content.getIdentifier() + "' )");
+        sb.append("#set( $ContentletTitle = '" + content.getTitle().replace("'", "") + "')");
+        sb.append("#set( $ContentletStructure = '" + content.getContentTypeId() + "')");
+        sb.append("#set( $ContentletContentType = '" + content.getContentTypeId() + "')");
+
+        // find and set the contentlet
+        sb.append("#set( $" + CONTAINER_CONTENTLET_OBJECT_VARIABLE +" = {})");
+        sb.append("#set( $" + CONTAINER_CONTENTLET_OBJECT_VARIABLE +" = $dotcontent.find('" + content.getInode() +"'))");
+        
+        /*
+        It is better if we calculate if it is a Widget before to try to evaluate
+        the Widget code, if the code evaluation fails the $isWidget could be false.
+         */
+        if (type.baseType() == BaseContentType.WIDGET) {
+            sb.append("#set( $isWidget = true)");
+            final String velPath = new VelocityResourceKey(type.fieldMap().get("widgetCode"), Optional.empty(), mode).path ;
+            final String widgetCode = "#set($widgetCode=$velutil.mergeTemplate('" +   velPath + "'))";
+            sb.append(widgetCode);
+        } 
+        
+        if (PageMode.EDIT_MODE == mode) {
+            sb.append("#set( $EDIT_CONTENT_PERMISSION=$EDIT_CONTENT_PERMISSION").append(content.getIdentifier()).append(" )");
+        }
+
+
+
+        return writeOutVelocity(filePath, sb.toString());
+    }
+    
+    
     public InputStream buildVelocity(Contentlet content, PageMode mode, String filePath)
             throws DotDataException, DotSecurityException {
         StringBuilder sb = new StringBuilder();
@@ -70,7 +123,10 @@ public class ContentletLoader implements DotLoader {
             .append("#set($IDENTIFIER_INODE='")
             .append(content.getIdentifier())
             .append("' )");
-
+        
+        sb.append("#set($" + CONTAINER_CONTENTLET_OBJECT_VARIABLE +" = {})");
+        sb.append("#set($" + CONTAINER_CONTENTLET_OBJECT_VARIABLE +"=$dotcontent.find('" + content.getInode() +"'))");
+        
         sb.append("#set($CONTENT_TYPE='").append(content.getContentType().variable()).append("' )");
 
         final BaseContentType baseType = content.get("formId") == null ? content.getContentType().baseType() : BaseContentType.FORM;
@@ -110,17 +166,17 @@ public class ContentletLoader implements DotLoader {
         the Widget code, if the code evaluation fails the $isWidget could be false.
          */
         if (type.baseType() == BaseContentType.WIDGET) {
-            sb.append("#set( $isWidget= \"").append(true).append("\")");
+            sb.append("#set( $isWidget= true)");
             if (type.name().equals(FormAPI.FORM_WIDGET_STRUCTURE_NAME_FIELD_NAME)) {
-                sb.append("#set($isFormWidget= \"").append(true).append("\")");
+                sb.append("#set($isFormWidget=true)");
             } else {
-                sb.append("#set($isFormWidget= \"").append(false).append("\")");
+                sb.append("#set($isFormWidget=false)");
             }
 
             //Cleaning up already loaded Widgets code
             sb.append("#set($widgetCode= \"\")");
         } else {
-            sb.append("#set($isWidget= \"").append(false).append("\")");
+            sb.append("#set($isWidget= false)");
         }
 
 
@@ -484,7 +540,7 @@ public class ContentletLoader implements DotLoader {
         // "\" )");
         // http://jira.dotmarketing.net/browse/DOTCMS-2808
         sb.append(widgetCode);
-        sb.append("#set($isForm= \"").append(false).append("\")");
+        sb.append("#set($isForm=false)");
         
         
         
@@ -580,7 +636,13 @@ public class ContentletLoader implements DotLoader {
         if (null == contentlet) {
             throw new ResourceNotFoundException("cannot find content for: " + key);
         }
-        return buildVelocity(contentlet, key.mode, key.path);
+        
+        if(Config.getBooleanProperty("BUILD_LEGACY_CONTENTLET_VELOCITY_OBJECT", false)) {
+            return buildVelocity(contentlet, key.mode, key.path);
+        }
+        
+        return buildNewVelocity(contentlet, key.mode, key.path);
+        
 
 
     }

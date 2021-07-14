@@ -350,8 +350,8 @@ public class ContainerLoader implements DotLoader {
                     }
                     
                         // ### START BODY ###
-                        velocityCodeBuilder.append("#if($isWidget==true)").append("$widgetCode");
-                        velocityCodeBuilder.append("#elseif($isForm==true)").append("$formCode");
+                        velocityCodeBuilder.append("#if($isWidget)").append("$widgetCode");
+                        velocityCodeBuilder.append("#elseif($isForm)").append("$formCode");
                         velocityCodeBuilder.append("#else");
 
                             for (int i = 0; i < containerContentTypeList.size(); i++) {
