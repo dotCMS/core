@@ -2071,6 +2071,120 @@ public class ContentletAPITest extends ContentletBaseTest {
     }
 
     /**
+     * Method to test: {@link ContentletAPI#getContentletReferences(Contentlet, User, boolean)}
+     * Test case: References from pages in different language than the contentlet one
+     * Expected result: The multitree is excluded from the results
+     */
+    @Test
+    public void getContentletReferences_FilterOutReferencesByContentLang() throws Exception {
+        final int english = 1;
+        final long spanish = spanishLanguage.getId();
+
+        final String UUID = UUIDGenerator.generateUuid();
+        Structure structure = new StructureDataGen().nextPersisted();
+        Container container = new ContainerDataGen().withStructure(structure, "").nextPersisted();
+        Template template = new TemplateDataGen().withContainer(container.getIdentifier(),UUID).nextPersisted();
+        Folder folder = new FolderDataGen().nextPersisted();
+
+        HTMLPageDataGen htmlPageDataGen = new HTMLPageDataGen(folder, template);
+        HTMLPageAsset spanishPage = htmlPageDataGen.languageId(spanish).nextPersisted();
+
+        ContentletDataGen contentletDataGen = new ContentletDataGen(structure.getInode());
+        Contentlet contentInEnglish = contentletDataGen.languageId(english).nextPersisted();
+        Contentlet contentInSpanish = contentletDataGen.languageId(spanish).nextPersisted();
+
+          // let's add the Spanish content to the page in Spanish (create the page-container-content relationship)
+        MultiTree multiTreeSP = new MultiTree(spanishPage.getIdentifier(), container.getIdentifier(),
+                contentInSpanish.getIdentifier(),UUID,0);
+        APILocator.getMultiTreeAPI().saveMultiTree(multiTreeSP);
+
+        // let's get the references for english content
+        List<Map<String, Object>> references = contentletAPI
+                .getContentletReferences(contentInEnglish, user, false);
+
+        assertNotNull(references);
+        assertTrue(references.isEmpty());
+    }
+
+    /**
+     * Method to test: {@link ContentletAPI#getContentletReferences(Contentlet, User, boolean)}
+     * Test case: References from pages in same language than the contentlet one
+     * Expected result: The multitree is present in the the results
+     */
+    @Test
+    public void getContentletReferences_ReferencesByContentLang() throws Exception {
+        final int english = 1;
+        final long spanish = spanishLanguage.getId();
+
+        final String UUID = UUIDGenerator.generateUuid();
+        Structure structure = new StructureDataGen().nextPersisted();
+        Container container = new ContainerDataGen().withStructure(structure, "").nextPersisted();
+        Template template = new TemplateDataGen().withContainer(container.getIdentifier(),UUID).nextPersisted();
+        Folder folder = new FolderDataGen().nextPersisted();
+
+        HTMLPageDataGen htmlPageDataGen = new HTMLPageDataGen(folder, template);
+        HTMLPageAsset spanishPage = htmlPageDataGen.languageId(spanish).nextPersisted();
+
+        ContentletDataGen contentletDataGen = new ContentletDataGen(structure.getInode());
+        contentletDataGen.languageId(english).nextPersisted();
+        Contentlet contentInSpanish = contentletDataGen.languageId(spanish).nextPersisted();
+
+        // let's add the Spanish content to the page in Spanish (create the page-container-content relationship)
+        MultiTree multiTreeSP = new MultiTree(spanishPage.getIdentifier(), container.getIdentifier(),
+                contentInSpanish.getIdentifier(),UUID,0);
+        APILocator.getMultiTreeAPI().saveMultiTree(multiTreeSP);
+
+        // let's get the references for spanish content
+        List<Map<String, Object>> references = contentletAPI
+                .getContentletReferences(contentInSpanish, user, false);
+
+        assertNotNull(references);
+        assertFalse(references.isEmpty());
+        assertTrue(references.stream().allMatch((ref)->((IHTMLPage)ref.get("page")).getIdentifier()
+                .equals(spanishPage.getIdentifier())));
+    }
+
+    /**
+     * Method to test: {@link ContentletAPI#getContentletReferences(Contentlet, User, boolean)}
+     * Test case: Reference from page for a certain Persona
+     * Expected result: The results include the Persona
+     */
+    @Test
+    public void getContentletReferences_PersonaIncluded() throws Exception {
+        final long spanish = spanishLanguage.getId();
+
+        final String UUID = UUIDGenerator.generateUuid();
+        Structure structure = new StructureDataGen().nextPersisted();
+        Container container = new ContainerDataGen().withStructure(structure, "").nextPersisted();
+        Template template = new TemplateDataGen().withContainer(container.getIdentifier(),UUID).nextPersisted();
+        Folder folder = new FolderDataGen().nextPersisted();
+
+        HTMLPageDataGen htmlPageDataGen = new HTMLPageDataGen(folder, template);
+        HTMLPageAsset spanishPage = htmlPageDataGen.languageId(spanish).nextPersisted();
+
+        ContentletDataGen contentletDataGen = new ContentletDataGen(structure.getInode());
+        Contentlet contentInSpanish = contentletDataGen.languageId(spanish).nextPersisted();
+
+        final Persona persona = new PersonaDataGen().keyTag(UUIDGenerator.shorty()).nextPersisted();
+        final String personalization = Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON
+                + persona.getKeyTag();
+
+        // let's add the Spanish content to the page in Spanish (create the page-container-content relationship)
+        MultiTree multiTreeSP = new MultiTree(spanishPage.getIdentifier(), container.getIdentifier(),
+                contentInSpanish.getIdentifier(),UUID,0, personalization);
+        APILocator.getMultiTreeAPI().saveMultiTree(multiTreeSP);
+
+        // let's get the references for spanish content
+        List<Map<String, Object>> references = contentletAPI
+                .getContentletReferences(contentInSpanish, user, false);
+
+        assertNotNull(references);
+        assertFalse(references.isEmpty());
+        assertTrue(references.stream().allMatch((ref)-> ref.get("persona").
+                equals(persona.getName())));
+    }
+
+    /**
      * Testing {@link ContentletAPI#getFieldValue(com.dotmarketing.portlets.contentlet.model.Contentlet, com.dotmarketing.portlets.structure.model.Field)}
      *
      * @throws DotDataException
