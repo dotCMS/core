@@ -92,7 +92,7 @@ public class SiteResourceTest extends UnitTestBase {
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
         SiteResource siteResource =
-                new SiteResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI, paginationUtil);
+                new SiteResource(webResource, new SiteHelper( hostAPI ), paginationUtil);
 
         final Response response = siteResource
                 .sites(request, httpServletResponse, "filter", false, false, false, page, count);
@@ -129,7 +129,7 @@ public class SiteResourceTest extends UnitTestBase {
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
         SiteResource siteResource =
-                new SiteResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI, paginationUtil);
+                new SiteResource(webResource, new SiteHelper( hostAPI ), paginationUtil);
 
         Response response1 = siteResource.switchSite(request, httpServletResponse);
         System.out.println(response1);
@@ -216,7 +216,7 @@ public class SiteResourceTest extends UnitTestBase {
         );
 
         SiteResource siteResource =
-                new SiteResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI, paginationUtil);
+                new SiteResource(webResource, new SiteHelper( hostAPI ), paginationUtil);
 
         Response response1 = siteResource
                 .switchSite(request, httpServletResponse, "48190c8c-42c4-46af-8d1a-0cd5db894798");
@@ -264,7 +264,7 @@ public class SiteResourceTest extends UnitTestBase {
         when(initDataObject.getUser()).thenReturn(user);
 
         final SiteResource siteResource =
-                new SiteResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI, paginationUtil);
+                new SiteResource(webResource, new SiteHelper( hostAPI ), paginationUtil);
         final Response response = siteResource.currentSite(request, httpServletResponse);
 
         RestUtilTest.verifySuccessResponse(response);
