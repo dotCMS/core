@@ -292,7 +292,6 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
      * @param <T> hash data-type
      * @return the new identifier ready to be inserted on a db
      */
-    @CloseDBIfOpened
     private <T> T bestEffortDeterministicId(final T hash, final Function<T,Boolean> testIdentifierFunction, final Supplier<T> fallbackIdentifier) {
         T candidateId = hash;
         for (int i = 1; i <= MAX_ATTEMPTS; i++) {
@@ -312,6 +311,7 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
      * @param parent
      * @return
      */
+    @CloseDBIfOpened
     @Override
     public String generateDeterministicIdBestEffort(final Versionable asset,
             final Treeable parent) {
@@ -329,6 +329,7 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
      * which is immutable in such cases we need to rely on this supplier.
      * @return generated deterministic id
      */
+    @CloseDBIfOpened
     @Override
     public String generateDeterministicIdBestEffort(final ContentType contentType,
             final Supplier<String> contentTypeVarName) {
@@ -343,6 +344,8 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
      * @param throwAwayField a field that might or might not has been initialized
      * @return generated deterministic id
      */
+    @CloseDBIfOpened
+    @Override
     public String generateDeterministicIdBestEffort(final Field throwAwayField,
             final Supplier<String> fieldVarName) {
         Preconditions.checkNotNull(throwAwayField.contentTypeId(), "contentTypeRequired");
@@ -367,6 +370,7 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
      * @param lang
      * @return generated deterministic id
      */
+    @CloseDBIfOpened
     @Override
     public long generateDeterministicIdBestEffort(final Language lang) {
 
@@ -385,7 +389,6 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
      * @param hash
      * @return
      */
-    @CloseDBIfOpened
     private boolean isLanguageId(final long hash){
         return new DotConnect()
                 .setSQL("select count(*) as test from language where id =?")
@@ -398,7 +401,6 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
      * @param hash
      * @return
      */
-    @CloseDBIfOpened
     private boolean isContentTypeInode(final String hash){
         return new DotConnect()
                 .setSQL("select count(*) as test from structure s join inode i on s.inode = i.inode where s.inode =?")
@@ -412,7 +414,6 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
      * @param hash
      * @return
      */
-    @CloseDBIfOpened
     private boolean isFieldInode(final String hash){
         return new DotConnect()
                 .setSQL("select count(*) as test from field f join inode i on f.inode = i.inode where i.inode =?")
