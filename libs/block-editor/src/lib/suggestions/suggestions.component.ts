@@ -4,6 +4,7 @@ import { map, take } from 'rxjs/operators';
 import { MenuItem } from 'primeng/api';
 
 import { SuggestionsService } from '../services/suggestions.service';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dotcms-suggestions',
@@ -11,12 +12,87 @@ import { SuggestionsService } from '../services/suggestions.service';
     styleUrls: ['./suggestions.component.scss']
 })
 export class SuggestionsComponent implements OnInit {
-    @Input() command: (item) => void;
+    @Input() command: ({
+        payload,
+        type
+    }: {
+        payload?: DotCMSContentlet;
+        type: { name: string; level?: number };
+    }) => void;
     items: MenuItem[] = [];
 
     constructor(private suggestionsService: SuggestionsService, private cd: ChangeDetectorRef) {}
 
     ngOnInit(): void {
+        const headings = [...Array(6).keys()].map((level) => {
+            return {
+                label: `Heading ${level + 1}`,
+                icon: 'pi pi-circle-on',
+                command: () => {
+                    this.command({
+                        type: {
+                            name: 'heading',
+                            level: level + 1
+                        }
+                    });
+                }
+            };
+        });
+
+        const paragraph = [
+            {
+                label: 'Paragraph',
+                icon: 'pi pi-circle-on',
+                command: () => {
+                    this.command({
+                        type: {
+                            name: 'paragraph'
+                        }
+                    });
+                }
+            }
+        ];
+
+        const list = [
+            {
+                label: 'List Ordered',
+                icon: 'pi pi-circle-on',
+                command: () => {
+                    this.command({
+                        type: {
+                            name: 'listOrdered'
+                        }
+                    });
+                }
+            },
+            {
+                label: 'List Unordered',
+                icon: 'pi pi-circle-on',
+                command: () => {
+                    this.command({
+                        type: {
+                            name: 'listUnordered'
+                        }
+                    });
+                }
+            }
+        ];
+
+        this.items = [
+            {
+                label: 'Contentlets',
+                icon: 'pi pi-plus',
+                command: () => {
+                    this.initContentletSelection();
+                }
+            },
+            ...headings,
+            ...paragraph,
+            ...list
+        ];
+    }
+
+    private initContentletSelection() {
         this.suggestionsService
             .getContentTypes()
             .pipe(
@@ -35,10 +111,16 @@ export class SuggestionsComponent implements OnInit {
                                                 label: contentlet['title'],
                                                 icon: 'pi pi-fw pi-plus',
                                                 command: () => {
-                                                    this.command(contentlet)
+                                                    this.command({
+                                                        payload: contentlet,
+                                                        type: {
+                                                            name: 'dotContent'
+                                                        }
+                                                    });
                                                 }
                                             };
                                         });
+
                                         this.cd.detectChanges();
                                     });
                             }
@@ -49,6 +131,7 @@ export class SuggestionsComponent implements OnInit {
             )
             .subscribe((items) => {
                 this.items = items;
+                this.cd.detectChanges();
             });
     }
 }

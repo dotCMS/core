@@ -1,14 +1,13 @@
 import { Editor, posToDOMRect, Range } from '@tiptap/core';
 import { EditorState, Plugin, PluginKey } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
+import { range } from 'rxjs';
 import tippy, { Instance, Props } from 'tippy.js';
-
-
 export interface FloatingActionsPluginProps {
     editor: Editor;
     element: HTMLElement;
     tippyOptions?: Partial<Props>;
-    onAction: (rect: DOMRect, range: Range) => void;
+    command: (props: { rect: DOMRect, range: Range, editor: Editor }) => void;
 }
 
 export type FloatingActionsViewProps = FloatingActionsPluginProps & {
@@ -26,9 +25,9 @@ export class FloatingActionsView {
 
     public tippy!: Instance;
 
-    public onAction: (props: DOMRect, range: Range) => void;
+    public command: (props: { rect: DOMRect, range: Range, editor: Editor }) => void;
 
-    constructor({ editor, element, view, tippyOptions, onAction }: FloatingActionsViewProps) {
+    constructor({ editor, element, view, tippyOptions, command }: FloatingActionsViewProps) {
         console.log('constructor');
         this.editor = editor;
         this.element = element;
@@ -38,7 +37,7 @@ export class FloatingActionsView {
         this.editor.on('blur', this.blurHandler);
         this.createTooltip(tippyOptions);
         this.element.style.visibility = 'visible';
-        this.onAction = onAction;
+        this.command = command;
     }
 
     mousedownHandler = () => {
@@ -48,7 +47,7 @@ export class FloatingActionsView {
         const { selection } = this.editor.state;
         const { from, to } = selection;
         const rect = posToDOMRect(this.view, from, to);
-        this.onAction(rect, { from, to });
+        this.command({ rect, range: { from, to }, editor: this.editor });
     };
 
     focusHandler = () => {

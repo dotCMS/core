@@ -11,8 +11,9 @@ import { NgxTiptapModule } from '../ngx-tiptap.module';
 import { SuggestionsService } from '../services/suggestions.service';
 import { BlockEditorComponent } from './block-editor.component';
 import { SuggestionsComponent } from '../suggestions/suggestions.component';
-import { ContentletBlockComponent } from '../extentions/contentlet-block/contentlet-block.component';
+
 import { ActionButtonComponent } from '../extentions/action-button/action-button.component';
+import { ContentletBlockComponent } from '../extentions/blocks/contentlet-block/contentlet-block.component';
 
 export default {
     title: 'BlockEditorComponent'

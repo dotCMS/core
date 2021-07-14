@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewEncapsulation } from '@angular/core';
-import { AngularNodeViewComponent } from '../../NodeViewRenderer';
+import { AngularNodeViewComponent } from '../../../NodeViewRenderer';
 
 @Component({
     selector: 'dotcms-contentlet-block',
