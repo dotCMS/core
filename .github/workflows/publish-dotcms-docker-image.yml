@@ -10,7 +10,7 @@ on:
         required: true
         default: 'true'
       also_latest:
-        description: 'Update also the "latest" tag (depends on update_stable input to be set to true)'
+        description: 'Update also the "latest" tag (relies on update_stable input to be set to true)'
         required: false
         default: 'false'
       dry_run:
