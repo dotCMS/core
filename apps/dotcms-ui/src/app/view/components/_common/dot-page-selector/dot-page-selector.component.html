@@ -1,64 +1,34 @@
 <div class="p-field">
-    <label>{{ label }}</label>
-    <span *ngIf="floatingLabel; else placeholded">
-        <p-autoComplete
-            appendTo="body"
-            (completeMethod)="search($event)"
-            (keydown.enter)="onKeyEnter($event)"
-            (keydown.tab)="$event.preventDefault()"
-            (onClear)="onClear($event)"
-            (onSelect)="onSelect($event)"
-            [minLength]="2"
-            field="label"
-            [ngModel]="val"
-            [suggestions]="results.data"
-        >
-            <ng-template let-item pTemplate="item">
-                <div class="dot-page-selector__item">
-                    <span *ngIf="results.type === 'site'">{{ item.label }}</span>
-                    <span
-                        class="dot-page-selector__item-url"
-                        *ngIf="results.type === 'page'"
-                        style=""
-                        >{{ item.payload.path }}</span
-                    >
-                    <span class="dot-page-selector__item-host" *ngIf="results.type === 'page'">{{
-                        item.payload.hostName
-                    }}</span>
-                </div>
-            </ng-template>
-        </p-autoComplete>
-    </span>
-    <small *ngIf="message" class="p-invalid" [textContent]="message"></small>
-    <dot-field-helper [message]="'page.selector.hint' | dm"></dot-field-helper>
-</div>
-
-<ng-template #placeholded>
+    <label class="form__label">{{ label }}</label>
     <p-autoComplete
+        #autoComplete
         appendTo="body"
+        data-testId="p-autoComplete"
         (completeMethod)="search($event)"
         (keydown.enter)="onKeyEnter($event)"
         (keydown.tab)="$event.preventDefault()"
-        (onClear)="onClear($event)"
+        (onClear)="onClear()"
         (onSelect)="onSelect($event)"
-        [minLength]="3"
+        [minLength]="2"
         field="label"
         [ngModel]="val"
-        [suggestions]="results.data"
+        [suggestions]="suggestions$ | async"
+        [placeholder]=" 'page.selector.placeholder' | dm"
     >
         <ng-template let-item pTemplate="item">
             <div class="dot-page-selector__item">
-                <span *ngIf="results.type === 'site'">{{ item.label }}</span>
-                <span
-                    class="dot-page-selector__item-url"
-                    *ngIf="results.type === 'page'"
-                    style=""
-                    >{{ item.payload.path }}</span
-                >
-                <span class="dot-page-selector__item-host" *ngIf="results.type === 'page'">{{
-                    item.payload.hostName
-                }}</span>
+                <span *ngIf="searchType === 'site'; else notSite" >{{ item.label }}</span>
+                <ng-template #notSite>
+                    <span class="dot-page-selector__item-url">
+                        {{ item.payload.path }}
+                    </span>
+                    <span class="dot-page-selector__item-host">
+                        {{item.payload.hostName}}
+                    </span>
+                </ng-template>
             </div>
         </ng-template>
     </p-autoComplete>
-</ng-template>
+    <small data-testId="message" [class]=" isError ? 'p-invalid' : 'p-info'" [textContent]="message"></small>
+    <dot-field-helper [message]=" (folderSearch ? 'page.selector.folder.hint' : 'page.selector.hint') | dm"></dot-field-helper>
+</div>

@@ -54,6 +54,7 @@ const mockWizardSteps: DotWizardStep<any>[] = [
         data: {
             assignable: true,
             commentable: true,
+            moveable: true,
             roleId: mockWorkflowsActions[0].nextAssign,
             roleHierarchy: mockWorkflowsActions[0].roleHierarchyForAssign
         }
@@ -72,6 +73,7 @@ const mockWizardInput: DotWizardInput = {
 const mockWizardOutputData = {
     assign: '654b0931-1027-41f7-ad4d-173115ed8ec1',
     comments: 'ds',
+    pathToMove: '/test/',
     environment: ['37fe23d5-588d-4c61-a9ea-70d01e913344'],
     expireDate: '2020-08-11 19:59',
     filterKey: 'Intelligent.yml',
@@ -88,7 +90,8 @@ const mockWizardOutputTransformedData = {
     iWantTo: 'publishexpire',
     publishDate: '2020-08-05',
     publishTime: '17-59',
-    whereToSend: '37fe23d5-588d-4c61-a9ea-70d01e913344'
+    whereToSend: '37fe23d5-588d-4c61-a9ea-70d01e913344',
+    pathToMove: '/test/'
 };
 
 describe('DotWorkflowEventHandlerService', () => {
@@ -204,8 +207,8 @@ describe('DotWorkflowEventHandlerService', () => {
                 workflowActionId: '44d4d4cd-c812-49db-adb1-1030be73e69a',
                 additionalParams: {
                     assignComment: {
-                        comment: 'ds',
-                        assign: '654b0931-1027-41f7-ad4d-173115ed8ec1'
+                        comment: mockWizardOutputData.comments,
+                        assign: mockWizardOutputData.assign
                     },
                     pushPublish: {
                         whereToSend: '37fe23d5-588d-4c61-a9ea-70d01e913344',
@@ -215,7 +218,8 @@ describe('DotWorkflowEventHandlerService', () => {
                         publishDate: '2020-08-05',
                         publishTime: '17-59',
                         filterKey: 'Intelligent.yml'
-                    }
+                    },
+                    additionalParamsMap: { _path_to_move: mockWizardOutputData.pathToMove }
                 },
                 query: 'query'
             };

@@ -43,6 +43,7 @@ import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-han
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { Menu, MenuModule } from 'primeng/menu';
 import { ConfirmationService } from 'primeng/api';
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -76,7 +77,8 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
                 RouterTestingModule,
                 BrowserAnimationsModule,
                 MenuModule,
-                HttpClientTestingModule
+                HttpClientTestingModule,
+                UiDotIconButtonModule
             ],
             declarations: [DotEditPageWorkflowsActionsComponent, TestHostComponent],
             providers: [
@@ -197,6 +199,7 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
                     const mockData = {
                         assign: '654b0931-1027-41f7-ad4d-173115ed8ec1',
                         comments: 'ds',
+                        pathToMove: '/test/',
                         environment: ['37fe23d5-588d-4c61-a9ea-70d01e913344'],
                         expireDate: '2020-08-11 19:59',
                         filterKey: 'Intelligent.yml',
@@ -213,7 +216,8 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
                         iWantTo: 'publishexpire',
                         publishDate: '2020-08-05',
                         publishTime: '17-59',
-                        whereToSend: '37fe23d5-588d-4c61-a9ea-70d01e913344'
+                        whereToSend: '37fe23d5-588d-4c61-a9ea-70d01e913344',
+                        pathToMove: '/test/'
                     };
 
                     let dotWizardService: DotWizardService;
@@ -289,7 +293,7 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
 
                 it('should refresh the action list after fire action', () => {
                     secondButton.click();
-                    expect(dotWorkflowsActionsService.getByInode).toHaveBeenCalledTimes(1);
+                    expect(dotWorkflowsActionsService.getByInode).toHaveBeenCalledTimes(2); // initial ngOnChanges & action.
                 });
 
                 it('should emit event after action was fired', () => {

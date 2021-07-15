@@ -8,7 +8,7 @@ import {
     EventEmitter,
     ChangeDetectionStrategy
 } from '@angular/core';
-import { tap, map, mergeMap, catchError, pluck, take } from 'rxjs/operators';
+import { tap, map, catchError, pluck, take } from 'rxjs/operators';
 import { MenuItem } from 'primeng/api';
 
 import { DotCMSWorkflowAction } from '@dotcms/dotcms-models';
@@ -119,27 +119,23 @@ export class DotEditPageWorkflowsActionsComponent implements OnChanges {
         data?: { [key: string]: any }
     ): void {
         const currentMenuActions = this.actions;
-        this.actions = this.dotWorkflowActionsFireService
+        this.dotWorkflowActionsFireService
             .fireTo(this.page.workingInode, workflow.id, data)
             .pipe(
+                take(1),
                 pluck('inode'),
-                tap(() => {
-                    this.dotGlobalMessageService.display(
-                        this.dotMessageService.get(
-                            'editpage.actions.fire.confirmation',
-                            workflow.name
-                        )
-                    );
-                }),
-                mergeMap((inode: string) => {
-                    const newInode = inode || this.page.workingInode;
-                    this.fired.emit();
-                    return this.getWorkflowActions(newInode);
-                }),
                 catchError((error) => {
                     this.httpErrorManagerService.handle(error);
                     return currentMenuActions;
                 })
-            );
+            )
+            .subscribe((inode: string) => {
+                this.dotGlobalMessageService.display(
+                    this.dotMessageService.get('editpage.actions.fire.confirmation', workflow.name)
+                );
+                const newInode = inode || this.page.workingInode;
+                this.fired.emit();
+                this.actions = this.getWorkflowActions(newInode);
+            });
     }
 }

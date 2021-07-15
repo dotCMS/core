@@ -4,11 +4,12 @@ import { take, takeUntil } from 'rxjs/operators';
 import { DotRole } from '@models/dot-role/dot-role.model';
 import { SelectItem } from 'primeng/api';
 import { DotFormModel } from '@models/dot-form/dot-form.model';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Subject } from 'rxjs';
 
 enum DotActionInputs {
-    ASSIGNABLE = 'assignable'
+    ASSIGNABLE = 'assignable',
+    MOVEABLE = 'moveable'
 }
 
 @Component({
@@ -58,7 +59,8 @@ export class DotCommentAndAssignFormComponent
     private initForm(): void {
         this.form = this.fb.group({
             assign: this.dotRoles ? this.dotRoles[0].value : '',
-            comments: ''
+            comments: '',
+            pathToMove: this.data[DotActionInputs.MOVEABLE] ? ['', [Validators.required]] : ''
         });
         this.emitValues();
         this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => this.emitValues());

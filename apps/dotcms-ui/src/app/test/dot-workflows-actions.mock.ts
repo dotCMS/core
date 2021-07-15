@@ -28,7 +28,8 @@ export const mockWorkflowsActions: DotCMSWorkflowAction[] = [
             {
                 body: {},
                 id: 'pushPublish'
-            }
+            },
+            { body: {}, id: 'moveable' }
         ]
     },
     {

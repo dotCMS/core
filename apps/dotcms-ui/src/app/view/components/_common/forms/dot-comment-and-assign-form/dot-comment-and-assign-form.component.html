@@ -26,4 +26,14 @@
         >
         </textarea>
     </div>
+
+    <div class="p-field" *ngIf="data['moveable']" >
+        <dot-page-selector
+            formControlName="pathToMove"
+            [folderSearch]="true"
+            [label]="'Move' | dm"
+        ></dot-page-selector>
+    </div>
+
+
 </form>

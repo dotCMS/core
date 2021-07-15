@@ -23,6 +23,10 @@
     dot-field-helper {
         @include dot-field-helper-on-input;
     }
+
+    .p-info{
+        color: $info;
+    }
 }
 
 .dot-page-selector__item {

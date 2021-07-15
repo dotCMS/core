@@ -22,7 +22,8 @@ const mockBulkOptions: DotActionBulkRequestOptions = {
             publishDate: 'p',
             publishTime: 'pp',
             filterKey: 'f'
-        }
+        },
+        additionalParamsMap: { _path_to_move: '' }
     }
 };
 

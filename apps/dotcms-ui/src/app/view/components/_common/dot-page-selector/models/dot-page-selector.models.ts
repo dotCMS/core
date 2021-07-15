@@ -1,18 +1,23 @@
 import { DotPageAsset } from '../service/dot-page-selector.service';
 import { Site } from '@dotcms/dotcms-js';
 
-export interface DotPageSeletorItem {
+export interface DotPageSelectorItem {
     label: string;
-    payload: DotPageAsset | Site;
-}
-
-export interface DotPageSelectorResults {
-    data: DotPageSeletorItem[];
-    type: string;
-    query: string;
+    payload: DotPageAsset | Site | DotFolder;
 }
 
 export interface DotSimpleURL {
     host: string;
     pathname: string;
+}
+
+export interface DotFolder {
+    hostName: string;
+    path: string;
+    addChildrenAllowed: boolean;
+}
+
+export interface CompleteEvent {
+    originalEvent: InputEvent;
+    query: string;
 }

@@ -1,24 +1,29 @@
 import { of as observableOf, Observable } from 'rxjs';
-import { waitForAsync, ComponentFixture } from '@angular/core/testing';
+import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { DebugElement, Component, Injectable } from '@angular/core';
 
 import { DotPageSelectorComponent } from './dot-page-selector.component';
-import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { DotPageSelectorService } from './service/dot-page-selector.service';
-import { FormGroup, FormBuilder } from '@angular/forms';
-import { AutoComplete } from 'primeng/autocomplete';
+import { DotPageAsset, DotPageSelectorService } from './service/dot-page-selector.service';
+import { FormGroup, FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
 import {
-    DotPageSelectorResults,
-    DotPageSeletorItem
+    DotFolder,
+    DotPageSelectorItem
 } from '@components/_common/dot-page-selector/models/dot-page-selector.models';
 import { LoginService } from '@dotcms/dotcms-js';
 import { LoginServiceMock } from '../../../../test/login-service.mock';
 import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { Site } from '@dotcms/dotcms-js';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { CommonModule } from '@angular/common';
+import {
+    expectedFolderMap,
+    expectedPagesMap,
+    expectedSitesMap
+} from '@components/_common/dot-page-selector/service/dot-page-selector.service.spec';
 
 export const mockDotPageSelectorResults = {
     type: 'page',
@@ -55,33 +60,22 @@ export const mockDotPageSelectorResults = {
     ]
 };
 
-export const mockDotSiteSelectorResults = {
-    type: 'site',
-    query: 'demo.dotcms.com',
-    data: [
-        {
-            label: '//demo.dotcms.com/',
-            isHost: true,
-            payload: {
-                hostname: 'demo.dotcms.com',
-                type: 'host',
-                identifier: 's48190c8c-42c4-46af-8d1a-0cd5db894797',
-                archived: false
-            }
-        }
-    ]
-};
-
 @Injectable()
 class MockDotPageSelectorService {
-    search(_param: string): Observable<DotPageSelectorResults> {
-        return observableOf(mockDotPageSelectorResults);
+    getPageById(_param: string): Observable<DotPageSelectorItem> {
+        return observableOf(mockDotPageSelectorResults.data[0]);
     }
 
-    setCurrentHost(_site: Site) {}
+    getPages(_param: string): Observable<DotPageSelectorItem[]> {
+        return observableOf(expectedPagesMap);
+    }
 
-    getPageById(_param: string): Observable<DotPageSeletorItem> {
-        return observableOf(mockDotPageSelectorResults.data[0]);
+    getFolders(_param: string): Observable<DotPageSelectorItem[]> {
+        return observableOf(expectedFolderMap);
+    }
+
+    getSites(_param: string): Observable<DotPageSelectorItem[]> {
+        return observableOf(expectedSitesMap);
     }
 }
 @Component({
@@ -89,7 +83,6 @@ class MockDotPageSelectorService {
     template: `
         <form [formGroup]="form">
             <dot-page-selector
-                [floatingLabel]="floatingLabel"
                 formControlName="page"
                 [style]="{ width: '100%' }"
                 label="Hello World"
@@ -100,7 +93,6 @@ class MockDotPageSelectorService {
 })
 class FakeFormComponent {
     form: FormGroup;
-    floatingLabel = false;
 
     constructor(private fb: FormBuilder) {
         /*
@@ -115,20 +107,15 @@ class FakeFormComponent {
 
 const messageServiceMock = new MockDotMessageService({
     'page.selector.no.sites.results': 'Search for sites have no results',
-    'page.selector.no.page.results': 'Search for pages have no results'
+    'page.selector.no.page.results': 'Search for pages have no results',
+    'page.selector.no.folder.results': 'Search for folders have no results',
+    'page.selector.placeholder': 'Start typing for suggestions',
+    'page.selector.folder.hint': 'Folder hint',
+    'page.selector.hint': 'Page hint',
+    'page.selector.folder.permissions': 'Folder Permissions',
+    'page.selector.folder.new': 'new folder'
 });
 
-const config = (host) => {
-    return {
-        declarations: [host, DotPageSelectorComponent],
-        imports: [DotDirectivesModule, DotFieldHelperModule],
-        providers: [
-            { provide: DotPageSelectorService, useClass: MockDotPageSelectorService },
-            { provide: LoginService, useClass: LoginServiceMock },
-            { provide: DotMessageService, useValue: messageServiceMock }
-        ]
-    };
-};
 let hostDe: DebugElement;
 let component: DotPageSelectorComponent;
 let de: DebugElement;
@@ -139,18 +126,43 @@ let dotPageSelectorService: DotPageSelectorService;
 describe('DotPageSelectorComponent', () => {
     let hostFixture: ComponentFixture<FakeFormComponent>;
     const searchPageObj = { originalEvent: { target: { value: 'demo' } }, query: 'demo' };
-    const invalidSearchPageObj = { originalEvent: { target: { value: 'de' } }, query: 'de' };
+    const searchFolderObj = { originalEvent: { target: { value: 'folder' } }, query: 'folder' };
+    const invalidSearchPageObj = { originalEvent: { target: { value: 'd' } }, query: 'd' };
     const searchHostObj = { originalEvent: { target: { value: '//' } }, query: '//' };
     const specialSearchObj = { originalEvent: { target: { value: 'd#emo$%' } }, query: 'd#emo$%' };
+    const fullSearchObj = {
+        originalEvent: { target: { value: '//demo/folder' } },
+        query: '//demo/folder'
+    };
+    const completeHostSearch = {
+        originalEvent: { target: { value: '//demo/' } },
+        query: '//demo/'
+    };
 
     beforeEach(
         waitForAsync(() => {
-            DOTTestBed.configureTestingModule(config(FakeFormComponent));
+            TestBed.configureTestingModule({
+                declarations: [FakeFormComponent, DotPageSelectorComponent],
+                imports: [
+                    DotDirectivesModule,
+                    DotFieldHelperModule,
+                    DotPipesModule,
+                    AutoCompleteModule,
+                    FormsModule,
+                    CommonModule,
+                    ReactiveFormsModule
+                ],
+                providers: [
+                    { provide: DotPageSelectorService, useClass: MockDotPageSelectorService },
+                    { provide: LoginService, useClass: LoginServiceMock },
+                    { provide: DotMessageService, useValue: messageServiceMock }
+                ]
+            }).compileComponents();
         })
     );
 
     beforeEach(async () => {
-        hostFixture = DOTTestBed.createComponent(FakeFormComponent);
+        hostFixture = TestBed.createComponent(FakeFormComponent);
         hostDe = hostFixture.debugElement;
         de = hostDe.query(By.css('dot-page-selector'));
         component = de.componentInstance;
@@ -161,90 +173,122 @@ describe('DotPageSelectorComponent', () => {
 
         hostFixture.detectChanges();
         await hostFixture.whenStable();
-        autocomplete = de.query(By.css('p-autoComplete'));
+        autocomplete = de.query(By.css('[data-testId="p-autoComplete"]'));
         autocompleteComp = autocomplete.componentInstance;
     });
 
-    it('should have autocomplete', () => {
-        expect(autocomplete).toBeTruthy();
+    describe('AutoComplete properties', () => {
+        it('should have placeholder', () => {
+            const input: HTMLInputElement = de.query(By.css('.p-autocomplete-input')).nativeElement;
+            expect(input.placeholder).toEqual('Start typing for suggestions');
+        });
     });
 
-    it('shold not set floating label directive', () => {
-        expect(de.query(By.css('[dotMdInputtext]')) === null).toBe(true);
-    });
-
-    it('should search for pages', () => {
-        spyOn(dotPageSelectorService, 'search').and.returnValue(
-            observableOf({ ...mockDotSiteSelectorResults })
-        );
-        autocomplete.triggerEventHandler('completeMethod', searchPageObj);
-        expect(dotPageSelectorService.search).toHaveBeenCalledWith(searchPageObj.query);
-    });
-
-    it('should not search for pages if has less than 3 characters', () => {
-        component.results = Object.assign({}, mockDotSiteSelectorResults);
-        spyOn(dotPageSelectorService, 'search').and.returnValue(observableOf(null));
-        autocomplete.triggerEventHandler('completeMethod', invalidSearchPageObj);
-
-        expect(dotPageSelectorService.search).not.toHaveBeenCalled();
-        expect(component.results.data.length).toBe(0);
-    });
-
-    it('should search for host', () => {
-        spyOn(dotPageSelectorService, 'search').and.returnValue(
-            observableOf({ ...mockDotSiteSelectorResults })
-        );
-        autocomplete.triggerEventHandler('completeMethod', searchHostObj);
-        expect(dotPageSelectorService.search).toHaveBeenCalledWith(searchHostObj.query);
-    });
-
-    it('should set current host on selection', () => {
-        component.results = mockDotSiteSelectorResults;
-        spyOn<any>(dotPageSelectorService, 'setCurrentHost').and.returnValue(observableOf(null));
-        autocomplete.triggerEventHandler('onSelect', mockDotSiteSelectorResults.data[0]);
-        expect(dotPageSelectorService.setCurrentHost).toHaveBeenCalledWith(
-            mockDotSiteSelectorResults.data[0].payload
-        );
-    });
-
-    it('should remove special characters when searching for pages', () => {
-        spyOn(dotPageSelectorService, 'search').and.returnValue(
-            observableOf({ ...mockDotSiteSelectorResults })
-        );
-        autocomplete.triggerEventHandler('completeMethod', specialSearchObj);
-        expect(dotPageSelectorService.search).toHaveBeenCalledWith('demo');
-    });
-
-    it('should display error when no results in pages', () => {
-        spyOn(dotPageSelectorService, 'search').and.returnValue(
-            observableOf({
-                type: 'page',
-                query: 'invalid',
-                data: []
-            })
-        );
-        autocomplete.triggerEventHandler('completeMethod', {
-            originalEvent: { target: { value: 'invalidPage' } },
-            query: 'invalidPage'
+    describe('Search Types', () => {
+        it('should search for pages', () => {
+            spyOn(dotPageSelectorService, 'getPages').and.callThrough();
+            autocomplete.triggerEventHandler('completeMethod', searchPageObj);
+            expect(dotPageSelectorService.getPages).toHaveBeenCalledWith(searchPageObj.query);
         });
 
-        expect(component.message).toEqual('Search for pages have no results');
-    });
-
-    it('should display error when no results in hosts', () => {
-        spyOn(dotPageSelectorService, 'search').and.returnValue(
-            observableOf({
-                type: 'site',
-                query: 'invalid',
-                data: []
-            })
-        );
-        autocomplete.triggerEventHandler('completeMethod', {
-            originalEvent: { target: { value: '//invalid' } },
-            query: '//invalid'
+        it('should not search for pages if has less than 2 characters', () => {
+            spyOn(dotPageSelectorService, 'getPages').and.callThrough();
+            autocomplete.triggerEventHandler('completeMethod', invalidSearchPageObj);
+            expect(dotPageSelectorService.getPages).not.toHaveBeenCalled();
         });
 
-        expect(component.message).toEqual('Search for sites have no results');
+        it('should search for host', () => {
+            spyOn(dotPageSelectorService, 'getSites').and.callThrough();
+            autocomplete.triggerEventHandler('completeMethod', searchHostObj);
+            expect(dotPageSelectorService.getSites).toHaveBeenCalledWith('');
+        });
+
+        it('should search for pages when the host is complete', () => {
+            spyOn(dotPageSelectorService, 'getSites').and.callThrough();
+            spyOn(dotPageSelectorService, 'getPages').and.callThrough();
+            autocomplete.triggerEventHandler('completeMethod', completeHostSearch);
+            expect(dotPageSelectorService.getSites).toHaveBeenCalledWith('demo', true);
+            expect(dotPageSelectorService.getPages).toHaveBeenCalledWith('//demo/');
+        });
+
+        it('should remove special characters when searching for pages', () => {
+            spyOn(dotPageSelectorService, 'getPages').and.callThrough();
+            autocomplete.triggerEventHandler('completeMethod', specialSearchObj);
+            expect(dotPageSelectorService.getPages).toHaveBeenCalledWith('demo');
+        });
+
+        it('should display error when no results in pages', () => {
+            spyOn(dotPageSelectorService, 'getPages').and.returnValue(observableOf([]));
+            autocomplete.triggerEventHandler('completeMethod', {
+                originalEvent: { target: { value: 'invalidPage' } },
+                query: 'invalidPage'
+            });
+            hostFixture.detectChanges();
+            const message = de.query(By.css('[data-testId="message"]'));
+            expect(message.nativeNode.textContent).toEqual('Search for pages have no results');
+            expect(message.nativeNode).toHaveClass('p-invalid');
+        });
+
+        it('should display error when no results in hosts', () => {
+            spyOn(dotPageSelectorService, 'getSites').and.returnValue(observableOf([]));
+            autocomplete.triggerEventHandler('completeMethod', {
+                originalEvent: { target: { value: '//invalid' } },
+                query: '//invalid'
+            });
+            hostFixture.detectChanges();
+            const message = de.query(By.css('[data-testId="message"]'));
+            expect(message.nativeNode.textContent).toEqual('Search for sites have no results');
+            expect(message.nativeNode).toHaveClass('p-invalid');
+        });
+
+        describe('folder search ', () => {
+            beforeEach(() => {
+                component.folderSearch = true;
+                hostFixture.detectChanges();
+            });
+
+            it('should search for folders', () => {
+                spyOn(dotPageSelectorService, 'getFolders').and.callThrough();
+                autocomplete.triggerEventHandler('completeMethod', searchFolderObj);
+                expect(dotPageSelectorService.getFolders).toHaveBeenCalledWith(
+                    searchFolderObj.query
+                );
+            });
+
+            it('should show message new folder will be created', () => {
+                spyOn(dotPageSelectorService, 'getSites').and.callThrough();
+                spyOn(dotPageSelectorService, 'getFolders').and.returnValue(observableOf([]));
+                autocomplete.triggerEventHandler('completeMethod', fullSearchObj);
+                hostFixture.detectChanges();
+                const message = de.query(By.css('[data-testId="message"]'));
+                expect(message.nativeNode.textContent).toEqual('new folder');
+                expect(message.nativeNode).toHaveClass('p-info');
+            });
+
+            it('should show message of permissions', () => {
+                spyOn(dotPageSelectorService, 'getFolders').and.callThrough();
+                autocomplete.triggerEventHandler('completeMethod', searchFolderObj);
+                autocomplete.triggerEventHandler('onSelect', expectedFolderMap[1]);
+                hostFixture.detectChanges();
+                const message = de.query(By.css('[data-testId="message"]'));
+                expect(message.nativeNode.textContent).toEqual('Folder Permissions');
+                expect(message.nativeNode).toHaveClass('p-invalid');
+            });
+
+            it('should display error when no results in folders', () => {
+                spyOn(dotPageSelectorService, 'getFolders').and.returnValue(observableOf([]));
+                autocomplete.triggerEventHandler('completeMethod', {
+                    originalEvent: { target: { value: 'invalid' } },
+                    query: 'invalid'
+                });
+                hostFixture.detectChanges();
+                const message = de.query(By.css('[data-testId="message"]'));
+                expect(message.nativeNode.textContent).toEqual(
+                    'Search for folders have no results'
+                );
+                expect(message.nativeNode).toHaveClass('p-invalid');
+            });
+        });
     });
 
     describe('ControlValueAccessor', () => {
@@ -252,14 +296,15 @@ describe('DotPageSelectorComponent', () => {
             spyOn(component, 'propagateChange').and.callThrough();
         });
 
-        it('should emit selected item and propagate changes', () => {
-            component.results = mockDotPageSelectorResults;
-            autocomplete.triggerEventHandler('onSelect', mockDotPageSelectorResults.data[0]);
+        it('should emit selected page and propagate changes', () => {
+            spyOn(dotPageSelectorService, 'getPages').and.callThrough();
+            autocomplete.triggerEventHandler('completeMethod', searchPageObj);
+            autocomplete.triggerEventHandler('onSelect', expectedPagesMap[0]);
             expect(component.selected.emit).toHaveBeenCalledWith(
-                mockDotPageSelectorResults.data[0].payload
+                expectedPagesMap[0].payload as DotPageAsset
             );
             expect(component.propagateChange).toHaveBeenCalledWith(
-                mockDotPageSelectorResults.data[0].payload.identifier
+                (expectedPagesMap[0].payload as DotPageAsset).identifier
             );
         });
 
@@ -267,34 +312,31 @@ describe('DotPageSelectorComponent', () => {
             expect(component.writeValue).toHaveBeenCalledWith(
                 'c12fe7e6-d338-49d5-973b-2d974d57015b'
             );
-            expect(component.val.payload.identifier).toEqual(
+            expect((component.val.payload as DotPageAsset).identifier).toEqual(
                 'c12fe7e6-d338-49d5-973b-2d974d57015b'
             );
         });
 
-        it('should clear model and suggections', () => {
+        it('should clear model and suggestions', () => {
+            component.suggestions$.subscribe((value) => {
+                expect(value).toEqual([]);
+            });
             autocomplete.triggerEventHandler('onClear', {});
             expect(component.propagateChange).toHaveBeenCalledWith(null);
-            expect(component.results.data).toEqual([]);
-        });
-    });
-
-    describe('floating label', () => {
-        beforeEach(() => {
-            component.floatingLabel = true;
-            hostFixture.detectChanges();
-            autocomplete = de.query(By.css('p-autoComplete'));
-            autocompleteComp = autocomplete.componentInstance;
         });
 
-        it('should set floating label directive', () => {
-            const span: DebugElement = de.query(By.css('.p-field'));
-            expect(span.componentInstance.label).toBe('Hello World');
-            expect(span).toBeTruthy();
-        });
-
-        it('should not have placeholder', () => {
-            expect(autocompleteComp.placeholder).toBeUndefined();
+        it('should emit selected folder and propagate changes', () => {
+            component.folderSearch = true;
+            const folder = <DotFolder>expectedFolderMap[0].payload;
+            spyOn(dotPageSelectorService, 'getFolders').and.callThrough();
+            autocomplete.triggerEventHandler('completeMethod', searchFolderObj);
+            autocomplete.triggerEventHandler('onSelect', expectedFolderMap[0]);
+            expect(component.selected.emit).toHaveBeenCalledWith(
+                `//${folder.hostName}${folder.path}`
+            );
+            expect(component.propagateChange).toHaveBeenCalledWith(
+                `//${folder.hostName}${folder.path}`
+            );
         });
     });
 });

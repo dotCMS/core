@@ -27,7 +27,8 @@ import { DotActionBulkRequestOptions } from '@models/dot-action-bulk-request-opt
 enum DotActionInputs {
     ASSIGNABLE = 'assignable',
     COMMENTABLE = 'commentable',
-    COMMENTANDASSIGN = 'commentAndAssign'
+    COMMENTANDASSIGN = 'commentAndAssign',
+    MOVEABLE = 'moveable'
 }
 
 const EDIT_CONTENT_CALLBACK_FUNCTION = 'saveAssignCallBackAngular';
@@ -159,12 +160,12 @@ export class DotWorkflowEventHandlerService {
         const body = {};
         let workflows: DotCMSWorkflowInput[];
         workflow.actionInputs.forEach((input) => {
-            if (this.isCommentOrAssign(input.id)) {
+            if (this.isValidActionInput(input.id)) {
                 body[input.id] = true;
             }
         });
         if (Object.keys(body).length) {
-            workflows = workflow.actionInputs.filter((input) => !this.isCommentOrAssign(input.id));
+            workflows = workflow.actionInputs.filter((input) => !this.isValidActionInput(input.id));
             workflows.unshift({
                 id: DotActionInputs.COMMENTANDASSIGN,
                 body: { ...body, ...this.getAssignableData(workflow) }
@@ -249,8 +250,12 @@ export class DotWorkflowEventHandlerService {
         return { roleId: workflow.nextAssign, roleHierarchy: workflow.roleHierarchyForAssign };
     }
 
-    private isCommentOrAssign(id: string): boolean {
-        return id === DotActionInputs.ASSIGNABLE || id === DotActionInputs.COMMENTABLE;
+    private isValidActionInput(id: string): boolean {
+        return (
+            id === DotActionInputs.ASSIGNABLE ||
+            id === DotActionInputs.COMMENTABLE ||
+            id === DotActionInputs.MOVEABLE
+        );
     }
 
     private processBulkData(
@@ -273,7 +278,8 @@ export class DotWorkflowEventHandlerService {
                     publishDate: data.publishDate,
                     publishTime: data.publishTime,
                     filterKey: data.filterKey
-                }
+                },
+                additionalParamsMap: { _path_to_move: data.pathToMove }
             }
         };
         if (Array.isArray(event.selectedInodes)) {

@@ -95,7 +95,8 @@ describe('DotAssigneeFormComponent', () => {
         it('should emit value and valid on form change', () => {
             const mockFormValue = {
                 assign: mockProcessedRoles[0].id,
-                comments: 'test'
+                comments: 'test',
+                pathToMove: '/path/'
             };
             const formComponent: DotCommentAndAssignFormComponent = fixture.debugElement.query(
                 By.css('dot-comment-and-assign-form')

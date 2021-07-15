@@ -645,7 +645,6 @@ describe('ContentTypesFormComponent', () => {
         const pageSelector: DebugElement = de.query(By.css('dot-page-selector'));
         expect(pageSelector !== null).toBe(true);
         expect(pageSelector.componentInstance.label).toEqual('Detail Page');
-        expect(pageSelector.componentInstance.floatingLabel).toBe(true);
     });
 
     describe('send data with valid form', () => {
