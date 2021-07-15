@@ -6,12 +6,12 @@ package com.dotcms.rest.api.v1.folder;
 public class FolderSearchResultView {
 
     private final String path;
-    private final String hostname;
+    private final String hostName;
     private final boolean addChildrenAllowed;
 
     public FolderSearchResultView(final String path, final String hostname, final boolean addChildrenAllowed) {
         this.path = path;
-        this.hostname = hostname;
+        this.hostName = hostname;
         this.addChildrenAllowed = addChildrenAllowed;
     }
 
@@ -20,8 +20,8 @@ public class FolderSearchResultView {
         return path;
     }
 
-    public String getHostname() {
-        return hostname;
+    public String getHostName() {
+        return hostName;
     }
 
     public boolean isAddChildrenAllowed(){ return addChildrenAllowed; }
