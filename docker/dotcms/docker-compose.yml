@@ -1,0 +1,61 @@
+version: '3.5'
+
+networks:
+  http_net:
+  db_net:
+  es_net:
+
+volumes:
+  cms-shared:
+  dbdata:
+  esdata:
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.1
+    environment:
+      - cluster.name=elastic-cluster
+      - discovery.type=single-node
+      - data
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xmx1G "
+    #ports:
+      #- 9200:9200
+      #- 9600:9600
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    networks:
+      - es_net
+
+  dotcms:
+    image: dotcms/dotcms:latest
+    environment:
+      "CMS_HEAP_SIZE": '1g'
+      "PROVIDER_DB_DNSNAME": 'db'
+      "PROVIDER_ELASTICSEARCH_ENDPOINTS": 'http://elasticsearch:9200'
+      "ES_ADMIN_PASSWORD": 'admin'
+      #"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20210106/starter-20210106.zip'
+    depends_on:
+      - elasticsearch
+      - db
+    volumes:
+      - cms-shared:/data/shared
+      #- [serverpath]/license.zip:/data/shared/assets/license.zip
+    networks:
+      - db_net
+      - es_net
+    ports:
+      - "8080:8081"
+      - "8443:8082"
+
+  db:
+    image: postgres:11
+    command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
+    environment:
+        "POSTGRES_USER": 'dotcmsdbuser'
+        "POSTGRES_PASSWORD": 'password'
+        "POSTGRES_DB": 'dotcms'
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    networks:
+      - db_net

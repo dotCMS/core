@@ -1,0 +1,48 @@
+# ----------------------------------------------
+# Stage 1:  Minimal java image with Ubuntu LTS
+# ----------------------------------------------
+FROM ubuntu:20.04 as minimal-java
+
+WORKDIR /srv
+
+# Defining default Java, can be any java provided by sdkman
+ARG JAVA_VERSION="21.1.0.r11-grl"
+ARG JAVA_OUTPUT_DIR="/java"
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Installing basic packages 
+RUN apt update && \
+	apt install -y --no-install-recommends zip unzip curl bash ca-certificates
+
+# Downloading sdkman
+RUN curl -sk "https://get.sdkman.io" | bash
+
+# Installing Java via sdkman 
+RUN bash -c "source /root/.sdkman/bin/sdkman-init.sh && \
+    yes | sdk install java $JAVA_VERSION "
+
+ENV PATH="$PATH:/root/.sdkman/candidates/java/$JAVA_VERSION/bin"
+
+RUN jlink \
+    --verbose \
+    --add-modules \
+        java.base,java.sql,java.naming,java.desktop,java.management,java.security.jgss,java.instrument,jdk.unsupported,java.scripting,java.rmi \
+        # java.naming - javax/naming/NamingException
+        # java.desktop - java/beans/PropertyEditorSupport
+        # java.management - javax/management/MBeanServer
+        # java.security.jgss - org/ietf/jgss/GSSException
+        # java.instrument - java/lang/instrument/IllegalClassFormatException
+        # jdk.unsupported - sun/misc/Unsafe, needed by caffine
+        # java.scripting - Nashhorn, needed by log4j
+        # java.rmi needed by Quartz
+    --compress 2 \
+    --no-header-files \
+    --no-man-pages \
+    --output "$JAVA_OUTPUT_DIR"
+
+RUN rm -rf /root/.sdkman
+RUN apt purge -y zip unzip curl wget 
+RUN apt autoremove -y
+RUN apt clean
+RUN rm -rf /var/lib/apt/lists/*

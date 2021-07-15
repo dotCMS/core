@@ -1,5 +1,5 @@
 # ----------------------------------------------
-# Stage 1:  Minimal java image with Ubuntu LTS
+# Stage 1:  Minimal java image with sdkman + Ubuntu LTS
 # ----------------------------------------------
 FROM ubuntu:20.04 as minimal-java
 
@@ -7,44 +7,52 @@ WORKDIR /srv
 
 # Defining default Java, can be any java provided by sdkman
 ARG JAVA_VERSION="21.1.0.r11-grl"
-ARG JAVA_HOME="/java"
+ARG JAVA_OUTPUT_DIR="/java"
 
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Installing basic packages 
-RUN apt-get update && \
-	apt-get install -y --no-install-recommends zip unzip curl bash ca-certificates
+RUN apt update && \
+	apt install -y --no-install-recommends zip unzip wget bash ca-certificates
+
+# Install curl
+RUN wget -O - http://repo.dotcms.com/artifactory/ext-release-local/com/dotcms/curl-static/curl-`uname -m` | install /dev/stdin /usr/bin/curl 
+
+
+
 
 # Downloading sdkman
-RUN curl -sk "https://get.sdkman.io" | bash
+RUN curl -sL "https://get.sdkman.io" | bash
 
 # Installing Java via sdkman 
 RUN bash -c "source /root/.sdkman/bin/sdkman-init.sh && \
     yes | sdk install java $JAVA_VERSION "
 
-ENV PATH="$PATH:/root/.sdkman/candidates/java/$JAVA_VERSION/bin"
 
-RUN java --version
-
-RUN jlink \
+RUN /root/.sdkman/candidates/java/$JAVA_VERSION/bin/jlink \
     --verbose \
     --add-modules \
-        java.base,java.sql,java.naming,java.desktop,java.management,java.security.jgss,java.instrument \
+        java.base,java.sql,java.naming,java.desktop,java.management,java.security.jgss,java.instrument,jdk.unsupported,java.scripting,java.rmi \
         # java.naming - javax/naming/NamingException
         # java.desktop - java/beans/PropertyEditorSupport
         # java.management - javax/management/MBeanServer
         # java.security.jgss - org/ietf/jgss/GSSException
         # java.instrument - java/lang/instrument/IllegalClassFormatException
+        # jdk.unsupported - sun/misc/Unsafe, needed by caffine
+        # java.scripting - Nashhorn, needed by log4j
+        # java.rmi needed by Quartz
     --compress 2 \
     --no-header-files \
     --no-man-pages \
-    --output "$JAVA_HOME"
+    --output "$JAVA_OUTPUT_DIR"
+
+ENV PATH="$PATH:/java/bin"
 
 RUN rm -rf /root/.sdkman
-RUN apt purge -y zip unzip curl wget 
+RUN apt purge -y zip unzip wget 
 RUN apt autoremove -y
-RUN apt-get clean
-
+RUN apt clean
+RUN rm -rf /var/lib/apt/lists/*
 
 
 # ----------------------------------------------
@@ -84,26 +92,21 @@ WORKDIR /srv
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Installing basic packages 
-RUN apt-get update && \
-	apt-get install -y --no-install-recommends zip unzip curl libtcnative-1 tzdata libsass1 tini golang git ca-certificates openssl wget
-
-# Download and build dockerize distributed under MIT license (https://github.com/jwilder/dockerize)
-RUN wget --quiet https://github.com/jwilder/dockerize/archive/v0.6.1.tar.gz \
-    && tar -C / -xzf v0.6.1.tar.gz  \
-    && cd /dockerize-0.6.1 \
-    && go get github.com/hpcloud/tail \
-    && go get github.com/jwilder/gojq \
-    && go get golang.org/x/net/context \
-    && go build \
-    && cp dockerize-0.6.1 /usr/local/bin/dockerize \
-    && chmod a+x /usr/local/bin/dockerize
+RUN apt update && \
+	apt install -y --no-install-recommends libtcnative-1 tzdata tini ca-certificates openssl
 
 
-RUN rm -rf  /dockerize-0.6.1
-RUN rm v0.6.1.tar.gz
-RUN apt purge -y golang gcc git zip unzip curl wget 
+
+RUN chmod a+x /usr/bin/curl 
+
+
+# Install dockerize
+RUN wget -O - http://repo.dotcms.com/artifactory/ext-release-local/com/dotcms/dockerize/dockerize-linux-`uname -m` | install /dev/stdin /usr/local/bin/dockerize 
+
+
+RUN apt purge --allow-remove-essential -y wget bash
 RUN apt autoremove -y
-RUN apt-get clean
+RUN apt clean
 RUN rm -rf /var/lib/apt/lists/*
 COPY --from=build-cms /srv/ /srv/
 COPY ROOT/ /
@@ -115,11 +118,9 @@ ARG USER_UID="1313"
 ARG USER_GID="1313"
 ARG USER_NAME="dotcms"
 
-
 # Creating default non-user 
 RUN groupadd -g $USER_GID $USER_NAME && \
 	useradd -d /srv -m -g $USER_GID -u $USER_UID $USER_NAME
-
 
 # Make scripts runable
 RUN find /srv/ -type f -name "*.sh" -exec chmod a+x {} \;
