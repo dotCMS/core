@@ -17,7 +17,7 @@ RUN apt update && \
 
 # Install curl
 RUN wget -O - https://repo.dotcms.com/artifactory/ext-release-local/com/dotcms/curl-static/curl-`uname -m` | install /dev/stdin /usr/bin/curl 
-
+RUN chmod a+x /usr/bin/curl 
 
 
 
@@ -95,14 +95,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt update && \
 	apt install -y --no-install-recommends libtcnative-1 tzdata tini ca-certificates openssl
 
-
-
-RUN chmod a+x /usr/bin/curl 
-
-
-# Install dockerize
+# Install prebuilt dockerize
 RUN curl -Ls https://repo.dotcms.com/artifactory/ext-release-local/com/dotcms/dockerize/dockerize-linux-`uname -m` | install /dev/stdin /usr/local/bin/dockerize 
-
 
 RUN apt purge --allow-remove-essential -y wget
 RUN apt autoremove -y
@@ -137,16 +131,17 @@ ENV SERVICE_DELAY_DEFAULT_MIN 1
 ENV SERVICE_DELAY_DEFAULT_STEP 3
 ENV SERVICE_DELAY_DEFAULT_MAX 30
 
-# Switching to non-root user to install SDKMAN! 
-#USER $USER_UID:$USER_GID
-    
-ENV JAVA_HOME="/java"
-ENV PATH=$PATH:/java/bin
-
+# ----------------------------------------------
+# Stage 4:  Flatten everything to 1 layer
+# ----------------------------------------------
 FROM scratch
+
 COPY --from=builder / /
 
-
+# Switching to non-root user to install SDKMAN! 
+#USER $USER_UID:$USER_GID
+ENV JAVA_HOME="/java"
+ENV PATH=$PATH:/java/bin
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/srv/entrypoint.sh"]
 CMD ["dotcms"]
