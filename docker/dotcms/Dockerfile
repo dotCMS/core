@@ -16,7 +16,7 @@ RUN apt update && \
 	apt install -y --no-install-recommends zip unzip wget bash ca-certificates
 
 # Install curl
-RUN wget -O - http://repo.dotcms.com/artifactory/ext-release-local/com/dotcms/curl-static/curl-`uname -m` | install /dev/stdin /usr/bin/curl 
+RUN wget -O - https://repo.dotcms.com/artifactory/ext-release-local/com/dotcms/curl-static/curl-`uname -m` | install /dev/stdin /usr/bin/curl 
 
 
 
@@ -85,7 +85,7 @@ RUN chmod -R 666 /srv && find /srv/ -type d -exec chmod a+x {} \;
 # Stage 3:  Build our container using the minimal-java image
 #           and copying the prebuilt dotcms
 # ----------------------------------------------
-FROM minimal-java
+FROM minimal-java as builder
 
 WORKDIR /srv
 
@@ -101,17 +101,16 @@ RUN chmod a+x /usr/bin/curl
 
 
 # Install dockerize
-RUN wget -O - http://repo.dotcms.com/artifactory/ext-release-local/com/dotcms/dockerize/dockerize-linux-`uname -m` | install /dev/stdin /usr/local/bin/dockerize 
+RUN curl -Ls https://repo.dotcms.com/artifactory/ext-release-local/com/dotcms/dockerize/dockerize-linux-`uname -m` | install /dev/stdin /usr/local/bin/dockerize 
 
 
-RUN apt purge --allow-remove-essential -y wget bash
+RUN apt purge --allow-remove-essential -y wget
 RUN apt autoremove -y
 RUN apt clean
 RUN rm -rf /var/lib/apt/lists/*
 COPY --from=build-cms /srv/ /srv/
 COPY ROOT/ /
 RUN rm -rf /srv/dotserver/tomcat-9.0.41/.git
-
 
 # Defining default non-root user UID, GID, and name 
 ARG USER_UID="1313"
@@ -143,6 +142,11 @@ ENV SERVICE_DELAY_DEFAULT_MAX 30
     
 ENV JAVA_HOME="/java"
 ENV PATH=$PATH:/java/bin
+
+FROM scratch
+COPY --from=builder / /
+
+
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/srv/entrypoint.sh"]
 CMD ["dotcms"]
