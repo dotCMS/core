@@ -9,10 +9,6 @@ on:
         description: 'Update stable tags'
         required: true
         default: 'true'
-      dry_run:
-        description: 'Runs publish image in dry-run mode'
-        required: false
-        default: 'true'
 jobs:
   publish_image:
     name: Discover DotCMS docker tags
