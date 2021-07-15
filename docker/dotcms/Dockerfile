@@ -19,8 +19,6 @@ RUN apt update && \
 RUN wget -O - https://repo.dotcms.com/artifactory/ext-release-local/com/dotcms/curl-static/curl-`uname -m` | install /dev/stdin /usr/bin/curl 
 RUN chmod a+x /usr/bin/curl 
 
-
-
 # Downloading sdkman
 RUN curl -sL "https://get.sdkman.io" | bash
 
@@ -136,10 +134,13 @@ ENV SERVICE_DELAY_DEFAULT_MAX 30
 # ----------------------------------------------
 FROM scratch
 
+ARG USER_UID="1313"
+ARG USER_GID="1313"
+
 COPY --from=builder / /
 
 # Switching to non-root user to install SDKMAN! 
-#USER $USER_UID:$USER_GID
+USER $USER_UID:$USER_GID
 ENV JAVA_HOME="/java"
 ENV PATH=$PATH:/java/bin
 
