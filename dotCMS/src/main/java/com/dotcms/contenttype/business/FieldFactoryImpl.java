@@ -234,15 +234,11 @@ public class FieldFactoryImpl implements FieldFactory {
 
     } catch (NotFoundInDbException e) {
       List<Field> fieldsAlreadyAdded = byContentTypeId(throwAwayField.contentTypeId());
-      // assign an inode and db column if needed
-      if (throwAwayField.id() == null) {
-        builder.id(UUID.randomUUID().toString());
-      }
 
       if (throwAwayField.sortOrder() < 0) {
         // move to the end of the line
     	builder.sortOrder(
-    		fieldsAlreadyAdded.stream().map(f -> f.sortOrder()).max(Integer::compare).orElse(-1) + 1
+    		fieldsAlreadyAdded.stream().map(Field::sortOrder).max(Integer::compare).orElse(-1) + 1
     	);
       }
 
@@ -253,6 +249,12 @@ public class FieldFactoryImpl implements FieldFactory {
       String tryVar = getFieldVariable(throwAwayField, takenFieldVars);
 
       builder.variable(tryVar);
+
+      // assign an inode and db column if needed
+      if (throwAwayField.id() == null) {
+          builder.id(APILocator.getDeterministicIdentifierAPI().generateDeterministicIdBestEffort(throwAwayField, ()->tryVar));
+      }
+
     }
     builder = FieldBuilder.builder(normalizeData(builder.build()));
 
