@@ -35,6 +35,16 @@ import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.rendering.velocity.services.PageLoader;
+import com.dotcms.storage.FileMetadataAPI;
+import com.dotcms.storage.model.Metadata;
+import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.portlets.personas.model.Persona;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import org.apache.commons.io.FileUtils;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
@@ -212,6 +222,7 @@ import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
 import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
+import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -1317,20 +1328,47 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         final List<MultiTree> trees = APILocator.getMultiTreeAPI().getMultiTreesByChild(id.getId());
         for (final MultiTree tree : trees) {
-            final IHTMLPage page = APILocator.getHTMLPageAssetAPI()
-                    .findByIdLanguageFallback(tree.getParent1(), contentlet.getLanguageId(), false,
-                            APILocator.getUserAPI().getSystemUser(), false);
-            final Container container = APILocator.getContainerAPI()
-                    .getWorkingContainerById(tree.getParent2(),
-                            APILocator.getUserAPI().getSystemUser(), false);
-            if (InodeUtils.isSet(page.getInode()) && InodeUtils.isSet(container.getInode())) {
-                final Map<String, Object> map = new HashMap<String, Object>();
-                map.put("page", page);
-                map.put("container", container);
-                results.add(map);
+
+            try {
+                final IHTMLPage page = APILocator.getHTMLPageAssetAPI()
+                        .findByIdLanguageFallback(tree.getHtmlPage(), contentlet.getLanguageId(),
+                                false,
+                                APILocator.getUserAPI().getSystemUser(), false);
+
+                if (InodeUtils.isSet(page.getInode())) {
+
+                    final Container container = APILocator.getContainerAPI()
+                            .getWorkingContainerById(tree.getContainer(),
+                                    APILocator.getUserAPI().getSystemUser(), false);
+
+                    if (InodeUtils.isSet(container.getInode())) {
+                        final String personaName = getPersonaNameByMultitree(tree);
+                        final Map<String, Object> map = new HashMap<>();
+                        map.put("page", page);
+                        map.put("container", container);
+                        map.put("persona", personaName);
+                        results.add(map);
+                    }
+                }
+            } catch(DoesNotExistException e) {
+                Logger.debug(this, "Page not available in the requested language. This is ok");
             }
         }
         return results;
+    }
+
+    private String getPersonaNameByMultitree(final MultiTree tree) throws DotSecurityException, DotDataException {
+        final Supplier<String> defaultPersonaSupplier = () -> Try.of(()->
+                LanguageUtil.get(DEFAULT_PERSONA_NAME_KEY)).getOrElse("Default Visitor");
+
+        String personaTag = Try.of(()-> tree.getPersonalization()
+                .substring((Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON).length()))
+                .getOrElse("");
+        Optional<Persona> personaOpt = APILocator.getPersonaAPI()
+                .findPersonaByTag(personaTag,
+                        APILocator.systemUser(), false);
+
+        return personaOpt.isPresent()? personaOpt.get().getName(): defaultPersonaSupplier.get();
     }
 
     @CloseDBIfOpened

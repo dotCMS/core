@@ -732,7 +732,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		workFlowFactory.saveScheme(scheme);
 
-		SecurityLogger.logInfo(this.getClass(), ()-> "The Scheme" + scheme.getName()
+		SecurityLogger.logInfo(this.getClass(), ()-> "The Scheme " + scheme.getName()
 				+ " has been saved by the user: " + user.getUserId());
 	}
 
@@ -830,7 +830,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			this.systemMessageEventUtil.pushSimpleTextEvent
 					(LanguageUtil.get(user.getLocale(), "Workflow-deleted", scheme.getName()), user.getUserId());
 
-			SecurityLogger.logInfo(this.getClass(), ()-> "The Scheme" + scheme.getName()
+			SecurityLogger.logInfo(this.getClass(), ()-> "The Scheme " + scheme.getName()
 					+ " has been deleted by the user: " + user.getUserId());
 		} catch (Exception e) {
 			Logger.error(this.getClass(),
