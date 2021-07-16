@@ -117,11 +117,18 @@ public class UserResource implements Serializable {
 		if(user != null) {
 			try {
 				final Role role = APILocator.getRoleAPI().getUserRole(user);
+
 				currentUser.userId(user.getUserId())
 						.givenName(user.getFirstName())
 						.email(user.getEmailAddress())
 						.surname(user.getLastName())
 						.roleId(role.getId());
+
+				final Role loginAsRole = APILocator.getRoleAPI().loadRoleByKey(Role.LOGIN_AS);
+				if (null != loginAsRole) {
+
+					currentUser.loginAs(APILocator.getRoleAPI().doesUserHaveRole(user, loginAsRole));
+				}
 			} catch (final DotDataException e) {
 				Logger.error(this, "Could not provide current user: " + e.getMessage(), e);
 				throw new BadRequestException("Could not provide current user.");
