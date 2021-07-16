@@ -7,8 +7,8 @@ WORKDIR /srv
 
 # Defining default Java, can be any java provided by sdkman
 ARG JAVA_VERSION="21.1.0.r11-grl"
-ARG JAVA_OUTPUT_DIR="/java"
 
+ENV JAVA_OUTPUT_DIR="/java"
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Installing basic packages 
@@ -66,7 +66,7 @@ LABEL com.dotcms.description "dotCMS Content Management System"
 ARG BUILD_FROM=COMMIT
 
 #  Value resolved in the context of $BUILD_FROM
-ARG BUILD_ID=origin/master
+ARG BUILD_ID=HEAD
 
 WORKDIR /srv
 
