@@ -346,6 +346,7 @@ public class UserResource implements Serializable {
 				.requiredFrontendUser(false)
 				.credentials(loginAsUserId,loginAsUserPwd)
 				.requestAndResponse(request, httpResponse)
+				.requiredRoles(Role.LOGIN_AS)
 				.rejectWhenNoUser(true)
 				.init();
 
