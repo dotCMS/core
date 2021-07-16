@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import java.util.function.Supplier;
@@ -28,6 +29,13 @@ public interface DeterministicIdentifierAPI {
      * @return generated deterministic id
      */
     String generateDeterministicIdBestEffort(ContentType contentType, Supplier<String> contentTypeVarName);
+
+    /**
+     * Entry point for Fields
+     * @param throwAwayField sometimes the var-name isn't set on the Field
+     * @return
+     */
+    String generateDeterministicIdBestEffort(Field throwAwayField, Supplier<String> fieldVarName);
 
     /**
      * Given a Language this will evaluate the code and country code if any then generate a sha256 and finally will hash it out into a long val

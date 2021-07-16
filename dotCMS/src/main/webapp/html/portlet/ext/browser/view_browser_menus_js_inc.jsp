@@ -915,7 +915,7 @@
 
 		if (menuOptions) {
 			var htmlCode = '';
-			htmlCode += '<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props=\'iconClass:"actionIcon", class:"dijitDropDownActionButton"\'>';
+			htmlCode += '<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props=\'iconClass:"fa-plus", class:"dijitDropDownActionButton"\'>';
 			htmlCode += '<span></span>';
 			htmlCode += '<div data-dojo-type="dijit/Menu" class="contentlet-menu-actions">';
 			htmlCode += menuOptions;
