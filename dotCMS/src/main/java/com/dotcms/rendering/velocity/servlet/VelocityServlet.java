@@ -6,6 +6,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import com.dotmarketing.util.WebKeys;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import com.dotcms.business.CloseDB;
 import com.dotcms.enterprise.LicenseUtil;
@@ -46,7 +48,7 @@ public class VelocityServlet extends HttpServlet {
         final String uri = CMSUrlUtil.getCurrentURI(request);
         final boolean comeFromSomeWhere = request.getHeader("referer") != null;
         
-
+        req.setAttribute(WebKeys.IS_LIVE_REQUEST, true);
         
         final User user = (userApi.getLoggedInUser(request)!=null) 
                         ? userApi.getLoggedInUser(request) 
