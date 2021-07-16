@@ -570,7 +570,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	 * @param sqlResults sql query results
 	 * @return a list of categories objects
 	 */
-	private List<Category> convertForCategories(List<Map<String, Object>> sqlResults) {
+	 List<Category> convertForCategories(List<Map<String, Object>> sqlResults) {
 
 		List<Category> categories = new ArrayList<>();
 

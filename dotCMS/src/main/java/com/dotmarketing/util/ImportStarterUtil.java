@@ -3,6 +3,7 @@ package com.dotmarketing.util;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import java.io.File;
 import java.io.IOException;
@@ -745,11 +746,11 @@ public class ImportStarterUtil {
             else {
                 String id;
                 if (Relationship.class.equals(_importClass) || Template.class.equals(_importClass)
-                        || Contentlet.class.equals(_importClass)) {
+                        || Contentlet.class.equals(_importClass) || Category.class.equals(_importClass)) {
                     id = "inode";
                 } else if(_importClass.equals(ContentletVersionInfo.class)) {
                     id = "identifier";
-                }else {
+                } else {
                     _dh = new HibernateUtil(_importClass);
                     id = HibernateUtil.getSession().getSessionFactory().getClassMetadata(_importClass)
                                     .getIdentifierPropertyName();
