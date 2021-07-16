@@ -1,5 +1,61 @@
-# OpenJDK distributed under GPLv2+Oracle Classpath Exception license (http://openjdk.java.net/legal/gplv2+ce.html)
-# Alpine Linux packages distributed under various licenses including GPL-3.0+ (https://pkgs.alpinelinux.org/packages)
+# ----------------------------------------------
+# Stage 1:  Minimal java image with sdkman + Ubuntu LTS
+# ----------------------------------------------
+FROM ubuntu:20.04 as minimal-java
+
+WORKDIR /srv
+
+# Defining default Java, can be any java provided by sdkman
+ARG JAVA_VERSION="21.1.0.r11-grl"
+
+ENV JAVA_OUTPUT_DIR="/java"
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Installing basic packages 
+RUN apt update && \
+	apt install -y --no-install-recommends zip unzip wget bash ca-certificates
+
+# Install curl
+RUN wget -O - https://repo.dotcms.com/artifactory/ext-release-local/com/dotcms/curl-static/curl-`uname -m` | install /dev/stdin /usr/bin/curl 
+RUN chmod a+x /usr/bin/curl 
+
+# Downloading sdkman
+RUN curl -sL "https://get.sdkman.io" | bash
+
+# Installing Java via sdkman 
+RUN bash -c "source /root/.sdkman/bin/sdkman-init.sh && \
+    yes | sdk install java $JAVA_VERSION "
+
+
+RUN /root/.sdkman/candidates/java/$JAVA_VERSION/bin/jlink \
+    --verbose \
+    --add-modules \
+        java.base,java.sql,java.naming,java.desktop,java.management,java.security.jgss,java.instrument,jdk.unsupported,java.scripting,java.rmi \
+        # java.naming - javax/naming/NamingException
+        # java.desktop - java/beans/PropertyEditorSupport
+        # java.management - javax/management/MBeanServer
+        # java.security.jgss - org/ietf/jgss/GSSException
+        # java.instrument - java/lang/instrument/IllegalClassFormatException
+        # jdk.unsupported - sun/misc/Unsafe, needed by caffine
+        # java.scripting - Nashhorn, needed by log4j
+        # java.rmi needed by Quartz
+    --compress 2 \
+    --no-header-files \
+    --no-man-pages \
+    --output "$JAVA_OUTPUT_DIR"
+
+ENV PATH="$PATH:/java/bin"
+
+RUN rm -rf /root/.sdkman
+RUN apt purge -y zip unzip wget 
+RUN apt autoremove -y
+RUN apt clean
+RUN rm -rf /var/lib/apt/lists/*
+
+
+# ----------------------------------------------
+# Stage 2:  Build dotCMS  
+# ----------------------------------------------
 FROM dotcms/dotcms-seed:jdk11 as build-cms
 
 LABEL com.dotcms.contact "support@dotcms.com"
@@ -21,46 +77,41 @@ RUN chmod 500 /build/build_dotcms.sh && /build/build_dotcms.sh ${BUILD_FROM} ${B
 RUN mkdir -p /srv/utils /srv/templates /srv/config /srv/home
 RUN chmod -R 666 /srv && find /srv/ -type d -exec chmod a+x {} \;
 
-##
-## Begin target image build
-##
 
-# OpenJDK distributed under GPLv2+Oracle Classpath Exception license (http://openjdk.java.net/legal/gplv2+ce.html)
-# Alpine Linux packages distributed under various licenses including GPL-3.0+ (https://pkgs.alpinelinux.org/packages)
-#ARG ARCH=arm64v8
 
-FROM alpine:3.13
+# ----------------------------------------------
+# Stage 3:  Build our container using the minimal-java image
+#           and copying the prebuilt dotcms
+# ----------------------------------------------
+FROM minimal-java as builder
 
 WORKDIR /srv
 
-RUN apk --no-cache update && apk upgrade \
-    && apk add --no-cache bash openjdk11 openssl ca-certificates gnupg tzdata grep libc6-compat sed tini nss s6-dns go libpq git gcc musl-dev tomcat-native curl \
-    && update-ca-certificates
+ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apk add libsass --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/community/
+# Installing basic packages 
+RUN apt update && \
+	apt install -y --no-install-recommends libtcnative-1 tzdata tini ca-certificates openssl
 
-# This is a nasty hack for libjsass, Alpine 3.9 no longer has a deprecated symlink in /lib
-RUN [ ! -e /lib/ld-linux-x86-64.so.2 ] &&  ln -s $(readlink /lib64/ld-linux-x86-64.so.2) /lib/ld-linux-x86-64.so.2 || :
+# Install prebuilt dockerize
+RUN curl -Ls https://repo.dotcms.com/artifactory/ext-release-local/com/dotcms/dockerize/dockerize-linux-`uname -m` | install /dev/stdin /usr/local/bin/dockerize 
 
-# Download and build dockerize distributed under MIT license (https://github.com/jwilder/dockerize)
-RUN wget --quiet https://github.com/jwilder/dockerize/archive/v0.6.1.tar.gz \
-    && tar -C / -xzf v0.6.1.tar.gz  \
-    && cd /dockerize-0.6.1 \
-    && go get github.com/hpcloud/tail \
-    && go get github.com/jwilder/gojq \
-    && go get golang.org/x/net/context \
-    && go build \
-    && cp dockerize-0.6.1 /usr/local/bin/dockerize \
-    && chmod a+x /usr/local/bin/dockerize
-
-RUN cd / && rm -rf  /dockerize-0.6.1
-
-RUN apk del -r --purge git gcc musl-dev go
-
-ENV JAVA_HOME /usr/lib/jvm/default-jvm
-
+RUN apt purge --allow-remove-essential -y wget
+RUN apt autoremove -y
+RUN apt clean
+RUN rm -rf /var/lib/apt/lists/*
 COPY --from=build-cms /srv/ /srv/
 COPY ROOT/ /
+RUN rm -rf /srv/dotserver/tomcat-9.0.41/.git
+
+# Defining default non-root user UID, GID, and name 
+ARG USER_UID="1313"
+ARG USER_GID="1313"
+ARG USER_NAME="dotcms"
+
+# Creating default non-user 
+RUN groupadd -g $USER_GID $USER_NAME && \
+	useradd -d /srv -m -g $USER_GID -u $USER_UID $USER_NAME
 
 # Make scripts runable
 RUN find /srv/ -type f -name "*.sh" -exec chmod a+x {} \;
@@ -68,17 +119,34 @@ RUN find /srv/ -type f -name "*.sh" -exec chmod a+x {} \;
 # Make plugin merging directories writable
 RUN find /srv/templates -type d -exec chmod 770 {} \;
 
-RUN mkdir -p /data/shared/assets && mkdir -p /data/local/dotsecure/license && chmod -R 660 /data && find /data/ -type d -exec chmod 770 {} \;
+# Make dotcms user owner
+RUN mkdir -p /data/shared/assets && \
+    mkdir -p /data/local/dotsecure/license && \
+    chown -R dotcms /data && \
+    find /srv/ -type d -exec chown -R dotcms {} \;
 
 ENV SERVICE_DELAY_DEFAULT_MIN 1
 ENV SERVICE_DELAY_DEFAULT_STEP 3
 ENV SERVICE_DELAY_DEFAULT_MAX 30
 
-#VOLUME /data/local
+# ----------------------------------------------
+# Stage 4:  Flatten everything to 1 layer
+# ----------------------------------------------
+FROM scratch
 
-## JDK upgrade does not take first run, needs to runs
-RUN  apk upgrade
+ARG USER_UID="1313"
+ARG USER_GID="1313"
 
+COPY --from=builder / /
+
+# Switching to non-root user to install SDKMAN! 
+USER $USER_UID:$USER_GID
+ENV JAVA_HOME="/java"
+ENV PATH=$PATH:/java/bin
+
+ENTRYPOINT ["/usr/bin/tini", "--", "/srv/entrypoint.sh"]
+CMD ["dotcms"]
+    
 ## Ports
 # Direct connect
 EXPOSE 8080
@@ -92,8 +160,3 @@ EXPOSE 8082
 EXPOSE 8000
 # Glowroot profiler - must be configured via CMS_JAVA_OPTS
 EXPOSE 4000
-
-USER 1000000000
-
-ENTRYPOINT ["/sbin/tini", "--", "/srv/entrypoint.sh"]
-CMD ["dotcms"]
