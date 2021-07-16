@@ -248,9 +248,9 @@ public class CategoryAPIImpl implements CategoryAPI {
 
 		final Category category = categoryFactory.findByKey(key);
 
-		if(!InodeUtils.isSet(category.getCategoryId()))
+		if(null == category || !InodeUtils.isSet(category.getCategoryId())){
 			return null;
-
+		}
 		if(!permissionAPI.doesUserHavePermission(category, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
 			throw new DotSecurityException("User" + user.getUserId() + " doesn't have permission to read this category = " +
 					category.getKey());
@@ -265,9 +265,9 @@ public class CategoryAPIImpl implements CategoryAPI {
 
 		final Category category = categoryFactory.findByName(name);
 
-		if(category == null)
+		if(category == null) {
 			return null;
-
+		}
 		if(!permissionAPI.doesUserHavePermission(category, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
 			throw new DotSecurityException("User" + user.getUserId() + " doesn't have permission to read this category = " +
 					category.getCategoryName());
