@@ -83,6 +83,7 @@ public enum PageMode {
 
         // only backend users can see non-live assets
         if (user == null  ||
+                // it is a velocity live request (FE) and the user is FE
                 (BooleanUtils.toBoolean((Boolean) request.getAttribute(WebKeys.IS_LIVE_REQUEST)) && user.isFrontendUser()) ||
                 !user.isBackendUser()) {
             return DEFAULT_PAGE_MODE;
