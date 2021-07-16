@@ -48,16 +48,14 @@ public class VelocityServlet extends HttpServlet {
         final String uri = CMSUrlUtil.getCurrentURI(request);
         final boolean comeFromSomeWhere = request.getHeader("referer") != null;
         
-        req.setAttribute(WebKeys.IS_LIVE_REQUEST, true);
-        
-        final User user = (userApi.getLoggedInUser(request)!=null) 
+        final User user = (userApi.getLoggedInUser(request)!=null)
                         ? userApi.getLoggedInUser(request) 
                         : userApi.getLoggedInFrontendUser(request) !=null
                            ? userApi.getLoggedInFrontendUser(request)
                            : userApi.getAnonymousUserNoThrow();
         
         request.setRequestUri(uri);
-        final PageMode mode = PageMode.getWithNavigateMode(request);
+        final PageMode mode = user.isFrontendUser()?  PageMode.setPageMode(request, PageMode.LIVE) : PageMode.getWithNavigateMode(request);
         
         // if you are hitting the servlet without running through the other filters
         if (uri == null) {

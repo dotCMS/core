@@ -4,8 +4,6 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import io.vavr.control.Try;
-import org.apache.commons.lang3.BooleanUtils;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
@@ -82,10 +80,7 @@ public enum PageMode {
         final User user = PortalUtil.getUser(request);
 
         // only backend users can see non-live assets
-        if (user == null  ||
-                // it is a velocity live request (FE) and the user is FE
-                (BooleanUtils.toBoolean((Boolean) request.getAttribute(WebKeys.IS_LIVE_REQUEST)) && user.isFrontendUser()) ||
-                !user.isBackendUser()) {
+        if (user == null || !user.isBackendUser()) {
             return DEFAULT_PAGE_MODE;
         }
 
@@ -127,6 +122,7 @@ public enum PageMode {
         return setPageMode(request,mode);
 
     }
+
 
     /**
      * Page mode can only be set for back end users, not for front end users (even logged in Front end users)

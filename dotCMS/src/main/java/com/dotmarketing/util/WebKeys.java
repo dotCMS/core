@@ -724,8 +724,4 @@ public final class WebKeys {
 
     public static final String BACKEND_LANGUAGE_PARAMETER_NAME = "backend_language_id";
 
-    /**
-     * Set to true (otherwise null or false) when the request is coming from the VelocityServlet (Aka live request)
-     */
-    public static final String IS_LIVE_REQUEST = "live_request";
 }
