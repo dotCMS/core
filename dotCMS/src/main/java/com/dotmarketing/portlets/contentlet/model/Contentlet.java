@@ -1594,7 +1594,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		return new ManifestInfoBuilder()
 			.objectType(type)
 			.id(this.getIdentifier())
-			.title(this.getTitle())
+			.title(this.getTitle().replace("\n", ","))
 			.siteId(this.getHost())
 			.folderId(this.getFolder())
 			.build();

@@ -59,11 +59,17 @@ public class ManifestItemsMapTest {
     }
 
     public void add(final ManifestItem assetManifestItem, final String reason) {
-        List<String> lines = includes.get(assetManifestItem.getManifestInfo().id());
+        final String key = assetManifestItem.getManifestInfo().id();
+
+        if (excludes.containsKey(key)) {
+            return;
+        }
+
+        List<String> lines = includes.get(key);
 
         if (lines == null) {
             lines = new ArrayList<>();
-            includes.put(assetManifestItem.getManifestInfo().id(), lines);
+            includes.put(key, lines);
         }
 
         lines.add(getIncludeLine(assetManifestItem, reason));
@@ -71,11 +77,17 @@ public class ManifestItemsMapTest {
     }
 
     public void addExclude(final ManifestItem assetManifestItem, final String reason) {
-        List<String> lines = excludes.get(assetManifestItem.getManifestInfo().id());
+        final String key = assetManifestItem.getManifestInfo().id();
+
+        if (includes.containsKey(key)) {
+            includes.remove(key);
+        }
+
+        List<String> lines = excludes.get(key);
 
         if (lines == null) {
             lines = new ArrayList<>();
-            excludes.put(assetManifestItem.getManifestInfo().id(), lines);
+            excludes.put(key, lines);
         }
 
         lines.add(getExcludeLine(assetManifestItem, reason));

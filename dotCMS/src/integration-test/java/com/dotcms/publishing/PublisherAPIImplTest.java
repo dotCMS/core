@@ -500,6 +500,8 @@ public class PublisherAPIImplTest {
                 contentlet -> manifestLines.add(contentlet, "Added Automatically by dotCMS")
         );
 
+        final ContentType languageVariablesContentType = getLanguageVariablesContentType();
+
         for (Contentlet languageVariable : languageVariablesAddInBundle) {
             final Collection<Object> dependenciesFrom = getLanguageVariable(languageVariable,
                     addLanguageVariableDependencies, true, true);
@@ -508,13 +510,12 @@ public class PublisherAPIImplTest {
                     dependency -> manifestLines.add((ManifestItem) dependency,
                             "Dependency from: " + languageVariable.getIdentifier())
             );
+
+            manifestLines.add(languageVariablesContentType,
+                    "Dependency from: " + languageVariable.getIdentifier());
         }
 
         if (!languageVariablesAddInBundle.isEmpty()) {
-            final ContentType languageVariablesContentType = getLanguageVariablesContentType();
-
-            manifestLines.add(languageVariablesContentType,
-                    "Dependency from: " + languageVariablesAddInBundle.get(0).getIdentifier());
 
             final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI()
                     .findSystemWorkflowScheme();
