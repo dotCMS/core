@@ -2,6 +2,7 @@ import { DotCMSSystemActionMappings, DotCMSWorkflow } from '../index';
 
 export interface DotCMSContentType {
     baseType: string;
+    icon?: string;
     clazz: string;
     defaultType: boolean;
     description?: string;

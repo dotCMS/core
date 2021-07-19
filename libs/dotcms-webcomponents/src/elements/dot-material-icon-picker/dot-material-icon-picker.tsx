@@ -179,6 +179,9 @@ export class DotMaterialIcon {
     render() {
         return (
             <Host
+                class={{
+                    'is-open': this.showSuggestions
+                }}
                 style={{
                     'font-size': this.size
                 }}

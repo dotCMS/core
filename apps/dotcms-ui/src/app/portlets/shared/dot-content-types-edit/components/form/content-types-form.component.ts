@@ -166,6 +166,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     private initFormGroup(): void {
         this.form = this.fb.group({
             defaultType: this.data.defaultType,
+            icon: this.data.icon,
             fixed: this.data.fixed,
             system: this.data.system,
             clazz: this.getProp(this.data.clazz),

@@ -39,6 +39,7 @@ import {
     dotcmsContentTypeFieldBasicMock,
     dotcmsContentTypeBasicMock
 } from '@tests/dot-content-types.mock';
+// eslint-disable-next-line max-len
 import { DotWorkflowsActionsSelectorFieldModule } from '@components/_common/dot-workflows-actions-selector-field/dot-workflows-actions-selector-field.module';
 import { mockWorkflowsActions } from '@tests/dot-workflows-actions.mock';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -47,6 +48,7 @@ import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { TabViewModule } from 'primeng/tabview';
+import { DotMdIconSelectorModule } from '@dotcms/app/view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
 
 @Component({
     selector: 'dot-site-selector-field',
@@ -173,7 +175,8 @@ describe('ContentTypesFormComponent', () => {
                     ReactiveFormsModule,
                     RouterTestingModule,
                     TabViewModule,
-                    HttpClientTestingModule
+                    HttpClientTestingModule,
+                    DotMdIconSelectorModule
                 ],
                 providers: [
                     { provide: LoginService, useClass: LoginServiceMock },
@@ -315,7 +318,7 @@ describe('ContentTypesFormComponent', () => {
         expect(comp.canSave).toBe(false, 'revert the change button disabled set it to false');
     });
 
-    // tslint:disable-next-line:max-line-length
+    // eslint-disable-next-line max-len
     it('should set canSave property false when the form value is updated and then gets back to the original content (community license)', () => {
         spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(true));
 
@@ -368,7 +371,8 @@ describe('ContentTypesFormComponent', () => {
         };
         fixture.detectChanges();
 
-        expect(Object.keys(comp.form.controls).length).toBe(12);
+        expect(Object.keys(comp.form.controls).length).toBe(13);
+        expect(comp.form.get('icon')).not.toBeNull();
         expect(comp.form.get('clazz')).not.toBeNull();
         expect(comp.form.get('name')).not.toBeNull();
         expect(comp.form.get('host')).not.toBeNull();
@@ -400,7 +404,8 @@ describe('ContentTypesFormComponent', () => {
             '#content-type-form-name',
             '#content-type-form-workflow',
             '#content-type-form-publish-date-field',
-            '#content-type-form-expire-date-field'
+            '#content-type-form-expire-date-field',
+            '#content-type-form-icon'
         ];
 
         fields.forEach((field) => {
@@ -415,9 +420,10 @@ describe('ContentTypesFormComponent', () => {
         };
         fixture.detectChanges();
 
-        expect(Object.keys(comp.form.controls).length).toBe(14);
+        expect(Object.keys(comp.form.controls).length).toBe(15);
         expect(comp.form.get('clazz')).not.toBeNull();
         expect(comp.form.get('name')).not.toBeNull();
+        expect(comp.form.get('icon')).not.toBeNull();
         expect(comp.form.get('host')).not.toBeNull();
         expect(comp.form.get('description')).not.toBeNull();
         expect(comp.form.get('workflows')).not.toBeNull();
@@ -438,6 +444,7 @@ describe('ContentTypesFormComponent', () => {
         spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(true));
 
         const base = {
+            icon: null,
             clazz: 'clazz',
             defaultType: false,
             description: 'description',
@@ -668,6 +675,7 @@ describe('ContentTypesFormComponent', () => {
             comp.submitForm();
 
             expect(data).toEqual({
+                icon: null,
                 clazz: '',
                 description: '',
                 host: '',
