@@ -224,7 +224,7 @@ public abstract class CategoryFactory {
 	 * Deletes all the top level categories
 	 * @return
 	 */
-	abstract protected void deleteTopLevelCategories();
+	abstract protected void deleteTopLevelCategories() throws DotDataException;
 	/**
 	 * Returns the first level of categories in the system
 	 * @return

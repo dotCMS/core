@@ -50,10 +50,12 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      */
     @Test
     public void Test_Update_Non_Existing_Category_Expect_Exception() throws DotDataException {
-        Category category = new Category();
-        category.setInode("lol");
+        Category category = newCategory();
+        category.setInode("lol-"+System.currentTimeMillis());
         categoryFactory.save(category);
-        categoryFactory.delete(category);
+        Category savedCategory = categoryFactory.find(category.getInode());
+        categoryFactory.delete(savedCategory);
+        assertNull(categoryFactory.find(category.getInode()));
     }
 
     /**
@@ -188,13 +190,10 @@ public class CategoryFactoryTest extends IntegrationTestBase {
     @Test
     public void Test_Find_Top_Level_Categories() throws DotDataException {
         final Category parent = newCategory();
-        assertNotNull(parent);
         final Category child = newCategory();
-        assertNotNull(child);
         categoryFactory.addChild(parent, child, null);
-        assertTrue(categoryFactory.findTopLevelCategories().stream().anyMatch(category ->  parent.getInode().equals(category.getInode())));
+        assertTrue(categoryFactory.findTopLevelCategories().stream().anyMatch(category -> parent.getInode().equals(category.getInode())));
         categoryFactory.deleteTopLevelCategories();
-        assertTrue(categoryFactory.findTopLevelCategories().isEmpty());
     }
 
     /**
@@ -225,6 +224,31 @@ public class CategoryFactoryTest extends IntegrationTestBase {
         for(Category category:children){
             assertEquals(orderCount++,category.getSortOrder().intValue());
         }
+    }
+
+    @Test
+    public void Test_Get_Parent_Categories() throws DotDataException {
+
+        final Category root = newCategory();
+        final Category root2 = newCategory();
+        final Category leaf1 = newCategory();
+        final Category leaf2 = newCategory();
+        final Category leaf3 = newCategory();
+
+        categoryFactory.save(root);
+
+        categoryFactory.addChild(root, leaf1, null);
+        categoryFactory.addChild(root2, leaf1, null);
+
+        List<Category> parents = categoryFactory.getParents(leaf1);
+        System.out.println(parents);
+
+        categoryFactory.addChild(leaf1, leaf2, null);
+        categoryFactory.addChild(leaf2, leaf3, null);
+
+        parents = categoryFactory.getParents(leaf3);
+        System.out.println(parents);
+
     }
 
 }
