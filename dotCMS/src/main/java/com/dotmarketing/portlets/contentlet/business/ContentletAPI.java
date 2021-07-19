@@ -25,6 +25,7 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships.Content
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import java.io.Serializable;
 import java.util.Date;
@@ -79,6 +80,60 @@ public interface ContentletAPI {
 	 * @throws DotDataException
 	 */
 	public Contentlet find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Move the contentlet to a host path for instance //demo.dotcms.com/application
+	 * Indexing will be based on the {@link Contentlet#getIndexPolicy()}
+	 *
+	 * It has to start with // and the host has to exists.
+	 * If the folderPath does not exists, will try to create it (if enough grants)
+	 *
+	 * @param contentlet {@link Contentlet} existing contentlet
+	 * @param user   {@link User} user that does the action
+	 * @param hostAndFolderPath {@link String} host and path to move the content, throw and exception if do not exists or can not write in there
+	 * @param respectFrontendRoles
+	 * @return Contentlet updated contentlet
+	 */
+	default Contentlet move(Contentlet contentlet, User user, String hostAndFolderPath, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+
+		Logger.info(this, "Move not implemented");
+		return contentlet;
+	}
+
+	/**
+	 * Move the contentlet to a particular host and path for instance /application on the demo.dotcms.com
+	 * Indexing will be based on the {@link Contentlet#getIndexPolicy()}
+	 *
+	 * If the folderPath does not exists, will try to create it (if enough grants)
+	 *
+	 * @param contentlet {@link Contentlet} existing contentlet
+	 * @param user   {@link User} user that does the action
+	 * @param host   {@link Host} host to move
+	 * @param folderPath {@link String} path of the destiny folder
+	 * @param respectFrontendRoles
+	 * @return Contentlet updated contentlet
+	 */
+	default Contentlet move(Contentlet contentlet, User user, Host host, String folderPath, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+		Logger.info(this, "Move not implemented");
+		return contentlet;
+	}
+
+	/**
+	 * Move the contentlet to a particular host and path
+	 * Indexing will be based on the {@link Contentlet#getIndexPolicy()}
+	 *
+	 * @param contentlet {@link Contentlet} existing contentlet
+	 * @param user   {@link User} user that does the action
+	 * @param host   {@link Host} host to move
+	 * @param folder {@link Folder} destiny folder
+	 * @param respectFrontendRoles
+	 * @return Contentlet updated contentlet
+	 */
+	default Contentlet move(final Contentlet contentlet, final User user, final Host host, final Folder folder,
+					final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+		Logger.info(this, "Move not implemented");
+		return contentlet;
+	}
 
 	/**
 	 * Returns a working Contentlet Object for a given language

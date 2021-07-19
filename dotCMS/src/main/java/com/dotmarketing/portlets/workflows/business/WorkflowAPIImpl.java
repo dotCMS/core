@@ -16,6 +16,7 @@ import com.dotcms.rekognition.actionlet.RekognitionActionlet;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.api.v1.workflow.ActionFail;
+import com.dotcms.rest.api.v1.workflow.ActionInputView;
 import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.model.Subscriber;
@@ -112,6 +113,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.Nullable;
+
+import io.vavr.control.Try;
 import org.apache.commons.lang.time.StopWatch;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.elasticsearch.search.query.QueryPhaseExecutionException;
@@ -215,7 +218,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				LargeMessageActionlet.class,
 				SendFormEmailActionlet.class,
 				ResetApproversActionlet.class,
-				RekognitionActionlet.class
+				RekognitionActionlet.class,
+				MoveContentActionlet.class
 		));
 
 		refreshWorkFlowActionletMap();
@@ -1553,6 +1557,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		boolean isDelete      = false;
 		boolean isDestroy     = false;
         boolean isPushPublish = false;
+		boolean isMove        = false;
+		boolean isMoveHasPath = false;
 
         for (final WorkflowActionClass actionClass : actionClasses) {
 
@@ -1567,7 +1573,21 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			    isDelete      |= (null != actionlet) && actionlet.delete();
 			    isDestroy     |= (null != actionlet) && actionlet.destroy();
                 isPushPublish |= (null != actionlet) && actionlet.pushPublish();
-        }
+
+			/*
+			 * In order to determine if an action is moveable, it needs to have a MoveContentActionlet assigned AND
+			 * their parameter MoveContentActionlet#PATH_KEY should be not set (b/c if it is, the path is already hardcored and does not need to ask for it)
+			 */
+			if (actionClass.getClazz().equals(MoveContentActionlet.class.getName())) {
+
+				final Map<String, WorkflowActionClassParameter> workflowActionClassParameterMap =
+						Try.of(() -> this.findParamsForActionClass(actionClass)).getOrNull();
+
+				isMove         = true;
+				isMoveHasPath |= UtilMethods.isSet(workflowActionClassParameterMap) &&
+						UtilMethods.isSet(workflowActionClassParameterMap.get(MoveContentActionlet.PATH_KEY).getValue());
+			}
+		}
 
 	    action.setSaveActionlet(isSave);
         action.setPublishActionlet(isPublish);
@@ -1577,6 +1597,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		action.setDeleteActionlet(isDelete);
 		action.setDestroyActionlet(isDestroy);
         action.setPushPublishActionlet(isPushPublish);
+        action.setMoveActionlet(isMove);
+        action.setMoveActionletHashPath(isMoveHasPath);
     }
 
 
@@ -2898,6 +2920,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			contentlet.setStringProperty(Contentlet.FILTER_KEY, pushPublishBean.getFilterKey());
 			contentlet.setStringProperty(Contentlet.I_WANT_TO, pushPublishBean.getIWantTo());
 		}
+
 		return contentlet;
 	}
 
@@ -2944,6 +2967,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 						// additional params applied directly to the contentlet.
 						contentlet = applyAdditionalParams(additionalParamsBean, contentlet);
 					}
+
+					if (UtilMethods.isSet(additionalParamsBean) && UtilMethods.isSet(additionalParamsBean.getAdditionalParamsMap())) {
+
+						for (Map.Entry<String, Object> entry : additionalParamsBean.getAdditionalParamsMap().entrySet()) {
+							contentlet.setProperty(entry.getKey(), entry.getValue());
+						}
+					}
+
 					fireBulkActionTask(action, contentlet, dependencies, successConsumer,
 							failConsumer, context);
 				} catch (Exception e) {
@@ -3078,6 +3109,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		if(UtilMethods.isSet(dependencies.getWorkflowIWantTo())){
 			contentlet.setStringProperty(Contentlet.I_WANT_TO, dependencies.getWorkflowIWantTo());
+		}
+
+		if(UtilMethods.isSet(dependencies.getWorkflowPathToMove())){
+			contentlet.setStringProperty(Contentlet.PATH_TO_MOVE, dependencies.getWorkflowPathToMove());
 		}
 	}
 
