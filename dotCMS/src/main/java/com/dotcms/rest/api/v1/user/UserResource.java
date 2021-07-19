@@ -357,8 +357,8 @@ public class UserResource implements Serializable {
 		if (!Try.of(()->roleAPI.doesUserHaveRole(initData.getUser(), loginAsRole)).getOrElse(false)) {
 
 			Logger.debug(this, "The user: " + initData.getUser().getUserId()
-					+ " does not have the LOGIN AS, can not execute this action");
-			throw new DotSecurityException("Must have the Login As to execute this action");
+					+ " does not have the LOGIN AS role, can not execute this action");
+			throw new DotSecurityException("Must have the Login As role to execute this action");
 		}
 
 		final String serverName = request.getServerName();
