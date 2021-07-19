@@ -20,6 +20,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -55,6 +56,8 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 
 /**
@@ -346,9 +349,15 @@ public class UserResource implements Serializable {
 				.requiredFrontendUser(false)
 				.credentials(loginAsUserId,loginAsUserPwd)
 				.requestAndResponse(request, httpResponse)
-				.requiredRoles(Role.LOGIN_AS)
 				.rejectWhenNoUser(true)
 				.init();
+
+		final RoleAPI roleAPI     = APILocator.getRoleAPI();
+		final Role    loginAsRole = roleAPI.loadRoleByKey(Role.LOGIN_AS);
+		if (!Try.of(()->roleAPI.doesUserHaveRole(initData.getUser(), loginAsRole)).getOrElse(false)) {
+
+			throw new DotSecurityException("Must have the Login As to execute this action");
+		}
 
 		final String serverName = request.getServerName();
 		final User currentUser = initData.getUser();
