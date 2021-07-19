@@ -339,7 +339,7 @@
                             		<% } %>
                                 <%=f.getFieldName()%>:</span>
                             </div>
-                            <div class="fieldValue">
+								<div class="fieldValue" style="overflow-x: scroll">
                                 <%
                                     if(f.getFieldType().equals(Field.FieldType.RELATIONSHIP.toString())){
                                         //field on the other side of the relationship
