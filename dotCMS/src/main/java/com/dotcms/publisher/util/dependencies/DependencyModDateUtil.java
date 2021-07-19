@@ -52,7 +52,7 @@ public class DependencyModDateUtil {
 		super();
 
 		final String bundleId = config.getId();
-		boolean isPublish = config.getOperation().equals(Operation.PUBLISH);
+		boolean isPublish = Operation.PUBLISH.equals(config.getOperation());
 
 		cache = CacheLocator.getPushedAssetsCache();
 		this.isDownload = isDownload;
