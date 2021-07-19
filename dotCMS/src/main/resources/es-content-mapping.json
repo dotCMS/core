@@ -84,10 +84,17 @@
                   }
               }
           },
-
           {
               "hostname" : {
                   "path_match": "host.hostname",
+                  "mapping": {
+                      "type": "keyword"
+                  }
+              }
+          },
+          {
+              "key_value": {
+                  "match": "*key_value",
                   "mapping": {
                       "type": "keyword"
                   }

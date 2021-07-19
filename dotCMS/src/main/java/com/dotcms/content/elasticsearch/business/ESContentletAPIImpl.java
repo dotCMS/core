@@ -48,6 +48,8 @@ import org.apache.commons.io.FileUtils;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
+import com.dotcms.storage.FileMetadataAPI;
+import com.dotcms.storage.model.Metadata;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.util.CollectionsUtils;
@@ -59,6 +61,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.Tree;
+import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
@@ -81,6 +84,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -140,6 +144,7 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -152,6 +157,11 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
@@ -162,7 +172,9 @@ import com.liferay.util.StringUtil;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
+import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
@@ -208,6 +220,7 @@ import java.util.stream.Stream;
 
 import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
 import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
 import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
 
@@ -349,6 +362,151 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotSecurityException("User:" + userId + " does not have permissions on Contentlet "+ContentletUtil
                     .toShortString(contentlet));
         }
+    }
+
+    @Override
+    public Contentlet move(final Contentlet contentlet, final User user, final String hostAndFolderPath,
+                           final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+
+        Logger.debug(this, ()->"Moving contentlet: " + contentlet.getIdentifier() + " to: " + hostAndFolderPath);
+
+        if (UtilMethods.isNotSet(hostAndFolderPath) || !hostAndFolderPath.startsWith(HostUtil.HOST_INDICATOR)) {
+
+            throw new IllegalArgumentException("The host path is not valid: " + hostAndFolderPath);
+        }
+
+        final Tuple2<String, Host> hostPathTuple = Try.of(()->HostUtil.splitPathHost(hostAndFolderPath, user,
+                StringPool.FORWARD_SLASH, HostUtil::findCurrentHost)).getOrElseThrow(e -> new DotRuntimeException(e));
+
+        return this.move(contentlet, user, hostPathTuple._2(), hostPathTuple._1(), respectFrontendRoles);
+    }
+
+    @Override
+    public Contentlet move(final Contentlet contentlet, final User user, final Host host, final String folderPathParam,
+                           final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+
+        Logger.debug(this, ()->"Moving contentlet: " + contentlet.getIdentifier() + " to: " + folderPathParam);
+
+        if (UtilMethods.isNotSet(folderPathParam) || !folderPathParam.startsWith(StringPool.SLASH)) {
+
+            throw new IllegalArgumentException("The folder is not valid: " + folderPathParam);
+        }
+
+        // we need a / at the end to check if exits
+        final String folderPath = folderPathParam.endsWith(StringPool.SLASH)?folderPathParam: folderPathParam + StringPool.SLASH;
+
+        Folder folder = Try.of(()-> APILocator.getFolderAPI()
+                .findFolderByPath(folderPath, host, user, respectFrontendRoles)).getOrNull();
+
+        if (null == folder || !UtilMethods.isSet(folder.getInode())) {
+
+            // if the folder does not exists try, let's see if the current user can create it.
+            if (this.permissionAPI.doesUserHavePermission(host, PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles)) {
+                Logger.debug(this, ()->"On Moving Contentlet, creating the Folders: " + folderPath);
+
+                try {
+                    // multiple contentlets on a bulk action may require to create the same folder
+                    // if after release to block, the folder does not exists so create it
+                    final String lockKey = folderPath;
+                    folder = lockManager.tryLock(lockKey,
+                            () -> {
+
+                                Folder testFolder = Try.of(()-> APILocator.getFolderAPI()
+                                        .findFolderByPath(folderPath, host, user, respectFrontendRoles)).getOrNull();
+
+                                if (null == testFolder || !UtilMethods.isSet(testFolder.getInode())) {
+
+                                    Logger.debug(this, ()->"Creating folders: " + folderPath + ", contentlet: " + contentlet.getIdentifier());
+                                    testFolder = DotConcurrentFactory.getInstance().getSingleSubmitter() // we need to run this in a separated thread, to use a diff conn.
+                                            .submit(()->this.createFolder(folderPath, contentlet, host, user, respectFrontendRoles)).get(); // b.c the folder is a pre-requisites
+                                }
+
+                                return testFolder;
+                            });
+                } catch (final Throwable t) {
+                    Logger.warn(getClass(),t.getMessage(),t);
+                    folder = null;
+                }
+            }
+
+            if (null == folder || !UtilMethods.isSet(folder.getInode())) {
+
+                throw new DoesNotExistException("The folder does not exists: " + folderPath + " and could not be created");
+            }
+        }
+
+        return this.move(contentlet, user, host, folder, respectFrontendRoles);
+    }
+
+    @WrapInTransaction
+    private Folder createFolder (final String folderPath, final Contentlet contentlet, final Host host,
+                                 final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+        Logger.debug(this, ()->"Creating folders: " + folderPath + ", contentlet: " + contentlet.getIdentifier());
+        return APILocator.getFolderAPI().createFolders(folderPath, host, user, respectFrontendRoles);
+    }
+
+    @WrapInTransaction
+    @Override
+    public Contentlet move(final Contentlet contentlet, final User incomingUser, final Host host, final Folder folder,
+                           final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+
+        Logger.debug(this, ()-> "Moving contentlet: " + contentlet.getIdentifier()
+                + " to host: " + host.getHostname() + " and path: " + folder.getPath() + ", id: " + folder.getIdentifier());
+
+        final User user = incomingUser!=null ? incomingUser: APILocator.getUserAPI().getAnonymousUser();
+
+        if(user.isAnonymousUser() && AnonymousAccess.systemSetting() != AnonymousAccess.WRITE) {
+            throw new DotSecurityException("CONTENT_APIS_ALLOW_ANONYMOUS setting does not allow anonymous content WRITEs");
+        }
+
+        // if the user can write and add a children to the host
+        if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles) ||
+                !permissionAPI.doesUserHavePermission(host, PERMISSION_CAN_ADD_CHILDREN, user)) {
+
+            this.throwSecurityException(contentlet, user);
+        }
+
+        final Identifier identifier = APILocator.getIdentifierAPI().loadFromDb(contentlet.getIdentifier());
+
+        // if id exists
+        if (null == identifier || !UtilMethods.isSet(identifier.getId())) {
+
+            throw new DoesNotExistException("The identifier does not exists: " + contentlet.getIdentifier());
+        }
+
+        // update with the new host and path
+        identifier.setHostId(host.getIdentifier());
+        identifier.setParentPath(folder.getPath());
+
+        Logger.debug(this, ()->"Updating the identifier: " + identifier);
+        // changing the host and path will move the contentlet
+        APILocator.getIdentifierAPI().save(identifier);
+
+        // update the version ts in order to be repushed
+        final Optional<ContentletVersionInfo> versionInfoOpt = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(identifier.getId(), contentlet.getLanguageId());
+        if (versionInfoOpt.isPresent()) {
+            versionInfoOpt.get().setVersionTs(new Date());
+            APILocator.getVersionableAPI().saveContentletVersionInfo(versionInfoOpt.get());
+        }
+
+        // update the content host + folder
+        contentlet.setHost(host.getIdentifier());
+        contentlet.setFolder(folder.getInode());
+
+        // clean cache
+        HibernateUtil.addCommitListener(identifier.getId(), new FlushCacheRunnable() {
+            @Override
+            public void run() {
+                CacheLocator.getContentletCache().remove(contentlet.getInode());
+            }
+        });
+
+        // refresh the index based on the index policy
+        this.indexAPI.addContentToIndex(contentlet, false);
+
+        return contentlet;
     }
 
     @CloseDBIfOpened
@@ -4626,6 +4784,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final String contentWhereToSend = contentlet.getStringProperty(Contentlet.WHERE_TO_SEND);
             final String filterKey = contentlet.getStringProperty(Contentlet.FILTER_KEY);
             final String iWantTo = contentlet.getStringProperty(Contentlet.I_WANT_TO);
+            final String pathToMove = contentlet.getStringProperty(Contentlet.PATH_TO_MOVE);
 
                 /*
                  For HTMLPages get the url of the page sent by the user, we use the Contentlet object to
@@ -5150,6 +5309,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             contentlet.setStringProperty(Contentlet.WHERE_TO_SEND, contentWhereToSend);
             contentlet.setStringProperty(Contentlet.FILTER_KEY, filterKey);
             contentlet.setStringProperty(Contentlet.I_WANT_TO, iWantTo);
+            if (UtilMethods.isSet(pathToMove)) {
+                contentlet.setStringProperty(Contentlet.PATH_TO_MOVE, pathToMove);
+            }
 
             //wapi.
             if(workflow!=null) {
@@ -5896,6 +6058,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 (String) properties.get(Contentlet.WHERE_TO_SEND));
         contentlet.setStringProperty(Contentlet.I_WANT_TO,
                 (String) properties.get(Contentlet.I_WANT_TO));
+        contentlet.setStringProperty(Contentlet.PATH_TO_MOVE,
+                (String) properties.get(Contentlet.PATH_TO_MOVE));
     }
 
     @Override

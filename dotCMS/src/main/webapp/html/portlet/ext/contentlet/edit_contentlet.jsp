@@ -118,8 +118,8 @@
 
 	//Variable used to return after the work is done with the contentlet
 	String referer = "";
-	if (request.getHeader("referer") != null && 
-	                (request.getHeader("referer").contains("baseType") || 
+	if (request.getHeader("referer") != null &&
+	                (request.getHeader("referer").contains("baseType") ||
 	                                request.getHeader("referer").contains("structure_id"))){
 	    referer = request.getHeader("referer");
 	}
@@ -181,7 +181,7 @@
     boolean canSeeRules = layoutAPI.doesUserHaveAccessToPortlet("rules", user)
             && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user, PageMode.get(request).respectAnonPerms)
             && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "RULES: " + PermissionAPI.PERMISSION_USE, user, PageMode.get(request).respectAnonPerms);
-    
+
     boolean hasViewPermision = layoutAPI.doesUserHaveAccessToPortlet("permissions", user)
             && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user, PageMode.get(request).respectAnonPerms)
             && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "PERMISSIONS: " + PermissionAPI.PERMISSION_USE, user, PageMode.get(request).respectAnonPerms);
@@ -212,6 +212,7 @@
 	<input name="wfActionAssign" id="wfActionAssign" type="hidden" value="">
 	<input name="wfActionComments" id="wfActionComments" type="hidden" value="">
 	<input name="wfActionId" id="wfActionId" type="hidden" value="">
+	<input name="wfPathToMove" id="wfPathToMove" type="hidden" value="">
 
 	<!-- PUSH PUBLISHING ACTIONLET -->
 	<input name="wfPublishDate" id="wfPublishDate" type="hidden" value="">
@@ -339,7 +340,7 @@
                             		<% } %>
                                 <%=f.getFieldName()%>:</span>
                             </div>
-                            <div class="fieldValue">
+								<div class="fieldValue" style="overflow-x: scroll">
                                 <%
                                     if(f.getFieldType().equals(Field.FieldType.RELATIONSHIP.toString())){
                                         //field on the other side of the relationship
@@ -583,7 +584,7 @@
 <script type="text/javascript">
 	dojo.addOnLoad(function () {
 		dojo.style(dijit.byId('savingContentDialog').closeButtonNode, 'visibility', 'hidden');
-		
+
         var tab = dijit.byId("mainTabContainer");
  		dojo.connect(tab, 'selectChild', function (evt) {
             selectedTab = tab.selectedChildWidget;
@@ -611,7 +612,7 @@
             name = shortenString(name, 100);
             resourceLink.text = name;
         }
-        
+
 	});
 
 	var onBeforeUnloadHandle = dojo.connect(dijit.byId('mainTabContainer'), "onkeypress", activateOnBeforeUnload);
@@ -636,7 +637,7 @@ String populateaccept = request.getParameter("populateaccept");
 if(!InodeUtils.isSet(inode) && UtilMethods.isSet(sib) && !UtilMethods.isSet(populateaccept)){
 	// Sibbling content
 	Contentlet sibbling=conAPI.find(sib, user,false);
-	Language previousLanguage = APILocator.getLanguageAPI().getLanguage(sibbling.getLanguageId());   
+	Language previousLanguage = APILocator.getLanguageAPI().getLanguage(sibbling.getLanguageId());
 	Language newLanguage=APILocator.getLanguageAPI().getLanguage(contentletForm.getLanguageId());
 
    	Map<String, String[]> params = new HashMap<String, String[]>();
@@ -723,7 +724,7 @@ if(!InodeUtils.isSet(inode) && UtilMethods.isSet(sib) && !UtilMethods.isSet(popu
         </div>
 
 	<%}
-    
+
 	/*########################## END  DOTCMS-2692 ###############################*/
 
 

@@ -8,15 +8,19 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import java.io.Serializable;
-import java.util.List;
-import java.util.Map;
+import com.liferay.util.StringPool;
+import org.glassfish.jersey.server.JSONP;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -25,12 +29,13 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
-import com.liferay.util.StringPool;
-import org.glassfish.jersey.server.JSONP;
+import java.io.Serializable;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by jasontesser on 9/28/16.
@@ -139,6 +144,134 @@ public class FolderResource implements Serializable {
         return Response.ok(new ResponseEntityView(folderHelper.loadFolderAndSubFoldersByPath(siteId,path, user))).build(); // 200
     }
 
+    /**
+     * This endpoint is to retrieve subfolders of a given path,
+     * will also filter these subfolders by the path sent. The subfolders returned will be the ones
+     * the user has permissions over.
+     *
+     * E.g of the behavior of the endpoint:
+     *
+     * SiteBrowser Tree:
+     * default
+     * 	folder1
+     * 		subfolder1
+     * 		subfolder2
+     *                  testsubfolder3
+     * 	folder2
+     * 		subfolder1
+     * 	testfolder3
+     *
+     * default_copy
+     * 	folder1_copy
+     * 		subfolder1_copy
+     * 		subfolder2_copy
+     *                  testsubfolder3_copy
+     * 	folder2_copy
+     * 		subfolder1_copy
+     * 	testfolder3_copy
+     *
+     * 	Value Sent | Expected Result
+     * ------------ | -------------
+     * //default/ | folder1, folder2, testfolder3
+     * //default/fol | folder1, folder2
+     * //default/fol/ | Nothing
+     * //default/bla | Nothing
+     * //default/folder1/ | subfolder1, subfolder2, testsubfolder3
+     * //default/folder1/s | subfolder1, subfolder2
+     * //default/folder1/b | Nothing
+     * / | folder1,folder2,testfolder3,folder1_copy,folder2_copy,testfolder3_copy
+     * /f | folder1,folder2,folder1_copy,folder2_copy
+     * /folder1/ | subfolder1, subfolder2, testsubfolder3,folder1_copy,folder2_copy,testfolder3_copy
+     * /folder1/s | subfolder1, subfolder2,subfolder1_copy, subfolder2_copy
+     * f | folder1,folder2,folder1_copy,folder2_copy
+     * folder1/ | subfolder1, subfolder2, testsubfolder3,folder1_copy,folder2_copy,testfolder3_copy
+     * folder1/s | subfolder1, subfolder2,subfolder1_copy, subfolder2_copy
+     *
+     *
+     * @param searchByPathForm path to look for the sub-folders
+     * @return List of {@link FolderSearchResultView}
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @POST
+    @Path ("/byPath")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public final Response findSubFoldersByPath(@Context final HttpServletRequest httpServletRequest,
+            @Context final HttpServletResponse httpServletResponse,
+            final SearchByPathForm searchByPathForm
+            ) throws  DotDataException, DotSecurityException   {
 
+        final InitDataObject initData =
+                new WebResource.InitBuilder(webResource)
+                        .rejectWhenNoUser(true)
+                        .requiredBackendUser(true)
+                        .requiredFrontendUser(false)
+                        .requestAndResponse(httpServletRequest, httpServletResponse)
+                        .init();
+
+        final User user = initData.getUser();
+
+        String path = searchByPathForm.getPath();
+        String siteId = null;
+        String folderPath = path;
+
+        if(path.startsWith(StringPool.DOUBLE_SLASH)){
+            //Removes // to search the host
+            path = path.startsWith(StringPool.DOUBLE_SLASH) ? path.substring(2) : path;
+            final String sitePath = path.split(StringPool.FORWARD_SLASH,2)[0];
+            final Host site = APILocator.getHostAPI().findByName(sitePath, user,false);
+            if(null == site){
+                throw new DoesNotExistException(String.format(" Couldn't find any host with name `%s` ",sitePath));
+            }else{
+                siteId = site.getIdentifier();
+            }
+            folderPath = path.split(StringPool.FORWARD_SLASH,2).length == 2  ?
+                    path.split(StringPool.FORWARD_SLASH,2)[1] :
+                    StringPool.FORWARD_SLASH;
+        }
+
+        folderPath = !folderPath.startsWith(StringPool.FORWARD_SLASH) ? StringPool.FORWARD_SLASH.concat(folderPath) : folderPath;
+
+        return Response.ok(new ResponseEntityView(folderHelper.findSubFoldersPathByParentPath(siteId,folderPath, user))).build(); // 200
+    }
+
+    /**
+     * This endpoint will try to retrieve folder if exists, otherwise 404
+     *
+     * @return Folder
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @GET
+    @Path ("/{folderId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public final Response findFolderById(@Context final HttpServletRequest httpServletRequest,
+                                         @Context final HttpServletResponse httpServletResponse,
+                                         @PathParam("folderId") final String folderId
+    ) throws  DotDataException, DotSecurityException   {
+
+        final InitDataObject initData =
+                new WebResource.InitBuilder(webResource)
+                        .rejectWhenNoUser(true)
+                        .requiredBackendUser(true)
+                        .requiredFrontendUser(false)
+                        .requestAndResponse(httpServletRequest, httpServletResponse)
+                        .init();
+
+        final User user = initData.getUser();
+
+        Logger.debug(this, ()-> "Finding the folder: " + folderId);
+
+        final Folder folder = APILocator.getFolderAPI().find(folderId, user,
+                PageMode.get(httpServletRequest).respectAnonPerms);
+
+        return null == folder || !UtilMethods.isSet(folder.getIdentifier())?
+                Response.status(Response.Status.NOT_FOUND).build():
+                Response.ok(new ResponseEntityView(folder)).build(); // 200
+    }
 
 }

@@ -73,12 +73,14 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
+import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
@@ -135,6 +137,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 
+import io.vavr.control.Try;
 import org.apache.commons.lang.time.StopWatch;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.server.JSONP;
@@ -458,6 +461,12 @@ public class WorkflowResource {
         workflowActionView.setDeleteActionlet(workflowAction.hasDeleteActionlet());
         workflowActionView.setDestroyActionlet(workflowAction.hasDestroyActionlet());
         workflowActionView.setShowOn(workflowAction.getShowOn());
+        workflowActionView.setActionInputs(this.createActionInputViews(workflowAction));
+
+        return workflowActionView;
+    }
+
+    private List<ActionInputView> createActionInputViews (final WorkflowAction workflowAction) {
 
         final List<ActionInputView> actionInputViews = new ArrayList<>();
 
@@ -465,18 +474,24 @@ public class WorkflowResource {
 
             actionInputViews.add(new ActionInputView("assignable", Collections.emptyMap()));
         }
+
         if (workflowAction.isCommentable()) {
 
             actionInputViews.add(new ActionInputView("commentable", Collections.emptyMap()));
         }
+
         if (workflowAction.hasPushPublishActionlet()) {
 
             actionInputViews.add(new ActionInputView("pushPublish", Collections.emptyMap()));
         }
 
-        workflowActionView.setActionInputs(actionInputViews);
+        // Has a move actionlet but the path is empty
+        if (workflowAction.hasMoveActionletActionlet() && !workflowAction.hasMoveActionletHasPathActionlet()) {
 
-        return workflowActionView;
+            actionInputViews.add(new ActionInputView("moveable", Collections.emptyMap()));
+        }
+
+        return actionInputViews;
     }
 
 
@@ -1460,7 +1475,8 @@ public class WorkflowResource {
                     .workflowNeverExpire(fireActionForm.getNeverExpire())
                     .workflowFilterKey(fireActionForm.getFilterKey())
                     .workflowWhereToSend(fireActionForm.getWhereToSend())
-                    .workflowIWantTo(fireActionForm.getIWantTo());
+                    .workflowIWantTo(fireActionForm.getIWantTo())
+                    .workflowPathToMove(fireActionForm.getPathToMove());
         }
 
         if (contentlet.getMap().containsKey(Contentlet.RELATIONSHIP_KEY)) {
@@ -2240,6 +2256,11 @@ public class WorkflowResource {
             fireActionFormBuilder.filterKey((String)contentMap.get(Contentlet.I_WANT_TO));
             contentMap.remove(Contentlet.I_WANT_TO);
         }
+
+        if (contentMap.containsKey(Contentlet.PATH_TO_MOVE)) {
+            fireActionFormBuilder.pathToMove((String)contentMap.get(Contentlet.PATH_TO_MOVE));
+            contentMap.remove(Contentlet.PATH_TO_MOVE);
+        }
     }
 
     private Contentlet getContentlet(final String inode,
@@ -2373,6 +2394,9 @@ public class WorkflowResource {
         contentlet.setStringProperty(Contentlet.WHERE_TO_SEND,   fireActionForm.getWhereToSend());
         contentlet.setStringProperty(Contentlet.FILTER_KEY, fireActionForm.getFilterKey());
         contentlet.setStringProperty(Contentlet.I_WANT_TO, fireActionForm.getFilterKey());
+        if (UtilMethods.isSet(fireActionForm.getPathToMove())) {
+            contentlet.setStringProperty(Contentlet.PATH_TO_MOVE, fireActionForm.getPathToMove());
+        }
 
         for(Field constant : contentlet.getContentType().fields()) {
           if(constant instanceof ConstantField)

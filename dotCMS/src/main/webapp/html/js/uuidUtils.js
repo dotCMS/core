@@ -7,7 +7,7 @@ function isInodeSet(inode){
 	   
 	    inode = inode + "";
 		
-		var validUUIDRegex = "^([a-f0-9]{8,8})\-([a-f0-9]{4,4})\-([a-f0-9]{4,4})\-([a-f0-9]{4,4})\-([a-f0-9]{12,12})$";
+		var validUUIDRegex = "^([a-f0-9]{8,8})\-?([a-f0-9]{4,4})\-?([a-f0-9]{4,4})\-?([a-f0-9]{4,4})\-?([a-f0-9]{12,12})$";
 		var olderInodeRegex = "^[0-9]+$";
 
 		if(inode.match(validUUIDRegex)){

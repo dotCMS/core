@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.folder;
 import com.dotcms.util.TreeableNameComparator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -13,6 +14,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -25,6 +27,7 @@ import java.util.stream.Collectors;
  */
 public class FolderHelper {
 
+    private static final int SUB_FOLDER_SIZE_DEFAULT_LIMIT = 20;
     private final HostAPI hostAPI;
     private final FolderAPI folderAPI;
 
@@ -150,6 +153,99 @@ public class FolderHelper {
         }
 
         return new FolderView(folder,foldersChildCustoms);
+    }
+
+    /**
+     * This method will return a list of {@link FolderSearchResultView} that lives under
+     * the path or starts with the path sent.
+     *
+     * @param siteId site where the  folders should live under. If is not send will look under all hosts.
+     * @param pathToSearch path + folder name to find to
+     * @param user user
+     * @return list of {@link FolderSearchResultView}
+     */
+    public List<FolderSearchResultView> findSubFoldersPathByParentPath(final String siteId, final String pathToSearch, final User user)
+            throws DotSecurityException, DotDataException {
+        final List<FolderSearchResultView> subFolders = new ArrayList<>();
+
+        if(pathToSearch.lastIndexOf(StringPool.FORWARD_SLASH) == 0){ //If there is only one / we need to search the subfolders under the host(s)
+            if(UtilMethods.isSet(siteId)) {
+                subFolders.addAll(findSubfoldersUnderHost(siteId,pathToSearch,user));
+            } else{
+                final List<Host> siteList = APILocator.getHostAPI().findAll(user,false);
+                for(final Host site : siteList){
+                    if(subFolders.size() < SUB_FOLDER_SIZE_DEFAULT_LIMIT) {
+                        subFolders.addAll(findSubfoldersUnderHost(site.getIdentifier(), pathToSearch, user));
+                    }
+                    continue;
+                }
+            }
+
+        } else {
+            if(UtilMethods.isSet(siteId)) {
+                subFolders.addAll(findSubfoldersUnderFolder(siteId,pathToSearch,user));
+            } else {
+                final List<Host> siteList = APILocator.getHostAPI().findAll(user,false);
+                for(final Host site : siteList){
+                    if(subFolders.size() < SUB_FOLDER_SIZE_DEFAULT_LIMIT) {
+                        subFolders.addAll(findSubfoldersUnderFolder(site.getIdentifier(), pathToSearch, user));
+                    }
+                    continue;
+                }
+            }
+        }
+
+        return subFolders;
+    }
+
+    /**
+     * Will find the subfolders living directly under the host passed.
+     * If pathToSearch is sent is  gonna filter the path of the subfolder by it.
+     */
+    private List<FolderSearchResultView> findSubfoldersUnderHost(final String siteId,
+            final String pathToSearch, final User user)
+            throws DotSecurityException, DotDataException {
+        final List<FolderSearchResultView> subFolders = new ArrayList<>();
+
+        final Host host = APILocator.getHostAPI().find(siteId, user, false);
+        final List<Folder> subFoldersOfRootPath = APILocator.getFolderAPI()
+                .findSubFolders(host, user, false);
+        subFoldersOfRootPath.stream().filter(folder -> folder.getPath().startsWith(pathToSearch))
+                .limit(SUB_FOLDER_SIZE_DEFAULT_LIMIT).forEach(
+                folder -> subFolders.add(new FolderSearchResultView(folder.getPath(), host.getHostname(),
+                        Try.of(() -> APILocator.getPermissionAPI().doesUserHavePermission(folder,
+                                PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user)).getOrElse(false))));
+
+        return subFolders;
+    }
+
+    /**
+     * Will find the subfolders living directly under the host passed and the last valid folder (spliting the pathToSearch by the last '/').
+     * And filter the results by what is left after the last '/'.
+     */
+    private List<FolderSearchResultView> findSubfoldersUnderFolder(final String siteId,
+            final String pathToSearch, final User user)
+            throws DotSecurityException, DotDataException {
+        final List<FolderSearchResultView> subFolders = new ArrayList<>();
+        final Host host = APILocator.getHostAPI().find(siteId, user, false);
+
+        final int lastIndexOf = pathToSearch.lastIndexOf(StringPool.FORWARD_SLASH);
+        final String lastValidPath = pathToSearch.substring(0, lastIndexOf);
+        final Folder lastValidFolder = APILocator.getFolderAPI()
+                .findFolderByPath(lastValidPath, host, user, false);
+        if (UtilMethods.isSet(lastValidFolder) && UtilMethods
+                .isSet(lastValidFolder.getInode())) {
+            final List<Folder> subFoldersOfLastValidPath = APILocator.getFolderAPI()
+                    .findSubFolders(lastValidFolder, user, false);
+            subFoldersOfLastValidPath.stream()
+                    .filter(folder -> folder.getPath()
+                            .startsWith(pathToSearch))
+                    .limit(SUB_FOLDER_SIZE_DEFAULT_LIMIT).forEach(folder -> subFolders
+                    .add(new FolderSearchResultView(folder.getPath(), host.getHostname(),
+                            Try.of(() -> APILocator.getPermissionAPI().doesUserHavePermission(folder,
+                                    PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user)).getOrElse(false))));
+        }
+        return subFolders;
     }
 
 }
