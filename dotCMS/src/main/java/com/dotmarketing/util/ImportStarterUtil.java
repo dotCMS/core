@@ -789,7 +789,9 @@ public class ImportStarterUtil {
                                 }
 
                             } else {
-                                if (obj instanceof Contentlet) {
+                                if(obj instanceof Category){
+                                    FactoryLocator.getCategoryFactory().save((Category) obj);
+                                } else if (obj instanceof Contentlet) {
                                     FactoryLocator.getContentletFactory().save((Contentlet) obj);
                                 } else if (obj instanceof Relationship) {
                                     Relationship rel = (Relationship) obj;

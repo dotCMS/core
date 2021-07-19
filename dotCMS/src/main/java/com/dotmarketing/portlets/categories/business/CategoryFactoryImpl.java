@@ -56,13 +56,11 @@ public class CategoryFactoryImpl extends CategoryFactory {
 			HibernateUtil.delete(t);
 		}
 
-		object = find(object.getInode()); //(Category) HibernateUtil.load(Category.class, object.getInode());
+		object = find(object.getInode());
         if(null == object) return;
 
 		PermissionAPI perAPI = APILocator.getPermissionAPI();
 		perAPI.removePermissions(object);
-
-		//HibernateUtil.delete(object);
 
 		new DotConnect()
 				.setSQL(" DELETE FROM category WHERE inode = ? ")
@@ -90,8 +88,6 @@ public class CategoryFactoryImpl extends CategoryFactory {
 						.loadObjectResults();
 
 				cat = result.isEmpty() ? null : convertForCategory(result.get(0));
-
-				//cat = (Category) HibernateUtil.load(Category.class, id);
 
 			if(cat != null)
 				try {
@@ -174,69 +170,82 @@ public class CategoryFactoryImpl extends CategoryFactory {
 
 	@Override
 	public void save(Category object) throws DotDataException {
-
 		final String id = object.getInode();
-		if(InodeUtils.isSet(id)) {
-			try
-			{
+		try {
+			if (InodeUtils.isSet(id)) {
 				Category cat = find(id);
 				// WE NEED TO REMOVE ORIGINAL BEFORE SAVING BECAUSE THE KEY CACHE NEEDS TO BE CLEARED
 				// DOTCMS-5717
-				if(null != cat) {
+				if (null != cat) {
 					catCache.remove(cat);
-					//BeanUtils.copyProperties(cat, object);
-					//HibernateUtil.saveOrUpdate(cat);
-
-					new DotConnect()
-							.setSQL("UPDATE category SET category_name=?, category_key=?, sort_order=?, active=?, keywords=?, category_velocity_var_name=?, mod_date=? WHERE inode=?")
-							.addParam(object.getCategoryName())
-							.addParam(object.getKey())
-							.addParam(object.getSortOrder())
-							.addParam(object.isActive())
-							.addParam(object.getKeywords())
-							.addParam(object.getCategoryVelocityVarName())
-							.addParam(new Date())
-							.addParam(object.getInode())
-							.loadResults();
-
+					updateCategory(cat);
 					cleanParentChildrenCaches(object);
+				} else {
+					insertCategory(object, id);
+					cleanParentChildrenCaches(object);
+					catCache.remove(object);
 				}
-			}catch(Exception ex){
-				throw new DotDataException(ex.getMessage(),ex);
-			}
-		}else{
-
-			final String inode = UUIDGenerator.generateUuid();
-			final Date date = new Date();
-			new DotConnect()
-			.setSQL("insert into inode (inode, idate, type) values (?,?,'category')")
-			.addParam(inode)
-			.addParam(date)
-			.loadResult();
-
-			new DotConnect()
-					.setSQL("INSERT INTO category(inode, category_name, category_key, sort_order, active, keywords, category_velocity_var_name, mod_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
-					.addParam(inode)
-					.addParam(object.getCategoryName())
-					.addParam(object.getKey())
-					.addParam(object.getSortOrder())
-					.addParam(object.isActive())
-					.addParam(object.getKeywords())
-					.addParam(object.getCategoryVelocityVarName())
-					.addParam(date)
-					.loadResults();
-
-			object.setInode(inode);
-
-			try {
+			} else {
+				final String inode = UUIDGenerator.generateUuid();
+				insertCategory(object, inode);
 				cleanParentChildrenCaches(object);
 				catCache.remove(object);
-			} catch (DotCacheException e) {
-				throw new DotDataException(e.getMessage(), e);
 			}
+		} catch (DotCacheException ce){
+			throw new DotDataException(ce.getMessage(), ce);
 		}
 	}
 
+	/**
+	 *
+	 * @param object
+	 * @param inode
+	 * @throws DotDataException
+	 * @throws DotCacheException
+	 */
+	private void insertCategory(final Category object, final String inode)
+			throws DotDataException, DotCacheException {
+		final Date date = new Date();
+		new DotConnect()
+				.setSQL("INSERT INTO inode (inode, idate, type) VALUES (?,?,'category')")
+				.addParam(inode)
+				.addParam(date)
+				.loadResult();
+
+		new DotConnect()
+				.setSQL("INSERT INTO category(inode, category_name, category_key, sort_order, active, keywords, category_velocity_var_name, mod_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+				.addParam(inode)
+				.addParam(object.getCategoryName())
+				.addParam(object.getKey())
+				.addParam(object.getSortOrder())
+				.addParam(object.isActive())
+				.addParam(object.getKeywords())
+				.addParam(object.getCategoryVelocityVarName())
+				.addParam(date)
+				.loadResults();
+
+		//The returned object must have an id assigned back into the original object sent
+		object.setInode(inode);
+	}
+
+	/**
+	 *
+	 * @param object
+	 * @throws DotDataException
+	 */
+	private void updateCategory(final Category object) throws DotDataException {
+		new DotConnect()
+				.setSQL("UPDATE category SET category_name=?, category_key=?, sort_order=?, active=?, keywords=?, category_velocity_var_name=?, mod_date=? WHERE inode=?")
+				.addParam(object.getCategoryName())
+				.addParam(object.getKey())
+				.addParam(object.getSortOrder())
+				.addParam(object.isActive())
+				.addParam(object.getKeywords())
+				.addParam(object.getCategoryVelocityVarName())
+				.addParam(new Date())
+				.addParam(object.getInode())
+				.loadResults();
+	}
 
 	@Override
 	protected void saveRemote(Category object) throws DotDataException {
