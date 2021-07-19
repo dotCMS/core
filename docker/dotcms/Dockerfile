@@ -105,8 +105,8 @@ COPY ROOT/ /
 RUN rm -rf /srv/dotserver/tomcat-9.0.41/.git
 
 # Defining default non-root user UID, GID, and name 
-ARG USER_UID="1313"
-ARG USER_GID="1313"
+ARG USER_UID="1000000000"
+ARG USER_GID="1000000000"
 ARG USER_NAME="dotcms"
 
 # Creating default non-user 
@@ -134,8 +134,8 @@ ENV SERVICE_DELAY_DEFAULT_MAX 30
 # ----------------------------------------------
 FROM scratch
 
-ARG USER_UID="1313"
-ARG USER_GID="1313"
+ARG USER_UID="1000000000"
+ARG USER_GID="1000000000"
 
 COPY --from=builder / /
 
