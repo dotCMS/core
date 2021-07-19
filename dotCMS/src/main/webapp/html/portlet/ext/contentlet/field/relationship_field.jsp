@@ -162,8 +162,11 @@
                        fieldValue = field != null ? field.getTitle() : "";
                    }
                } else if (key.equals("titleImage")) {
-                   final Optional <com.dotcms.contenttype.model.field.Field> titleImage = relatedContentlet.flatMap(Contentlet::getTitleImage);
-                   fieldValue = titleImage.map(field -> (contentlet.getInode() + "/" + field.variable())).orElse("");
+                   final Optional <com.dotcms.contenttype.model.field.Field> titleImage =
+                           relatedContentlet.flatMap(Contentlet::getTitleImage);
+                   fieldValue = titleImage
+                           .map(field -> relatedContentlet.get().getInode() + "/" + field.variable())
+                           .orElse("");
                } else {
                    fieldValue = "";
                }
@@ -186,8 +189,8 @@
 <%
 			if (!overrideRelated) {
 %>
-				<th width="100%"><%=LanguageUtil.get(pageContext, "Title")%></th>
-                <th style="min-width: 60px"></th>
+                <th style="min-width: 100px"></th>
+                <th width="100%"><%=LanguageUtil.get(pageContext, "Title")%></th>
 <%
 			} else {
                 for (final Tuple2<String, String> field : showFields) {
@@ -547,24 +550,30 @@
             imgCell.style.whiteSpace="nowrap";
             imgCell.style.textAlign = 'center';
             var imageValue;
-            if (typeof item === 'string') {
-                imageValue = item || '';
+            if (typeof item === 'object') {
+                imgCell.innerHTML = (item.hasTitleImage === 'true')
+                    ? '<img class="listingTitleImg" src="/dA/' + item.inode + '/titleImage/64w"  >'
+                    : '<span class="'+item.iconClass+'" style="font-size:24px;width:auto;"></span>';
             } else {
-                imageValue = item.hasTitleImage === 'true' ? item.inode : '';
+                imgCell.innerHTML = item
+                    ? '<img class="listingTitleImg" src="/dA/' + item + '/titleImage/64w"  >'
+                    : '<span style="font-size:24px;width:auto;"></span>';
             }
-
-            imgCell.innerHTML = imageValue !== ''
-                ? '<img class="listingTitleImg" src="/dA/' + imageValue + '/titleImage/64w"  >'
-                : '<span class="'+item.iconClass+'" style="font-size:24px;width:auto;"></span>';
         }
 
         function CreateRow<%= relationJsName %>(item, hint) {
             var row = document.createElement("tr");
             row.className="dataRow<%= relationJsName %>";
 
-            createImageCell(row, item);
+            // displays edit(pencil icon) and delete(X).
+            var actionTD = document.createElement("td");
+            dojo.style(actionTD, "text-align", "center");
+            actionTD.innerHTML = <%= relationJsName %>unrelateAction(item);
+            row.appendChild(actionTD);
 
             if (<%= relationJsName%>_jsOverrideRelated === false) {
+                createImageCell(row, item);
+
                 var titleCell = row.insertCell (row.cells.length);
                 titleCell.innerHTML = <%= relationJsName%>WriteLinkTitle (item);
 
@@ -604,13 +613,6 @@
 			dojo.addClass(order,"<%= relationJsName %>orderBox");
 			order.value = <%= relationJsName %>_order_tf();
 			row.appendChild(order);
-
-            // displays edit(pencil icon) and delete(X).
-            var actionTD = document.createElement("td");
-            dojo.style(actionTD, "text-align", "center");
-            actionTD.innerHTML = <%= relationJsName %>unrelateAction(item);
-            row.appendChild(actionTD);
-
 
 			return {node: row, data: item, type: "text"};
 		}
