@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "75053fc6-3e87-4330-aafb-a7f91e193792",
+		"_postman_id": "3abfd5f8-f72d-4825-b3f8-dcf4481369b3",
 		"name": "UserResource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -309,6 +309,15 @@
 					]
 				},
 				"description": "* <b>Given scenario:</b> Get All the Users from the system.\n     * <b>Expected result:</b> The Total field should be greaterThan 0, so at least 1 user must be returned."
+			},
+			"response": []
+		},
+		{
+			"name": "User Current",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": null
 			},
 			"response": []
 		}
