@@ -178,7 +178,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 				// DOTCMS-5717
 				if (null != cat) {
 					catCache.remove(cat);
-					updateCategory(cat);
+					updateCategory(object);
 					cleanParentChildrenCaches(object);
 				} else {
 					insertCategory(object, id);
