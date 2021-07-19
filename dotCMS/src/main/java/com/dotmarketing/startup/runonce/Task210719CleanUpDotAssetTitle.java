@@ -25,7 +25,7 @@ public class Task210719CleanUpDotAssetTitle implements StartupTask {
                 .setSQL("select s.inode structure_inode, c.inode contentlet_inode, title, "
                         + "f.velocity_var_name, f.sort_order  from contentlet c, structure s, "
                         + "field f where c.structure_inode = s.inode and f.structure_inode = s.inode \n"
-                        + "and f.field_type = ? and title=c.identifier"
+                        + "and f.field_type = ? and title=c.identifier "
                         + "and f.indexed=true and s.structuretype=?  group by s.inode, c.inode, "
                         + "title, f.velocity_var_name, f.sort_order order by f.sort_order asc\n")
                 .addParam(BinaryField.class.getCanonicalName())
@@ -47,9 +47,9 @@ public class Task210719CleanUpDotAssetTitle implements StartupTask {
                 final File[] files = binaryFileFolder.listFiles();
 
                 if (null != files && files.length > 0){
-                    new DotConnect().executeUpdate("update contentlet "
+                    new DotConnect().setSQL("update contentlet "
                             + "set title='" + files[0].getName() + "', friendly_name='"
-                            + files[0].getName() + "' where inode='" + inode + "'");
+                            + files[0].getName() + "' where inode='" + inode + "'").loadResult();
                 }
             }
         }
