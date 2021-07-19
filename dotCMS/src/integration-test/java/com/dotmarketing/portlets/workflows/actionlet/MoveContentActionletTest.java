@@ -126,7 +126,7 @@ public class MoveContentActionletTest extends BaseWorkflowIntegrationTest {
         cleanupDebug(MoveContentActionletTest.class);
     } // cleanup
 
-    public Contentlet saveCustomTestContentType() throws DotDataException, DotSecurityException {
+    private Contentlet saveCustomTestContentType() throws DotDataException, DotSecurityException {
 
         final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
         final Contentlet contentlet = new Contentlet();
