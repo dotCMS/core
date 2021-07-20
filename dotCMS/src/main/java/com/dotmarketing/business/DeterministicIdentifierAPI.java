@@ -2,6 +2,7 @@ package com.dotmarketing.business;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import java.util.function.Supplier;
 
@@ -36,6 +37,8 @@ public interface DeterministicIdentifierAPI {
      * @return
      */
     String generateDeterministicIdBestEffort(Field throwAwayField, Supplier<String> fieldVarName);
+
+    String generateDeterministicIdBestEffort(final Category category);
 
     /**
      * Given a Language this will evaluate the code and country code if any then generate a sha256 and finally will hash it out into a long val

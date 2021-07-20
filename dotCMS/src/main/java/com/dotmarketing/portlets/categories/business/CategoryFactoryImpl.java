@@ -172,22 +172,23 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	public void save(Category object) throws DotDataException {
 		final String id = object.getInode();
 		try {
+			final DotConnect dotConnect = new DotConnect();
 			if (InodeUtils.isSet(id)) {
 				Category cat = find(id);
 				// WE NEED TO REMOVE ORIGINAL BEFORE SAVING BECAUSE THE KEY CACHE NEEDS TO BE CLEARED
 				// DOTCMS-5717
 				if (null != cat) {
 					catCache.remove(cat);
-					updateCategory(object);
+					updateCategory(object, dotConnect);
 					cleanParentChildrenCaches(object);
 				} else {
-					insertCategory(object, id);
+					insertCategory(object, id, dotConnect);
 					cleanParentChildrenCaches(object);
 					catCache.remove(object);
 				}
 			} else {
 				final String inode = UUIDGenerator.generateUuid();
-				insertCategory(object, inode);
+				insertCategory(object, inode, dotConnect);
 				cleanParentChildrenCaches(object);
 				catCache.remove(object);
 			}
@@ -203,16 +204,24 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	 * @throws DotDataException
 	 * @throws DotCacheException
 	 */
-	private void insertCategory(final Category object, final String inode)
+	private void insertCategory(final Category object, final String inode, final DotConnect dotConnect)
 			throws DotDataException, DotCacheException {
 		final Date date = new Date();
-		new DotConnect()
-				.setSQL("INSERT INTO inode (inode, idate, type) VALUES (?,?,'category')")
-				.addParam(inode)
-				.addParam(date)
-				.loadResult();
 
-		new DotConnect()
+		final boolean inodeExists = dotConnect
+				.setSQL("SELECT count(*) as test FROM inode WHERE inode=? AND type = 'category' ")
+				.addParam(inode)
+				.getInt("test")>0;
+
+		if(!inodeExists) {
+			dotConnect
+					.setSQL("INSERT INTO inode (inode, idate, type) VALUES (?,?,'category')")
+					.addParam(inode)
+					.addParam(date)
+					.loadResult();
+		}
+
+		dotConnect
 				.setSQL("INSERT INTO category(inode, category_name, category_key, sort_order, active, keywords, category_velocity_var_name, mod_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
 				.addParam(inode)
 				.addParam(object.getCategoryName())
@@ -233,8 +242,8 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	 * @param object
 	 * @throws DotDataException
 	 */
-	private void updateCategory(final Category object) throws DotDataException {
-		new DotConnect()
+	private void updateCategory(final Category object, final DotConnect dotConnect) throws DotDataException {
+		dotConnect
 				.setSQL("UPDATE category SET category_name=?, category_key=?, sort_order=?, active=?, keywords=?, category_velocity_var_name=?, mod_date=? WHERE inode=?")
 				.addParam(object.getCategoryName())
 				.addParam(object.getKey())

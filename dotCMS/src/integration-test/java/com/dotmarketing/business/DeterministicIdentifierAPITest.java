@@ -27,6 +27,8 @@ import com.dotmarketing.cms.urlmap.URLMapAPIImpl;
 import com.dotmarketing.cms.urlmap.UrlMapContext;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.categories.business.CategoryAPI;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -464,6 +466,37 @@ public class DeterministicIdentifierAPITest {
         }finally {
             Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, generateConsistentIdentifiers);
         }
+
+    }
+
+    @Test
+    public void Test_Category() throws Exception{
+        final CategoryAPI api  = APILocator.getCategoryAPI();
+        final String parentName = "Parent:" + System.currentTimeMillis();
+        //Create First Child Category.
+        final Category parent = new Category();
+        parent.setCategoryName(parentName);
+        parent.setKey( "key" );
+        parent.setCategoryVelocityVarName(parentName );
+        parent.setSortOrder( 1 );
+        parent.setKeywords( null );
+
+        final String childName = "Child:" + System.currentTimeMillis();
+
+        final Category child = new Category();
+        child.setCategoryName(childName);
+        child.setKey( "key" );
+        child.setCategoryVelocityVarName(childName);
+        child.setSortOrder( 1 );
+        child.setKeywords( null );
+
+        api.save(null, parent, APILocator.systemUser(),false);
+        api.save(parent, child, APILocator.systemUser(),false);
+
+        String out = defaultGenerator.generateDeterministicIdBestEffort(parent);
+        System.out.println(out);
+        out = defaultGenerator.generateDeterministicIdBestEffort(child);
+        System.out.println(out);
 
     }
 

@@ -11,7 +11,11 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.business.CategoryAPI;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -22,6 +26,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
@@ -48,6 +53,7 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
     private final FolderAPI folderAPI;
     private final HostAPI hostAPI;
     private final ContentTypeAPI contentTypeAPI;
+    private final CategoryAPI categoryAPI;
     private final Supplier<String> uuidSupplier;
     private final Function<String, String> hashFunction;
 
@@ -55,15 +61,17 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
         this(APILocator.getFolderAPI(),
              APILocator.getHostAPI(),
              APILocator.getContentTypeAPI(APILocator.systemUser()),
+             APILocator.getCategoryAPI(),
              UUIDGenerator::generateUuid,
              DigestUtils::sha256Hex);
     }
 
     @VisibleForTesting
-    DeterministicIdentifierAPIImpl(final FolderAPI folderAPI, final HostAPI hostAPI, final ContentTypeAPI contentTypeAPI,final Supplier<String> uuidSupplier, final Function<String, String> hashFunction) {
+    DeterministicIdentifierAPIImpl(final FolderAPI folderAPI, final HostAPI hostAPI, final ContentTypeAPI contentTypeAPI, final CategoryAPI categoryAPI, final Supplier<String> uuidSupplier, final Function<String, String> hashFunction) {
         this.folderAPI = folderAPI;
         this.hostAPI = hostAPI;
         this.contentTypeAPI = contentTypeAPI;
+        this.categoryAPI = categoryAPI;
         this.uuidSupplier = uuidSupplier;
         this.hashFunction = hashFunction;
     }
@@ -363,6 +371,33 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
         }
         return uuidSupplier.get();
 
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public String generateDeterministicIdBestEffort(final Category category){
+
+        String path = "";
+        try {
+            path = buildPath( category, path );
+        } catch (DotDataException | DotSecurityException e) {
+            Logger.error(DeterministicIdentifierAPIImpl.class, e);
+        }
+
+        return String.format("Category:{%s}",path);
+    }
+
+    private String buildPath(final Category category, String path) throws DotDataException, DotSecurityException {
+
+        final List<Category> parents = categoryAPI.getParents(category, APILocator.systemUser(), false);
+        if(!parents.isEmpty()) {
+            final Category parent = parents.get(0);
+            path = parent.getCategoryVelocityVarName() + " > " + category.getCategoryVelocityVarName();
+            path = buildPath(parent, path);
+        } else {
+            path = StringUtils.isSet(path) ? path : category.getCategoryVelocityVarName();
+        }
+        return path;
     }
 
     /**

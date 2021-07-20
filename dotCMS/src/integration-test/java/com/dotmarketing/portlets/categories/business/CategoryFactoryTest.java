@@ -226,6 +226,10 @@ public class CategoryFactoryTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to test: {@link CategoryFactory#getParents(Categorizable, String)} (String)}
+     * @throws DotDataException
+     */ 
     @Test
     public void Test_Get_Parent_Categories() throws DotDataException {
 
@@ -241,13 +245,13 @@ public class CategoryFactoryTest extends IntegrationTestBase {
         categoryFactory.addChild(root2, leaf1, null);
 
         List<Category> parents = categoryFactory.getParents(leaf1);
-        System.out.println(parents);
+        assertEquals(2,parents.size());
 
         categoryFactory.addChild(leaf1, leaf2, null);
         categoryFactory.addChild(leaf2, leaf3, null);
 
         parents = categoryFactory.getParents(leaf3);
-        System.out.println(parents);
+        assertEquals(1,parents.size());
 
     }
 
