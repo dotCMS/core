@@ -168,12 +168,13 @@ public class DependencyBundlerTest {
 
         final Map<ManifestItem, Collection<ManifestItem>> dependencies = map(
                 content, list(host, language, contentType, relationship),
-                contentletChild, list(language, contentletChild)
+                contentletChild, list(language, contentTypeChild)
         );
 
         dependencies.putAll(contentTypeWithDependencies.dependenciesToAssert);
         dependencies.get(relationship).add(contentletChild);
         dependencies.get(relationship).add(contentType);
+        dependencies.get(relationship).add(contentTypeChild);
 
         final TestData folderWithDependencies = createFolderWithDependencies();
         final Folder folder = (Folder) folderWithDependencies.assetsToAddInBundle ;
@@ -468,7 +469,7 @@ public class DependencyBundlerTest {
 
         return new TestData(contentType, map(
                 contentType, list(host, workflowScheme, category, systemWorkflowScheme, relationship),
-                contentTypeChild, list(host, contentTypeChild, systemWorkflowScheme),
+                contentTypeChild, list(host, systemWorkflowScheme),
                 relationship, list(contentTypeChild)
         ), null, "Content Type with dependencies");
     }
@@ -555,7 +556,7 @@ public class DependencyBundlerTest {
 
         final Language imageFileLanguage = new LanguageDataGen().nextPersisted();
         final Folder imageFolder = new FolderDataGen().site(host).nextPersisted();
-        File tempFile = File.createTempFile("testFileAsset2-es", ".jpg");
+        File tempFile = File.createTempFile("contentWithImageBundleTest", ".jpg");
         URL url = FocalPointAPITest.class.getResource("/images/test.jpg");
         File testImage = new File(url.getFile());
         FileUtils.copyFile(testImage, tempFile);
@@ -1110,53 +1111,53 @@ public class DependencyBundlerTest {
         list(host, systemWorkflowScheme, category);
         return list(
                 new TestData(contentType,
-                        map(contentType, list(host, systemWorkflowScheme)), excludeSystemFolder, filterDescriptorAllDependencies, "Contentype with filterDescriptorNotDependenciesRelationship"),
+                        map(contentType, list(host, systemWorkflowScheme)), excludeSystemFolder, filterDescriptorAllDependencies, "Contentype with filterDescriptorAllDependencies"),
 
                 new TestData(contentType, map(),
                         map(
                             FILTER_EXCLUDE_REASON, list(host, systemWorkflowScheme),
-                            EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)), filterDescriptorNotDependencies, "Contentype with filterDescriptorNotDependenciesRelationship"),
+                            EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)), filterDescriptorNotDependencies, "Contentype with filterDescriptorNotDependencies"),
 
                 new TestData(contentType,
                         map(contentType, list(host, systemWorkflowScheme)),
-                        excludeSystemFolder, filterDescriptorNotRelationship, "Contentype with and filterDescriptorNotDependenciesRelationship"),
+                        excludeSystemFolder, filterDescriptorNotRelationship, "Contentype with and filterDescriptorNotRelationship"),
 
                 new TestData(contentType, map(),
                         map(FILTER_EXCLUDE_REASON, list(host, systemWorkflowScheme),
                                 EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)), filterDescriptorNotDependenciesRelationship, "Contentype with filterDescriptorNotDependenciesRelationship"),
 
                 new TestData(contentTypeWithFolder, contentTypeWithFolderIncludes, excludeSystemFolder,
-                        filterDescriptorAllDependencies, "Contentype with Folder and filterDescriptorNotDependenciesRelationship"),
+                        filterDescriptorAllDependencies, "Contentype with Folder and filterDescriptorAllDependencies"),
                 new TestData(contentTypeWithFolder, map(),
-                        map(FILTER_EXCLUDE_REASON, list(folder, systemWorkflowScheme, folderHost)), filterDescriptorNotDependencies, "Contentype with Folder and filterDescriptorNotDependenciesRelationship"),
+                        map(FILTER_EXCLUDE_REASON, list(folder, systemWorkflowScheme, folderHost)), filterDescriptorNotDependencies, "Contentype with Folder and filterDescriptorNotDependencies"),
                 new TestData(contentTypeWithFolder, contentTypeWithFolderIncludes, excludeSystemFolder,
-                        filterDescriptorNotRelationship, "Contentype with Folder and filterDescriptorNotDependenciesRelationship"),
+                        filterDescriptorNotRelationship, "Contentype with Folder and filterDescriptorNotRelationship"),
                 new TestData(contentTypeWithFolder, map(),
                         map(FILTER_EXCLUDE_REASON, list(folder, systemWorkflowScheme, folderHost)),
                         filterDescriptorNotDependenciesRelationship, "Contentype with Folder and filterDescriptorNotDependenciesRelationship"),
 
-                new TestData(contentTypeWithWorkflow, contentTypeWithWorkflowIncludes, excludeSystemFolder, filterDescriptorAllDependencies, "Contentype with Workflow and filterDescriptorNotDependenciesRelationship"),
+                new TestData(contentTypeWithWorkflow, contentTypeWithWorkflowIncludes, excludeSystemFolder, filterDescriptorAllDependencies, "Contentype with Workflow and filterDescriptorAllDependencies"),
                 new TestData(contentTypeWithWorkflow, map(), map(FILTER_EXCLUDE_REASON, list(host, systemWorkflowScheme, workflowScheme),
-                        EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)), filterDescriptorNotDependencies, "Contentype with Workflow and filterDescriptorNotDependenciesRelationship"),
-                new TestData(contentTypeWithWorkflow, contentTypeWithWorkflowIncludes, excludeSystemFolder, filterDescriptorNotRelationship, "Contentype with Workflow and filterDescriptorNotDependenciesRelationship"),
+                        EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)), filterDescriptorNotDependencies, "Contentype with Workflow and filterDescriptorNotDependencies"),
+                new TestData(contentTypeWithWorkflow, contentTypeWithWorkflowIncludes, excludeSystemFolder, filterDescriptorNotRelationship, "Contentype with Workflow and filterDescriptorNotRelationship"),
                 new TestData(contentTypeWithWorkflow, map(), map(FILTER_EXCLUDE_REASON, list(host, systemWorkflowScheme, workflowScheme),
                         EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)), filterDescriptorNotDependenciesRelationship, "Contentype with Workflow and filterDescriptorNotDependenciesRelationship"),
 
                 new TestData(contentTypeWithCategory, contentTypeWithCategoryIncludes, excludeSystemFolder,
-                        filterDescriptorAllDependencies, "Contentype with Category and filterDescriptorNotDependenciesRelationship"),
+                        filterDescriptorAllDependencies, "Contentype with Category and filterDescriptorAllDependencies"),
                 new TestData(contentTypeWithCategory, map(), map(FILTER_EXCLUDE_REASON, list(host, systemWorkflowScheme, category),
-                        EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)), filterDescriptorNotDependencies, "Contentype with Category and filterDescriptorNotDependenciesRelationship"),
+                        EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)), filterDescriptorNotDependencies, "Contentype with Category and filterDescriptorNotDependencies"),
                 new TestData(contentTypeWithCategory, contentTypeWithCategoryIncludes, excludeSystemFolder,
-                        filterDescriptorNotRelationship, "Contentype with Category and filterDescriptorNotDependenciesRelationship"),
+                        filterDescriptorNotRelationship, "Contentype with Category and filterDescriptorNotRelationship"),
                 new TestData(contentTypeWithCategory, map(), map(FILTER_EXCLUDE_REASON, list(host, systemWorkflowScheme, category),
                         EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)), filterDescriptorNotDependenciesRelationship, "Contentype with Category and filterDescriptorNotDependenciesRelationship"),
 
-                new TestData(contentTypeParent, contentTypeParentIncludes, excludeSystemFolder, filterDescriptorAllDependencies, "Contentype with Relationship and filterDescriptorNotDependenciesRelationship"),
+                new TestData(contentTypeParent, contentTypeParentIncludes, excludeSystemFolder, filterDescriptorAllDependencies, "Contentype with Relationship and filterDescriptorAllDependencies"),
                 new TestData(contentTypeParent, map(), map(FILTER_EXCLUDE_REASON, list(host, systemWorkflowScheme, relationship),
-                        EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)), filterDescriptorNotDependencies, "Contentype with Relationship and filterDescriptorNotDependenciesRelationship"),
+                        EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)), filterDescriptorNotDependencies, "Contentype with Relationship and filterDescriptorNotDependencies"),
                 new TestData(contentTypeParent, map(contentTypeParent, list(host, systemWorkflowScheme)),
                         map(FILTER_EXCLUDE_REASON, list(relationship), EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)),
-                        filterDescriptorNotRelationship, "Contentype with Relationship and filterDescriptorNotDependenciesRelationship"),
+                        filterDescriptorNotRelationship, "Contentype with Relationship and filterDescriptorNotRelationship"),
                 new TestData(contentTypeParent, map(), map(FILTER_EXCLUDE_REASON, list(host, systemWorkflowScheme, relationship),
                         EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)), filterDescriptorNotDependenciesRelationship, "Contentype with Relationship and filterDescriptorNotDependenciesRelationship")
         );

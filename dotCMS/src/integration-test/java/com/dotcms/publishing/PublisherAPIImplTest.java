@@ -444,9 +444,6 @@ public class PublisherAPIImplTest {
 
         final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
 
-        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
-        APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
-
         final PublisherAPIImpl publisherAPI = new PublisherAPIImpl();
 
         final PushPublisherConfig config = new PushPublisherConfig();
@@ -563,7 +560,7 @@ public class PublisherAPIImplTest {
                 nLines++;
             }
 
-            assertEquals("manifestItems " + manifestItems + " Manifest content " + buffer.toString(),
+            assertEquals("manifestItems\n" + manifestItems + "\nManifest content\n" + buffer,
                     manifestItems.size(), nLines - 1 );
         }
     }
@@ -586,9 +583,6 @@ public class PublisherAPIImplTest {
                 .nextPersisted();
 
         final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
-
-        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
-        APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
 
         final PushPublisherConfig config = new PushPublisherConfig();
         config.setPublishers(list(publisher));
