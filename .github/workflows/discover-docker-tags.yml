@@ -1,11 +1,11 @@
-name: publish-dotcms-docker-image
+name: discover-dotcms-docker-image
 on:
   workflow_dispatch:
     inputs:
       custom_label:
         description: 'Custom label to add as part of the tag'
         required: false
-      update_stable:
+      updata_stable_tags:
         description: 'Update stable tags'
         required: true
         default: 'true'
@@ -13,13 +13,9 @@ on:
         description: 'Update also the "latest" tag (relies on update_stable input to be set to true)'
         required: false
         default: 'false'
-      dry_run:
-        description: 'Runs publish image in dry-run mode'
-        required: false
-        default: 'true'
 jobs:
   publish_image:
-    name: Publish DotCMS docker image
+    name: Discover DotCMS docker tags
     runs-on: ubuntu-latest
     steps:
       - name: GITHUB CONTEXT
@@ -44,19 +40,8 @@ jobs:
         id: discover-docker-tags
         uses: dotcms/discover-docker-tags-action@main
         with:
-          version: ${{ env.DOTCMS_VERSION }}
+          version: ${{ ENV.DOTCMS_VERSION }}
           hash: ${{ env.BUILD_HASH }}
           label: ${{ github.event.inputs.custom_label }}
-          update_stable: ${{ github.event.inputs.update_stable }}
+          update_stable: ${{ github.event.inputs.updata_stable_tags }}
           also_latest: ${{ github.event.inputs.also_latest }}
-      - name: Publish docker image
-        id: publish-docker-image
-        uses: dotcms/publish-docker-image-action@main
-        with:
-          dot_cicd_branch: master
-          build_id: ${{ env.BUILD_ID }}
-          tags: ${{ steps.discover-docker-tags.outputs.discovered_tags }}
-          github_user_token: ${{ secrets.CICD_GITHUB_TOKEN }}
-          docker_hub_username: ${{ secrets.DOCKER_USERNAME }}
-          docker_hub_token: ${{ secrets.DOCKER_TOKEN }}
-          dry_run: ${{ github.event.inputs.dry_run }}

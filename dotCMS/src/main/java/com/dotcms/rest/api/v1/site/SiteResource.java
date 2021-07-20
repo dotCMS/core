@@ -84,29 +84,22 @@ public class SiteResource implements Serializable {
 
     private static final String NO_FILTER = "*";
 
-    private final UserAPI userAPI;
     private final WebResource webResource;
     private final SiteHelper siteHelper;
-    private final I18NUtil i18NUtil;
     private final PaginationUtil paginationUtil;
 
     public SiteResource() {
         this(new WebResource(),
                 SiteHelper.getInstance(),
-                I18NUtil.INSTANCE, APILocator.getUserAPI(),
                 new PaginationUtil(new SitePaginator()));
     }
 
     @VisibleForTesting
     public SiteResource(final WebResource webResource,
                         final SiteHelper siteHelper,
-                        final I18NUtil i18NUtil,
-                        final UserAPI userAPI,
                         final PaginationUtil paginationUtil) {
         this.webResource = webResource;
         this.siteHelper  = siteHelper;
-        this.i18NUtil    = i18NUtil;
-        this.userAPI = userAPI;
         this.paginationUtil = paginationUtil;
     }
 
@@ -139,6 +132,7 @@ public class SiteResource implements Serializable {
               .requestAndResponse(httpServletRequest, httpServletResponse)
               .requiredBackendUser(true)
               .requiredFrontendUser(true)
+              .requiredPortlet("sites")
               .init().getUser();
           
             Host currentSite = siteHelper.getCurrentSite(httpServletRequest, user);
@@ -185,6 +179,7 @@ public class SiteResource implements Serializable {
             .requestAndResponse(httpServletRequest, httpServletResponse)
             .requiredBackendUser(true)
             .rejectWhenNoUser(true)
+            .requiredPortlet("sites")
             .init().getUser();
 
         String filter = (null != filterParam && filterParam.endsWith(NO_FILTER))?
@@ -229,6 +224,7 @@ public class SiteResource implements Serializable {
             .requestAndResponse(httpServletRequest, httpServletResponse)
             .requiredBackendUser(true)
             .rejectWhenNoUser(true)
+            .requiredPortlet("sites")
             .init().getUser();
         boolean switchDone = false;
         Host hostFound = null;
@@ -282,6 +278,7 @@ public class SiteResource implements Serializable {
           .requestAndResponse(request, response)
           .requiredBackendUser(true)
           .rejectWhenNoUser(true)
+          .requiredPortlet("sites")
           .init().getUser();
 
         Logger.debug(this, "Switching to default host for user: " + user.getUserId());
@@ -376,7 +373,6 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requireLicense(true)
                 .requiredPortlet("sites")
                 .init().getUser();
 
@@ -416,7 +412,6 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requireLicense(true)
                 .requiredPortlet("sites")
                 .init().getUser();
 
@@ -458,7 +453,6 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requireLicense(true)
                 .requiredPortlet("sites")
                 .init().getUser();
 
@@ -518,7 +512,6 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requireLicense(true)
                 .requiredPortlet("sites")
                 .init().getUser();
 
@@ -562,7 +555,6 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requireLicense(true)
                 .requiredPortlet("sites")
                 .init().getUser();
 
@@ -621,7 +613,6 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requireLicense(true)
                 .requiredPortlet("sites")
                 .init().getUser();
 
@@ -660,6 +651,13 @@ public class SiteResource implements Serializable {
                                 @Context final HttpServletResponse httpServletResponse,
                                 @PathParam("siteId")  final String siteId){
 
+        new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .requiredPortlet("sites")
+                .init().getUser();
+
         Logger.debug(this, ()-> "Getting the site : " + siteId + " as a default");
 
         return Response.ok(new ResponseEntityView(
@@ -690,7 +688,6 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requireLicense(true)
                 .requiredPortlet("sites")
                 .init().getUser();
 
@@ -732,7 +729,6 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requireLicense(true)
                 .requiredPortlet("sites")
                 .init().getUser();
 
@@ -782,7 +778,6 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requireLicense(true)
                 .requiredPortlet("sites")
                 .init().getUser();
         final PageMode      pageMode      = PageMode.get(httpServletRequest);
@@ -883,7 +878,6 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requireLicense(true)
                 .requiredPortlet("sites")
                 .init().getUser();
 
@@ -1000,6 +994,7 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
+                .requireLicense(true)
                 .requiredPortlet("sites")
                 .init().getUser();
 
