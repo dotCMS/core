@@ -30,6 +30,17 @@ export class CustomValidators {
         };
     }
 
+    static noDoubleQuotes() {
+        return (control: NgControl): { [key: string]: any } => {
+            const v: string = control.value;
+            let failed = false;
+            if (!Verify.empty(v) && v.indexOf('"') !== -1) {
+                failed = true;
+            }
+            return failed ? { noDoubleQuotes: true } : null;
+        };
+    }
+
     static maxLength(max) {
         return (control: NgControl): { [key: string]: any } => {
             const v: string = control.value;

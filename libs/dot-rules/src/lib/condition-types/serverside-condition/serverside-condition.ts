@@ -138,6 +138,7 @@ export class ServersideCondition {
     private _errorMessageFormatters = {
         minLength: 'Input must be at least ${len} characters long.',
         noQuotes: 'Input cannot contain quote [" or \'] characters.',
+        noDoubleQuotes: 'Input cannot contain quote ["] characters.',
         required: 'Required'
     };
 
