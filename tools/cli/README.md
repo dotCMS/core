@@ -68,14 +68,15 @@ otherwise they will be ignored by the script.
 ### Config
 
 Before you can use the tool you need to make it aware of the location of the dotCMS instance 
-and also get a valid authorization token associated with an authorized user.
-Once you have such information at hand it must be set in the config file. 
-
+and also get a valid API Access Key associated with an authorized user. 
+[Here's](https://dotcms.com/docs/latest/authentication-using-jwt#APIAccessKeys) how you can get a valid API Access Key.
+Aka (JSON_WEB_TOKEN)
+Once you have such information at hand. it must be set in the config file located in: 
 <pre>
 tools/cli/config    
 </pre>
 
-The following properties are expected
+The following properties are expected by the tool.
   
 <pre>
 DOTCMS_BASE_URL
@@ -88,7 +89,7 @@ PASS (Optional)
 
 **Site**:
 
-We're providing a basic example that takes only one simple parameter Name
+We're providing a basic example that takes only one simple parameter Name,
 But you can pass much more. 
 
 Further info is available in our API-Postman Test
