@@ -377,6 +377,10 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		currentContentlet.setStringProperty(Contentlet.FILTER_KEY, (String) contentletFormData.get(Contentlet.FILTER_KEY));
 		currentContentlet.setStringProperty(Contentlet.I_WANT_TO, (String) contentletFormData.get(Contentlet.I_WANT_TO));
 
+		if (UtilMethods.isSet(contentletFormData.get("wfPathToMove"))) {
+			currentContentlet.setStringProperty(Contentlet.PATH_TO_MOVE, (String) contentletFormData.get("wfPathToMove"));
+		}
+
 
 		contentletFormData.put(WebKeys.CONTENTLET_FORM_EDIT, currentContentlet);
 		contentletFormData.put(WebKeys.CONTENTLET_EDIT, currentContentlet);

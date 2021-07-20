@@ -54,6 +54,8 @@ public class WorkflowAction implements Permissionable, Serializable{
 	private boolean unarchiveActionlet;
 	private boolean deleteActionlet;
 	private boolean destroyActionlet;
+	private boolean moveActionlet;
+	private boolean moveActionletHasPath;
 	private Set<WorkflowState> showOn = Collections.emptySet();
 
 	public WorkflowAction() {
@@ -205,6 +207,22 @@ public class WorkflowAction implements Permissionable, Serializable{
 	}
 
 	/**
+	 * Returns true if the action has a move actionlet
+	 * @return Boolean true if has move action
+	 */
+	public boolean hasMoveActionletActionlet() {
+		return this.moveActionlet;
+	}
+
+	/**
+	 * Returns true if the action move has a path already set
+	 * @return Boolean true if action move has a path already set
+	 */
+	public boolean hasMoveActionletHasPathActionlet() {
+		return this.moveActionletHasPath;
+	}
+
+	/**
 	 * Returns true if the action has at least one action let that unpublish
 	 * @return Boolean true if has unpublish action
 	 */
@@ -257,6 +275,14 @@ public class WorkflowAction implements Permissionable, Serializable{
 
 	public void setPushPublishActionlet(boolean pushPublishActionlet) {
 		this.pushPublishActionlet = pushPublishActionlet;
+	}
+
+	public void setMoveActionlet(boolean moveActionlet) {
+		this.moveActionlet = moveActionlet;
+	}
+
+	public void setMoveActionletHashPath(boolean moveActionletHasPath) {
+		this.moveActionletHasPath = moveActionletHasPath;
 	}
 
 	public void setUnpublishActionlet(final boolean unpublishActionlet) {

@@ -28,6 +28,7 @@ import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.SimpleScheduledTask;
 import com.dotmarketing.quartz.job.HostCopyOptions;
@@ -47,6 +48,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -890,6 +892,9 @@ public class SiteResource implements Serializable {
 
             throw new NotFoundException("Site: " + siteIdentifier + " does not exists");
         }
+
+        // we need to clean up mostly the null properties when recovery the by identifier
+        site.cleanup();
 
         final PageMode      pageMode      = PageMode.get(httpServletRequest);
         final TempFileAPI tempFileAPI = APILocator.getTempFileAPI();

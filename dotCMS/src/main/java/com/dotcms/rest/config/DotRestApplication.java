@@ -17,6 +17,7 @@ import com.dotcms.rest.api.v1.browsertree.BrowserTreeResource;
 import com.dotcms.rest.api.v1.categories.CategoriesResource;
 import com.dotcms.rest.api.v1.container.ContainerResource;
 import com.dotcms.rest.api.v1.content.ContentRelationshipsResource;
+import com.dotcms.rest.api.v1.content.ContentResource;
 import com.dotcms.rest.api.v1.content.ContentVersionResource;
 import com.dotcms.rest.api.v1.content.ResourceLinkResource;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeResource;
@@ -168,6 +169,7 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 			.add(ToolGroupResource.class)
 			.add(VersionableResource.class)
 			.add(PermissionResource.class)
+			.add(ContentResource.class)
 			.build();
 
 

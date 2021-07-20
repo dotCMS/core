@@ -10,6 +10,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -22,6 +23,8 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.cms.urlmap.URLMapAPIImpl;
+import com.dotmarketing.cms.urlmap.UrlMapContext;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -44,6 +47,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -74,7 +78,7 @@ public class DeterministicIdentifierAPITest {
     /**
      * Given scenario: We have created contentlets having turned off the deterministic id generation therefore it all comes with random ids
      * Meaning that any deterministic id request does not exist in the database
-     * Expected behavior: The best effort must give us deterministic ids unitl they're inserted on te database.
+     * Expected behavior: The best effort must give us deterministic ids until they're inserted on te database.
      * @param testCase
      * @throws Exception
      */
@@ -236,9 +240,16 @@ public class DeterministicIdentifierAPITest {
 
     }
 
+    /**
+     * Given Scenario: We get a bunch of Content-types then we revise the generation of the name based on the info provided on the test-case
+     * methodToTest {@link DeterministicIdentifierAPIImpl#generateDeterministicIdBestEffort(ContentType, Supplier)}
+     * methodToTest {@link DeterministicIdentifierAPIImpl#generateDeterministicIdBestEffort(Field, Supplier)}
+     * Expected Results: Both tested methods must be idempotent for a given set of inputs the outcome should always remain the same
+     * @param testCase
+     */
     @Test
     @UseDataProvider("getContentTypeTestCases")
-    public void Test_create_Content_Type(final ContentTypeTestCase testCase) {
+    public void Test_Generate_Content_Type_Identifier(final ContentTypeTestCase testCase) {
         final boolean generateConsistentIdentifiers = Config
                 .getBooleanProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
         try {
@@ -256,6 +267,17 @@ public class DeterministicIdentifierAPITest {
                             testCase.contentType::variable);
             //Test it is idempotent
             assertEquals(generatedId1, generatedId2);
+
+            for(final Field field : testCase.contentType.fields()){
+
+                final String fieldIdentifier1 = defaultGenerator.generateDeterministicIdBestEffort(field, field::variable);
+                assertTrue(UUIDUtil.isUUID(fieldIdentifier1));
+                final String fieldIdentifier2 = defaultGenerator.generateDeterministicIdBestEffort(field, field::variable);
+                //Test it is idempotent
+                assertEquals(fieldIdentifier1, fieldIdentifier2);
+                assertEquals(field.variable(), defaultGenerator.resolveName(field, field::variable));
+            }
+
         } finally {
             Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, generateConsistentIdentifiers);
         }
@@ -399,6 +421,50 @@ public class DeterministicIdentifierAPITest {
                     ", country='" + country + '\'' +
                     '}';
         }
+    }
+
+    /**
+     * Test Two separate Content-Types sharing a pretty much identical structure dont generate a conflict identifier wise
+     */
+    @Test
+    public void Test_Similar_Content_Type_Wont_Clash() {
+        final boolean generateConsistentIdentifiers = Config
+                .getBooleanProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+        try {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+            final ContentType contentGenericType1 = new ContentTypeDataGen()
+                    .workflowId(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID)
+                    .baseContentType(BaseContentType.CONTENT)
+                    .field(new FieldDataGen().name("title").velocityVarName("title").next())
+                    .field(new FieldDataGen().name("body").velocityVarName("body").next())
+                    .field(new FieldDataGen().name("bin1").velocityVarName("bin1").next())
+                    .field(new FieldDataGen().name("bin2").velocityVarName("bin2").next())
+                    .nextPersisted();
+
+            final ContentType contentGenericType2 = new ContentTypeDataGen()
+                    .workflowId(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID)
+                    .baseContentType(BaseContentType.CONTENT)
+                    .field(new FieldDataGen().name("title").velocityVarName("title").next())
+                    .field(new FieldDataGen().name("body").velocityVarName("body").next())
+                    .field(new FieldDataGen().name("bin1").velocityVarName("bin1").next())
+                    .field(new FieldDataGen().name("bin2").velocityVarName("bin2").next())
+                    .nextPersisted();
+
+            assertTrue(defaultGenerator.isDeterministicId(contentGenericType1.id()));
+            assertTrue(defaultGenerator.isDeterministicId(contentGenericType2.id()));
+
+            contentGenericType1.fields().forEach(field -> {
+                assertTrue(defaultGenerator.isDeterministicId(field.id()));
+            });
+
+            contentGenericType2.fields().forEach(field -> {
+                assertTrue(defaultGenerator.isDeterministicId(field.id()));
+            });
+
+        }finally {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, generateConsistentIdentifiers);
+        }
+
     }
 
 }

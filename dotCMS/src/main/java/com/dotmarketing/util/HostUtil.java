@@ -54,7 +54,11 @@ public class HostUtil {
 			Optional.empty();
 	}
 
-	private static Host findCurrentHost () {
+	/**
+	 * Tries to find the current host
+	 * @return  Host
+	 */
+	public static Host findCurrentHost () {
 
 		final Optional<Host> hostOpt = tryToFindCurrentHost(APILocator.systemUser());
 		return hostOpt.isPresent()? hostOpt.get():null;
@@ -95,9 +99,10 @@ public class HostUtil {
 
 		final HostAPI hostAPI        = APILocator.getHostAPI();
 		final int hostIndicatorIndex = inputPath.indexOf(HOST_INDICATOR);
-		final int applicationContainerFolderStartsIndex =
-				inputPath.indexOf(posHostToken);
 		final boolean hasHost        = hostIndicatorIndex != -1;
+		final int     hostIndicatorLength = HOST_INDICATOR.length();
+		final int applicationContainerFolderStartsIndex = hasHost?
+				inputPath.substring(hostIndicatorLength).indexOf(posHostToken)+hostIndicatorLength:inputPath.indexOf(posHostToken);
 		final boolean hasPos         = applicationContainerFolderStartsIndex != -1;
 		final String hostName        = hasHost && hasPos?
 				inputPath.substring(hostIndicatorIndex+2, applicationContainerFolderStartsIndex):null;
