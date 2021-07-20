@@ -508,10 +508,34 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	}
 
 	@Override
-	protected void deleteTopLevelCategories() throws DotDataException {
-		final List<Category> topLevelCategories = findTopLevelCategories();
-        for (final Category category:topLevelCategories){
-        	delete(category);
+	protected void deleteTopLevelCategories() {
+		Statement s = null;
+		Connection conn = null;
+		try {
+			conn = DbConnectionFactory.getDataSource().getConnection();
+			conn.setAutoCommit(false);
+			s = conn.createStatement();
+			StringBuilder sql = new StringBuilder();
+			sql.append("delete from category category left join tree tree on category.inode = tree.child, ");
+			sql.append("inode category_1_ where tree.child is null and category_1_.inode = category.inode and category_1_.type = 'category' ");
+			s.executeUpdate(sql.toString());
+			conn.commit();
+		} catch (SQLException e) {
+			try {
+				conn.rollback();
+			} catch (SQLException e1) {
+				Logger.error(this, e1.getMessage(), e1);
+			}
+
+			Logger.error(this, e.getMessage(), e);
+		} finally {
+			try {
+				s.close();
+				conn.close();
+			} catch (SQLException e) {
+
+				Logger.error(this, e.getMessage(), e);
+			}
 		}
 	}
 
