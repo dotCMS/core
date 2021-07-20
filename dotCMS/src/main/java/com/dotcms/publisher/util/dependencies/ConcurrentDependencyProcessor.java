@@ -200,7 +200,11 @@ public class ConcurrentDependencyProcessor implements DependencyProcessor {
                         () -> String.format("%s : We have something to process - %s %s",
                                 Thread.currentThread().getName(), dependencyProcessorItem.asset, pusheableAsset));
 
-                consumerDependencies.get(pusheableAsset).accept(dependencyProcessorItem.asset);
+                final Consumer<Object> proccesor = consumerDependencies.get(pusheableAsset);
+
+                if (UtilMethods.isSet(proccesor)) {
+                    proccesor.accept(dependencyProcessorItem.asset);
+                }
             } catch(Exception e) {
                 addError(e);
             } finally {

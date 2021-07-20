@@ -592,14 +592,16 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
             final String keyValueQuery = "+contentType:" + LanguageVariableAPI.LANGUAGEVARIABLE + " +languageId:" + lang;
             final List<Contentlet> listKeyValueLang = APILocator.getContentletAPI()
                     .search(keyValueQuery,0, -1, StringPool.BLANK, user, false);
-            tryToAddAll(PusheableAsset.CONTENTLET, listKeyValueLang,
-                    ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(language));
 
-            final String contentTypeId = listKeyValueLang.get(0).getContentTypeId();
-            tryToAddSilently(PusheableAsset.CONTENT_TYPE,
-                    CacheLocator.getContentTypeCache().getStructureByInode(contentTypeId),
-                    ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(language));
+            if (UtilMethods.isSet(listKeyValueLang)) {
+                tryToAddAll(PusheableAsset.CONTENTLET, listKeyValueLang,
+                        ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(language));
 
+                final String contentTypeId = listKeyValueLang.get(0).getContentTypeId();
+                tryToAddSilently(PusheableAsset.CONTENT_TYPE,
+                        CacheLocator.getContentTypeCache().getStructureByInode(contentTypeId),
+                        ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(language));
+            }
         } catch (Exception e) {
             throw new DotBundleException(this.getClass().getName() + " : " + "generate()"
                     + e.getMessage() + ": Unable to pull content", e);
