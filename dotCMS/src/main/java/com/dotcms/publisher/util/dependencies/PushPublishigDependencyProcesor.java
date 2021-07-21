@@ -469,10 +469,6 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
                                 final List<Contentlet> fileAssets = APILocator.getContentletAPI()
                                         .findAllVersions(id, false, user, false);
 
-                                if (fileAssets.isEmpty()) {
-                                    throw new DotRuntimeException("fileAssets empty: " + APILocator.getContentletAPI()
-                                            .findAllVersions(id, true, APILocator.systemUser(), false));
-                                }
                                 for (final Contentlet fileAsset : fileAssets) {
                                     final boolean added = tryToAddSilently(PusheableAsset.CONTENTLET, fileAsset,
                                             ManifestReason.INCLUDE_DEPENDENCY_FROM
@@ -482,8 +478,6 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
                                         contentsWithDependenciesToProcess.addAll(fileAssets);
                                     }
                                 }
-                            } else {
-                                throw new DotRuntimeException("Not contentlet " + id);
                             }
                         } catch (Exception ex) {
                             Logger.debug(this, ex.toString());
