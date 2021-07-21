@@ -16,7 +16,7 @@ public enum PusheableAsset {
 
 	CONTENT_TYPE("contenttype"), TEMPLATE("template"), CONTAINER("containers"), FOLDER("folder"), SITE(
 			"host"), CATEGORY("category"), LINK("links"), WORKFLOW("workflow"), LANGUAGE("language"), RULE("rule"), USER(
-			"user"), OSGI("osgi"), CONTENTLET("contentlet"), RELATIONSHIP("relationship");
+			"user"), OSGI("osgi"), CONTENTLET("contentlet");
 
 	private String type = null;
 

@@ -2,7 +2,6 @@ package com.dotcms.enterprise.publishing.remote.bundler;
 
 import com.dotcms.datagen.*;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
-import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.FilterDescriptor;
@@ -86,7 +85,7 @@ public class FolderBundlerTest {
         final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
 
         final PushPublisherConfig config = new PushPublisherConfig();
-        config.add(folder, PusheableAsset.FOLDER);
+        config.setFolders(set(folder.getIdentifier()));
         config.setOperation(PublisherConfig.Operation.PUBLISH);
 
         new BundleDataGen()
