@@ -5,8 +5,6 @@ import static org.junit.Assert.assertFalse;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.UtilMethods;
-import java.util.List;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -23,9 +21,8 @@ public class Task210719CleanUpTitleFieldTest {
 
         final Task210719CleanUpTitleField upgradeTask = new Task210719CleanUpTitleField();
         upgradeTask.executeUpgrade();
-
-        final List results = new DotConnect()
-                .setSQL("select inode from contentlet where title <> null").loadObjectResults();
-        assertFalse(UtilMethods.isSet(results));
+        assertFalse(new DotConnect()
+                .setSQL("select count(inode) as test from contentlet where title is not null")
+                .getInt("test") > 0);
     }
 }
