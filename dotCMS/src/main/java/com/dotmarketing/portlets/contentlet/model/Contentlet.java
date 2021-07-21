@@ -295,9 +295,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 			if (!isSet(title)) {
 				title = this.buildName();
-			}
+			}else{
+                map.put(TITTLE_KEY, title);
+            }
 
-			map.put(TITTLE_KEY, title);
     	    return title;
 		} catch (Exception e) {
 			Logger.debug(this,"Unable to get title for contentlet, id: " + getIdentifier(), e);
