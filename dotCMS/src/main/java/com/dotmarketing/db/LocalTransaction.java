@@ -10,6 +10,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
+import com.microsoft.sqlserver.jdbc.ISQLServerConnection;
 import io.vavr.control.Try;
 
 public class LocalTransaction {
@@ -24,6 +25,62 @@ public class LocalTransaction {
 
 
     private final static String WARN_MESSAGE = "Transaction broken - Connection that started the transaction is not the same as the one who is commiting";
+
+    /**
+     *
+     * @param delegate {@link ReturnableDelegate}
+     * @return T result of the {@link ReturnableDelegate}
+     * @throws DotDataException
+     *
+     * This class can be used to wrap methods in a "local transaction" pattern including the listeners (commit and rollback listeners)
+     * this pattern will check to see if the method is being called in an existing transaction.
+     * if it is being called in a transaction, it will do nothing.  If it is not being called in a transaction
+     * it will checkout a db connection,start a transaction, do the work, commit the transaction, return the result
+     * and  finally close the db connection.  If the SQL call fails, it will rollback the work, close  the db connection
+     * and throw the error up the stack.
+     *
+     * In addition the connection will be closed, only if the current transaction is opening it.
+     *
+     *  How to use:
+     *
+     *	return new LocalTransaction().wrapReturnWithListeners(() ->{
+     *		return myDBMethod(args);
+     *  });
+     */
+    static public <T> T transaction(final ReturnableDelegate<T> delegate) throws Exception {
+
+        // gets the current conn
+        final Connection currentConnection        = DbConnectionFactory.getConnection();
+        // creates a new one
+        final Connection newTransactionConnection = DbConnectionFactory.getDataSource().getConnection();
+        if (DbConnectionFactory.MSSQL.equals(DbConnectionFactory.getDBType())) {
+            newTransactionConnection.setTransactionIsolation(ISQLServerConnection.TRANSACTION_SNAPSHOT);
+        }
+        // overrides the current thread
+        DbConnectionFactory.setConnection(newTransactionConnection);
+
+        HibernateUtil.startTransaction();
+
+        T result = null;
+
+        try {
+            final StackTraceElement[] threadStack = Thread.currentThread().getStackTrace();
+            result = delegate.execute();
+            handleTransactionInteruption(newTransactionConnection, threadStack);
+            HibernateUtil.commitTransaction();
+        } catch (Throwable e) {
+
+            HibernateUtil.rollbackTransaction();
+            throwException(e);
+        } finally {
+
+            HibernateUtil.closeSessionSilently();
+            // return the previous conn, if needed
+            DbConnectionFactory.setConnection(currentConnection);
+        }
+
+        return result;
+    } // transaction.
 
     /**
      *
