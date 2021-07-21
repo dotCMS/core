@@ -405,7 +405,7 @@ import org.junit.runners.Suite.SuiteClasses;
         ResetPasswordTokenUtilTest.class,
         ContainerBundlerTest.class,
         ContentTypeBundlerTest.class,*/
-        DependencyBundlerTest.class/*,
+        DependencyBundlerTest.class,
         FolderBundlerTest.class,
         HostBundlerTest.class,
         LinkBundlerTest.class,
@@ -435,7 +435,7 @@ import org.junit.runners.Suite.SuiteClasses;
         DeterministicIdentifierAPITest.class,
         Task210527DropReviewFieldsFromContentletTableTest.class,
         ContentletCacheImplTest.class,
-        HostTest.class*/
+        HostTest.class
 })
 public class MainSuite {
 
