@@ -32,22 +32,20 @@ public class LocalTransaction {
      * @return T result of the {@link ReturnableDelegate}
      * @throws DotDataException
      *
-     * This class can be used to wrap methods in a "local transaction" pattern including the listeners (commit and rollback listeners)
-     * this pattern will check to see if the method is being called in an existing transaction.
-     * if it is being called in a transaction, it will do nothing.  If it is not being called in a transaction
-     * it will checkout a db connection,start a transaction, do the work, commit the transaction, return the result
-     * and  finally close the db connection.  If the SQL call fails, it will rollback the work, close  the db connection
+     * This class can be used to wrap methods in a "externalized transaction" pattern including the listeners (commit and rollback listeners)
+     * this pattern will use a new connection (if the parent caller is already in a transaction, that transaction will be restored after this method gets done)
+     * If the SQL call fails, it will rollback the work, close  the db connection
      * and throw the error up the stack.
      *
-     * In addition the connection will be closed, only if the current transaction is opening it.
+     * Since it uses a new connection, that one will be closed at the end of the transaction.
      *
      *  How to use:
      *
-     *	return new LocalTransaction().wrapReturnWithListeners(() ->{
+     *	return new LocalTransaction().externalizeTransaction(() ->{
      *		return myDBMethod(args);
      *  });
      */
-    static public <T> T transaction(final ReturnableDelegate<T> delegate) throws Exception {
+    static public <T> T externalizeTransaction(final ReturnableDelegate<T> delegate) throws Exception {
 
         // gets the current conn
         final Connection currentConnection        = DbConnectionFactory.getConnection();
