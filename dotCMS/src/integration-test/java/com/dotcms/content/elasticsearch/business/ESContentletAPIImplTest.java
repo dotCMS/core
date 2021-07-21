@@ -31,6 +31,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -747,7 +748,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      * Given Scenario: sends a not null host and folder path, but invalid b/c does not starts with //
      * ExpectedResult: The method should not throw a {@link IllegalArgumentException}
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = DoesNotExistException.class)
     public void test_move_not_exists_path() throws DotDataException, DotSecurityException {
 
         final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
