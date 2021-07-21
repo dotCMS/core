@@ -6,28 +6,28 @@ FROM ubuntu:20.04 as minimal-java
 WORKDIR /srv
 
 # Defining default Java, can be any java provided by sdkman
-ARG JAVA_VERSION="21.1.0.r11-grl"
+ARG JAVA_VERSION="21.2.0.r11-grl"
 
 ENV JAVA_OUTPUT_DIR="/java"
 ENV DEBIAN_FRONTEND=noninteractive
+ENV PATH="$PATH:/java/bin"
 
 # Installing basic packages 
 RUN apt update && \
 	apt install -y --no-install-recommends zip unzip wget bash ca-certificates
 
 # Install curl
-RUN wget -O - https://repo.dotcms.com/artifactory/ext-release-local/com/dotcms/curl-static/curl-`uname -m` | install /dev/stdin /usr/bin/curl 
-RUN chmod a+x /usr/bin/curl 
+RUN wget -O - https://repo.dotcms.com/artifactory/ext-release-local/com/dotcms/curl-static/curl-`uname -m` | install /dev/stdin /usr/bin/curl && \
+    chmod a+x /usr/bin/curl 
 
 # Downloading sdkman
 RUN curl -sL "https://get.sdkman.io" | bash
 
 # Installing Java via sdkman 
 RUN bash -c "source /root/.sdkman/bin/sdkman-init.sh && \
-    yes | sdk install java $JAVA_VERSION "
-
-
-RUN /root/.sdkman/candidates/java/$JAVA_VERSION/bin/jlink \
+    yes | sdk install java $JAVA_VERSION " && \
+    # Create a minimized java profile to run dotCMS
+    /root/.sdkman/candidates/java/$JAVA_VERSION/bin/jlink \
     --verbose \
     --add-modules \
         java.base,java.sql,java.naming,java.desktop,java.management,java.security.jgss,java.instrument,jdk.unsupported,java.scripting,java.rmi \
@@ -42,15 +42,12 @@ RUN /root/.sdkman/candidates/java/$JAVA_VERSION/bin/jlink \
     --compress 2 \
     --no-header-files \
     --no-man-pages \
-    --output "$JAVA_OUTPUT_DIR"
-
-ENV PATH="$PATH:/java/bin"
-
-RUN rm -rf /root/.sdkman
-RUN apt purge -y zip unzip wget 
-RUN apt autoremove -y
-RUN apt clean
-RUN rm -rf /var/lib/apt/lists/*
+    --output "$JAVA_OUTPUT_DIR" && \
+    rm -rf /root/.sdkman && \
+    apt purge -y zip unzip wget && \
+    apt autoremove -y && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
 
 
 # ----------------------------------------------
@@ -72,10 +69,9 @@ WORKDIR /srv
 
 # dotCMS core distributed under GPLv3 license (https://github.com/dotCMS/core/blob/master/license.txt)
 COPY build-src/ /build/
-RUN chmod 500 /build/build_dotcms.sh && /build/build_dotcms.sh ${BUILD_FROM} ${BUILD_ID}
-
-RUN mkdir -p /srv/utils /srv/templates /srv/config /srv/home
-RUN chmod -R 666 /srv && find /srv/ -type d -exec chmod a+x {} \;
+RUN chmod 500 /build/build_dotcms.sh && /build/build_dotcms.sh ${BUILD_FROM} ${BUILD_ID} && \
+    mkdir -p /srv/utils /srv/templates /srv/config /srv/home && \
+    chmod -R 666 /srv && find /srv/ -type d -exec chmod a+x {} \;
 
 
 
@@ -96,12 +92,13 @@ RUN apt update && \
 # Install prebuilt dockerize
 RUN curl -Ls https://repo.dotcms.com/artifactory/ext-release-local/com/dotcms/dockerize/dockerize-linux-`uname -m` | install /dev/stdin /usr/local/bin/dockerize 
 
-RUN apt purge --allow-remove-essential -y wget
-RUN apt autoremove -y
-RUN apt clean
-RUN rm -rf /var/lib/apt/lists/*
+RUN apt purge --allow-remove-essential -y wget && \
+    apt autoremove -y && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
 COPY --from=build-cms /srv/ /srv/
 COPY ROOT/ /
+
 RUN rm -rf /srv/dotserver/tomcat-9.0.41/.git
 
 # Defining default non-root user UID, GID, and name 
@@ -111,16 +108,13 @@ ARG USER_NAME="dotcms"
 
 # Creating default non-user 
 RUN groupadd -g $USER_GID $USER_NAME && \
-	useradd -d /srv -m -g $USER_GID -u $USER_UID $USER_NAME
-
-# Make scripts runable
-RUN find /srv/ -type f -name "*.sh" -exec chmod a+x {} \;
-
-# Make plugin merging directories writable
-RUN find /srv/templates -type d -exec chmod 770 {} \;
-
-# Make dotcms user owner
-RUN mkdir -p /data/shared/assets && \
+	useradd -d /srv -m -g $USER_GID -u $USER_UID $USER_NAME && \
+    # Make scripts runable
+    find /srv/ -type f -name "*.sh" -exec chmod a+x {} \; && \
+    # Make plugin merging directories writable
+    find /srv/templates -type d -exec chmod 770 {} \;  && \
+    # Make dotcms user owner
+    mkdir -p /data/shared/assets && \
     mkdir -p /data/local/dotsecure/license && \
     chown -R dotcms /data && \
     find /srv/ -type d -exec chown -R dotcms {} \;

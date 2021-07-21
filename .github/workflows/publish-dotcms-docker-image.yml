@@ -8,13 +8,13 @@ on:
       update_stable:
         description: 'Update stable tags'
         required: true
-        default: 'true'
+        default: 'false'
       also_latest:
         description: 'Update also the "latest" tag (relies on update_stable input to be set to true)'
         required: false
         default: 'false'
       dry_run:
-        description: 'Runs publish image in dry-run mode'
+        description: 'Dry Run (does not publish to docker hub)'
         required: false
         default: 'true'
 jobs:
@@ -49,6 +49,9 @@ jobs:
           label: ${{ github.event.inputs.custom_label }}
           update_stable: ${{ github.event.inputs.update_stable }}
           also_latest: ${{ github.event.inputs.also_latest }}
+      - name: Delete unneeded files (Docker does not need src to build)
+        run: |
+          rm -rf dotCMS .git libs
       - name: Publish docker image
         id: publish-docker-image
         uses: dotcms/publish-docker-image-action@main
