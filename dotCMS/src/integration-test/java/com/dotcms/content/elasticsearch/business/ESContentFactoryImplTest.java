@@ -886,4 +886,15 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         }
     }
 
+    @Test
+    public void test_dotAssets_persist_title_as_null() {
+        Contentlet contentlet = TestDataUtils.getDotAssetLikeContentlet();
+
+        assertNull(contentlet.getMap().get(Contentlet.TITTLE_KEY));
+
+        contentlet = instance.findInDb(contentlet.getInode()).get();
+        
+        assertNull(contentlet.getMap().get(Contentlet.TITTLE_KEY));
+    }
+
 }

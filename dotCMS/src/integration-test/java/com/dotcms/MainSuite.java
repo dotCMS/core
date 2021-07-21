@@ -106,7 +106,7 @@ import com.dotmarketing.startup.runonce.Task210506UpdateStorageTableTest;
 import com.dotmarketing.startup.runonce.Task210527DropReviewFieldsFromContentletTableTest;
 import com.dotmarketing.startup.runonce.Task210520UpdateAnonymousEmailTest;
 import com.dotmarketing.startup.runonce.Task210510UpdateStorageTableDropMetadataColumnTest;
-import com.dotmarketing.startup.runonce.Task210719CleanUpDotAssetTitleTest;
+import com.dotmarketing.startup.runonce.Task210719CleanUpTitleFieldTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.TestConfig;
@@ -437,7 +437,7 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentletCacheImplTest.class,
         HostTest.class,
         FileToolTest.class,
-        Task210719CleanUpDotAssetTitleTest.class
+        Task210719CleanUpTitleFieldTest.class
 })
 public class MainSuite {
 

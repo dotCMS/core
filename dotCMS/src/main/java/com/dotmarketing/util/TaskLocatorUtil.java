@@ -300,7 +300,7 @@ public class TaskLocatorUtil {
 		.add(Task210510UpdateStorageTableDropMetadataColumn.class)
 		.add(Task210520UpdateAnonymousEmail.class)
         .add(Task210527DropReviewFieldsFromContentletTable.class)
-        .add(Task210719CleanUpDotAssetTitle.class)
+        .add(Task210719CleanUpTitleField.class)
         .build();
         
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
