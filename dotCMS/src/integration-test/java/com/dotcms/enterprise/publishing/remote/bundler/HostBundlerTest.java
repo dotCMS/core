@@ -2,7 +2,6 @@ package com.dotcms.enterprise.publishing.remote.bundler;
 
 import com.dotcms.datagen.*;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
-import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.FilterDescriptor;
@@ -84,8 +83,7 @@ public class HostBundlerTest {
         final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
 
         final PushPublisherConfig config = new PushPublisherConfig();
-
-        hosts.stream().forEach(host -> config.add(host, PusheableAsset.SITE));
+        config.setHostSet(set( hosts.get(0).getIdentifier()));
         config.setOperation(PublisherConfig.Operation.PUBLISH);
 
         final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config);
