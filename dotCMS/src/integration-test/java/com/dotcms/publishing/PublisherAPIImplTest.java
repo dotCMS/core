@@ -195,9 +195,13 @@ public class PublisherAPIImplTest {
 
         final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
 
+        final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI()
+                .findSystemWorkflowScheme();
+
         return new TestAsset(workingVersion,
                 map(
-                    workingVersion, list(host, contentType, defaultLanguage)
+                    workingVersion, list(host, contentType, defaultLanguage),
+                        contentType, list(systemWorkflowScheme)
                 ),
                 set(liveVersion),
                 "/bundlers-test/contentlet/contentlet/contentlet.content.xml");
