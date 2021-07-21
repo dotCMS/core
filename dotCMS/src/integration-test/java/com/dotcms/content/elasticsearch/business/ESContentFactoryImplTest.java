@@ -886,11 +886,17 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to test: {@link Contentlet#getTitle()} <br>
+     * Given scenario: A piece of content without an explicit title field should persist with title=null <br>
+     * Expected Result: Title is not persisted in db but {@link Contentlet#getTitle()} returns a value
+     */
     @Test
     public void test_dotAssets_persist_title_as_null() {
         Contentlet contentlet = TestDataUtils.getDotAssetLikeContentlet();
 
         assertNull(contentlet.getMap().get(Contentlet.TITTLE_KEY));
+        assertNotNull(contentlet.getTitle());
 
         contentlet = instance.findInDb(contentlet.getInode()).get();
         
