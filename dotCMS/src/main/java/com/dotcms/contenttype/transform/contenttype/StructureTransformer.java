@@ -191,7 +191,7 @@ public class StructureTransformer implements ContentTypeTransformer  {
 
 			@Override
 			public String icon() {
-				return UtilMethods.isSet(struct.getIcon()) ? struct.getIcon() : null;
+				return UtilMethods.isSet(struct.getIcon()) ? struct.getIcon() : BaseContentType.iconFallbackMap.get(base);
 			}
 
 			@Override
