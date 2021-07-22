@@ -19,7 +19,9 @@ import { MODEL_VAR_NAME } from '@dotcms/app/portlets/dot-edit-page/content/servi
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { PageModelChangeEvent, PageModelChangeEventType } from './models';
 import {
+    DotAssetPayload,
     DotContentletEvent,
+    DotContentletEventDragAndDropDotAsset,
     DotContentletEventRelocate,
     DotContentletEventSave,
     DotContentletEventSelect,
@@ -30,6 +32,7 @@ import { DotPageContainer } from '@models/dot-page-container/dot-page-container.
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { INLINE_TINYMCE_SCRIPTS } from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/inline-edit-mode.js';
 import { HttpErrorResponse } from '@angular/common/http';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 export enum DotContentletAction {
     EDIT,
@@ -38,6 +41,7 @@ export enum DotContentletAction {
 @Injectable()
 export class DotEditContentHtmlService {
     contentletEvents$: Subject<
+        | DotContentletEventDragAndDropDotAsset
         | DotContentletEventRelocate
         | DotContentletEventSelect
         | DotContentletEventSave
@@ -65,6 +69,7 @@ export class DotEditContentHtmlService {
         private dotEditContentToolbarHtmlService: DotEditContentToolbarHtmlService,
         private dotDOMHtmlUtilService: DotDOMHtmlUtilService,
         private dotDialogService: DotAlertConfirmService,
+        private dotHttpErrorManagerService: DotHttpErrorManagerService,
         private dotMessageService: DotMessageService,
         private dotGlobalMessageService: DotGlobalMessageService,
         private dotWorkflowActionsFireService: DotWorkflowActionsFireService,
@@ -198,23 +203,34 @@ export class DotEditContentHtmlService {
     }
 
     /**
-     * Render a contrentlet in the DOM after add it
+     * Render a contentlet in the DOM after add it
      *
-     * @param * contentlet
+     * @param DotPageContent contentlet
+     * @param string placeholderIdToBeReplaced
      * @memberof DotEditContentHtmlService
      */
-    renderAddedContentlet(contentlet: DotPageContent): void {
+    renderAddedContentlet(contentlet: DotPageContent, placeholderIdToBeReplaced?: string): void {
         const doc = this.getEditPageDocument();
+        if (placeholderIdToBeReplaced) {
+            const container: HTMLElement = doc.querySelector(`#${placeholderIdToBeReplaced}`).closest('[data-dot-object="container"]');
+            this.setContainterToAppendContentlet({ identifier: container.dataset['dotIdentifier'], uuid: container.dataset['dotUuid']});
+        }
+
         const containerEl: HTMLElement = doc.querySelector(
-            // eslint-disable-next-line max-len
             `[data-dot-object="container"][data-dot-identifier="${this.currentContainer.identifier}"][data-dot-uuid="${this.currentContainer.uuid}"]`
         );
 
         if (this.isContentExistInContainer(contentlet, containerEl)) {
             this.showContentAlreadyAddedError();
         } else {
-            const contentletPlaceholder = this.getContentletPlaceholder();
-            containerEl.appendChild(contentletPlaceholder);
+            let contentletPlaceholder;
+            if (placeholderIdToBeReplaced) {
+                contentletPlaceholder = doc.querySelector(`#${placeholderIdToBeReplaced}`);
+            } else {
+                contentletPlaceholder = this.getContentletPlaceholder();
+                containerEl.appendChild(contentletPlaceholder);
+            }
+            
             this.dotContainerContentletService
                 .getContentletToContainer(this.currentContainer, contentlet)
                 .pipe(take(1))
@@ -628,6 +644,15 @@ export class DotEditContentHtmlService {
             },
             'deleted-contenlet': () => {
                 this.removeCurrentContentlet();
+            },
+            'add-uploaded-dotAsset': (dotAssetData: DotAssetPayload) => {
+                this.renderAddedContentlet(dotAssetData.contentlet, dotAssetData.placeholderId)
+            },
+            'handle-http-error': (err: HttpErrorResponse) => {
+                this.dotHttpErrorManagerService
+                        .handle(err)
+                        .pipe(take(1))
+                        .subscribe(() => {});
             }
         };
 

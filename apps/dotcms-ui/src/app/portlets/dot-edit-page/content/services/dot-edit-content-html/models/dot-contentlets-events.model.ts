@@ -6,9 +6,15 @@ export interface DotContentletEvent<T> {
     data: T;
 }
 
+export interface DotContentletEventDragAndDropDotAsset extends DotContentletEvent<DotAssetPayload> {}
 export interface DotContentletEventRelocate extends DotContentletEvent<DotRelocatePayload> {}
 export interface DotContentletEventSelect extends DotContentletEvent<DotPageContent> {}
 export interface DotContentletEventSave extends DotContentletEvent<DotPageContent> {}
+
+export interface DotAssetPayload {
+    contentlet: DotPageContent;
+    placeholderId: string;
+}
 
 export interface DotRelocatePayload {
     container: DotPageContainer;
