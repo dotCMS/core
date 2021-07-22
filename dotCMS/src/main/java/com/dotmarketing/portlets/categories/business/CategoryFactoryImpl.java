@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.categories.business;
 
+import com.dotcms.util.CloseUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
@@ -641,12 +642,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 			}
 			Logger.error(CategoryFactoryImpl.class, e);
 		} finally {
-			try {
-				s.close();
-				conn.close();
-			} catch (SQLException e) {
-				Logger.error(CategoryFactoryImpl.class,e);
-			}
+			CloseUtils.closeQuietly(s, conn);
 		}
 	}
 	@SuppressWarnings("unchecked")
@@ -746,7 +742,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 			}
             Logger.debug( this, "Error trying to execute statements", e );
 		} finally {
-            closeEverything( s, conn, rs );
+			CloseUtils.closeQuietly(rs,s,conn);
         }
 	}
 
@@ -799,7 +795,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 			}
             Logger.debug( this, "Error trying to execute statements", e );
 		} finally {
-            closeEverything( statement, conn, rs );
+			CloseUtils.closeQuietly(statement, conn, rs);
         }
 	}
 
@@ -807,16 +803,6 @@ public class CategoryFactoryImpl extends CategoryFactory {
         while(rs.next()) {
 			// calling find will put it into cache internally
 			find(rs.getString("inode"));
-        }
-    }
-
-    private void closeEverything( final Statement s, final Connection conn, final ResultSet rs ) {
-        try {
-            rs.close();
-            s.close();
-            conn.close();
-        } catch (SQLException e) {
-            Logger.debug( this, "Error trying to close statement, connection and result set", e );
         }
     }
 
