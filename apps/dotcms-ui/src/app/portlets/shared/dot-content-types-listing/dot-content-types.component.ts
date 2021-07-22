@@ -188,7 +188,7 @@ export class DotContentTypesPortletComponent implements OnInit {
             {
                 fieldName: 'name',
                 header: this.dotMessageService.get('contenttypes.fieldname.structure.name'),
-                icon: (item: any): string => item.icon || this.contentTypesInfoService.getIcon(item.baseType),
+                icon: (item: any): string => item.icon,
                 sortable: true
             },
             {
