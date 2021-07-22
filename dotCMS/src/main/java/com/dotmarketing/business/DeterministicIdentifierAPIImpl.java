@@ -373,18 +373,44 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
 
     }
 
+    /**
+     * Entry point for category id generation
+     * @param category a category
+     * @return generated deterministic id
+     */
     @CloseDBIfOpened
     @Override
-    public String generateDeterministicIdBestEffort(final Category category){
+    public String generateDeterministicIdBestEffort(final Category category, final Category parent){
+        return isEnabled() ? bestEffortDeterministicId(
+                hash(deterministicIdSeed(category, parent)),
+                this::isCategoryId, uuidSupplier) : uuidSupplier.get();
+    }
 
+    @VisibleForTesting
+    String deterministicIdSeed(final Category category, final Category parent){
         String path = "";
         try {
-            path = buildPath( category, path );
+            path = buildPath( category, parent );
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(DeterministicIdentifierAPIImpl.class, e);
         }
-
         return String.format("Category:{%s}",path);
+    }
+
+    private String buildPath(final Category category, final Category parent)
+            throws DotDataException, DotSecurityException {
+        String path = "";
+        if (null != parent) {
+            path = buildPath(parent, path);
+            if (UtilMethods.isSet(path)) {
+                path = path + " > " + category.getCategoryVelocityVarName();
+            } else {
+                path = category.getCategoryVelocityVarName();
+            }
+        } else {
+            path = category.getCategoryVelocityVarName();
+        }
+        return path;
     }
 
     private String buildPath(final Category category, String path) throws DotDataException, DotSecurityException {
@@ -452,6 +478,18 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
     private boolean isFieldInode(final String hash){
         return new DotConnect()
                 .setSQL("select count(*) as test from field f join inode i on f.inode = i.inode where i.inode =?")
+                .addParam(hash)
+                .getInt("test")>0;
+    }
+
+    /**
+     * Test the calculated hash has already been used as a category inode
+     * @param hash
+     * @return
+     */
+    private boolean isCategoryId(final String hash){
+        return new DotConnect()
+                .setSQL("SELECT count(*) as test  FROM inode, category WHERE inode.inode = category.inode AND inode.type = 'category' AND inode.inode =?")
                 .addParam(hash)
                 .getInt("test")>0;
     }

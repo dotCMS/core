@@ -193,7 +193,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
         final Category child = newCategory();
         categoryFactory.addChild(parent, child, null);
         assertTrue(categoryFactory.findTopLevelCategories().stream().anyMatch(category -> parent.getInode().equals(category.getInode())));
-        categoryFactory.deleteTopLevelCategories();
+        assertTrue(categoryFactory.findTopLevelCategories().stream().noneMatch(category -> child.getInode().equals(category.getInode())));
     }
 
     /**
@@ -227,7 +227,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link CategoryFactory#getParents(Categorizable, String)} (String)}
+     * Method to test: {@link CategoryFactory#getParents(Categorizable, String)}
      * @throws DotDataException
      */ 
     @Test
@@ -253,6 +253,21 @@ public class CategoryFactoryTest extends IntegrationTestBase {
         parents = categoryFactory.getParents(leaf3);
         assertEquals(1,parents.size());
 
+    }
+
+    /**
+     * Method to test: {@link CategoryFactory#hasDependencies(Category)}
+     * Given Scenario: create parent test if has dependencies then add a child and test again
+     * ExpectedResult: initially the root should not show any dependencies until we add a child
+     * @throws DotDataException
+     */
+    @Test
+    public void Test_Has_Dependencies() throws DotDataException {
+        final Category root = newCategory();
+        assertFalse(categoryFactory.hasDependencies(root));
+        final Category leaf1 = newCategory();
+        categoryFactory.addChild(root, leaf1, null);
+        assertTrue(categoryFactory.hasDependencies(root));
     }
 
 }

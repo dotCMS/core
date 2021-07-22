@@ -164,7 +164,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 		}
 
 		category.setModDate(new Date());
-		categoryFactory.save(category);
+		categoryFactory.save(category, parent);
 
 		//if is a new category and is not top level, relate the category to the parent category
 		if(isANewCategory && parent != null) {

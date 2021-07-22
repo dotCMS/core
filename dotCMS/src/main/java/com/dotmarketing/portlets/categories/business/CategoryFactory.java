@@ -72,6 +72,14 @@ public abstract class CategoryFactory {
 	 * @throws DotDataException
 	 */
 	public abstract void save(Category object) throws DotDataException;
+
+	/**
+	 * This save requires of a parent in order to calculate the deterministic identifier
+ 	 * @param object
+	 * @param parent
+	 * @throws DotDataException
+	 */
+	public abstract void save(Category object, Category parent) throws DotDataException;
 	
 	/**
 	 * This method saves a category in the system coming by a Remote publishing.
@@ -220,11 +228,6 @@ public abstract class CategoryFactory {
 	 */
 	abstract protected void removeParent(Categorizable child, Category parent) throws DotDataException;
 
-	/**
-	 * Deletes all the top level categories
-	 * @return
-	 */
-	abstract protected void deleteTopLevelCategories() throws DotDataException;
 	/**
 	 * Returns the first level of categories in the system
 	 * @return
