@@ -16,7 +16,6 @@ import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import java.sql.Connection;
@@ -635,10 +634,12 @@ public class CategoryFactoryImpl extends CategoryFactory {
 			s.executeUpdate(sql.toString());
 			conn.commit();
 		} catch (SQLException e) {
-			try {
-				conn.rollback();
-			} catch (SQLException e1) {
-				Logger.error(CategoryFactoryImpl.class,e1);
+			if (conn != null) {
+				try {
+					conn.rollback();
+				} catch (SQLException e1) {
+					//Quiet
+				}
 			}
 			Logger.error(CategoryFactoryImpl.class, e);
 		} finally {
@@ -735,12 +736,14 @@ public class CategoryFactoryImpl extends CategoryFactory {
 
             putResultInCatCache( rs );
         } catch (SQLException e) {
-			try {
-				conn.rollback();
-			} catch (SQLException sqlException) {
-				Logger.debug( this, "Error trying to rollback connection", sqlException );
+			if (null != conn) {
+				try {
+					conn.rollback();
+				} catch (SQLException sqlException) {
+					//Quiet
+				}
 			}
-            Logger.debug( this, "Error trying to execute statements", e );
+            Logger.error( this, "Error trying to execute statements", e );
 		} finally {
 			CloseUtils.closeQuietly(rs,s,conn);
         }
@@ -788,12 +791,14 @@ public class CategoryFactoryImpl extends CategoryFactory {
             putResultInCatCache( rs );
 
         } catch (SQLException e) {
-			try {
-				conn.rollback();
-			} catch (SQLException sqlException) {
-                Logger.debug( this, "Error trying to rollback connection", sqlException );
+			if (null != conn) {
+				try {
+					conn.rollback();
+				} catch (SQLException sqlException) {
+					//Quiet
+				}
 			}
-            Logger.debug( this, "Error trying to execute statements", e );
+            Logger.error( this, "Error trying to execute statements", e );
 		} finally {
 			CloseUtils.closeQuietly(statement, conn, rs);
         }
@@ -838,8 +843,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
           if (dc.getInt("test") == 0) {
             return var;
           }
-            var = VelocityUtil.convertToVelocityVariable(categoryVelVarName, false) + String
-                    .valueOf(i);
+            var = VelocityUtil.convertToVelocityVariable(categoryVelVarName, false) + i;
         }
         throw new DotDataException("Unable to suggest a variable name.  Got to:" + var);
     }

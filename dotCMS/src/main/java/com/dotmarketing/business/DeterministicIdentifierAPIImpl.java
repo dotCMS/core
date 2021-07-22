@@ -392,7 +392,10 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
         try {
             path = buildPath( category, parent );
         } catch (DotDataException | DotSecurityException e) {
-            Logger.error(DeterministicIdentifierAPIImpl.class, e);
+            Logger.error(DeterministicIdentifierAPIImpl.class,
+                    String.format("Category id `%s`, Parent category id `%s` ",
+                            category == null ? "Unknown" : category.getInode(),
+                            parent == null ? "Unknown" : parent.getInode()), e);
         }
         return String.format("Category:{%s}",path);
     }

@@ -32,7 +32,6 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      * Method to test: {@link CategoryFactory#save(Category)}
      * Given Scenario: attempt to save an empty category object
      * ExpectedResult: Should throw a DotDataException
-     * @throws DotSecurityException
      * @throws DotDataException
      */
     @Test(expected = DotDataException.class)
@@ -44,8 +43,7 @@ public class CategoryFactoryTest extends IntegrationTestBase {
     /**
      * Method to test: {@link CategoryFactory#save(Category)}
      * Given Scenario: attempt to save an empty category object
-     * ExpectedResult: Should throw a DotDataException
-     * @throws DotSecurityException
+     * ExpectedResult: We should be able to find the Category created using an existing inode
      * @throws DotDataException
      */
     @Test
@@ -62,7 +60,6 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      * Method to test: {@link CategoryFactory#find(String)}
      * Given Scenario: attempt to find a non existing category
      * ExpectedResult: Should return null
-     * @throws DotSecurityException
      * @throws DotDataException
      */
     @Test
@@ -75,7 +72,6 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      * Method to test: {@link CategoryFactory#findByKey(String)}
      * Given Scenario: attempt to find a non existing category
      * ExpectedResult: Should return null
-     * @throws DotSecurityException
      * @throws DotDataException
      */
     @Test
@@ -103,7 +99,6 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      * Method to test: {@link CategoryFactory#save(Category)}
      * Given Scenario: attempt to save a category object then find it in different ways
      * ExpectedResult: Should be found everytime
-     * @throws DotSecurityException
      * @throws DotDataException
      */
     @Test
@@ -122,7 +117,6 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      * Method to test: {@link CategoryFactory#findAll()}
      * Given Scenario: get all categories then remove them then use find all again
      * ExpectedResult: After having removed all categories whe should expect none
-     * @throws DotSecurityException
      * @throws DotDataException
      */
     @Test
@@ -144,7 +138,6 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      * Method to test: {@link CategoryFactory#getChildren(Categorizable)} {@link CategoryFactory#findChildrenByFilter(String, String, String)}
      * Given Scenario: create a parent-child category hierarchy the test the  child finders
      * ExpectedResult: Once removed the finders should return empty and vice-versa
-     * @throws DotSecurityException
      * @throws DotDataException
      */
     @Test
@@ -165,7 +158,6 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      * Method to test: {@link CategoryFactory#getParents(Categorizable, String)}
      * Given Scenario: create a parent-child category hierarchy the test the  child finders
      * ExpectedResult: Once removed the finders should return empty and vice-versa
-     * @throws DotSecurityException
      * @throws DotDataException
      */
     @Test
@@ -184,7 +176,6 @@ public class CategoryFactoryTest extends IntegrationTestBase {
      * Method to test: {@link CategoryFactory#findTopLevelCategories()}
      * Given Scenario: create parent children items call top level finder
      * ExpectedResult: verify top level is found then delete parent call finder again. expect empty collection
-     * @throws DotSecurityException
      * @throws DotDataException
      */
     @Test
@@ -222,7 +213,22 @@ public class CategoryFactoryTest extends IntegrationTestBase {
         final List<Category> children = categoryFactory.getChildren(parent);
         int orderCount = 1;
         for(Category category:children){
-            assertEquals(orderCount++,category.getSortOrder().intValue());
+            assertEquals(orderCount,category.getSortOrder().intValue());
+            switch (orderCount){
+                case 1:{
+                    assertEquals(child3.getInode(),category.getInode());
+                    break;
+                }
+                case 2:{
+                    assertEquals(child2.getInode(),category.getInode());
+                    break;
+                }
+                case 3:{
+                    assertEquals(child1.getInode(),category.getInode());
+                    break;
+                }
+            }
+            orderCount++;
         }
     }
 
