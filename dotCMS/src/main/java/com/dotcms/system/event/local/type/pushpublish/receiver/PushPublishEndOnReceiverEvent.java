@@ -7,9 +7,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Object used to represent an event to be triggered when the push publishing process finishes
+ * Object used to represent an event to be triggered when the push publishing process finishes on the receiver
  *
- * @author nollymar
+ * @author jsanca
  */
 public class PushPublishEndOnReceiverEvent extends PublishEvent {
 

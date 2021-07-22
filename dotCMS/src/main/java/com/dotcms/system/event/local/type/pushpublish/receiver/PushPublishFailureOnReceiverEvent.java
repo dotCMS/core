@@ -7,9 +7,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Object used to represent an event to be triggered when all endpoints fail during push publishing
+ * Object used to represent an event to be triggered when all endpoints fail during push publishing on the receiver
  *
- * @author nollymar
+ * @author jsanca
  */
 public class PushPublishFailureOnReceiverEvent extends PublishEvent {
 

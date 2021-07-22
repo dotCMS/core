@@ -7,9 +7,9 @@ import java.time.LocalDateTime;
 
 /**
  * Object used to represent an event to be triggered when bundles were sent successfully to all
- * endpoints
+ * endpoints on the receiver
  *
- * @author nollymar
+ * @author jsanca
  */
 public class PushPublishSuccessOnReceiverEvent extends PublishEvent {
 

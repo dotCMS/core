@@ -279,6 +279,8 @@ public class BundlePublisher extends Publisher {
             localSystemEventsAPI.asyncNotify(new PushPublishSuccessOnReceiverEvent(config));
             localSystemEventsAPI.asyncNotify(new PushPublishEndOnReceiverEvent(config.getAssets()));
         } catch (Exception e) {
+
+            localSystemEventsAPI.asyncNotify(new PushPublishFailureOnReceiverEvent(config.getAssets(), e));
             Logger.error(BundlePublisher.class, "Unable to update audit table for bundle with ID '" + bundleName + "': " + e.getMessage(), e);
         }
 
