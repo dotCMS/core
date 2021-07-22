@@ -187,7 +187,7 @@ public class CSVManifestBuilderTest {
     private static TestCase getHostTestCase() {
         final Host host = new SiteDataGen().nextPersisted();
         final String line = list(PusheableAsset.SITE.getType(), host.getIdentifier(),
-                host.getTitle(), "SYSTEM_HOST", "/")
+                host.getTitle(), "System Host", "/")
                 .stream().collect(Collectors.joining(","));
         return new TestCase(host, line);
     }
@@ -320,7 +320,8 @@ public class CSVManifestBuilderTest {
             throws IOException {
         final List<String> lines = getFileLines(manifestFile);
 
-        assertEquals(expected.size(), lines.size());
+        assertEquals("Manifest\n" + lines.stream()
+                .collect(Collectors.joining("\n")), expected.size(), lines.size());
 
         for (int index = 0; index < lines.size(); index++) {
             final String line = lines.get(index);

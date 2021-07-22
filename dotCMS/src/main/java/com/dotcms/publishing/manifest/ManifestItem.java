@@ -125,7 +125,7 @@ public interface ManifestItem {
         public String site(){
             if (UtilMethods.isSet(siteId)) {
                 final Host host = getHost(siteId);
-                return host.getName();
+                return host.getHostname();
             } else {
                 return StringPool.BLANK;
             }

@@ -72,6 +72,7 @@ import static org.mockito.Mockito.mock;
 public class DependencyBundlerTest {
 
     private static  Map<String, List<ManifestItem>> excludeSystemFolder;
+    private static  Map<String, List<ManifestItem>> excludeSystemFolderAndSystemHost;
 
     public static final String EXCLUDE_SYSTEM_FOLDER_HOST = "Excluded System Folder/Host";
     private static String FILTER_EXCLUDE_REASON = "Excluded by filter";
@@ -92,6 +93,10 @@ public class DependencyBundlerTest {
 
         excludeSystemFolder = map(EXCLUDE_SYSTEM_FOLDER_HOST,
                 list(APILocator.getFolderAPI().findSystemFolder()));
+
+        excludeSystemFolderAndSystemHost = map(
+                EXCLUDE_SYSTEM_FOLDER_HOST, list(APILocator.getFolderAPI().findSystemFolder(),
+                        APILocator.getHostAPI().findSystemHost()));
 
         filterDescriptorAllDependencies = new FilterDescriptorDataGen().next();
         filterDescriptorNotDependencies = new FilterDescriptorDataGen()
@@ -214,8 +219,8 @@ public class DependencyBundlerTest {
         final Rule ruleWithPage = new RuleDataGen().page(htmlPageAsset).nextPersisted();
 
         return list(
-                new TestData(rule, map(rule, list(rule, host)), excludeSystemFolder, filterDescriptorAllDependencies, "Rule with third party"),
-                new TestData(ruleWithPage, map(ruleWithPage, list(htmlPageAsset)), excludeSystemFolder, filterDescriptorAllDependencies, "Rule with page and third party")
+                new TestData(rule, map(rule, list(rule, host)), map(), filterDescriptorAllDependencies, "Rule with third party"),
+                new TestData(ruleWithPage, map(ruleWithPage, list(htmlPageAsset)), map(), filterDescriptorAllDependencies, "Rule with page and third party")
         );
     }
 
@@ -234,7 +239,7 @@ public class DependencyBundlerTest {
         final Map<ManifestItem, Collection<ManifestItem>> dependencies = map(link, list(host, folder));
 
         return list(
-                new TestData(link, dependencies, excludeSystemFolder, filterDescriptorAllDependencies, "Link with third Party")
+                new TestData(link, dependencies, map(), filterDescriptorAllDependencies, "Link with third Party")
         );
     }
 
@@ -268,7 +273,7 @@ public class DependencyBundlerTest {
         dependencies.putAll(subFolderWithDependencies.dependenciesToAssert);
 
         return list(
-                new TestData(folder, dependencies, excludeSystemFolder, filterDescriptorAllDependencies, "Folder with third party")
+                new TestData(folder, dependencies, excludeSystemFolderAndSystemHost, filterDescriptorAllDependencies, "Folder with third party")
         );
     }
 
@@ -369,7 +374,7 @@ public class DependencyBundlerTest {
                         filterDescriptorAllDependencies, "Content Type with third party dependencies"),
                 new TestData(contentTypeWithFolder, map(
                         contentTypeWithFolder, list(folderHost, contentTypeFolder, systemWorkflowScheme)
-                    ), excludeSystemFolder, filterDescriptorAllDependencies, "Content Type with folder and third party dependencies")
+                    ), map(), filterDescriptorAllDependencies, "Content Type with folder and third party dependencies")
         );
     }
 
@@ -594,13 +599,14 @@ public class DependencyBundlerTest {
 
         final Map<ManifestItem, Collection<ManifestItem>> contentWithCategoryIncludes = map(
                 contentWithCategory, list(host, contentTypeWithCategory, language, category),
-                contentTypeWithCategory, list(systemWorkflowScheme)
+                contentTypeWithCategory, list(systemWorkflowScheme, category)
         );
 
         final Map<ManifestItem, Collection<ManifestItem>> htmlPageAssetIncludes = map(
                 htmlPageAsset, list(host, defaultLanguage, template, htmlPageAssetContentType),
                 template, list(container, defaultHost),
                 contentTypeToPage, list(systemWorkflowScheme),
+                htmlPageAssetContentType, list(systemWorkflowScheme),
                 container, list(contentTypeToPage)
         );
 
@@ -640,12 +646,12 @@ public class DependencyBundlerTest {
                 new TestData(contentletWithFolder, contentletWithFolderIncludes, excludeSystemFolder, filterDescriptorAllDependencies, "Contentlet with folder and filterDescriptorAllDependencies"),
                 new TestData(contentletWithFolder, map(), contentletWithFolderExcludes, filterDescriptorNotDependencies, "Contentlet with folder and filterDescriptorNotDependencies"),
                 new TestData(contentletWithFolder,contentletWithFolderIncludes, excludeSystemFolder, filterDescriptorNotRelationship, "Contentlet folder and with filterDescriptorNotRelationship"),
-                new TestData(contentletWithFolder, map(), contentletWithFolderExcludes, filterDescriptorNotDependenciesRelationship, "Contentlet folder and with filterDescriptorNotDependenciesRelationship")    ,
+                new TestData(contentletWithFolder, map(), contentletWithFolderExcludes, filterDescriptorNotDependenciesRelationship, "Contentlet folder and with filterDescriptorNotDependenciesRelationship"),
 
                 new TestData(contentletWithRelationship, contentletWithRelationshipIncludes, excludeSystemFolder,
                         filterDescriptorAllDependencies, "Contentlet with Relationship and filterDescriptorAllDependencies"),
                 new TestData(contentletWithRelationship, map(), contentletWithRelationshipExcludes, filterDescriptorNotDependencies, "Contentlet with Relationship and filterDescriptorNotDependencies"),
-                new TestData(contentletWithRelationship, map(contentletWithRelationship, list(host, contentTypeParent, language)),
+                new TestData(contentletWithRelationship, map(contentletWithRelationship, list(host, contentTypeParent, language), contentTypeParent, list(systemWorkflowScheme)),
                         map(FILTER_EXCLUDE_REASON, list(relationship), EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)),
                         filterDescriptorNotRelationship, "Contentlet with Relationship and filterDescriptorNotRelationship"),
                 new TestData(contentletWithRelationship, map(), contentletWithRelationshipExcludes,
@@ -661,15 +667,15 @@ public class DependencyBundlerTest {
                         filterDescriptorNotRelationship, "Contentlet with Category and filterDescriptorNotRelationship"),
                 new TestData(contentWithCategory, map(), contentWithCategoryExcludes, filterDescriptorNotDependenciesRelationship, "Contentlet with Category and filterDescriptorNotDependenciesRelationship"),
 
-                new TestData(htmlPageAsset, htmlPageAssetIncludes, excludeSystemFolder, filterDescriptorAllDependencies, "Page with filterDescriptorAllDependencies"),
+                new TestData(htmlPageAsset, htmlPageAssetIncludes, excludeSystemFolderAndSystemHost, filterDescriptorAllDependencies, "Page with filterDescriptorAllDependencies"),
                 new TestData(htmlPageAsset, map(), htmlPageAssetExcludes, filterDescriptorNotDependencies, "Page with filterDescriptorNotDependencies"),
-                new TestData(htmlPageAsset, htmlPageAssetIncludes, excludeSystemFolder, filterDescriptorNotRelationship, "Page with filterDescriptorNotRelationship"),
-                new TestData(htmlPageAsset, map(), htmlPageAssetExcludes, filterDescriptorNotDependenciesRelationship, "Page with filterDescriptorNotDependenciesRelationship"),
+                new TestData(htmlPageAsset, htmlPageAssetIncludes, excludeSystemFolderAndSystemHost, filterDescriptorNotRelationship, "Page with filterDescriptorNotRelationship"),
+                new TestData(htmlPageAsset, map(), htmlPageAssetExcludes, filterDescriptorNotDependenciesRelationship, "Page with filterDescriptorNotDependenciesRelationship")/*,
 
                 new TestData(contentletWithImage, contentletWithImageIncludes, excludeSystemFolder, filterDescriptorAllDependencies, "Contentlet with Image and filterDescriptorAllDependencies"),
                 new TestData(contentletWithImage, map(), contentletWithImageExcludes, filterDescriptorNotDependencies, "Contentlet with Image and filterDescriptorNotDependencies"),
                 new TestData(contentletWithImage, contentletWithImageIncludes, excludeSystemFolder, filterDescriptorNotRelationship, "Contentlet with Image and filterDescriptorNotRelationship"),
-                new TestData(contentletWithImage, map(), contentletWithImageExcludes, filterDescriptorNotDependenciesRelationship, "Contentlet with Image and filterDescriptorNotDependenciesRelationship")
+                new TestData(contentletWithImage, map(), contentletWithImageExcludes, filterDescriptorNotDependenciesRelationship, "Contentlet with Image and filterDescriptorNotDependenciesRelationship")*/
         );
     }
 
@@ -682,25 +688,27 @@ public class DependencyBundlerTest {
         final Rule ruleWithPage = new RuleDataGen().page(htmlPageAsset).nextPersisted();
 
         return list(
-                new TestData(rule, map(rule, list(host)), excludeSystemFolder, filterDescriptorAllDependencies, "Rule with filterDescriptorAllDependencies"),
+                new TestData(rule, map(rule, list(host)), map(), filterDescriptorAllDependencies, "Rule with filterDescriptorAllDependencies"),
                 new TestData(rule, map(), map(FILTER_EXCLUDE_REASON, list(host)), filterDescriptorNotDependencies, "Rule with filterDescriptorNotDependencies"),
-                new TestData(rule, map(rule, list(host)), excludeSystemFolder, filterDescriptorNotRelationship, "Rule with filterDescriptorNotRelationship"),
+                new TestData(rule, map(rule, list(host)), map(), filterDescriptorNotRelationship, "Rule with filterDescriptorNotRelationship"),
                 new TestData(rule, map(), map(FILTER_EXCLUDE_REASON, list(host)), filterDescriptorNotDependenciesRelationship, "Page with filterDescriptorNotDependenciesRelationship"),
 
-                new TestData(ruleWithPage, map(ruleWithPage, list(htmlPageAsset)), excludeSystemFolder, filterDescriptorAllDependencies, "Rule with page and filterDescriptorAllDependencies"),
+                new TestData(ruleWithPage, map(ruleWithPage, list(htmlPageAsset)), map(), filterDescriptorAllDependencies, "Rule with page and filterDescriptorAllDependencies"),
                 new TestData(ruleWithPage, map(), map(FILTER_EXCLUDE_REASON, list(htmlPageAsset)), filterDescriptorNotDependencies, "Rule with page and filterDescriptorAllDependencies"),
-                new TestData(ruleWithPage, map(ruleWithPage, list(htmlPageAsset)), excludeSystemFolder, filterDescriptorNotRelationship, "Rule with page and filterDescriptorAllDependencies"),
+                new TestData(ruleWithPage, map(ruleWithPage, list(htmlPageAsset)), map(), filterDescriptorNotRelationship, "Rule with page and filterDescriptorAllDependencies"),
                 new TestData(ruleWithPage, map(), map(FILTER_EXCLUDE_REASON, list(htmlPageAsset)), filterDescriptorNotDependenciesRelationship, "Rule with page and filterDescriptorAllDependencies")
+
         );
+
     }
 
     private static Collection<TestData> createLanguageTestCase() {
         final Language language = new LanguageDataGen().nextPersisted();
 
         return list(
-                new TestData(language, map(), excludeSystemFolder, filterDescriptorAllDependencies, "Language with filterDescriptorAllDependencies"),
+                new TestData(language, map(), map(), filterDescriptorAllDependencies, "Language with filterDescriptorAllDependencies"),
                 new TestData(language, map(), filterDescriptorNotDependencies, "Language with filterDescriptorNotDependencies"),
-                new TestData(language, map(), excludeSystemFolder, filterDescriptorNotRelationship, "Language with filterDescriptorNotRelationship"),
+                new TestData(language, map(), map(), filterDescriptorNotRelationship, "Language with filterDescriptorNotRelationship"),
                 new TestData(language, map(), filterDescriptorNotDependenciesRelationship, "Language with filterDescriptorNotDependenciesRelationship")
         );
 
@@ -709,13 +717,11 @@ public class DependencyBundlerTest {
     private static Collection<TestData> createWorkflowTestCase() {
         final WorkflowScheme workflowScheme = new WorkflowDataGen().nextPersisted();
         final WorkflowStep workflowStep = new WorkflowStepDataGen(workflowScheme.getId()).nextPersisted();
-        final WorkflowAction workflowAction = new WorkflowActionDataGen(workflowScheme.getId(), workflowStep.getId())
-                .nextPersisted();
 
         return list(
-                new TestData(workflowScheme, map(), excludeSystemFolder, filterDescriptorAllDependencies, "WorkflowScheme with filterDescriptorAllDependencies"),
+                new TestData(workflowScheme, map(), map(), filterDescriptorAllDependencies, "WorkflowScheme with filterDescriptorAllDependencies"),
                 new TestData(workflowScheme, map(), filterDescriptorNotDependencies, "WorkflowScheme with filterDescriptorNotDependencies"),
-                new TestData(workflowScheme, map(), excludeSystemFolder, filterDescriptorNotRelationship, "WorkflowScheme with filterDescriptorNotRelationship"),
+                new TestData(workflowScheme, map(), map(), filterDescriptorNotRelationship, "WorkflowScheme with filterDescriptorNotRelationship"),
                 new TestData(workflowScheme, map(), filterDescriptorNotDependenciesRelationship, "WorkflowScheme with filterDescriptorNotDependenciesRelationship")
         );
     }
@@ -762,25 +768,25 @@ public class DependencyBundlerTest {
         );
 
         return list(
-                new TestData(host, map(), excludeSystemFolder, filterDescriptorAllDependencies, "Host with filterDescriptorAllDependencies"),
+                new TestData(host, map(), map(), filterDescriptorAllDependencies, "Host with filterDescriptorAllDependencies"),
                 new TestData(host, map(), map(), filterDescriptorNotDependencies, "Host with filterDescriptorNotDependencies"),
-                new TestData(host, map(), excludeSystemFolder, filterDescriptorNotRelationship, "Host with filterDescriptorNotRelationship"),
+                new TestData(host, map(), map(), filterDescriptorNotRelationship, "Host with filterDescriptorNotRelationship"),
                 new TestData(host, map(), filterDescriptorNotDependenciesRelationship, "Host with filterDescriptorNotDependenciesRelationship"),
 
                 new TestData(hostWithTemplate, map(hostWithTemplate, list(template)),
-                        excludeSystemFolder, filterDescriptorAllDependencies, "Host with template and filterDescriptorAllDependencies"),
+                        map(), filterDescriptorAllDependencies, "Host with template and filterDescriptorAllDependencies"),
                 new TestData(hostWithTemplate, map(), map(FILTER_EXCLUDE_REASON, list(template)),
                         filterDescriptorNotDependencies, "Host with template and  filterDescriptorNotDependencies"),
-                new TestData(hostWithTemplate, map(hostWithTemplate, list(template)), excludeSystemFolder,
+                new TestData(hostWithTemplate, map(hostWithTemplate, list(template)), map(),
                         filterDescriptorNotRelationship, "Host with template and  filterDescriptorNotRelationship"),
                 new TestData(hostWithTemplate, map(), map(FILTER_EXCLUDE_REASON, list(template)),
                         filterDescriptorNotDependenciesRelationship, "Host with template and  filterDescriptorNotDependenciesRelationship"),
 
-                new TestData(hostWithContainer, map(hostWithContainer, list(container)), excludeSystemFolder,
+                new TestData(hostWithContainer, map(hostWithContainer, list(container)), map(),
                         filterDescriptorAllDependencies, "Host with Container and filterDescriptorAllDependencies"),
                 new TestData(hostWithContainer, map(), map(FILTER_EXCLUDE_REASON, list(container)),
                         filterDescriptorNotDependencies, "Host with Container and filterDescriptorNotDependencies"),
-                new TestData(hostWithContainer, map(hostWithContainer, list(container)), excludeSystemFolder,
+                new TestData(hostWithContainer, map(hostWithContainer, list(container)), map(),
                         filterDescriptorNotRelationship, "Host with Container and filterDescriptorNotRelationship"),
                 new TestData(hostWithContainer, map(), map(FILTER_EXCLUDE_REASON, list(container)),
                         filterDescriptorNotDependenciesRelationship, "Host with Container and filterDescriptorNotDependenciesRelationship"),
@@ -793,18 +799,18 @@ public class DependencyBundlerTest {
                 new TestData(hostWithContent, map(), map(FILTER_EXCLUDE_REASON, list(contentType, contentlet)),
                         filterDescriptorNotDependenciesRelationship, "Host with Content andfilterDescriptorNotDependenciesRelationship"),
 
-                new TestData(hostWithFolder, hostWithFolderInclude, excludeSystemFolder, filterDescriptorAllDependencies, "Host with Folder and filterDescriptorAllDependencies"),
+                new TestData(hostWithFolder, hostWithFolderInclude, excludeSystemFolderAndSystemHost, filterDescriptorAllDependencies, "Host with Folder and filterDescriptorAllDependencies"),
                 new TestData(hostWithFolder, map(), map(FILTER_EXCLUDE_REASON, list(folder)),
                         filterDescriptorNotDependencies, "Host with Folder and filterDescriptorNotDependencies"),
-                new TestData(hostWithFolder, hostWithFolderInclude, excludeSystemFolder,
+                new TestData(hostWithFolder, hostWithFolderInclude, excludeSystemFolderAndSystemHost,
                         filterDescriptorNotRelationship, "Host with Folder and filterDescriptorNotRelationship"),
                 new TestData(hostWithFolder, map(), map(FILTER_EXCLUDE_REASON, list(folder)),
                         filterDescriptorNotDependenciesRelationship, "Host with Folder and filterDescriptorNotDependenciesRelationship"),
 
-                new TestData(hostWithRule, map(hostWithRule, list(rule)), excludeSystemFolder,
+                new TestData(hostWithRule, map(hostWithRule, list(rule)), map(),
                         filterDescriptorAllDependencies, "Host with Rule and filterDescriptorAllDependencies"),
                 new TestData(hostWithRule, map(), map(FILTER_EXCLUDE_REASON, list(rule)),filterDescriptorNotDependencies, "Host with Rule and filterDescriptorNotDependencies"),
-                new TestData(hostWithRule, map(hostWithRule, list(rule)), excludeSystemFolder, filterDescriptorNotRelationship, "Host with Rule and filterDescriptorNotRelationship"),
+                new TestData(hostWithRule, map(hostWithRule, list(rule)), map(), filterDescriptorNotRelationship, "Host with Rule and filterDescriptorNotRelationship"),
                 new TestData(hostWithRule, map(), map(FILTER_EXCLUDE_REASON, list(rule)), filterDescriptorNotDependenciesRelationship, "Host with Rule and filterDescriptorNotDependenciesRelationship")
         );
     }
@@ -818,9 +824,9 @@ public class DependencyBundlerTest {
                 .nextPersisted();
 
         return list(
-                new TestData(link, map(link, list(host, folder)), excludeSystemFolder, filterDescriptorAllDependencies, "Link with filterDescriptorAllDependencies"),
+                new TestData(link, map(link, list(host, folder)), map(), filterDescriptorAllDependencies, "Link with filterDescriptorAllDependencies"),
                 new TestData(link, map(), map(FILTER_EXCLUDE_REASON, list(host, folder)), filterDescriptorNotDependencies, "Link with filterDescriptorNotDependencies"),
-                new TestData(link, map(link, list(host, folder)), excludeSystemFolder, filterDescriptorNotRelationship, "Link with filterDescriptorNotRelationship"),
+                new TestData(link, map(link, list(host, folder)), map(), filterDescriptorNotRelationship, "Link with filterDescriptorNotRelationship"),
                 new TestData(link, map(), map(FILTER_EXCLUDE_REASON, list(host, folder)), filterDescriptorNotDependenciesRelationship, "Link with filterDescriptorNotDependenciesRelationship")
         );
     }
@@ -904,51 +910,51 @@ public class DependencyBundlerTest {
 
         //Folder with sub folder
         return list(
-                new TestData(folder, folderIncludes, excludeSystemFolder, filterDescriptorAllDependencies, "Folder with filterDescriptorAllDependencies"),
+                new TestData(folder, folderIncludes, excludeSystemFolderAndSystemHost, filterDescriptorAllDependencies, "Folder with filterDescriptorAllDependencies"),
                 new TestData(folder, map(), map(FILTER_EXCLUDE_REASON, list(host, folderContentType)),
                         filterDescriptorNotDependencies, "Folder with filterDescriptorNotDependencies"),
-                new TestData(folder, folderIncludes, excludeSystemFolder, filterDescriptorNotRelationship, "Folder with filterDescriptorNotRelationship"),
+                new TestData(folder, folderIncludes, excludeSystemFolderAndSystemHost, filterDescriptorNotRelationship, "Folder with filterDescriptorNotRelationship"),
                 new TestData(folder, map(), map(FILTER_EXCLUDE_REASON, list(host, folderContentType)),
                         filterDescriptorNotDependenciesRelationship, "Folder with filterDescriptorNotDependenciesRelationship"),
 
                 //Dependency manager not add Parent Folder, the Parent Folder is added as dependency in FolderBundle
-                new TestData(folderWithParent, folderWithParentIncludes, excludeSystemFolder,
+                new TestData(folderWithParent, folderWithParentIncludes, excludeSystemFolderAndSystemHost,
                         filterDescriptorAllDependencies, "Folder with parent and filterDescriptorAllDependencies"),
                 new TestData(folderWithParent, map(), map(FILTER_EXCLUDE_REASON, list(host, folderContentType, parentFolder)),
                         filterDescriptorNotDependencies, "Folder with parent and filterDescriptorNotDependencies"),
-                new TestData(folderWithParent, folderWithParentIncludes, excludeSystemFolder,
+                new TestData(folderWithParent, folderWithParentIncludes, excludeSystemFolderAndSystemHost,
                         filterDescriptorNotRelationship, "Folder with parent and filterDescriptorNotRelationship"),
                 new TestData(folderWithParent, map(), map(FILTER_EXCLUDE_REASON, list(host, folderContentType, parentFolder)),
                         filterDescriptorNotDependenciesRelationship, "Folder with parent and filterDescriptorNotDependenciesRelationship"),
 
-                new TestData(folderWithContentType, folderWithContentTypeIncludes, excludeSystemFolder,
+                new TestData(folderWithContentType, folderWithContentTypeIncludes, excludeSystemFolderAndSystemHost,
                         filterDescriptorAllDependencies, "Folder with ContentType and filterDescriptorAllDependencies"),
                 new TestData(folderWithContentType, map(),
                         map(FILTER_EXCLUDE_REASON, list(host, folderContentType, contentType)), filterDescriptorNotDependencies, "Folder with ContentType and filterDescriptorNotDependencies"),
-                new TestData(folderWithContentType, folderWithContentTypeIncludes, excludeSystemFolder,
+                new TestData(folderWithContentType, folderWithContentTypeIncludes, excludeSystemFolderAndSystemHost,
                         filterDescriptorNotRelationship, "Folder with ContentType and filterDescriptorNotRelationship"),
                 new TestData(folderWithContentType, map(),
                         map(FILTER_EXCLUDE_REASON, list(host, folderContentType, contentType)),
                         filterDescriptorNotDependenciesRelationship, "Folder with ContentType and filterDescriptorNotDependenciesRelationship"),
 
-                new TestData(folderWithContent, folderWithContentIncludes, excludeSystemFolder, filterDescriptorAllDependencies, "Folder with Content and filterDescriptorAllDependencies"),
+                new TestData(folderWithContent, folderWithContentIncludes, excludeSystemFolderAndSystemHost, filterDescriptorAllDependencies, "Folder with Content and filterDescriptorAllDependencies"),
                 new TestData(folderWithContent, map(), map(FILTER_EXCLUDE_REASON, list(host, folderContentType, contentlet)),
                         filterDescriptorNotDependencies, "Folder with Content and filterDescriptorNotDependencies"),
-                new TestData(folderWithContent, folderWithContentIncludes, excludeSystemFolder, filterDescriptorNotRelationship, "Folder with Content and filterDescriptorNotRelationship"),
+                new TestData(folderWithContent, folderWithContentIncludes, excludeSystemFolderAndSystemHost, filterDescriptorNotRelationship, "Folder with Content and filterDescriptorNotRelationship"),
                 new TestData(folderWithContent, map(), map(FILTER_EXCLUDE_REASON, list(host, folderContentType, contentlet)),
                         filterDescriptorNotDependenciesRelationship, "Folder with Content and filterDescriptorNotDependenciesRelationship"),
 
-                new TestData(folderWithLink, folderWithLinkIncludes, excludeSystemFolder, filterDescriptorAllDependencies, "Folder with Link and filterDescriptorAllDependencies"),
+                new TestData(folderWithLink, folderWithLinkIncludes, excludeSystemFolderAndSystemHost, filterDescriptorAllDependencies, "Folder with Link and filterDescriptorAllDependencies"),
                 new TestData(folderWithLink, map(), map(FILTER_EXCLUDE_REASON, list(host, folderContentType, link)),
                         filterDescriptorNotDependencies, "Folder with Link and filterDescriptorNotDependencies"),
-                new TestData(folderWithLink, folderWithLinkIncludes, excludeSystemFolder, filterDescriptorNotRelationship, "Folder with Link and filterDescriptorNotRelationship"),
+                new TestData(folderWithLink, folderWithLinkIncludes, excludeSystemFolderAndSystemHost, filterDescriptorNotRelationship, "Folder with Link and filterDescriptorNotRelationship"),
                 new TestData(folderWithLink, map(), map(FILTER_EXCLUDE_REASON, list(host, folderContentType, link)),
                         filterDescriptorNotDependenciesRelationship, "Folder with Link and filterDescriptorNotDependenciesRelationship"),
 
-                new TestData(folderWithSubFolder, folderWithSubFolderIncludes, excludeSystemFolder, filterDescriptorAllDependencies, "Folder with Subfolder and filterDescriptorAllDependencies"),
+                new TestData(folderWithSubFolder, folderWithSubFolderIncludes, excludeSystemFolderAndSystemHost, filterDescriptorAllDependencies, "Folder with Subfolder and filterDescriptorAllDependencies"),
                 new TestData(folderWithSubFolder, map(), map(FILTER_EXCLUDE_REASON, list(host, folderContentType, subFolder)),
                         filterDescriptorNotDependencies, "Folder with Subfolder and filterDescriptorNotDependencies"),
-                new TestData(folderWithSubFolder,folderWithSubFolderIncludes, excludeSystemFolder,
+                new TestData(folderWithSubFolder,folderWithSubFolderIncludes, excludeSystemFolderAndSystemHost,
                         filterDescriptorNotRelationship, "Folder with Subfolder and filterDescriptorNotRelationship"),
                 new TestData(folderWithSubFolder, map(), map(FILTER_EXCLUDE_REASON, list(host, folderContentType, subFolder)),
                         filterDescriptorNotDependenciesRelationship, "Folder with Subfolder and filterDescriptorNotDependenciesRelationship")
@@ -978,11 +984,11 @@ public class DependencyBundlerTest {
 
         return list(
                 new TestData(containerWithoutContentType, map(containerWithoutContentType, list(host)),
-                        excludeSystemFolder, filterDescriptorAllDependencies, "Container without Contenttype and filterDescriptorAllDependencies"),
+                        map(), filterDescriptorAllDependencies, "Container without Contenttype and filterDescriptorAllDependencies"),
                 new TestData(containerWithoutContentType, map(), map(FILTER_EXCLUDE_REASON, list(host)),
                         filterDescriptorNotDependencies, "Container without Contenttype and der and filterDescriptorNotDependencies"),
                 new TestData(containerWithoutContentType, map(containerWithoutContentType, list(host)),
-                        excludeSystemFolder, filterDescriptorNotRelationship, "Container without Contenttype and filterDescriptorNotRelationship"),
+                        map(), filterDescriptorNotRelationship, "Container without Contenttype and filterDescriptorNotRelationship"),
                 new TestData(containerWithoutContentType,  map(), map(FILTER_EXCLUDE_REASON, list(host)),
                         filterDescriptorNotDependenciesRelationship, "Container without Contenttype and filterDescriptorNotDependenciesRelationship"),
 
@@ -999,7 +1005,7 @@ public class DependencyBundlerTest {
 
     private static List<TestData> createTemplatesTestCase() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
-        final Template advancedTemplateWithContainer = new TemplateDataGen().host(host).nextPersisted();
+        final Template advancedTemplateWithoutContainer = new TemplateDataGen().host(host).nextPersisted();
 
         final ContentType contentType = new ContentTypeDataGen().host(host).nextPersisted();
 
@@ -1011,6 +1017,12 @@ public class DependencyBundlerTest {
         final Container container_2 = new ContainerDataGen()
                 .site(host)
                 .withContentType(contentType, "")
+                .nextPersisted();
+
+        final Template advancedTemplateWithContainer = new TemplateDataGen()
+                .host(host)
+                .withContainer(container_1.getIdentifier())
+                .withContainer(container_2.getIdentifier())
                 .nextPersisted();
 
         final TemplateLayout templateLayout = new TemplateLayoutDataGen()
@@ -1025,7 +1037,7 @@ public class DependencyBundlerTest {
 
         final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
 
-        final Map<ManifestItem, Collection<ManifestItem>> contentTypeParentIncludes = map(
+        final Map<ManifestItem, Collection<ManifestItem>> templateWithTemplateLayoutIncludes = map(
                 templateWithTemplateLayout, list(host, container_1, container_2),
                 container_1, list(contentType),
                 container_2, list(contentType),
@@ -1033,23 +1045,32 @@ public class DependencyBundlerTest {
         );
 
         return list(
+                new TestData(advancedTemplateWithoutContainer, map(advancedTemplateWithoutContainer, list(host)),
+                        map(), filterDescriptorAllDependencies, "Advanced Template without Container and filterDescriptorAllDependencies"),
+                new TestData(advancedTemplateWithoutContainer, map(),  map(FILTER_EXCLUDE_REASON, list(host)),
+                        filterDescriptorNotDependencies, "Advanced Template without Container and filterDescriptorNotDependencies"),
+                new TestData(advancedTemplateWithoutContainer, map(advancedTemplateWithoutContainer, list(host)),
+                        map(), filterDescriptorNotRelationship, "Advanced Template without Container and filterDescriptorNotRelationship"),
+                new TestData(advancedTemplateWithoutContainer, map(),  map(FILTER_EXCLUDE_REASON, list(host)),
+                        filterDescriptorNotDependenciesRelationship, "Advanced Template without Container and filterDescriptorNotDependenciesRelationship"),
+
                 new TestData(advancedTemplateWithContainer, map(advancedTemplateWithContainer, list(host)),
-                        excludeSystemFolder, filterDescriptorAllDependencies, "Advanced Template with Container and filterDescriptorAllDependencies"),
+                        map(), filterDescriptorAllDependencies, "Advanced Template with Container and filterDescriptorAllDependencies"),
                 new TestData(advancedTemplateWithContainer, map(),  map(FILTER_EXCLUDE_REASON, list(host)),
                         filterDescriptorNotDependencies, "Advanced Template with Container and filterDescriptorNotDependencies"),
                 new TestData(advancedTemplateWithContainer, map(advancedTemplateWithContainer, list(host)),
-                        excludeSystemFolder, filterDescriptorNotRelationship, "Advanced Template with Container and filterDescriptorNotRelationship"),
+                        map(), filterDescriptorNotRelationship, "Advanced Template with Container and filterDescriptorNotRelationship"),
                 new TestData(advancedTemplateWithContainer, map(),  map(FILTER_EXCLUDE_REASON, list(host)),
                         filterDescriptorNotDependenciesRelationship, "Advanced Template with Container and filterDescriptorNotDependenciesRelationship"),
 
-                new TestData(templateWithTemplateLayout, contentTypeParentIncludes, excludeSystemFolder,
-                        filterDescriptorAllDependencies, "Advanced Template with Template Layout and filterDescriptorAllDependencies"),
+                new TestData(templateWithTemplateLayout, templateWithTemplateLayoutIncludes, excludeSystemFolder,
+                        filterDescriptorAllDependencies, "Template with Template Layout and filterDescriptorAllDependencies"),
                 new TestData(templateWithTemplateLayout, map(),  map(FILTER_EXCLUDE_REASON, list(host, container_1, container_2)),
-                        filterDescriptorNotDependencies, "Advanced Template with Template Layout and filterDescriptorNotDependencies"),
-                new TestData(templateWithTemplateLayout, contentTypeParentIncludes, excludeSystemFolder,
-                        filterDescriptorNotRelationship, "Advanced Template with Template Layout and filterDescriptorNotRelationship"),
+                        filterDescriptorNotDependencies, "Template with Template Layout and filterDescriptorNotDependencies"),
+                new TestData(templateWithTemplateLayout, templateWithTemplateLayoutIncludes, excludeSystemFolder,
+                        filterDescriptorNotRelationship, "Template with Template Layout and filterDescriptorNotRelationship"),
                 new TestData(templateWithTemplateLayout, map(),  map(FILTER_EXCLUDE_REASON, list(host, container_1, container_2)),
-                        filterDescriptorNotDependenciesRelationship, "Advanced Template with Template Layout and filterDescriptorNotDependenciesRelationship")
+                        filterDescriptorNotDependenciesRelationship, "Template with Template Layout and filterDescriptorNotDependenciesRelationship")
         );
     }
 
@@ -1126,13 +1147,13 @@ public class DependencyBundlerTest {
                         map(FILTER_EXCLUDE_REASON, list(host, systemWorkflowScheme),
                                 EXCLUDE_SYSTEM_FOLDER_HOST, list(systemFolder)), filterDescriptorNotDependenciesRelationship, "Contentype with filterDescriptorNotDependenciesRelationship"),
 
-                new TestData(contentTypeWithFolder, contentTypeWithFolderIncludes, excludeSystemFolder,
+                new TestData(contentTypeWithFolder, contentTypeWithFolderIncludes, map(),
                         filterDescriptorAllDependencies, "Contentype with Folder and filterDescriptorAllDependencies"),
                 new TestData(contentTypeWithFolder, map(),
                         map(FILTER_EXCLUDE_REASON, list(folder, systemWorkflowScheme, folderHost)), filterDescriptorNotDependencies, "Contentype with Folder and filterDescriptorNotDependencies"),
-                new TestData(contentTypeWithFolder, contentTypeWithFolderIncludes, excludeSystemFolder,
+                new TestData(contentTypeWithFolder, contentTypeWithFolderIncludes, map(),
                         filterDescriptorNotRelationship, "Contentype with Folder and filterDescriptorNotRelationship"),
-                new TestData(contentTypeWithFolder, map(),
+               new TestData(contentTypeWithFolder, map(),
                         map(FILTER_EXCLUDE_REASON, list(folder, systemWorkflowScheme, folderHost)),
                         filterDescriptorNotDependenciesRelationship, "Contentype with Folder and filterDescriptorNotDependenciesRelationship"),
 

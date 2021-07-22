@@ -118,7 +118,7 @@ import org.junit.runners.Suite.SuiteClasses;
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
-        /*PushPublishBundleGeneratorTest.class,
+        PushPublishBundleGeneratorTest.class,
         RuleBundlerTest.class,
         com.dotcms.content.elasticsearch.business.ESMappingAPITest.class,
         org.apache.velocity.runtime.parser.node.SimpleNodeTest.class,
@@ -404,7 +404,7 @@ import org.junit.runners.Suite.SuiteClasses;
         PermissionHelperTest.class,
         ResetPasswordTokenUtilTest.class,
         ContainerBundlerTest.class,
-        ContentTypeBundlerTest.class,*/
+        ContentTypeBundlerTest.class,
         DependencyBundlerTest.class,
         FolderBundlerTest.class,
         HostBundlerTest.class,

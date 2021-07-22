@@ -528,6 +528,9 @@ public class PublisherAPIImplTest {
 
             final Host systemHost = APILocator.getHostAPI().findSystemHost();
             manifestLines.addExclude(systemHost, "Excluded System Folder/Host");
+
+            manifestLines.addExclude(APILocator.getFolderAPI().findSystemFolder(),
+                    "Excluded System Folder/Host");
         }
     }
 
