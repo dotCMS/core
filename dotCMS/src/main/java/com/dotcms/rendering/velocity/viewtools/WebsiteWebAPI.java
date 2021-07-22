@@ -4,6 +4,7 @@ package com.dotcms.rendering.velocity.viewtools;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.dotmarketing.beans.Host;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 import com.dotmarketing.business.APILocator;
@@ -30,7 +31,7 @@ public class WebsiteWebAPI implements ViewTool {
 	    }
 		return null;
     }
-    
+
     public Folder getFolder (String parentFolder, String hostId) {
         Folder folder = new Folder();
 		try {
@@ -74,4 +75,43 @@ public class WebsiteWebAPI implements ViewTool {
 		}
         return subFolders;
     }
+
+	/**
+	 * Get host based on the id, if can not resolved returns null
+	 * @param hostId {@link String}
+	 * @return Host
+	 */
+	public Host getHost (final String hostId) {
+
+		Host host = null;
+		try {
+			host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(),false);
+		} catch (Exception e) {
+			Logger.error(this,e.getMessage(), e);
+			throw new DotRuntimeException(e.getMessage(),e);
+		}
+		return host;
+	}
+
+	/**
+	 * Get host name based on the id, if can not resolved returns hostId
+	 * @param hostId {@link String}
+	 * @return Host
+	 */
+	public String getHostName (final String hostId) {
+
+		String hostName = hostId;
+		Host host = null;
+		try {
+			host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(),false);
+			if (null != host) {
+
+				hostName = host.getHostname();
+			}
+		} catch (Exception e) {
+			Logger.error(this,e.getMessage(), e);
+			throw new DotRuntimeException(e.getMessage(),e);
+		}
+		return hostName;
+	}
 }

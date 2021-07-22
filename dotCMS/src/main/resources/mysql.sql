@@ -741,6 +741,8 @@ create table structure (
    expire_date_var varchar(255),
    publish_date_var varchar(255),
    mod_date datetime,
+   sort_order integer,
+   icon varchar(255),
    primary key (inode)
 );
 create table cms_role (

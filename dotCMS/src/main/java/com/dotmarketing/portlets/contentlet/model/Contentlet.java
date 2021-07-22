@@ -148,6 +148,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   public static final String FILTER_KEY = "filterKey";
   public static final String WHERE_TO_SEND = "whereToSend";
   public static final String I_WANT_TO = "iWantTo";
+  public static final String PATH_TO_MOVE = "_path_to_move";
   public static final String TEMP_BINARY_IMAGE_INODES_LIST = "tempBinaryImageInodesList";
   public static final String RELATIONSHIP_KEY = "__##relationships##__";
 

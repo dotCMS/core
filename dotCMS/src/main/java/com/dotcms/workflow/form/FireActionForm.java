@@ -20,6 +20,7 @@ public class FireActionForm extends Validated {
     private final String filterKey;
     private final String iWantTo;
     private final String query;
+    private final String pathToMove;
 
     private final Map<String, Object> contentletFormData;
 
@@ -71,6 +72,10 @@ public class FireActionForm extends Validated {
         return query;
     }
 
+    public String getPathToMove() {
+        return pathToMove;
+    }
+
     public FireActionForm(final Builder builder) {
 
         this.comments    = builder.comments;
@@ -84,6 +89,7 @@ public class FireActionForm extends Validated {
         this.filterKey   = builder.filterKey;
         this.iWantTo     = builder.iWantTo;
         this.query       = builder.query;
+        this.pathToMove  = builder.pathToMove;
         this.contentletFormData =
                 builder.contentlet;
     }
@@ -112,8 +118,15 @@ public class FireActionForm extends Validated {
         private String iWantTo;
         @JsonProperty()
         private String query;
+        @JsonProperty()
+        private String pathToMove;
         @JsonProperty("contentlet")
         private Map<String, Object> contentlet;
+
+        public Builder pathToMove(final String pathToMove) {
+            this.pathToMove = pathToMove;
+            return this;
+        }
 
         public Builder comments(final String comments) {
             this.comments = comments;

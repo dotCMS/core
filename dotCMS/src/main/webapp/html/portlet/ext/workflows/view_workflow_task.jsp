@@ -27,14 +27,14 @@ public String getPostedby(String postedBy){
 
 
 	try {
-	
+
 	    return APILocator.getUserAPI().loadUserById(postedBy, APILocator.systemUser(), false).getFullName();
 	} catch (Exception e) {
 	    try{
 	        return APILocator.getRoleAPI().loadRoleById(postedBy).getName();
 	    }
 	    catch(Exception ee){
-	        
+
 	    }
 	}
 	return "unknown";
@@ -47,7 +47,7 @@ public String getGravatar(String postedBy){
         return DigestUtils.md5Hex(APILocator.getUserAPI().loadUserById(postedBy, APILocator.systemUser(), false).getEmailAddress().toLowerCase()).toString();
 
     } catch (Exception e) {
-        
+
     }
     return "unknown";
 }
@@ -259,7 +259,7 @@ public String getGravatar(String postedBy){
 	        <th style="display:flex; align-items:center;">
 	            <div>
 	                <span class="pageIcon"></span>
-	
+
 	            </div>
 	            <h1 style="margin:15px 0 15px 10px;"><a href="javascript:doEdit()"><%= contentlet.getTitle() %></a></h1>
 	        </th>
@@ -267,12 +267,12 @@ public String getGravatar(String postedBy){
 	        <!-- START Actions -->
 	            <div id="archiveDropDownButton" data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"'>
 	                <span></span>
-	
+
 	                <div data-dojo-type="dijit/Menu" class="contentlet-menu-actions">
 	                    <div id="cancel" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: cancel">
 	                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
 	                    </div>
-	
+
 	                    <%--Start workflow tasks --%>
 	                    <%boolean hasAction = false; %>
 	                    <%if(canEdit) {%>
@@ -283,9 +283,9 @@ public String getGravatar(String postedBy){
 	                            <% hasAction = true; %>
 	                        <%} %>
 	                    <%} %>
-	
+
 	                    <%for(WorkflowAction a : actions){ %>
-	
+
 	                        <% List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(a); %>
 	                        <% boolean hasPushPublishActionlet = false; %>
 	                        <% for(WorkflowActionClass actionlet : actionlets){ %>
@@ -293,20 +293,20 @@ public String getGravatar(String postedBy){
 	                                <% hasPushPublishActionlet = true; %>
 	                            <% } %>
 	                        <% } %>
-	
-	                        <div data-dojo-type="dijit/MenuItem" onclick="contentAdmin.executeWfAction('<%=a.getId()%>', <%=a.isAssignable() || hasPushPublishActionlet%>, <%=a.isCommentable() || UtilMethods.isSet(a.getCondition())%>, '<%=contentlet.getInode()%>', <%=hasPushPublishActionlet%>)">
+
+	                        <div data-dojo-type="dijit/MenuItem" onclick="contentAdmin.executeWfAction('<%=a.getId()%>', <%=a.isAssignable() || hasPushPublishActionlet%>, <%=a.isCommentable() || UtilMethods.isSet(a.getCondition())%>, '<%=contentlet.getInode()%>', <%=hasPushPublishActionlet%>, '<%=(a.hasMoveActionletActionlet() && !a.hasMoveActionletHasPathActionlet())%>')">
 	                            <!-- <span class="<%=a.getIcon()%>"></span> -->
 	                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, a.getName())) %>
 	                            <% hasAction = true; %>
 	                        </div>
 	                    <%}%>
-	
+
 	                    <%if(!hasAction){ %>
 	                        <div data-dojo-type="dijit/MenuItem" data-dojo-props="">
 	                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "No-Actions")) %>
 	                        </div>
 	                    <%} %>
-	
+
 	                </div>
 	            </div>
 	        <!-- END Actions -->
@@ -314,16 +314,16 @@ public String getGravatar(String postedBy){
 	    </tr>
 	</table>
 	<!-- END Task HEADER -->
-	
+
 	<!-- START Tabs -->
 	<div style="display: flex; flex-wrap: nowrap;">
 		<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer" style="margin-top:10px;">
-		
+
 		    <!-- START Comments -->
 		        <div id="commentsTab" dojoType="dijit.layout.ContentPane" title="Comments">
                     <div style="max-height:500px;overflow: auto;border-bottom:1px solid silver;padding:15px;">
 		                <table style="width:100%;padding: 0px;">
-		                    <% 
+		                    <%
 		                        for(WorkflowTimelineItem comment : commentsHistory){ %>
                                   <tr>
 		                            <td style="width:50px;vertical-align: top;padding: 15px 0px 15px 0px">
@@ -337,9 +337,9 @@ public String getGravatar(String postedBy){
                                      <td>
                                         <div  style="border:1px solid silver;margin:10px 15px 14px 5px">
                                           <div style="background: #efefef;padding:10px;"><b><%=getPostedby(comment.roleId())%></b> <%= DateUtil.prettyDateSince(comment.createdDate()) %>
-                                          
+
                                           <div style="float:right;"><%=UtilMethods.dateToHTMLDate(comment.createdDate()) %> - <%=UtilMethods.dateToHTMLTime(comment.createdDate()) %></div>
-                                          
+
                                           </div>
                                           <div style="padding:15px;min-height: 70px"><%= Xss.strip(comment.commentDescription()) %></div>
                                         </div>
@@ -361,9 +361,9 @@ public String getGravatar(String postedBy){
                             </portlet:actionURL>">
                             <input type="hidden" name="referer" value="<%= referer %>">
                             <input type="hidden" name="cmd" value="add_comment">
-                           
+
                             <textarea id="comment" name="comment" class="mceNoEditor" rows="4" cols="60"></textarea>
-                          
+
                                <div class="buttonRow">
                                 <button dojoType="dijit.form.Button" type="button" onClick="dojo.byId('commentFormlet').submit()">
                                 <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Comment")) %>
@@ -371,21 +371,21 @@ public String getGravatar(String postedBy){
                                </div>
                             </div>
                            </form>
-               
-                        
-		        
-		
-		
-		
+
+
+
+
+
+
 		            <div style="float:left;padding:10px;width:100%;">
 		                <jsp:include page="/html/portlet/ext/contentlet/view_contentlet_popup_inc.jsp"></jsp:include>
 		            </div>
-		        
+
 		        </div>
-		
+
 		    <!-- START Files Tab -->
 		        <div id="TabTwo" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Attached-Files") %>">
-		
+
 		            <% if (!step.isResolved()) { %>
 		                <div class="buttonRow" style="Text-align:right;">
 		                    <button dojoType="dijit.form.Button" onClick="attachFile();" iconClass="browseIcon"><%= LanguageUtil.get(pageContext, "Attach-File") %></button>
@@ -395,12 +395,12 @@ public String getGravatar(String postedBy){
 		                    <%= LanguageUtil.get(pageContext, "Attached-Files") %>
 		                </div>
 		            <% } %>
-		
+
 		            <table class="listingTable">
 		                <%
 		                    int x=0;
 		                    String str_style="";
-		
+
 		                    for (IFileAsset file : files) {
 		                        if(x%2==0){
 		                          str_style="class=\"alternate_1\"";
@@ -415,14 +415,14 @@ public String getGravatar(String postedBy){
 		                            <img border="0" src="/icon?i=<%= UtilMethods.encodeURIComponent(file.getFileName()) %>"> &nbsp;
 
 		                                <%= file.getFileName() %>
-		                
+
 		                        </td>
 		                        <td>
 		                            <button dojoType="dijit.form.Button" type="button" class="dijitButtonDanger" style="float: right;" href="javascript:removeFile('<%= file.getInode() %>')"><%= LanguageUtil.get(pageContext, "remove") %></button>
 		                        </td>
 		                    </tr>
 		                <% } %>
-		
+
 		                <% if (files.size() == 0 && !UtilMethods.isSet(errorRetrievingFilesMsg)) { %>
 		                    <tr>
 		                        <td colspan="2">
@@ -441,7 +441,7 @@ public String getGravatar(String postedBy){
 		    <!-- END Files Tab -->
 
 		</div>
-		
+
 		<!-- START Task DETAILS -->
 		<div style="width:300px;background:#fafafa;">
 			<table class="listingTable">
@@ -455,9 +455,9 @@ public String getGravatar(String postedBy){
 			        <td>
 			            <strong><%= LanguageUtil.get(pageContext, "Assigned-To") %>:</strong>
 			            <%= assignedRoleName%>
-			
+
 			        </td>
-			    
+
 			    </tr>
 			    <tr>
 			        <td>
@@ -476,7 +476,7 @@ public String getGravatar(String postedBy){
 			            <%= LanguageUtil.get(pageContext, "at") %> <%= UtilMethods.dateToHTMLTime(task.getCreationDate()) %>
 			        </td>
 			    </tr>
-			
+
 			    <tr>
 			        <td>
 			            <strong><%= LanguageUtil.get(pageContext, "Status") %>: </strong>
@@ -490,10 +490,10 @@ public String getGravatar(String postedBy){
 			            <%= DateUtil.prettyDateSince(task.getModDate(), user.getLocale()) %>
 			        </td>
 			    </tr>
-			
+
 			    <%if (contentlet.isLocked()) {%>
-                    <% 
-                        Optional<Date> date = APILocator.getVersionableAPI().getLockedOn(contentlet); 
+                    <%
+                        Optional<Date> date = APILocator.getVersionableAPI().getLockedOn(contentlet);
                         Optional<String> userId = APILocator.getVersionableAPI().getLockedBy(contentlet);
                     %>
 			        <tr>
@@ -508,9 +508,9 @@ public String getGravatar(String postedBy){
 		</div>
 		<!-- END Task DETAILS -->
 	</div>
-	
-	
-	
+
+
+
 </div>
 <%} else {%>
     <table border="0" cellpadding="4" cellspacing="0" width="100%" height="300">

@@ -163,6 +163,17 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     return Host.SYSTEM_HOST;
   }
 
+  @Nullable
+  @Value.Default
+  public String icon() {
+    return null;
+  }
+
+  @Value.Default
+  public int sortOrder() {
+    return 0;
+  }
+
   @JsonIgnore
   @Value.Lazy
   public List<Field> fields() {

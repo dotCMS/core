@@ -92,6 +92,8 @@ public class Structure extends Inode implements Permissionable, Treeable,Content
     private String publishDateVar;
     private String expireDateVar;
     private Date modDate;
+    private String icon;
+    private int sortOrder;
 
 
 
@@ -412,7 +414,7 @@ public class Structure extends Inode implements Permissionable, Treeable,Content
 
     @JsonIgnore
     @Override
-    public ManifestInfo getManifestInfo(){
+    public ManifestInfo getManifestInfo() {
         return new ManifestInfoBuilder()
                 .objectType(PusheableAsset.CONTENT_TYPE.getType())
                 .id(this.identifier)
@@ -420,5 +422,21 @@ public class Structure extends Inode implements Permissionable, Treeable,Content
                 .siteId(this.host)
                 .folderId(this.folder)
                 .build();
+    }
+
+    public void setIcon(final String icon) {
+        this.icon = icon;
+    }
+
+    public void setSortOrder(final int sortOrder) {
+        this.sortOrder = sortOrder;
+    }
+
+    public String getIcon() {
+        return icon;
+    }
+
+    public int getSortOrder() {
+        return sortOrder;
     }
 }
