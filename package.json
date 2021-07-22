@@ -1,6 +1,6 @@
 {
     "name": "dotcms-ui",
-    "version": "21.8.0-next.6",
+    "version": "21.8.0-next.7",
     "license": "MIT",
     "scripts": {
         "ng": "nx",
