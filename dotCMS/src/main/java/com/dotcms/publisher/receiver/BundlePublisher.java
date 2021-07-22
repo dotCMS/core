@@ -36,7 +36,15 @@ import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.rest.BundlePublisherResource;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.system.event.local.type.pushpublish.AllPushPublishEndpointsFailureEvent;
+import com.dotcms.system.event.local.type.pushpublish.PushPublishStartEvent;
+import com.dotcms.system.event.local.type.pushpublish.receiver.PushPublishEndOnReceiverEvent;
+import com.dotcms.system.event.local.type.pushpublish.receiver.PushPublishFailureOnReceiverEvent;
+import com.dotcms.system.event.local.type.pushpublish.receiver.PushPublishStartOnReceiverEvent;
+import com.dotcms.system.event.local.type.pushpublish.receiver.PushPublishSuccessOnReceiverEvent;
 import com.dotcms.util.CloseUtils;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
@@ -134,6 +142,7 @@ public class BundlePublisher extends Publisher {
             throw new RuntimeException( "need an enterprise license to run this" );
         }
 
+        final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
         boolean hasWarnings = false;
         String bundleName = config.getId();
         String bundleID = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
@@ -156,6 +165,8 @@ public class BundlePublisher extends Publisher {
 
             auditAPI.updatePublishAuditStatus(bundleID, PublishAuditStatus.Status.PUBLISHING_BUNDLE,
                 currentStatusHistory);
+            // Notify to anyone subscribed the PP is about to start
+            localSystemEventsAPI.asyncNotify(new PushPublishStartOnReceiverEvent(config.getAssets()));
         } catch (Exception e) {
             Logger.error(BundlePublisher.class, "Unable to update audit table for bundle with ID '" + bundleName + "': " + e.getMessage(), e);
         }
@@ -172,6 +183,9 @@ public class BundlePublisher extends Publisher {
             bundleIS = Files.newInputStream(Paths.get(bundlePath + bundleName));
             untar(bundleIS, folderOut.getAbsolutePath() + File.separator + bundleName, bundleName);
         } catch (IOException e) {
+
+            // Notify to anyone subscribed the PP is failed
+            localSystemEventsAPI.asyncNotify(new PushPublishFailureOnReceiverEvent(config.getAssets(), e));
             throw new DotPublishingException("Cannot extract the selected archive", e);
         } finally {
             CloseUtils.closeQuietly(bundleIS);
@@ -236,6 +250,8 @@ public class BundlePublisher extends Publisher {
 
                 auditAPI.updatePublishAuditStatus(bundleID, PublishAuditStatus.Status.FAILED_TO_PUBLISH,
                         currentStatusHistory);
+
+                localSystemEventsAPI.asyncNotify(new PushPublishFailureOnReceiverEvent(config.getAssets(), e));
             } catch (DotPublisherException e1) {
                 throw new DotPublishingException("Cannot update audit of bundle with ID '" + bundleName + "': ", e);
             }
@@ -258,6 +274,10 @@ public class BundlePublisher extends Publisher {
                     hasWarnings ? Status.SUCCESS_WITH_WARNINGS : PublishAuditStatus.Status.SUCCESS,
                     currentStatusHistory);
             config.setPublishAuditStatus(auditAPI.getPublishAuditStatus(bundleID));
+
+            // Everything success and the process ends
+            localSystemEventsAPI.asyncNotify(new PushPublishSuccessOnReceiverEvent(config));
+            localSystemEventsAPI.asyncNotify(new PushPublishEndOnReceiverEvent(config.getAssets()));
         } catch (Exception e) {
             Logger.error(BundlePublisher.class, "Unable to update audit table for bundle with ID '" + bundleName + "': " + e.getMessage(), e);
         }
