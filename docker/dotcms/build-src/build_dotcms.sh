@@ -12,34 +12,26 @@ echo "Build id: $build_id"
 build_target_dir=/build/cms
 mkdir -p "${build_target_dir}"
 
-get_by_url() {
-  build_download_dir=/build/download
-  mkdir -p ${build_download_dir}
-
-  echo "Fetching build: $1"
-  wget --quiet -O "${build_download_dir}/dotcms.tgz" "$1"
-  tar xzf "${build_download_dir}/dotcms.tgz" -C "${build_target_dir}"
-  # We should have some verification here, but we have no source of truth yet
-}
-
 build_by_commit() {
-  mkdir -p /build/src && cd /build/src
-
   cd /build/src/core
-  git fetch --all --tags
-  git pull
 
-  echo "Checking out commit/tag/branch: $1"
-  if [[ ${is_release} == true ]]; then
-    echo "Executing: git checkout tags/${1} -b ${1}"
-    git checkout tags/${1} -b ${1}
-  elif [[ "${1}" != 'master' ]]; then
-    echo "Executing: git checkout ${1}"
-    git checkout ${1}
+  # if this is not a shallow checkout (meaning, we are not being built in github)
+  if [[ -d "/build/src/core/.git" ]]; then
+      git fetch --all --tags
+      git pull
+      echo "Checking out commit/tag/branch: $1"
+      if [[ ${is_release} == true ]]; then
+        echo "Executing: git checkout tags/${1} -b ${1}"
+        git checkout tags/${1} -b ${1}
+      elif [[ "${1}" != 'master' ]]; then
+        echo "Executing: git checkout ${1}"
+        git checkout ${1}
+      fi
+      git clean -f -d
   fi
+  rm -rf /build/src/core/dist
+  cd dotCMS && ./gradlew clean createDistPrep --no-daemon 
 
-  git clean -f -d
-  cd dotCMS && ./gradlew clonePullTomcatDist createDistPrep -PuseGradleNode=false
   find ../dist/  -name "*.sh" -exec chmod 500 {} \;
   mv ../dist/* "${build_target_dir}"
 }
@@ -71,22 +63,6 @@ set_tomcat_dir() {
 }
 
 case "${build_source}" in
-
-  "TARBALL_URL" )
-
-    get_by_url "${build_id}"
-    ;;
-
-  "RELEASE" )
-
-    get_by_url "http://static.dotcms.com/versions/dotcms_${build_id}.tar.gz"
-    ;;
-
-  "NIGHTLY" )
-
-    echo "ERROR: Not implemented"
-    exit 1
-    ;;
 
   "COMMIT" | "TAG" )
 
