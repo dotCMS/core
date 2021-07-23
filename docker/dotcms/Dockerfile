@@ -26,10 +26,12 @@ ENV GRADLE_USER_HOME=/build/src/core/dotCMS/.gradle
 ENV GRADLE_OPTS="-Dfile.encoding=utf-8 -Xmx2g"
 
 
-RUN chmod 500 /build/build_dotcms.sh 
-RUN /build/build_dotcms.sh ${BUILD_FROM} ${BUILD_ID} 
-RUN rm -rf /srv/dotserver/tomcat-9.0.41/.git
+COPY build-src/ /build/
+RUN chmod 500 /build/build_dotcms.sh && /build/build_dotcms.sh ${BUILD_FROM} ${BUILD_ID}
 RUN mkdir -p /srv/utils /srv/templates /srv/config /srv/home
+RUN chmod -R 666 /srv && find /srv/ -type d -exec chmod a+x {} \;
+RUN rm -rf /srv/dotserver/tomcat-9.0.41/.git
+
 
 
 # ----------------------------------------------
@@ -52,7 +54,7 @@ RUN curl -Ls https://repo.dotcms.com/artifactory/ext-release-local/com/dotcms/do
 
 
 # Cleanup
-RUN apt purge --allow-remove-essential -y wget && \
+RUN apt purge --allow-remove-essential -y wget git && \
     apt autoremove -y && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
