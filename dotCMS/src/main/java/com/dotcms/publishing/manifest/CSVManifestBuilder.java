@@ -66,7 +66,9 @@ public class CSVManifestBuilder implements ManifestBuilder {
         try {
             writeLine(line);
         } catch (IOException e) {
-            throw new DotRuntimeException(e);
+            throw new DotRuntimeException(
+                    String.format("Error writing in the Manifest file: error %s, line: %s",
+                            e.getMessage(), line), e);
         }
     }
 
@@ -102,7 +104,9 @@ public class CSVManifestBuilder implements ManifestBuilder {
         try {
             writeLine(line);
         } catch (IOException e) {
-            throw new DotRuntimeException(e);
+            throw new DotRuntimeException(
+                    String.format("Error writing in the Manifest file: error %s, line: %s",
+                    e.getMessage(), line), e);
         }
     }
 
