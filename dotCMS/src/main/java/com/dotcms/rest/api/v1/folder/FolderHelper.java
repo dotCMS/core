@@ -209,10 +209,12 @@ public class FolderHelper {
 
         final Host host = APILocator.getHostAPI().find(siteId, user, false);
 
-        final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
-        subFolders.add(new FolderSearchResultView(systemFolder.getPath(), host.getHostname(),
-                Try.of(() -> APILocator.getPermissionAPI().doesUserHavePermission(systemFolder,
-                        PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user)).getOrElse(false)));
+        if(pathToSearch.equals(StringPool.FORWARD_SLASH)) {
+            final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
+            subFolders.add(new FolderSearchResultView(systemFolder.getPath(), host.getHostname(),
+                    Try.of(() -> APILocator.getPermissionAPI().doesUserHavePermission(systemFolder,
+                            PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user)).getOrElse(false)));
+        }
 
         final List<Folder> subFoldersOfRootPath = APILocator.getFolderAPI()
                 .findSubFolders(host, user, false);
