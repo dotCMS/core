@@ -18,22 +18,6 @@
 			<column name="type" length="64" index="idx_index_1" />
 		</property>
 
-		<joined-subclass name="com.dotmarketing.portlets.categories.model.Category" table="category">
-			<key column="inode" />
-			<property length="255" name="categoryName" not-null="true" type="string">
-				<column name="category_name" index="idx_category_1" />
-			</property>
-
-			<property length="20" name="key" type="string">
-				<column name="category_key" index="idx_category_2" />
-			</property>
-			<property column="sort_order" length="4" name="sortOrder" type="integer" />
-			<property column="active" name="active" type="boolean" />
-			<property column="keywords" name="keywords" type="string" length="123456789"/>
-			<property column="category_velocity_var_name" name="categoryVelocityVarName" type="string" length="255"/>
-			<property column="mod_date" length="23" name="modDate" type="java.util.Date" />
-		</joined-subclass>
-
 		<joined-subclass name="com.dotmarketing.portlets.containers.model.Container" table="dot_containers">
 			<key column="inode" />
 			<property column="code" name="code" type="string" length="123456789" />
