@@ -11,6 +11,7 @@ WORKDIR /srv
 
 # Build env dependencies
 RUN apt update && \
+    apt upgrade && \
 	apt install -y --no-install-recommends git
 
 RUN mkdir -p /build/src && cd /build/src && git clone https://github.com/dotCMS/core

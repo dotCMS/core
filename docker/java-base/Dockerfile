@@ -14,6 +14,7 @@ ENV PATH="$PATH:/java/bin"
 
 # Installing basic packages 
 RUN apt update && \
+    apt upgrade -y && \
 	apt install -y --no-install-recommends zip unzip wget bash ca-certificates
 
 # Install curl

@@ -44,6 +44,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Installing basic packages 
 RUN apt update && \
+    apt upgrade -y && \
 	apt install -y --no-install-recommends libtcnative-1 tzdata tini ca-certificates openssl
 
 # Install prebuilt dockerize
@@ -62,8 +63,9 @@ ARG USER_GID="1000000000"
 ARG USER_NAME="dotcms"
 
 # Creating default non-user 
+# the useradd 
 RUN groupadd -g $USER_GID $USER_NAME && \
-	useradd -d /srv -m -g $USER_GID -u $USER_UID $USER_NAME
+	useradd -l -d /srv -g $USER_GID -u $USER_UID $USER_NAME
 
 # Copy our build
 COPY --from=build-cms --chown=dotcms:dotcms /srv/ /srv/
@@ -81,7 +83,7 @@ COPY --chown=dotcms:dotcms ROOT/ /
 # ----------------------------------------------
 # Stage 3:  Flatten everything to 1 layer
 # ----------------------------------------------
-#FROM scratch
+FROM scratch
 
 ENV SERVICE_DELAY_DEFAULT_MIN 1
 ENV SERVICE_DELAY_DEFAULT_STEP 3
@@ -91,11 +93,10 @@ LABEL com.dotcms.contact "support@dotcms.com"
 LABEL com.dotcms.vendor "dotCMS LLC"
 LABEL com.dotcms.description "dotCMS Content Management System"
 
+ARG USER_UID="1000000000"
+ARG USER_GID="1000000000"
 
-#ARG USER_UID="1000000000"
-#ARG USER_GID="1000000000"
-
-#COPY --from=builder / /
+COPY --from=builder / /
 
 # Switching to non-root user to install SDKMAN! 
 USER $USER_UID:$USER_GID
