@@ -64,6 +64,7 @@ export class DotPushPublishFormComponent
 
     ngOnInit() {
         if (this.data) {
+            this.setPreviousDayToMinDate();
             if (this.filterOptions) {
                 this.loadData(this.data);
             } else {
@@ -111,6 +112,11 @@ export class DotPushPublishFormComponent
         this.changeTimezoneActionLabel = this.showTimezonePicker
             ? this.dotMessageService.get('hide')
             : this.dotMessageService.get('Change');
+    }
+
+    private setPreviousDayToMinDate() {
+        const today = new Date();
+        this.dateFieldMinDate.setDate(today.getDate()-1);
     }
 
     private loadData(data: DotPushPublishDialogData): void {

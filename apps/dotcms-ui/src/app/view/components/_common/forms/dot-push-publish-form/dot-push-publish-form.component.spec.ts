@@ -169,6 +169,13 @@ describe('DotPushPublishFormComponent', () => {
         expect(filterDropDown.options).toEqual(mockSortedFilters);
     });
 
+    it('should set 1 previous day as a minDate for Publish Date', () => {
+        const publishDateInputCalendar = fixture.debugElement.query(
+            By.css('[data-testid="publishDateInputCalendar"]')
+        );
+        expect(publishDateInputCalendar.componentInstance._minDate).toBe(pushPublishForm.dateFieldMinDate);
+    });
+
     it('should load timezones local label and list on load, also TimeZone dropdown must be hidden', () => {
         const timezoneDropDownContainer = fixture.debugElement.query(
             By.css('[data-testid="timeZoneSelectContainer"]')
