@@ -430,8 +430,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 
             if (null == folder || !UtilMethods.isSet(folder.getInode())) {
-
-                throw new DoesNotExistException("The folder does not exists: " + folderPath + " and could not be created");
+                throw new IllegalArgumentException("The folder does not exists: " + folderPath + " and could not be created");
             }
         }
 
