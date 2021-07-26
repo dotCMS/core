@@ -549,8 +549,9 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 
 		final ContentType contentTypeSearched = contentTypeFactory.find(type.id());
 		Assert.assertNotNull(contentTypeSearched);
-		Assert.assertNull(contentTypeSearched.icon());
+		Assert.assertNotNull(contentTypeSearched.icon());
 		Assert.assertEquals(10,contentTypeSearched.sortOrder());
+		Assert.assertEquals(BaseContentType.iconFallbackMap.get(contentTypeSearched.baseType()),contentTypeSearched.icon());
 	}
 
 	/***

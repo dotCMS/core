@@ -20,6 +20,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -55,6 +56,8 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 
 /**
@@ -117,11 +120,18 @@ public class UserResource implements Serializable {
 		if(user != null) {
 			try {
 				final Role role = APILocator.getRoleAPI().getUserRole(user);
+
 				currentUser.userId(user.getUserId())
 						.givenName(user.getFirstName())
 						.email(user.getEmailAddress())
 						.surname(user.getLastName())
 						.roleId(role.getId());
+
+				final Role loginAsRole = APILocator.getRoleAPI().loadRoleByKey(Role.LOGIN_AS);
+				if (null != loginAsRole) {
+
+					currentUser.loginAs(APILocator.getRoleAPI().doesUserHaveRole(user, loginAsRole));
+				}
 			} catch (final DotDataException e) {
 				Logger.error(this, "Could not provide current user: " + e.getMessage(), e);
 				throw new BadRequestException("Could not provide current user.");
@@ -341,6 +351,16 @@ public class UserResource implements Serializable {
 				.requestAndResponse(request, httpResponse)
 				.rejectWhenNoUser(true)
 				.init();
+
+		final RoleAPI roleAPI     = APILocator.getRoleAPI();
+		final Role    loginAsRole = roleAPI.loadRoleByKey(Role.LOGIN_AS);
+		if (!Try.of(()->roleAPI.doesUserHaveRole(initData.getUser(), loginAsRole)).getOrElse(false)) {
+
+			Logger.debug(this, "The user: " + initData.getUser().getUserId()
+					+ " does not have the LOGIN AS role, can not execute this action");
+			throw new DotSecurityException("The user: " + initData.getUser().getUserId()
+					+ " must have the Login As role to execute this action");
+		}
 
 		final String serverName = request.getServerName();
 		final User currentUser = initData.getUser();
