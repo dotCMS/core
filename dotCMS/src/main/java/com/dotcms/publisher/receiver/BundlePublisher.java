@@ -166,7 +166,7 @@ public class BundlePublisher extends Publisher {
             auditAPI.updatePublishAuditStatus(bundleID, PublishAuditStatus.Status.PUBLISHING_BUNDLE,
                 currentStatusHistory);
             // Notify to anyone subscribed the PP is about to start
-            Logger.info(this, "Notify PushPublishStartOnReceiverEvent");
+            Logger.debug(this, "Notify PushPublishStartOnReceiverEvent");
             localSystemEventsAPI.asyncNotify(new PushPublishStartOnReceiverEvent(config.getAssets()));
         } catch (Exception e) {
             Logger.error(BundlePublisher.class, "Unable to update audit table for bundle with ID '" + bundleName + "': " + e.getMessage(), e);
@@ -186,7 +186,7 @@ public class BundlePublisher extends Publisher {
         } catch (IOException e) {
 
             // Notify to anyone subscribed the PP is failed
-            Logger.info(this, "Notify PushPublishFailureOnReceiverEvent");
+            Logger.debug(this, "Notify PushPublishFailureOnReceiverEvent");
             localSystemEventsAPI.asyncNotify(new PushPublishFailureOnReceiverEvent(config.getAssets(), e));
             throw new DotPublishingException("Cannot extract the selected archive", e);
         } finally {
@@ -253,7 +253,7 @@ public class BundlePublisher extends Publisher {
                 auditAPI.updatePublishAuditStatus(bundleID, PublishAuditStatus.Status.FAILED_TO_PUBLISH,
                         currentStatusHistory);
 
-                Logger.info(this, "Notify PushPublishFailureOnReceiverEvent");
+                Logger.debug(this, "Notify PushPublishFailureOnReceiverEvent");
                 localSystemEventsAPI.asyncNotify(new PushPublishFailureOnReceiverEvent(config.getAssets(), e));
             } catch (DotPublisherException e1) {
                 throw new DotPublishingException("Cannot update audit of bundle with ID '" + bundleName + "': ", e);
@@ -279,7 +279,7 @@ public class BundlePublisher extends Publisher {
             config.setPublishAuditStatus(auditAPI.getPublishAuditStatus(bundleID));
 
             // Everything success and the process ends
-            Logger.info(this, "Notify PushPublishSuccessOnReceiverEvent and PushPublishEndOnReceiverEvent");
+            Logger.debug(this, "Notify PushPublishSuccessOnReceiverEvent and PushPublishEndOnReceiverEvent");
             localSystemEventsAPI.asyncNotify(new PushPublishSuccessOnReceiverEvent(config));
             localSystemEventsAPI.asyncNotify(new PushPublishEndOnReceiverEvent(config.getAssets()));
         } catch (Exception e) {
