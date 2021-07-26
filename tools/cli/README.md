@@ -126,7 +126,9 @@ e.g.
   </pre>    
 
 if your bundle has a site named "my.cool-bike.com" the returning identifier will be replaced automatically.
-But host can be a regular valid identifier.   
+But host can be a regular valid identifier.
+
+**Important**: Interpolation is useful only when we work importing a full bundles.
 
 ### Commands
 
@@ -148,6 +150,8 @@ This command imports the file assets piece of the directory structure described 
 <pre>
 ./dot-cli --site ../cli/bundles/bike-shop/sites/my.cool-bike.com.site.json
 </pre>
+
+**Important**: Make sure your content-type file has valid site identifier set when using this command. As interpolation here is of no use.
 
 **_Import Content-Types_**: Takes a file as parameter like this:
 <pre>

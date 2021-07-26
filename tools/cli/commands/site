@@ -37,7 +37,7 @@ echo "Verifying $siteName against remote host."
 
 code=$(curl -s -X POST "${DOTCMS_BASE_URL}/api/v1/site/_byname" -o /dev/null --header "Authorization: Bearer ${JSON_WEB_TOKEN}" -w "%{http_code}" --header 'Content-Type: application/json' --data-raw "{ \"siteName\":\"$siteName\" }")
 
-echo " response code was $code"
+#echo " response code was $code"
 
 if [[ ${code} = 401 ]]; then
   echo "Unauthorized Request - Verify your Credentials."
