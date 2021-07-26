@@ -16,7 +16,7 @@ on:
       dry_run:
         description: 'Dry Run (does not publish to docker hub)'
         required: false
-        default: 'true'
+        default: 'false'
 jobs:
   publish_image:
     name: Publish DotCMS docker image
@@ -54,7 +54,7 @@ jobs:
           rm -rf dotCMS .git libs
       - name: Publish docker image
         id: publish-docker-image
-        uses: dotcms/publish-docker-image-action@main
+        uses: dotcms/publish-docker-image-action@from-src
         with:
           dot_cicd_branch: master
           build_id: ${{ env.BUILD_ID }}

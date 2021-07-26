@@ -1,7 +1,7 @@
 # ----------------------------------------------
 # Stage 1:  Build dotCMS from our builder image
 # ----------------------------------------------
-FROM dotcms/dotcms-seed:jdk11 as build-cms
+FROM dotcms/dotcms-seed:21.06 as build-cms
 
 LABEL com.dotcms.contact "support@dotcms.com"
 LABEL com.dotcms.vendor "dotCMS LLC"
@@ -15,6 +15,11 @@ ARG BUILD_ID=HEAD
 
 WORKDIR /srv
 
+# Set gradle options
+ENV GRADLE_USER_HOME=/build/src/core/dotCMS/.gradle
+ENV GRADLE_OPTS="-Dfile.encoding=utf-8 -Xmx2g"
+
+
 # dotCMS core distributed under GPLv3 license (https://github.com/dotCMS/core/blob/master/license.txt)
 COPY build-src/ /build/
 RUN chmod 500 /build/build_dotcms.sh && /build/build_dotcms.sh ${BUILD_FROM} ${BUILD_ID}
@@ -26,7 +31,7 @@ RUN chmod -R 666 /srv && find /srv/ -type d -exec chmod a+x {} \;
 # Stage 2:  Construct our container using the minimal-java image
 #           and copying the prebuilt dotcms
 # ----------------------------------------------
-FROM dotcms/java-base as container-base
+FROM dotcms/java-base:21.06 as container-base
 
 WORKDIR /srv
 
@@ -40,7 +45,7 @@ RUN apt update && \
 RUN curl -Ls https://repo.dotcms.com/artifactory/ext-release-local/com/dotcms/dockerize/dockerize-linux-`uname -m` | install /dev/stdin /usr/local/bin/dockerize 
 
 # Cleanup
-RUN apt purge --allow-remove-essential -y wget git && \
+RUN apt purge --allow-remove-essential -y  && \
     apt autoremove -y && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
