@@ -111,12 +111,15 @@ public class IntegrationResourceLinkTest extends IntegrationTestBase {
         assertEquals(mimeType, link.getMimeType());
         assertFalse(link.isDownloadRestricted());
 
-        assertTrue(link.getIdPath().contains("/dA/") && link.getIdPath().contains("/"+htmlFileName)
-                && link.getIdPath().contains(APILocator.getShortyAPI().shortify(contentlet.getIdentifier())));
-        assertTrue(link.getVersionPath().contains("/dA/") && link.getVersionPath().contains("/"+htmlFileName)
-                && link.getVersionPath().contains(APILocator.getShortyAPI().shortify(contentlet.getInode())));
-        assertTrue(link.getConfiguredImageURL().contains("/dA/")
-                && link.getConfiguredImageURL().contains(contentlet.getIdentifier()) && link.getConfiguredImageURL().contains("language_id"));
+        assertTrue(link.getIdPath().contains("/dA/"));
+        assertTrue(link.getIdPath().contains("/"+htmlFileName));
+        assertTrue(link.getIdPath().contains(APILocator.getShortyAPI().shortify(contentlet.getIdentifier())));
+        assertTrue(link.getVersionPath().contains("/dA/"));
+        assertTrue(link.getVersionPath().contains("/"+htmlFileName));
+        assertTrue(link.getVersionPath().contains(APILocator.getShortyAPI().shortify(contentlet.getInode())));
+        assertTrue(link.getConfiguredImageURL().contains("/dA/"));
+        assertTrue(link.getConfiguredImageURL().contains(APILocator.getShortyAPI().shortify(contentlet.getInode())));
+        assertTrue(link.getConfiguredImageURL().contains(contentlet.getTitle()));
     }
 
     private User mockLimitedUser(){
@@ -159,12 +162,15 @@ public class IntegrationResourceLinkTest extends IntegrationTestBase {
         final ResourceLinkBuilder resourceLinkBuilder = new ResourceLinkBuilder();
         final ResourceLink link = resourceLinkBuilder.build(request, limitedUser, contentlet);
         assertTrue(link.isDownloadRestricted());
-        assertTrue(link.getIdPath().contains("/dA/") && link.getIdPath().contains("/"+htmlFileName)
-                && link.getIdPath().contains(APILocator.getShortyAPI().shortify(contentlet.getIdentifier())));
-        assertTrue(link.getVersionPath().contains("/dA/") && link.getVersionPath().contains("/"+htmlFileName)
-                && link.getVersionPath().contains(APILocator.getShortyAPI().shortify(contentlet.getInode())));
-        assertTrue(link.getConfiguredImageURL().contains("/dA/")
-                && link.getConfiguredImageURL().contains(contentlet.getIdentifier()) && link.getConfiguredImageURL().contains("language_id"));
+        assertTrue(link.getIdPath().contains("/dA/"));
+        assertTrue(link.getIdPath().contains("/"+htmlFileName));
+        assertTrue(link.getIdPath().contains(APILocator.getShortyAPI().shortify(contentlet.getIdentifier())));
+        assertTrue(link.getVersionPath().contains("/dA/"));
+        assertTrue(link.getVersionPath().contains("/"+htmlFileName));
+        assertTrue(link.getVersionPath().contains(APILocator.getShortyAPI().shortify(contentlet.getInode())));
+        assertTrue(link.getConfiguredImageURL().contains("/dA/"));
+        assertTrue(link.getConfiguredImageURL().contains(APILocator.getShortyAPI().shortify(contentlet.getInode())));
+        assertTrue(link.getConfiguredImageURL().contains(contentlet.getTitle()));
 
     }
 
