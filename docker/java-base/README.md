@@ -20,6 +20,12 @@ docker buildx use multiarch
 
 At this point, you can use `buildx` to build your image and target the platform(s) you want to build for.  Mostly, the same arguements apply, though `buildx` also allows you to immediatly push your new image to docker hub after it is built.
 
+Use the version specified
+```
+docker buildx build --platform linux/amd64,linux/arm64 --pull --push -t dotcms/java-base .
+```
+
+or specify a version
 ```
 docker buildx build --platform linux/amd64,linux/arm64 --pull --push --build-arg JAVA_VERSION=21.2.0.r11-grl  -t dotcms/java-base .
 

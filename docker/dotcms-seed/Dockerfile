@@ -1,7 +1,7 @@
 # OpenJDK distributed under GPLv2+Oracle Classpath Exception license (http://openjdk.java.net/legal/gplv2+ce.html)
 # Alpine Linux packages distributed under various licenses including GPL-3.0+ (https://pkgs.alpinelinux.org/packages)
 # dotCMS core distributed under GPLv3 license (https://github.com/dotCMS/core/blob/master/license.txt)
-FROM dotcms/java-base as builder
+FROM adoptopenjdk/openjdk11:alpine as dotcms-seed
 
 LABEL com.dotcms.contact "info@dotcms.com"
 LABEL com.dotcms.vendor "dotCMS LLC"
@@ -10,23 +10,11 @@ LABEL com.dotcms.description "dotCMS Content Management System"
 WORKDIR /srv
 
 # Build env dependencies
-RUN apt update && \
-    apt upgrade && \
-	apt install -y --no-install-recommends git
+RUN apk update && apk --no-cache add bash grep openssl git sed
 
-RUN mkdir -p /build/src && cd /build/src && git clone https://github.com/dotCMS/core
-
-#COPY --from=dotcms/dotcms-seed /build/src/core /build/src/core
-
-ENV GRADLE_USER_HOME=/build/src/core/dotCMS/.gradle
-ENV GRADLE_OPTS="-Dfile.encoding=utf-8 -Xmx2g"
-
-RUN cd /build/src/core/dotCMS \
-    && git pull \
-    && ./gradlew  --no-daemon downloadDependencies 
-
-
-RUN apt purge --allow-remove-essential -y git bash zip unzip && \
-    apt autoremove -y && \
-    apt clean && \
-    rm -rf /var/lib/apt/lists/*
+RUN mkdir -p /build/src \
+    && echo "Pulling dotCMS src" \
+    && cd /build/src && git clone https://github.com/dotCMS/core.git core \
+    && cd /build/src/core/dotCMS \
+    && git gc --aggressive \
+    && ./gradlew  --no-daemon downloadDependencies clonePullTomcatDist -PuseGradleNode=false
