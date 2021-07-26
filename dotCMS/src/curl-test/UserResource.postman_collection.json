@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "3abfd5f8-f72d-4825-b3f8-dcf4481369b3",
+		"_postman_id": "670e1994-0ef9-4bec-a5f8-35ed59622175",
 		"name": "UserResource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -313,7 +313,7 @@
 			"response": []
 		},
 		{
-			"name": "User Current",
+			"name": "Get User Current",
 			"event": [
 				{
 					"listen": "test",
@@ -329,9 +329,7 @@
 							"pm.test(\"Valid response\", function () {",
 							"    pm.expect(jsonData.email).to.eq(\"admin@dotcms.com\");",
 							"    pm.expect(jsonData.loginAs).to.eq(true);",
-							"});",
-							"",
-							""
+							"});"
 						],
 						"type": "text/javascript"
 					}
@@ -366,7 +364,8 @@
 						"users",
 						"current"
 					]
-				}
+				},
+				"description": "Method to test: current <br/>\nGiven Scenario: request the current endpoint and expects to recovery the loginAs <br/>\nExpectedResult: The login as should be true"
 			},
 			"response": []
 		}
