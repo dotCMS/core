@@ -37,8 +37,6 @@ import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.rest.BundlePublisherResource;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
-import com.dotcms.system.event.local.type.pushpublish.AllPushPublishEndpointsFailureEvent;
-import com.dotcms.system.event.local.type.pushpublish.PushPublishStartEvent;
 import com.dotcms.system.event.local.type.pushpublish.receiver.PushPublishEndOnReceiverEvent;
 import com.dotcms.system.event.local.type.pushpublish.receiver.PushPublishFailureOnReceiverEvent;
 import com.dotcms.system.event.local.type.pushpublish.receiver.PushPublishStartOnReceiverEvent;
@@ -54,6 +52,12 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.FileUtil;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.tools.tar.TarBuffer;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -66,11 +70,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.exception.ExceptionUtils;
-import org.apache.tools.tar.TarBuffer;
 
 /**
  * This publisher will be in charge of retrieving the bundle, un-zipping it, and
@@ -194,6 +193,7 @@ public class BundlePublisher extends Publisher {
         }
 
         Map<String, String> assetsDetails = null;
+        List<PublishQueueElement> bundlerAssets = null;
 
         try {
             //Read the bundle to see what kind of configuration we need to apply
@@ -203,7 +203,7 @@ public class BundlePublisher extends Publisher {
 
             //Get the identifiers on this bundle
             assetsDetails = new HashMap<>();
-            List<PublishQueueElement> bundlerAssets = readConfig.getAssets();
+            bundlerAssets = readConfig.getAssets();
 
             if (bundlerAssets != null && !bundlerAssets.isEmpty()) {
                 for (PublishQueueElement asset : bundlerAssets) {
@@ -281,7 +281,7 @@ public class BundlePublisher extends Publisher {
             // Everything success and the process ends
             Logger.debug(this, "Notify PushPublishSuccessOnReceiverEvent and PushPublishEndOnReceiverEvent");
             localSystemEventsAPI.asyncNotify(new PushPublishSuccessOnReceiverEvent(config));
-            localSystemEventsAPI.asyncNotify(new PushPublishEndOnReceiverEvent(config.getAssets()));
+            localSystemEventsAPI.asyncNotify(new PushPublishEndOnReceiverEvent(bundlerAssets));
         } catch (Exception e) {
 
             localSystemEventsAPI.asyncNotify(new PushPublishFailureOnReceiverEvent(config.getAssets(), e));
