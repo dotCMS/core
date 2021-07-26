@@ -73,12 +73,13 @@ public class CategoriesWebAPI implements ViewTool {
 
 	public List<Category> getChildrenCategoriesByKey(String key) {
 		if (key == null) {
-			return new ArrayList<Category>();
+			return new ArrayList<>();
 		}
 		try {
 			Category cat = categoryAPI.findByKey(key, user, true);
-			if (!InodeUtils.isSet(cat.getInode())) {
-				return new ArrayList<Category>();
+			if (null == cat || !InodeUtils.isSet(cat.getInode())) {
+				Logger.info(this, String.format("The category for key `%s` does not exist.",key));
+				return new ArrayList<>();
 			}
 			return categoryAPI.getChildren(cat, user, true);
 		} catch (DotSecurityException se) {
