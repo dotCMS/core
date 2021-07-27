@@ -31,6 +31,7 @@ import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleAPITest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
+import com.dotcms.publisher.receiver.TestBundlePublisher;
 import com.dotcms.publisher.util.DependencyManagerTest;
 import com.dotcms.publisher.util.DependencyModDateUtilTest;
 import com.dotcms.publishing.PublisherAPIImplTest;
@@ -439,7 +440,8 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentletCacheImplTest.class,
         HostTest.class,
         Task210702UpdateStructureTableTest.class,
-        MaintenanceUtilTest.class
+        MaintenanceUtilTest.class,
+        TestBundlePublisher.class
 })
 public class MainSuite {
 
