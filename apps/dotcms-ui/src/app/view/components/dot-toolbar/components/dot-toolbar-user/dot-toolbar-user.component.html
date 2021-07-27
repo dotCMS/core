@@ -41,11 +41,10 @@
                     [textContent]="'my-account' | dm"
                 ></a>
             </li>
-            <li class="user-menu__item">
+            <li data-testId="login-as" class="user-menu__item" *ngIf="!auth.loginAsUser && (this.haveLoginAsPermission$ | async)">
                 <a
                     href="#"
                     (click)="tooggleLoginAs($event)"
-                    *ngIf="!auth.loginAsUser"
                     id="dot-toolbar-user-link-login-as"
                     [textContent]="'login-as' | dm"
                     >login-as</a

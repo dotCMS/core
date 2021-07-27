@@ -53,6 +53,13 @@ export class BundleService {
         this._pushRuleUrl = `/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish`;
     }
 
+    /**
+     * Get current logged in user
+     *
+     * @return {*}  {Observable<IUser>}
+     * @memberof BundleService
+     * @deprecated use getCurrentUser in LoginService
+     */
     getLoggedUser(): Observable<IUser> {
         return this.coreWebService
             .request({

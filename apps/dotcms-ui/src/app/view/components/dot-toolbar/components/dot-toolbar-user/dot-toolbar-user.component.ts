@@ -1,10 +1,12 @@
 import { Component, ViewChild, OnInit, Inject } from '@angular/core';
 import { DotDropdownComponent } from '@components/_common/dot-dropdown-component/dot-dropdown.component';
 import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
-import { LoginService, Auth, LoggerService, LOGOUT_URL } from '@dotcms/dotcms-js';
+import { LoginService, Auth, LoggerService, LOGOUT_URL, CurrentUser } from '@dotcms/dotcms-js';
 import { LOCATION_TOKEN } from '@dotcms/app/providers';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { map } from 'rxjs/operators';
+import { Observable } from 'rxjs';
 
 @Component({
     selector: 'dot-toolbar-user',
@@ -20,6 +22,8 @@ export class DotToolbarUserComponent implements OnInit {
 
     logoutUrl = `${LOGOUT_URL}?r=${new Date().getTime()}`;
 
+    haveLoginAsPermission$: Observable<boolean>;
+
     constructor(
         @Inject(LOCATION_TOKEN) private location: Location,
         private loggerService: LoggerService,
@@ -33,6 +37,10 @@ export class DotToolbarUserComponent implements OnInit {
         this.loginService.watchUser((auth: Auth) => {
             this.auth = auth;
         });
+
+        this.haveLoginAsPermission$ = this.loginService
+            .getCurrentUser()
+            .pipe(map((res: CurrentUser) => res.loginAs));
     }
 
     /**

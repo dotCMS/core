@@ -70,7 +70,7 @@ export class CoreWebService {
      * @memberof CoreWebService
      * @deprecated
      */
-    request<T>(options: DotRequestOptionsArgs): Observable<HttpResponse<any>> {
+    request<T>(options: DotRequestOptionsArgs): Observable<HttpResponse<T | any>> {
         if (!options.method) {
             options.method = 'GET';
         }

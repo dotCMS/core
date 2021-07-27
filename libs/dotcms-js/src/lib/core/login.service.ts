@@ -7,6 +7,7 @@ import { Observable, Subject, of } from 'rxjs';
 import { HttpCode } from './util/http-code';
 import { pluck, tap, map } from 'rxjs/operators';
 import { DotcmsEventsService } from './dotcms-events.service';
+import { HttpResponse } from '@angular/common/http';
 
 export interface DotLoginParams {
     login: string;
@@ -45,11 +46,26 @@ export class LoginService {
             logoutAs: 'v1/users/logoutas',
             recoverPassword: 'v1/forgotpassword',
             serverInfo: 'v1/loginform',
-            userAuth: 'v1/authentication'
+            userAuth: 'v1/authentication',
+            current: '/api/v1/users/current/'
         };
 
         // when the session is expired/destroyed
         dotcmsEventsService.subscribeTo('SESSION_DESTROYED').subscribe(() => this.logOutUser());
+    }
+
+    /**
+     * Get current logged in user
+     *
+     * @return {*}  {Observable<CurrentUser>}
+     * @memberof LoginService
+     */
+    getCurrentUser(): Observable<CurrentUser> {
+        return this.coreWebService
+            .request<CurrentUser>({
+                url: this.urls.current
+            })
+            .pipe(map((res: HttpResponse<CurrentUser>) => res)) as unknown as Observable<CurrentUser>
     }
 
     get loginAsUsersList$(): Observable<User[]> {
@@ -301,6 +317,15 @@ export class LoginService {
     private logOutUser(): void {
         window.location.href = `${LOGOUT_URL}?r=${new Date().getTime()}`;
     }
+}
+
+export interface CurrentUser {
+    email: string;
+    givenName: string;
+    loginAs: boolean
+    roleId: string;
+    surname: string;
+    userId: string;
 }
 
 export interface User {
