@@ -720,6 +720,12 @@ public class HibernateUtil {
 		return Optional.ofNullable(sessionHolder.get());
 	}
 
+	/**
+	 * Creates a new Hibernate Session based on the conn on the parameter
+	 * Also
+	 * @param newTransactionConnection  {@link Connection}
+	 * @return Session
+	 */
 	public static Session createNewSession(final Connection newTransactionConnection) {
 
 		try{
@@ -727,7 +733,6 @@ public class HibernateUtil {
 			// just to create the initial if are not set
 			getSessionIfOpened();
 			final Session session = sessionFactory.openSession(newTransactionConnection);
-			sessionHolder.set(session);
 			if(null != session){
 				session.setFlushMode(FlushMode.NEVER);
 			}
@@ -737,6 +742,10 @@ public class HibernateUtil {
 		}
 	}
 
+	/**
+	 * Set a session on the parameter as the new session to use on all next hibernate calls
+	 * @param newSession
+	 */
 	public static void setSession(final Session newSession) {
 
 		try {
