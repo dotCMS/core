@@ -114,21 +114,21 @@ Therefore the main json body must be extracted before putting it into a _.conten
 
 Another relevant detail is that content-type definition files must be fed with a valid site id. If not the content-type would be rejected.
 
-We support interpolation if the site is also part of the bundle we're pushing
+We support pushing content-type file using site-name. Back in the server side the site-name will be resolved/  
 e.g.
 
   <pre>
    "fixed":false,
    "folder":"SYSTEM_FOLDER",
-   "host":"$my.cool-bike.com",
+   "host":"my.cool-bike.com",
    "iDate":1623251909000,
    "id":"eab1ad11292a6052b90a6247b122858b"
   </pre>    
 
-if your bundle has a site named "my.cool-bike.com" the returning identifier will be replaced automatically.
-But host can be a regular valid identifier.
+if your bundle has a site named "my.cool-bike.com" that has been previously created such named can be used in you content-type files.
+But host can also be a regular valid site identifier or name. If the host is an empty string the CT will be placed under System-Host
 
-**Important**: Interpolation is useful only when we work importing a full bundles.
+**Important**: When a site-name gets passed to the Rest API. if the API fails to resolve the content-type. The new Content-Type will be placed under the default site as a fall-back and no errors will be reported on the logs by the app.
 
 ### Commands
 

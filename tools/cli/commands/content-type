@@ -45,9 +45,10 @@ if [[ ${sitePlaceHolder} == \$* ]]; then
     printf "Site identifier is '%s'. " "${identifier}"
 
     if [[ -z ${identifier} ]]; then
-      printf "${RED}Unable to replace site-place-holder ${sitePlaceHolder} With a valid site identifier.\n${NC}This option is useful only when the script has previously created a site using the ${GREEN}--bundle${NC} command.\nYou need to replace the site-place-holder in your content-type file with a valid site identifier."
-      exit 1
-    else
+      # printf "${RED}Unable to replace site-place-holder ${sitePlaceHolder} With a valid site identifier.\n${NC}This option is useful only when the script has previously created a site using the ${GREEN}--bundle${NC} command.\nYou need to replace the site-place-holder in your content-type file with a valid site identifier."
+      printf "Empty site identifier make the CT System wide.";
+    fi
+
       #Make a copy of the json file using a temp file so we can work on it.
       tmp=$(mktemp) || exit 1
       cp ${file} ${tmp}
@@ -59,7 +60,6 @@ if [[ ${sitePlaceHolder} == \$* ]]; then
       jsonContentType=$(<${tmp})
       #And kiss goodbye the tmp
       rm -f "${tmp}"
-    fi
 
 fi
 
@@ -84,7 +84,9 @@ if [[ ! -z ${contentTypeVar} ]]; then
        echo "Content-type does not exists on remote site. Add will be attempted."
 
        response=$(curl -s "${DOTCMS_BASE_URL}/api/v1/contenttype"  --header "Authorization: Bearer ${JSON_WEB_TOKEN}" --header 'Content-Type: application/json' --data-raw  "$jsonContentType"  --compressed)
-       echo "$response"
+
+       echo "$response" | jq --color-output .
+
        identifier=$(jq -r ' try .entity[].id' <<< "$response")
 
            if [[ -z ${identifier} ]];
@@ -99,9 +101,10 @@ if [[ ! -z ${contentTypeVar} ]]; then
           echo "A content type named $contentTypeVar already exists. Update will be attempted."
 
           response=$(curl -s -X PUT "${DOTCMS_BASE_URL}/api/v1/contenttype/id/${contentTypeVar}"  --header "Authorization: Bearer ${JSON_WEB_TOKEN}" --header 'Content-Type: application/json' --data-raw  "$jsonContentType"  --compressed)
-          echo "$response"
 
-          identifier=$(jq -r ' try .entity[].id' <<< "$response")
+          echo "$response" | jq --color-output .
+
+          identifier=$(jq -r ' try .entity.id' <<< "$response")
 
           if [[ -z ${identifier} ]];
           then
