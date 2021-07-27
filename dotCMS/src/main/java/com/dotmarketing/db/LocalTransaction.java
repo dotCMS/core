@@ -3,6 +3,7 @@ package com.dotmarketing.db;
 
 import java.sql.Connection;
 
+import com.dotcms.repackage.net.sf.hibernate.Session;
 import com.dotcms.util.ReturnableDelegate;
 import com.dotcms.util.VoidDelegate;
 import com.dotmarketing.exception.DotDataException;
@@ -49,6 +50,7 @@ public class LocalTransaction {
 
         // gets the current conn
         final Connection currentConnection        = DbConnectionFactory.getConnection();
+        final Session    currentSession           = HibernateUtil.getSession();
         // creates a new one
         final Connection newTransactionConnection = DbConnectionFactory.getDataSource().getConnection();
         if (DbConnectionFactory.MSSQL.equals(DbConnectionFactory.getDBType())) {
@@ -56,6 +58,8 @@ public class LocalTransaction {
         }
         // overrides the current thread
         DbConnectionFactory.setConnection(newTransactionConnection);
+        final Session newSession = HibernateUtil.createNewSession(newTransactionConnection);
+        HibernateUtil.setSession(newSession);
 
         HibernateUtil.startTransaction();
 
@@ -74,6 +78,7 @@ public class LocalTransaction {
 
             HibernateUtil.closeSessionSilently();
             // return the previous conn, if needed
+            HibernateUtil.setSession(currentSession);
             DbConnectionFactory.setConnection(currentConnection);
         }
 

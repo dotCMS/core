@@ -720,6 +720,37 @@ public class HibernateUtil {
 		return Optional.ofNullable(sessionHolder.get());
 	}
 
+	public static Session createNewSession(final Connection newTransactionConnection) {
+
+		try{
+
+			// just to create the initial if are not set
+			getSessionIfOpened();
+			final Session session = sessionFactory.openSession(newTransactionConnection);
+			sessionHolder.set(session);
+			if(null != session){
+				session.setFlushMode(FlushMode.NEVER);
+			}
+			return session;
+		}catch (Exception e) {
+			throw new DotStateException("Unable to get Hibernate Session ", e);
+		}
+	}
+
+	public static void setSession(final Session newSession) {
+
+		try {
+			if (null != newSession && null != newSession.connection()
+					&& !newSession.connection().isClosed()) {
+				sessionHolder.set(newSession);
+			}
+		} catch (Exception e) {
+			Logger.error(HibernateUtil.class, "---------- HibernateUtil: error : " + e);
+			Logger.debug(HibernateUtil.class, "---------- HibernateUtil: error ", e);
+			throw new DotRuntimeException(e.getMessage(), e);
+		}
+	}
+
 	/**
 	 * Attempts to find a session associated with the Thread. If there isn't a
 	 * session, it will create one.
