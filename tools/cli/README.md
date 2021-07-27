@@ -128,7 +128,7 @@ e.g.
 if your bundle has a site named "my.cool-bike.com" that has been previously created such named can be used in you content-type files.
 But host can also be a regular valid site identifier or name. If the host is an empty string the CT will be placed under System-Host
 
-**Important**: When a site-name gets passed to the Rest API. if the API fails to resolve the content-type. The new Content-Type will be placed under the default site as a fall-back and no errors will be reported on the logs by the app.
+**Important**: When a site-name gets passed to the Rest API. if the API fails to resolve the content-type. The new Content-Type will be placed under System-Host site as a fall-back and no errors will be reported on the logs by the app.
 
 ### Commands
 
