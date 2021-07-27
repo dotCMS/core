@@ -10,6 +10,7 @@ import com.dotmarketing.beans.transform.MultiTreeTransformer;
 import com.dotmarketing.beans.transform.TreeTransformer;
 import com.dotmarketing.business.ContentletVersionInfoTransformer;
 import com.dotmarketing.business.transform.UserTransformer;
+import com.dotmarketing.portlets.categories.business.CategoryTransformer;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.transform.ContainerTransformer;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -236,5 +237,14 @@ public class TransformerLocator {
             List<Map<String, Object>> initList) {
 
         return new UserTransformer(initList);
+    }
+
+    /**
+     * Creates a Map to object Transformer for Categories
+     * @param initList
+     * @return
+     */
+    public static CategoryTransformer createCategoryTransformer(List<Map<String, Object>> initList){
+        return new CategoryTransformer(initList);
     }
 }

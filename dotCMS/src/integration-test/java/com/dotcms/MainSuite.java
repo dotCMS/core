@@ -68,6 +68,7 @@ import com.dotmarketing.filters.AutoLoginFilterTest;
 import com.dotmarketing.image.filter.ImageFilterAPIImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.osgi.GenericBundleActivatorTest;
+import com.dotmarketing.portlets.categories.business.CategoryFactoryTest;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
 import com.dotmarketing.portlets.containers.business.ContainerFactoryImplTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
@@ -441,7 +442,8 @@ import org.junit.runners.Suite.SuiteClasses;
         HostTest.class,
         Task210702UpdateStructureTableTest.class,
         MaintenanceUtilTest.class,
-        TestBundlePublisher.class
+        TestBundlePublisher.class,
+        CategoryFactoryTest.class
 })
 public class MainSuite {
 
