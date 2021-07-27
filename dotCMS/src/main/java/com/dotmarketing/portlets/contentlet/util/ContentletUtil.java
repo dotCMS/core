@@ -137,8 +137,10 @@ public class ContentletUtil {
 	public static Map<String, Object> getContentPrintableMap(
 			final User user, final Contentlet sourceContentlet, final boolean allCategoriesInfo)
 			throws DotDataException, IOException {
-		sourceContentlet.setTags();
-		return new DotTransformerBuilder().contentResourceOptions(allCategoriesInfo).content(sourceContentlet).build().toMaps().get(0);
+//		sourceContentlet.setTags();
+		return new DotTransformerBuilder().contentResourceOptions(allCategoriesInfo)
+				.siteToMapTransformer(false)
+				.content(sourceContentlet).build().toMaps().get(0);
 	}
 
 	/**

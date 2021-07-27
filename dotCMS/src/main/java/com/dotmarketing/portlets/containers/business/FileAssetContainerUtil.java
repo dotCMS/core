@@ -63,11 +63,11 @@ public class FileAssetContainerUtil {
     private static String [] DEFAULT_META_DATA_NAMES_ARRAY
             = new String[] { TITLE, DESCRIPTION, MAX_CONTENTLETS, NOTES};
 
-    static final String CODE                 = "container_code.vtl";
-    static final String PRE_LOOP             = "preloop.vtl";
-    static final String POST_LOOP            = "postloop.vtl";
-    static final String CONTAINER_META_INFO  = "container.vtl";
-
+    static final String CODE                     = "container_code.vtl";
+    static final String PRE_LOOP                 = "preloop.vtl";
+    static final String POST_LOOP                = "postloop.vtl";
+    static final String CONTAINER_META_INFO      = "container.vtl";
+    static final String DEFAULT_CONTAINER_LAYOUT = "default_container.vtl";
 
 
     private static class SingletonHolder {
@@ -250,16 +250,15 @@ public class FileAssetContainerUtil {
 
         final ImmutableList.Builder<FileAsset> containerStructures =
                 new ImmutableList.Builder<>();
-        final FileAssetContainer container =
-                new FileAssetContainer();
-        Optional<String> preLoop           = Optional.empty();
-        Optional<String> postLoop          = Optional.empty();
-        Optional<String> codeScript        = Optional.empty();
-        Optional<FileAsset> preLoopAsset   = Optional.empty();
-        Optional<FileAsset> postLoopAsset  = Optional.empty();
-        Optional<String> containerMetaInfo = Optional.empty();
-        FileAsset metaInfoFileAsset        =  null;
-
+        final FileAssetContainer container = new FileAssetContainer();
+        Optional<String> preLoop                    = Optional.empty();
+        Optional<String> postLoop                   = Optional.empty();
+        Optional<String> codeScript                 = Optional.empty();
+        Optional<FileAsset> preLoopAsset            = Optional.empty();
+        Optional<FileAsset> postLoopAsset           = Optional.empty();
+        Optional<FileAsset> defaultContainerLayout  = Optional.empty();
+        Optional<String> containerMetaInfo          = Optional.empty();
+        FileAsset metaInfoFileAsset                 =  null;
 
         for (final FileAsset fileAsset : assets) {
 
@@ -290,6 +289,11 @@ public class FileAssetContainerUtil {
             if (this.isValidContentType(showLive, fileAsset)) {
                 containerStructures.add(fileAsset);
             }
+
+            if (this.isDefaultContainerLayout(showLive, fileAsset)) {
+
+                defaultContainerLayout = Optional.of(fileAsset);
+            }
         }
 
         if (null == metaInfoFileAsset) {
@@ -300,7 +304,7 @@ public class FileAssetContainerUtil {
         }
 
         this.setContainerData(host, containerFolder, metaInfoFileAsset, containerStructures.build(), container,
-                preLoop, postLoop, preLoopAsset, postLoopAsset, containerMetaInfo.get(), codeScript);
+                preLoop, postLoop, preLoopAsset, postLoopAsset, containerMetaInfo.get(), codeScript, defaultContainerLayout);
 
         return container;
     }
@@ -315,6 +319,11 @@ public class FileAssetContainerUtil {
         } catch (DotDataException | DotSecurityException e) {
             return false;
         }
+    }
+
+    private boolean isDefaultContainerLayout(final boolean showLive, final FileAsset fileAsset) {
+
+        return isType(fileAsset, showLive, DEFAULT_CONTAINER_LAYOUT);
     }
 
     /**
@@ -346,7 +355,8 @@ public class FileAssetContainerUtil {
                                   final Optional<FileAsset> preLoopAsset,
                                   final Optional<FileAsset> postLoopAsset,
                                   final String containerMetaInfo,
-                                  final Optional<String> codeScript) {
+                                  final Optional<String> codeScript,
+                                  final Optional<FileAsset> defaultContainerLayoutAsset) {
 
         container.setIdentifier (metaInfoFileAsset.getIdentifier());
         container.setInode      (metaInfoFileAsset.getInode());
@@ -370,6 +380,7 @@ public class FileAssetContainerUtil {
         container.setContainerStructuresAssets(containerStructures);
         preLoopAsset.ifPresent (asset -> container.setPreLoopAsset (asset));
         postLoopAsset.ifPresent(asset -> container.setPostLoopAsset(asset));
+        defaultContainerLayoutAsset.ifPresent(asset -> container.setDefaultContainerLayoutAsset(asset));
         codeScript.ifPresent(script -> container.setCode(script));
     }
 
@@ -457,12 +468,19 @@ public class FileAssetContainerUtil {
         }
     }
 
+    /**
+     * Returns the contents of the specified File Asset.
+     *
+     * @param fileAsset The {@link FileAsset} whose contents will be returned.
+     *
+     * @return The contents of the File Asset.
+     */
     private String toString (final FileAsset fileAsset) {
-
-        try (InputStream fileAssetStream = fileAsset.getInputStream()) {
+        try (final InputStream fileAssetStream = fileAsset.getInputStream()) {
             return IOUtils.toString(fileAssetStream,
                     UtilMethods.getCharsetConfiguration());
-        } catch (IOException e) {
+        } catch (final IOException | NullPointerException e) {
+            // Return an empty String if the file couldn't be read, or if the physical file is missing
             return StringPool.BLANK;
         }
     }
@@ -492,8 +510,9 @@ public class FileAssetContainerUtil {
             return (CONTAINER_META_INFO.equals(asset.getFileName()) && UtilMethods
                     .isSet(parentFolder.getPath()) && parentFolder.getPath()
                     .startsWith(CONTAINER_FOLDER_PATH));
-        } catch (Exception e) {
-            Logger.error(FileAssetContainerUtil.class, "Unable to determine if contentlet is a fileAssetContainer ", e);
+        } catch (final Exception e) {
+            Logger.error(FileAssetContainerUtil.class, String.format("Unable to determine if Contentlet with ID '%s' " +
+                    "is a File Asset Container: %s", contentlet.getIdentifier(), e.getMessage()), e);
         }
         return false;
     }
@@ -520,8 +539,9 @@ public class FileAssetContainerUtil {
                 final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost();
                 return getFullPath(currentHost, containerPath);
             }
-        } catch (DotDataException | DotSecurityException e) {
-            throw new DotRuntimeException(e);
+        } catch (final DotDataException | DotSecurityException e) {
+            throw new DotRuntimeException(String.format("An error occurred when retrieving the full path for '%s': " +
+                    "%s", containerPath, e.getMessage()), e);
         }
     }
 

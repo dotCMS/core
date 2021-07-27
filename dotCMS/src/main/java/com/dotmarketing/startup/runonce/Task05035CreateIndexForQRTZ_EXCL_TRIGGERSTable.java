@@ -27,11 +27,6 @@ public class Task05035CreateIndexForQRTZ_EXCL_TRIGGERSTable extends AbstractJDBC
     }
 
     @Override
-    public String getH2Script() {
-        return null;
-    }
-
-    @Override
     protected List<String> getTablesToDropConstraints() {
         return Collections.emptyList();
     }

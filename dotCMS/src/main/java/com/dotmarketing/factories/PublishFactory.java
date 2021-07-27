@@ -1,8 +1,14 @@
 package com.dotmarketing.factories;
 
+import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
+import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.MessageType;
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.rendering.velocity.services.PageLoader;
@@ -12,11 +18,9 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.WebAsset;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Treeable;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.menubuilders.RefreshMenus;
@@ -29,19 +33,25 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 
+import io.vavr.API;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 
@@ -52,6 +62,16 @@ import com.liferay.portal.util.PortalUtil;
 public class PublishFactory {	
 
 	private static PermissionAPI permissionAPI  = APILocator.getPermissionAPI();
+	private static SystemMessageEventUtil systemMessageEventUtil;
+
+	static {
+		systemMessageEventUtil = SystemMessageEventUtil.getInstance();
+	}
+
+	@VisibleForTesting
+	public static void setSystemMessageEventUtil(final SystemMessageEventUtil systemMessageEventUtil) {
+		PublishFactory.systemMessageEventUtil = systemMessageEventUtil;
+	}
 
 	/**
 	 * @param permissionAPIRef the permissionAPI to set
@@ -267,21 +287,17 @@ public class PublishFactory {
 			}
 		}
 
+		final ContentletLoader contentletLoader = new ContentletLoader();
 		if (webAsset instanceof Link) {
-			List contentlets = InodeFactory.getParentsOfClass(webAsset, com.dotmarketing.portlets.contentlet.business.Contentlet.class);
-			Iterator it = contentlets.iterator();
-			while (it.hasNext()) {
-				com.dotmarketing.portlets.contentlet.business.Contentlet cont = (com.dotmarketing.portlets.contentlet.business.Contentlet) it.next();
-			    if (cont.isLive()) {
-			    	try {
-			    		com.dotmarketing.portlets.contentlet.model.Contentlet newFormatContentlet =
-							conAPI.convertFatContentletToContentlet(cont);
-			    		    new ContentletLoader().invalidate(newFormatContentlet);
-					} catch (DotDataException e) {
-						throw new WebAssetException(e.getMessage(), e);
-					}
-			    }
-			}
+            FactoryLocator.getMenuLinkFactory()
+                    .getParentContentlets(webAsset.getInode()).stream().filter(contentlet -> {
+                try {
+                    return contentlet.isLive();
+                } catch (DotDataException | DotSecurityException  e) {
+                    throw new DotRuntimeException(e);
+                }
+			}).forEach( contentlet -> contentletLoader.invalidate(contentlet));
+
 			// Removes static menues to provoke all possible dependencies be generated.
 			Folder parentFolder = (Folder)APILocator.getFolderAPI().findParentFolder((Treeable) webAsset,user,false);
 			Host host = (Host) hostAPI.findParentHost(parentFolder, APILocator.getUserAPI().getSystemUser(), respectFrontendRoles);
@@ -313,24 +329,33 @@ public class PublishFactory {
         Logger.debug(PublishFactory.class, "*****I'm an HTML Page -- Publishing");
 
         ContentletAPI contentletAPI = APILocator.getContentletAPI();
+		final Set<Contentlet> futureContentlets = new HashSet<>();
+		final Set<Contentlet> expiredContentlets = new HashSet<>();
 
+        final ContentletLoader contentletLoader = new ContentletLoader();
         //Publishing related pieces of content
         for ( Object asset : relatedNotPublished ) {
             if ( asset instanceof Contentlet ) {
                 Logger.debug( PublishFactory.class, "*****I'm an HTML Page -- Publishing my Contentlet Child=" + ((Contentlet) asset).getInode() );
                 try {
-                    Contentlet contentlet = (Contentlet) asset;
-
                     contentletAPI.publish( (Contentlet) asset, user, false );
-                    new ContentletLoader().invalidate(asset);
+                    contentletLoader.invalidate(asset);
 
                 } catch ( DotSecurityException e ) {
                     //User has no permission to publish the content in the page so we just skip it
                     Logger.debug( PublishFactory.class, "publish html page: User has no permission to publish the content inode = " + ((Contentlet) asset).getInode() + " in the page, skipping it." );
-                }
+                } catch (DotRuntimeException e) {
+					final Throwable rootCause = ExceptionUtil.getRootCause(e);
+
+					if (FutureContentletPublishStateException.class.equals(rootCause.getClass())) {
+						futureContentlets.add(((FutureContentletPublishStateException) rootCause).getContentlet());
+					} else if (ExpiredContentletPublishStateException.class.equals(rootCause.getClass())) {
+						expiredContentlets.add(((ExpiredContentletPublishStateException) rootCause).getContentlet());
+					}
+				}
             } else if ( asset instanceof Template ) {
                 Logger.debug( PublishFactory.class, "*****I'm an HTML Page -- Publishing Template =" + ((Template) asset).getInode() );
-                publishAsset( (Template) asset, user, respectFrontendRoles, false );
+                APILocator.getTemplateAPI().publishTemplate(Template.class.cast(asset),user,respectFrontendRoles);
             }
         }
 
@@ -341,6 +366,22 @@ public class PublishFactory {
 
         //Remove from block cache.
         CacheLocator.getBlockPageCache().remove(htmlPage);
+
+        if (!futureContentlets.isEmpty()) {
+			final String listContentlets = futureContentlets.stream()
+					.map(contentlet -> String.format("<li>%s</li>", contentlet.getTitle()))
+					.collect(Collectors.joining());
+
+        	sendMessage(user,"publish.page.future.fields.error", String.format("<ul>%s</ul>", listContentlets));
+		}
+
+		if (!expiredContentlets.isEmpty()) {
+			final String listContentlets = expiredContentlets.stream()
+					.map(contentlet -> String.format("<li>%s</li>", contentlet.getTitle()))
+					.collect(Collectors.joining());
+
+			sendMessage(user,"publish.page.expired.fields.error", String.format("<ul>%s</ul>", listContentlets));
+		}
 
         return true;
     }
@@ -469,7 +510,7 @@ public class PublishFactory {
 
         //gets working (not published) template parent for this html page
         Template templateParent = APILocator.getTemplateAPI().findWorkingTemplate( htmlPage.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false );
-        if ( InodeUtils.isSet( templateParent.getInode() ) ) {
+        if ( templateParent!=null && InodeUtils.isSet( templateParent.getInode() ) ) {
 
             if ( !templateParent.isLive() && (permissionAPI.doesUserHavePermission( templateParent, PERMISSION_PUBLISH, user, respectFrontendRoles ) || !checkPublishPermissions) ) {
                 relatedAssets.add( templateParent );
@@ -529,4 +570,22 @@ public class PublishFactory {
         return relatedAssets;
     }
 
+	private static void sendMessage(final User user, final String messageKey, String... arguments) {
+		try {
+
+			final String  message = LanguageUtil.get(messageKey, arguments);
+
+			final SystemMessageBuilder messageBuilder = new SystemMessageBuilder()
+					.setMessage(message)
+					.setSeverity(MessageSeverity.ERROR)
+					.setType(MessageType.SIMPLE_MESSAGE)
+					.setLife(TimeUnit.SECONDS.toMillis(5));
+
+			systemMessageEventUtil.pushMessage(messageBuilder.create(), list(user.getUserId()));
+
+			Logger.warn(PublishFactory.class, message);
+		} catch (final  LanguageException  e) {
+			Logger.warn(PublishFactory.class, () -> "messageKey:" + messageKey + ", msg:" + e.getMessage());
+		}
+	}
 }

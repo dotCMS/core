@@ -1,0 +1,17 @@
+<com.dotcms.publisher.pusher.wrapper.RelationshipWrapper>
+    <relationship>
+        <iDate>2021-01-19 16:47:26.864 UTC</iDate>
+        <type>relationship</type>
+        <owner></owner>
+        <inode>__inode__</inode>
+        <parentStructureInode>__parent_inode__</parentStructureInode>
+        <childStructureInode>__child_inode__</childStructureInode>
+        <childRelationName>__child_name__</childRelationName>
+        <relationTypeValue>__relation_type__</relationTypeValue>
+        <cardinality>__cardinality__</cardinality>
+        <parentRequired>false</parentRequired>
+        <childRequired>false</childRequired>
+        <fixed>false</fixed>
+    </relationship>
+    <operation>PUBLISH</operation>
+</com.dotcms.publisher.pusher.wrapper.RelationshipWrapper>

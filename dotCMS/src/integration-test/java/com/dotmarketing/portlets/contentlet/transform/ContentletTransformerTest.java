@@ -3,7 +3,6 @@ package com.dotmarketing.portlets.contentlet.transform;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.IDENTIFIER_KEY;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
-import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.META_DATA_FIELD;
 import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.MIMETYPE_FIELD;
 import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.TITLE_FIELD;
 import static com.dotmarketing.portlets.fileassets.business.FileAssetAPI.UNDERLYING_FILENAME;
@@ -19,6 +18,8 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.api.APIProvider;
+import com.dotcms.api.APIProvider.Builder;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
@@ -28,6 +29,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.repackage.com.google.common.io.Files;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.MapToContentletPopulator;
@@ -40,7 +42,6 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.struts.ContentletForm;
 import com.dotmarketing.portlets.contentlet.transform.strategy.AbstractTransformStrategy;
@@ -50,12 +51,14 @@ import com.dotmarketing.portlets.contentlet.transform.strategy.StrategyResolverI
 import com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions;
 import com.dotcms.api.APIProvider;
 import com.dotcms.api.APIProvider.Builder;
+import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.workflows.actionlet.copy.AssertionStrategy;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
@@ -81,8 +84,10 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
 @RunWith(DataProviderRunner.class)
 public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
@@ -314,6 +319,36 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         
     }
 
+    /**
+     * Given scenario: We create a dotAsset then we transform it and then we call getContentPrintableMap which internally does call the transformers again.
+     * Meaning we're pushing the contentlet twice into the transformers pipeline.
+     * Expected results: We should still get all the file related properties with the expected values.
+     * @throws Exception
+     */
+    @Test
+    public void Test_DotAsset_FileAsset_Pushed_Back_into_Transformer() throws Exception {
+        final User systemUser = APILocator.systemUser();
+        when(Config.CONTEXT.getMimeType(Mockito.endsWith(".jpg"))).thenReturn("image/jpeg");
+        when(Config.CONTEXT.getMimeType(Mockito.endsWith(".jpeg"))).thenReturn("image/jpeg");
+        final Contentlet dotAssetLikeContentlet = TestDataUtils.getDotAssetLikeContentlet();
+        final Contentlet transformedDotAsset = new DotTransformerBuilder().defaultOptions().content(dotAssetLikeContentlet).build().hydrate().get(0);
+        final Map<String, Object> map1 = ContentletUtil.getContentPrintableMap(
+                systemUser, transformedDotAsset, true);
+        Assert.assertTrue(map1.get("asset") instanceof String);
+        Assert.assertNotEquals(map1.get("title"),"unknown");
+        Assert.assertTrue((long)map1.get("size") > 0);
+        Assert.assertNotEquals(map1.get("mimeType"),"unknown");
+
+        final Contentlet fileAssetLikeContentlet = TestDataUtils.getFileAssetContent(true, langId, TestFile.GIF);
+        final Contentlet transformedFileAsset = new DotTransformerBuilder().defaultOptions().content(fileAssetLikeContentlet).build().hydrate().get(0);
+        final Map<String, Object> map2 = ContentletUtil.getContentPrintableMap(systemUser, transformedFileAsset, true);
+        Assert.assertTrue(map2.get("fileAsset") instanceof String);
+        Assert.assertNotEquals(map2.get("title"),"unknown");
+        Assert.assertNotEquals(map2.get("mimeType"),"unknown");
+        Assert.assertTrue((long)map2.get("size") > 0);
+
+    }
+
 
     @DataProvider
     public static Object[] listTestCases() throws Exception {
@@ -353,6 +388,11 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
             this.baseContentType = baseContentType;
             this.contentlets = contentlets;
         }
+
+        @Override
+        public String toString() {
+            return "CompatibilityTestCase{" + "baseContentType=" + baseContentType +'}';
+        }
     }
 
     /**
@@ -362,7 +402,8 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
      */
     @Test
     @UseDataProvider("listTestCases")
-    public void Transformer_Backwards_Compatibility_Test(final CompatibilityTestCase testCase) {
+    public void Transformer_Backwards_Compatibility_Test(final CompatibilityTestCase testCase)
+            throws DotDataException {
 
         final List <Contentlet> list = testCase.contentlets;
 
@@ -391,7 +432,10 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
             final Map<String, Object> sourceMap = transformedList1.get(i);
             final Map<String, Object> copyMap = transformedList2.get(i);
 
-            assertTrue(String.format(" baseType `%s` should have same (or more) number of properties " ,baseTypeName),copyMap.size() >= sourceMap.size());
+            final String missingKeys = sourceMap.keySet().stream()
+                    .filter(key -> !copyMap.containsKey(key)).collect(Collectors.joining(","));
+
+            assertTrue(String.format(" baseType `%s` should have same (or more) number of properties. Missing properties %s" ,baseTypeName, missingKeys),copyMap.size() >= sourceMap.size());
             final String assertMessage =  " contentType:`%s` , id: `%s` ,  key: `%s` ";
 
             for (final String propertyName : sourceMap.keySet()) {
@@ -406,11 +450,9 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
                 if(object1 instanceof File){
                     //Binaries are now formatted to their /dA/ path form.
-                    final File conBinary = (File)object1;
-                    final String dAPath = "/dA/%s/%s/%s";
-                    final String binaryPath = String.format(dAPath, sourceMap.get("identifier"),propertyName,conBinary.getName());
-                    assertEquals(String.format(assertMessage,
-                            baseTypeName, original.getIdentifier(), propertyName), binaryPath, object2);
+                    final String dAPath = "/dA/%s/%s/";
+                    final String binaryPath = String.format(dAPath, sourceMap.get("identifier"),propertyName);
+                    assertTrue(String.format(assertMessage, baseTypeName, original.getIdentifier(), propertyName), object2.toString().contains(binaryPath));
                     continue;
                 }
 
@@ -445,11 +487,9 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
                 if(object1 instanceof File){
                     //Binaries are now formatted to their /dA/ path form.
-                    final File conBinary = (File)object1;
-                    final String dAPath = "/dA/%s/%s/%s";
-                    final String binaryPath = String.format(dAPath, contentlet1.getMap().get("identifier"),propertyName,conBinary.getName());
-                    assertEquals(String.format(" contentType:`%s` , id: `%s` ,  key: `%s` ",
-                            baseTypeName, contentlet1.getIdentifier(), propertyName), binaryPath, object2);
+                    final String dAPath = "/dA/%s/%s/";
+                    final String binaryPath = String.format(dAPath, contentlet1.getMap().get("identifier"),propertyName);
+                    assertTrue(String.format(" contentType:`%s` , id: `%s` ,  key: `%s` ", baseTypeName, contentlet1.getIdentifier(), propertyName), object2.toString().contains(binaryPath));
                     continue;
                 }
 
@@ -559,7 +599,6 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         map.put(Contentlet.INODE_KEY, inode);
         map.put(Contentlet.CONTENT_TYPE_KEY, fileAssetContentType);
         map.put(Contentlet.BASE_TYPE_KEY, BaseContentType.FILEASSET);
-        map.put(META_DATA_FIELD, ContentletCache.CACHED_METADATA);
 
         final ImageField field = mock(ImageField.class);
         when(field.variable()).thenReturn("imageVar");
@@ -593,7 +632,6 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         when(fileAsset.getUnderlyingFileName()).thenReturn(underlyingFileName);
         when(fileAsset.getWidth()).thenReturn(width);
         when(fileAsset.getHeight()).thenReturn(height);
-        when(fileAsset.getMetaData()).thenReturn("Meta");
 
         when(fileAssetAPI.fromContentlet(any(Contentlet.class))).thenReturn(fileAsset);
 
@@ -611,7 +649,6 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         final String extension = (String)mapView.get("extension");
         final Integer returnedWidth = (Integer)mapView.get("width");
         final Integer returnedHeight = (Integer)mapView.get("height");
-        final String meta = (String)mapView.get(META_DATA_FIELD);
         final String returnedUnderlyingFileName = (String)mapView.get(UNDERLYING_FILENAME);
 
         //FLAG Alias is OFF
@@ -627,7 +664,6 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         assertEquals(height, returnedHeight.intValue());
         assertEquals(width, returnedWidth.intValue());
         assertEquals(underlyingFileName, returnedUnderlyingFileName);
-        assertEquals(ContentletCache.CACHED_METADATA, meta);
 
     }
 

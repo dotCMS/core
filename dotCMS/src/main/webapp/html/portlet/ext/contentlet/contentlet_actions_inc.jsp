@@ -10,6 +10,7 @@
 <%@page import="java.util.Map"%>
 <%@ page import="com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo" %>
 <%@ page import="com.dotmarketing.util.Logger" %>
+<%@ page import="com.dotmarketing.util.PageMode" %>
 <%
 
 if(user == null){
@@ -49,6 +50,7 @@ catch(Exception e){
 	}
 %>
 <%@page import="com.dotmarketing.business.web.WebAPILocator"%>
+<%@ page import="java.util.Optional" %>
 <% com.dotmarketing.beans.Host myHost =  WebAPILocator.getHostWebAPI().getCurrentHost(request); %>
 
 <script>
@@ -90,19 +92,19 @@ function editPage(url, languageId) {
 <%if(schemesAvailable.size()>1){%>
    <div style="margin-bottom:10px;">
    	<select id="select-workflow-scheme-dropdown" dojoType="dijit.form.FilteringSelect" onchange="setMyWorkflowScheme()" style="width:100%">
-   
+
    	   <option value=""><%=LanguageUtil.get(pageContext, "dot.common.select.workflow")%></option>
    		<%for(String key :schemesAvailable.keySet()) {%>
-   
+
    		  <option value="<%=key%>"><%=schemesAvailable.get(key) %></option>
-   
+
    		<%} %>
    	</select>
    </div>
 <%}%>
 
 <%--check permissions to display the save and publish button or not--%>
-<%boolean canUserWriteToContentlet = conPerAPI.doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_WRITE,user);%>
+<%boolean canUserWriteToContentlet = conPerAPI.doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_WRITE,user, PageMode.get(request).respectAnonPerms);%>
 
 <%if(!"edit-page".equals(request.getParameter("angularCurrentPortlet")) && contentlet.isHTMLPage() && contentlet.getIdentifier() != "" && (canUserWriteToContentlet)) {%>
    <div class="content-edit-actions" >
@@ -141,16 +143,21 @@ function editPage(url, languageId) {
 				<%}%>
 			<%} else if (InodeUtils.isSet(contentlet.getInode())) {
 
-				final ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
-				final String 				latestInode		  	  = contentletVersionInfo.getWorkingInode();
-			%>
-				<a  onClick="editVersion('<%=latestInode%>');">
-					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "See-Latest-Version")) %>
-				</a>
-				<a  onClick="selectVersion('<%=contentlet.getInode()%>');">
-					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Bring-Back-Version")) %>
-				</a>
-			<%} %>
+				final Optional<ContentletVersionInfo> contentletVersionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
+
+				if(contentletVersionInfo.isPresent()) {
+					final String 				latestInode		  	  = contentletVersionInfo.get().getWorkingInode();
+				%>
+					<a  onClick="editVersion('<%=latestInode%>');">
+						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "See-Latest-Version")) %>
+					</a>
+					<a  onClick="selectVersion('<%=contentlet.getInode()%>');">
+						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Bring-Back-Version")) %>
+					</a>
+				<%} else {
+					Logger.error(this, "Can't find ContentletVersionInfo. Identifier: " + contentlet.getIdentifier() + ". Lang: " + contentlet.getLanguageId());
+				}
+			} %>
 		<%}else if(!isContLocked &&  !contentlet.isNew()) {%>
 
 			<%if((null != scheme ) || ( wfActionsAll != null && wfActionsAll.size() > 0)){ %>
@@ -188,8 +195,8 @@ function editPage(url, languageId) {
 
 			<a
 			style="<%if(schemesAvailable.size()>1){%>display:none;<%} %>" class="schemeId<%=action.getSchemeId()%> schemeActionsDiv"
-			onclick="contentAdmin.executeWfAction('<%=action.getId()%>', <%= action.hasPushPublishActionlet() || action.isAssignable() || action.isCommentable() || UtilMethods.isSet(action.getCondition()) %>)">
-				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, action.getName())) %>   
+			onclick="contentAdmin.executeWfAction('<%=action.getId()%>', <%= action.hasPushPublishActionlet() || action.isAssignable() || action.isCommentable() || (action.hasMoveActionletActionlet() && !action.hasMoveActionletHasPathActionlet()) || UtilMethods.isSet(action.getCondition()) %>)">
+				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, action.getName())) %>
 				<%if(action.hasSaveActionlet()){ %>
                     <i class="fa fa-save" style="opacity:.35;float:right"></i>
                 <%} %>
@@ -227,8 +234,15 @@ function editPage(url, languageId) {
             <%if(contentlet != null && InodeUtils.isSet(contentlet.getInode()) && isContLocked){ %>
                 <th style="vertical-align: top"><%= LanguageUtil.get(pageContext, "Locked") %>:</th>
                 <td id="lockedTextInfoDiv">
-                    <%=APILocator.getUserAPI().loadUserById(APILocator.getVersionableAPI().getLockedBy(contentlet), APILocator.getUserAPI().getSystemUser(), false).getFullName() %>
-                    <span class="lockedAgo">(<%=UtilMethods.capitalize( DateUtil.prettyDateSince(APILocator.getVersionableAPI().getLockedOn(contentlet), user.getLocale())) %>)</span>
+					<% Optional<String> lockedBy = APILocator.getVersionableAPI().getLockedBy(contentlet);
+					   Optional<Date> lockedOn = APILocator.getVersionableAPI().getLockedOn(contentlet);
+					   if(lockedBy.isPresent() && lockedOn.isPresent()) { %>
+						<%=APILocator.getUserAPI().loadUserById(lockedBy.get(), APILocator.getUserAPI().getSystemUser(), false).getFullName() %>
+						<span class="lockedAgo">(<%=UtilMethods.capitalize( DateUtil.prettyDateSince(lockedOn.get(), user.getLocale())) %>)</span>
+					<% } else {
+						Logger.error(this, "Can't find either LockedBy or LockedOn for Contentlet. Identifier: "
+								+ contentlet.getIdentifier() + ". Lang: " + contentlet.getLanguageId());
+					} %>
                 </td>
             <%} %>
         </tr>

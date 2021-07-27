@@ -18,7 +18,9 @@ import com.dotcms.publisher.receiver.BundlePublisher;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.DotPublishingException;
+import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublishStatus;
+import com.dotcms.publishing.PublisherAPIImplTest;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.repackage.org.apache.struts.Globals;
@@ -34,6 +36,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.portal.struts.MultiMessageResourcesFactory;
@@ -73,6 +76,8 @@ public class PublisherTest extends IntegrationTestBase {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
         LicenseTestUtil.getLicense();
+
+        createFilter();
 
         when(Config.CONTEXT.getAttribute(Globals.MESSAGES_KEY))
                 .thenReturn(new MultiMessageResources( MultiMessageResourcesFactory.createFactory(),""));
@@ -209,12 +214,18 @@ public class PublisherTest extends IntegrationTestBase {
         assertTrue(bundlerStatus.isPresent());
         assertTrue("We should have 1 page on: " + folderPage.folder, bundlerStatus.get().getCount() != 0);
 
+        File tarGzipFile = new File(pushResult.bundlePath + ".tar.gz");
+        assertTrue(tarGzipFile.exists());
+
+        PublisherAPIImplTest.extractTarArchive(tarGzipFile, new File(pushResult.bundlePath));
+
         assertTrue(PublisherTestUtil.existsFolder(pushResult.bundlePath, folderPage.folder));
         assertTrue(PublisherTestUtil.existsPage(pushResult.bundlePath, host, folderPage.folder, folderPage.page));
     }
 
     private void assertRemoveFolder(final FolderPage folderPage, final PushResult pushResult) throws Exception {
-
+        File tarGzipFile = new File(pushResult.bundlePath + ".tar.gz");
+        PublisherAPIImplTest.extractTarArchive(tarGzipFile, new File(pushResult.bundlePath));
         assertTrue(PublisherTestUtil.existsFolder(pushResult.bundlePath, folderPage.folder));
     }
 
@@ -389,5 +400,14 @@ public class PublisherTest extends IntegrationTestBase {
             this.folder = folder;
             this.page = page;
         }
+    }
+
+    private static void createFilter() {
+        final Map<String, Object> filtersMap =
+                ImmutableMap.of("dependencies", true, "relationships", true);
+        final FilterDescriptor filterDescriptor =
+                new FilterDescriptor("filterTestAPI.yml", "Filter Test Title", filtersMap, true,
+                        "Reviewer,dotcms.org.2789");
+        APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
     }
 }

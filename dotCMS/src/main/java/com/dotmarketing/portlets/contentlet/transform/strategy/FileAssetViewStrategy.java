@@ -86,7 +86,7 @@ public class FileAssetViewStrategy extends WebAssetStrategy<FileAsset> {
         map.put(DESCRIPTION, isSet(description) ? description : BLANK );
         map.put(UNDERLYING_FILENAME, underlyingFileName);
         if(options.contains(LOAD_META)) {
-            map.put(META_DATA_FIELD, fileAsset.getMetaData());
+            map.put(META_DATA_FIELD, fileAsset.getMetaDataMap());
         }
         map.put("path", fileAsset.getPath());
         final String parent = fileAsset.getParent();

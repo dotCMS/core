@@ -39,11 +39,6 @@ public class Task03800AddIndexLowerStructureTable extends AbstractJDBCStartupTas
     }
 
     @Override
-    public String getH2Script() {
-        return null;
-    }
-
-    @Override
     protected List<String> getTablesToDropConstraints() {
         return null;
     }

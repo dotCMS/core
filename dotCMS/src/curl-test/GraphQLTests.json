@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "8ebdc33c-110c-4f94-adf0-6d4844cc5ee1",
+		"_postman_id": "f8e6f36f-0e13-4a74-8439-9cc82852be81",
 		"name": "GraphQL",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -14,7 +14,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d7ce458d-7749-4ce1-9655-c3d9c0ae5cf0",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -67,10 +66,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/assets.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -93,7 +89,7 @@
 								}
 							]
 						},
-						"description": "Imports a Bundle that includes:\n* HTMLPage /blog/index\n* HTMLPage /blog/destinations/costa-rica\n* Contentlet [Blog] Ecotourism in Costa Rica\n* Blog Detail Page /blog/blog-detail"
+						"description": "Imports a Bundle that includes:\n* HTMLPage /sports\nThe page includes the Blog contentlet \"10 New Snow Sports to Try This Winter\""
 					},
 					"response": []
 				},
@@ -103,7 +99,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "314ca4fc-bb50-4e0f-9677-05899558558b",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -156,10 +151,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/personas.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -187,12 +179,171 @@
 					"response": []
 				},
 				{
+					"name": "pre_ImportBundleWithDemoHost",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"demo.dotcms.com.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/demo.dotcms.com.tar.gz"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* Imports demo.dotcms.com"
+					},
+					"response": []
+				},
+				{
+					"name": "Switch site to 'demo.dotcms.com'",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    var jsonData = pm.response.json();",
+									"",
+									"    pm.expect(jsonData.entity.hostSwitched).equal(true);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site/switch/48190c8c-42c4-46af-8d1a-0cd5db894797",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"switch",
+								"48190c8c-42c4-46af-8d1a-0cd5db894797"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "RenderDestinationsCostaRicaPage",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "267edb03-3cc8-492e-a452-df2b90115cb3",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -332,7 +483,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "74c6a123-8fe9-4477-ae63-877b1183abb7",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -460,7 +610,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "660cfe4e-65d2-4c3b-b08f-33d249785c41",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -567,7 +716,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "bd54b3e0-c765-4780-a7a8-4060d8789ba0",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -578,9 +726,9 @@
 									"    var jsonData = pm.response.json();",
 									"    var template = jsonData.data.page.template;",
 									"",
-									"    pm.expect(template[\"iDate\"], 'FAILED:[iDate]').equal(\"1578687702481\");",
+									"    pm.expect(template[\"iDate\"], 'FAILED:[iDate]').to.be.not.null",
 									"    pm.expect(template[\"type\"], 'FAILED:[type]').equal(\"template\");",
-									"    pm.expect(template[\"owner\"].firstName, 'FAILED:[owner.firstName]').equal(null);",
+									"    pm.expect(template[\"owner\"].firstName, 'FAILED:[owner.firstName]').equal(\"system user\");",
 									"    pm.expect(template[\"inode\"], 'FAILED:[inode]').equal(\"cfda9246-cce3-4313-8cc3-2080d1935cf9\");",
 									"    pm.expect(template[\"identifier\"], 'FAILED:[identifier]').equal(\"0c556e37-99e0-4458-a2cd-d42cc7a11045\");",
 									"    pm.expect(template[\"source\"], 'FAILED:[source]').equal(\"DB\");",
@@ -675,7 +823,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "9d090461-f727-4f42-b182-729576504571",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -707,9 +854,9 @@
 									"    pm.expect(persona[\"photo\"].idPath, 'FAILED:[persona.photo.idPath]').equal(\"/dA/792c7c9f6b/photo/mountain-persona.jpg?language_id=1\");",
 									"    pm.expect(persona[\"keyTag\"], 'FAILED:[persona.keyTag]').equal(\"WinterEnthusiast\");",
 									"    let expectedPersonTags = [",
-									"                        \"skiing\",",
+									"                        \"snowmobile\",",
 									"                        \"snowboarding\",",
-									"                        \"snowmobile\"",
+									"                        \"skiing\"",
 									"                    ];",
 									"    pm.expect(checker(expectedPersonTags, persona[\"tags\"]), 'FAILED:[persona.tags]').equal(true);",
 									"",
@@ -726,29 +873,26 @@
 									"    pm.expect(visitorPersona[\"keyTag\"], 'FAILED:[visitorPersona.keyTag]').equal(\"WinterEnthusiast\");",
 									"",
 									"    let expectedVisitorPersonaTags = [",
-									"                        \"skiing\",",
+									"                        \"snowmobile\",",
 									"                        \"snowboarding\",",
-									"                        \"snowmobile\"",
+									"                        \"skiing\"",
 									"                    ];",
+									"",
 									"    pm.expect(checker(expectedVisitorPersonaTags, visitorPersona[\"tags\"]), 'FAILED:[visitorPersona.tags]').equal(true);",
 									"",
 									"    // visitor's tags",
 									"    pm.expect(JSON.stringify(visitor[\"tags\"])==JSON.stringify([",
 									"                        {",
 									"                            \"tag\": \"snowmobile\",",
-									"                            \"count\": 26",
+									"                            \"count\": 2",
 									"                        },",
 									"                        {",
 									"                            \"tag\": \"skiing\",",
-									"                            \"count\": 26",
+									"                            \"count\": 2",
 									"                        },",
 									"                        {",
 									"                            \"tag\": \"snowboarding\",",
-									"                            \"count\": 26",
-									"                        },",
-									"                        {",
-									"                            \"tag\": \"diving\",",
-									"                            \"count\": 1",
+									"                            \"count\": 2",
 									"                        }",
 									"                    ]), 'FAILED:[visitorPersona.tags]').equal(true);",
 									"",
@@ -816,7 +960,7 @@
 						"body": {
 							"mode": "graphql",
 							"graphql": {
-								"query": "{\n  page(url:\"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\") {\n     viewAs {\n      persona {\n        name\n        description\n        photo {\n          idPath\n        }\n        keyTag\n        tags\n      }\n      visitor {\n        persona {\n          name\n          description\n          photo {\n            idPath\n          }\n          keyTag\n          tags\n        }\n        device\n        isNew\n        tags {\n          tag\n          count\n        }\n        userAgent {\n          operatingSystem\n          browser\n          id\n          browserVersion {\n            version\n            majorVersion\n            minorVersion\n          }\n        }\n        personas {\n          persona \n          count\n        }\n      }\n      mode\n      language {\n        id\n        country\n        countryCode\n        language\n        languageCode\n      }\n    }\n  }\n}",
+								"query": "{\n  page(url:\"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\", persona:\"WinterEnthusiast\") {\n     viewAs {\n      persona {\n        name\n        description\n        photo {\n          idPath\n        }\n        keyTag\n        tags\n      }\n      visitor {\n        persona {\n          name\n          description\n          photo {\n            idPath\n          }\n          keyTag\n          tags\n        }\n        device\n        isNew\n        tags {\n          tag\n          count\n        }\n        userAgent {\n          operatingSystem\n          browser\n          id\n          browserVersion {\n            version\n            majorVersion\n            minorVersion\n          }\n        }\n        personas {\n          persona \n          count\n        }\n      }\n      mode\n      language {\n        id\n        country\n        countryCode\n        language\n        languageCode\n      }\n    }\n  }\n}",
 								"variables": ""
 							}
 						},
@@ -840,7 +984,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "bde8aed5-7a1b-46b6-b091-a5f74a4a43be",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -854,7 +997,7 @@
 									"    var render = jsonData.data.page.render;",
 									"",
 									"    // mode",
-									"    pm.expect(render, 'FAILED:[rendered]').equal(\"<!doctype html>\\n<html lang=\\\"en\\\">\\n\\n    <head>\\n\\n        \\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width, height=device-height, initial-scale=1.0, maximum-scale=5.0, user-scalable=1\\\">\\n<meta http-equiv=\\\"X-UA-Compatible\\\" content=\\\"IE=edge\\\">\\n<meta charset=\\\"utf-8\\\">\\n<link rel=\\\"icon\\\" href=\\\"/application/themes/travel/images/favicon.ico\\\" type=\\\"image/x-icon\\\">\\n<title>Costa Rica Rain Forest</title>\\n<meta name=\\\"description\\\" content=\\\"Visit Costa Rica a rugged, rainforested Central American country with coastlines on the Caribbean and Pacific.\\\">\\n<meta name=\\\"language\\\" content=\\\"english\\\">\\n<meta name=\\\"author\\\" content=\\\"dotCMS\\\">\\n<meta name=\\\"copyright\\\" content=\\\"dotCMS LLC, Miami Florida, US\\\">\\n<meta property=\\\"og:title\\\" content=\\\"Costa Rica Rain Forest\\\">\\n<meta property=\\\"og:url\\\" content=\\\"https://demo.dotcms.com$!{request.getAttribute(\\\"javax.servlet.forward.request_uri\\\")}\\\">\\n<meta property=\\\"og:image\\\" content=\\\"/images/default.png\\\">\\n<link rel=\\\"canonical\\\" href=\\\"https://demo.dotcms.com$!{request.getAttribute(\\\"javax.servlet.forward.request_uri\\\")}\\\">\\n\\n<!-- CSS -->\\n<link rel=\\\"stylesheet\\\" type=\\\"text/css\\\" href=\\\"//fonts.googleapis.com/css?family=Oswald:500,600,700%7CRoboto:300,300i,700%7CCondiment%7CDella+Respira\\\">\\n<link rel=\\\"stylesheet\\\" href=\\\"/application/themes/travel/css/styles.dotsass\\\">\\n\\n</head>\\n\\n<body id=\\\"costa-rica-rain-forest\\\" >\\n\\n            <header>\\n\\n  <!-- RD Navbar-->\\n  <div class=\\\"rd-navbar-wrap\\\">\\n    <nav class=\\\"rd-navbar rd-navbar-static rd-navbar-classic\\\" data-layout=\\\"rd-navbar-fixed\\\" data-sm-layout=\\\"rd-navbar-fixed\\\" data-md-layout=\\\"rd-navbar-fixed\\\" data-md-device-layout=\\\"rd-navbar-fixed\\\" data-lg-layout=\\\"rd-navbar-static\\\" data-lg-device-layout=\\\"rd-navbar-static\\\" data-xl-layout=\\\"rd-navbar-static\\\" data-xl-device-layout=\\\"rd-navbar-static\\\" data-lg-stick-up-offset=\\\"78px\\\" data-xl-stick-up-offset=\\\"98px\\\" data-xxl-stick-up-offset=\\\"118px\\\" data-lg-stick-up=\\\"true\\\" data-xl-stick-up=\\\"true\\\" data-xxl-stick-up=\\\"true\\\">\\n      <div class=\\\"rd-navbar-collapse-toggle rd-navbar-fixed-element-1\\\" data-rd-navbar-toggle=\\\".rd-navbar-collapse\\\"><span></span></div>\\n      \\n      <div class=\\\"rd-navbar-aside-outer rd-navbar-collapse bg-default\\\">\\n        <div class=\\\"rd-navbar-aside\\\">\\n\\n          <!-- CONTACT INFO -->\\n          <ul class=\\\"list-inline list-inline-xxl\\\">\\n            <li>\\n              <div class=\\\"unit unit-spacing-xs\\\">\\n                <div class=\\\"unit-left\\\"><span class=\\\"icon mdi mdi-map-marker\\\"></span></div>\\n                <div class=\\\"unit-body\\\"><a href=\\\"#\\\">3059 Grand Avenue, Suite 300 Miami, FL, 33133 USA</a></div>\\n              </div>\\n            </li>\\n            <li>\\n              <div class=\\\"unit unit-spacing-xs\\\">\\n                <div class=\\\"unit-left\\\"><span class=\\\"icon mdi mdi-cellphone-android\\\"></span></div>\\n                <div class=\\\"unit-body\\\"><a href=\\\"tel:+1-888-404-6185\\\">+1-888-404-6185</a></div>\\n              </div>\\n            </li>\\n            <li>\\n              <div class=\\\"unit unit-spacing-xs\\\">\\n                <div class=\\\"unit-left\\\"><span class=\\\"icon mdi mdi-email-outline\\\"></span></div>\\n                <div class=\\\"unit-body\\\"><a href=\\\"mailto: info@dotcms.com\\\">info@dotcms.com</a></div>\\n              </div>\\n            </li>\\n          </ul>\\n\\n          <div>\\n            <!-- CART -->\\n            <a class=\\\"basket\\\" href=\\\"/store/cart\\\"><span class=\\\"icon mdi mdi-cart-outline\\\"></span><span class=\\\"basket-count\\\">3</span></a>\\n\\n            <!-- My Account -->\\n            <a href=\\\"/login/profile\\\" class=\\\"ml-3\\\">\\n                                <img src=\\\"/dA/792c7c9f-6b6f-427b-80ff-1643376c9999/photo/42w/50q/mountain-persona.jpg\\\" alt=\\\"Winter Enthusiast Persona\\\" class=\\\"img-circles border\\\">\\n                          </a>\\n          </div>\\n        </div>\\n      </div>\\n\\n      <div class=\\\"rd-navbar-main-outer\\\">\\n        <div class=\\\"rd-navbar-main\\\">\\n\\n          <div class=\\\"rd-navbar-panel\\\">\\n            <button class=\\\"rd-navbar-toggle\\\" data-rd-navbar-toggle=\\\".rd-navbar-nav-wrap\\\" aria-label=\\\"Toggle Menu\\\"><span></span></button>\\n            <div class=\\\"rd-navbar-brand\\\"><a class=\\\"brand\\\" href=\\\"/\\\" aria-label=\\\"TravelLux Home\\\"><img class=\\\"brand-logo-dark\\\" src=\\\"/application/themes/travel/images/logo.png\\\" width=\\\"195\\\" height=\\\"40\\\" alt=\\\"TravelLux Home\\\"></a></div>\\n          </div>\\n\\n          <!-- NAV BAR -->\\n\\n          <div class=\\\"rd-navbar-main-element\\\">\\n\\n            <div class=\\\"rd-navbar-nav-wrap\\\">\\n            \\n                        \\n              <ul class=\\\"rd-navbar-nav\\\">\\n                <li class=\\\"rd-nav-item  \\\"><a class=\\\"rd-nav-link\\\" href='/'>Home</a></li>\\n                                                                      <li class=\\\"rd-nav-item \\\"><a class=\\\"rd-nav-link\\\" href='/blog' target='_self'>Travel Blog</a></li>\\n                                                                        <li class=\\\"rd-nav-item \\\"><a class=\\\"rd-nav-link\\\" href='/destinations' target='_self'>Destinations</a></li>\\n                                                </ul>\\n            </div>\\n\\n            <!-- RD Navbar Search-->\\n            <div class=\\\"rd-navbar-search\\\">\\n              <button class=\\\"rd-navbar-search-toggle rd-navbar-fixed-element-2\\\" data-rd-navbar-toggle=\\\".rd-navbar-search\\\" aria-label=\\\"Search Box Toggle\\\"><span></span></button>\\n              <form class=\\\"rd-search\\\" action=\\\"/search/\\\" method=\\\"GET\\\">\\n                <div class=\\\"form-wrap\\\">\\n                  <label class=\\\"form-label search-label\\\" for=\\\"site-search\\\">Search...</label>\\n                  <input class=\\\"rd-navbar-search-form-input form-input site-search\\\" type=\\\"text\\\" name=\\\"q\\\" autocomplete=\\\"off\\\">\\n                </div>\\n                <button class=\\\"rd-search-form-submit fa-search\\\" type=\\\"submit\\\" aria-label=\\\"Submit\\\"></button>\\n              </form>\\n            </div>\\n            \\n          </div>\\n        </div>\\n      </div>\\n    </nav>\\n  </div>\\n\\n</header>\\n    \\n    <div class=\\\"body-wrapper\\\">\\n    \\n            \\n            \\n                \\n                        \\n    \\n                                                            \\n                                                \\n                                                                                                                        \\n                        <section id=\\\"section-1\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-12  \\\"><!-- Column -->\\n                                                                                \\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                                                                                                    \\n                        <section id=\\\"section-2\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-6  \\\"><!-- Column -->\\n                                                                                \\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                                    \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-6  \\\"><!-- Column -->\\n                                                                                \\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                                                                                                    \\n                        <section id=\\\"section-3\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-12  \\\"><!-- Column -->\\n                                                                                \\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                                                                                                    \\n                        <section id=\\\"section-4\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-10 offset-lg-1 \\\"><!-- Column -->\\n                                                                                \\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                                                                                                    \\n                        <section id=\\\"section-5\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-6  \\\"><!-- Column -->\\n                                                                                \\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                                    \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-6  \\\"><!-- Column -->\\n                                                                                \\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                                                                                                    \\n                        <section id=\\\"section-6\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-5  \\\"><!-- Column -->\\n                                                                                \\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                                    \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-6 offset-lg-1 \\\"><!-- Column -->\\n                                                                                \\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                            \\n                                                    </div><!-- /body-wrapper -->\\n\\n            <!-- Page Footer-->\\n\\n\\n\\n\\n<footer class=\\\"footer-classic bg-footer bg-overlay-80 context-dark\\\" style=\\\"background-image: url('/dA/bec7b960-a8bf-4f14-a22b-0d94caf217f0/image/WebP/1200w/footer-image.jpg')\\\" >\\n  <div class=\\\"section-xxl\\\">\\n    <div class=\\\"container\\\">\\n      <div class=\\\"row row-50 justify-content-center\\\">\\n        <div class=\\\"col-lg-4\\\">\\n          <h2>About us</h2>\\n          <p class=\\\"max-width-xl-90 text-gray-400\\\">We are TravelLux, a community of dedicated travel experts, journalists, and bloggers. Our aim is to offer you the best insight on where to go for your travel as well as to give you amazing opportunities with free benefits and bonuses for registered clients.</p>\\n          <a class=\\\"footer-brand\\\" href=\\\"./\\\"><img src=\\\"/application/themes/travel/images/logo-inverse.png\\\" alt=\\\"TravelLux Home\\\" height=\\\"40\\\"/></a>\\n        </div>\\n\\n\\n        <div class=\\\"col-sm-8 col-md-6 col-lg-4\\\">\\n          <h2>Latest blog posts</h2>\\n          \\n          <!-- Latest Blogs -->\\n                    \\n        </div>\\n        <div class=\\\"col-sm-8 col-md-6 col-lg-4\\\">\\n          <h2>Get in touch</h2>\\n          <form class=\\\"rd-form form-sm rd-mailform\\\" data-form-output=\\\"form-output-global\\\" data-form-type=\\\"contact\\\" method=\\\"post\\\" action=\\\"\\\">\\n            <div class=\\\"form-wrap\\\">\\n              <input class=\\\"form-input\\\" id=\\\"footer-form-name\\\" type=\\\"text\\\" name=\\\"name\\\" data-constraints=\\\"@Required\\\">\\n              <label class=\\\"form-label\\\" for=\\\"footer-form-name\\\">Name</label>\\n            </div>\\n            <div class=\\\"form-wrap\\\">\\n              <input class=\\\"form-input\\\" id=\\\"footer-form-email\\\" type=\\\"email\\\" name=\\\"email\\\" data-constraints=\\\"@Email @Required\\\">\\n              <label class=\\\"form-label\\\" for=\\\"footer-form-email\\\">E-mail</label>\\n            </div>\\n            <div class=\\\"form-wrap\\\">\\n              <label class=\\\"form-label\\\" for=\\\"footer-form-message\\\">Message</label>\\n              <textarea class=\\\"form-input\\\" id=\\\"footer-form-message\\\" name=\\\"message\\\" data-constraints=\\\"@Required\\\"></textarea>\\n            </div>\\n            <div class=\\\"form-wrap\\\">\\n              <button class=\\\"button button-md button-primary\\\" type=\\\"submit\\\">Send</button>\\n            </div>\\n          </form>\\n        </div>\\n      </div>\\n    </div>\\n  </div>\\n  <div class=\\\"container\\\">\\n    <!-- Rights-->\\n    <p class=\\\"rights mb-0\\\"><span>&copy;2012 - 2020 All Rights Reserved</span> <a href=\\\"https://dotcms.com/company/policies/privacy-policy\\\">Terms of Use</a> <span>and</span> <a href=\\\"https://dotcms.com/company/policies/privacy-policy\\\">Privacy Policy</a></p>\\n  </div>\\n</footer>\\n\\n<!-- Javascript-->\\n<script src=\\\"/application/themes/travel/js/core.min.js\\\"></script>\\n<script src=\\\"/application/themes/travel/js/script.js\\\"></script>\\n\\n    \\n</body>\\n</html>\");",
+									"    pm.expect(render, 'FAILED:[rendered]').equal(\"<!doctype html>\\n<html lang=\\\"en\\\">\\n\\n    <head>\\n\\n        \\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width, height=device-height, initial-scale=1.0, maximum-scale=5.0, user-scalable=1\\\">\\n<meta http-equiv=\\\"X-UA-Compatible\\\" content=\\\"IE=edge\\\">\\n<meta charset=\\\"utf-8\\\">\\n<link rel=\\\"icon\\\" href=\\\"/application/themes/travel/images/favicon.ico\\\" type=\\\"image/x-icon\\\">\\n<title>Costa Rica Rain Forest</title>\\n<meta name=\\\"description\\\" content=\\\"Visit Costa Rica a rugged, rainforested Central American country with coastlines on the Caribbean and Pacific.\\\">\\n<meta name=\\\"language\\\" content=\\\"english\\\">\\n<meta name=\\\"author\\\" content=\\\"dotCMS\\\">\\n<meta name=\\\"copyright\\\" content=\\\"dotCMS LLC, Miami Florida, US\\\">\\n<meta property=\\\"og:title\\\" content=\\\"Costa Rica Rain Forest\\\">\\n<meta property=\\\"og:url\\\" content=\\\"https://demo.dotcms.com$!{request.getAttribute(\\\"javax.servlet.forward.request_uri\\\")}\\\">\\n<meta property=\\\"og:image\\\" content=\\\"/images/default.png\\\">\\n<link rel=\\\"canonical\\\" href=\\\"https://demo.dotcms.com$!{request.getAttribute(\\\"javax.servlet.forward.request_uri\\\")}\\\">\\n\\n<!-- CSS -->\\n<link rel=\\\"stylesheet\\\" type=\\\"text/css\\\" href=\\\"//fonts.googleapis.com/css?family=Oswald:500,600,700%7CRoboto:300,300i,700%7CCondiment%7CDella+Respira\\\">\\n<link rel=\\\"stylesheet\\\" href=\\\"/application/themes/travel/css/styles.dotsass\\\">\\n\\n</head>\\n\\n<body id=\\\"costa-rica-rain-forest\\\" >\\n\\n            <header>\\n\\n  <!-- RD Navbar-->\\n  <div class=\\\"rd-navbar-wrap\\\">\\n    <nav class=\\\"rd-navbar rd-navbar-static rd-navbar-classic\\\" data-layout=\\\"rd-navbar-fixed\\\" data-sm-layout=\\\"rd-navbar-fixed\\\" data-md-layout=\\\"rd-navbar-fixed\\\" data-md-device-layout=\\\"rd-navbar-fixed\\\" data-lg-layout=\\\"rd-navbar-static\\\" data-lg-device-layout=\\\"rd-navbar-static\\\" data-xl-layout=\\\"rd-navbar-static\\\" data-xl-device-layout=\\\"rd-navbar-static\\\" data-lg-stick-up-offset=\\\"78px\\\" data-xl-stick-up-offset=\\\"98px\\\" data-xxl-stick-up-offset=\\\"118px\\\" data-lg-stick-up=\\\"true\\\" data-xl-stick-up=\\\"true\\\" data-xxl-stick-up=\\\"true\\\">\\n      <div class=\\\"rd-navbar-collapse-toggle rd-navbar-fixed-element-1\\\" data-rd-navbar-toggle=\\\".rd-navbar-collapse\\\"><span></span></div>\\n      \\n      <div class=\\\"rd-navbar-aside-outer rd-navbar-collapse bg-default\\\">\\n        <div class=\\\"rd-navbar-aside\\\">\\n\\n          <!-- CONTACT INFO -->\\n          <ul class=\\\"list-inline list-inline-xxl\\\">\\n            <li>\\n              <div class=\\\"unit unit-spacing-xs\\\">\\n                <div class=\\\"unit-left\\\"><span class=\\\"icon mdi mdi-map-marker\\\"></span></div>\\n                <div class=\\\"unit-body\\\"><a href=\\\"#\\\">3059 Grand Avenue, Suite 300 Miami, FL, 33133 USA</a></div>\\n              </div>\\n            </li>\\n            <li>\\n              <div class=\\\"unit unit-spacing-xs\\\">\\n                <div class=\\\"unit-left\\\"><span class=\\\"icon mdi mdi-cellphone-android\\\"></span></div>\\n                <div class=\\\"unit-body\\\"><a href=\\\"tel:+1-888-404-6185\\\">+1-888-404-6185</a></div>\\n              </div>\\n            </li>\\n            <li>\\n              <div class=\\\"unit unit-spacing-xs\\\">\\n                <div class=\\\"unit-left\\\"><span class=\\\"icon mdi mdi-email-outline\\\"></span></div>\\n                <div class=\\\"unit-body\\\"><a href=\\\"mailto: info@dotcms.com\\\">info@dotcms.com</a></div>\\n              </div>\\n            </li>\\n          </ul>\\n\\n          <div>\\n            <!-- CART -->\\n            <a class=\\\"basket\\\" href=\\\"/store/cart\\\"><span class=\\\"icon mdi mdi-cart-outline\\\"></span><span class=\\\"basket-count\\\">3</span></a>\\n\\n            <!-- My Account -->\\n            <a href=\\\"/login/profile\\\" class=\\\"ml-3\\\">\\n                                <img src=\\\"/dA/0ed8e71a-47c7-4b30-a6f2-3796aa71ba49/photo/42w/50q/hiking-profile.jpg\\\" alt=\\\"Eco Enthusiast Persona\\\" class=\\\"img-circles border\\\">\\n                          </a>\\n          </div>\\n        </div>\\n      </div>\\n\\n      <div class=\\\"rd-navbar-main-outer\\\">\\n        <div class=\\\"rd-navbar-main\\\">\\n\\n          <div class=\\\"rd-navbar-panel\\\">\\n            <button class=\\\"rd-navbar-toggle\\\" data-rd-navbar-toggle=\\\".rd-navbar-nav-wrap\\\" aria-label=\\\"Toggle Menu\\\"><span></span></button>\\n            <div class=\\\"rd-navbar-brand\\\"><a class=\\\"brand\\\" href=\\\"/\\\" aria-label=\\\"TravelLux Home\\\"><img class=\\\"brand-logo-dark\\\" src=\\\"/application/themes/travel/images/logo.png\\\" width=\\\"195\\\" height=\\\"40\\\" alt=\\\"TravelLux Home\\\"></a></div>\\n          </div>\\n\\n          <!-- NAV BAR -->\\n\\n          <div class=\\\"rd-navbar-main-element\\\">\\n\\n            <div class=\\\"rd-navbar-nav-wrap\\\">\\n            \\n                        \\n              <ul class=\\\"rd-navbar-nav\\\">\\n                <li class=\\\"rd-nav-item  \\\"><a class=\\\"rd-nav-link\\\" href='/'>Home</a></li>\\n                                                                      <li class=\\\"rd-nav-item \\\"><a class=\\\"rd-nav-link\\\" href='/blog' target='_self'>Travel Blog</a></li>\\n                                                                        <li class=\\\"rd-nav-item \\\"><a class=\\\"rd-nav-link\\\" href='/destinations' target='_self'>Destinations</a></li>\\n                                                </ul>\\n            </div>\\n\\n            <!-- RD Navbar Search-->\\n            <div class=\\\"rd-navbar-search\\\">\\n              <button class=\\\"rd-navbar-search-toggle rd-navbar-fixed-element-2\\\" data-rd-navbar-toggle=\\\".rd-navbar-search\\\" aria-label=\\\"Search Box Toggle\\\"><span></span></button>\\n              <form class=\\\"rd-search\\\" action=\\\"/search/\\\" method=\\\"GET\\\">\\n                <div class=\\\"form-wrap\\\">\\n                  <label class=\\\"form-label search-label\\\" for=\\\"site-search\\\">Search...</label>\\n                  <input class=\\\"rd-navbar-search-form-input form-input site-search\\\" type=\\\"text\\\" name=\\\"q\\\" autocomplete=\\\"off\\\">\\n                </div>\\n                <button class=\\\"rd-search-form-submit fa-search\\\" type=\\\"submit\\\" aria-label=\\\"Submit\\\"></button>\\n              </form>\\n            </div>\\n            \\n          </div>\\n        </div>\\n      </div>\\n    </nav>\\n  </div>\\n\\n</header>\\n    \\n    <div class=\\\"body-wrapper\\\">\\n    \\n            \\n            \\n                \\n                        \\n    \\n                                                            \\n                                                \\n                                                                                                                        \\n                        <section id=\\\"section-1\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-12  \\\"><!-- Column -->\\n                                                                                \\n<!-- Container Code: /application/containers/defualt/banner.vtl -->\\n\\n    <div class=\\\"banner bg-image-full bg-overlay-30 context-dark\\\" style=\\\"background-image: url('/dA/d4ed1990-b151-42ca-9bca-0725b07260de/image/1200w/50q/scenic-view-of-the-mountains-733092.jpg');\\\">\\n        <div class=\\\"container\\\">\\n            <div class=\\\"row justify-content-lg-center\\\">\\n                <div class=\\\"col-lg-9 text-center\\\">\\n                    <p class=\\\"banner-title\\\">Costa Rica</p>\\n                    <h2 class=\\\"text-decoration-lines-2\\\">\\n                        <span>\\n                            Sanctuary For The Senses\\n                            <span class=\\\"text-decoration-line text-decoration-line-left\\\"></span>\\n                            <span class=\\\"text-decoration-line text-decoration-line-right\\\"></span>\\n                        </span>\\n                    </h2>\\n                    \\n                                    </div>\\n            </div>\\n        </div>\\n    </div>\\n\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                                                                                                    \\n                        <section id=\\\"section-2\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-6  \\\"><!-- Column -->\\n                                                                                \\n<h2>Custom Packages</h2>\\n<p>Are you looking for the ultimate in Costa Rica vacations? Our team oat TravelLux will design your custom vacation package. We do not sell cookie-cutter trips. Instead, we take the time to get to know your unique &ldquo;travel personality&rdquo;. Then we match you with a hand-picked selection of housing, tours &amp; transportation options. The result is a tailor-made Costa Rica journey that will fit you like a glove.</p>\\n<p>We email you a detailed travel itinerary filled with info, pictures and videos. Your TravelLux agent will work with you to adjust your vacation package until you are 100% satisfied. This makes for a seamless, worry-free experience that allows you to relax &amp; enjoy the voyage.</p>\\n<p><a href=\\\"/contact-us/\\\" class=\\\"btn btn-primary\\\">Book Now</a></p>\\n<article class=\\\"thumbnail-classic mb-5\\\">\\n    <a class=\\\"thumbnail-classic-figure\\\" href=\\\"/dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/ski_holidays.png/1200w\\\" data-lightgallery=\\\"item\\\">\\n        <picture>\\n            <source media=\\\"(min-width: 800px)\\\" srcset=\\\"/dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/ski_holidays.png/1200w/50q/ski_holidays.png, /dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/ski_holidays.png/2400w/50q/ski_holidays.png 2x\\\">\\n            <source media=\\\"(min-width: 480px)\\\" srcset=\\\"/dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/ski_holidays.png/600w/50q/ski_holidays.png, /dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433//1200w/50q/ski_holidays.png 2x\\\">\\n            <img src=\\\"/dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/ski_holidays.png/480w/50q/ski_holidays.png\\\" alt=\\\"With over 400\\\" of snow fall a year we have the longest season in the Continental US\\\" class=\\\"img-fluid\\\">\\n        </picture>\\n    </a>\\n    <div class=\\\"thumbnail-classic-caption\\\">\\n        <h4 class=\\\"thumbnail-classic-title\\\">Over 400\\\" of snow a year</h4>\\n        <p class=\\\"thumbnail-classic-text\\\">With over 400\\\" of snow fall a year we have the longest season in the Continental US</p>\\n        <a class=\\\"thumbnail-classic-link mdi mdi-plus-circle-outline\\\" href=\\\"/dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/1200w/50q/ski_holidays.png\\\" data-lightgallery=\\\"item\\\"></a>\\n    </div>    \\n</article>\\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                                    \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-6  \\\"><!-- Column -->\\n                                                                                \\n<!-- Container Code: /application/containers/video.vtl -->\\n\\n<a class=\\\"video-cover bg-overlay-30 mb-5\\\" data-lightbox=\\\"iframe\\\" href=\\\"https://www.youtube.com/watch?v=1qw4ayRc1t8\\\">\\n  <div class=\\\"video-img\\\" style=\\\"background-image: url(https://i.ytimg.com/vi/1qw4ayRc1t8/hqdefault.jpg);\\\"></div>\\n  <span class=\\\"icon mdi mdi-play video-cover-icon\\\"></span>\\n</a><div></div>\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                                                                                                    \\n                        <section id=\\\"section-3\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-12  \\\"><!-- Column -->\\n                                                                                \\n\\r\\n<h1 class=\\\"text-center\\\">Featured Activities</h1>\\n<div class=\\\"row justify-content-center\\\">\\n            <div class=\\\"col-lg-3 col-md-4 col-sm-6 col-xs-6 mb-3\\\">\\n            <a class=\\\"box-info\\\" href=\\\"/activities/hiking\\\">\\n                <img class=\\\"box-info-img\\\" src=\\\"/dA/6bbead53-3908-471c-966d-9e76c5dd9eba/image/270w/50q/hiking.jpg\\\" alt=\\\"Hiking\\\" width=\\\"270\\\" height=\\\"270\\\">\\n                <div class=\\\"box-info-body\\\">\\n                    <h4 class=\\\"box-info-title\\\">\\n                        Hiking\\n                    </h4>\\n                    <p class=\\\"box-info-text\\\">Guided hiking tours where our guides use their training as naturalists to point out animals, unique plants and nature ...</p>\\n                </div>\\n                                    </a>\\n        </div>\\n            <div class=\\\"col-lg-3 col-md-4 col-sm-6 col-xs-6 mb-3\\\">\\n            <a class=\\\"box-info\\\" href=\\\"/activities/zip-lining\\\">\\n                <img class=\\\"box-info-img\\\" src=\\\"/dA/50757fb4-75df-4e2c-8335-35d36bdb944b/image/270w/50q/zip-line.jpg\\\" alt=\\\"Zip-Lining\\\" width=\\\"270\\\" height=\\\"270\\\">\\n                <div class=\\\"box-info-body\\\">\\n                    <h4 class=\\\"box-info-title\\\">\\n                        Zip-Lining\\n                    </h4>\\n                    <p class=\\\"box-info-text\\\">Ever wondered what it is like to fly through the forest canopy? Zip-lining ais the best way to explore the forest canopy...</p>\\n                </div>\\n                                    </a>\\n        </div>\\n            <div class=\\\"col-lg-3 col-md-4 col-sm-6 col-xs-6 mb-3\\\">\\n            <a class=\\\"box-info\\\" href=\\\"/activities/white-water-rafting\\\">\\n                <img class=\\\"box-info-img\\\" src=\\\"/dA/0e9340f8-08d2-46e3-ae25-be0137c575d0/image/270w/50q/white-water-raft-2.jpg\\\" alt=\\\"White Water Rafting\\\" width=\\\"270\\\" height=\\\"270\\\">\\n                <div class=\\\"box-info-body\\\">\\n                    <h4 class=\\\"box-info-title\\\">\\n                        White Water Rafting\\n                    </h4>\\n                    <p class=\\\"box-info-text\\\">For those looking for a thrill, we offer some of the worlds bets white water rafting. Class II - IV rivers.</p>\\n                </div>\\n                                    </a>\\n        </div>\\n    </div>\\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                                                                                                    \\n                        <section id=\\\"section-4\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-10 offset-lg-1 \\\"><!-- Column -->\\n                                                                                \\n<h2>Costa Rica Family Adventure</h2>\\n<p>Tropical rainforests, zip lines, monkey sightings and waterfall swims make for the most unforgettable vacation&mdash;and photos.</p>\\n<p>Abundance abounds in Costa Rica: beautiful beaches, friendly people and endless adventures to embark upon. We dabble in it all with a family-friendly itinerary that will get everyone&rsquo;s heart pumping. Jump right in to adventure life in Costa Rica at Arenal Volcano where we zip along the treetops, get a glimpse of rural Tico life on a local farm, rappel down a canyon waterfall that lies deep in the tropical rainforest, and soak in thermal hot springs.</p>\\n<p>Journey south, crossing Lake Arenal by boat, and dive deep into the Monteverde cloud forest. Your hotel is located in the reserve, home to eight different biological zones and thousands of plants and animals. Keep your eyes peeled for monkeys and quetzals during the day and embark on night walks with your guide to experience a whole different world after dark. Spend a unique day exploring the forest giants from the ground up&mdash;climbing up specially outfitted trees and then exploring the forest on foot with your naturalist guide.</p><div></div>\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                                                                                                    \\n                        <section id=\\\"section-5\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-6  \\\"><!-- Column -->\\n                                                                                \\n<h3>Adventure travel done right</h3>\\n<p>Wherever you want to go, whatever you want to get into, we&rsquo;ve got a trip that&rsquo;ll make your dream vacation come true. Visit like a local, explore at your own pace, and eat like a king (or a vegan king, if that&rsquo;s more your thing).<strong><br /></strong></p><div></div>\\n                                    </div><!-- Column -->\\n\\n                                                                    \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-6  \\\"><!-- Column -->\\n                                                                                \\n<h3>Experience the world with us</h3>\\n<p>We practice Leave No Trace principles on all our trips and work with local people and businesses as often as possible.Our expert guides don&rsquo;t just know these places&mdash;they call them home. Their local knowledge unveils worlds few get to see. Hike, bike, swim and paddle with like-minded travelers who share your passion for adventure and the outdoors.</p><div></div>\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                                                                                                    \\n                        <section id=\\\"section-6\\\" class=\\\"section \\\"><!-- section -->\\n                            <div class=\\\"container\\\"><!-- container -->\\n                                <div class=\\\"row\\\"><!-- row -->\\n                        \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-5  \\\"><!-- Column -->\\n                                                                                \\n\\n<article class=\\\"thumbnail-classic mb-5\\\">\\n    <a class=\\\"thumbnail-classic-figure\\\" href=\\\"/dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/waterfall-costa-rica.jpg/1200w\\\" data-lightgallery=\\\"item\\\">\\n        <picture>\\n            <source media=\\\"(min-width: 800px)\\\" srcset=\\\"/dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/waterfall-costa-rica.jpg/1200w/50q/waterfall-costa-rica.jpg, /dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/waterfall-costa-rica.jpg/2400w/50q/waterfall-costa-rica.jpg 2x\\\">\\n            <source media=\\\"(min-width: 480px)\\\" srcset=\\\"/dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/waterfall-costa-rica.jpg/600w/50q/waterfall-costa-rica.jpg, /dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca//1200w/50q/waterfall-costa-rica.jpg 2x\\\">\\n            <img src=\\\"/dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/waterfall-costa-rica.jpg/480w/50q/waterfall-costa-rica.jpg\\\" alt=\\\"From breathtaking waterfalls to amazing rain forest, Costa Rica has something for every Eco adventurer.\\\" class=\\\"img-fluid\\\">\\n        </picture>\\n    </a>\\n    <div class=\\\"thumbnail-classic-caption\\\">\\n        <h4 class=\\\"thumbnail-classic-title\\\">Fall into Costa Rica</h4>\\n        <p class=\\\"thumbnail-classic-text\\\">From breathtaking waterfalls to amazing rain forest, Costa Rica has something for every Eco adventurer.</p>\\n        <a class=\\\"thumbnail-classic-link mdi mdi-plus-circle-outline\\\" href=\\\"/dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/1200w/50q/waterfall-costa-rica.jpg\\\" data-lightgallery=\\\"item\\\"></a>\\n    </div>    \\n</article>\\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                                    \\n                                                \\n                                                                                                \\n                                    <div class=\\\" col-lg-6 offset-lg-1 \\\"><!-- Column -->\\n                                                                                \\n<div></div>\\n                                    </div><!-- Column -->\\n\\n                                                        </div><!-- /row -->\\n                            </div><!-- /container -->\\n                        </section><!-- /section -->\\n                                                                            \\n                                                    </div><!-- /body-wrapper -->\\n\\n            <!-- Page Footer-->\\n\\n\\n\\n\\n<footer class=\\\"footer-classic bg-footer bg-overlay-80 context-dark\\\" style=\\\"background-image: url('/dA/bec7b960-a8bf-4f14-a22b-0d94caf217f0/image/WebP/1200w/footer-image.jpg')\\\" >\\n  <div class=\\\"section-xxl\\\">\\n    <div class=\\\"container\\\">\\n      <div class=\\\"row row-50 justify-content-center\\\">\\n        <div class=\\\"col-lg-4\\\">\\n          <h2>About us</h2>\\n          <p class=\\\"max-width-xl-90 text-gray-400\\\">We are TravelLux, a community of dedicated travel experts, journalists, and bloggers. Our aim is to offer you the best insight on where to go for your travel as well as to give you amazing opportunities with free benefits and bonuses for registered clients.</p>\\n          <a class=\\\"footer-brand\\\" href=\\\"./\\\"><img src=\\\"/application/themes/travel/images/logo-inverse.png\\\" alt=\\\"TravelLux Home\\\" height=\\\"40\\\"/></a>\\n        </div>\\n\\n\\n        <div class=\\\"col-sm-8 col-md-6 col-lg-4\\\">\\n          <h2>Latest blog posts</h2>\\n          \\n          <!-- Latest Blogs -->\\n                    \\n        </div>\\n        <div class=\\\"col-sm-8 col-md-6 col-lg-4\\\">\\n          <h2>Get in touch</h2>\\n          <form class=\\\"rd-form form-sm rd-mailform\\\" data-form-output=\\\"form-output-global\\\" data-form-type=\\\"contact\\\" method=\\\"post\\\" action=\\\"\\\">\\n            <div class=\\\"form-wrap\\\">\\n              <input class=\\\"form-input\\\" id=\\\"footer-form-name\\\" type=\\\"text\\\" name=\\\"name\\\" data-constraints=\\\"@Required\\\">\\n              <label class=\\\"form-label\\\" for=\\\"footer-form-name\\\">Name</label>\\n            </div>\\n            <div class=\\\"form-wrap\\\">\\n              <input class=\\\"form-input\\\" id=\\\"footer-form-email\\\" type=\\\"email\\\" name=\\\"email\\\" data-constraints=\\\"@Email @Required\\\">\\n              <label class=\\\"form-label\\\" for=\\\"footer-form-email\\\">E-mail</label>\\n            </div>\\n            <div class=\\\"form-wrap\\\">\\n              <label class=\\\"form-label\\\" for=\\\"footer-form-message\\\">Message</label>\\n              <textarea class=\\\"form-input\\\" id=\\\"footer-form-message\\\" name=\\\"message\\\" data-constraints=\\\"@Required\\\"></textarea>\\n            </div>\\n            <div class=\\\"form-wrap\\\">\\n              <button class=\\\"button button-md button-primary\\\" type=\\\"submit\\\">Send</button>\\n            </div>\\n          </form>\\n        </div>\\n      </div>\\n    </div>\\n  </div>\\n  <div class=\\\"container\\\">\\n    <!-- Rights-->\\n    <p class=\\\"rights mb-0\\\"><span>&copy;2012 - 2021 All Rights Reserved</span> <a href=\\\"https://dotcms.com/company/policies/privacy-policy\\\">Terms of Use</a> <span>and</span> <a href=\\\"https://dotcms.com/company/policies/privacy-policy\\\">Privacy Policy</a></p>\\n  </div>\\n</footer>\\n\\n<!-- Javascript-->\\n<script src=\\\"/application/themes/travel/js/core.min.js\\\"></script>\\n<script src=\\\"/application/themes/travel/js/script.js\\\"></script>\\n\\n    \\n</body>\\n</html>\");",
 									"",
 									"});",
 									""
@@ -925,7 +1068,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f389f7b1-13d3-4629-8a2f-0cf8d5e7dc2a",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1002,12 +1144,95 @@
 					"response": []
 				},
 				{
+					"name": "pre_ImportBundleWithURLMappedContent",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"urlmap-bundle.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/urlmap-bundle.tar.gz"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "GivenRequestByURI_PageContainsUrlMappedContentField",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "3946c1d0-2052-473e-9a2c-07661f8f1606",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -1020,10 +1245,13 @@
 									"    var jsonData = pm.response.json();",
 									"    var urlmappedContent = jsonData.data.page.urlContentMap;",
 									"",
-									"    // mode",
-									"    pm.expect(urlmappedContent.title, 'FAILED:[urlmappedContent.title]').equal(\"Ecotourism in Costa Rica\");",
-									"    pm.expect(urlmappedContent.identifier, 'FAILED:[urlmappedContent.identifier]').equal(\"57ee7cd3-66fc-4f01-9b7e-11e53553c220\");",
-									"    pm.expect(urlmappedContent.urlMap, 'FAILED:[urlmappedContent.urlMap]').equal(\"/blog/post/ecotourism-in-costa-rica\");",
+									"    pm.expect(urlmappedContent.title, 'FAILED:[urlmappedContent.title]').equal(\"Eagles Nest Outfitters DoubleNest Hammock Patriot\");",
+									"    pm.expect(urlmappedContent.identifier, 'FAILED:[urlmappedContent.identifier]').equal(\"46e52dc2-e72a-4641-8925-026abf2adccd\");",
+									"    pm.expect(urlmappedContent.urlMap, 'FAILED:[urlmappedContent.urlMap]').equal(\"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\");",
+									"    pm.expect(urlmappedContent.contentType, 'FAILED:[urlmappedContent.contentType]').equal(\"Product\");",
+									"    pm.expect(urlmappedContent.productNumber, 'FAILED:[urlmappedContent.productNumber]').equal(\"9315054521506-1280000\");",
+									"",
+									"    pm.expect(urlmappedContent.image.idPath, 'FAILED:[urlmappedContent.image.idPath]').equal(\"/dA/46e52dc2e7/image/hammock-1.jpg?language_id=1\");",
 									"",
 									"});",
 									""
@@ -1070,7 +1298,7 @@
 						"body": {
 							"mode": "graphql",
 							"graphql": {
-								"query": "{\n  page(url:\"/blog/post/ecotourism-in-costa-rica\", pageMode: \"live\", languageId: \"1\") {\n     urlContentMap {\n        title\n        identifier\n        urlMap\n        contentType\n    }\n  }\n}",
+								"query": "{\n  page(url: \"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\") {\n    title\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
 								"variables": ""
 							}
 						},
@@ -1094,7 +1322,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "104ea22a-a663-4ef4-9308-a724b82242b7",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1147,10 +1374,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/costa-rica-sidebar.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -1183,7 +1407,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f8a0d0cc-61ee-426d-9351-69fe76628b7a",
 								"exec": [
 									"",
 									"let checker = (arr, target) => target.every(v => arr.includes(v));",
@@ -1302,9 +1525,1209 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_ContainersFieldContainsFirstLevelFields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'Page' includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var containers = jsonData.data.page.containers;",
+									"",
+									"    var container1 = containers[0];",
+									"",
+									"    // containers fields",
+									"    pm.expect(container1.archived, 'FAILED:[container1.archived]').equal(false);",
+									"    pm.expect(container1.categoryId, 'FAILED:[container1.categoryId]').equal(\"ad50ff07-6f7e-4b3c-a1ca-08667fecb28d\");",
+									"    pm.expect(container1.deleted, 'FAILED:[container1.deleted]').equal(false);",
+									"    pm.expect(container1.friendlyName, 'FAILED:[container1.friendlyName]').equal(\"container\");",
+									"    pm.expect(container1.host.hostName, 'FAILED:[container1.host.hostName]').equal(\"demo.dotcms.com\");",
+									"    pm.expect(container1.iDate, 'FAILED:[container1.iDate]').not.null;",
+									"    pm.expect(container1.idate, 'FAILED:[container1.idate]').not.null;",
+									"    pm.expect(container1.identifier, 'FAILED:[container1.identifier]').equal(\"69b3d24d-7e80-4be6-b04a-d352d16493ee\");",
+									"    pm.expect(container1.inode, 'FAILED:[container1.inode]').equal(\"ad50ff07-6f7e-4b3c-a1ca-08667fecb28d\");",
+									"    pm.expect(container1.languageId, 'FAILED:[container1.languageId]').equal(1);",
+									"    pm.expect(container1.live, 'FAILED:[container1.live]').equal(true);",
+									"    pm.expect(container1.locked, 'FAILED:[container1.locked]').equal(false);",
+									"    pm.expect(container1.maxContentlets, 'FAILED:[container1.maxContentlets]').equal(25);",
+									"    pm.expect(container1.modDate, 'FAILED:[container1.modDate]').not.null;",
+									"    pm.expect(container1.modUser.userId, 'FAILED:[container1.modUser.userId]').equal(\"system\");",
+									"    pm.expect(container1.name, 'FAILED:[container1.name]').equal(\"Default\");",
+									"    pm.expect(container1.new, 'FAILED:[container1.new]').equal(false);",
+									"    pm.expect(container1.notes, 'FAILED:[container1.notes]').equal(\"New File Container\");",
+									"    pm.expect(container1.owner.userId, 'FAILED:[container1.owner.userId]').equal(\"dotcms.org.1\");",
+									"    pm.expect(container1.parentPermissionable.hostName, 'FAILED:[container1.parentPermissionable.hostName]').equal(\"demo.dotcms.com\");",
+									"    pm.expect(container1.path, 'FAILED:[container1.path]').equal(\"//demo.dotcms.com/application/containers/default/\");",
+									"    pm.expect(container1.permissionId, 'FAILED:[container1.permissionId]').equal(\"69b3d24d-7e80-4be6-b04a-d352d16493ee\");",
+									"    pm.expect(container1.permissionType, 'FAILED:[container1.permissionType]').equal(\"com.dotmarketing.portlets.containers.model.FileAssetContainer\");",
+									"    pm.expect(container1.postLoop, 'FAILED:[container1.postLoop]').equal(\"#dotParse(\\\"//demo.dotcms.com/application/containers/default/postloop.vtl\\\")\");",
+									"    pm.expect(container1.preLoop, 'FAILED:[container1.preLoop]').equal(\"#dotParse(\\\"//demo.dotcms.com/application/containers/default/preloop.vtl\\\")\");",
+									"    pm.expect(container1.showOnMenu, 'FAILED:[container1.showOnMenu]').equal(false);",
+									"    pm.expect(container1.sortOrder, 'FAILED:[container1.sortOrder]').equal(0);",
+									"    pm.expect(container1.source, 'FAILED:[container1.source]').equal(\"FILE\");",
+									"    pm.expect(container1.staticify, 'FAILED:[container1.staticify]').equal(false);",
+									"    pm.expect(container1.title, 'FAILED:[container1.source]').equal(\"Default\");",
+									"    pm.expect(container1.type, 'FAILED:[container1.type]').equal(\"containers\");",
+									"    pm.expect(container1.useDiv, 'FAILED:[container1.useDiv]').equal(false);",
+									"    pm.expect(container1.versionId, 'FAILED:[container1.versionId]').equal(\"69b3d24d-7e80-4be6-b04a-d352d16493ee\");",
+									"    pm.expect(container1.versionType, 'FAILED:[container1.versionType]').equal(\"containers\");",
+									"    pm.expect(container1.working, 'FAILED:[container1.working]').equal(true);",
+									"    ",
+									"    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\") {\n    containers {\n      archived\n      categoryId\n      deleted\n      friendlyName\n      host {\n        hostName\n      }\n      iDate\n      idate\n      identifier\n      inode\n      languageId\n      live\n      locked\n      maxContentlets\n      modDate\n      modUser {\n        userId\n      }\n      name\n      new\n      notes\n      owner {\n        userId\n      }\n      parentPermissionable {\n        hostName\n      }\n      path\n      permissionId\n      permissionType\n      postLoop\n      preLoop\n      showOnMenu\n      sortOrder\n      source\n      staticify\n      title\n      type\n      useDiv\n      versionId\n      versionType\n      working\n    }\n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_ContainersFieldContainsFirstLevelFields_NoLanguage",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'Page' includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var containers = jsonData.data.page.containers;",
+									"",
+									"    var container1 = containers[0];",
+									"",
+									"    // containers fields",
+									"    pm.expect(container1.archived, 'FAILED:[container1.archived]').equal(false);",
+									"    pm.expect(container1.categoryId, 'FAILED:[container1.categoryId]').equal(\"ad50ff07-6f7e-4b3c-a1ca-08667fecb28d\");",
+									"    pm.expect(container1.deleted, 'FAILED:[container1.deleted]').equal(false);",
+									"    pm.expect(container1.friendlyName, 'FAILED:[container1.friendlyName]').equal(\"container\");",
+									"    pm.expect(container1.host.hostName, 'FAILED:[container1.host.hostName]').equal(\"demo.dotcms.com\");",
+									"    pm.expect(container1.iDate, 'FAILED:[container1.iDate]').not.null;",
+									"    pm.expect(container1.idate, 'FAILED:[container1.idate]').not.null;",
+									"    pm.expect(container1.identifier, 'FAILED:[container1.identifier]').equal(\"69b3d24d-7e80-4be6-b04a-d352d16493ee\");",
+									"    pm.expect(container1.inode, 'FAILED:[container1.inode]').equal(\"ad50ff07-6f7e-4b3c-a1ca-08667fecb28d\");",
+									"    pm.expect(container1.languageId, 'FAILED:[container1.languageId]').equal(1);",
+									"    pm.expect(container1.live, 'FAILED:[container1.live]').equal(true);",
+									"    pm.expect(container1.locked, 'FAILED:[container1.locked]').equal(false);",
+									"    pm.expect(container1.maxContentlets, 'FAILED:[container1.maxContentlets]').equal(25);",
+									"    pm.expect(container1.modDate, 'FAILED:[container1.modDate]').not.null;",
+									"    pm.expect(container1.modUser.userId, 'FAILED:[container1.modUser.userId]').equal(\"system\");",
+									"    pm.expect(container1.name, 'FAILED:[container1.name]').equal(\"Default\");",
+									"    pm.expect(container1.new, 'FAILED:[container1.new]').equal(false);",
+									"    pm.expect(container1.notes, 'FAILED:[container1.notes]').equal(\"New File Container\");",
+									"    pm.expect(container1.owner.userId, 'FAILED:[container1.owner.userId]').equal(\"dotcms.org.1\");",
+									"    pm.expect(container1.parentPermissionable.hostName, 'FAILED:[container1.parentPermissionable.hostName]').equal(\"demo.dotcms.com\");",
+									"    pm.expect(container1.path, 'FAILED:[container1.path]').equal(\"//demo.dotcms.com/application/containers/default/\");",
+									"    pm.expect(container1.permissionId, 'FAILED:[container1.permissionId]').equal(\"69b3d24d-7e80-4be6-b04a-d352d16493ee\");",
+									"    pm.expect(container1.permissionType, 'FAILED:[container1.permissionType]').equal(\"com.dotmarketing.portlets.containers.model.FileAssetContainer\");",
+									"    pm.expect(container1.postLoop, 'FAILED:[container1.postLoop]').equal(\"#dotParse(\\\"//demo.dotcms.com/application/containers/default/postloop.vtl\\\")\");",
+									"    pm.expect(container1.preLoop, 'FAILED:[container1.preLoop]').equal(\"#dotParse(\\\"//demo.dotcms.com/application/containers/default/preloop.vtl\\\")\");",
+									"    pm.expect(container1.showOnMenu, 'FAILED:[container1.showOnMenu]').equal(false);",
+									"    pm.expect(container1.sortOrder, 'FAILED:[container1.sortOrder]').equal(0);",
+									"    pm.expect(container1.source, 'FAILED:[container1.source]').equal(\"FILE\");",
+									"    pm.expect(container1.staticify, 'FAILED:[container1.staticify]').equal(false);",
+									"    pm.expect(container1.title, 'FAILED:[container1.source]').equal(\"Default\");",
+									"    pm.expect(container1.type, 'FAILED:[container1.type]').equal(\"containers\");",
+									"    pm.expect(container1.useDiv, 'FAILED:[container1.useDiv]').equal(false);",
+									"    pm.expect(container1.versionId, 'FAILED:[container1.versionId]').equal(\"69b3d24d-7e80-4be6-b04a-d352d16493ee\");",
+									"    pm.expect(container1.versionType, 'FAILED:[container1.versionType]').equal(\"containers\");",
+									"    pm.expect(container1.working, 'FAILED:[container1.working]').equal(true);",
+									"    ",
+									"    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/destinations/costa-rica\", pageMode: \"live\") {\n    containers {\n      archived\n      categoryId\n      deleted\n      friendlyName\n      host {\n        hostName\n      }\n      iDate\n      idate\n      identifier\n      inode\n      languageId\n      live\n      locked\n      maxContentlets\n      modDate\n      modUser {\n        userId\n      }\n      name\n      new\n      notes\n      owner {\n        userId\n      }\n      parentPermissionable {\n        hostName\n      }\n      path\n      permissionId\n      permissionType\n      postLoop\n      preLoop\n      showOnMenu\n      sortOrder\n      source\n      staticify\n      title\n      type\n      useDiv\n      versionId\n      versionType\n      working\n    }\n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_ContainersFieldContainsRendered",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'Page' includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var containers = jsonData.data.page.containers;",
+									"",
+									"    pm.expect(containers.length, 'FAILED:[containers.length]').equal(2);",
+									"",
+									"    var container1rendered = containers[0].rendered;",
+									"",
+									"    pm.expect(container1rendered.length, 'FAILED:[container1rendered.length]').equal(9);",
+									"    // rendered fields",
+									"    pm.expect(container1rendered[0].uuid, 'FAILED:[container1rendered[0].uuid]').equal(\"uuid-1\");",
+									"    pm.expect(container1rendered[0].render, 'FAILED:[container1rendered[0].render]').equal(\"\\n    <!-- Container Code: /application/containers/activity.vtl -->\\n\\n<a class=\\\"box-info\\\" href=\\\"/activities/hiking\\\">\\n\\t<img class=\\\"box-info-img\\\" src=\\\"/dA/6bbead53-3908-471c-966d-9e76c5dd9eba/image/270w/50q/hiking.jpg\\\" alt=\\\"Hiking\\\" width=\\\"270\\\" height=\\\"270\\\">\\n\\t<div class=\\\"box-info-body\\\">\\n\\t\\t<h4 class=\\\"box-info-title\\\">Hiking</h4>\\n\\t\\t<p class=\\\"box-info-text\\\">Guided hiking tours where our guides use their training as naturalists to point out animals, unique plants and nature ...</p>\\n\\t</div>\\n</a><div></div>\");",
+									"",
+									"    pm.expect(container1rendered[1].uuid, 'FAILED:[container1rendered[1].uuid]').equal(\"uuid-2\");",
+									"    pm.expect(container1rendered[1].render, 'FAILED:[container1rendered[1].render]').equal(\"\\n    <h2>Custom Packages</h2>\\n<p>Are you looking for the ultimate in Costa Rica vacations? Our team oat TravelLux will design your custom vacation package. We do not sell cookie-cutter trips. Instead, we take the time to get to know your unique &ldquo;travel personality&rdquo;. Then we match you with a hand-picked selection of housing, tours &amp; transportation options. The result is a tailor-made Costa Rica journey that will fit you like a glove.</p>\\n<p>We email you a detailed travel itinerary filled with info, pictures and videos. Your TravelLux agent will work with you to adjust your vacation package until you are 100% satisfied. This makes for a seamless, worry-free experience that allows you to relax &amp; enjoy the voyage.</p>\\n<p><a href=\\\"/contact-us/\\\" class=\\\"btn btn-primary\\\">Book Now</a></p>\\n<article class=\\\"thumbnail-classic mb-5\\\">\\n    <a class=\\\"thumbnail-classic-figure\\\" href=\\\"/dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/ski_holidays.png/1200w\\\" data-lightgallery=\\\"item\\\">\\n        <picture>\\n            <source media=\\\"(min-width: 800px)\\\" srcset=\\\"/dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/ski_holidays.png/1200w/50q/ski_holidays.png, /dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/ski_holidays.png/2400w/50q/ski_holidays.png 2x\\\">\\n            <source media=\\\"(min-width: 480px)\\\" srcset=\\\"/dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/ski_holidays.png/600w/50q/ski_holidays.png, /dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433//1200w/50q/ski_holidays.png 2x\\\">\\n            <img src=\\\"/dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/ski_holidays.png/480w/50q/ski_holidays.png\\\" alt=\\\"With over 400\\\" of snow fall a year we have the longest season in the Continental US\\\" class=\\\"img-fluid\\\">\\n        </picture>\\n    </a>\\n    <div class=\\\"thumbnail-classic-caption\\\">\\n        <h4 class=\\\"thumbnail-classic-title\\\">Over 400\\\" of snow a year</h4>\\n        <p class=\\\"thumbnail-classic-text\\\">With over 400\\\" of snow fall a year we have the longest season in the Continental US</p>\\n        <a class=\\\"thumbnail-classic-link mdi mdi-plus-circle-outline\\\" href=\\\"/dA/7b4ba67a-1793-4daf-bed9-f8ce054f1433/1200w/50q/ski_holidays.png\\\" data-lightgallery=\\\"item\\\"></a>\\n    </div>    \\n</article>\\n<div></div>\");",
+									"",
+									"    pm.expect(container1rendered[2].uuid, 'FAILED:[container1rendered[2].uuid]').equal(\"uuid-3\");",
+									"    pm.expect(container1rendered[2].render, 'FAILED:[container1rendered[2].render]').equal(\"\\n    <!-- Container Code: /application/containers/video.vtl -->\\n\\n<a class=\\\"video-cover bg-overlay-30 mb-5\\\" data-lightbox=\\\"iframe\\\" href=\\\"https://www.youtube.com/watch?v=1qw4ayRc1t8\\\">\\n  <div class=\\\"video-img\\\" style=\\\"background-image: url(https://i.ytimg.com/vi/1qw4ayRc1t8/hqdefault.jpg);\\\"></div>\\n  <span class=\\\"icon mdi mdi-play video-cover-icon\\\"></span>\\n</a><div></div>\");",
+									"    ",
+									"    pm.expect(container1rendered[3].uuid, 'FAILED:[container1rendered[3].uuid]').equal(\"uuid-4\");",
+									"    pm.expect(container1rendered[3].render, 'FAILED:[container1rendered[3].render]').equal(\"\\n    \\r\\n<h1 class=\\\"text-center\\\">Featured Activities</h1>\\n<div class=\\\"row justify-content-center\\\">\\n    </div>\\n<div></div>\");",
+									"",
+									"    pm.expect(container1rendered[4].uuid, 'FAILED:[container1rendered[4].uuid]').equal(\"uuid-5\");",
+									"    pm.expect(container1rendered[4].render, 'FAILED:[container1rendered[4].render]').equal(\"\\n    <h2>Costa Rica Family Adventure</h2>\\n<p>Tropical rainforests, zip lines, monkey sightings and waterfall swims make for the most unforgettable vacation&mdash;and photos.</p>\\n<p>Abundance abounds in Costa Rica: beautiful beaches, friendly people and endless adventures to embark upon. We dabble in it all with a family-friendly itinerary that will get everyone&rsquo;s heart pumping. Jump right in to adventure life in Costa Rica at Arenal Volcano where we zip along the treetops, get a glimpse of rural Tico life on a local farm, rappel down a canyon waterfall that lies deep in the tropical rainforest, and soak in thermal hot springs.</p>\\n<p>Journey south, crossing Lake Arenal by boat, and dive deep into the Monteverde cloud forest. Your hotel is located in the reserve, home to eight different biological zones and thousands of plants and animals. Keep your eyes peeled for monkeys and quetzals during the day and embark on night walks with your guide to experience a whole different world after dark. Spend a unique day exploring the forest giants from the ground up&mdash;climbing up specially outfitted trees and then exploring the forest on foot with your naturalist guide.</p><div></div>\");",
+									"",
+									"    pm.expect(container1rendered[5].uuid, 'FAILED:[container1rendered[5].uuid]').equal(\"uuid-6\");",
+									"    pm.expect(container1rendered[5].render, 'FAILED:[container1rendered[5].render]').equal(\"\\n    <h3>Adventure travel done right</h3>\\n<p>Wherever you want to go, whatever you want to get into, we&rsquo;ve got a trip that&rsquo;ll make your dream vacation come true. Visit like a local, explore at your own pace, and eat like a king (or a vegan king, if that&rsquo;s more your thing).<strong><br /></strong></p><div></div>\");",
+									"",
+									"    pm.expect(container1rendered[6].uuid, 'FAILED:[container1rendered[6].uuid]').equal(\"uuid-7\");",
+									"    pm.expect(container1rendered[6].render, 'FAILED:[container1rendered[6].render]').equal(\"\\n    <h3>Experience the world with us</h3>\\n<p>We practice Leave No Trace principles on all our trips and work with local people and businesses as often as possible.Our expert guides don&rsquo;t just know these places&mdash;they call them home. Their local knowledge unveils worlds few get to see. Hike, bike, swim and paddle with like-minded travelers who share your passion for adventure and the outdoors.</p><div></div>\");",
+									"",
+									"    pm.expect(container1rendered[7].uuid, 'FAILED:[container1rendered[7].uuid]').equal(\"uuid-8\");",
+									"    pm.expect(container1rendered[7].render, 'FAILED:[container1rendered[7].render]').equal(\"\\n    \\n<article class=\\\"thumbnail-classic mb-5\\\">\\n    <a class=\\\"thumbnail-classic-figure\\\" href=\\\"/dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/waterfall-costa-rica.jpg/1200w\\\" data-lightgallery=\\\"item\\\">\\n        <picture>\\n            <source media=\\\"(min-width: 800px)\\\" srcset=\\\"/dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/waterfall-costa-rica.jpg/1200w/50q/waterfall-costa-rica.jpg, /dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/waterfall-costa-rica.jpg/2400w/50q/waterfall-costa-rica.jpg 2x\\\">\\n            <source media=\\\"(min-width: 480px)\\\" srcset=\\\"/dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/waterfall-costa-rica.jpg/600w/50q/waterfall-costa-rica.jpg, /dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca//1200w/50q/waterfall-costa-rica.jpg 2x\\\">\\n            <img src=\\\"/dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/waterfall-costa-rica.jpg/480w/50q/waterfall-costa-rica.jpg\\\" alt=\\\"From breathtaking waterfalls to amazing rain forest, Costa Rica has something for every Eco adventurer.\\\" class=\\\"img-fluid\\\">\\n        </picture>\\n    </a>\\n    <div class=\\\"thumbnail-classic-caption\\\">\\n        <h4 class=\\\"thumbnail-classic-title\\\">Fall into Costa Rica</h4>\\n        <p class=\\\"thumbnail-classic-text\\\">From breathtaking waterfalls to amazing rain forest, Costa Rica has something for every Eco adventurer.</p>\\n        <a class=\\\"thumbnail-classic-link mdi mdi-plus-circle-outline\\\" href=\\\"/dA/bfee8f08-a6d1-4fd7-8f70-476e62663eca/1200w/50q/waterfall-costa-rica.jpg\\\" data-lightgallery=\\\"item\\\"></a>\\n    </div>    \\n</article>\\n<div></div>\");",
+									"",
+									"    pm.expect(container1rendered[8].uuid, 'FAILED:[container1rendered[8].uuid]').equal(\"uuid-9\");",
+									"    pm.expect(container1rendered[8].render, 'FAILED:[container1rendered[8].render]').equal(\"\\n    <div></div>\");",
+									"    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\") {\n    containers {\n      rendered {\n        uuid\n        render\n      }\n    }\n      \n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_ContainersFieldContainsContainerStructure",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"let contains = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'Containers Field' includes all Container Structures\", function () {",
+									"    var jsonData = pm.response.json();",
+									"",
+									"    pm.expect(jsonData.data.page.containers.length, 'FAILED:[jsonData.data.page.containers.length]').equal(2);",
+									"",
+									"    var containerStructuresFirstContainer = jsonData.data.page.containers[0].containerStructures;",
+									"",
+									"    pm.expect(containerStructuresFirstContainer.length, 'FAILED:[containerStructuresFirstContainer.length]').equal(9);",
+									"",
+									"    let expectedTypes = [",
+									"                        \"#dotParse(\\\"//demo.dotcms.com/application/containers/default/banner.vtl\\\")\", ",
+									"                        \"#dotParse(\\\"//demo.dotcms.com/application/containers/default/blog.vtl\\\")\", ",
+									"                        \"#dotParse(\\\"//demo.dotcms.com/application/containers/default/product.vtl\\\")\", ",
+									"                        \"#dotParse(\\\"//demo.dotcms.com/application/containers/default/activity.vtl\\\")\", ",
+									"                        \"#dotParse(\\\"//demo.dotcms.com/application/containers/default/calendarevent.vtl\\\")\", ",
+									"                        \"#dotParse(\\\"//demo.dotcms.com/application/containers/default/image.vtl\\\")\", ",
+									"                        \"#dotParse(\\\"//demo.dotcms.com/application/containers/default/video.vtl\\\")\", ",
+									"                        \"#dotParse(\\\"//demo.dotcms.com/application/containers/default/calltoaction.vtl\\\")\", ",
+									"                        \"#dotParse(\\\"//demo.dotcms.com/application/containers/default/webpagecontent.vtl\\\")\"                ",
+									"    ];",
+									"",
+									"    // assert all expected content types are included ",
+									"    const respondedTypes = containerStructuresFirstContainer.map(structure => structure.code);                 ",
+									"    pm.expect(contains(respondedTypes, expectedTypes ), 'FAILED:[expectedTypes]').equal(true);",
+									"",
+									"    // assert all properties are present ",
+									"",
+									"    pm.expect(containerStructuresFirstContainer[0].id, 'FAILED:[ontainerStructuresFirstContainer[0].id]').not.undefined;",
+									"    pm.expect(containerStructuresFirstContainer[0].id, 'FAILED:[ontainerStructuresFirstContainer[0].id]').not.null;",
+									"",
+									"    pm.expect(containerStructuresFirstContainer[0].structureId, 'FAILED:[ontainerStructuresFirstContainer[0].structureId]').not.undefined;",
+									"    pm.expect(containerStructuresFirstContainer[0].structureId, 'FAILED:[ontainerStructuresFirstContainer[0].structureId]').not.null;",
+									"",
+									"    pm.expect(containerStructuresFirstContainer[0].containerInode, 'FAILED:[ontainerStructuresFirstContainer[0].containerInode]').not.undefined;",
+									"    pm.expect(containerStructuresFirstContainer[0].containerInode, 'FAILED:[ontainerStructuresFirstContainer[0].containerInode]').not.null;",
+									"",
+									"    pm.expect(containerStructuresFirstContainer[0].containerId, 'FAILED:[ontainerStructuresFirstContainer[0].containerId]').not.undefined;",
+									"    pm.expect(containerStructuresFirstContainer[0].containerId, 'FAILED:[ontainerStructuresFirstContainer[0].containerId]').not.null;",
+									"",
+									"    pm.expect(containerStructuresFirstContainer[0].code, 'FAILED:[ontainerStructuresFirstContainer[0].code]').not.undefined;",
+									"    pm.expect(containerStructuresFirstContainer[0].code, 'FAILED:[ontainerStructuresFirstContainer[0].code]').not.null;",
+									"    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\") {\n    containers {\n      containerStructures {\n        id\n        structureId\n        containerInode\n        containerId\n        code\n      }\n    }\n      \n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "pre_ImportBundleWithContentWithTagsAndCats",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"costa-rica-family-cats-tags.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/costa-rica-family-cats-tags.tar.gz"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* Content `Costa Rica Family Adventure` with \n`taggie` field with `costa rica` and `winterenthusiast` tags and `cat` field with `All Incluse` and `Tours` categories"
+					},
+					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_ContainersFieldContainsContainerContentlets",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'Page' includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var containerContentlets = jsonData.data.page.containers[0].containerContentlets;",
+									"",
+									"    var containerContentlets1 = containerContentlets[0];",
+									"    // containerContentlets fields",
+									"    pm.expect(containerContentlets1.uuid, 'FAILED:[containerContentlets1.uuid]').equal(\"uuid-9\");",
+									"    pm.expect(containerContentlets1.contentlets[0].identifier, 'FAILED:[containerContentlets1.contentlets[0]].identifier').equal(\"7c9cb3a7-bb68-4fd0-b21d-03ec4be491a7\");",
+									"    pm.expect(containerContentlets1.contentlets[0].title, 'FAILED:[containerContentlets1.contentlets[0]].title').equal(\"Costa Rica FAQ\");",
+									"",
+									"    var containerContentlets2 = containerContentlets[1];",
+									"    // containerContentlets fields",
+									"    pm.expect(containerContentlets2.uuid, 'FAILED:[containerContentlets2.uuid]').equal(\"uuid-1\");",
+									"    pm.expect(containerContentlets2.contentlets[0].identifier, 'FAILED:[containerContentlets2.contentlets[0]].identifier').equal(\"6bbead53-3908-471c-966d-9e76c5dd9eba\");",
+									"    pm.expect(containerContentlets2.contentlets[0].title, 'FAILED:[containerContentlets2.contentlets[0]].title').equal(\"Hiking\");",
+									"",
+									"    var containerContentlets3 = containerContentlets[2];",
+									"    // containerContentlets fields",
+									"    pm.expect(containerContentlets3.uuid, 'FAILED:[containerContentlets3.uuid]').equal(\"uuid-3\");",
+									"    pm.expect(containerContentlets3.contentlets[0].identifier, 'FAILED:[containerContentlets3.contentlets[0]].identifier').equal(\"f40c6030-3532-4e75-9ca8-0d92261264e3\");",
+									"    pm.expect(containerContentlets3.contentlets[0].title, 'FAILED:[containerContentlets3.contentlets[0]].title').equal(\"Nat Geo Top Rated Eco Lodge, Episode 2 of 4\");",
+									"",
+									"    var containerContentlets4 = containerContentlets[3];",
+									"    // containerContentlets fields",
+									"    pm.expect(containerContentlets4.uuid, 'FAILED:[containerContentlets4.uuid]').equal(\"uuid-4\");",
+									"    pm.expect(containerContentlets4.contentlets[0].identifier, 'FAILED:[containerContentlets4.contentlets[0]].identifier').equal(\"fb6a06da-8c0f-4828-99c5-91b03b17eaf7\");",
+									"    pm.expect(containerContentlets4.contentlets[0].title, 'FAILED:[containerContentlets4.contentlets[0]].title').equal(\"Destination Related Activities\");",
+									"",
+									"    var containerContentlets5 = containerContentlets[4];",
+									"    // containerContentlets fields",
+									"    pm.expect(containerContentlets5.uuid, 'FAILED:[containerContentlets5.uuid]').equal(\"uuid-5\");",
+									"    pm.expect(containerContentlets5.contentlets[0].identifier, 'FAILED:[containerContentlets5.contentlets[0]].identifier').equal(\"3e6533b7-c3ba-4ec4-8bca-6a88d54cd037\");",
+									"    pm.expect(containerContentlets5.contentlets[0].title, 'FAILED:[containerContentlets5.contentlets[0]].title').equal(\"Costa Rica Family Adventure\");",
+									"    // tags ",
+									"    pm.expect(containerContentlets5.contentlets[0].taggies, 'FAILED:[containerContentlets5.contentlets[0].taggies]').equal(\"costa rica,winterenthusiast:persona\");",
+									"    // cats ",
+									"    pm.expect(JSON.stringify(containerContentlets5.contentlets[0].cats), 'FAILED:[containerContentlets5.contentlets[0].cats]').equal(JSON.stringify([{\"allInclusive\": \"All Inclusive\"}, {\"tours\": \"Tours\"}]));",
+									"",
+									"",
+									"    var containerContentlets6 = containerContentlets[5];",
+									"    // containerContentlets fields",
+									"    pm.expect(containerContentlets6.uuid, 'FAILED:[containerContentlets6.uuid]').equal(\"uuid-6\");",
+									"    pm.expect(containerContentlets6.contentlets[0].identifier, 'FAILED:[containerContentlets6.contentlets[0]].identifier').equal(\"57abf7cc-8b91-4cb9-8e5d-bc7f0ff54665\");",
+									"    pm.expect(containerContentlets6.contentlets[0].title, 'FAILED:[containerContentlets6.contentlets[0]].title').equal(\"Adventure travel done right\");",
+									"",
+									"    var containerContentlets7 = containerContentlets[6];",
+									"    // containerContentlets fields",
+									"    pm.expect(containerContentlets7.uuid, 'FAILED:[containerContentlets7.uuid]').equal(\"uuid-7\");",
+									"    pm.expect(containerContentlets7.contentlets[0].identifier, 'FAILED:[containerContentlets7.contentlets[0]].identifier').equal(\"5a4e4ef3-884f-4258-9009-f8fa83236242\");",
+									"    pm.expect(containerContentlets7.contentlets[0].title, 'FAILED:[containerContentlets7.contentlets[0]].title').equal(\"Experience the world with us\");",
+									"",
+									"    var containerContentlets8 = containerContentlets[7];",
+									"    // containerContentlets fields",
+									"    pm.expect(containerContentlets8.uuid, 'FAILED:[containerContentlets8.uuid]').equal(\"uuid-8\");",
+									"    pm.expect(containerContentlets8.contentlets[0].identifier, 'FAILED:[containerContentlets8.contentlets[0]].identifier').equal(\"bfee8f08-a6d1-4fd7-8f70-476e62663eca\");",
+									"    pm.expect(containerContentlets8.contentlets[0].title, 'FAILED:[containerContentlets8.contentlets[0]].title').equal(\"Fall into Costa Rica\");",
+									"",
+									"    var containerContentlets9 = containerContentlets[8];",
+									"    // containerContentlets fields",
+									"    pm.expect(containerContentlets9.uuid, 'FAILED:[containerContentlets9.uuid]').equal(\"uuid-2\");",
+									"    pm.expect(containerContentlets9.contentlets[0].identifier, 'FAILED:[containerContentlets9.contentlets[0]].identifier').equal(\"f827c41a-5689-4733-b4d7-916d3a31c9c6\");",
+									"    pm.expect(containerContentlets9.contentlets[0].title, 'FAILED:[containerContentlets9.contentlets[0]].title').equal(\"Costa Rica Intro\");",
+									"",
+									"    pm.expect(containerContentlets9.contentlets[1].identifier, 'FAILED:[containerContentlets9.contentlets[0]].identifier').equal(\"7b4ba67a-1793-4daf-bed9-f8ce054f1433\");",
+									"    pm.expect(containerContentlets9.contentlets[1].title, 'FAILED:[containerContentlets9.contentlets[0]].title').equal(\"Over 400\\\" of snow a year\");",
+									"    ",
+									"    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/destinations/costa-rica\", pageMode: \"live\", languageId: \"1\") {\n    containers {\n      containerContentlets {\n        uuid\n        contentlets {\n          identifier\n          title\n          taggies: _map(key:\"taggies\") \n          cats: _map(key:\"cats\")\n        }\n      }\n    }\n      \n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "pre_ImportBundleWithMexicoPageAndRule",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"mexico-pageasset.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/mexico-pageasset.tar.gz"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_FireRulesTrue_PREVIEW_MODE_pageRuleShouldFire",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Rule fired\", function () {",
+									"    var rulesFired = pm.response.headers.get(\"rulesFired\");",
+									"    pm.expect(rulesFired, 'FAILED:[rulesFired').equal(\"true\");",
+									"    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/destinations/mexico\", pageMode: \"preview_mode\", languageId: \"1\", fireRules: true) {\n    title\n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_FireRulesTrue_PREVIEW_MODE_pageRuleShouldFire Copy",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Rule fired\", function () {",
+									"    var rulesFired = pm.response.headers.get(\"rulesFired\");",
+									"    pm.expect(rulesFired, 'FAILED:[rulesFired').equal(\"true\");",
+									"    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/destinations/mexico\", pageMode: \"preview_mode\", languageId: \"1\", fireRules: true) {\n    title\n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GivenRequestByURLMAP_givenRequestedPersona_shouldRenderUsingPersona",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Persona present\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.page.viewAs.visitor.persona.keyTag, 'FAILED:[jsonData.data.page.viewAs.visitor.persona.keyTag]').equal(\"EcoEnthusiast\");",
+									"    pm.expect(jsonData.data.page.viewAs.visitor.persona.identifier, 'FAILED:[jsonData.data.page.viewAs.visitor.persona.identifier]').equal(\"0ed8e71a-47c7-4b30-a6f2-3796aa71ba49\");",
+									"    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\", fireRules: true, persona: \"EcoEnthusiast\") {\n    viewAs {\n      visitor {\n        device\n        persona {\n          keyTag\n          identifier\n        }\n        tags {\n          tag\n        }\n      }\n    }\n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "This tests that given a persona tag in the parameters of the `page` field, the page rendering needs to take the persona into consideration and return the persona info"
+					},
+					"response": []
+				},
+				{
+					"name": "pre_ImportBundleWithPageInDifferentSite",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"page-in-another-site.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/page-in-another-site.tar.gz"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_givenASite_shouldReturnExpectedPage",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"let checker = (arr, target) => target.every(v => arr.includes(v));",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Expected page fetched\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.page.title, 'FAILED:[jsonData.data.page.title]').equal(\"copy-page\");",
+									"    pm.expect(jsonData.data.page.url, 'FAILED:[jsonData.data.page.url]').equal(\"/copy-page\");",
+									"    pm.expect(jsonData.data.page.host.hostName, 'FAILED:[jsonData.data.page.host.hostName]').equal(\"copy.dotcms.com\");",
+									"    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/copy-page\", fireRules: true, site: \"copy.dotcms.com\") {\n    title\n    url\n    host {\n      hostName\n    }\n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "This tests that given a persona tag in the parameters of the `page` field, the page rendering needs to take the persona into consideration and return the persona info"
+					},
+					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "Test BaseType fields ",
@@ -1315,7 +2738,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "9f53bc11-d480-4feb-a011-4e10b9cffd0e",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1368,10 +2790,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/personas.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -1404,7 +2823,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "80116f04-0625-4544-a952-180cd5e78c3a",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1457,10 +2875,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/keyvalue.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -1493,7 +2908,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c12b9f4d-6f4c-4068-b38e-1ad8d2b64710",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1546,10 +2960,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/vanity.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -1582,7 +2993,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "6b19625f-015c-40ef-8c6e-ae65895ba6aa",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1635,10 +3045,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/dotasset.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -1671,7 +3078,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d28d0656-61ee-41fe-b14a-95e0909c23b6",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1724,10 +3130,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/page.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -1760,7 +3163,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "51028aad-acb6-4543-96a4-dc95881bb850",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1813,10 +3215,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/fileasset.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -1849,7 +3248,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b1526eba-52b6-47f5-9b9b-c54a9d03245d",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1902,10 +3300,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/widget.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -1938,7 +3333,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "6fff3e00-260e-4748-992c-e351ae010266",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2000,7 +3394,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "31904990-e291-44ae-9ade-478858cc2979",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2054,7 +3447,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "e1cd8656-c620-48c2-8f18-4872da53526d",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2124,7 +3516,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "5bfea9fd-07c6-4449-8991-56451e38eb0a",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2173,7 +3564,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d47a71d5-c7dd-4cfd-a83c-45566f580cb5",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2222,7 +3612,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "a47cc911-35c1-403e-a4bf-f0a539ab8cc2",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2275,7 +3664,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "435a011a-3dfe-4848-94fa-c303673badc5",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2317,8 +3705,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "Get content in new Language",
@@ -2329,7 +3716,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b0d7f45a-38fa-4230-9b5b-e370cad0a87a",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"languageId\", jsonData.entity.id);"
@@ -2392,7 +3778,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "11cff9ca-b5d7-44d0-a36d-f4a1d9613a4c",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);"
@@ -2450,7 +3835,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d93b684a-c5a6-4794-8c5d-9d3faa57ea2d",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);"
@@ -2509,7 +3893,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f0ccfb65-eed7-4957-b0cf-509296b1cfbb",
 								"exec": [
 									"pm.test(\"Content in new Language should be retrieved\", function () {",
 									"    var jsonData = pm.response.json();",
@@ -2547,22 +3930,20 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
-			"name": "Test GraphQL Image Field fields ",
+			"name": "Test GraphQL File/Image Field fields",
 			"item": [
 				{
-					"name": "Create Image ContentType",
+					"name": "Create File/Image ContentType",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "88c92ddb-bd41-4abb-bd39-314c0c2d95dd",
 								"exec": [
 									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"imageContentTypeVariable\", jsonData.entity[0].variable);"
+									"pm.collectionVariables.set(\"fileImageContentTypeVariable\", jsonData.entity[0].variable);"
 								],
 								"type": "text/javascript"
 							}
@@ -2595,7 +3976,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"defaultType\": false,\n  \"fixed\": false,\n  \"system\": false,\n  \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableFileAssetContentType\",\n  \"description\": \"\",\n  \"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n  \"folder\": \"SYSTEM_FOLDER\",\n  \"name\": \"myImageType{{$randomBankAccount}}\",\n  \"systemActionMappings\": {\n    \"NEW\": \"\"\n  },\n  \"workflow\": [\n    \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n  ]\n}"
+							"raw": "{\n  \"defaultType\": false,\n  \"fixed\": false,\n  \"system\": false,\n  \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableFileAssetContentType\",\n  \"description\": \"\",\n  \"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n  \"folder\": \"SYSTEM_FOLDER\",\n  \"name\": \"myFileImageType{{$randomBankAccount}}\",\n  \"systemActionMappings\": {\n    \"NEW\": \"\"\n  },\n  \"workflow\": [\n    \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n  ]\n}"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/contenttype",
@@ -2617,7 +3998,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f2d75aa1-040b-4f5e-8e76-2858ce83563d",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -2658,7 +4038,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"My Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"My Custom Type {{$randomBankAccount}}\",\n\t\"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n\t\"fixed\": false,\n\t\"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"],\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 1,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"fixed\": true\n\t\t}, \n\t\t{\n              \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableImageField\",\n              \"dataType\": \"TEXT\",\n              \"fieldType\": \"Image\",\n              \"fieldTypeLabel\": \"Image\",\n              \"fieldVariables\": [],\n              \"fixed\": false,\n              \"iDate\": 1585605564000,\n              \"indexed\": false,\n              \"listed\": false,\n              \"modDate\": 1585605564000,\n              \"name\": \"myImage\",\n              \"readOnly\": false,\n              \"required\": false,\n              \"searchable\": false,\n              \"sortOrder\": 2,\n              \"unique\": false\n       },\n\t   {\n\t\t      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableFileField\",\n\t\t      \"name\": \"myFile\",\n\t\t      \"required\": false,\n\t\t      \"hint\": \"\"\n\t   }\n\t]\n}"
+							"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"My Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"My Custom Type {{$randomBankAccount}}\",\n\t\"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n\t\"fixed\": false,\n\t\"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"],\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 1,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"fixed\": true\n\t\t}, \n        {\n\t\t      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableFileField\",\n\t\t      \"name\": \"myFile\",\n\t\t      \"required\": false,\n\t\t      \"hint\": \"\", \n              \"sortOrder\": 2, \n              \"indexed\": true\n\t    }, \n\t\t{\n              \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableImageField\",\n              \"dataType\": \"TEXT\",\n              \"fieldType\": \"Image\",\n              \"fieldTypeLabel\": \"Image\",\n              \"fieldVariables\": [],\n              \"fixed\": false,\n              \"iDate\": 1585605564000,\n              \"indexed\": true,\n              \"listed\": false,\n              \"modDate\": 1585605564000,\n              \"name\": \"myImage\",\n              \"readOnly\": false,\n              \"required\": false,\n              \"searchable\": false,\n              \"sortOrder\": 3,\n              \"unique\": false\n       }\n\t]\n}"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/contenttype",
@@ -2675,86 +4055,11 @@
 					"response": []
 				},
 				{
-					"name": "Create Image Content",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "59ef896e-c8d5-494d-aff9-973197df63ca",
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"imageContentIdentifier\", jsonData.entity.identifier);"
-								],
-								"type": "text/javascript"
-							}
-						},
-						{
-							"listen": "prerequest",
-							"script": {
-								"id": "141f88b9-e401-4a7c-a477-96b173f13642",
-								"exec": [
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "json",
-									"value": "{\n    \"contentlet\": {\n       \"contentType\":\"{{imageContentTypeVariable}}\",\n       \"title\":\"My Image\", \n       \"hostFolder\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"showOnMenu\":\"true\",\n       \"sortOrder\":2\n    }\n}",
-									"type": "text"
-								},
-								{
-									"key": "file",
-									"type": "file",
-									"src": "resources/GraphQL/Test_GraphQL_Image_Field_fields/tommylee18005.jpeg"
-								}
-							],
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"actions",
-								"default",
-								"fire",
-								"PUBLISH"
-							]
-						},
-						"description": "This is to fire the added default action\n\nhttp://localhost:8080/api/v1/workflow/actions/default/fire/PUBLISH\n\nIn this case I'm using the \"test\" content type that just have a name filed (text)"
-					},
-					"response": []
-				},
-				{
 					"name": "Create File Content",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "974446be-0beb-4bed-af7a-db9195f0bc86",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"fileContentIdentifier\", jsonData.entity.identifier);"
@@ -2778,7 +4083,7 @@
 							"formdata": [
 								{
 									"key": "json",
-									"value": "{\n    \"contentlet\": {\n       \"contentType\":\"{{imageContentTypeVariable}}\",\n       \"title\":\"My Image\", \n       \"hostFolder\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"showOnMenu\":\"true\",\n       \"sortOrder\":\"2\"\n    }\n}",
+									"value": "{\n    \"contentlet\": {\n       \"contentType\":\"{{fileImageContentTypeVariable}}\",\n       \"title\":\"My Image\", \n       \"hostFolder\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"showOnMenu\":\"true\",\n       \"sortOrder\":\"2\"\n    }\n}",
 									"type": "text"
 								},
 								{
@@ -2813,15 +4118,23 @@
 					"response": []
 				},
 				{
-					"name": "Create Content",
+					"name": "Create Image Content",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "8c9e38ef-0ed8-4b2b-a354-dfd2e823c32f",
 								"exec": [
 									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);"
+									"pm.collectionVariables.set(\"imageContentIdentifier\", jsonData.entity.identifier);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -2838,8 +4151,19 @@
 							}
 						],
 						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"contentlet\": {\n       \"contentType\":\"{{contentTypeVariable}}\",\n       \"name\":\"Content With Image\", \n       \"contentHost\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"{{imageFieldVariable}}\":\"{{imageContentIdentifier}}\",\n       \"{{fileFieldVariable}}\":\"{{fileContentIdentifier}}\"\n    }\n}",
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "json",
+									"value": "{\n    \"contentlet\": {\n       \"contentType\":\"{{fileImageContentTypeVariable}}\",\n       \"title\":\"My Image\", \n       \"hostFolder\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"showOnMenu\":\"true\",\n       \"sortOrder\":2\n    }\n}",
+									"type": "text"
+								},
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/Test_GraphQL_Image_Field_fields/tommylee18005.jpeg"
+								}
+							],
 							"options": {
 								"raw": {
 									"language": "json"
@@ -2866,12 +4190,63 @@
 					"response": []
 				},
 				{
-					"name": "Request content with Image field",
+					"name": "Create Content",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "2e6ec58b-9957-48c6-a96c-a7eb2efb7a04",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n       \"contentType\":\"{{contentTypeVariable}}\",\n       \"name\":\"Content With Image\", \n       \"contentHost\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"{{fileFieldVariable}}\":\"{{fileContentIdentifier}}\", \n       \"{{imageFieldVariable}}\":\"{{imageContentIdentifier}}\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						},
+						"description": "This is to fire the added default action\n\nhttp://localhost:8080/api/v1/workflow/actions/default/fire/PUBLISH\n\nIn this case I'm using the \"test\" content type that just have a name filed (text)"
+					},
+					"response": []
+				},
+				{
+					"name": "Request content with Image and File fields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"var imageFieldVariable = pm.collectionVariables.get(\"imageFieldVariable\");",
@@ -2886,7 +4261,6 @@
 									"    ",
 									"    // general attributes",
 									"    pm.expect(imageFieldJson.fileName).to.eql(\"tommylee18005.jpeg\");",
-									"    pm.expect(imageFieldJson.description).to.eql(\"tommylee18005\");",
 									"    pm.expect(imageFieldJson.sortOrder).to.eql(2);",
 									"    pm.expect(imageFieldJson.showOnMenu[0]).to.eql(\"true\");",
 									"    ",
@@ -2896,14 +4270,17 @@
 									"    pm.expect(imageFieldJson.fileAsset.mime).to.eql(\"image/jpeg\");",
 									"    ",
 									"    // metaData",
-									"    pm.expect(imageFieldJson.metaData.length).to.eql(6);",
-									"    pm.expect(hasProperty(imageFieldJson.metaData, \"fileSize\", \"5494\")).to.be.true;",
-									"    pm.expect(hasProperty(imageFieldJson.metaData, \"length\", \"5494\")).to.be.true;",
-									"    pm.expect(hasProperty(imageFieldJson.metaData, \"width\", \"139\")).to.be.true;",
-									"    pm.expect(hasProperty(imageFieldJson.metaData, \"contentType\", \"image/jpeg\")).to.be.true;",
-									"    pm.expect(hasProperty(imageFieldJson.metaData, \"content\", \"\")).to.be.true;",
-									"    pm.expect(hasProperty(imageFieldJson.metaData, \"height\", \"186\")).to.be.true;",
-									"",
+									"    pm.expect(imageFieldJson.metaData.length).to.eql(11);",
+									"    pm.expect(hasProperty(imageFieldJson.metaData, \"fileSize\", \"5494\"), 'FAILED:[fileSize]').to.be.true;",
+									"    pm.expect(hasProperty(imageFieldJson.metaData, \"length\", \"5494\"), 'FAILED:[length]').to.be.true;",
+									"    pm.expect(hasProperty(imageFieldJson.metaData, \"width\", \"139\"), 'FAILED:[width]').to.be.true;",
+									"    pm.expect(hasProperty(imageFieldJson.metaData, \"contentType\", \"image/jpeg\"), 'FAILED:[contentType]').to.be.true;",
+									"    pm.expect(hasProperty(imageFieldJson.metaData, \"height\", \"186\"), 'FAILED:[height]').to.be.true;",
+									"    pm.expect(metaDataIncludes(imageFieldJson.metaData, \"path\", \"/fileAsset/tommylee18005.jpeg\"), 'FAILED:[path]').to.be.true;",
+									"    pm.expect(hasProperty(imageFieldJson.metaData, \"sha256\", \"d6b09b7a7d42e6a84e455e7257faf32c4351aa9bb491ceb939f7f3443c2150ae\"), 'FAILED:[sha256]').to.be.true;",
+									"    pm.expect(hasProperty(imageFieldJson.metaData, \"title\", \"tommylee18005.jpeg\"), 'FAILED:[title]').to.be.true;",
+									"    pm.expect(hasProperty(imageFieldJson.metaData, \"isImage\", \"true\"), 'FAILED:[isImage]').to.be.true;",
+									"    pm.expect(imageFieldJson.metaData.modDate).to.be.not.null;",
 									"    ",
 									"    ",
 									"});",
@@ -2913,37 +4290,47 @@
 									"    var fileFieldJson = jsonData.data[collectionName][0][fileFieldVariable];",
 									"    ",
 									"    // general attributes",
-									"    pm.expect(fileFieldJson.fileName).to.eql(\"Readme18005.md\");",
-									"    pm.expect(fileFieldJson.description).to.eql(\"Readme18005\");",
-									"    pm.expect(fileFieldJson.sortOrder).to.eql(2);",
-									"    pm.expect(fileFieldJson.showOnMenu[0]).to.eql(\"true\");",
+									"    pm.expect(fileFieldJson.fileName, 'FAILED:[fileName]').to.eql(\"Readme18005.md\");",
+									"    pm.expect(fileFieldJson.sortOrder, 'FAILED:[sortOrder]').to.eql(2);",
+									"    pm.expect(fileFieldJson.showOnMenu[0], 'FAILED:[showOnMenu]').to.eql(\"true\");",
 									"    ",
 									"    // fileAsset",
-									"    pm.expect(fileFieldJson.fileAsset.name).to.eql(\"Readme18005.md\");",
-									"    pm.expect(fileFieldJson.fileAsset.size).to.eql(14);",
-									"    pm.expect(fileFieldJson.fileAsset.mime).to.be.null;",
+									"    pm.expect(fileFieldJson.fileAsset.name, 'FAILED:[name]').to.eql(\"Readme18005.md\");",
+									"    pm.expect(fileFieldJson.fileAsset.size, 'FAILED:[size]').to.eql(14);",
+									"    pm.expect(fileFieldJson.fileAsset.mime, 'FAILED:[mime]').to.eql(\"text/plain; charset=ISO-8859-1\");",
 									"    ",
-									"    pm.expect(fileFieldJson.metaData.length).to.eql(4);",
+									"    pm.expect(fileFieldJson.metaData.length).to.eql(9);",
 									"",
 									"    // console.log(fileFieldJson.metaData)",
 									"    ",
-									"    pm.expect(hasProperty(fileFieldJson.metaData, \"fileSize\", \"14\")).to.be.true;",
-									"    pm.expect(hasProperty(fileFieldJson.metaData, \"length\", \"14\")).to.be.true;",
-									"    pm.expect(hasProperty(fileFieldJson.metaData, \"contentType\", \"text/plain; charset=ISO-8859-1\")).to.be.true;",
-									"    pm.expect(hasProperty(fileFieldJson.metaData, \"content\", \"This is a test\")).to.be.true;",
+									"    pm.expect(hasProperty(fileFieldJson.metaData, \"fileSize\", \"14\"), 'FAILED:[fileSize]').to.be.true;",
+									"    pm.expect(hasProperty(fileFieldJson.metaData, \"length\", \"14\"), 'FAILED:[length]').to.be.true;",
+									"    pm.expect(hasProperty(fileFieldJson.metaData, \"contentType\", \"text/plain; charset=ISO-8859-1\"), 'FAILED:[contentType]').to.be.true;",
+									"    ",
 									"    ",
 									"});",
 									"",
 									"function hasProperty(metaData, name, value) {",
-									"        var hasProperty = false;",
-									"        metaData.forEach(function (item) {",
-									"            if(item.key==name && item.value.trim()==value) {",
-									"                hasProperty = true;",
-									"            }",
-									"        });",
+									"    var hasProperty = false;",
+									"    metaData.forEach(function (item) {",
+									"        if(item.key==name && item.value.trim()==value) {",
+									"            hasProperty = true;",
+									"        }",
+									"    });",
 									"",
-									"        return hasProperty;",
-									"    }",
+									"    return hasProperty;",
+									"}",
+									"",
+									"function metaDataIncludes(metaData, name, value) {",
+									"    var metaDataIncludes = false;",
+									"    metaData.forEach(function (item) {",
+									"        if(item.key==name && item.value.trim().includes(value)) {",
+									"            metaDataIncludes = true;",
+									"        }",
+									"    });",
+									"",
+									"    return metaDataIncludes;",
+									"}",
 									""
 								],
 								"type": "text/javascript"
@@ -2975,8 +4362,7 @@
 					"response": []
 				}
 			],
-			"description": "This test that the custom type Image contains the expecte fields.\nExpected fields:\n\n* fileName\n* description\n* fileAsset (Composed/Custom Type. see Binary type on our GraphQL doc)\n* metaData (Custom Type. See Key Value type on our GraphQL doc)\n* showOnMenu\n* sortOrder",
-			"protocolProfileBehavior": {}
+			"description": "This test that the custom type Image contains the expecte fields.\nExpected fields:\n\n* fileName\n* description\n* fileAsset (Composed/Custom Type. see Binary type on our GraphQL doc)\n* metaData (Custom Type. See Key Value type on our GraphQL doc)\n* showOnMenu\n* sortOrder"
 		},
 		{
 			"name": "Related content respects language in query for parent",
@@ -2987,7 +4373,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "46e91aba-8d25-44d1-86c3-dbc8287ce600",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"languageId\", jsonData.entity.id);"
@@ -3050,7 +4435,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "33d07a12-5450-4f75-9b79-74cfdce51d40",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"childContentTypeVariable\", jsonData.entity[0].variable);"
@@ -3108,7 +4492,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "efb2bbf5-73e3-4a3d-8a6f-a89df40bd3bd",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"parentContentTypeVariable\", jsonData.entity[0].variable);",
@@ -3167,7 +4550,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "55b8d053-9d63-4c0c-813c-4f26ec31f2a1",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"childContentIdentifier\", jsonData.entity.identifier);"
@@ -3226,7 +4608,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ab0baa96-788c-46ca-9974-a89af8227466",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"parentContentIdentifier\", jsonData.entity.identifier);"
@@ -3285,7 +4666,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "9141c398-72ef-4683-b385-0159820a21a5",
 								"exec": [
 									"pm.test(\"Content parent and child content returned in requested language\", function () {",
 									"    var jsonData = pm.response.json();",
@@ -3329,8 +4709,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "Empty Collection",
@@ -3341,7 +4720,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "3fbe595a-e5f3-4320-aa86-f2a23496ba64",
 								"exec": [
 									"var jsonData = pm.response.json();",
 									"",
@@ -3404,7 +4782,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ba29446d-4c81-4e34-b7e5-a013783f8ed1",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3438,8 +4815,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "Metadata ",
@@ -3450,7 +4826,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "2faf096d-b38b-4e9b-b109-b5b5cc7b4966",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3503,10 +4878,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/personas.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -3539,7 +4911,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "940848d6-42bb-43d6-9f8b-23dcce7c5225",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3592,10 +4963,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/vanity.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -3628,7 +4996,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "165bb850-5f6d-4f51-9e31-144d10b4bf09",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3677,96 +5044,925 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
+		},
+		{
+			"name": "Related content with condition / query",
+			"item": [
+				{
+					"name": "pre_ImportBundleWithContext",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"movies-studios-ratings-bundle.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/movies-studios-ratings-bundle.tar.gz"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* HTMLPage /blog/index\n* HTMLPage /blog/destinations/costa-rica\n* Contentlet [Blog] Ecotourism in Costa Rica\n* Blog Detail Page /blog/blog-detail"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Related Content with condition",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Filtered relationship fetched\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    ",
+									"    pm.expect(jsonData.data.MovieCollection[2].studio[0].name).to.eql(\"Walt Disney Pictures\");",
+									"",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  MovieCollection(sortBy: \"Movie.title\") {\n    title\n    studio(query: \"+studio.name:\\\"Walt Disney Pictures\\\"\") {\n      name\n    }\n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "File Metadata",
+			"item": [
+				{
+					"name": "Create FileAsset Content",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"fileContentIdentifier\", jsonData.entity.identifier);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotCMS.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "json",
+									"value": "{\n    \"contentlet\": {\n       \"contentType\":\"FileAsset\",\n       \"title\":\"Legioss\", \n       \"hostFolder\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"showOnMenu\":\"true\",\n       \"sortOrder\":\"2\"\n    }\n}",
+									"type": "text"
+								},
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/Test_GraphQL_Image_Field_fields/actn-legioss.jpg"
+								}
+							],
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						},
+						"description": "This is to fire the added default action\n\nhttp://localhost:8080/api/v1/workflow/actions/default/fire/PUBLISH\n\nIn this case I'm using the \"test\" content type that just have a name filed (text)"
+					},
+					"response": []
+				},
+				{
+					"name": "Request File Asset metada fields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"var imageFieldVariable = pm.collectionVariables.get(\"imageFieldVariable\");",
+									"var fileFieldVariable = pm.collectionVariables.get(\"fileFieldVariable\");",
+									"",
+									"var contentIdentifier = pm.collectionVariables.get(\"contentIdentifier\")",
+									"",
+									"pm.test(\"FileAsset metadata attributes\", function () {",
+									"     ",
+									"    var metadataFields = jsonData.data[\"FileAssetCollection\"][0][\"fileAsset\"];",
+									"    ",
+									"    // metadata attributes",
+									"    pm.expect(metadataFields.name).to.eql(\"actn-legioss.jpg\");",
+									"    pm.expect(metadataFields.title).to.eql(\"actn-legioss.jpg\");",
+									"    pm.expect(metadataFields.isImage).to.eql(true);",
+									"    pm.expect(metadataFields.modDate).to.be.above(0);",
+									"    pm.expect(metadataFields.size).to.eql(215384);",
+									"    pm.expect(metadataFields.mime).to.eql(\"image/jpeg\");",
+									"    pm.expect(metadataFields.width).to.eql(1200);",
+									"    pm.expect(metadataFields.height).to.eql(900);",
+									"    pm.expect(metadataFields.sha256).to.eql(\"ffe7157a4b7c8dd772f57dc2de8694ea974b87653b5605f854924a43bbfbb0ce\");",
+									"    pm.expect(metadataFields.path).not.eql(null);",
+									"    pm.expect(metadataFields.versionPath).not.eql(null);",
+									"    pm.expect(metadataFields.focalPoint).to.eql(\"0.0\");",
+									"",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  \nFileAssetCollection(limit:20){\n    fileAsset{\n      modDate\n      sha256\n      mime\n      title\n      versionPath\n      mime\n      focalPoint\n      path\n      name\n      versionPath\n      width\n      height\n      size\n      isImage\n    }   \n  }\n\n}\n\n\n\n\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Test Render Content Fields",
+			"item": [
+				{
+					"name": "pre_ImportBundleWithContent",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"contentWithRendereableFields.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/contentWithRendereableFields.tar.gz"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* Content with renderable fields"
+					},
+					"response": []
+				},
+				{
+					"name": "Render content fields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Content field values are rendered and not rendered as requested\", function () {",
+									"    var jsonData = pm.response.json();",
+									"",
+									"    var contentlet = jsonData.data.TypeWithRedereableFieldsCollection[0];",
+									"    ",
+									"    pm.expect(contentlet.textField).to.eql(\"401ca578-74ef-463b-9ad0-c863da1724e5\");",
+									"    pm.expect(contentlet.textareaField).to.eql(\"401ca578-74ef-463b-9ad0-c863da1724e5\");",
+									"    pm.expect(contentlet.wysiwygField).to.eql(\"401ca578-74ef-463b-9ad0-c863da1724e5\");",
+									"    pm.expect(contentlet.customField).to.eql(\"401ca578-74ef-463b-9ad0-c863da1724e5\");",
+									"    pm.expect(contentlet.constantField).to.eql(\"401ca578-74ef-463b-9ad0-c863da1724e5\");",
+									"    pm.expect(contentlet.rawText).to.eql(\"$content.identifier\");",
+									"    pm.expect(contentlet.rawTextarea).to.eql(\"$content.identifier\");",
+									"    pm.expect(contentlet.rawWysiwyg).to.eql(\"$content.identifier\");",
+									"    pm.expect(contentlet.rawCustom).to.eql(\"$content.identifier\");",
+									"    pm.expect(contentlet.rawConstant).to.eql(\"$content.identifier\");",
+									"    pm.expect(contentlet.rawText_default).to.eql(\"$content.identifier\");",
+									"    pm.expect(contentlet.rawTextarea_default).to.eql(\"$content.identifier\");",
+									"    pm.expect(contentlet.rawWysiwyg_default).to.eql(\"$content.identifier\");",
+									"    pm.expect(contentlet.rawCustom_default).to.eql(\"$content.identifier\");",
+									"    pm.expect(contentlet.rawConstant_default).to.eql(\"$content.identifier\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n \n    TypeWithRedereableFieldsCollection {\n      textField(render: true)\n      textareaField(render: true)\n      wysiwygField(render: true)\n      customField(render: true)\n      constantField(render: true)\n      rawText:textField(render: false)\n      rawTextarea:textareaField(render: false)\n      rawWysiwyg:wysiwygField(render: false)\n      rawCustom:customField(render: false)\n      rawConstant:constantField(render: false)\n      rawText_default:textField\n      rawTextarea_default:textareaField\n      rawWysiwyg_default:wysiwygField\n      rawCustom_default:customField\n      rawConstant_default:constantField\n    }\n  \n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "This tests that: \n* It's possible to request rendered content fields.\n* It's possible to request unrendered content fields. \n* It's possible to request the same field in both rendered and unrendered forms.   \n* If \"render\" argument is not specified, then it defaults to render:false"
+					},
+					"response": []
+				},
+				{
+					"name": "pre_ImportBundleWithContentWithBadVelocity",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"contentWithBadVelocity.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/contentWithBadVelocity.tar.gz"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* Content with a body field that can't be velocity-rendered"
+					},
+					"response": []
+				},
+				{
+					"name": "Render content with field with bad velocity",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"When error rendering field value then original field value is returned\", function () {",
+									"    var jsonData = pm.response.json();",
+									"",
+									"    var contentlet = jsonData.data.webPageContentCollection[0];",
+									"    ",
+									"    pm.expect(contentlet.body).to.eql(\"<p>&lt;p&gt;By default, CSS styles controlling the appearance of form fields reside in the following dotCMS directory:&amp;nbsp;/html/css/content/forms.css. However, redefining the CSS classes controlling the styling of form fields is fairly simple.&lt;/p&gt;\\\\n&lt;p&gt;Setting the &lt;b&gt;$contentFormMacroCSS&lt;/b&gt;&amp;nbsp;velocity variable on the Template, Container, or in a piece of content above the form on the page will over-ride the default CSS controlling form field styling. An example of the set command to a relative path is given below:&lt;/p&gt;\\\\n&lt;p&gt;&lt;b&gt;#set($contentFormMacroCSS = \\\\\\\"/global/css/&lt;span&gt;&lt;font color=\\\\\\\"#3366ff\\\\\\\"&gt;mycustomcssfile.css&lt;/font&gt;&lt;/span&gt;\\\\\\\")&lt;/b&gt;&lt;/p&gt;\\\\n&lt;p&gt;As long as the customized CSS file is read after the default dotCMS file, and before the Form itself, then the styles for the form fields will be over-ridden.&lt;/p&gt;</p>\");",
+									"    ",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n \n    webPageContentCollection(query: \"+identifier:4b70c644-8111-496b-95c3-2cf9a942f20d\") {\n      title\n      body(render: true)\n    }\n  \n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "This tests that: \n* Requesting the field \"body\" with `render:true` returns the original field value when the field value is unable to be rendered."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "PageAPI_TestMapSpecialField",
+			"item": [
+				{
+					"name": "pre_ImportBundleWithSportsPage",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"sports-page.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/sports-page.tar.gz"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* Sports page with Blog contentlet \"10 New Snow Sports to Try This Winter\""
+					},
+					"response": []
+				},
+				{
+					"name": "GivenRequestByURI_MapWithoutArguments_ShouldReturnDepth0RelatedContentAndUnrenderedFields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"'Page' includes all properties\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var map = jsonData.data.page.containers[0].containerContentlets[0].contentlets[0]._map;",
+									"",
+									"    // scalar values",
+									"    pm.expect(map.identifier, 'FAILED:[map.identifier]').equal(\"0edfee78-2a75-4f3d-bf20-813aae15d4e9\");",
+									"    pm.expect(map.inode, 'FAILED:[map.inode]').equal(\"1f4db79c-7ec6-4efe-9369-1ae2193a2d7f\");",
+									"    pm.expect(map.locked, 'FAILED:[map.locked]').equal(false);",
+									"    pm.expect(map.stInode, 'FAILED:[map.stInode]').equal(\"799f176a-d32e-4844-a07c-1b5fcd107578\");",
+									"    pm.expect(map.contentType, 'FAILED:[map.contentType]').equal(\"Blog\");",
+									"    pm.expect(map.urlTitle, 'FAILED:[map.urlTitle]').equal(\"10-new-snow-sports-to-try-this-winter\");",
+									"",
+									"    pm.expect(map.tags, 'FAILED:[map.tags]').contains(\"snowboarding\");",
+									"    pm.expect(map.tags, 'FAILED:[map.tags]').contains(\"winter\");",
+									"    pm.expect(map.tags, 'FAILED:[map.tags]').contains(\"snowmobiling\");",
+									"    pm.expect(map.tags, 'FAILED:[map.tags]').contains(\"snow sports\");",
+									"    pm.expect(map.tags, 'FAILED:[map.tags]').contains(\"skiing\");",
+									"    pm.expect(map.tags, 'FAILED:[map.tags]').contains(\"cross-country skiing\");",
+									"",
+									"    pm.expect(map.folder, 'FAILED:[map.folder]').equal(\"SYSTEM_FOLDER\");",
+									"    pm.expect(map.hostName, 'FAILED:[map.hostName]').equal(\"demo.dotcms.com\");",
+									"    pm.expect(map.title, 'FAILED:[map.title]').equal(\"10 New Snow Sports to Try This Winter\");",
+									"    pm.expect(map.archived, 'FAILED:[map.archived]').equal(false);",
+									"    pm.expect(map.working, 'FAILED:[map.working]').equal(true);",
+									"    pm.expect(map.live, 'FAILED:[map.live]').equal(true);",
+									"    pm.expect(map.owner, 'FAILED:[map.owner]').equal(\"dotcms.org.1\");",
+									"    pm.expect(map.URL_MAP_FOR_CONTENT, 'FAILED:[map.URL_MAP_FOR_CONTENT]').equal(\"/blog/post/10-new-snow-sports-to-try-this-winter\");",
+									"    pm.expect(map.modUserName, 'FAILED:[map.modUserName]').equal(\"Admin User\");",
+									"    pm.expect(map.urlMap, 'FAILED:[map.urlMap]').equal(\"/blog/post/10-new-snow-sports-to-try-this-winter\");",
+									"    pm.expect(map.modUser, 'FAILED:[map.modUser]').equal(\"dotcms.org.1\");",
+									"    pm.expect(map.teaser, 'FAILED:[map.teaser]').equal(\"$date - From the tame to the exotic, these alternative winter sports will keep you outside and in shape until all the snow\");",
+									"",
+									"    pm.expect(map.body, 'FAILED:[map.body]').contains(\"Curabitur egestas mi eget massa maximus\");",
+									"",
+									"",
+									"    // assertions for File field",
+									"    var file = map.myFile;",
+									"    pm.expect(file.identifier, 'FAILED:[file.identifier]').equal(\"8dd88708-c600-4366-8a50-9eec2af9091b\");",
+									"    pm.expect(file.extension, 'FAILED:[file.extension]').equal(\"jpg\");",
+									"    pm.expect(file.description, 'FAILED:[file.description]').equal(\"isalnds-french-polynesia\");",
+									"    pm.expect(file.__icon__, 'FAILED:[file.__icon__]').equal(\"jpgIcon\");",
+									"    pm.expect(file.mimeType, 'FAILED:[file.mimeType]').equal(\"image/jpeg\");",
+									"    pm.expect(file.statusIcons, 'FAILED:[file.statusIcons]').equal(\"<span class='greyDotIcon' style='opacity:.4'></span><span class='liveIcon'></span>\");",
+									"    pm.expect(file.type, 'FAILED:[file.type]').equal(\"file_asset\");",
+									"    pm.expect(file.path, 'FAILED:[file.path]').equal(\"/images/blogs/\");",
+									"    pm.expect(file.size, 'FAILED:[file.size]').equal(102816);",
+									"    pm.expect(file.name, 'FAILED:[file.name]').equal(\"isalnds-french-polynesia.jpg\");",
+									"    pm.expect(file.width, 'FAILED:[file.width]').equal(780);",
+									"    pm.expect(file.underlyingFileName, 'FAILED:[file.underlyingFileName]').equal(\"isalnds-french-polynesia.jpg\");",
+									"    pm.expect(file.height, 'FAILED:[file.height]').equal(520);",
+									"",
+									"    // assertions for File field metadata",
+									"    var fileMetadata = file.metaData;",
+									"    pm.expect(fileMetadata.path, 'FAILED:[fileMetadata.path]').equal(\"c/5/c5ad88f9-31b3-458b-87ed-64f2c1cf82b5/fileAsset/isalnds-french-polynesia.jpg\");",
+									"    pm.expect(fileMetadata.isImage, 'FAILED:[fileMetadata.isImage]').equal(true);",
+									"    pm.expect(fileMetadata.sha256, 'FAILED:[fileMetadata.sha256]').equal(\"6c6658a841c3ae9a60d20143d4de6e320664411a9458b92c787b6201136164e5\");",
+									"    pm.expect(fileMetadata.fileSize, 'FAILED:[fileMetadata.fileSize]').equal(102816);",
+									"    pm.expect(fileMetadata.length, 'FAILED:[fileMetadata.length]').equal(102816);",
+									"    pm.expect(fileMetadata.name, 'FAILED:[fileMetadata.name]').equal(\"isalnds-french-polynesia.jpg\");",
+									"    pm.expect(fileMetadata.width, 'FAILED:[fileMetadata.width]').equal(780);",
+									"    pm.expect(fileMetadata.title, 'FAILED:[fileMetadata.title]').equal(\"isalnds-french-polynesia.jpg\");",
+									"    pm.expect(fileMetadata.contentType, 'FAILED:[fileMetadata.contentType]').equal(\"image/jpeg\");",
+									"    pm.expect(fileMetadata.height, 'FAILED:[fileMetadata.height]').equal(520);",
+									"",
+									"    // assertions for Language field",
+									"    var language = map.language;",
+									"    pm.expect(language.languageId, 'FAILED:[language.identifier]').equal(1);",
+									"    pm.expect(language.language, 'FAILED:[language.language]').equal(\"English\");",
+									"    pm.expect(language.languageCode, 'FAILED:[language.languageCode]').equal(\"en\");",
+									"    pm.expect(language.country, 'FAILED:[language.country]').equal(\"United States\");",
+									"    pm.expect(language.countryCode, 'FAILED:[language.countryCode]').equal(\"US\");",
+									"    pm.expect(language.languageFlag, 'FAILED:[language.languageFlag]').equal(\"en_US\");",
+									"     pm.expect(language.isoCode, 'FAILED:[language.isoCode]').equal(\"en-us\");",
+									"",
+									"",
+									"",
+									"    // // rows fields",
+									"    // var rows = layout.body.rows;",
+									"    // pm.expect(rows.length, 'FAILED:[rows.length]').equal(6);",
+									"",
+									"    // var row1 = rows[0];",
+									"    // pm.expect(row1.styleClass, 'FAILED:[row1.styleClass]').equal(null);",
+									"",
+									"    // var row1Columns = row1.columns;",
+									"    // pm.expect(row1Columns.length, 'FAILED:[row1Columns.length]').equal(1);",
+									"",
+									"    // var column1 = row1Columns[0];",
+									"    // pm.expect(column1.preview, 'FAILED:[column1.preview]').equal(false);",
+									"    // pm.expect(column1.width, 'FAILED:[column1.width]').equal(12);",
+									"    // pm.expect(column1.widthPercent, 'FAILED:[column1.widthPercent]').equal(100);",
+									"    // pm.expect(column1.left, 'FAILED:[column1.left]').equal(0);",
+									"    // pm.expect(column1.leftOffset, 'FAILED:[column1.leftOffset]').equal(1);",
+									"    // pm.expect(column1.styleClass, 'FAILED:[column1.styleClass]').equal(null);",
+									"",
+									"    // var containers = column1.containers;",
+									"    // pm.expect(containers.length, 'FAILED:[containers.length]').equal(1);",
+									"",
+									"    // var container1 = containers[0];",
+									"    // pm.expect(container1.identifier, 'FAILED:[container1.identifier]').equal(\"5a07f889-4536-4956-aa6e-e7967969ec3f\");",
+									"    // pm.expect(container1.uuid, 'FAILED:[container1.uuid]').equal(\"2\");",
+									"",
+									"    // // sidebar",
+									"    // var sidebar = layout.sidebar;",
+									"    // pm.expect(sidebar.preview, 'FAILED:[sidebar.preview]').equal(false);",
+									"    // pm.expect(sidebar.width, 'FAILED:[sidebar.width]').equal(\"small\");",
+									"    // pm.expect(sidebar.widthPercent, 'FAILED:[sidebar.widthPercent]').equal(20);",
+									"    // pm.expect(sidebar.location, 'FAILED:[sidebar.location]').equal(\"left\");",
+									"",
+									"    // var sidebarContainers = sidebar.containers;",
+									"    // pm.expect(sidebarContainers.length, 'FAILED:[sidebarContainers.length]').equal(2);",
+									"",
+									"    // var sidebarContainer1 = sidebarContainers[0];",
+									"    // pm.expect(sidebarContainer1.identifier, 'FAILED:[sidebarContainer1.identifier]').equal(\"//demo.dotcms.com/application/containers/default/\");",
+									"    // pm.expect(sidebarContainer1.uuid, 'FAILED:[sidebarContainers.uuid]').equal(\"1\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"type": "text",
+								"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"type": "text",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  page(url: \"/sports\", pageMode: \"live\", languageId: \"1\") {\n    containers {\n      containerContentlets {\n        uuid\n        contentlets {\n          _map\n        }\n      }\n    }\n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "* Given scenario: given a request to a page by URI, and requesting the special \"_map\" field of the contentlet of the page, without passing any arguments to the \"_map\" field\n\n* Expected result: it should return all map fields, with the proper transformations/expansions for certain field types like file, image, binaries. No field should be rendered and only the identifiers of the related content should be returned (depth: 0)"
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"variable": [
 		{
-			"id": "16acbba9-2597-4be2-9efb-a49ef05e684f",
 			"key": "languageId",
-			"value": 1592433023079
+			"value": 1609799506077
 		},
 		{
-			"id": "de1be12b-269e-44b7-bb23-ac4bca9ea7db",
 			"key": "contentId",
 			"value": null
 		},
 		{
-			"id": "abe08a03-a2a2-4058-baca-4543dbefb483",
 			"key": "contentTypeVariable",
-			"value": "MyCustomType53380831"
+			"value": "MyCustomType94382829"
 		},
 		{
-			"id": "c402b9c9-9f3b-40a6-9af7-8f1e7f5d2d9f",
 			"key": "contentIdentifier",
-			"value": "78a7fd09-e804-4d6d-96e9-ca4165ab29ec"
+			"value": "671144d9-739d-4dd2-b8a0-5ea9c32f9daa"
 		},
 		{
-			"id": "d9ca3e29-84c9-4501-8103-816a79960c6d",
 			"key": "structureVariable",
 			"value": "myStructure94983807"
 		},
 		{
-			"id": "0f938161-d161-45f2-b9a7-85e6944eec44",
 			"key": "imageContentTypeVariable",
-			"value": "MyImageType22920449"
+			"value": "MyImageType20538490"
 		},
 		{
-			"id": "a21e0513-bd8f-4020-bb18-8243717aab3e",
 			"key": "imageContentIdentifier",
-			"value": "f1bde8d3-0502-482e-932b-88f7ef470a31"
+			"value": "d3915dc0-ba86-48e7-a1f1-856478b06cfe"
 		},
 		{
-			"id": "d7e52160-e900-495c-ac20-5034dd3c7cdd",
 			"key": "imageFieldVariable",
-			"value": "myImage"
+			"value": "myFile"
 		},
 		{
-			"id": "7b22de2c-86d8-4c12-8294-0c96fd3042df",
 			"key": "showOnMenu",
 			"value": true
 		},
 		{
-			"id": "ea2d16b6-194e-438e-b950-38ecfe6215b6",
 			"key": "sortOrder",
 			"value": 2
 		},
 		{
-			"id": "5e930148-2643-4514-98de-bf8af2fa4e34",
 			"key": "fileFieldVariable",
-			"value": "myFile"
+			"value": "myImage"
 		},
 		{
-			"id": "d22b5bbd-c0a8-4096-8fc2-9a838976a333",
 			"key": "fileContentIdentifier",
-			"value": "b3e1f5ca-b6ac-4138-990d-9a96fff815cb"
+			"value": "35bd8a93-0d74-44e6-8a89-cb57735114f1"
 		},
 		{
-			"id": "3939ec8e-09ce-4eb8-8b4d-0bb7f8749a5b",
 			"key": "childContentTypeVariable",
-			"value": "childType23553509"
+			"value": "childType40723544"
 		},
 		{
-			"id": "9beb1284-309b-4056-b9af-ea9be8169335",
 			"key": "parentContentTypeVariable",
-			"value": "parentType65070125"
+			"value": "parentType84267241"
 		},
 		{
-			"id": "6c71d02c-7323-40f6-b1c0-c4ce25c556f1",
 			"key": "relFieldVariable",
 			"value": "rel"
 		},
 		{
-			"id": "cc50683e-f7d7-448f-ad7f-91ae133f3242",
 			"key": "childContentIdentifier",
-			"value": "6a0d1ea2-a282-45d1-a838-88816ad62ac6"
+			"value": "69953bca-0384-487c-8288-5118f455c127"
 		},
 		{
-			"id": "b6c592b4-b3e8-42b0-afd1-648fc8ad7b2a",
 			"key": "parentContentIdentifier",
-			"value": "2921b23c-2a96-4de9-afee-832aa01500db"
+			"value": "5f487236-01fb-4ff1-a25e-8eecc99b2312"
+		},
+		{
+			"key": "fileImageContentTypeVariable",
+			"value": "MyFileImageType68267192"
 		}
-	],
-	"protocolProfileBehavior": {}
+	]
 }

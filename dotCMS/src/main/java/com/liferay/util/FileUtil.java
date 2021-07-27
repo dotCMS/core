@@ -22,6 +22,7 @@
 
 package com.liferay.util;
 
+import com.dotcms.publisher.pusher.PushUtils;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.filefilter.TrueFileFilter;
 import com.dotmarketing.business.DotStateException;
@@ -41,6 +42,7 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
@@ -148,7 +150,7 @@ public class FileUtil {
 		copyFile(source, destination, Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true));
 	}
 	
-	private static void validateEmptyFile(File source) throws IOException{
+	public static void validateEmptyFile(File source) throws IOException{
 		final String metaDataPath = "metaData" + File.separator + "content";
         final String languagePropertyPath = "messages" + File.separator + "cms_language";
         
@@ -229,13 +231,20 @@ public class FileUtil {
         }
 
         if (!hardLinks) {
-            try (final ReadableByteChannel inputChannel = Channels.newChannel(Files.newInputStream(source.toPath()));
-                    final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(destination.toPath()))){
-                FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
-            }
-        }
+			copyFile(source, Files.newOutputStream(destination.toPath()));
+		}
 
     }
+
+	public static void copyFile(final File source, final OutputStream destination) throws IOException {
+		try (final ReadableByteChannel inputChannel = Channels.newChannel(Files.newInputStream(source.toPath()));
+			 final WritableByteChannel outputChannel = Channels.newChannel(destination)){
+			FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
+		} catch(IOException e) {
+			Logger.error(FileUtil.class, e);
+			throw e;
+		}
+	}
 
 	public static void copyFileLazy(String source, String destination)
 		throws IOException {
@@ -781,12 +790,12 @@ public class FileUtil {
         final ByteBuffer buffer = ByteBuffer.allocateDirect(5 * 1024);
 
         while (src.read(buffer) != -1) {
-            buffer.flip();
+			((Buffer)buffer).flip();
             dest.write(buffer);
             buffer.compact();
         }
 
-        buffer.flip();
+		((Buffer)buffer).flip();
 
         while (buffer.hasRemaining()) {
             dest.write(buffer);
@@ -933,13 +942,26 @@ public class FileUtil {
 	 */
 	public static InputStream createInputStream(final Path path, final StreamCompressorType type) throws IOException {
 
+		return wrapCompressedInputStream(Files.newInputStream(path), type);
+	}
+
+	/**
+	 * Wraps the original input stream into a compress indicated on type {@link StreamCompressorType}
+	 * Does not wrap anything if the type is not supported
+	 * @param stream {@link InputStream}
+	 * @param type   {@link StreamCompressorType}
+	 * @return InputStream
+	 * @throws IOException
+	 */
+	public static InputStream wrapCompressedInputStream (final InputStream stream, final StreamCompressorType type) throws IOException {
+
 		switch (type) {
 			case GZIP:
-				return new GZIPInputStream(Files.newInputStream(path));
+				return new GZIPInputStream(stream);
 			case BZIP2:
-				return new BZip2CompressorInputStream(Files.newInputStream(path));
+				return new BZip2CompressorInputStream(stream);
 			default:
-				return Files.newInputStream(path);
+				return stream;
 		}
 	}
 
@@ -1011,5 +1033,19 @@ public class FileUtil {
 
 		GZIP, BZIP2, NONE;
 	}
+	
+	/**
+	 * Convienience Method to access .tar.gz functionality
+	 * @param directory
+	 * @return
+	 * @throws IOException
+	 */
+    public static File tarGzipDirectory(final File directory) throws IOException {
+	    return PushUtils.tarGzipDirectory(directory);
+	    
+	}
+	
+	
+	
 
 }

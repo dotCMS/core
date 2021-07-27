@@ -9,6 +9,7 @@ import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
@@ -104,6 +105,13 @@ public interface HostAPI {
 	public Host find(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
+	 * Retrieves a host given a {@link Contentlet} to resolve from there the actual host id
+	 */
+	Host find(Contentlet contentlet,
+			  User user,
+			  boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	/**
 	 * Retrieves the list of all hosts in the system, that the given user has permissions to see
 	 * @throws DotSecurityException
 	 *
@@ -123,6 +131,14 @@ public interface HostAPI {
 	 *
 	 */
 	public List<Host> findAllFromDB(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	/**
+	 *
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 */
+	public List<Host> findAllFromCache(final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Saves the host into the system

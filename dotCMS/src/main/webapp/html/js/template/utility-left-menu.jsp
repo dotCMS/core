@@ -372,8 +372,8 @@ function getUUID (container) {
         containersUUID[container.path] = !!containersUUID[container.path] ? containersUUID[container.path] + 1 : 1;
         return containersUUID[container.path];
     } else {
-        containersUUID[container.id] = !!containersUUID[container.id] ? containersUUID[container.id] + 1 : 1;
-        return containersUUID[container.id];
+        containersUUID[container.identifier] = !!containersUUID[container.identifier] ? containersUUID[container.identifier] + 1 : 1;
+        return containersUUID[container.identifier];
     }
 }
 

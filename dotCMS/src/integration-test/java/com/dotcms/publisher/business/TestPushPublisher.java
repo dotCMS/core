@@ -1,6 +1,7 @@
 package com.dotcms.publisher.business;
 
 import com.dotcms.publisher.bundle.bean.Bundle;
+import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.environment.bean.Environment;
@@ -44,16 +45,8 @@ public class TestPushPublisher extends PushPublisher {
             File bundleRoot = BundlerUtil.getBundleRoot(this.config);
             ArrayList<File> list = new ArrayList<File>(1);
             list.add(bundleRoot);
-            File bundle = new File(bundleRoot+File.separator+".."+File.separator+this.config.getId()+".tar.gz");
+            File bundle = new File(bundleRoot + ".tar.gz");
 
-            // If the tar.gz doesn't exist or if it the first try to push bundle
-            // we need to compress the bundle folder into the tar.gz file.
-            if (!bundle.exists() || !pubAuditAPI.isPublishRetry(config.getId())) {
-                PushUtils.compressFiles(list, bundle, bundleRoot.getAbsolutePath());
-            } else {
-                Logger.info(this, "Retrying bundle: " + config.getId()
-                        + ", we don't need to compress bundle again");
-            }
 
             List<Environment> environments = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(this.config.getId());
 
@@ -90,6 +83,7 @@ public class TestPushPublisher extends PushPublisher {
                             if (PublisherConfig.DeliveryStrategy.ALL_ENDPOINTS.equals(this.config.getDeliveryStrategy())
                                     || (PublisherConfig.DeliveryStrategy.FAILED_ENDPOINTS.equals(this.config.getDeliveryStrategy())
                                     && PublishAuditStatus.Status.SUCCESS.getCode() != epDetail.getStatus()
+                                    && Status.SUCCESS_WITH_WARNINGS.getCode() != epDetail.getStatus()
                                     && PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode() != epDetail.getStatus())) {
                                 endpoints.add(ep);
                             }

@@ -1064,10 +1064,6 @@ public class Task03600UpdateMssqlVarcharTextColumns extends AbstractJDBCStartupT
 				+ "ALTER TABLE rule_action_pars ALTER COLUMN value NVARCHAR(MAX);";
 	}
 
-	@Override
-	public String getH2Script() {
-		return null;
-	}
 
 	@Override
 	protected List<String> getTablesToDropConstraints() {

@@ -1,5 +1,13 @@
 package com.dotcms.vanityurl.filters;
 
+import static com.dotmarketing.filters.Constants.VANITY_URL_OBJECT;
+
+import com.dotcms.http.CircuitBreakerUrl;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import java.io.IOException;
 import java.util.Optional;
 import javax.servlet.Filter;
@@ -36,7 +44,7 @@ public class VanityURLFilter implements Filter {
   private final HostWebAPI hostWebAPI;
   private final LanguageWebAPI languageWebAPI;
   private final VanityUrlAPI vanityApi;
-
+  private final boolean addVanityHeader;
   public VanityURLFilter() {
 
     this(CMSUrlUtil.getInstance(), WebAPILocator.getHostWebAPI(), WebAPILocator.getLanguageWebAPI(),
@@ -51,6 +59,7 @@ public class VanityURLFilter implements Filter {
     this.urlUtil = urlUtil;
     this.hostWebAPI = hostWebAPI;
     this.languageWebAPI = languageWebAPI;
+    this.addVanityHeader=Config.getBooleanProperty("VANITY_URL_INCLUDE_HEADER", true);
   }
   @Override
   public void init(FilterConfig filterConfig) throws ServletException {}
@@ -76,13 +85,22 @@ public class VanityURLFilter implements Filter {
           final Language language = this.languageWebAPI.getLanguage(request);
           final Optional<CachedVanityUrl> cachedVanity = vanityApi.resolveVanityUrl(uri, host, language);
           
-          if (cachedVanity.isPresent()) {
+          if (cachedVanity.isPresent() &&
+                  // checks if the current destiny is not exactly the forward of the vanity
+                  // we do this to avoid infinite loop
+                  this.forwardToIsnotTheSameOfUri(cachedVanity.get(), uri)) {
+
+              request.setAttribute(VANITY_URL_OBJECT, cachedVanity.get());
+              if(addVanityHeader) {
+                  response.setHeader("X-DOT-VanityUrl",cachedVanity.get().vanityUrlId );
+              }
               final VanityUrlResult vanityUrlResult = cachedVanity.get().handle( uri, response);
+              final VanityUrlRequestWrapper vanityUrlRequestWrapper = new VanityUrlRequestWrapper(request, vanityUrlResult);
               // If the handler already resolved the requested URI we stop the processing here
-              if (vanityUrlResult.isResolved()) {
+              if (handleVanityURLRedirects(vanityUrlRequestWrapper, response, vanityUrlResult)) {
                 return;
               }
-              filterChain.doFilter(new VanityUrlRequestWrapper(request, vanityUrlResult), response);
+              filterChain.doFilter(vanityUrlRequestWrapper, response);
               return;
           }
 
@@ -91,10 +109,48 @@ public class VanityURLFilter implements Filter {
       filterChain.doFilter(request, response);
   } // doFilter.
 
+    private boolean forwardToIsnotTheSameOfUri(final CachedVanityUrl cachedVanityUrl, final String uri) {
+
+        // if the forward to is not actually the same of uri, is ok
+        return null != cachedVanityUrl && null != cachedVanityUrl.forwardTo && null != uri?
+                !cachedVanityUrl.forwardTo.equals(uri): false;
+    }
+
   @Override
   public void destroy() {
  
     
   }
+
+    /**
+     * Product of refactoring handling 301 and 302 previously executed by CachedVanityUrl
+     *
+     * @return weather or not the redirect was handled
+     */
+  private boolean handleVanityURLRedirects(final VanityUrlRequestWrapper request,
+            final HttpServletResponse response, final VanityUrlResult vanityUrlResult) {
+        if (!response.isCommitted()) {
+            final String uri = vanityUrlResult.getRewrite();
+            final String queryString = request.getQueryString();
+            final int responseCode = request.getResponseCode();
+
+            final String newUrl = uri + (queryString != null ? StringPool.QUESTION + queryString
+                    : StringPool.BLANK);
+            if (responseCode == 301 || responseCode == 302) {
+                response.setStatus(responseCode);
+                response.setHeader("Location", newUrl);
+                return true;
+            }
+
+            // if the vanity is a proxy request
+            if (responseCode == 200 && UtilMethods.isSet(uri) && uri.contains("//")) {
+                Try.run(() -> new CircuitBreakerUrl(newUrl).doOut(response)).onFailure(
+                        DotRuntimeException::new);
+                return true;
+            }
+        }
+        return false;
+  }
+
 
 } // E:O:F:VanityURLFilter.

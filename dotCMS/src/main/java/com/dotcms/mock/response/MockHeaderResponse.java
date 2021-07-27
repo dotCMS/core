@@ -1,6 +1,5 @@
 package com.dotcms.mock.response;
 
-import com.dotcms.mock.request.MockHttpRequest;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;

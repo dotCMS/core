@@ -1,30 +1,29 @@
 package com.dotcms.publishing;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
+import com.dotcms.publishing.output.BundleOutput;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.pushpublish.PushPublishEndEvent;
 import com.dotcms.system.event.local.type.pushpublish.PushPublishStartEvent;
-import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.system.event.local.type.staticpublish.StaticPublishEndEvent;
 import com.dotcms.system.event.local.type.staticpublish.StaticPublishStartEvent;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class PublisherAPIImpl implements PublisherAPI {
 
@@ -34,14 +33,14 @@ public class PublisherAPIImpl implements PublisherAPI {
 
 
     @Override
-    public PublishStatus publish ( PublisherConfig config ) throws DotPublishingException {
+    final public PublishStatus publish ( PublisherConfig config) throws DotPublishingException {
 
         return publish( config, new PublishStatus() );
     }
 
     @CloseDBIfOpened
     @Override
-    public PublishStatus publish ( PublisherConfig config, PublishStatus status ) throws DotPublishingException {
+    final public PublishStatus publish ( PublisherConfig config, PublishStatus status) throws DotPublishingException {
 
         PushPublishLogger.log( this.getClass(), "Started Publishing Task", config.getId() );
 
@@ -56,23 +55,24 @@ public class PublisherAPIImpl implements PublisherAPI {
             // init publishers
             for ( Class<Publisher> c : config.getPublishers() ) {
                 // Process config
-                Publisher p = c.newInstance();
-                config = p.init( config );
+                Publisher publisher = c.newInstance();
+                config = publisher.init(config);
 
-                if ( config.isIncremental() && config.getEndDate() == null && config.getStartDate() == null ) {
+                if (config.isIncremental() && config.getEndDate() == null
+                        && config.getStartDate() == null) {
                     // if its incremental and start/end dates aren't se we take it from latest bundle
-                    if ( BundlerUtil.bundleExists( config ) ) {
-                        PublisherConfig pc = BundlerUtil.readBundleXml( config );
-                        if ( pc.getEndDate() != null ) {
-                            config.setStartDate( pc.getEndDate() );
-                            config.setEndDate( new Date() );
+                    if (BundlerUtil.bundleExists(config)) {
+                        PublisherConfig pc = BundlerUtil.readBundleXml(config);
+                        if (pc.getEndDate() != null) {
+                            config.setStartDate(pc.getEndDate());
+                            config.setEndDate(new Date());
                         } else {
-                            config.setStartDate( null );
-                            config.setEndDate( new Date() );
+                            config.setStartDate(null);
+                            config.setEndDate(new Date());
                         }
                     } else {
-                        config.setStartDate( null );
-                        config.setEndDate( new Date() );
+                        config.setStartDate(null);
+                        config.setEndDate(new Date());
                     }
                 }
 
@@ -82,71 +82,73 @@ public class PublisherAPIImpl implements PublisherAPI {
                 // will return true after that always.
                 final boolean bundleExists = BundlerUtil.bundleExists(config);
 
-                // Run bundlers
-                File bundleRoot = BundlerUtil.getBundleRoot( config );
+                try (BundleOutput output = publisher.createBundleOutput()){
+                    status.addOutput(output);
+                    // Run bundlers
 
-                if (config.isStatic()) {
-                    //If static we just want to save the things that we need,
-                    // at this point only the id, static and operation.
-                	PublisherConfig pcClone = new PublisherConfig();
-                	pcClone.setId(config.getId());
-                	pcClone.setStatic(true);
-                	pcClone.setOperation(config.getOperation());
-                    Logger.info(this, "Writing bundle.xml file");
-                	BundlerUtil.writeBundleXML( pcClone );
-                } else {
-                    Logger.info(this, "Writing bundle.xml file");
-                    BundlerUtil.writeBundleXML( config );
-                }
+                    if (config.isStatic()) {
+                        //If static we just want to save the things that we need,
+                        // at this point only the id, static and operation.
+                        PublisherConfig pcClone = new PublisherConfig();
+                        pcClone.setId(config.getId());
+                        pcClone.setStatic(true);
+                        pcClone.setOperation(config.getOperation());
+                        Logger.info(this, "Writing bundle.xml file");
+                        BundlerUtil.writeBundleXML(pcClone, output);
+                    } else {
+                        Logger.info(this, "Writing bundle.xml file");
+                        BundlerUtil.writeBundleXML(config, output);
+                    }
 
-                // If the bundle exists and we are retrying to push the bundle
-                // there is no need to run all the bundlers again.
-                if (!bundleExists || !publishAuditAPI.isPublishRetry(config.getId())) {
-                    PublishAuditStatus currentStatus = publishAuditAPI
-                            .getPublishAuditStatus(config.getId());
-                    PublishAuditHistory currentStatusHistory = null;
-                    if(currentStatus != null) {
-                        currentStatusHistory = currentStatus.getStatusPojo();
-                        if(currentStatusHistory != null) {
-                            currentStatusHistory.setBundleStart(new Date());
+                    // If the bundle exists and we are retrying to push the bundle
+                    // there is no need to run all the bundlers again.
+                    if (!bundleExists || !publishAuditAPI.isPublishRetry(config.getId())) {
+                        PublishAuditStatus currentStatus = publishAuditAPI
+                                .getPublishAuditStatus(config.getId());
+                        PublishAuditHistory currentStatusHistory = null;
+                        if (currentStatus != null) {
+                            currentStatusHistory = currentStatus.getStatusPojo();
+                            if (currentStatusHistory != null) {
+                                currentStatusHistory.setBundleStart(new Date());
+                            }
                         }
-                    }
 
-                    for ( Class<IBundler> clazz : p.getBundlers() ) {
-                        IBundler bundler = clazz.newInstance();
-                        confBundlers.add( bundler );
-                        bundler.setConfig( config );
-                        bundler.setPublisher(p);
-                        BundlerStatus bs = new BundlerStatus( bundler.getClass().getName() );
-                        status.addToBs( bs );
-                        //Generate the bundler
-                        Logger.info(this, "Start of Bundler: " + clazz.getSimpleName());
-                        bundler.generate( bundleRoot, bs );
-                        Logger.info(this, "End of Bundler: " + clazz.getSimpleName());
-                    }
+                        for (Class<IBundler> clazz : publisher.getBundlers()) {
+                            IBundler bundler = clazz.newInstance();
+                            confBundlers.add(bundler);
+                            bundler.setConfig(config);
+                            bundler.setPublisher(publisher);
+                            BundlerStatus bs = new BundlerStatus(bundler.getClass().getName());
+                            status.addToBs(bs);
+                            //Generate the bundler
+                            Logger.info(this, "Start of Bundler: " + clazz.getSimpleName());
+                            bundler.generate(output, bs);
+                            Logger.info(this, "End of Bundler: " + clazz.getSimpleName());
+                        }
 
-                    if(currentStatusHistory != null) {
-                        currentStatusHistory.setBundleEnd(new Date());
-                        publishAuditAPI
-                                .updatePublishAuditStatus(config.getId(),
-                                        PublishAuditStatus.Status.BUNDLING,
-                                        currentStatusHistory);
+                        if (currentStatusHistory != null) {
+                            currentStatusHistory.setBundleEnd(new Date());
+                            publishAuditAPI
+                                    .updatePublishAuditStatus(config.getId(),
+                                            PublishAuditStatus.Status.BUNDLING,
+                                            currentStatusHistory);
+                        }
+                    } else {
+                        Logger.info(this, "Retrying bundle: " + config.getId()
+                                + ", we don't need to run bundlers again");
                     }
-                } else {
-                    Logger.info(this, "Retrying bundle: " + config.getId()
-                            + ", we don't need to run bundlers again");
                 }
 
-                p.process( status );
+                publisher.process(status);
+
+                config.setBundlers(confBundlers);
+
+                //Triggering event listener when the publishing process ends
+                localSystemEventsAPI.asyncNotify(new PushPublishEndEvent(config.getAssets()));
+                localSystemEventsAPI.asyncNotify(new StaticPublishEndEvent(config.getAssets()));
+
+                PushPublishLogger.log(this.getClass(), "Completed Publishing Task", config.getId());
             }
-
-            config.setBundlers( confBundlers );
-
-            //Triggering event listener when the publishing process ends
-            localSystemEventsAPI.asyncNotify(new PushPublishEndEvent(config.getAssets()));
-            localSystemEventsAPI.asyncNotify(new StaticPublishEndEvent(config.getAssets()));
-
-            PushPublishLogger.log( this.getClass(), "Completed Publishing Task", config.getId() );
         } catch ( Exception e ) {
             Logger.error( PublisherAPIImpl.class, e.getMessage(), e );
             throw new DotPublishingException( e.getMessage(), e );

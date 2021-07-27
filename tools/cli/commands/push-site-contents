@@ -1,0 +1,76 @@
+#!/bin/bash
+set -e
+. "$DOTCLI_WORKDIR/common"
+
+
+if [[ ! -n "$1" ]]; then
+  cli_log "Missing required param";
+fi
+
+siteDir="$1";
+
+langId="$2";
+
+
+
+if [[ ! -d "$siteDir" ]]; then
+    cli_log " The directory $siteDir does not exist."
+    exit 1
+fi
+
+if [[ -z "$langId" ]]; then
+    cli_log " Unable to get lang id."
+    exit 1
+fi
+
+siteName=$(basename "${siteDir}")
+
+cli_log "::: Pushing site contents for $siteName and language $langId :::"
+
+code=$(curl -s -X POST "${DOTCMS_BASE_URL}/api/v1/site/_byname" -o /dev/null --header "Authorization: Bearer ${JSON_WEB_TOKEN}" -w "%{http_code}" --header 'Content-Type: application/json' --data-raw "{ \"siteName\":\"$siteName\" }")
+#if the site folder name does not correspond to a valid existing site we don't need to bother
+if [[ 200 == ${code} ]]; then
+
+    # this gets me ALL the files/directories under the site directory
+    find ${siteDir} -name '*' | while read line; do
+         #line holds the file or folder
+        echo "Processing '$line'"
+        #from the full file system path line, we cute the portion that includes the site.
+        siteInclusivePath=$(echo $line | grep -o "/$siteName.*");
+        #this next line extracts the relevant portion concerning the site and replaces the site piece with an empty string leaving only the folder file
+        path=$(echo ${siteInclusivePath} | sed "s/\/$siteName//g");
+
+        #path=$(echo $line | grep -o "/$siteName.*" | sed "s/\/$siteName//g" )
+
+        #now verify if the original line was directory or a file so we can choose the endpoint to submit the content
+        if [[  -d "$line" ]]; then
+
+           # We could accomplish the same using webdav here but I find it a bit troublesome not capable of dealing with hierarchies in paths
+           #$(curl -X MKCOL "${DOTCMS_BASE_URL}/webdav/live/${langId}/${siteName}{$substring}" -u "admin@dotCMS.com:admin" --compressed)
+           if [[ ! -z "$path" ]]; then
+              echo "pushing dir $path"
+              json="[\"${path}\"]"
+              response=$(curl -s -X POST "${DOTCMS_BASE_URL}/api/v1/folder/createfolders/${siteName}" --header "Authorization: Bearer ${JSON_WEB_TOKEN}"  --header 'Content-Type: application/json' --data-raw  "$json"  --compressed)
+              echo $response
+           fi
+        fi
+
+        #or the original line was a file
+        if [[  -f "$line" ]]; then
+          #and we have a remote path to push to
+          if [[ ! -z "$path" ]]; then
+              echo "pushing file $path"
+              fileName=$(basename "${path}")
+              ##TODO: discard hidden files here
+              response=$(curl -s -T ${line} "${DOTCMS_BASE_URL}/webdav/live/${langId}${siteInclusivePath}" -u "${USER}:${PASS}" --compressed)
+              echo ${response}
+          fi
+        fi
+
+    done
+
+else
+   cli_log " $siteName isn't a valid existing site.  In order for the site to be added it must be defined under /bundle/sites/"
+fi
+
+cli_log "::: Done Pushing site contents for $siteName and language $langId :::"

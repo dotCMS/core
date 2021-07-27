@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.templates.business;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 
@@ -20,6 +21,12 @@ public class TemplateCacheImpl extends TemplateCache {
 
 	@Override
 	protected Template add(String key, Template template) {
+	    
+	    if(DbConnectionFactory.inTransaction()) {
+	        return template;
+	    }
+	    
+	    
 		key = primaryGroup + key;
 
         // Add the key to the cache
@@ -32,6 +39,10 @@ public class TemplateCacheImpl extends TemplateCache {
 	
 	@Override
 	protected Template get(String key) {
+       if(DbConnectionFactory.inTransaction()) {
+            return null;
+        }
+	    
 		key = primaryGroup + key;
 		Template template = null;
     	try{

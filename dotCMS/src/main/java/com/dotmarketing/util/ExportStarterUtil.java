@@ -1,12 +1,5 @@
 package com.dotmarketing.util;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import javax.servlet.ServletException;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
 import com.dotcms.publishing.BundlerUtil;
@@ -24,12 +17,16 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.calendar.model.CalendarReminder;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.cmsmaintenance.util.AssetFileNameFilter;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.tag.model.Tag;
@@ -39,6 +36,13 @@ import com.liferay.portal.ejb.ImageLocalManagerUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import javax.servlet.ServletException;
 
 public class ExportStarterUtil {
 
@@ -89,10 +93,16 @@ public class ExportStarterUtil {
         try {
 
             /* get a list of all our tables */
-            //Including Identifier.class and Language.class because it is not mapped with Hibernate anymore
+            //Including classes that are no longer mapped with Hibernate anymore
             _tablesToDump.add(Identifier.class);
             _tablesToDump.add(Language.class);
             _tablesToDump.add(Relationship.class);
+            _tablesToDump.add(ContentletVersionInfo.class);
+            _tablesToDump.add(Template.class);
+            _tablesToDump.add(Contentlet.class);
+            _tablesToDump.add(Category.class);
+
+            //end classes no longer mapped with Hibernate
             _tablesToDump.addAll(HibernateUtil.getSession().getSessionFactory().getAllClassMetadata().keySet());
 
             _tablesToDump.removeIf(c->c.equals(Inode.class));
@@ -167,8 +177,24 @@ public class ExportStarterUtil {
                         dc = new DotConnect();
                         dc.setSQL("SELECT * FROM relationship order by inode")
                                 .setStartRow(i).setMaxRows(step);
-                    }
-                    else {
+                    } else if (ContentletVersionInfo.class.equals(clazz)) {
+                        dc = new DotConnect();
+                        dc.setSQL("SELECT * FROM contentlet_version_info ORDER BY identifier")
+                                .setStartRow(i).setMaxRows(step);
+                    } else if (Template.class.equals(clazz)) {
+                        dc = new DotConnect();
+                        dc.setSQL("SELECT * FROM template ORDER BY inode")
+                                .setStartRow(i).setMaxRows(step);
+                    } else if (Contentlet.class.equals(clazz)) {
+                        dc = new DotConnect();
+                        dc.setSQL("select contentlet.*, contentlet_1_.owner from contentlet join inode contentlet_1_ "
+                                + " on contentlet_1_.inode = contentlet.inode ORDER BY contentlet.inode")
+                                .setStartRow(i).setMaxRows(step);
+                    } else if (Category.class.equals(clazz)) {
+                        dc = new DotConnect();
+                        dc.setSQL("SELECT * FROM category ORDER BY inode")
+                                .setStartRow(i).setMaxRows(step);
+                    } else {
                         _dh.setQuery("from " + clazz.getName() + " order by 1");
                     }
 
@@ -181,6 +207,22 @@ public class ExportStarterUtil {
                     } else if (Relationship.class.equals(clazz)) {
                         _list = TransformerLocator
                                 .createRelationshipTransformer(dc.loadObjectResults()).asList();
+                    } else if (ContentletVersionInfo.class.equals(clazz)) {
+                        _list = TransformerLocator
+                                .createContentletVersionInfoTransformer(dc.loadObjectResults())
+                                .asList();
+                    } else if (Template.class.equals(clazz)) {
+                        _list = TransformerLocator
+                                .createTemplateTransformer(dc.loadObjectResults())
+                                .asList();
+                    } else if (Contentlet.class.equals(clazz)) {
+                        _list = TransformerLocator
+                                .createContentletTransformer(dc.loadObjectResults())
+                                .asList();
+                    } else if(Category.class.equals(clazz)) {
+                        _list = TransformerLocator
+                                .createCategoryTransformer(dc.loadObjectResults())
+                                .asList();
                     } else {
                         _list = _dh.list();
                     }

@@ -90,6 +90,7 @@ public class ContentTypeCache2Impl implements ContentTypeCache2 {
         if(type==null)return;
         cache.remove( type.id(),primaryGroup);
         cache.remove( type.variable(),primaryGroup);
+        this.clearContainerStructures();
         clearURLMasterPattern();
 	}
 
@@ -103,4 +104,9 @@ public class ContentTypeCache2Impl implements ContentTypeCache2 {
     	}
 
 	}
+
+    public void clearContainerStructures() {
+
+        cache.flushGroup(containerStructureGroup);
+    }
 }

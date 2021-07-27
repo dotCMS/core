@@ -74,11 +74,6 @@ public class Task03020PostgresqlIndiciesFK extends AbstractJDBCStartupTask {
     }
 
     @Override
-    public String getH2Script() {
-        return "";
-    }
-
-    @Override
     protected List<String> getTablesToDropConstraints() {
         return null;
     }

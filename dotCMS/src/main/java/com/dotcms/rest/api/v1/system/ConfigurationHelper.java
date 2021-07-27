@@ -9,20 +9,28 @@ import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_REC
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.license.LicenseManager;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.ReleaseInfo;
 import com.liferay.util.LocaleUtil;
+import io.vavr.control.Try;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 import javax.servlet.http.HttpServletRequest;
 
 /**
@@ -57,9 +65,13 @@ public class ConfigurationHelper implements Serializable {
 	public static final String SECONDARY_COLOR = "secondary";
 	public static final String COLORS = "colors";
 	public static final String LANGUAGES = "languages";
+	public static final String TIMEZONES = "timezones";
 	public static final String CLUSTER = "cluster";
 	public static final String CLUSTER_ID = "clusterId";
 	public static final String KEY_DIGEST = "companyKeyDigest";
+	public static final String LOGOS = "logos";
+	public static final String LOGIN_SCREEN_LOGO = "loginScreen";
+	public static final String NAV_BAR_LOGO = "navBar";
 	public static ConfigurationHelper INSTANCE = new ConfigurationHelper();
 
 	/**
@@ -86,6 +98,11 @@ public class ConfigurationHelper implements Serializable {
 	    String backgroundColor = "NA";
 		String primaryColor = "NA";
 		String secondaryColor = "NA";
+		String loginScreenLogo = Try.of(() -> APILocator.getCompanyAPI().getDefaultCompany().getCity()).getOrElse("NA");
+		loginScreenLogo = UtilMethods.isSet(loginScreenLogo) && loginScreenLogo.startsWith("/dA") ? loginScreenLogo : "NA";
+		String navBarLogo = Try.of(() -> APILocator.getCompanyAPI().getDefaultCompany().getState()).getOrElse("NA");
+		navBarLogo = LicenseUtil.getLevel() > LicenseLevel.COMMUNITY.level &&
+				UtilMethods.isSet(navBarLogo) && navBarLogo.startsWith("/dA") ? navBarLogo : "NA";
 
 	    try {
 			backgroundColor = APILocator.getCompanyAPI().getDefaultCompany().getSize();
@@ -132,11 +149,37 @@ public class ConfigurationHelper implements Serializable {
 						PRIMARY_COLOR, primaryColor,
 						SECONDARY_COLOR, secondaryColor
 				),
-				CLUSTER, clusterMap(user));
+				CLUSTER, clusterMap(user),
+				LOGOS,
+				map(
+						LOGIN_SCREEN_LOGO,loginScreenLogo,
+						NAV_BAR_LOGO,navBarLogo
+				)
+		);
 
 	    map.put(LANGUAGES, APILocator.getLanguageAPI().getLanguages());
+	    map.put(TIMEZONES, getTimeZones(locale));
 	    return map;
 	}
+
+    /**
+     * Returns a list of all available timezones
+     * @param locale
+     * @return
+     */
+	private List getTimeZones(final Locale locale){
+
+        final List<Map<String, Object>> timeZoneList = new ArrayList<>();
+        final String[] timeZonesIDs = TimeZone.getAvailableIDs();
+        Arrays.sort(timeZonesIDs);
+        for(final String id : timeZonesIDs) {
+            final TimeZone timeZone = TimeZone.getTimeZone(id);
+            timeZoneList.add(CollectionsUtils.map("id", timeZone.getID(), "label",
+                    timeZone.getDisplayName(locale) + " (" + timeZone
+                            .getID() + ")", "offset", timeZone.getRawOffset()));
+        }
+        return timeZoneList;
+    }
 
 	private String getWebSocketProtocol (final HttpServletRequest request) {
 

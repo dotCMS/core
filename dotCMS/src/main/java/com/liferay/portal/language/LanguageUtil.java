@@ -27,6 +27,7 @@ import com.dotcms.repackage.org.apache.struts.taglib.TagUtils;
 import com.dotcms.repackage.org.apache.struts.util.MessageResources;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -35,6 +36,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.MultiMessageResources;
+import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.WebAppPool;
 import com.liferay.util.CollectionFactory;
@@ -289,6 +291,17 @@ public class LanguageUtil {
 	public static String get(PageContext pageContext, String key) throws LanguageException {
     	return get(pageContext, key, (Object[])null);
 	}
+	
+    public static String getOrDefaultValue(final String key, final String defaultValue) throws LanguageException {
+        final User user = PortalUtil.getUser();
+        
+        final Optional<String> optValue = getOpt(APILocator.getCompanyAPI().getDefaultCompany().getCompanyId(), user.getLocale(), key);
+        
+        return optValue.orElse(defaultValue);
+
+    }
+	
+	
 	public static String get(PageContext pageContext, String key, Object... args)
 		throws LanguageException {
 		Logger.debug(LanguageUtil.class, key);

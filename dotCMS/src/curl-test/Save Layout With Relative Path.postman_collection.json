@@ -1,17 +1,17 @@
 {
 	"info": {
-		"_postman_id": "41780f23-6f2e-4fe7-851b-f9ae3ad2c121",
+		"_postman_id": "87387ef4-2f0c-4a85-b5f6-d5f14dbc2a6b",
 		"name": "Save Layout With Relative Path",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "push contents with relationship Copy",
+			"name": "Upload Bundle Success",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
-						"id": "53158e3d-0f27-4f91-ae6d-e7f7ceb2dcef",
+						"id": "2d81b7a6-ec34-4b2a-8d15-b5b2bb433a83",
 						"exec": [
 							"pm.test(\"Bundle uploaded sucessfully\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -57,7 +57,7 @@
 							"key": "file",
 							"contentType": "application/tar+gzip ",
 							"type": "file",
-							"src": "/build/src/core/dotCMS/src/curl-test/resources/resolve_relative_path_in_layout_end_point/page_test_bundle-01EEZJ5H186WF88K28VHB3P9A6.tar.gz"
+							"src": "resources/resolve_relative_path_in_layout_end_point/page_test_bundle-01EEZJ5H186WF88K28VHB3P9A6.tar.gz"
 						}
 					],
 					"options": {
@@ -92,7 +92,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "c50e3863-b57f-491d-8b31-b8e790169ecf",
+						"id": "fb013fb2-bd90-4dfc-97b6-34853feb4c2c",
 						"exec": [
 							"pm.test(\"Relative path should be save as Absolute path\", function () {",
 							"    pm.response.to.have.status(200);",

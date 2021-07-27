@@ -2,10 +2,13 @@ package com.dotmarketing.filters;
 
 import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
 import static com.dotcms.vanityurl.business.VanityUrlAPIImpl.LEGACY_CMS_HOME_PAGE;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.startsWith;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import com.google.common.collect.ImmutableList;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -14,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.servlet.FilterChain;
 import javax.servlet.RequestDispatcher;
@@ -43,7 +47,7 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.mock.response.MockHttpStatusResponse;
 import com.dotcms.rendering.velocity.servlet.VelocityServlet;
@@ -207,8 +211,8 @@ public class FiltersTest {
         
         HttpServletRequest request = getMockRequest(site.getHostname(), "/" + uniqueUrl + "1");
         filter.doFilter(request, response, chain);
-        Assert.assertEquals(200, response.getStatus());
-        Assert.assertEquals("/about-us/" + CMSFilter.CMS_INDEX_PAGE,
+        assertEquals(200, response.getStatus());
+        assertEquals("/about-us/" + CMSFilter.CMS_INDEX_PAGE,
                 request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
 
         Logger.info(this.getClass(),
@@ -216,8 +220,8 @@ public class FiltersTest {
         request = getMockRequest(site.getHostname(), "/" + uniqueUrl + "2");
         response = new MockResponseWrapper(Mockito.mock(HttpServletResponse.class));
         filter.doFilter(request, response, chain);
-        Assert.assertEquals(200, response.getStatus());
-        Assert.assertEquals("/about-us/" + CMSFilter.CMS_INDEX_PAGE,
+        assertEquals(200, response.getStatus());
+        assertEquals("/about-us/" + CMSFilter.CMS_INDEX_PAGE,
                 request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
 
         Logger.info(this.getClass(),
@@ -226,8 +230,8 @@ public class FiltersTest {
         request = getMockRequest(site.getHostname(), "/" + uniqueUrl + "3");
         response = new MockResponseWrapper(Mockito.mock(HttpServletResponse.class));
         filter.doFilter(request, response, chain);
-        Assert.assertEquals(301, response.getStatus());
-        Assert.assertEquals("http://demo.dotcms.com/about-us/" + CMSFilter.CMS_INDEX_PAGE,
+        assertEquals(301, response.getStatus());
+        assertEquals("http://demo.dotcms.com/about-us/" + CMSFilter.CMS_INDEX_PAGE,
                 response.getRedirectLocation());
 
         Logger.info(this.getClass(),
@@ -236,8 +240,8 @@ public class FiltersTest {
         request = getMockRequest(site.getHostname(), "/" + uniqueUrl + "4");
         response = new MockResponseWrapper(Mockito.mock(HttpServletResponse.class));
         filter.doFilter(request, response, chain);
-        Assert.assertEquals(301, response.getStatus());
-        Assert.assertEquals("http://demo.dotcms.com/about-us/" + CMSFilter.CMS_INDEX_PAGE,
+        assertEquals(301, response.getStatus());
+        assertEquals("http://demo.dotcms.com/about-us/" + CMSFilter.CMS_INDEX_PAGE,
                 response.getRedirectLocation());
 
         Logger.info(this.getClass(),
@@ -245,7 +249,7 @@ public class FiltersTest {
         request = getMockRequest(site.getHostname(), "/forbidden");
         response = new MockResponseWrapper(Mockito.mock(HttpServletResponse.class));
         filter.doFilter(request, response, chain);
-        Assert.assertEquals(302, response.getStatus());
+        assertEquals(302, response.getStatus());
 
 
     }
@@ -285,7 +289,7 @@ public class FiltersTest {
         VanityURLFilter filter = new VanityURLFilter();
         
         HttpServletResponse response = new MockHttpStatusResponse(new MockHttpResponse().response()).response();
-        HttpServletRequest request = new MockHttpRequest(site.getHostname(), "/" + uniqueUrl + "1?param2=" + URL).request();
+        HttpServletRequest request = new MockHttpRequestIntegrationTest(site.getHostname(), "/" + uniqueUrl + "1?param2=" + URL).request();
         
         MockFilterChain chain = new MockFilterChain();
         
@@ -300,8 +304,8 @@ public class FiltersTest {
         //assert that we have a new request wrapper
         assertTrue(request instanceof VanityUrlRequestWrapper);
         
-        Assert.assertEquals(200, response.getStatus());
-        Assert.assertEquals("/about-us/" + CMSFilter.CMS_INDEX_PAGE, request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
+        assertEquals(200, response.getStatus());
+        assertEquals("/about-us/" + CMSFilter.CMS_INDEX_PAGE, request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
         
         
         assertTrue(VANITY.equals(request.getParameter("param1")));
@@ -311,7 +315,7 @@ public class FiltersTest {
         Logger.info(this.getClass(),
                 "/" + uniqueUrl + "2 should forward to /about-us/" + CMSFilter.CMS_INDEX_PAGE);
         
-        request = new MockHttpRequest(site.getHostname(), "/" + uniqueUrl + "2?param1=" + URL + "&param2=" + URL).request();
+        request = new MockHttpRequestIntegrationTest(site.getHostname(), "/" + uniqueUrl + "2?param1=" + URL + "&param2=" + URL).request();
         
         response = new MockHttpStatusResponse(new MockHttpResponse().response()).response();
         filter.doFilter(request, response, chain);
@@ -319,8 +323,8 @@ public class FiltersTest {
         request =(HttpServletRequest) chain.request;
         
         
-        Assert.assertEquals(200, response.getStatus());
-        Assert.assertEquals("/about-us/" + CMSFilter.CMS_INDEX_PAGE,
+        assertEquals(200, response.getStatus());
+        assertEquals("/about-us/" + CMSFilter.CMS_INDEX_PAGE,
                 request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
 
         // VANITY - from the VANITY takes priority
@@ -334,11 +338,41 @@ public class FiltersTest {
 
 
     }
-    
-    
-    
-    
-    
+
+    @Test
+    public void Test_VanityURL_Forward_Redirect_Params() throws Exception {
+
+        final List<Integer> actions = ImmutableList.of(200, 301, 302);
+        final VanityURLFilter filter = new VanityURLFilter();
+        final MockFilterChain chain = new MockFilterChain();
+        for (final Integer action : actions) {
+
+            final String uniqueUrl = UUIDGenerator.shorty();
+            final Contentlet vanityUrl1 = filtersUtil
+                    .createVanityUrl("Fwd", site.getIdentifier(), "/" + uniqueUrl + "fwd",
+                            "/about-us/" + CMSFilter.CMS_INDEX_PAGE + "?param1=" + VANITY + "&param2="+VANITY , action,
+                            1, defaultLanguageId);
+            filtersUtil.publishVanityUrl(vanityUrl1);
+
+            final HttpServletResponse response = new MockHttpStatusResponse(
+                    new MockHttpResponse().response()).response();
+            final HttpServletRequest request = new MockHttpRequestIntegrationTest(site.getHostname(),
+                    "/" + uniqueUrl + "fwd?param1=" + URL).request();
+
+            final ServletOutputStream servletOutputStream = mock(ServletOutputStream.class);
+            final HttpServletResponse res = Mockito.mock(HttpServletResponse.class);
+            when(res.getOutputStream()).thenReturn(servletOutputStream);
+
+            Logger.info(this.getClass(),
+                    "/" + uniqueUrl + "1 should forward to /about-us/" + CMSFilter.CMS_INDEX_PAGE);
+
+            filter.doFilter(request, response, chain);
+            final HttpServletRequest postFilterRequest = (HttpServletRequest) chain.request;
+            assertEquals(response.getStatus(), action.intValue());
+            assertEquals(VANITY, postFilterRequest.getParameter("param1"));//Vanity takes precedence
+            assertEquals(VANITY, postFilterRequest.getParameter("param2"));
+        }
+    }
     
     
     
@@ -374,11 +408,11 @@ public class FiltersTest {
                     Mockito.mock(HttpServletResponse.class));
             filter.doFilter(request, response, chain);
             Logger.info(this.getClass(), "looking for 200, got:" + response.getStatus());
-            Assert.assertEquals(200, response.getStatus());
+            assertEquals(200, response.getStatus());
             Logger.info(this.getClass(),
                     "looking for /about-us/" + CMSFilter.CMS_INDEX_PAGE + ", got:" + request
                             .getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
-            Assert.assertEquals("/about-us/" + CMSFilter.CMS_INDEX_PAGE,
+            assertEquals("/about-us/" + CMSFilter.CMS_INDEX_PAGE,
                     request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
             //Delete the test Vanity URL
             contentletAPI.archive(vanityURLContentlet, user, false);
@@ -396,11 +430,11 @@ public class FiltersTest {
             response = new MockResponseWrapper(Mockito.mock(HttpServletResponse.class));
             filter.doFilter(request, response, chain);
             Logger.info(this.getClass(), "looking for 200, got:" + response.getStatus());
-            Assert.assertEquals(200, response.getStatus());
+            assertEquals(200, response.getStatus());
             Logger.info(this.getClass(),
                     "looking for /about-us" + CMSFilter.CMS_INDEX_PAGE + ", got:" + request
                             .getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
-            Assert.assertEquals("/about-us/" + CMSFilter.CMS_INDEX_PAGE,
+            assertEquals("/about-us/" + CMSFilter.CMS_INDEX_PAGE,
                     request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
 
         } catch (Exception e) {
@@ -471,11 +505,11 @@ public class FiltersTest {
                     Mockito.mock(HttpServletResponse.class));
             filter.doFilter(request, response, chain);
             Logger.info(this.getClass(), "looking for 200, got:" + response.getStatus());
-            Assert.assertEquals(200, response.getStatus());
+            assertEquals(200, response.getStatus());
             Logger.info(this.getClass(),
                     "looking for " + forwardTo + ", got:" + request
                             .getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
-            Assert.assertEquals(forwardTo,
+            assertEquals(forwardTo,
                     request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
 
         } catch (Exception e) {
@@ -586,7 +620,7 @@ public class FiltersTest {
         try {
             new CMSFilter().doFilter(request, response, chain);
             Logger.info(this.getClass(), "looking for 200, got;" + response.getStatus());
-            Assert.assertEquals(200, response.getStatus());
+            assertEquals(200, response.getStatus());
             Mockito.verify(chain).doFilter(request, response);
         } catch (ServletException e) {
             Assert.fail();
@@ -614,7 +648,7 @@ public class FiltersTest {
         try {
             new CMSFilter().doFilter(request, response, chain);
             Logger.info(this.getClass(), "looking for 200, got;" + response.getStatus());
-            Assert.assertEquals(200, response.getStatus());
+            assertEquals(200, response.getStatus());
 
 
         } catch (ServletException e) {
@@ -642,7 +676,7 @@ public class FiltersTest {
         try {
             new CMSFilter().doFilter(request, response, chain);
             Logger.info(this.getClass(), "looking for 401, got;" + response.getStatus());
-            Assert.assertEquals(401, response.getStatus());
+            assertEquals(401, response.getStatus());
 
 
         } catch (ServletException e) {
@@ -668,9 +702,9 @@ public class FiltersTest {
         try {
             new CMSFilter().doFilter(request, response, chain);
 
-            Assert.assertEquals("/products/",
+            assertEquals("/products/",
                     response.getRedirectLocation());
-            Assert.assertEquals(301, response.getStatus());
+            assertEquals(301, response.getStatus());
         } catch (ServletException e) {
             Assert.fail();
         }
@@ -685,10 +719,10 @@ public class FiltersTest {
             Logger.info(this.getClass(),
                     "looking for /products/" + CMSFilter.CMS_INDEX_PAGE + " , got;" + request
                             .getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
-            Assert.assertEquals("/products/" + CMSFilter.CMS_INDEX_PAGE,
+            assertEquals("/products/" + CMSFilter.CMS_INDEX_PAGE,
                     request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
             Logger.info(this.getClass(), "looking for 200, got;" + response.getStatus());
-            Assert.assertEquals(200, response.getStatus());
+            assertEquals(200, response.getStatus());
 
 
 

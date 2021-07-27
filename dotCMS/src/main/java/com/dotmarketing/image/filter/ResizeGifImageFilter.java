@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.util.Map;
 
 import javax.imageio.ImageIO;
-
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.image.gif.AnimatedGifEncoder;
 import com.dotmarketing.image.gif.GifDecoder;
 import com.dotmarketing.util.Logger;
@@ -55,13 +55,14 @@ public class ResizeGifImageFilter extends ImageFilter {
       final int width = (int) w;
       final int height = (int) h;
 
-      readWriteGIF(file, resultFile, maxFrames, loop, width, height);
+      File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() + ".tmp");
+      readWriteGIF(file, tempResultFile, maxFrames, loop, width, height);
+      tempResultFile.renameTo(resultFile);
       return resultFile;
     } catch (Exception e) {
-      Logger.warnAndDebug(this.getClass(), "error:" + e.getStackTrace()[0].getClassName() + " " + e.getMessage(), e);
-
+        throw new DotRuntimeException("unable to convert file:" +file + " : " +  e.getMessage(),e);
     }
-    return file;
+
   }
 
   private void readWriteGIF(File inputFile, File outputFile, final int maxFrames, final int loop, int width, int height)

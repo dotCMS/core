@@ -15,7 +15,7 @@
         }
         return false;
     }
-    
+
     /**
      *
      */
@@ -51,6 +51,7 @@
             + '             data-acction-id="'+action.workflowAction.id+'" '
             + '             data-action-commentable="'+action.workflowAction.commentable+'" '
             + '             data-action-assignable="'+action.workflowAction.assignable+'" '
+            + '             data-action-moveable="'+action.moveable+'" '
             + '             data-action-pushPublish="'+action.pushPublish+'"  '
             + '             data-action-condition="'+action.conditionPresent+'" >'+action.count+' content(s)</button>'
             + '   </td>'
@@ -239,17 +240,16 @@
     }
 
     function showPopupIfRequired(buttonElement) {
-
         var commentable = dojo.attr(buttonElement, 'data-action-commentable');
         var assignable = dojo.attr(buttonElement, 'data-action-assignable');
         var pushPublish = dojo.attr(buttonElement, 'data-action-pushPublish');
+        var moveable = dojo.attr(buttonElement, 'data-action-moveable');
         var condition = dojo.attr(buttonElement, 'data-action-condition');
 
-        var popupRequired = (commentable == 'true' || assignable == 'true' || pushPublish == 'true' || condition == 'true' );
+        var popupRequired = (commentable == 'true' || assignable == 'true' || pushPublish == 'true' || condition == 'true' || moveable == 'true' );
         if(!popupRequired){
            return false;
         }
-
         var actionId = dojo.attr(buttonElement, 'data-acction-id');
 
         var inode = null;
@@ -262,9 +262,8 @@
             actionId:actionId,
             inode:inode
         };
-
         var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Workflow-Action")%>');
-        pushHandler.showWorkflowEnabledDialog(workflow, fireActionCallback);
+        pushHandler.showWorkflowEnabledDialog(workflow, fireActionCallback, true);
         return true;
     }
 
@@ -295,9 +294,7 @@
     }
 
     function fireAction(actionId, popupData) {
-
-        dojo.byId('bulkActionsContainer').innerHTML = `<%=LanguageUtil.get(pageContext, "Applying")%>`;
-
+        fireActionLoadingIndicator();
         var selectedInodes = getSelectedInodes();
         if(!selectedInodes){
             return;
@@ -344,12 +341,7 @@
                 'Content-Type' : 'application/json;charset=utf-8',
             },
             load: function(data) {
-                if(data && data.entity){
-                    var summary = actionsExecutionSummarytMarkup(data.entity);
-                    dojo.byId('bulkActionsContainer').innerHTML = summary;
-                } else {
-                    showDotCMSSystemMessage(`<%=LanguageUtil.get(pageContext, "Available-actions-error")%>`, true);
-                }
+                const entity = data ? data.entity : null; bulkWorkflowActionCallback(entity);
             },
             error: function(error){
                 dojo.byId('bulkActionsContainer').innerHTML = `<%=LanguageUtil.get(pageContext, "Available-actions-error")%>`;
@@ -358,6 +350,19 @@
 
         dojo.xhrPut(xhrArgs);
         return true;
+    }
+
+    function fireActionLoadingIndicator(){
+        dojo.byId('bulkActionsContainer').innerHTML = `<%=LanguageUtil.get(pageContext, "Applying")%>`;
+    }
+
+    function bulkWorkflowActionCallback(data) {
+        if(data){
+            var summary = actionsExecutionSummarytMarkup(data);
+            dojo.byId('bulkActionsContainer').innerHTML = summary;
+        } else {
+            showDotCMSSystemMessage(`<%=LanguageUtil.get(pageContext, "Available-actions-error")%>`, true);
+        }
     }
 
     function getAvailableBulkActions(data){

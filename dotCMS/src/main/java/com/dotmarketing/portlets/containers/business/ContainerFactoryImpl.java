@@ -22,6 +22,7 @@ import com.dotmarketing.business.IdentifierCache;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -224,21 +225,29 @@ public class ContainerFactoryImpl implements ContainerFactory {
             throw new NotFoundInDbException("no container found under: " + folder.getPath() );
         }
 
-        final ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI().
+        final Optional<ContentletVersionInfo> contentletVersionInfo = APILocator.getVersionableAPI().
 				getContentletVersionInfo(identifier.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
-        final String inode = showLive && UtilMethods.isSet(contentletVersionInfo.getLiveInode()) ?
-				contentletVersionInfo.getLiveInode() : contentletVersionInfo.getWorkingInode();
+
+        if(!contentletVersionInfo.isPresent()) {
+        	throw new DotDataException("Can't find ContentletVersionInfo. Identifier:"
+					+ identifier.getId() + ". Lang:"
+					+ APILocator.getLanguageAPI().getDefaultLanguage().getId());
+		}
+
+        final String inode = showLive && UtilMethods.isSet(contentletVersionInfo.get().getLiveInode()) ?
+				contentletVersionInfo.get().getLiveInode() : contentletVersionInfo.get().getWorkingInode();
         Container container = containerCache.get(inode);
 
-        if(container==null) {
+        if(container==null || !InodeUtils.isSet(container.getInode())) {
 
             synchronized (identifier) {
 
-                if(container==null) {
+                if(container==null || !InodeUtils.isSet(container.getInode())) {
 
                     container = FileAssetContainerUtil.getInstance().fromAssets (host, folder,
 							this.findContainerAssets(folder, user, showLive), showLive, includeHostOnPath);
-                    if(container != null && container.getInode() != null) {
+                    if(container != null && InodeUtils.isSet(container.getInode())) {
+
                         containerCache.add(container);
                     }
                 }
@@ -296,7 +305,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		int     internalLimit                      = 500;
 		int     internalOffset                     = 0;
 		boolean done                               = false;
-		String  orderBy                            = orderByParam;
+		String  orderBy                            = SQLUtil.sanitizeSortBy(orderByParam) ;
 		final StringBuilder query 				   = new StringBuilder().append("select asset.*, inode.* from ")
 				.append(Type.CONTAINERS.getTableName()).append(" asset, inode, identifier, ")
 				.append(Type.CONTAINERS.getVersionTableName()).append(" vinfo");
@@ -304,9 +313,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		this.buildFindContainersQuery(includeArchived, hostId, inode,
 				identifier, parent, contentTypeAPI, query);
 
-		if(!UtilMethods.isSet(orderBy)) {
-			orderBy = "mod_date desc";
-		}
+		orderBy = UtilMethods.isEmpty(orderBy) ? "mod_date desc" : orderBy;
 
 		List<Container> resultList;
 		final DotConnect dotConnect  = new DotConnect();

@@ -8,8 +8,7 @@ public abstract class ContentTypeSql {
 
     public static ContentTypeSql getInstance() {
         if (instance == null){
-            instance = DbConnectionFactory.isH2() ? new ContentTypeH2DB() :
-                DbConnectionFactory.isMySql() ? new ContentTypeMySql() :
+            instance = DbConnectionFactory.isMySql() ? new ContentTypeMySql() :
                     DbConnectionFactory.isPostgres() ? new ContentTypePostgres()
                         : DbConnectionFactory.isMsSql() ? new ContentTypeMSSQL() :
                             new ContentTypeOracle();
@@ -19,8 +18,12 @@ public abstract class ContentTypeSql {
 
     public static String SELECT_ALL_STRUCTURE_FIELDS = "select  inode.inode as inode, owner, idate as idate, name, "
         + "description, default_structure, page_detail, structuretype, system, fixed, velocity_var_name , "
-        + "url_map_pattern , host, folder, expire_date_var , publish_date_var , mod_date "
+        + "url_map_pattern , host, folder, expire_date_var , publish_date_var , mod_date, icon, sort_order "
         + "from inode, structure  where inode.type='structure' and inode.inode = structure.inode  ";
+    
+    
+    public static String SELECT_ONLY_INODE_FIELD = "select  inode.inode as inode from inode, structure  where inode.type='structure' and inode.inode = structure.inode  ";
+    
 
 	public static String SELECT_BY_INODE = SELECT_ALL_STRUCTURE_FIELDS + " and inode.inode = ?";
     public static String SELECT_BY_VAR = SELECT_ALL_STRUCTURE_FIELDS + " and lower(structure.velocity_var_name) like ?";
@@ -33,8 +36,8 @@ public abstract class ContentTypeSql {
 	public static String INSERT_TYPE_INODE = "insert into inode (inode, idate, owner, type) values (?,?,?,'structure')";
 
 	public static String INSERT_TYPE = "insert into structure(inode,name,description,default_structure,page_detail,"
-        + "structuretype,system,fixed,velocity_var_name,url_map_pattern,host,folder,expire_date_var,publish_date_var,mod_date) "
-        + "values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        + "structuretype,system,fixed,velocity_var_name,url_map_pattern,host,folder,expire_date_var,publish_date_var,mod_date,icon,sort_order) "
+        + "values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
 	public static String UPDATE_TYPE = "update structure set "
         + "name=?, "
@@ -49,7 +52,9 @@ public abstract class ContentTypeSql {
         + "host=?,folder=?,"
         + "expire_date_var=?,"
         + "publish_date_var=?,"
-        + "mod_date=? "
+        + "mod_date=?,"
+		+ "icon=?,"
+		+ "sort_order=? "
         + "where inode=?";
 
 	public static String SELECT_QUERY_CONDITION = SELECT_ALL_STRUCTURE_FIELDS
@@ -57,6 +62,13 @@ public abstract class ContentTypeSql {
         + " %s" //if we have a condition
         + " and structuretype>=? and structuretype<= ? order by %s";
 
+    public static String SELECT_INODE_ONLY_QUERY_CONDITION = SELECT_ONLY_INODE_FIELD 
+                    + " and (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) "  //search
+                    + " %s" //if we have a condition
+                    + " and structuretype>=? and structuretype<= ? order by %s";
+	
+	
+	
 	public static String SELECT_COUNT_CONDITION = "select count(*) as test from structure, inode "
         + "where inode.type='structure' and inode.inode=structure.inode and "
         + " (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) "

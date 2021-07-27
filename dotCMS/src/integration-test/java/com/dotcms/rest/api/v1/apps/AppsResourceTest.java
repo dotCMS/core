@@ -25,6 +25,8 @@ import com.dotcms.rest.api.v1.apps.view.AppView;
 import com.dotcms.rest.api.v1.apps.view.SecretView;
 import com.dotcms.rest.api.v1.apps.view.SecretView.SecretViewSerializer;
 import com.dotcms.rest.api.v1.apps.view.SiteView;
+import com.dotcms.rest.api.v1.apps.view.ViewUtil;
+import com.dotcms.security.apps.AppDescriptorHelper;
 import com.dotcms.security.apps.AppsAPI;
 import com.dotcms.security.apps.AppsAPIImpl;
 import com.dotcms.security.apps.ParamDescriptor;
@@ -110,10 +112,11 @@ public class AppsResourceTest extends IntegrationTestBase {
         appsResource = new AppsResource(webResource,
                 appsHelper);
 
-        final AppsAPI appsAPI = new AppsAPIImpl(APILocator.getUserAPI(), APILocator.getLayoutAPI(),
+        final AppsAPI appsAPI = new AppsAPIImpl(APILocator.getLayoutAPI(),
                 APILocator.getHostAPI(), APILocator.getContentletAPI(),
                 SecretsStore.INSTANCE.get(), CacheLocator.getAppsCache(),
                 APILocator.getLocalSystemEventsAPI(),
+                new AppDescriptorHelper(),
                 new LicenseValiditySupplier() {
                     @Override
                     public boolean hasValidLicense() {
@@ -122,7 +125,7 @@ public class AppsResourceTest extends IntegrationTestBase {
                 }
         );
 
-        final AppsHelper appsHelperNonLicense = new AppsHelper(appsAPI, APILocator.getHostAPI(), APILocator.getContentletAPI());
+        final AppsHelper appsHelperNonLicense = new AppsHelper(appsAPI, APILocator.getHostAPI(), APILocator.getPermissionAPI());
         appsResourceNonLicense = new AppsResource(webResource,
                 appsHelperNonLicense);
 
@@ -757,11 +760,13 @@ public class AppsResourceTest extends IntegrationTestBase {
                         try(JsonGenerator jsonGenerator = createJsonGenerator(writer)){
                         final String key = secretEntry.getKey();
                         final SecretView view = secretEntry.getValue();
+                        ViewUtil.newStackContext(appDetailedView);
+                        ViewUtil.currentSite(siteId);
                         final SecretViewSerializer secretViewSerializer = new SecretViewSerializer();
                         secretViewSerializer.serialize(view, jsonGenerator, null);
                         jsonGenerator.flush();
                         final String asJson = writer.toString();
-
+                        ViewUtil.disposeStackContext();
                         Logger.debug(AppsResourceTest.class, () -> String.format(" `%s` ", asJson));
 
                         final ParamDescriptor descriptorParam = dataGen.paramMap().get(key);
@@ -1334,6 +1339,74 @@ public class AppsResourceTest extends IntegrationTestBase {
                          createFormDataMultiPart(targetFile.getName(), exportInputStream, json));
                  Assert.assertEquals(HttpStatus.SC_OK, appResponse.getStatus());
              }
+         }
+     }
+
+    /**
+     * Given Scenario: We create secrets with whitespaces at the beginning/end of keys/values
+     * Expected Results: Secrets' keys/values should be saved without whitespaces at the beginning/end
+     * @throws IOException
+     */
+     @Test
+     public void Test_Secret_Form_Keys_And_Values_Are_Trimmed() throws IOException {
+         final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                 .stringParam("param1", false,  true)
+                 .stringParam("param2", false,  true)
+                 .withName("secret-form-trim-test")
+                 .withDescription("secret-form-trim-test")
+                 //We're indicating that extra params are allowed to test required params are still required.
+                 .withExtraParameters(true);
+         final String key = dataGen.getKey();
+         final HttpServletRequest request = mock(HttpServletRequest.class);
+         final HttpServletResponse response = mock(HttpServletResponse.class);
+
+         when(request.getRequestURI()).thenReturn("/baseURL");
+         final String fileName = dataGen.getFileName();
+         final File file = dataGen.nextPersistedDescriptor();
+         try(InputStream inputStream = Files.newInputStream(file.toPath())) {
+             final FormDataMultiPart formDataMultiPart = createFormDataMultiPart(fileName,
+                     inputStream);
+             final Response appResponseOk = appsResource
+                     .createApp(request, response, formDataMultiPart);
+             Assert.assertNotNull(appResponseOk);
+             Assert.assertEquals(HttpStatus.SC_OK, appResponseOk.getStatus());
+
+             final Response availableAppsResponse = appsResource
+                     .listAvailableApps(request, response, null);
+             Assert.assertEquals(HttpStatus.SC_OK, availableAppsResponse.getStatus());
+             final ResponseEntityView responseEntityView1 = (ResponseEntityView) availableAppsResponse
+                     .getEntity();
+             final List<AppView> integrationViewList = (List<AppView>) responseEntityView1
+                     .getEntity();
+             assertFalse(integrationViewList.isEmpty());
+
+             final Host site = new SiteDataGen().nextPersisted();
+
+             final String siteId = site.getIdentifier();
+             final Map<String, Input> inputParamMap = ImmutableMap.of(
+                     "    param1", newInputParam("   value1".toCharArray()),
+                     "param2    ", newInputParam("value2    ".toCharArray())
+             );
+             final SecretForm secretForm1 = new SecretForm(inputParamMap);
+             final Response createSecretResponse1 = appsResource
+                     .createAppSecrets(request, response, key, siteId, secretForm1);
+             Assert.assertEquals(HttpStatus.SC_OK, createSecretResponse1.getStatus());
+
+             final Response appDetail = appsResource.getAppDetail(request, response, key,siteId);
+             Assert.assertEquals(HttpStatus.SC_OK, appDetail.getStatus());
+
+             final ResponseEntityView entityView = (ResponseEntityView) appDetail.getEntity();
+             final AppView appView = (AppView) entityView.getEntity();
+
+             Assert.assertNotNull(appView.getSites());
+             assertFalse(appView.getSites().isEmpty());
+             final Map<String, SecretView> storedSecrets = appView
+                     .getSites()
+                     .get(0).getSecrets().stream().collect(Collectors.toMap(SecretView::getName,
+                             Function.identity()));
+
+             Assert.assertEquals(storedSecrets.get("param1").getSecret().getString(),"value1");
+             Assert.assertEquals(storedSecrets.get("param2").getSecret().getString(),"value2");
          }
      }
 

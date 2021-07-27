@@ -19,6 +19,7 @@
 
 package com.liferay.portal.ejb;
 
+import com.liferay.util.StringPool;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
@@ -371,8 +372,8 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
         // we use the ICQ field to store the token:timestamp of the
         // password reset request we put in the email
         // the timestamp is used to set an expiration on the token
-        String token = ResetPasswordTokenUtil.createToken();
-        user.setIcqId(token + ":" + new Date().getTime());
+        final String token = ResetPasswordTokenUtil.createToken();
+        user.setIcqId(token);
 
         UserUtil.update(user);
 
@@ -728,16 +729,9 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
     public void resetPassword(String userId, String token, String newPassword) throws com.dotmarketing.business.NoSuchUserException,
             DotSecurityException, DotInvalidTokenException, DotInvalidPasswordException {
         try {
-            if (UtilMethods.isSet(userId) && UtilMethods.isSet(token)) {
-                User user = APILocator.getUserAPI().loadUserById(userId);
-
-                if (user == null) {
-                    throw new com.dotmarketing.business.NoSuchUserException("");
-                }
-
+                final User user = APILocator.getUserAPI().loadUserById(userId);
                 ResetPasswordTokenUtil.checkToken(user, token);
                 APILocator.getUserAPI().updatePassword(user, newPassword, APILocator.getUserAPI().getSystemUser(), false);
-            }
         } catch (DotDataException e) {
             throw new IllegalArgumentException();
         }

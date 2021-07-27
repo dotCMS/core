@@ -378,20 +378,11 @@
 
 		dojo.byId("wfCons").value=cons;
 
-		actionStore.fetch({
-			query: {id: actionId}, onComplete: function (item) {
-				if (item[0].assignable == "true" || item[0].commentable == "true"
-						|| item[0].pushPublish == "true") {
-					let workflow = {
-						actionId: actionId,
-						inode: ''
-					};
-					var pushHandler = new dotcms.dojo.push.PushHandler(
-							'<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
-					pushHandler.showWorkflowEnabledDialog(workflow, fireActionCallback, true);
-				} else {
-					contentAdmin.saveAssign();
-				}
+		getWorkFLow(actionId).then((action) => {
+			if ( action.actionInputs && action.actionInputs.length){
+				dispatchBulkWorkflowEvent(action);
+			} else {
+				contentAdmin.saveAssign();
 			}
 		});
 	}
@@ -406,6 +397,32 @@
 			}
 		});
 		return ids;
+	}
+
+	function getWorkFLow (action) {
+		return fetch(`/api/v1/workflow/actions/${action}`)
+			.then(response => response.json())
+			.then(data => data.entity)
+			.catch(() => []);
+	}
+
+	function dispatchBulkWorkflowEvent (workflow) {
+		const data = {
+			workflow: workflow,
+			selectedInodes: getTaskSelectedInodes(),
+			callback: 'bulkWorkflowActionCallback'
+		};
+		const customEvent = document.createEvent("CustomEvent");
+		customEvent.initCustomEvent("ng-event", false, false,  {
+			name: "workflow-wizard",
+			data: data
+		});
+		document.dispatchEvent(customEvent);
+	}
+
+	function bulkWorkflowActionCallback(data) {
+		showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Saved")%>");
+		doFilter();
 	}
 
 	function fireActionCallback(actionId, formData){

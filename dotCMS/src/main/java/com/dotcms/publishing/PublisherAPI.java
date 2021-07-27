@@ -4,7 +4,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
 import java.util.List;
-import java.util.Map;
 
 public interface PublisherAPI {
 
@@ -24,7 +23,7 @@ public interface PublisherAPI {
      * @see Publisher
      * @see com.dotcms.publisher.environment.bean.Environment
      */
-    public PublishStatus publish ( PublisherConfig config ) throws DotPublishingException;
+    public PublishStatus publish ( PublisherConfig config) throws DotPublishingException;
 
     /**
      * This method call will create and send to an specified Environments a Bundle, in order to do that it will follow this main steps:<br/>
@@ -43,7 +42,7 @@ public interface PublisherAPI {
      * @see Publisher
      * @see com.dotcms.publisher.environment.bean.Environment
      */
-    public PublishStatus publish ( PublisherConfig config, PublishStatus status ) throws DotPublishingException;
+    public PublishStatus publish ( PublisherConfig config, PublishStatus status) throws DotPublishingException;
 
     /**
      * Adds a filter to the map of filters, using the filterDescriptor.Key as the key

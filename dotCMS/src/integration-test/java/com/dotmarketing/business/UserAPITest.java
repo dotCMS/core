@@ -2,10 +2,11 @@ package com.dotmarketing.business;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.notifications.bean.Notification;
+import com.dotcms.rest.api.v1.authentication.DotInvalidTokenException;
+import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.TimeUtil;
 import com.dotmarketing.beans.*;
@@ -48,7 +49,9 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.UserTestUtil;
+import com.liferay.portal.ejb.UserUtil;
 import com.liferay.portal.model.User;
+import java.util.Optional;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -857,18 +860,53 @@ public class UserAPITest extends IntegrationTestBase {
 
 	}
 
+    @Test
+    public void testFindAllUsers() throws DotDataException, DotSecurityException {
+        String id;
+        String userName;
+        UserAPI userAPI;
+
+        id = String.valueOf(new Date().getTime());
+        userAPI = APILocator.getUserAPI();
+        userName = "user" + id;
+
+        final User user = UserTestUtil.getUser(userName, false, true);
+
+        final List<User> result = userAPI.findAllUsers();
+
+        assertNotNull(result);
+        assertTrue(result.stream().anyMatch(currentUser -> currentUser.getUserId().equals(user.getUserId())));
+        assertTrue(result.stream().noneMatch(currentUser -> currentUser.getCompanyId().equals(User.DEFAULT)));
+    }
+
+    @Test
+    public void testGetCountUsersByName() throws DotDataException, DotSecurityException {
+        String id;
+        String userName;
+        UserAPI userAPI;
+
+        id = String.valueOf(new Date().getTime());
+        userAPI = APILocator.getUserAPI();
+        userName = "user" + id;
+
+        UserTestUtil.getUser(userName, false, true);
+
+        long count = userAPI.getCountUsersByName(userName);
+
+        assertTrue(count == 1);
+    }
+
 	@Test
 	public void testGetCountUsersByNameOrEmail() throws DotDataException, DotSecurityException {
 		String id;
 		String userName;
-		User user;
 		UserAPI userAPI;
 
 		id = String.valueOf(new Date().getTime());
 		userAPI = APILocator.getUserAPI();
 		userName = "user" + id;
 
-		user = UserTestUtil.getUser(userName, false, true);
+		UserTestUtil.getUser(userName, false, true);
 
 		long count = userAPI.getCountUsersByNameOrEmail(userName + "@fake.org");
 
@@ -1095,4 +1133,209 @@ public class UserAPITest extends IntegrationTestBase {
 
 	}
 
+	/**
+	 * Method to test: {@link User#getUserRole()}
+	 * Given Scenario: When creating a new user an UserRole must be created, get that UserRole.
+	 * ExpectedResult: UserRole created for the new user.
+	 *
+	 */
+	@Test
+	public void test_getUserRole_success() throws Exception{
+  		final User newUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
+
+  		final Role userRole = newUser.getUserRole();
+
+  		assertNotNull(userRole);
+		assertEquals(newUser.getUserId(),userRole.getRoleKey());
+	}
+
+	/**
+	 * Method to test: {@link User#getUserRole()}
+	 * Given Scenario: Try to get the UserRole of an user that does not exist.
+	 * ExpectedResult: UserRole must be null
+	 *
+	 */
+	@Test
+	public void test_getUserRole_null() throws Exception{
+		final User newUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).next();
+
+		final Role userRole = newUser.getUserRole();
+
+		assertNull(userRole);
+	}
+
+	/**
+	 * Method to test: {@link UserAPI#getUserIdByToken(String)}
+	 * Given Scenario: Create a new user and set it the icqId (token when forgot password).
+	 * 					Find the userId associated to the icqId.
+	 * ExpectedResult: UserId of the created user.
+	 *
+	 */
+	@Test
+	public void test_getUserIdByIcqId_success() throws Exception{
+		final User newUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
+		final String icqId = ResetPasswordTokenUtil.createToken();
+		newUser.setIcqId(icqId);
+		UserUtil.update(newUser);
+
+		final Optional<String> userId = userAPI.getUserIdByToken(icqId);
+		assertTrue(userId.isPresent());
+		assertEquals(newUser.getUserId(),userId.get());
+	}
+
+	/**
+	 * Method to test: {@link UserAPI#getUserIdByToken(String)}
+	 * Given Scenario: Try to get the userId of an empty icqId
+	 * ExpectedResult: DotInvalidTokenException
+	 *
+	 */
+	@Test(expected = DotInvalidTokenException.class)
+	public void test_getUserIdByIcqId_icqIdEmpty_throwDotInvalidTokenException() throws Exception{
+		userAPI.getUserIdByToken("");
+	}
+
+	/**
+	 * Method to test: {@link UserAPI#getUserIdByToken(String)}
+	 * Given Scenario: Try to get the userId of a null icqId
+	 * ExpectedResult: DotInvalidTokenException
+	 *
+	 */
+	@Test(expected = DotInvalidTokenException.class)
+	public void test_getUserIdByIcqId_icqIdNull_throwDotInvalidTokenException() throws Exception{
+		userAPI.getUserIdByToken(null);
+	}
+
+	/**
+	 * Method to test: {@link UserAPI#getUserIdByToken(String)}
+	 * Given Scenario: Find the userId associated to the icqId.
+	 * ExpectedResult: UserId is not present since the icqId was not associated to any user.
+	 *
+	 */
+	@Test
+	public void test_getUserIdByIcqId_icqIdDoesNotBelongToAnyUser_returnEmptyOptional() throws Exception{
+		final String icqId = ResetPasswordTokenUtil.createToken();
+
+		final Optional<String> userId = userAPI.getUserIdByToken(icqId);
+		assertFalse(userId.isPresent());
+	}
+
+    /**
+     * Method to test: {@link UserAPI#save(User, User, boolean)}
+     * Given Scenario: A new user is saved with its additional info
+     * ExpectedResult: The new user is persisted with its additional info
+     *
+     */
+	@Test
+	public void test_saveNewUser_withAdditionalInfo() throws DotDataException, DotSecurityException {
+
+        final User newUser = new UserDataGen().firstName("backendUser" + System.currentTimeMillis())
+                .additionalInfo("suffix", "MySuffix")
+                .additionalInfo("title", "MyTitle")
+                .additionalInfo("facebookId", "MyFacebookId").nextPersisted();
+
+        final User savedUser = userAPI.loadUserById(newUser.getUserId());
+
+        assertNotNull(savedUser.getAdditionalInfo());
+        assertEquals("MySuffix", savedUser.getAdditionalInfo().get("suffix"));
+        assertEquals("MyTitle", savedUser.getAdditionalInfo().get("title"));
+        assertEquals("MyFacebookId", savedUser.getAdditionalInfo().get("facebookId"));
+    }
+
+    /**
+     * Method to test: {@link UserAPI#save(User, User, boolean)}
+     * Given Scenario: The additional info of an existing user is modified
+     * ExpectedResult: The user's additional info is updated in DB correctly
+     *
+     */
+    @Test
+    public void test_updateUser_withAdditionalInfo() throws DotDataException, DotSecurityException {
+
+        final User newUser = new UserDataGen().firstName("backendUser" + System.currentTimeMillis())
+                .additionalInfo("suffix", "MySuffix")
+                .additionalInfo("title", "MyTitle")
+                .additionalInfo("facebookId", "MyFacebookId").nextPersisted();
+
+        newUser.getAdditionalInfo().put("suffix", "EditedSuffix");
+        newUser.getAdditionalInfo().put("twitterId", "MyTwitterId");
+        
+        userAPI.save(newUser, systemUser, false);
+
+        final User savedUser = userAPI.loadUserById(newUser.getUserId());
+
+        assertNotNull(savedUser.getAdditionalInfo());
+        assertEquals("EditedSuffix", savedUser.getAdditionalInfo().get("suffix"));
+        assertEquals("MyTitle", savedUser.getAdditionalInfo().get("title"));
+        assertEquals("MyFacebookId", savedUser.getAdditionalInfo().get("facebookId"));
+        assertEquals("MyTwitterId", savedUser.getAdditionalInfo().get("twitterId"));
+    }
+
+	/**
+	 * Method to test: {@link UserAPI#loadByUserByEmail}
+	 * Given Scenario: Given limited user
+	 * ExpectedResult: Limited user should be able to load self-user
+	 *
+	 */
+	@Test
+	public void test_loadByUserByEmail_selfUser() throws DotDataException, DotSecurityException {
+
+		final User newUser = new UserDataGen().firstName("limitedUser" + System.currentTimeMillis())
+			.nextPersisted();
+
+		userAPI.save(newUser, systemUser, false);
+
+		final User ownUser = userAPI.loadByUserByEmail(newUser.getEmailAddress(),
+				newUser, false);
+
+		assertNotNull(ownUser.getAdditionalInfo());
+		assertEquals(newUser.getUserId(), ownUser.getUserId());
+	}
+
+	/**
+	 * Method to test: {@link UserAPI#loadUserById(String, User, boolean)}
+	 * Given Scenario: Given limited user
+	 * ExpectedResult: Limited user should be able to load self-user
+	 *
+	 */
+	@Test
+	public void test_loadByUserById_selfUser() throws DotDataException, DotSecurityException {
+
+		final User newUser = new UserDataGen().firstName("limitedUser" + System.currentTimeMillis())
+				.nextPersisted();
+
+		userAPI.save(newUser, systemUser, false);
+
+		final User ownUser = userAPI.loadUserById(newUser.getUserId(),
+				newUser, false);
+
+		assertEquals(newUser.getUserId(), ownUser.getUserId());
+	}
+
+	/**
+	 * Method to test: {@link UserAPI#save(User, User, boolean)}
+	 * Given Scenario: Given limited user
+	 * ExpectedResult: Limited user should be able to save self-user
+	 *
+	 */
+	@Test
+	public void test_save_selfUser() throws DotDataException, DotSecurityException {
+
+		final User newUser = new UserDataGen().firstName("limitedUser" + System.currentTimeMillis())
+				.nextPersisted();
+
+		final String userId = newUser.getUserId();
+
+		userAPI.save(newUser, systemUser, false);
+
+		final User ownUser = userAPI.loadUserById(userId,
+				APILocator.systemUser(), false);
+
+		// let's modify the user and save it using the self-user
+		ownUser.setFirstName("modifiedLimitedUser"+ + System.currentTimeMillis());
+		userAPI.save(ownUser, ownUser, false);
+
+		final User reloadedUser = userAPI.loadUserById(userId,
+				APILocator.systemUser(), false);
+
+		assertTrue(reloadedUser.getFirstName().contains("modifiedLimitedUser"));
+	}
 }

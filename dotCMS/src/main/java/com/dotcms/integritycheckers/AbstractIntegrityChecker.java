@@ -96,7 +96,7 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
             discardConflicts(endpointId, getIntegrityType());
         } else {
             Logger.warn(this, "Results table not supported for integrity type = ["
-                    + getIntegrityType() + "]");
+                    + getIntegrityType() + "], endpointId = [" + endpointId +"]");
         }
     }
 
@@ -135,7 +135,7 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
      */
     protected File generateContentletsCSVFile(final String outputFile, final int structureTypeId)
             throws DotDataException, IOException {
-        File csvFile = null;
+        File csvFile;
         CsvWriter writer = null;
 
         try {
@@ -151,9 +151,9 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
                     .append(structureTypeId).append(") ")
                     .append("INNER JOIN identifier i ON (i.id = c.identifier)").toString();
 
-            Connection conn = DbConnectionFactory.getConnection();
-            try (PreparedStatement statement = conn.prepareStatement(query)) {
-                try (ResultSet rs = statement.executeQuery()) {
+            final Connection conn = DbConnectionFactory.getConnection();
+            try (final PreparedStatement statement = conn.prepareStatement(query)) {
+                try (final ResultSet rs = statement.executeQuery()) {
                     int count = 0;
 
                     while (rs.next()) {
@@ -174,8 +174,10 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
                         }
                     }
                 }
-            } catch (SQLException e) {
-                throw new DotDataException(e.getMessage(), e);
+            } catch (final SQLException e) {
+                throw new DotDataException(String.format("An error occurred when generating the CSV file for " +
+                        "Contentlets for Content Type ID '%s' to file '%s': %s", structureTypeId, outputFile, e
+                        .getMessage()), e);
             }
         } finally {
             // Close writer
@@ -217,7 +219,7 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
                 Charset.forName("UTF-8"));
 
         DotConnect dc = new DotConnect();
-        String tempTableName = getTempTableName(endpointId);
+        final String tempTableName = getTempTableName(endpointId);
 
 		final String INSERT_TEMP_TABLE = "INSERT INTO " + tempTableName + " (working_inode, live_inode, identifier, full_path_lc, host_identifier, language_id) VALUES(?,?,?,?,?,?)";
 		boolean hasResultsToCheck = false;
@@ -246,14 +248,13 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
 				dc.addParam(contentHostIdentifier);
 				dc.addParam(new Long(contentLanguage));
 				dc.loadResult();
-			} catch (DotDataException e) {
+			} catch (final DotDataException e) {
 				contentFile.close();
 				final String assetId = UtilMethods.isSet(contentIdentifier) ? contentIdentifier
 						: "";
-				throw new DotDataException(
-						"An error occured when generating temp table for asset: "
-								+ assetId, e);
-			}
+                throw new DotDataException(String.format("An error occured when generating temp table for asset '%s':" +
+                        " %s", assetId, e.getMessage()), e);
+            }
         }
         contentFile.close();
         if (!hasResultsToCheck) {
@@ -283,7 +284,7 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
 
         dc.setSQL(selectSQL);
 
-        List<Map<String, Object>> results = dc.loadObjectResults();
+        final List<Map<String, Object>> results = dc.loadObjectResults();
 
         // If we have conflicts, lets create a table out of them.
         if (!results.isEmpty()) {
@@ -383,9 +384,7 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
      */
     private String getIntegerKeyword() {
         String keyword = null;
-        if (DbConnectionFactory.isH2()) {
-            keyword = "bigint";
-        } else if (DbConnectionFactory.isPostgres()) {
+        if (DbConnectionFactory.isPostgres()) {
             keyword = "int8";
         } else if (DbConnectionFactory.isMySql()) {
             keyword = "bigint";

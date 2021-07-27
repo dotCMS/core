@@ -46,4 +46,8 @@ public abstract class ContentTypeCache extends ContentTypeCache2Impl {
 
     public abstract void clearRecents(String userId);
 
+    /**
+     * Cleans the containers/structures
+     */
+    public abstract void clearContainerStructures();
 }

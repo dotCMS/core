@@ -37,12 +37,7 @@ import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.builder.ToStringBuilder;
@@ -185,15 +180,19 @@ public class ContentMap {
 					return null;
 				}
 				Identifier i = APILocator.getIdentifierAPI().find(fid);
-				ContentletVersionInfo cvi =  APILocator.getVersionableAPI().getContentletVersionInfo(i.getId(), content.getLanguageId());
-				if(cvi == null) {
+				Optional<ContentletVersionInfo> cvi =  APILocator.getVersionableAPI().getContentletVersionInfo(i.getId(), content.getLanguageId());
+				if(!cvi.isPresent()) {
 				    final long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 				    if(content.getLanguageId() != defaultLanguageId && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE",true)){
 				        cvi =  APILocator.getVersionableAPI().getContentletVersionInfo(i.getId(), defaultLanguageId);
 				    }
 				}
 
-				String inode =  (EDIT_OR_PREVIEW_MODE) ? cvi.getWorkingInode()  : cvi.getLiveInode();
+				if(!cvi.isPresent()) {
+					return null;
+				}
+
+				String inode =  EDIT_OR_PREVIEW_MODE ? cvi.get().getWorkingInode() : cvi.get().getLiveInode();
 				Contentlet fileAsset  =  APILocator.getContentletAPI().find(inode, user!=null?user:APILocator.getUserAPI().getAnonymousUser(), true);
 					
 				if(fileAsset != null && UtilMethods.isSet(fileAsset.getInode())){
@@ -278,17 +277,30 @@ public class ContentMap {
 			}else if(f != null && f.getFieldType().equals(Field.FieldType.CHECKBOX.toString())){
 				return new CheckboxMap(f, content);
 			}else if(f != null && f.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())){
-			    final String jsonData=(String)conAPI.getFieldValue(content, f);
-				Map<String,Object> keyValueMap = KeyValueFieldUtil.JSONValueToHashMap(jsonData);
-				//needs to be ordered
-				Map<String,Object> retMap = new java.util.LinkedHashMap<String,Object>() {
-				    @Override
-				    public String toString() {
-				        return jsonData;
-				    }
-				};
-				for(String key :keyValueMap.keySet()){
-					retMap.put(key.replaceAll("\\W",""), keyValueMap.get(key));
+
+				Map<String, Object> keyValueMap = new HashMap<>();
+				Map<String, Object> retMap = new LinkedHashMap<>();
+
+				final Object object = conAPI.getFieldValue(content, f);
+
+				if(object instanceof Map){
+					keyValueMap=(Map)object;
+				}
+
+				if (object instanceof String) {
+					final String jsonData = (String) object;
+					keyValueMap = KeyValueFieldUtil.JSONValueToHashMap(jsonData);
+					//needs to be ordered
+					retMap = new java.util.LinkedHashMap<String, Object>() {
+						@Override
+						public String toString() {
+							return jsonData;
+						}
+					};
+				}
+
+				for (String key : keyValueMap.keySet()) {
+					retMap.put(key.replaceAll("\\W", ""), keyValueMap.get(key));
 				}
 				retMap.put("keys", retMap.keySet());
 				retMap.put("map", keyValueMap);
@@ -337,18 +349,45 @@ public class ContentMap {
 		final ContentletRelationshipRecords records = relationships.getRelationshipsRecords().get(0);
 		if(records.getRecords().isEmpty()) {
 		    return null;
-		}
-		else if (records.doesAllowOnlyOne()){
-			return new ContentMap(records.getRecords().get(0),user,
-					EDIT_OR_PREVIEW_MODE, host, context);
-		} else{
-			return perAPI.filterCollection(records.getRecords(),
-					PermissionAPI.PERMISSION_USE, true, user).stream()
-					.map(contentlet -> new ContentMap((Contentlet) contentlet, user,
-							EDIT_OR_PREVIEW_MODE, host, context)).collect(Collectors.toList());
+		} else if (records.doesAllowOnlyOne()){
+			return new ContentMap(records.getRecords().get(0),user, EDIT_OR_PREVIEW_MODE, host, context);
+		} else {
+			final List<Contentlet> contents = records.getRecords().stream()
+					.filter(contentlet -> needLiveVersion(contentlet))
+					.map(relatedContent -> EDIT_OR_PREVIEW_MODE ? relatedContent : getLiveVersion(relatedContent))
+					.filter(Objects::nonNull)
+					.collect(Collectors.toList());
+
+			return perAPI.filterCollection(contents, PermissionAPI.PERMISSION_USE, true, user).stream()
+					.map(contentlet -> new ContentMap(contentlet, user, EDIT_OR_PREVIEW_MODE, host, context))
+					.collect(Collectors.toList());
 		}
 
 
+	}
+
+	private Contentlet getLiveVersion(final Contentlet relatedContent) {
+		try {
+			if (relatedContent.isLive()) {
+				return relatedContent;
+			} else {
+				try {
+					final List<Contentlet> contentlets = APILocator.getContentletAPI()
+							.findContentletsByIdentifiers(new String[]{relatedContent.getIdentifier()}, true, relatedContent.getLanguageId(), user, user.isFrontendUser());
+
+					return contentlets != null && !contentlets.isEmpty() ? contentlets.get(0) : null;
+				} catch (DotDataException| DotSecurityException e) {
+					throw new RuntimeException(e);
+				}
+			}
+		} catch (DotDataException | DotSecurityException e) {
+			return null;
+		}
+	}
+
+	private boolean needLiveVersion(final Contentlet contentlet) {
+		return Try.of(() -> EDIT_OR_PREVIEW_MODE || !EDIT_OR_PREVIEW_MODE && contentlet.hasLiveVersion())
+				.getOrElse(false);
 	}
 
 	/**

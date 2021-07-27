@@ -70,6 +70,7 @@ import java.net.URLDecoder;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
@@ -334,7 +335,8 @@ public class DirectorAction extends DotPortletAction {
 				    workingTemplate = APILocator.getTemplateAPI().findWorkingTemplate(
 				            htmlPage.getTemplateId(),user,false);
 				} else if (req.getParameter("template")!=null) {
-					workingTemplate = (Template) InodeFactory.getInode(req.getParameter("template"), Template.class);
+					workingTemplate = APILocator.getTemplateAPI().findWorkingTemplate(
+							req.getParameter("template"),user,false);
 				}
 
 				if ("unlockTemplate".equals(subcmd)) {
@@ -506,12 +508,12 @@ public class DirectorAction extends DotPortletAction {
 	                    	
 	                    }
 	                    if(!duplicateContentCheck){
-	                        ContentletVersionInfo versionInfo = APILocator
+	                        Optional<ContentletVersionInfo> versionInfo = APILocator
 	                                .getVersionableAPI()
 	                                .getContentletVersionInfo(
 	                                        htmlPage.getIdentifier(),
 	                                        contentlet.getLanguageId());
-	                        if (versionInfo != null) {
+	                        if (versionInfo.isPresent()) {
 	                            APILocator.getMultiTreeAPI().saveMultiTree(mTree);
 	                        } else {
 	                            // The language in the page and the 

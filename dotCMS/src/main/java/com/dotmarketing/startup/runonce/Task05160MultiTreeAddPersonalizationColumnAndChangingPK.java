@@ -141,11 +141,6 @@ public class Task05160MultiTreeAddPersonalizationColumnAndChangingPK extends Abs
     }
 
     @Override
-    public String getH2Script() {
-        return null;
-    }
-
-    @Override
     protected List<String> getTablesToDropConstraints() {
         return null;
     }

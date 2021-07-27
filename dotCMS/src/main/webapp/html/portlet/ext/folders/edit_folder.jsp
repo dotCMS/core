@@ -218,8 +218,8 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 								ignoreCase="true"
 								labelAttr="name"
 								searchAttr="name"
-								value="<%=InodeUtils.isSet(folder.getInode())?folder.getDefaultFileType():defaultFileAssetStructure.getInode() %>"
-							invalidMessage="<%=LanguageUtil.get(pageContext, "Invalid-option-selected")%>">
+								value="<%=InodeUtils.isSet(folder.getInode())?folder.getDefaultFileType():(parentFolder!=null?parentFolder.getDefaultFileType():defaultFileAssetStructure.getInode()) %>"
+							    invalidMessage="<%=LanguageUtil.get(pageContext, "Invalid-option-selected")%>">
 						</select>
 					</dd>
 				</dl>
@@ -241,8 +241,10 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 	<!-- START permissions -->
 	<%
 		PermissionAPI perAPI = APILocator.getPermissionAPI();
-		boolean canEditAsset = perAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
-		if (canEditAsset) {
+
+		if (UtilMethods.isSet(folder.getIdentifier()) &&
+				perAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
+						user)) {
 	%>
 		<div id="permissionsTab" refreshOnShow="true" preload="true"  dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>" onShow="hideEditButtonsRow()" >
 			<%

@@ -1,25 +1,9 @@
-/**
- * 
- */
 package com.dotmarketing.quartz.job;
-
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
-
-import com.dotcms.notifications.bean.NotificationType;
-import com.dotcms.util.I18NMessage;
-import org.quartz.Job;
-import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
-import org.quartz.SimpleTrigger;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.notifications.bean.NotificationType;
+import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -31,6 +15,7 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.quartz.QuartzUtils;
@@ -38,6 +23,18 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import org.quartz.Job;
+import org.quartz.JobDataMap;
+import org.quartz.JobDetail;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.SimpleTrigger;
 
 /**
  * @author Oscar Arrieta
@@ -49,16 +46,16 @@ public class IdentifierDateJob implements Job {
 	 * @see org.quartz.Job#execute(org.quartz.JobExecutionContext)
 	 */
 	@Override
-	public void execute(JobExecutionContext jobContext) throws JobExecutionException {
-		ContentletAPI contentletAPI = APILocator.getContentletAPI();
+	public void execute(final JobExecutionContext jobContext) throws JobExecutionException {
+		final ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
-		JobDataMap map = jobContext.getJobDetail().getJobDataMap();
-		ContentType type = (ContentType) map.get("contenttype");
-		User user = (User) map.get("user");
+		final JobDataMap map = jobContext.getJobDetail().getJobDataMap();
+		final ContentType type = (ContentType) map.get("contenttype");
+		final User user = (User) map.get("user");
 
 		try{
 			//Lucene query to be sure that I will get all fields of the contentlet
-			String luceneQuery = "+structureName:" + type.variable() +
+			final String luceneQuery = "+structureName:" + type.variable() +
 								" +working:true" +
 								" +languageId:" + APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
@@ -77,17 +74,15 @@ public class IdentifierDateJob implements Job {
 				//Iterates all the ContentletSearch of the query
 				for(ContentletSearch contentletSearch : contenletSearchList){
 					//Get the identifier of each contentlet
-					Identifier identifier= APILocator.getIdentifierAPI().find(contentletSearch.getIdentifier());
+					final Identifier identifier= APILocator.getIdentifierAPI().find(contentletSearch.getIdentifier());
 
-					//Gets from hibernate all the Data of the Contentlet
-					com.dotmarketing.portlets.contentlet.business.Contentlet fatty =
-							(com.dotmarketing.portlets.contentlet.business.Contentlet)HibernateUtil
-							.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, contentletSearch.getInode());
+					//Gets contentlet info
+                    final Contentlet contentlet = contentletAPI.find(contentletSearch.getInode(), user, false);
 
 					//Check if the new Publish Date Var is not null
 					if(UtilMethods.isSet(type.publishDateVar())){
 						//Sets the identifier SysPublishDate to the new Structure/Content Publish Date Var
-						identifier.setSysPublishDate((Date)fatty.getMap().get(type.publishDateVar()));
+						identifier.setSysPublishDate((Date)contentlet.getMap().get(type.publishDateVar()));
 					}else{
 						identifier.setSysPublishDate(null);
 					}
@@ -95,7 +90,7 @@ public class IdentifierDateJob implements Job {
 					//Check if the new Expire Date Var is not null
 					if(UtilMethods.isSet(type.expireDateVar())){
 						//Sets the identifier SysExpireDate to the new Structure/Content Expire Date Var
-						identifier.setSysExpireDate((Date)fatty.getMap().get(type.expireDateVar()));
+						identifier.setSysExpireDate((Date)contentlet.getMap().get(type.expireDateVar()));
 					}else{
 						identifier.setSysExpireDate(null);
 					}
@@ -106,11 +101,11 @@ public class IdentifierDateJob implements Job {
 					CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(contentletSearch.getIdentifier());
 					//Clears Contentlet Cache for each language and version
 					for(Language lan : APILocator.getLanguageAPI().getLanguages()) {
-						ContentletVersionInfo versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(identifier.getId(), lan.getId()) ;
-						if(versionInfo!=null && UtilMethods.isSet(versionInfo.getIdentifier())) {
-							CacheLocator.getContentletCache().remove(versionInfo.getWorkingInode());
-							if(UtilMethods.isSet(versionInfo.getLiveInode())) {
-								CacheLocator.getContentletCache().remove(versionInfo.getLiveInode());
+						Optional<ContentletVersionInfo> versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(identifier.getId(), lan.getId()) ;
+						if(versionInfo.isPresent() && UtilMethods.isSet(versionInfo.get().getIdentifier())) {
+							CacheLocator.getContentletCache().remove(versionInfo.get().getWorkingInode());
+							if(UtilMethods.isSet(versionInfo.get().getLiveInode())) {
+								CacheLocator.getContentletCache().remove(versionInfo.get().getLiveInode());
 
 							}
 						}
@@ -178,7 +173,7 @@ public class IdentifierDateJob implements Job {
 		SimpleTrigger trigger = new SimpleTrigger("IdentifierDateTrigger-" + randomID, "identifier_data_triggers",  new Date(startTime));
 		
 		try {
-			Scheduler sched = QuartzUtils.getSequentialScheduler();
+			Scheduler sched = QuartzUtils.getScheduler();
 			sched.scheduleJob(jd, trigger);
 		} catch (SchedulerException e) {
 			Logger.error(IdentifierDateJob.class, "Error scheduling the Identifier Date Job", e);

@@ -1,9 +1,11 @@
 package com.dotcms.rendering.velocity.viewtools;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import org.apache.velocity.tools.view.ImportSupport;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -247,20 +249,49 @@ public class JSONTool extends ImportSupport implements ViewTool {
     return new JSONObject(o);
   }
 
+  private final static Class LIST_MAP_CLASS = new ArrayList<Map<String, Object>>().getClass();
+  private final static Class MAP_CLASS      = new HashMap<String, Object>().getClass();
   /**
    * Returns a JSONObject as constructed from the provided string.
    *
    * @param s The JSON string.
    * @return A JSONObject as parsed from the provided string, null in the event of an error.
    */
-  public Object generate(String s) {
+  public Object generate(final String s) {
+
+    return Config.getBooleanProperty("jsontool.generate.jackson", true)?
+            this.jacksonGenerate(s): this.jsonGenerate(s);
+  }
+
+  private Object jacksonGenerate(final String s) {
+
+    final DotObjectMapperProvider mapper = DotObjectMapperProvider.getInstance();
+
+    try {
+
+      final String trimmedString = s.trim();
+      Logger.debug(this.getClass(), ()->"Json RESPONSE: " + s);
+
+      return trimmedString.startsWith("[") && trimmedString.endsWith("]")?
+              mapper.getDefaultObjectMapper().readValue(trimmedString, LIST_MAP_CLASS):
+              mapper.getDefaultObjectMapper().readValue(trimmedString, MAP_CLASS);
+    } catch (Exception e) {
+      Logger.error(this.getClass(), "Error on parsing the String: " + s + ", message: " + e.getMessage());
+      Logger.warnAndDebug(this.getClass(), e);
+      return null;
+    }
+  }
+
+  private Object jsonGenerate(final String s) {
     Object result;
 
     try {
-      if (s.startsWith("[") && s.endsWith("]")) {
-        result = new JSONArray(s);
+
+      final String trimmedString = s.trim();
+      if (trimmedString.startsWith("[") && trimmedString.endsWith("]")) {
+        result = new JSONArray(trimmedString);
       } else {
-        result = new JSONObject(s);
+        result = new JSONObject(trimmedString);
       }
     } catch (Exception e) {
       Logger.warn(this.getClass(), e.getMessage());

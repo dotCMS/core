@@ -144,9 +144,24 @@ public final class Constants {
 	 */
 	public static final String CONTAINER_META_INFO_FILE_NAME   = "container.vtl";
 
+	/**
+	 * Base path that contains the folder template definitions
+	 */
+	public static final String TEMPLATE_FOLDER_PATH   = "/application/templates";
+
+	/**
+	 * This is the name of the meta info for a file based template.
+	 */
+	public static final String TEMPLATE_META_INFO_FILE_NAME   = "properties.vtl";
+
 
 	/**
 	 * Extension for the velocity file: .vtl
 	 */
 	public static final String VELOCITY_FILE_EXTENSION = ".vtl";
+
+	/**
+	 * Extension for the JSON file: .json
+	 */
+	public static final String JSON_FILE_EXTENSION = ".json";
 }

@@ -1,20 +1,37 @@
 package com.dotcms.rest;
 
+import com.dotcms.mock.request.MockAttributeRequest;
+import com.dotcms.mock.request.MockHeaderRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
+import com.dotcms.mock.request.MockSessionRequest;
+import com.dotcms.mock.response.MockAsyncResponse;
+import com.dotcms.mock.response.MockHttpResponse;
+import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publishing.FilterDescriptor;
+import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.rules.model.Condition;
-import com.dotmarketing.portlets.rules.model.ConditionGroup;
-import com.dotmarketing.portlets.structure.model.ContentletRelationships;
+import com.dotmarketing.util.UUIDGenerator;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import java.io.IOException;
+import java.util.Date;
+import java.util.Map;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import org.glassfish.jersey.internal.util.Base64;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -25,17 +42,23 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.toImmutableList;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class BundleResourceTest {
 
+    private static BundleResource bundleResource;
+    private static User adminUser;
+    static HttpServletResponse response;
+
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
+        bundleResource = new BundleResource();
+        adminUser = APILocator.systemUser();
+        response = new MockHttpResponse();
     }
 
     /**
@@ -76,8 +99,6 @@ public class BundleResourceTest {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getAttribute(WebKeys.USER)).thenReturn(APILocator.systemUser());
 
-        final HttpServletResponse response = mock(HttpServletResponse.class);
-
         final BodyPart bodyPart = mock(BodyPart.class);
         when(bodyPart.getEntity()).thenReturn(createCOntentFileInputStream);
 
@@ -88,7 +109,118 @@ public class BundleResourceTest {
         final FormDataMultiPart multipart = mock(FormDataMultiPart.class);
         when(multipart.getBodyParts()).thenReturn(list(bodyPart));
 
-        final BundleResource bundleResource = new BundleResource();
         bundleResource.uploadBundleSync(request, response, multipart);
+    }
+
+    private static void createFilter(){
+        final Map<String,Object> filtersMap =
+                ImmutableMap.of("dependencies",true,"relationships",true);
+        final FilterDescriptor filterDescriptor =
+                new FilterDescriptor("filterTestAPI.yml","Filter Test Title",filtersMap,true,"Reviewer,dotcms.org.2789");
+
+        APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
+    }
+
+    private String insertPublishingBundle(final String userId, final Date publishDate)
+            throws DotDataException {
+        final String uuid = UUIDGenerator.generateUuid();
+        final Bundle bundle = new Bundle();
+        bundle.setId(uuid);
+        bundle.setName("testBundle"+System.currentTimeMillis());
+        bundle.setForcePush(false);
+        bundle.setOwner(userId);
+        bundle.setPublishDate(publishDate);
+        APILocator.getBundleAPI().saveBundle(bundle);
+
+        return uuid;
+    }
+
+    /**
+     * BasicAuth
+     */
+    private HttpServletRequest getHttpRequest() {
+        final MockHeaderRequest request = new MockHeaderRequest(
+                new MockSessionRequest(
+                        new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
+                                .request())
+                        .request());
+
+        request.setHeader("Authorization",
+                "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+
+        return request;
+    }
+
+    /**
+     * Method to Test: {@link BundleResource#generateBundle(HttpServletRequest, HttpServletResponse, AsyncResponse, GenerateBundleForm)}
+     * When: Create a bundle and generate the tar.gz file of the given bundle.
+     * Should: Generate the bundle without issues, 200.
+     */
+    @Test
+    public void test_generateBundle_success() throws DotDataException, IOException {
+        //Create new bundle
+        final String bundleId = insertPublishingBundle(adminUser.getUserId(),new Date());
+
+        //Create a Filter since it's needed to generate the bundle
+        createFilter();
+
+        //Create GenerateBundleForm
+        final GenerateBundleForm bundleForm = new GenerateBundleForm.Builder().bundleId(bundleId).build();
+
+        //Call generate endpoint
+        final AsyncResponse asyncResponse = new MockAsyncResponse((arg) -> {
+
+            final Response generateBundleResponse = (Response)arg;
+            assertEquals(Status.OK.getStatusCode(), generateBundleResponse.getStatus());
+            return true;
+        }, arg -> {
+            fail("Error generating bundle");
+            return true;
+        });
+
+        bundleResource.generateBundle(getHttpRequest(),response,asyncResponse,bundleForm);
+        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
+    }
+
+    /**
+     * Method to Test: {@link BundleResource#downloadBundle(HttpServletRequest, HttpServletResponse, String)}
+     * When: Create a bundle and try to download it, but since the tar.gz has not been generated should fail.
+     * Should: return 404 since the file has not been generated
+     */
+    @Test
+    public void test_downloadBundle_fileNotGenerated_return404() throws DotDataException {
+        //Create new bundle
+        final String bundleId = insertPublishingBundle(adminUser.getUserId(),new Date());
+
+        //Call download endpoint
+        final Response responseResource = bundleResource.downloadBundle(getHttpRequest(),response,bundleId);
+
+        Assert.assertEquals(Status.NOT_FOUND.getStatusCode(),responseResource.getStatus());
+    }
+
+    /**
+     * Method to Test: {@link BundleResource#downloadBundle(HttpServletRequest, HttpServletResponse, String)}
+     * When: Create a bundle and try to download it, since the tar.gz has been generated should succeed.
+     * Should: return 200 since the file has been generated
+     */
+    @Test
+    public void test_downloadBundle_success() throws DotDataException {
+        //Create new bundle
+        final String bundleId = insertPublishingBundle(adminUser.getUserId(),new Date());
+
+        //Create a Filter since it's needed to generate the bundle
+        createFilter();
+
+        //Generate bundle file
+        final Bundle bundle = APILocator.getBundleAPI().getBundleById(bundleId);
+        bundle.setOperation(PushPublisherConfig.Operation.PUBLISH.ordinal());
+        APILocator.getBundleAPI().generateTarGzipBundleFile(bundle);
+
+        PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
+
+        //Call download endpoint
+        final Response responseResource = bundleResource.downloadBundle(getHttpRequest(),response,bundleId);
+
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
     }
 }

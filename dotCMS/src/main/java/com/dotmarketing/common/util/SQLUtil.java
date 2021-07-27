@@ -185,7 +185,7 @@ public class SQLUtil {
 			return query;
 		}else{
 		     if(DbConnectionFactory.isPostgres()||
-				DbConnectionFactory.isMySql() || DbConnectionFactory.isH2()){
+				DbConnectionFactory.isMySql()){
 			   query = query +" LIMIT "+limit+" OFFSET " +offSet;
 			   queryString.append(query);
 
@@ -329,6 +329,30 @@ public class SQLUtil {
 					(DbConnectionFactory.isPostgres() && sqle.getSQLState().equals(POSTGRE_SQL_STATE_UNIQUE_CONSTRAINT));
 		}
 		return false;
+	}
+
+	/**
+	 * Returns an immutable list of common evil SQL keywords that must not be included in SQL queries sent by custom
+	 * code.
+	 *
+	 * @return The list of evil SQL keywords.
+	 */
+	public static Set<String> getEvilSqlConditionWords() {
+		return EVIL_SQL_CONDITION_WORDS;
+	}
+
+	/**
+	 * Scans the SQL query passed down by the user/developer looking for evil SQL words, as only {@code SELECT} queries
+	 * (data reading operations) are allowed.
+	 *
+	 * @param sqlQuery The SQL query.
+	 *
+	 * @return If the SQL query is safe, returns {@code true}. Otherwise, returns {@code false}.
+	 */
+	public static boolean containsEvilSqlWords(final String sqlQuery) {
+		final String evilWord = getEvilSqlConditionWords().stream().filter(restrictedWord -> sqlQuery
+				.contains(restrictedWord + " ")).findFirst().orElse(null);
+		return UtilMethods.isSet(evilWord) ? Boolean.TRUE : Boolean.FALSE;
 	}
 
 } // E:O:F:SQLUtil.

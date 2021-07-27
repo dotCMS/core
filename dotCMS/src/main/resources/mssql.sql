@@ -178,7 +178,8 @@ create table User_ (
     agreedToTermsOfUse bit,
     active_ bit,
     delete_in_progress TINYINT DEFAULT 0,
-    delete_date DATETIME NULL
+    delete_date DATETIME NULL,
+    additional_info NVARCHAR(MAX) NULL
 );
 
 create table UserTracker (
@@ -970,6 +971,8 @@ create table structure (
    expire_date_var NVARCHAR(255) null,
    publish_date_var NVARCHAR(255) null,
    mod_date datetime null,
+   sort_order int null,
+   icon NVARCHAR(255) null,
    primary key (inode)
 );
 create table cms_role (
@@ -1011,9 +1014,6 @@ create table permission (
     sort_order int null,
     friendly_name NVARCHAR(255) null,
     structure_inode NVARCHAR(36) null,
-    last_review datetime null,
-    next_review datetime null,
-    review_interval NVARCHAR(255) null,
     disabled_wysiwyg NVARCHAR(255) null,
     identifier NVARCHAR(36) null,
     language_id numeric(19,0) null,
@@ -1266,6 +1266,9 @@ create table identifier (
    syspublish_date datetime null,
    sysexpire_date datetime null,
    full_path_lc  as CASE WHEN parent_path = 'System folder' THEN '/' ELSE LOWER(CONCAT(parent_path, asset_name)) END,
+   owner NVARCHAR(255),
+   create_date datetime,
+   asset_subtype NVARCHAR(255),
    primary key (id),
    unique (parent_path, asset_name, host_inode)
 );
@@ -1525,54 +1528,6 @@ create table links (
    identifier NVARCHAR(36) null,
    primary key (inode)
 );
-create table user_proxy (
-   inode NVARCHAR(36) not null,
-   user_id NVARCHAR(255) null,
-   prefix NVARCHAR(255) null,
-   suffix NVARCHAR(255) null,
-   title NVARCHAR(255) null,
-   school NVARCHAR(255) null,
-   how_heard NVARCHAR(255) null,
-   company NVARCHAR(255) null,
-   long_lived_cookie NVARCHAR(255) null,
-   website NVARCHAR(255) null,
-   graduation_year int null,
-   organization NVARCHAR(255) null,
-   mail_subscription tinyint null,
-   var1 NVARCHAR(255) null,
-   var2 NVARCHAR(255) null,
-   var3 NVARCHAR(255) null,
-   var4 NVARCHAR(255) null,
-   var5 NVARCHAR(255) null,
-   var6 NVARCHAR(255) null,
-   var7 NVARCHAR(255) null,
-   var8 NVARCHAR(255) null,
-   var9 NVARCHAR(255) null,
-   var10 NVARCHAR(255) null,
-   var11 NVARCHAR(255) null,
-   var12 NVARCHAR(255) null,
-   var13 NVARCHAR(255) null,
-   var14 NVARCHAR(255) null,
-   var15 NVARCHAR(255) null,
-   var16 NVARCHAR(255) null,
-   var17 NVARCHAR(255) null,
-   var18 NVARCHAR(255) null,
-   var19 NVARCHAR(255) null,
-   var20 NVARCHAR(255) null,
-   var21 NVARCHAR(255) null,
-   var22 NVARCHAR(255) null,
-   var23 NVARCHAR(255) null,
-   var24 NVARCHAR(255) null,
-   var25 NVARCHAR(255) null,
-   last_result int null,
-   last_message NVARCHAR(255) null,
-   no_click_tracking tinyint null,
-   cquestionid NVARCHAR(255) null,
-   cqanswer NVARCHAR(255) null,
-   chapter_officer NVARCHAR(255) null,
-   primary key (inode),
-   unique (user_id)
-);
 create table chain_state_parameter (
    id numeric(19,0) identity not null,
    chain_state_id numeric(19,0) not null,
@@ -1796,6 +1751,7 @@ alter table analytic_summary_visits add constraint fk9eac9733b7b46300 foreign ke
 create index idx_preference_1 on user_preferences (preference);
 create index idx_identifier_pub on identifier (syspublish_date);
 create index idx_identifier_exp on identifier (sysexpire_date);
+create index idx_identifier_asset_subtype on identifier (asset_subtype);
 create index idx_user_clickstream11 on clickstream (host_id);
 create index idx_user_clickstream12 on clickstream (last_page_id);
 create index idx_user_clickstream15 on clickstream (browser_name);
@@ -1833,7 +1789,6 @@ alter table analytic_summary_referer add constraint fk5bc0f3e2ed30e054 foreign k
 alter table dot_containers add constraint fk8a844125fb51eb foreign key (inode) references inode;
 alter table communication add constraint fkc24acfd65fb51eb foreign key (inode) references inode;
 alter table links add constraint fk6234fb95fb51eb foreign key (inode) references inode;
-alter table user_proxy add constraint fk7327d4fa5fb51eb foreign key (inode) references inode;
 create index idx_field_1 on field (structure_inode);
 alter table field add constraint fk5cea0fa5fb51eb foreign key (inode) references inode;
 create index idx_relationship_1 on relationship (parent_structure_inode);
@@ -2629,22 +2584,16 @@ alter table container_structures add constraint FK_cs_inode foreign key (contain
 
 
 -- license repo
-create table sitelic(id NVARCHAR(36) primary key, serverid NVARCHAR(100), license NVARCHAR(MAX) not null, lastping datetime not null);
+create table sitelic(id NVARCHAR(36) primary key, serverid NVARCHAR(100), license NVARCHAR(MAX) not null, lastping datetime not null, startup_time bigint);
 
 -- Integrity Checker
-create table folders_ir(folder NVARCHAR(255), local_inode NVARCHAR(36), remote_inode NVARCHAR(36), local_identifier NVARCHAR(36), remote_identifier NVARCHAR(36), endpoint_id NVARCHAR(36), PRIMARY KEY (local_inode, endpoint_id));
-create table structures_ir(velocity_name NVARCHAR(255), local_inode NVARCHAR(36), remote_inode NVARCHAR(36), endpoint_id NVARCHAR(36), PRIMARY KEY (local_inode, endpoint_id));
-create table schemes_ir(name NVARCHAR(255), local_inode NVARCHAR(36), remote_inode NVARCHAR(36), endpoint_id NVARCHAR(36), PRIMARY KEY (local_inode, endpoint_id));
-create table htmlpages_ir(html_page NVARCHAR(255), local_working_inode NVARCHAR(36), local_live_inode NVARCHAR(36), remote_working_inode NVARCHAR(36), remote_live_inode NVARCHAR(36),local_identifier NVARCHAR(36), remote_identifier NVARCHAR(36), endpoint_id NVARCHAR(36), language_id bigint, PRIMARY KEY (local_working_inode, language_id, endpoint_id));
-create table fileassets_ir(file_name NVARCHAR(255), local_working_inode NVARCHAR(36), local_live_inode NVARCHAR(36), remote_working_inode NVARCHAR(36), remote_live_inode NVARCHAR(36),local_identifier NVARCHAR(36), remote_identifier NVARCHAR(36), endpoint_id NVARCHAR(36), language_id bigint, PRIMARY KEY (local_working_inode, language_id, endpoint_id));
-create table cms_roles_ir(name NVARCHAR(1000), role_key NVARCHAR(255), local_role_id NVARCHAR(36), remote_role_id NVARCHAR(36), local_role_fqn NVARCHAR(1000), remote_role_fqn NVARCHAR(1000), endpoint_id NVARCHAR(36), PRIMARY KEY (local_role_id, endpoint_id));
+create table folders_ir(folder NVARCHAR(255), local_inode NVARCHAR(36), remote_inode NVARCHAR(36), local_identifier NVARCHAR(36), remote_identifier NVARCHAR(36), endpoint_id NVARCHAR(40), PRIMARY KEY (local_inode, endpoint_id));
+create table structures_ir(velocity_name NVARCHAR(255), local_inode NVARCHAR(36), remote_inode NVARCHAR(36), endpoint_id NVARCHAR(40), PRIMARY KEY (local_inode, endpoint_id));
+create table schemes_ir(name NVARCHAR(255), local_inode NVARCHAR(36), remote_inode NVARCHAR(36), endpoint_id NVARCHAR(40), PRIMARY KEY (local_inode, endpoint_id));
+create table htmlpages_ir(html_page NVARCHAR(255), local_working_inode NVARCHAR(36), local_live_inode NVARCHAR(36), remote_working_inode NVARCHAR(36), remote_live_inode NVARCHAR(36),local_identifier NVARCHAR(36), remote_identifier NVARCHAR(36), endpoint_id NVARCHAR(40), language_id bigint, PRIMARY KEY (local_working_inode, language_id, endpoint_id));
+create table fileassets_ir(file_name NVARCHAR(255), local_working_inode NVARCHAR(36), local_live_inode NVARCHAR(36), remote_working_inode NVARCHAR(36), remote_live_inode NVARCHAR(36),local_identifier NVARCHAR(36), remote_identifier NVARCHAR(36), endpoint_id NVARCHAR(40), language_id bigint, PRIMARY KEY (local_working_inode, language_id, endpoint_id));
+create table cms_roles_ir(name NVARCHAR(1000), role_key NVARCHAR(255), local_role_id NVARCHAR(36), remote_role_id NVARCHAR(36), local_role_fqn NVARCHAR(1000), remote_role_fqn NVARCHAR(1000), endpoint_id NVARCHAR(40), PRIMARY KEY (local_role_id, endpoint_id));
 
-alter table folders_ir add constraint FK_folder_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
-alter table structures_ir add constraint FK_structure_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
-alter table schemes_ir add constraint FK_scheme_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
-alter table htmlpages_ir add constraint FK_page_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
-alter table fileassets_ir add constraint FK_file_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
-alter table cms_roles_ir add constraint FK_cms_roles_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
 
 ---Server Action
 create table cluster_server_action(
@@ -2698,3 +2647,37 @@ CREATE TABLE api_token_issued(
 create index idx_api_token_issued_user ON api_token_issued (token_userid);
 
 CREATE UNIQUE INDEX idx_ident_uniq_asset_name on identifier (full_path_lc,host_inode);
+
+create table storage_group (
+    group_name varchar(255)  not null,
+    mod_date   datetime NOT NULL DEFAULT GETDATE(),
+    PRIMARY KEY (group_name)
+);
+
+create table storage (
+    path       varchar(255) not null,
+    group_name varchar(255) not null,
+    hash       varchar(64) not null,
+    mod_date   datetime  NOT NULL DEFAULT GETDATE(),
+    hash_ref   varchar(64),
+    PRIMARY KEY (path, group_name),
+    FOREIGN KEY (group_name) REFERENCES storage_group (group_name)
+);
+
+CREATE INDEX idx_storage_hash ON storage (hash);
+
+create table storage_data (
+    hash_id  varchar(64) not null,
+    data     varbinary(max) not null,
+    mod_date datetime NOT NULL DEFAULT GETDATE(),
+    PRIMARY KEY (hash_id)
+);
+
+create table storage_x_data (
+    storage_hash varchar(64)                 not null,
+    data_hash    varchar(64)                 not null,
+    data_order   integer                     not null,
+    mod_date     datetime NOT NULL DEFAULT GETDATE(),
+    PRIMARY KEY (storage_hash, data_hash),
+    FOREIGN KEY (data_hash) REFERENCES storage_data (hash_id)
+);

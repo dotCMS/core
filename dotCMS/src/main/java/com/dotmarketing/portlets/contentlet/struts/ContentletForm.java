@@ -1,6 +1,8 @@
 package com.dotmarketing.portlets.contentlet.struts;
 
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.rendering.velocity.viewtools.util.ConversionUtils;
 import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.apache.struts.validator.ValidatorForm;
@@ -10,19 +12,25 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
+import com.liferay.portal.util.PortalUtil;
+import io.vavr.control.Try;
+import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang.builder.HashCodeBuilder;
@@ -35,9 +43,6 @@ public class ContentletForm extends ValidatorForm {
     public static final String INODE_KEY = "inode";
     public static final String LANGUAGEID_KEY = "languageId";
     public static final String STRUCTURE_INODE_KEY = "stInode";
-    public static final String LAST_REVIEW_KEY = "lastReview";
-    public static final String NEXT_REVIEW_KEY = "nextReview";
-    public static final String REVIEW_INTERNAL_KEY = "reviewInternal";
     public static final String DISABLED_WYSIWYG_KEY = "disabledWYSIWYG";
     public static final String LOCKED_KEY = "locked";
     public static final String ARCHIVED_KEY = "archived";
@@ -58,11 +63,7 @@ public class ContentletForm extends ValidatorForm {
 	
 	private String[] categories;
 	
-	private boolean allowChange = true; 
-    
-    private boolean reviewContent;
-    private String reviewIntervalNum;
-    private String reviewIntervalSelect;
+	private boolean allowChange = true;
 
     private String taskAssignment;
     private String taskComments;
@@ -137,30 +138,6 @@ public class ContentletForm extends ValidatorForm {
 	public Structure getStructure () {
 		return CacheLocator.getContentTypeCache().getStructureByInode( getStructureInode() );
 	}
-
-    public Date getLastReview() {
-    	return (Date)map.get(LAST_REVIEW_KEY);
-    }
-
-    public void setLastReview(Date lastReview) {
-    	map.put(LAST_REVIEW_KEY, lastReview);
-    }
-
-    public Date getNextReview() {
-    	return (Date)map.get(NEXT_REVIEW_KEY);
-    }
-
-    public void setNextReview(Date nextReview) {
-    	map.put(NEXT_REVIEW_KEY, nextReview);
-    }
-
-    public String getReviewInterval() {
-    	return (String)map.get(REVIEW_INTERNAL_KEY);
-    }
-
-    public void setReviewInterval(String reviewInterval) {
-    	map.put(REVIEW_INTERNAL_KEY, reviewInterval);
-    }
 
     public int hashCode() {
         return new HashCodeBuilder().append(getInode()).toHashCode();
@@ -440,37 +417,6 @@ public class ContentletForm extends ValidatorForm {
     }
 
 
-    public boolean isReviewContent() {
-        return reviewContent;
-    }
-
-
-    public void setReviewContent(boolean reviewContent) {
-        this.reviewContent = reviewContent;
-    }
-
-   
-
-    public String getReviewIntervalNum() {
-        return reviewIntervalNum;
-    }
-
-
-    public void setReviewIntervalNum(String reviewIntervalNum) {
-        this.reviewIntervalNum = reviewIntervalNum;
-    }
-
-
-    public String getReviewIntervalSelect() {
-        return reviewIntervalSelect;
-    }
-
-
-    public void setReviewIntervalSelect(String reviewIntervalSelect) {
-        this.reviewIntervalSelect = reviewIntervalSelect;
-    }
-
-
     public ActionErrors validate(ActionMapping mapping, HttpServletRequest request) {
         if(request.getParameter("cmd")!=null && request.getParameter("cmd").equals(Constants.ADD)) {
             Logger.debug(this, "Contentlet validation!!!!!!");
@@ -567,15 +513,39 @@ public class ContentletForm extends ValidatorForm {
 			   }
 
 		   } catch ( Exception e ) {
-			   Logger.error( this, "An error has ocurred trying to get the value for the field: " + velocityVariableName );
+			   Logger.error( this, "An error has occurred trying to get the value for the field: " + velocityVariableName );
 		   }
 
-           if ( InodeUtils.isSet( getInode() ) && Contentlet.isMetadataFieldCached( getStructureInode(), velocityVariableName, value ) ) {
-               return Contentlet.lazyMetadataLoad( getInode(), getStructureInode() );
-           }
+		   final Optional<Map<String, Serializable>> optionalMetadata = loadMetadata(velocityVariableName, getInode());
+		   if (optionalMetadata.isPresent()) {
+			   return ConversionUtils.toString(optionalMetadata.get());
+		   }
 
-           return value;
+		   return value;
        }
+
+
+	private Optional<Map<String, Serializable>> loadMetadata(
+			final String velocityVariableName,
+			final String inode)  {
+		if (InodeUtils.isSet(getInode()) && FileAssetAPI.META_DATA_FIELD
+				.equals(velocityVariableName)) {
+			final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+			if (null != request) {
+				final User user = PortalUtil.getUser(request);
+				final Contentlet contentlet = Try.of(() -> APILocator.getContentletAPI()
+						.find(inode, user, false)).getOrNull();
+				if (null != contentlet && contentlet.isFileAsset()) {
+					return Optional.ofNullable(
+					     Try.of(()->
+							APILocator.getFileMetadataAPI().getFullMetadataNoCacheForceGenerate(contentlet,FileAssetAPI.BINARY_FIELD).getMap()
+					       ).getOrNull()
+					);
+				}
+			}
+		}
+		return Optional.empty();
+	}
 
 	private Boolean isHTMLPage () {
 

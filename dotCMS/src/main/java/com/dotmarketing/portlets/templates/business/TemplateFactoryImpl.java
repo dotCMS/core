@@ -1,23 +1,34 @@
 package com.dotmarketing.portlets.templates.business;
 
+import static com.dotcms.util.FunctionUtils.ifOrElse;
+
+import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.rendering.velocity.services.TemplateLoader;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode.Type;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.design.bean.*;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.*;
 import com.google.common.io.LineReader;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import org.apache.commons.beanutils.BeanUtils;
 
 import java.io.IOException;
@@ -28,47 +39,42 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class TemplateFactoryImpl implements TemplateFactory {
-	static TemplateCache templateCache = CacheLocator.getTemplateCache();
+	private static TemplateCache templateCache = CacheLocator.getTemplateCache();
+	private static TemplateSQL templateSQL = TemplateSQL.getInstance();
 
-	private final String templatesUnderHostSQL =
-		"select template.*, template_1_.*  from " + Type.TEMPLATE.getTableName() + " template, inode template_1_, " +
-		"identifier template_identifier, " + Type.TEMPLATE.getVersionTableName() + " vi where " +
-		"template_identifier.host_inode = ? and template_identifier.id = template.identifier and " +
-		"template.inode = template_1_.inode and vi.identifier=template.identifier and " +
-		"template.inode=vi.working_inode ";
-
-	private final String templateWithNameSQL =
-		"select template.*, template_1_.* from " + Type.TEMPLATE.getTableName() + " template, inode template_1_, " +
-		"identifier template_identifier, " + Type.TEMPLATE.getVersionTableName() + " vi where " +
-		"template_identifier.host_inode = ? and template_identifier.id = template.identifier and " +
-		"vi.identifier=template_identifier.id and template.title = ? and " +
-		"template.inode = template_1_.inode and " +
-		"template.inode=vi.working_inode ";
-
-	
 	@SuppressWarnings("unchecked")
 
-	public Template find(String inode) throws DotStateException, DotDataException {
-		
+	public Template find(final String inode) throws DotStateException, DotDataException {
+
 		Template template = templateCache.get(inode);
 
 		if(template==null){
-			HibernateUtil hu = new HibernateUtil(Template.class);
-			template = (Template) hu.load(inode);
+			final List<Map<String, Object>> templateResults = new DotConnect()
+					.setSQL(templateSQL.FIND_BY_INODE)
+					.addParam(inode)
+					.loadObjectResults();
+			if (templateResults.isEmpty()) {
+				Logger.debug(this, "Template with inode: " + inode + " not found");
+				return null;
+			}
 
-			if(template != null && template.getInode() != null)
+			template = (Template) TransformerLocator.createTemplateTransformer(templateResults).findFirst();
+
+			if(template != null && template.getInode() != null) {
 				templateCache.add(inode, template);
+			}
 		}
 
 		return template;
 	}
 
 	@SuppressWarnings("unchecked")
-	public List<Template> findTemplatesAssignedTo(Host parentHost, final boolean includeArchived)
+	public List<Template> findTemplatesAssignedTo(final Host parentHost, final boolean includeArchived)
 			throws DotDataException {
 		final DotConnect dc = new DotConnect();
-		final String query = !includeArchived ? templatesUnderHostSQL + " and vi.deleted = "
-				+ DbConnectionFactory.getDBFalse() : templatesUnderHostSQL;
+		final String query = !includeArchived ?
+				templateSQL.FIND_TEMPLATES_BY_HOST_INODE + " and vi.deleted = "
+						+ DbConnectionFactory.getDBFalse() : templateSQL.FIND_TEMPLATES_BY_HOST_INODE;
 		dc.setSQL(query);
 		dc.addParam(parentHost.getIdentifier());
 
@@ -80,63 +86,94 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 
 	@SuppressWarnings("unchecked")
-	public List<Template> findTemplatesUserCanUse(User user, String hostId, String query,boolean searchHost ,int offset, int limit) throws DotDataException, DotSecurityException {
+	public List<Template> findTemplatesUserCanUse(final User user, final String hostId, final String query, final boolean searchHost , final int offset, final int limit) throws DotDataException, DotSecurityException {
 		return findTemplates(user, false,
-				UtilMethods.isSet(query) ? Collections.singletonMap("title", query.toLowerCase())
+				UtilMethods.isSet(query) ? Collections.singletonMap("filter", query.toLowerCase())
 						: null, hostId, null, null, null, offset, limit, "title");
 	}
 
-	public void delete(Template template) throws DotDataException {
-		templateCache.remove(template.getInode());
-		HibernateUtil.delete(template);
-		
-	}
-
-	public void save(Template template) throws DotDataException {
-
-
-		
+	public void save(final Template template) throws DotDataException {
 		save(template, UUIDGenerator.generateUuid());
-		
-
 	}
-	
-	public void save(Template template, String existingId) throws DotDataException {
-        if(!UtilMethods.isSet(template.getIdentifier())){
-            throw new DotStateException("Cannot save a tempalte without an Identifier");
-        }
+
+	public void save(final Template template, final String inode) throws DotDataException {
+		if(!UtilMethods.isSet(template.getIdentifier())){
+			throw new DotStateException("Cannot save a template without an Identifier");
+		}
 
 		if (UtilMethods.isSet(template.getTitle()) && !template.isAnonymous()) {
 			template.setIsTemplate(true);
 		}
-        
-        if(UtilMethods.isSet(template.getDrawedBody())) {
-            template.setDrawed(true);
-        }else {
-            template.setDrawedBody((String)null);
-            template.setDrawed(false);
-        }
-        
-        
-        
-        
-        
-        HibernateUtil.saveWithPrimaryKey(template, existingId);
-        templateCache.add(template.getInode(), template);
-        new TemplateLoader().invalidate(template);
 
-    }
+		if(UtilMethods.isSet(template.getDrawedBody())) {
+			template.setDrawed(true);
+		}else {
+			template.setDrawedBody((String)null);
+			template.setDrawed(false);
+		}
+
+		if(!UtilMethods.isSet(template.getInode())) {
+			template.setInode(UUIDGenerator.generateUuid());
+		}
+
+		if(!UtilMethods.isSet(find(template.getInode()))) {
+			insertInodeInDB(template);
+			insertTemplateInDB(template);
+		} else {
+			updateInodeInDB(template);
+			updateTemplateInDB(template);
+		}
+
+		templateCache.add(template.getInode(), template);
+		new TemplateLoader().invalidate(template);
+
+	}
+
+	private void insertInodeInDB(final Template template) throws DotDataException{
+		DotConnect dc = new DotConnect();
+		dc.setSQL(templateSQL.INSERT_INODE);
+		dc.addParam(template.getInode());
+		dc.addParam(template.getiDate());
+		dc.addParam(template.getOwner());
+		dc.loadResult();
+	}
+
+	private void insertTemplateInDB(final Template template) throws DotDataException {
+		DotConnect dc = new DotConnect();
+		dc.setSQL(templateSQL.INSERT_TEMPLATE);
+		dc.addParam(template.getInode());
+		dc.addParam(template.isShowOnMenu());
+		dc.addParam(template.getTitle());
+		dc.addParam(template.getModDate());
+		dc.addParam(template.getModUser());
+		dc.addParam(template.getSortOrder());
+		dc.addParam(template.getFriendlyName());
+		dc.addParam(template.getBody());
+		dc.addParam(template.getHeader());
+		dc.addParam(template.getFooter());
+		dc.addParam(template.getImage());
+		dc.addParam(template.getIdentifier());
+		dc.addParam(template.isDrawed());
+		dc.addParam(template.getDrawedBody());
+		dc.addParam(template.getCountAddContainer());
+		dc.addParam(template.getCountContainers());
+		dc.addParam(template.getHeadCode());
+		dc.addParam(template.getTheme());
+		dc.loadResult();
+	}
 
 	public void deleteFromCache(final Template template) throws DotDataException {
-		templateCache.remove(template.getInode());
-		new TemplateLoader().invalidate(template);
-		CacheLocator.getIdentifierCache().removeFromCacheByVersionable(template);
+		if(null!=template && UtilMethods.isSet(template.getInode())) {
+			templateCache.remove(template.getInode());
+			new TemplateLoader().invalidate(template);
+			CacheLocator.getIdentifierCache().removeFromCacheByVersionable(template);
+		}
 	}
 
 	@SuppressWarnings("unchecked")
 	public Template findWorkingTemplateByName(String name, Host host) throws DotDataException {
 		DotConnect dc = new DotConnect();
-		dc.setSQL(templateWithNameSQL);
+		dc.setSQL(templateSQL.FIND_WORKING_TEMPLATE_BY_HOST_INODE_AND_TITLE);
 		dc.addParam(host.getIdentifier());
 		dc.addParam(name);
 		try{
@@ -171,61 +208,13 @@ public class TemplateFactoryImpl implements TemplateFactory {
 				: " asset.inode=versioninfo.working_inode  ";
 		conditionBuffer.append(condition);
 
-		List<Object> paramValues =null;
 		if(params!=null && params.size()>0){
-			conditionBuffer.append(" and (");
-			paramValues = new ArrayList<>();
-			int counter = 0;
-			for (Map.Entry<String, Object> entry : params.entrySet()) {
-				if(counter==0){
-					if(entry.getValue() instanceof String){
-						if(entry.getKey().equalsIgnoreCase("inode")){
-							conditionBuffer.append(" asset.");
-							conditionBuffer.append(entry.getKey());
-							conditionBuffer.append(" = '");
-							conditionBuffer.append(entry.getValue());
-							conditionBuffer.append("'");
-						}else{
-							conditionBuffer.append(" lower(asset.");
-							conditionBuffer.append(entry.getKey());
-							conditionBuffer.append(") like ? ");
-							paramValues.add("%"+ ((String)entry.getValue()).toLowerCase()+"%");
-						}
-					}else{
-						conditionBuffer.append(" asset.");
-						conditionBuffer.append(entry.getKey());
-						conditionBuffer.append(" = ");
-						conditionBuffer.append(entry.getValue());
-					}
-				}else{
-					if(entry.getValue() instanceof String){
-						if(entry.getKey().equalsIgnoreCase("inode")){
-							conditionBuffer.append(" OR asset.");
-							conditionBuffer.append(entry.getKey());
-							conditionBuffer.append(" = '");
-							conditionBuffer.append(entry.getValue());
-							conditionBuffer.append("'");
-						}else{
-							conditionBuffer.append(" OR lower(asset.");
-							conditionBuffer.append(entry.getKey());
-							conditionBuffer.append(") like ? ");
-							paramValues.add("%"+ ((String)entry.getValue()).toLowerCase()+"%");
-						}
-					}else{
-						conditionBuffer.append(" OR asset.");
-						conditionBuffer.append(entry.getKey());
-						conditionBuffer.append(" = ");
-						conditionBuffer.append(entry.getValue());
-					}
-				}
-
-				counter+=1;
-			}
-			conditionBuffer.append(" ) ");
+			conditionBuffer
+					.append(" and ( asset.inode like ? or asset.identifier like ? or lower(asset.title) like ? )");
 		}
 
 		StringBuffer query = new StringBuffer();
-		query.append("select asset.*, inode.* from ");
+		query.append("select asset.*, identifier.* from ");
 		query.append(Type.TEMPLATE.getTableName());
 		query.append(" asset, inode, identifier, ");
 		query.append(Type.TEMPLATE.getVersionTableName());
@@ -238,7 +227,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			query.append(" where asset.inode = inode.inode and asset.identifier = identifier.id");
 		}
 		query.append(" and versioninfo.identifier=asset.identifier ")
-			.append(" and show_on_menu = ").append(DbConnectionFactory.getDBTrue());
+				.append(" and show_on_menu = ").append(DbConnectionFactory.getDBTrue());
 
 		if(UtilMethods.isSet(hostId)){
 			query.append(" and identifier.host_inode = '");
@@ -255,6 +244,8 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			query.append(identifier);
 			query.append("'");
 		}
+
+		orderBy = SQLUtil.sanitizeSortBy(orderBy);
 		if(!UtilMethods.isSet(orderBy)){
 			orderBy = "mod_date desc";
 		}
@@ -270,26 +261,45 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			query.append(orderBy);
 			dc.setSQL(query.toString());
 
-			if(paramValues!=null && paramValues.size()>0){
-				for (Object value : paramValues) {
-					dc.addParam((String)value);
-				}
+			if(params!=null && params.size()>0){
+				final String filter = "%"+params.get("filter").toString().toLowerCase()+"%";
+				dc.addParam(filter);
+				dc.addParam(filter);
+				dc.addParam(filter);
 			}
 
-			while(!done) {
-				dc.setStartRow(internalOffset);
-				dc.setMaxRows(internalLimit);
+			// adding the templates from the site browser
+			toReturn.addAll(this.findFolderAssetTemplate(user, hostId, orderBy,
+					includeArchived, params != null ? params.get("filter").toString(): null));
 
-				resultList = TransformerLocator.createTemplateTransformer(dc.loadObjectResults()).asList();
+			if(countLimit > 0 && toReturn.size() < countLimit + offset) {//If haven't reach the amount of templates requested
+				while (!done) {
+					dc.setStartRow(internalOffset);
+					dc.setMaxRows(internalLimit);
 
-				PermissionAPI permAPI = APILocator.getPermissionAPI();
-				toReturn.addAll(permAPI.filterCollection(resultList, PermissionAPI.PERMISSION_READ, false, user));
-				if(countLimit > 0 && toReturn.size() >= countLimit + offset)
-					done = true;
-				else if(resultList.size() < internalLimit)
-					done = true;
+					resultList = TransformerLocator
+							.createTemplateTransformer(dc.loadObjectResults()).asList();
 
-				internalOffset += internalLimit;
+					//Search by inode
+					if (resultList.isEmpty()) {
+						final Template templateInode =
+								params != null ? find(params.get("filter").toString()) : null;
+						resultList =
+								templateInode != null ? Collections.singletonList(templateInode)
+										: Collections.emptyList();
+					}
+
+					PermissionAPI permAPI = APILocator.getPermissionAPI();
+					toReturn.addAll(
+							permAPI.filterCollection(resultList, PermissionAPI.PERMISSION_READ,
+									false, user));
+					if (countLimit > 0 && toReturn.size() >= countLimit + offset)
+						done = true;
+					else if (resultList.size() < internalLimit)
+						done = true;
+
+					internalOffset += internalLimit;
+				}
 			}
 
 			if(offset > toReturn.size()) {
@@ -316,7 +326,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 				}
 			} else {
 				for(int i=0;i<toReturn.size();i++){
-						assets.add((Template) toReturn.get(i));
+					assets.add((Template) toReturn.get(i));
 				}
 			}
 		} catch (Exception e) {
@@ -331,10 +341,10 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	}
 
 
-	
+
 	@Override
 	public List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-		
+
 		List<Container> result = new ArrayList<Container>();
 		Collection<String> ids = getContainerIds(template);
 		for(String containerId : ids) {
@@ -395,10 +405,10 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	}
 
 	private List<String> getContainerIdsFromHTML(String templateBody) {
-	    Set<String> ids = new HashSet<String>();
-	    if(!UtilMethods.isSet(templateBody)){
-	        return new ArrayList<>(ids);
-	    }
+		Set<String> ids = new HashSet<String>();
+		if(!UtilMethods.isSet(templateBody)){
+			return new ArrayList<>(ids);
+		}
 
 		Pattern newContainerReferencesRegex = Pattern.compile(PARSE_CONTAINER_ID_PATTERN);
 		Matcher matcher = newContainerReferencesRegex.matcher(templateBody);
@@ -406,11 +416,11 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			String containerId = matcher.group(1).trim();
 			ids.add(containerId);
 		}
-        return new ArrayList<>(ids);
+		return new ArrayList<>(ids);
 	}
 
-    private static final String PARSE_CONTAINER_ID_PATTERN =
-            "#parseContainer\\s*\\(\\s*['\"]*([^'\")]+)['\"]*\\s*\\)";
+	private static final String PARSE_CONTAINER_ID_PATTERN =
+			"#parseContainer\\s*\\(\\s*['\"]*([^'\")]+)['\"]*\\s*\\)";
 	private static final String PARSE_CONTAINER_ID_UUDI_PATTERN =
 			"\\s*#parseContainer\\s*\\(\\s*['\"]{1}([^'\")]+)['\"]{1}\\s*,\\s*['\"]{1}([^'\")]+)['\"]{1}\\s*\\)\\s*";
 
@@ -426,8 +436,8 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			line = lineReader.readLine();
 			final Pattern newContainerUUIDReferencesRegex =
 					Pattern.compile(PARSE_CONTAINER_ID_UUDI_PATTERN);
-            final Pattern newContainerReferencesRegex =
-                    Pattern.compile(PARSE_CONTAINER_ID_PATTERN);
+			final Pattern newContainerReferencesRegex =
+					Pattern.compile(PARSE_CONTAINER_ID_PATTERN);
 
 			while (null != line) {
 
@@ -440,14 +450,14 @@ public class TemplateFactoryImpl implements TemplateFactory {
 					containerUUIDS.add(new ContainerUUID(containerId, uuid));
 				} else {
 
-                    matcher = newContainerReferencesRegex.matcher(line);
-                    if (matcher.find() && matcher.groupCount() == 1) {
+					matcher = newContainerReferencesRegex.matcher(line);
+					if (matcher.find() && matcher.groupCount() == 1) {
 
-                        final String containerId = matcher.group(1).trim();
-                        final String uuid        = ContainerUUID.UUID_LEGACY_VALUE;
-                        containerUUIDS.add(new ContainerUUID(containerId, uuid));
-                    }
-                }
+						final String containerId = matcher.group(1).trim();
+						final String uuid        = ContainerUUID.UUID_LEGACY_VALUE;
+						containerUUIDS.add(new ContainerUUID(containerId, uuid));
+					}
+				}
 
 				line = lineReader.readLine();
 			}
@@ -458,8 +468,8 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 		return containerUUIDS;
 	}
-	
-	
+
+
 	@Override
 	public Template copyTemplate(Template currentTemplate, Host host) throws DotDataException, DotSecurityException {
 		if(currentTemplate ==null){
@@ -485,11 +495,11 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		if(RegEX.contains(newTemplateName, " - [0-9]+$")){
 			newTemplateName = newTemplateName.substring(0,newTemplateName.lastIndexOf("-")).trim();
 		}
-		
-		
-		
+
+
+
 		Template test = null;
-		for(int iter=1;iter<100000;iter++){		
+		for(int iter=1;iter<100000;iter++){
 			try{
 				test = findWorkingTemplateByName(testName, host);
 			}
@@ -505,7 +515,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 				break;
 			}
 		}
-		
+
 		newTemplate.setFriendlyName(newTemplateName);
 		newTemplate.setTitle(newTemplateName);
 
@@ -514,7 +524,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 		return newTemplate;
 	}
-	
+
 	/**
 	 *
 	 * Updates the template's theme without creating new version.
@@ -522,50 +532,408 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	 * @param theme
 	 *
 	 */
-   public void updateThemeWithoutVersioning(String templateInode, String theme) throws DotDataException{
-	   Template templateToUpdate = find(templateInode);
-	   templateToUpdate.setTheme(theme);
-       HibernateUtil.saveOrUpdate(templateToUpdate);
-       templateCache.add(templateToUpdate.getInode(), templateToUpdate);
-       new TemplateLoader().invalidate(templateToUpdate);
-   }
+	public void updateThemeWithoutVersioning(final String templateInode, final String theme) throws DotDataException{
+		final Template templateToUpdate = find(templateInode);
+		templateToUpdate.setTheme(theme);
 
-   /**
+		updateInodeInDB(templateToUpdate);
+		updateTemplateInDB(templateToUpdate);
+
+		templateCache.add(templateToUpdate.getInode(), templateToUpdate);
+		new TemplateLoader().invalidate(templateToUpdate);
+	}
+
+	private void updateInodeInDB(final Template template) throws DotDataException{
+		DotConnect dc = new DotConnect();
+		dc.setSQL(templateSQL.UPDATE_INODE);
+		dc.addParam(template.getiDate());
+		dc.addParam(template.getOwner());
+		dc.addParam(template.getInode());
+		dc.loadResult();
+	}
+
+	private void updateTemplateInDB(final Template template) throws DotDataException {
+		DotConnect dc = new DotConnect();
+		dc.setSQL(templateSQL.UPDATE_TEMPLATE);
+		dc.addParam(template.isShowOnMenu());
+		dc.addParam(template.getTitle());
+		dc.addParam(template.getModDate());
+		dc.addParam(template.getModUser());
+		dc.addParam(template.getSortOrder());
+		dc.addParam(template.getFriendlyName());
+		dc.addParam(template.getBody());
+		dc.addParam(template.getHeader());
+		dc.addParam(template.getFooter());
+		dc.addParam(template.getImage());
+		dc.addParam(template.getIdentifier());
+		dc.addParam(template.isDrawed());
+		dc.addParam(template.getDrawedBody());
+		dc.addParam(template.getCountAddContainer());
+		dc.addParam(template.getCountContainers());
+		dc.addParam(template.getHeadCode());
+		dc.addParam(template.getTheme());
+		dc.addParam(template.getInode());
+		dc.loadResult();
+	}
+
+	/**
 	 * Method will replace user references of the given userId in templates
-	 * with the replacement user Id  
+	 * with the replacement user Id
 	 * @param userId User Identifier
 	 * @param replacementUserId The user id of the replacement user
 	 * @throws DotDataException There is a data inconsistency
 	 * @throws DotStateException There is a data inconsistency
-	 * @throws DotSecurityException 
+	 * @throws DotSecurityException
 	 */
 	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException{
 		DotConnect dc = new DotConnect();
-       
-       try {
-          dc.setSQL("select inode from " + Type.TEMPLATE.getTableName() + " where mod_user = ?");
-          dc.addParam(userId);
-          List<HashMap<String, String>> templates = dc.loadResults();
-          
-          dc.setSQL("UPDATE " + Type.TEMPLATE.getTableName() + " set mod_user = ? where mod_user = ? ");
-          dc.addParam(replacementUserId);
-          dc.addParam(userId);
-          dc.loadResult();
-          
-          dc.setSQL("update " + Type.TEMPLATE.getVersionTableName() + " set locked_by=? where locked_by  = ?");
-          dc.addParam(replacementUserId);
-          dc.addParam(userId);
-          dc.loadResult();
-        
-          for(HashMap<String, String> ident:templates){
-              String inode = ident.get("inode");
-              Template template = find(inode);
-              deleteFromCache(template);
-              new TemplateLoader().invalidate(template);
-          }
-       } catch (DotDataException e) {
-           Logger.error(TemplateFactory.class,e.getMessage(),e);
-           throw new DotDataException(e.getMessage(), e);
-       }
+
+		try {
+			dc.setSQL(templateSQL.FIND_TEMPLATES_BY_MOD_USER);
+			dc.addParam(userId);
+			List<HashMap<String, String>> templates = dc.loadResults();
+
+			dc.setSQL(templateSQL.UPDATE_MOD_USER_BY_MOD_USER);
+			dc.addParam(replacementUserId);
+			dc.addParam(userId);
+			dc.loadResult();
+
+			dc.setSQL(templateSQL.UPDATE_LOCKED_BY);
+			dc.addParam(replacementUserId);
+			dc.addParam(userId);
+			dc.loadResult();
+
+			for(HashMap<String, String> ident:templates){
+				String inode = ident.get("inode");
+				Template template = find(inode);
+				deleteFromCache(template);
+				new TemplateLoader().invalidate(template);
+			}
+		} catch (DotDataException e) {
+			Logger.error(TemplateFactory.class,e.getMessage(),e);
+			throw new DotDataException(e.getMessage(), e);
+		}
+	}
+
+	public List<Template> findAllVersions(final Identifier identifier, final boolean bringOldVersions)
+			throws DotDataException {
+		if(!UtilMethods.isSet(identifier) || !UtilMethods.isSet(identifier.getId())) {
+			return new ArrayList<>();
+		}
+
+		final DotConnect dc = new DotConnect();
+		final StringBuffer query = new StringBuffer();
+
+		if(bringOldVersions) {
+			query.append(templateSQL.FIND_ALL_VERSIONS_BY_IDENTIFIER);
+
+		} else {//This only brings the inode of the working and live version
+			query.append(templateSQL.FIND_WORKING_LIVE_VERSION_BY_IDENTIFIER);
+		}
+
+		dc.setSQL(query.toString());
+		dc.addParam(identifier.getId());
+		final List<Map<String,Object>> results=dc.loadObjectResults();
+		final List<Template> templateAllVersions = new ArrayList<>();
+		for(Map<String,Object> result : results) {
+			final Template template = find(result.get("inode").toString());
+			templateAllVersions.add(template);
+		}
+		return templateAllVersions;
+	}
+
+	public void deleteTemplateByInode(final String templateInode) throws DotDataException {
+		deleteTemplateInDB(templateInode);
+		deleteInodeInDB(templateInode);
+	}
+
+	private void deleteInodeInDB(final String inode) throws DotDataException{
+		DotConnect dc = new DotConnect();
+		dc.setSQL(templateSQL.DELETE_INODE);
+		dc.addParam(inode);
+		dc.loadResult();
+	}
+
+	private void deleteTemplateInDB(final String inode) throws DotDataException{
+		DotConnect dc = new DotConnect();
+		dc.setSQL(templateSQL.DELETE_TEMPLATE_BY_INODE);
+		dc.addParam(inode);
+		dc.loadResult();
+	}
+
+	public List<Template> findTemplatesByContainerInode(final String containerInode) throws DotDataException{
+		DotConnect dc = new DotConnect();
+		dc.setSQL(templateSQL.FIND_TEMPLATES_BY_CONTAINER_INODE);
+		dc.addParam(containerInode);
+		return TransformerLocator.createTemplateTransformer(dc.loadObjectResults()).asList();
+	}
+
+	/**
+	 * Get a template based on a folder (non-db) A folder could be considered as a template if:
+	 * 1) Is under /application/templates
+	 * 2) Has a file called properties.vtl
+	 *
+	 * And convert it into a Template
+	 * @param site site where the folder lives
+	 * @param folder folder that should be a template
+	 * @return Template
+	 */
+	@Override
+	public Template getTemplateByFolder(final Host site, final Folder folder, final User user, final boolean showLive) throws DotDataException, DotSecurityException {
+
+		if (!this.isValidTemplateFolderPath(folder)) {
+
+			throw new NotFoundInDbException("On getting the template by folder, the folder: " + (folder != null ? folder.getPath() : "Unknown" ) +
+					" is not valid, it must be under: " + Constants.TEMPLATE_FOLDER_PATH + " and must have a child file asset called: " +
+					Constants.TEMPLATE_META_INFO_FILE_NAME);
+		}
+
+		final Identifier propertiesIdentifer = getTemplatePropertiesIdentifer(site, folder);
+		if(propertiesIdentifer==null) {
+			throw new NotFoundInDbException("No template found under: " + folder.getPath() );
+		}
+
+		final Optional<ContentletVersionInfo> contentletVersionInfo = APILocator.getVersionableAPI().
+				getContentletVersionInfo(propertiesIdentifer.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
+
+		if(!contentletVersionInfo.isPresent()) {
+			throw new DotDataException("Can't find ContentletVersionInfo. Identifier:"
+					+ propertiesIdentifer.getId() + ". Lang:"
+					+ APILocator.getLanguageAPI().getDefaultLanguage().getId());
+		}
+
+		final String inode = showLive  ?
+				contentletVersionInfo.get().getLiveInode() : contentletVersionInfo.get().getWorkingInode();
+		Template template = templateCache.get(inode);
+
+		if(template==null || !InodeUtils.isSet(template.getInode())) {
+
+			synchronized (propertiesIdentifer) {
+
+				if(template==null || !InodeUtils.isSet(template.getInode())) {
+
+					template = FileAssetTemplateUtil.getInstance().fromAssets (site, folder,
+							this.findTemplateAssets(folder, user, showLive));
+					if(template != null && InodeUtils.isSet(template.getInode())) {
+
+						templateCache.add(inode, template);
+					}
+				}
+			}
+		}
+
+		return template;
+	}
+
+	/**
+	 * Determine if the folder lives under /application/templates
+	 * @param folder to check
+	 * @return true if the folder lives under /application/templates
+	 */
+	private boolean isValidTemplateFolderPath(final Folder folder) {
+		return null != folder && UtilMethods.isSet(folder.getPath()) && folder.getPath().contains(Constants.TEMPLATE_FOLDER_PATH);
+	}
+
+	/**
+	 * Finds the Identifier of the properties.vtl file of the template folder
+	 * @param host    site where the folder lives
+	 * @param folder  template folder
+	 * @return identifier of the properties.vtl file
+	 */
+	private Identifier getTemplatePropertiesIdentifer(final Host host, final Folder folder) {
+		try {
+
+			final Identifier identifier = APILocator.getIdentifierAPI().find(host, StringUtils.builder(folder.getPath(),
+					Constants.TEMPLATE_META_INFO_FILE_NAME).toString());
+			return identifier!=null  && UtilMethods.isSet(identifier.getId()) ? identifier : null;
+		} catch (Exception  e) {
+			Logger.warnAndDebug(this.getClass(),e);
+			return null;
+		}
+	}
+
+	/**
+	 * Finds the list of file assets of a template based on a folder.
+	 * First search in the index then in the DB(this is because of PP)
+	 * @param folder where the files live
+	 * @param user
+	 * @param showLive get the working or the live assets
+	 * @return list of assets
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	private List<FileAsset> findTemplateAssets(final Folder folder, final User user, final boolean showLive) throws DotDataException, DotSecurityException {
+		List<FileAsset> assetList = APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, null, showLive, user, false);
+		if(assetList.isEmpty()){
+			final List<Contentlet> dbSearch = showLive ? APILocator.getFolderAPI().getLiveContent(folder,user,false).stream()
+					.filter(contentlet -> contentlet.getBaseType().get().equals(BaseContentType.FILEASSET))
+					.collect(Collectors.toList()):
+					 APILocator.getFolderAPI().getWorkingContent(folder,user,false).stream()
+							 .filter(contentlet -> contentlet.getBaseType().get().equals(BaseContentType.FILEASSET))
+							.collect(Collectors.toList());
+			assetList = APILocator.getFileAssetAPI().fromContentlets(dbSearch);
+		}
+		return assetList;
+	}
+
+	/**
+	 * Finds all the properties.vtl on a specific host
+	 * returns even working versions but not archived
+	 * the search is based on the ES Index.
+	 * If exists multiple language version, will consider only the versions based on the default language,
+	 * so if only exists a properties.vtl with a non-default language it will be skipped.
+	 *
+	 * @param host {@link Host}
+	 * @param user {@link User}
+	 * @param includeArchived {@link Boolean} if wants to include archive templates
+	 * @return List of Folder where the files lives
+	 */
+	private List<Folder> findTemplatesAssetsByHost(final Host host, final User user, final boolean includeArchived) {
+
+		List<Contentlet>           templates = null;
+		final List<Folder>         folders   = new ArrayList<>();
+
+		try {
+			final StringBuilder queryBuilder = StringUtils.builder("+structureType:", BaseContentType.FILEASSET.getType(),
+					" +path:",    Constants.TEMPLATE_FOLDER_PATH, "/*",
+					" +path:*/" + Constants.TEMPLATE_META_INFO_FILE_NAME,
+					" +working:true",
+					includeArchived? StringPool.BLANK : " +deleted:false");
+
+			if (null != host) {
+				queryBuilder.append(" +conhost:" + host.getIdentifier());
+			}
+
+			final String query = queryBuilder.toString();
+
+			templates =
+					this.filterTemplatesAssetsByLanguage (APILocator.getPermissionAPI().filterCollection(
+							APILocator.getContentletAPI().search(query,-1, 0, null , user, false),
+							PermissionAPI.PERMISSION_READ, false, user),
+							APILocator.getLanguageAPI().getDefaultLanguage().getId());
+
+
+
+			for(final Contentlet template : templates) {
+				folders.add(APILocator.getFolderAPI().find(template.getFolder(), user, false));
+			}
+		} catch (Exception e) {
+
+			Logger.error(this.getClass(), e.getMessage(), e);
+			throw new DotRuntimeException(e.getMessage(), e);
+		}
+
+		return folders;
+	}
+
+	/**
+	 * Filters a list of contentlets (templates as files) .
+	 *
+	 * Groups the templates by identifier (could be that the files were created multilanguage) and gets the one in the language specified
+	 * if not get any.
+	 * @param contentTemplates list of contentlets that are templates
+	 * @param languageId
+	 * @return list of contentlets (template properties.vtl) one per Identifier
+	 */
+	private List<Contentlet> filterTemplatesAssetsByLanguage(final List<Contentlet> contentTemplates, final long languageId) {
+
+		final List<Contentlet> uniqueContentTemplates = new ArrayList<>();
+		final Map<String, List<Contentlet>> contentletsGroupByIdentifier = CollectionsUtils
+				.groupByKey(contentTemplates, Contentlet::getIdentifier);
+
+		for (final Map.Entry<String, List<Contentlet>> entry : contentletsGroupByIdentifier.entrySet()) {
+
+			if (entry.getValue().size() <= 1) {
+				uniqueContentTemplates.addAll(entry.getValue());
+			} else {
+				ifOrElse(entry.getValue().stream()
+								.filter(contentlet -> contentlet.getLanguageId() == languageId).findFirst(), // if present the one with the default lang take it
+						uniqueContentTemplates::add,
+						()->uniqueContentTemplates.add(entry.getValue().get(0))); // otherwise take any one, such as the first one
+			}
+		}
+
+		return uniqueContentTemplates;
+	}
+
+	/**
+	 * Converts the folders into templates.
+	 * @param host {@link Host}
+	 * @param user {@link User}
+	 * @param subFolders {@link List}
+	 * @param includeHostOnPath {@link Boolean} true if you want to  include the host on the template path
+	 * @return List of Templates
+	 * @throws DotDataException
+	 */
+	private List<Template> convertFoldersToTemplates(final Host host, final User user,
+			final List<Folder> subFolders, final boolean includeHostOnPath) throws DotDataException {
+
+		final List<Template> templates = new ArrayList<>();
+		for (final Folder subFolder : subFolders) {
+
+			try {
+
+				final User      userFinal = null != user? user: APILocator.systemUser();
+				final Template template = this.getTemplateByFolder(null != host? host :
+								APILocator.getHostAPI().find(subFolder.getHostId(), user, includeHostOnPath),
+						subFolder, userFinal, false);
+				templates.add(template);
+			} catch (DotSecurityException e) {
+				Logger.debug(this, () -> "Does not have permission to read the folder template: " + subFolder.getPath());
+			} catch (NotFoundInDbException e) {
+				Logger.debug(this, () -> "The folder: " + subFolder.getPath() + ", is not a template");
+			}
+		}
+
+		return templates;
+	}
+
+	/**
+	 * Finds all file based templates for an user. Also order by orderByParam values (title asc, title desc, modDate asc, modDate desc)
+	 * @param user {@link User} to check the permissions
+	 * @param hostId {@link String} host id to find the containers
+	 * @param orderByParam {@link String} order by parameter
+	 * @param includeArchived {@link Boolean} if wants to include archive containers
+	 **/
+	private Collection<? extends Permissionable> findFolderAssetTemplate(final User user, final String hostId,
+			final String orderByParam, final boolean includeArchived,
+			final String filter) {
+
+		try {
+
+			final Host host     		   = APILocator.getHostAPI().find(hostId, user, false);
+			final List<Folder> listOfTemplatesFolders  = this.findTemplatesAssetsByHost(host, user, includeArchived);
+			List<Template> templates       = this.convertFoldersToTemplates(host, user, listOfTemplatesFolders, false);
+
+			if (UtilMethods.isSet(filter)) {
+				templates = templates.stream().filter(template ->
+						template.getTitle().toLowerCase().contains(filter))
+						.collect(Collectors.toList());
+			}
+
+			if (UtilMethods.isSet(orderByParam)) {
+				switch (orderByParam.toLowerCase()) {
+					case "title asc":
+						templates.sort(Comparator.comparing(Template::getTitle));
+						break;
+
+					case "title desc":
+						templates.sort(Comparator.comparing(Template::getTitle).reversed());
+						break;
+
+					case "moddate asc":
+						templates.sort(Comparator.comparing(Template::getModDate));
+						break;
+
+					case "moddate desc":
+						templates.sort(Comparator.comparing(Template::getModDate).reversed());
+						break;
+				}
+			}
+			return templates;
+		} catch (Exception e) {
+			Logger.error(this, e.getMessage(), e);
+			return Collections.emptyList();
+		}
 	}
 }

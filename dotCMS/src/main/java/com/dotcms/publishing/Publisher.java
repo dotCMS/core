@@ -2,6 +2,8 @@ package com.dotcms.publishing;
 
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.pusher.PushUtils;
+import com.dotcms.publishing.output.BundleOutput;
+import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
@@ -246,7 +248,7 @@ public abstract class Publisher implements IPublisher {
      */
     protected void compressBundleIfNeeded() throws IOException {
         if (Config.getBooleanProperty("STATIC_PUBLISHING_GENERATE_TAR_GZ", false)) {
-            final File bundleToCompress = BundlerUtil.getBundleRoot(config);
+            final File bundleToCompress = BundlerUtil.getBundleRoot(config.getName(), false);
             final ArrayList<File> list = Lists.newArrayList(bundleToCompress);
             final File bundle = new File(
                     bundleToCompress + File.separator
@@ -346,4 +348,7 @@ public abstract class Publisher implements IPublisher {
         return config;
     } // getContextMap.
 
+    public BundleOutput createBundleOutput() throws IOException {
+        return new DirectoryBundleOutput(config);
+    }
 }

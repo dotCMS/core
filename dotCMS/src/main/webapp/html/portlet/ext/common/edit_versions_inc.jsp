@@ -9,7 +9,7 @@
 
 
 <%
-
+	boolean hideBringBack = request.getAttribute("hideBringBack") !=null ? (boolean)request.getAttribute("hideBringBack") : false;
 	Contentlet cver = null;
 	boolean isContentlet = false;
  	Versionable v = (Versionable)request.getAttribute(com.dotmarketing.util.WebKeys.VERSIONS_INODE_EDIT);
@@ -46,8 +46,14 @@
 			//versions.add(0,working);
 	}else if(InodeUtils.isSet(v.getInode())){
 		ident = APILocator.getIdentifierAPI().find(v);
-		WebAsset working = (WebAsset) APILocator.getVersionableAPI().findWorkingVersion(ident, user, false);
-		versions = WebAssetFactory.getAssetVersionsandLive(working);
+		if(ident.getAssetType().equals(Identifier.ASSET_TYPE_TEMPLATE)){
+			versions.addAll(APILocator.getTemplateAPI().findAllVersions(ident,user,false));
+
+		} else {
+			WebAsset working = (WebAsset) APILocator.getVersionableAPI()
+					.findWorkingVersion(ident, user, false);
+			versions = WebAssetFactory.getAssetVersionsandLive(working);
+		}
 	}
 
 %>
@@ -105,9 +111,11 @@
 			<% if (!working) {  %>
 				<% if(canEdit) {  %>
 					<% if (!live) { %>
-						<a  href="javascript: deleteVersion('<%= vinode%>');"><%= LanguageUtil.get(pageContext, "Delete") %></a> -
+						<a  href="javascript: deleteVersion('<%= vinode%>');"><%= LanguageUtil.get(pageContext, "Delete") %></a>
 					<% } %>
-					<a  href="javascript: selectVersion('<%= vinode %>');"><%= LanguageUtil.get(pageContext, "Bring-Back") %></a>
+					<% if(!hideBringBack) { %>
+						 - <a  href="javascript: selectVersion('<%= vinode %>');"><%= LanguageUtil.get(pageContext, "Bring-Back") %></a>
+					<%}%>
 				<% } %>
 			<% } else { %>
 				<%= LanguageUtil.get(pageContext, "Working-Version") %>

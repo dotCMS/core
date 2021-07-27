@@ -199,7 +199,7 @@ public class ContentletLoader implements DotLoader {
                 if (InodeUtils.isSet(identifierValue)) {
                     sb.append("#set($")
                             .append(field.variable())
-                            .append("Object= $filetool.getFile('")
+                            .append("Object= $filetool.getFileAsContentlet('")
                             .append(identifierValue)
                             .append("'," + mode.showLive + ",")
                             .append(content.getLanguageId())
@@ -559,19 +559,22 @@ public class ContentletLoader implements DotLoader {
             throws DotStateException, DotDataException, DotSecurityException {
 
         long language = new Long(key.language);
-        ContentletVersionInfo info = APILocator.getVersionableAPI().getContentletVersionInfo(key.id1, language);
+        Optional<ContentletVersionInfo> info = APILocator.getVersionableAPI().getContentletVersionInfo(key.id1, language);
 
-        if (isLiveVersionNotAvailable(key, info) && shouldCheckForVersionInfoInDefaultLanguage(
-                language)) {
+        if ((!info.isPresent() || key.mode.showLive && !UtilMethods.isSet(info.get().getLiveInode()))
+                && shouldCheckForVersionInfoInDefaultLanguage(language)) {
             info = APILocator.getVersionableAPI().getContentletVersionInfo(key.id1, defaultLang);
         }
 
-        if (isLiveVersionNotAvailable(key, info)) {
+        if (!info.isPresent() || key.mode.showLive && !UtilMethods.isSet(info.get().getLiveInode())) {
             throw new ResourceNotFoundException("cannot find content for: " + key);
         }
-        Contentlet contentlet =
-                (key.mode.showLive) ? APILocator.getContentletAPI().find(info.getLiveInode(), APILocator.systemUser(), false)
-                        : APILocator.getContentletAPI().find(info.getWorkingInode(), APILocator.systemUser(), false);
+
+        Contentlet contentlet = (key.mode.showLive)
+                ? APILocator.getContentletAPI().find(info.get().getLiveInode(),
+                        APILocator.systemUser(), false)
+                : APILocator.getContentletAPI().find(info.get().getWorkingInode(),
+                        APILocator.systemUser(), false);
 
         Logger.debug(this, "DotResourceLoader:\tWriting out contentlet inode = " + contentlet.getInode());
         if (null == contentlet) {

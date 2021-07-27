@@ -68,13 +68,18 @@ public enum InterfaceType {
     public static final String FORM_INTERFACE_NAME = "FormBaseType";
     public static final String DOTASSET_INTERFACE_NAME = "DotAssetBaseType";
 
+    public static final String DOT_CONTENTLET = "DotContentlet";
+
     static {
 
         Map<String, TypeFetcher> contentFields = ContentFields.getContentFields();
 
         CONTENT_INTERFACE_FIELDS.addAll(contentFields.keySet());
 
-        interfaceTypes.put("CONTENTLET", createInterfaceType("Contentlet", contentFields, new ContentResolver()));
+        GraphQLInterfaceType contentletInterface = createInterfaceType(DOT_CONTENTLET,
+                contentFields, new ContentResolver());
+
+        interfaceTypes.put("CONTENTLET", contentletInterface);
 
         interfaceTypes.put("CONTENT", createInterfaceType(CONTENT_INTERFACE_NAME, contentFields, new ContentResolver()));
 

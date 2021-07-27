@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "00ea59d0-e92e-4dbb-8b3e-b4c463dd8eca",
+		"_postman_id": "68914333-24d0-43e8-847d-cc3668c526a8",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -15,7 +15,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b0552c22-b586-4408-a942-ff69ba95610b",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -48,7 +47,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "76a64325-3f78-4759-ac6f-4e37ee3f2bb7",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
@@ -109,7 +107,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "2badbf15-e242-40f3-930c-355b4d4d37d9",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -185,7 +182,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "80c18cf4-fbfe-48a6-bcc6-a9dee18962a9",
 								"exec": [
 									"pm.test(\"Status code is 200, Scheme already exist\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -259,7 +255,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d341d5cf-4437-45a4-895a-4600ee6b7e88",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -292,7 +287,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ebc0ad87-6e3f-4a38-b11f-7f0575fe861a",
 								"exec": [
 									"pm.test(\"Status code is 400 \", function () {",
 									"    pm.response.to.have.status(400);",
@@ -362,7 +356,6 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "8a0e794f-373c-4534-9b84-042cfb8fb6da",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -372,15 +365,13 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "34bf30a2-ba67-44ea-a08c-a9d27660b8fc",
 						"type": "text/javascript",
 						"exec": [
 							""
 						]
 					}
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "Save Step [POST /api/v1/workflow/steps]",
@@ -391,7 +382,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d32744ab-1c4d-4b78-ad1b-8d767fae2707",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -424,7 +414,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "1be74458-63dd-4cac-8af9-3d5486c66d71",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
@@ -485,7 +474,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "8ec20cdd-e6a1-41ec-b635-62d077dfaf48",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -563,7 +551,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "89d29bde-4ad8-4d04-aa4c-46c2c14bddd1",
 								"exec": [
 									"pm.test(\"Status code is 404\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -637,7 +624,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f577b14e-ea4a-4cce-ae90-7f9bcebe100f",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -711,7 +697,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "41bf9a36-50b0-449d-a4d3-94acdfb050b4",
 								"exec": [
 									"pm.test(\"Status code is 400 \", function () {",
 									"    pm.response.to.have.status(400);",
@@ -781,7 +766,6 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "454cfe06-7068-4413-922c-3c2cd5276a07",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -791,15 +775,13 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "2ceef445-fe26-4c14-87c5-15e054515267",
 						"type": "text/javascript",
 						"exec": [
 							""
 						]
 					}
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "SaveAction [POST /api/v1/workflow/actions]",
@@ -810,7 +792,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d96a8911-a3bf-4a17-baaa-7135526be7ab",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -843,7 +824,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "a278a3fd-890c-4fde-838a-9292d01299ec",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
@@ -896,7 +876,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "084b0bb5-3957-4a48-ab60-1ebb75b61f5b",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -974,7 +953,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "fbe1da47-1c40-4af2-ad3e-31feef51fe6e",
 								"exec": [
 									"pm.test(\"Status code is 404\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -1048,7 +1026,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c059e547-6404-47fa-8e1a-1bb5bc30cdb3",
 								"exec": [
 									"pm.test(\"Status code is 404\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -1122,7 +1099,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f0929421-766f-4a54-b529-e2ded0aa610b",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1196,7 +1172,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d09929d2-1b0a-4358-a607-734472fedcf0",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 400 \", function () {",
@@ -1266,7 +1241,6 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "f037d9e6-01ab-4883-b8a7-015d34fb6b26",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -1276,15 +1250,13 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "d8391102-b116-4ba1-b120-171c06a548b6",
 						"type": "text/javascript",
 						"exec": [
 							""
 						]
 					}
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "findSchemas [GET /api/v1/workflow/schemes]",
@@ -1295,7 +1267,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "87cac7e0-eb77-48c8-941b-0911f30e86ad",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1328,7 +1299,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f26ddf77-a5b1-4a3d-97db-f77fac90df43",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
@@ -1372,7 +1342,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c6af6274-a537-449e-a7db-42eeb7551d0c",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1439,7 +1408,6 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "ac466d02-6b51-456e-b3a7-27533bc0d434",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -1449,15 +1417,13 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "0a6a3df3-ff3b-4f9c-a9d0-8aa82dcf4c9b",
 						"type": "text/javascript",
 						"exec": [
 							""
 						]
 					}
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "findAllSchemesAndSchemesByContentType",
@@ -1468,7 +1434,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "9746d1f4-b47a-4751-83e8-1d3b8a6f6905",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1501,7 +1466,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "389d94b0-f6fc-48d5-970c-55e0c6d99fd9",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
@@ -1547,7 +1511,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "2a346e73-2a40-48c1-9092-8679fe55ce81",
 								"exec": [
 									"pm.test(\"Status code is 200, Content types permissions\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1613,7 +1576,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "fafdd6ea-1b2e-4448-917e-12ebb0b3069c",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 404, Content types not found\", function () {",
@@ -1680,7 +1642,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "4540cda8-e868-430d-8075-b365d01fe3e1",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1751,7 +1712,6 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "6306b619-db6f-41c8-ac45-6e441c4d42d0",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -1761,15 +1721,13 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "2e23387d-a867-4a75-aa5a-e18a048a7a34",
 						"type": "text/javascript",
 						"exec": [
 							""
 						]
 					}
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "findStepsByScheme [GET /api/v1/workflow/schemes/{schemeId}/steps]",
@@ -1780,7 +1738,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "50175d77-bffa-402d-b5f7-8b3b7c459000",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1813,7 +1770,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "788a40a5-923a-45a8-8ac7-d6ffd957a34c",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
@@ -1859,7 +1815,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "89df26d1-4967-495e-8a4d-4a4ba03caf7f",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1929,7 +1884,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "464ec080-ebf6-421d-bb06-ab552266aef3",
 								"exec": [
 									"pm.test(\"Status code is 404\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -2000,7 +1954,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "44c9fa38-4490-4df4-9451-09390b37e626",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2082,7 +2035,6 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "d65359e3-1844-4d46-9791-63e6c29442db",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -2092,15 +2044,13 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "ac2091af-cad0-429c-98bb-200c06fabc54",
 						"type": "text/javascript",
 						"exec": [
 							""
 						]
 					}
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "findAvailableActions [GET }/api/v1/workflow/contentlet/{contentId}/actions]",
@@ -2111,7 +2061,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d2a5c225-6b2d-456c-b504-365f774ed580",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2144,7 +2093,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b5fded63-7d8b-43f3-90e5-7b20ceae4a91",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
 									"    pm.response.to.have.status(401);",
@@ -2190,7 +2138,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "167a2424-8ae5-4bfd-a758-f7ccadf8e6b5",
 								"exec": [
 									"tests[\"Status code is 404\"] = responseCode.code === 404;",
 									"var body = JSON.parse(responseBody);",
@@ -2255,7 +2202,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "33b2222d-ec68-4627-b7ec-ebd45ab21ece",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2338,7 +2284,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "1f4f62e9-d0fa-4e42-8b15-765ed15142b0",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2405,7 +2350,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ddc48da4-5ad3-4d2a-b171-9b1536ba8e44",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2472,7 +2416,6 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "343d8fe1-dbcc-4e74-abe9-9dd002acf376",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -2482,15 +2425,13 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "04e26c7e-2a0f-4791-86de-09e2af8ba110",
 						"type": "text/javascript",
 						"exec": [
 							""
 						]
 					}
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "findAction [GET /api/v1/workflow/actions/{actionId}]",
@@ -2501,7 +2442,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "1774d4b1-b5c4-45d1-8b4d-954cc8f2eda0",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2534,7 +2474,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "8581eda4-a952-4b85-95af-8ff92d6f8040",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
@@ -2579,7 +2518,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "69ba15ab-4e76-4da9-ad87-b8c3efc819f2",
 								"exec": [
 									"pm.test(\"Status code is 404, The action does not exist\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -2645,7 +2583,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "211e1a58-da6d-4dc1-82b6-c153adc99c11",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2720,7 +2657,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "a412681f-14f2-4555-9164-df8550d12e6f",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2780,8 +2716,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "findActionByStep [GET /api/v1/workflow/steps/{{stepId}}/actions/{{actionId}}]",
@@ -2792,7 +2727,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "8f9c9e0e-bcb9-4cc9-8348-5d5a7754f630",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -2825,7 +2759,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d8e5d4a3-a0b5-4f01-af5f-35da1554bd65",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
@@ -2872,7 +2805,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "4534c713-410f-427c-a1bb-919c5620a9b2",
 								"exec": [
 									"pm.test(\"Status code is 404, The step does not exist\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -2940,7 +2872,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "bc38f4c3-1678-4674-b4d0-bbb650511c07",
 								"exec": [
 									"pm.test(\"Status code is 404, The action does not exist\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -3008,7 +2939,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c0ded5ff-ea70-46ea-b58b-2a040f747477",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3076,7 +3006,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f4429b94-4766-4c75-94d8-101ca0cb4ae7",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3144,7 +3073,6 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "e7a4bbfc-cf90-4825-ba4f-5b1337b93cc6",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -3154,15 +3082,13 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "96f842ac-03d8-4e61-ac3a-8dce73afed31",
 						"type": "text/javascript",
 						"exec": [
 							""
 						]
 					}
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "findActionsByStep (all the actions)",
@@ -3173,7 +3099,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "945ceee3-8e83-4180-871e-9fd6bb9f7e01",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3206,7 +3131,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "31ea7827-95f9-49e0-9a30-0d2f7df1553e",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
@@ -3252,7 +3176,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "e7aff97a-3866-4764-ab99-5d4e0f483aba",
 								"exec": [
 									"pm.test(\"Status code is 404, The step does not exist\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -3319,7 +3242,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "753a5213-d540-47d3-b28f-4f12210751c4",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3388,7 +3310,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "4fc0d682-4b0a-485d-aff5-72c6bbc3ed06",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3457,7 +3378,6 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "dde528d0-f490-4095-ab46-d87e4d1c84ed",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -3467,15 +3387,13 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "d7be83a7-92d2-468c-a33a-2a10a448734b",
 						"type": "text/javascript",
 						"exec": [
 							""
 						]
 					}
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "findActionByScheme [GET /api/v1/workflow/schemes/{{schemeIdShorty}}/actions]",
@@ -3486,7 +3404,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f4458b35-b7cb-42f6-aea4-804bd82f21bf",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3519,7 +3436,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "aa25b94b-1d8c-4677-b940-520e9c5f2b96",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
 									"    pm.response.to.have.status(401);",
@@ -3565,7 +3481,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c6f0e58c-57c6-42b9-a1f8-dd26def94aed",
 								"exec": [
 									"pm.test(\"Status code is 404, The scheme does not exist\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -3632,7 +3547,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "1b1ffc65-0704-442b-80f5-bb1eb72f44e9",
 								"exec": [
 									"pm.test(\"Status code is 200, Success request\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3706,7 +3620,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "7cea73b0-972c-4878-a09b-62c3f287450f",
 								"exec": [
 									"pm.test(\"Status code is 200, Success request\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3780,7 +3693,6 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "d24f7735-dd4e-4cb2-8196-37b0f17a0654",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -3790,15 +3702,13 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "ad35b900-4bb7-479a-897d-e1d561f4091d",
 						"type": "text/javascript",
 						"exec": [
 							""
 						]
 					}
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "findStepById [GET /api/v1/workflow/steps/{stepId}]",
@@ -3809,7 +3719,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d3acc64b-ace4-411b-8834-0dff3bef43b2",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3842,7 +3751,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "0bcefd45-3a6b-406a-91c0-9a0b7ba4714a",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
@@ -3895,7 +3803,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "062d37d2-6fcc-46a9-8fe6-93c14c715a44",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -3961,7 +3868,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "5b0eaf6e-acf0-435d-abe4-9fb8b4054e2f",
 								"exec": [
 									"pm.test(\"Status code is 404, The action does not exist\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -4027,7 +3933,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "50069504-24f7-4dec-804f-134ae214898d",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -4087,8 +3992,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "findAvailableDefaultActionsByContentType",
@@ -4099,7 +4003,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "337a4f01-58c9-450a-bf5f-600e6e3f0eaf",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -4132,7 +4035,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "e6b7fda1-71d6-4a5a-8e0c-8c0440422faf",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
@@ -4186,7 +4088,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "2f2ccd0b-562f-4a11-ad27-8d3a029f91de",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -4253,7 +4154,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "1f64a335-ab8a-4d97-b4a8-ee84a4c3f41f",
 								"exec": [
 									"pm.test(\"Status code is 404, The action does not exist\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -4326,7 +4226,6 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "5baad86b-9cba-401c-bdce-e4dc5a7afd40",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -4336,15 +4235,13 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "107615b2-cf18-4660-8971-7bf18842e03e",
 						"type": "text/javascript",
 						"exec": [
 							""
 						]
 					}
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "findAvailableDefaultActionsBySchemes",
@@ -4355,7 +4252,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "a9d85665-47db-4440-8b88-d7d5738d6224",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -4388,7 +4284,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "9dda4ba7-bb5b-47d4-86af-f087fd4071c1",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
@@ -4441,7 +4336,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ea5e37ae-44b4-4b10-a99e-246602dae90e",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -4513,7 +4407,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "989ca2be-9ddf-4d54-af55-739e60b1cc86",
 								"exec": [
 									"pm.test(\"Status code is 404, The action does not exist\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -4585,7 +4478,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "67c098be-1183-4016-8a72-4f6a2874cc76",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -4651,8 +4543,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "findInitialAvailableActionsByContentType",
@@ -4663,7 +4554,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "81213afe-40d7-4458-9719-231bac10205f",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -4696,7 +4586,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ad16cf5c-951d-418f-97ab-a2ea88c9ef78",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
@@ -4750,7 +4639,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d2c84e30-0f32-4190-aca3-042c8b09d3cf",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
@@ -4822,7 +4710,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "5fd1ba84-93bf-4a8f-b9d9-b13b6a3efa32",
 								"exec": [
 									"pm.test(\"Status code is 404 \", function () {",
 									"    pm.response.to.have.status(404);",
@@ -4884,8 +4771,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "UpdateAction [PUT /api/v1/workflow/actions/{actionId}]",
@@ -4896,7 +4782,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b2d89c52-aa8e-4a38-bc45-0fb38dd27686",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -4929,7 +4814,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "2d0ef834-52d8-4528-8678-954684a2b457",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
@@ -4983,7 +4867,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "fe84ac56-0364-40e2-a9a8-066ac6f4914e",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -5057,7 +4940,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c0538456-8758-42da-9364-25f2da32c96d",
 								"exec": [
 									"pm.test(\"Status code is 404, Action does not exist\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -5131,7 +5013,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "8306682e-6080-4eba-875b-fa1f870dbe10",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -5207,7 +5088,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "361a3d3e-e0b1-49cb-8cef-458f65834b8b",
 								"exec": [
 									"pm.test(\"Status code is 400 \", function () {",
 									"    pm.response.to.have.status(400);",
@@ -5279,7 +5159,6 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "6fb5b8a7-3688-47c8-86c3-8e1cad68296c",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -5289,15 +5168,13 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "771b28fd-96c2-470e-9548-8a4e7af009bb",
 						"type": "text/javascript",
 						"exec": [
 							""
 						]
 					}
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "SaveActionToStep",
@@ -5308,7 +5185,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b59a93ff-2fcf-4908-9fc6-b2ff20d61a43",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -5341,7 +5217,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "40e2da9f-d877-4676-8bca-044b104f9421",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
@@ -5404,7 +5279,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "707a3d82-8ac2-4e2d-891e-6b3ebf4a1811",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -5480,7 +5354,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "640380b6-4b55-4d88-b943-f4a7ec37c9b9",
 								"exec": [
 									"pm.test(\"Status code is 404\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -5556,7 +5429,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "46e200ff-57ab-4fdb-b7cf-ef4f8a7007bf",
 								"exec": [
 									"pm.test(\"Status code is 404\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -5632,7 +5504,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "cb648b47-2ac9-4610-8fb2-476bc78e7fea",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -5708,7 +5579,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "18796d50-0022-4d24-bf76-829d78be349d",
 								"exec": [
 									"pm.test(\"Status code is 400 \", function () {",
 									"    pm.response.to.have.status(400);",
@@ -5776,8 +5646,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "ImportScheme",
@@ -5788,7 +5657,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "9722dc5e-7b50-46ed-9cec-ae99bed6f8a0",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -5821,7 +5689,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b3be202d-0f4d-414a-b751-47634ed8fe44",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 401, Invalid Credentials\", function () {",
@@ -5873,7 +5740,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "e4cb3da4-8fd8-49c2-aa68-16e6450eec28",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -5948,7 +5814,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "924730b4-6179-43de-b941-9399f345767e",
 								"exec": [
 									"pm.test(\"Status code is 400\", function () {",
 									"    pm.response.to.have.status(400);",
@@ -6023,7 +5888,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "7fb7db89-1327-46c9-aae5-ee09898fa95f",
 								"exec": [
 									"pm.test(\"Status code is 400 \", function () {",
 									"    pm.response.to.have.status(400);",
@@ -6087,9 +5951,154 @@
 						"description": "Validate you can import schemes as limited user if you have permissions to the workflow portlet "
 					},
 					"response": []
+				},
+				{
+					"name": "ImportWithNotifyAssignActionlet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Body matches string\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"OK\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"workflowObject\": {\n        \"actionClassParams\": [\n            {\n                \"actionClassId\": \"deb0865a-8367-499a-9c80-f70f6cb4a201\",\n                \"id\": \"2163cb23-8b9a-406a-b2fa-7beecd5c63b0\",\n                \"key\": \"emailSubject\",\n                \"value\": \"subject\"\n            },\n            {\n                \"actionClassId\": \"deb0865a-8367-499a-9c80-f70f6cb4a201\",\n                \"id\": \"f98771e9-ca5c-438a-a23b-85594b92af45\",\n                \"key\": \"emailBody\",\n                \"value\": \"msg\"\n            },\n            {\n                \"actionClassId\": \"deb0865a-8367-499a-9c80-f70f6cb4a201\",\n                \"id\": \"d831815e-f9c4-4338-956f-2e8b9e0e371b\",\n                \"key\": \"isHtml\",\n                \"value\": \"true\"\n            }\n        ],\n        \"actionClasses\": [\n            {\n                \"actionId\": \"9148bd02-9d49-4765-8570-17f9a28d64bc\",\n                \"actionlet\": {\n                    \"actionClass\": \"com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet\",\n                    \"howTo\": \"This actionlet will send an email to the assignee (or assignees if the next assign is a role).  It uses a default email subject and message, but can be overridden.  Both the subject and message are parsed Velocity, and have access to a $workflow object that gives them $workflow.task, $workflow.nextAssign, $workflow.action, $workflow.step, etc.. \",\n                    \"localizedHowto\": \"com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet.howTo\",\n                    \"localizedName\": \"Notify Assignee\",\n                    \"name\": \"Notify Assignee\",\n                    \"nextStep\": null,\n                    \"parameters\": [\n                        {\n                            \"defaultValue\": \"\",\n                            \"displayName\": \"Email Subject\",\n                            \"key\": \"emailSubject\",\n                            \"required\": false\n                        },\n                        {\n                            \"defaultValue\": null,\n                            \"displayName\": \"Email Message\",\n                            \"key\": \"emailBody\",\n                            \"required\": false\n                        },\n                        {\n                            \"defaultValue\": \"true\",\n                            \"displayName\": \"Is Html?\",\n                            \"key\": \"isHtml\",\n                            \"required\": false\n                        }\n                    ]\n                },\n                \"clazz\": \"com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet\",\n                \"id\": \"deb0865a-8367-499a-9c80-f70f6cb4a201\",\n                \"name\": \"Notify Assignee\",\n                \"order\": 0\n            }\n        ],\n        \"actionSteps\": [\n            {\n                \"actionId\": \"9148bd02-9d49-4765-8570-17f9a28d64bc\",\n                \"actionOrder\": \"0\",\n                \"stepId\": \"2ad8291f-eee4-4ce7-ab99-1b2186ef4dec\"\n            }\n        ],\n        \"actions\": [\n            {\n                \"assignable\": false,\n                \"commentable\": false,\n                \"condition\": \"\",\n                \"icon\": \"workflowIcon\",\n                \"id\": \"9148bd02-9d49-4765-8570-17f9a28d64bc\",\n                \"name\": \"test\",\n                \"nextAssign\": \"654b0931-1027-41f7-ad4d-173115ed8ec1\",\n                \"nextStep\": \"currentstep\",\n                \"nextStepCurrentStep\": true,\n                \"order\": 0,\n                \"owner\": null,\n                \"roleHierarchyForAssign\": false,\n                \"schemeId\": \"8760ea91-9912-456c-b719-7c63e81fa981\",\n                \"showOn\": []\n            }\n        ],\n        \"schemeSystemActionWorkflowActionMappings\": [],\n        \"schemes\": [\n            {\n                \"archived\": false,\n                \"creationDate\": 1623256714100,\n                \"defaultScheme\": false,\n                \"description\": \"\",\n                \"entryActionId\": null,\n                \"id\": \"8760ea91-9912-456c-b719-7c63e81fa981\",\n                \"mandatory\": false,\n                \"modDate\": 1623203259556,\n                \"name\": \"Test\",\n                \"system\": false\n            }\n        ],\n        \"steps\": [\n            {\n                \"creationDate\": 1623256717104,\n                \"enableEscalation\": false,\n                \"escalationAction\": null,\n                \"escalationTime\": 0,\n                \"id\": \"2ad8291f-eee4-4ce7-ab99-1b2186ef4dec\",\n                \"myOrder\": 0,\n                \"name\": \"step1\",\n                \"resolved\": false,\n                \"schemeId\": \"8760ea91-9912-456c-b719-7c63e81fa981\"\n            }\n        ],\n        \"version\": \"1.0\"\n    },\n    \"permissions\": []\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/schemes/import",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"schemes",
+								"import"
+							]
+						},
+						"description": "Validate you can import schemes as admin\n"
+					},
+					"response": []
+				},
+				{
+					"name": "CopySchemewithNotifyAssignActionlet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n       \"name\": \"Copy Workflow\"\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/schemes/8760ea91-9912-456c-b719-7c63e81fa981/copy",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"schemes",
+								"8760ea91-9912-456c-b719-7c63e81fa981",
+								"copy"
+							]
+						},
+						"description": "Validate you can import schemes as admin\n"
+					},
+					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "ExportScheme",
@@ -6100,7 +6109,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b054aec6-30f6-4050-84a6-c5b872cb5910",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -6133,7 +6141,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "32e9e702-cbd0-4c05-8d4c-243e9f34174e",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 401, Invalid credentials\", function () {",
@@ -6177,7 +6184,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "0ba7f8fd-62a4-44f5-8240-0947679820f9",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -6250,7 +6256,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "2f4b8005-0cc9-40f3-b7fa-3821303fd96b",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -6317,8 +6322,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "UpdateStep",
@@ -6329,7 +6333,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "bb010eb1-92a3-472d-9c10-92b77330b3b0",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -6362,7 +6365,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c82f92c3-5b10-4878-8fd8-15052d99d861",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
@@ -6424,7 +6426,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "a6ab3c29-3427-4e00-9177-9f2cffdfa7f8",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -6499,7 +6500,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "121cfbbd-6005-4781-92aa-91f740f99a9b",
 								"exec": [
 									"pm.test(\"Status code is 404\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -6574,7 +6574,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d26747a1-1baa-4a87-815e-f8b77cfe5d81",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -6649,7 +6648,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "a8c20647-3ca3-47eb-9710-5456e185675c",
 								"exec": [
 									"pm.test(\"Status code is 400 \", function () {",
 									"    pm.response.to.have.status(400);",
@@ -6715,8 +6713,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "ReorderStep",
@@ -6727,7 +6724,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "3d637620-9412-4ad9-bedf-c8bf0a3a1a36",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -6760,7 +6756,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "371955bb-e11e-4f5f-9a5c-cf7327cfb97f",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
@@ -6816,7 +6811,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "955553ad-64a2-464c-a691-a6a00b459e66",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -6885,7 +6879,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b5d29218-fc45-4e00-9b6f-a1a63524acfe",
 								"exec": [
 									"pm.test(\"Status code is 404\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -6954,7 +6947,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "4dfc41e9-0625-4ebc-9df6-65719e2a000f",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -7017,8 +7009,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "UpdateScheme",
@@ -7029,7 +7020,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "134bd8b7-9f45-46ca-8d0d-ef884e7018ac",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -7062,7 +7052,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d00f4561-257e-4607-aead-dd97d557270e",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
@@ -7124,7 +7113,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "407053fd-4925-4f02-9827-2f08942c8401",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -7199,7 +7187,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "3df75c9a-4cdc-4e41-905e-44afcdcd18c8",
 								"exec": [
 									"pm.test(\"Status code is 404 \", function () {",
 									"    pm.response.to.have.status(404);",
@@ -7274,7 +7261,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "66bcb7ec-7b98-41a8-9519-f60f1fd7cd63",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -7349,7 +7335,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "2965a718-7b1a-472c-aa82-44433b5c28f8",
 								"exec": [
 									"pm.test(\"Status code is 400 \", function () {",
 									"    pm.response.to.have.status(400);",
@@ -7415,8 +7400,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "ReorderAction",
@@ -7427,7 +7411,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "49dbc500-e9be-4f99-81bd-2cb35c57bdb0",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -7460,7 +7443,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "69b77963-2f14-4b8d-9714-575a04c9dbe4",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
@@ -7525,7 +7507,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "e204160f-fa73-441b-8144-64b5fbaabede",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -7603,7 +7584,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "dea0c03e-4dd3-4628-8f1d-6f0145946887",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 400, Bad request\", function () {",
@@ -7681,7 +7661,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "765ddd62-9e9b-4a17-9188-1b4de57e3f15",
 								"exec": [
 									"pm.test(\"Status code is 404\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -7759,7 +7738,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "9a84e1c4-65da-405d-bfac-7e40a8ff660b",
 								"exec": [
 									"pm.test(\"Status code is 404\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -7837,7 +7815,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "22f3b970-dd72-49f6-9904-607f69a1f0e9",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -7915,7 +7892,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d9b25a6d-5a8a-455f-bc4a-bcb48096b1f8",
 								"exec": [
 									"pm.test(\"Status code is 400 \", function () {",
 									"    pm.response.to.have.status(400);",
@@ -7984,11 +7960,10 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
-			"name": "FireAction",
+			"name": "FireActionById",
 			"item": [
 				{
 					"name": "invalidateSession",
@@ -7996,7 +7971,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "bf665ff9-33a0-4a61-bdcc-85407e5a0bd5",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -8024,75 +7998,11 @@
 					"response": []
 				},
 				{
-					"name": "UserCredentialsValidation",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "94108f93-14e5-4c5e-ada0-b0d64fcd9d10",
-								"exec": [
-									"pm.test(\"Status code is 401, You need credentials\", function () {",
-									"    pm.response.to.have.status(401);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Invalid User\");",
-									"});pm.test(\"Status code is 401, You need credentials\", function () {",
-									"    pm.response.to.have.status(401);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Invalid User\");",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "noauth"
-						},
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{ \"contentlet\" : {\n  \"stInode\" : \"678d00bf-10b0-4080-99b4-9517ab9ea580\",\n  \"languageId\" : 1,\n  \"name\": \"postman1\"\n}\n}"
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/936f14eef2/fire",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"actions",
-								"936f14eef2",
-								"fire"
-							]
-						},
-						"description": "Fire any action uysing the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here. \n\n@Path(\"/actions/{actionId}/fire\")"
-					},
-					"response": []
-				},
-				{
 					"name": "SuccessRequest",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "b9f9a1f1-93ae-4959-8a47-99d5a2fe3599",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -8101,12 +8011,13 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"postman\");",
+									"    pm.expect(pm.response.text()).to.include(\"SucessRequest\");",
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"contentletIdentifier\", jsonData.entity.identifier);",
 									"pm.collectionVariables.set(\"contentletInode\", jsonData.entity.inode);",
+									"pm.collectionVariables.set(\"fireActionLanguageKey\", jsonData.entity.key);",
 									"// pm.collectionVariables.set(\"contentletIdShorty\", jsonData.entity.id.replace(\"-\",\"\").substring(0,10));",
 									"",
 									""
@@ -8149,7 +8060,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{ \"contentlet\" : {\n  \"stInode\" : \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"languageId\" : 1,\n  \"key\": \"postman3\",\n  \"value\": \"postman3\"\n}\n}"
+							"raw": "{ \"contentlet\" : {\n  \"stInode\" : \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"languageId\" : 1,\n  \"key\": \"SucessRequest{{$timestamp}}\",\n  \"value\": \"SucessRequest{{$timestamp}}\"\n}\n}"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d88-4311-8365-187323c96436/fire",
@@ -8165,7 +8076,7 @@
 								"fire"
 							]
 						},
-						"description": "Fire any action uysing the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here. \n\n@Path(\"/actions/{actionId}/fire\")"
+						"description": "Fire any action using the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here.\n\n@Path(\"/actions/{actionId}/fire\")"
 					},
 					"response": []
 				},
@@ -8175,7 +8086,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "fb7d3a0f-a9b1-48d5-8720-c66dd872047f",
 								"exec": [
 									"pm.test(\"Status code is 404\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -8251,7 +8161,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c4a907b5-e538-4ffd-a4bb-60f543ef5fca",
 								"exec": [
 									"pm.test(\"Status code is 400\", function () {",
 									"    pm.response.to.have.status(400);",
@@ -8328,7 +8237,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "1aceb1ec-2ec4-4421-9d18-ec68ae0ca98e",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -8337,7 +8245,7 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"postman5\");",
+									"    pm.expect(pm.response.text()).to.include(\"SupportShorty\");",
 									"});"
 								],
 								"type": "text/javascript"
@@ -8378,7 +8286,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{ \"contentlet\" : {\n  \"stInode\" : \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"languageId\" : 1,\n  \"key\": \"postman5\",\n  \"value\": \"postman5\"\n}\n}"
+							"raw": "{ \"contentlet\" : {\n  \"stInode\" : \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"languageId\" : 1,\n  \"key\": \"SupportShorty{{$timestamp}}\",\n  \"value\": \"SupportShorty{{$timestamp}}\"\n}\n}"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d8843/fire",
@@ -8404,7 +8312,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "f5536b44-37e7-44da-b1af-a93b659d5c46",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -8413,7 +8320,7 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"postman\");",
+									"    pm.expect(pm.response.text()).to.include(\"SucessRequest\");",
 									"});"
 								],
 								"type": "text/javascript"
@@ -8486,7 +8393,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "86c9a142-e264-4ad9-aa9b-3ad6aebfd538",
 								"exec": [
 									"pm.test(\"Status code is 400, BadRequest\", function () {",
 									"    pm.response.to.have.status(400);",
@@ -8536,7 +8442,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{ \"contentlet\" : {\n  \"stInode\" : \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"languageId\" : 1,\n  \"key\": \"postman3\",\n  \"value\": \"postman3\"\n}\n}"
+							"raw": "{ \"contentlet\" : {\n  \"stInode\" : \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"languageId\" : 1,\n  \"key\": \"{{fireActionLanguageKey}}\",\n  \"value\": \"postman3\"\n}\n}"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d88-4311-8365-187323c96436/fire",
@@ -8562,7 +8468,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b35d1d1e-1d5e-44ca-821d-f44f1de66c26",
 								"exec": [
 									"pm.test(\"Status code is 400 \", function () {",
 									"    pm.response.to.have.status(400);",
@@ -8627,9 +8532,702 @@
 						"description": "Fire any action uysing the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here. \n\n@Path(\"/actions/{actionId}/fire\")"
 					},
 					"response": []
+				},
+				{
+					"name": "SuccessRequest_Mutipart",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"First binary included\", function () {",
+									"    pm.expect(jsonData.entity.asset).include(\"james.jpeg\"); ",
+									"});",
+									"",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "json",
+									"value": "{ \"contentlet\" : {\n  \"stInode\" : \"f2d8a1c7-2b77-2081-bcf1-b5348988c08d\"\n}\n}",
+									"type": "text"
+								},
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/WorkflowResource/testImages/james.jpeg"
+								},
+								{
+									"key": "file",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d88-4311-8365-187323c96436/fire",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"b9d89c80-3d88-4311-8365-187323c96436",
+								"fire"
+							]
+						},
+						"description": "Fire any action using the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here.\n\n@Path(\"/actions/{actionId}/fire\")"
+					},
+					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
+		},
+		{
+			"name": "FireDefaultAction",
+			"item": [
+				{
+					"name": "invalidateSession",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "SuccessRequest",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"SucessRequest\");",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"contentletIdentifier\", jsonData.entity.identifier);",
+									"pm.collectionVariables.set(\"contentletInode\", jsonData.entity.inode);",
+									"pm.collectionVariables.set(\"fireActionLanguageKey\", jsonData.entity.key);",
+									"// pm.collectionVariables.set(\"contentletIdShorty\", jsonData.entity.id.replace(\"-\",\"\").substring(0,10));",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"contentlet\" : {\n  \"stInode\" : \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"languageId\" : 1,\n  \"key\": \"SucessRequest{{$timestamp}}\",\n  \"value\": \"SucessRequest{{$timestamp}}\"\n}\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						},
+						"description": "Fire any action using the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here.\n\n@Path(\"/actions/{actionId}/fire\")"
+					},
+					"response": []
+				},
+				{
+					"name": "InvalidActionId",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"No enum constant\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"contentlet\" : {\n  \"stInode\" : \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"languageId\" : 1,\n  \"key\": \"postman\",\n  \"value\": \"postman\"\n}\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/NONEXISTING",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"NONEXISTING"
+							]
+						},
+						"description": "Fire any action uysing the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here. \n\n@Path(\"/actions/{actionId}/fire\")"
+					},
+					"response": []
+				},
+				{
+					"name": "InvalidContentTypeId",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Content Type with id\");",
+									"    pm.expect(pm.response.text()).to.include(\"not found\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "chris",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "chris@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"contentlet\" : {\n  \"stInode\" : \"af4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"languageId\" : 1,\n  \"key\": \"postman\",\n  \"value\": \"postman\"\n}\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d88-4311-8365-187323c96436/fire",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"b9d89c80-3d88-4311-8365-187323c96436",
+								"fire"
+							]
+						},
+						"description": "Fire any action uysing the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here. \n\n@Path(\"/actions/{actionId}/fire\")"
+					},
+					"response": []
+				},
+				{
+					"name": "FireActionWithoutBody",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"SucessRequest\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d8843/fire?inode={{contentletInode}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"b9d89c80-3d8843",
+								"fire"
+							],
+							"query": [
+								{
+									"key": "inode",
+									"value": "{{contentletInode}}"
+								}
+							]
+						},
+						"description": "Fire any action uysing the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here. \n\n@Path(\"/actions/{actionId}/fire\")"
+					},
+					"response": []
+				},
+				{
+					"name": "ExistingUniqueContent_ShouldRespond400",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400, BadRequest\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"unique\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"contentlet\" : {\n  \"stInode\" : \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"languageId\" : 1,\n  \"key\": \"{{fireActionLanguageKey}}\",\n  \"value\": \"postman3\"\n}\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						},
+						"description": "Fire any action uysing the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here. \n\n@Path(\"/actions/{actionId}/fire\")"
+					},
+					"response": []
+				},
+				{
+					"name": "BadRequest",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400 \", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d88-4311-8365-187323c96436/fire",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"b9d89c80-3d88-4311-8365-187323c96436",
+								"fire"
+							]
+						},
+						"description": "Fire any action uysing the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here. \n\n@Path(\"/actions/{actionId}/fire\")"
+					},
+					"response": []
+				},
+				{
+					"name": "SuccessRequest_Mutipart",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"First binary included\", function () {",
+									"    pm.expect(jsonData.entity.asset).include(\"james.jpeg\"); ",
+									"});",
+									"",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "json",
+									"value": "{ \"contentlet\" : {\n  \"stInode\" : \"f2d8a1c7-2b77-2081-bcf1-b5348988c08d\"\n}\n}",
+									"type": "text"
+								},
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/WorkflowResource/testImages/james.jpeg"
+								},
+								{
+									"key": "file",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						},
+						"description": "Fire any action using the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here.\n\n@Path(\"/actions/{actionId}/fire\")"
+					},
+					"response": []
+				}
+			]
 		},
 		{
 			"name": "CopyScheme",
@@ -8640,7 +9238,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b5dbd110-6f22-4e61-9601-308d8d834a45",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -8673,7 +9270,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "553c2807-2988-47e7-bf7e-cbb90cb6476d",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
@@ -8727,7 +9323,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b809c9d5-3386-4875-9be2-b0b6c92c4f70",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -8816,7 +9411,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "928a5d9c-5ab8-4e75-bee4-fd498f2db3ee",
 								"exec": [
 									"pm.test(\"Status code is 404\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -8898,7 +9492,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "87583010-c6cd-4e8b-a3fd-ed64f78b2d81",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -8980,7 +9573,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "037c18e9-5c2c-430e-a6f0-8649d987bd83",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -9055,7 +9647,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "8f5a3c37-7fc2-4a83-bb5d-537320da6ec7",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -9137,8 +9728,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "DeleteStep",
@@ -9149,7 +9739,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "e61733f1-2367-47a1-839c-782731bc9911",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -9182,7 +9771,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "7307f30f-6054-4b55-993c-8f56fe01b257",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
@@ -9227,7 +9815,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c2ca6068-9347-4899-bf8b-f9270ae6147f",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -9297,7 +9884,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "743c32f4-982e-41df-9934-667de3f40e68",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 400\", function () {",
@@ -9363,7 +9949,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "bc41ebda-b744-4f9b-99a2-cc6c4436d173",
 								"exec": [
 									"pm.test(\"Status code is 404\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -9429,7 +10014,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b067dd05-4bc2-4b74-8349-1a32e247a5b3",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -9507,7 +10091,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d2ca147b-3ad7-4fa7-b884-36be81a853ff",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -9571,8 +10154,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "DeleteAction (Permanently)",
@@ -9583,7 +10165,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "611c840c-ebbf-487f-a192-44ad4f6b62cc",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -9616,7 +10197,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "efccfbf0-4adc-4c92-89ef-1a90f529dc3e",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
@@ -9669,7 +10249,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "e7ddbe8a-ac07-4a79-90bb-94f786067702",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -9735,7 +10314,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "7fd474a0-ac64-433c-ba14-9f0eb8987400",
 								"exec": [
 									"pm.test(\"Status code is 404\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -9801,7 +10379,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "e147bacf-1617-4ee9-8682-fade6c63c5a2",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -9879,7 +10456,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "97e2bb52-2ff3-48a9-837c-39378f99f054",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -9957,7 +10533,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "75936f20-48b2-4671-808b-ed33d4617002",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -10017,8 +10592,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "DeleteAction (from step)",
@@ -10029,7 +10603,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ad9ed75d-4e0e-4f4b-9778-a326f6bb1d76",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -10107,7 +10680,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "4b7f1ee7-ecf0-4b38-819a-84c694d64857",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -10185,7 +10757,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "cdd3675b-5ea8-42dc-928d-2c753233fb67",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -10218,7 +10789,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "cbe7de2c-16ea-460b-b1bf-5ce06ddc2f51",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
@@ -10273,7 +10843,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "251c331a-3379-4c90-a902-51a56f280913",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -10341,7 +10910,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "6cac416b-3651-4d29-9739-1d3891b1f8f8",
 								"exec": [
 									"pm.test(\"Status code is 404\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -10409,7 +10977,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "89395374-87b6-4e03-a394-ecb194d3c6c5",
 								"exec": [
 									"pm.test(\"Status code is 404\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -10477,7 +11044,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "15466f4c-5e65-4f3a-abd3-005b91081f52",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -10555,7 +11121,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "785215f8-7c21-4bf4-91e6-2b8fdb3f1e73",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -10633,7 +11198,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "cc46cdda-2037-419a-9779-2f7dd4c92185",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -10695,8 +11259,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "DeleteScheme",
@@ -10707,7 +11270,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c2040f95-b652-46fa-b2f8-9499cb3b07bd",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -10740,7 +11302,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "a33d7c72-a90b-41bf-bc0c-d95808cfe557",
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status code is 401, You need credentials\", function () {",
@@ -10783,7 +11344,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "0eb41abd-118c-430f-b0e1-c1e34cc80468",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -10858,7 +11418,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "7acfd60a-80f4-4c80-a3ba-9f37208d6986",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -10928,7 +11487,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "8cc29b35-111c-46be-a6d7-92a3d31459e8",
 								"exec": [
 									"pm.test(\"Status code is 404\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -10994,7 +11552,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "243396a9-3d5b-4c63-8c8d-63d440d52ee0",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -11070,7 +11627,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d8555d60-f7ea-4feb-a599-44c152ee753a",
 								"exec": [
 									"pm.test(\"Status code is 200 \", function () {",
 									"    pm.response.to.have.status(200);",
@@ -11145,7 +11701,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "dc8e338d-975a-48eb-b867-599dcbf5d9d0",
 								"exec": [
 									"pm.test(\"Status code is 200, You need credentials\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -11211,7 +11766,6 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "59580b4c-2bab-4789-a4b0-176448e6a86b",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -11221,15 +11775,13 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "703e4a7b-8d77-4c78-8794-926757b65987",
 						"type": "text/javascript",
 						"exec": [
 							""
 						]
 					}
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "systemActions",
@@ -11240,7 +11792,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ed7077a3-3daa-47d9-aa43-48be4fd6769a",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -11309,7 +11860,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "a26f7e8c-d80b-4913-b550-1f7c1570fb62",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -11379,7 +11929,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "cfa6c4d9-b6d2-411f-8908-d97da4d9e0b8",
 								"exec": [
 									"pm.test(\"No errors\", function () {",
 									"    ",
@@ -11466,7 +12015,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ce0a0f5e-95bb-4cad-bdea-38293c1da03a",
 								"exec": [
 									"pm.test(\"No errors\", function () {",
 									"    ",
@@ -11547,7 +12095,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "ef436ce8-1db1-4c11-b62f-d3069a2999b5",
 								"exec": [
 									"pm.test(\"No errors\", function () {",
 									"    ",
@@ -11629,7 +12176,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "59a8b572-9f29-4995-a484-66bc13525252",
 								"exec": [
 									"pm.test(\"No errors\", function () {",
 									"    ",
@@ -11706,15 +12252,829 @@
 					},
 					"response": []
 				}
+			]
+		},
+		{
+			"name": "mergeAction",
+			"item": [
+				{
+					"name": "AddMergeContentlet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log(\"Running test\")",
+									"",
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.baseType).to.eql(\"CONTENT\");",
+									"    pm.expect(jsonData.entity.contentType).to.eql(\"webPageContent\");",
+									"});",
+									"",
+									"var requestcounter = pm.environment.get(\"requestcounter\");",
+									"console.log(\"requestcounter #: \" + requestcounter)",
+									"",
+									"if(!requestcounter || requestcounter > 10) {",
+									"",
+									"    pm.environment.set(\"requestcounter\", 1);",
+									"} else {",
+									"",
+									"    pm.environment.set(\"requestcounter\", requestcounter+1);",
+									"}",
+									"",
+									"if (requestcounter <= 10) {",
+									"    ",
+									"    console.log(\"Calling AddMergeContentlet again #: \" + requestcounter)",
+									"    postman.setNextRequest(\"AddMergeContentlet\");",
+									"}",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"comments\":\"Adding New Generic content\",\n\t\"contentlet\": {\n\t\t\"contentType\":\"webPageContent\",\n        \"title\":\"Test Merge Content\",\n        \"body\":\"Test Merge Body\",\n\t\t\"contentHost\":\"default\"\n\t}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/NEW",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"NEW"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "PublishMerge",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log(\"Running test\")",
+									"",
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.summary.affected).to.above(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"comments\":\"Publish an existing Generic content\",\n    \"query\":\"+contentType:webPageContent AND title:\\\"Test Merge Content\\\"\",\n\t\"contentlet\": {\n        \"title\":\"Test Merge Content Published\"\n\t}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CreateNewGenericContentlet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log(\"Running test\")",
+									"",
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"contentlet\": {\n        \"contentType\":\"webPageContent\",\n        \"title\":\"Test title\",\n        \"body\":\"Test body\",\n        \"contentHost\":\"default\"\n\t}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/NEW",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"NEW"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "PublishMergeIndividual",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log(\"Running test\")",
+									"",
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.summary.affected).to.eql(1);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"comments\":\"Publish an existing Generic content\",\n\t\"contentlet\": {\n        \"title\":\"Test Merge Content Published\"\n\t}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?inode={{genericContentletInode}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "inode",
+									"value": "{{genericContentletInode}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "PublishMergeNotExists",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log(\"Running test\")",
+									"",
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.summary.affected).to.eql(1);",
+									"});",
+									"",
+									"pm.test(\"Content Not Found\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.results[0].xxxx.errorMessage).to.eql(\"Content not found\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"comments\":\"Publish an existing Generic content\",\n\t\"contentlet\": {\n        \"title\":\"Test Merge Content Published\"\n\t}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?inode=xxxx",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "inode",
+									"value": "xxxx"
+								}
+							]
+						}
+					},
+					"response": []
+				}
 			],
-			"protocolProfileBehavior": {}
+			"auth": {
+				"type": "basic",
+				"basic": [
+					{
+						"key": "password",
+						"value": "admin",
+						"type": "string"
+					},
+					{
+						"key": "username",
+						"value": "admin@dotcms.com",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "saveMultiple",
+			"item": [
+				{
+					"name": "Save Multiple Generic Contentlets",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log(\"Running test\")",
+									"",
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.summary.affected).to.eql(20);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\n    \"contentlets\":[\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content1\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content1\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content2\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content2\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content3\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content3\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content4\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content4\"\n        },\n         {\n             \"contentType\":\"webPageContent\",\n            \"title\":\"Content5\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content5\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content6\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content6\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content7\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content7\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content8\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content8\"\n        },\n         {\n             \"contentType\":\"webPageContent\",\n            \"title\":\"Content9\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content9\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content10\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content10\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content11\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content11\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content12\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content12\"\n        },\n         {\n             \"contentType\":\"webPageContent\",\n            \"title\":\"Content13\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content13\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content14\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content14\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content15\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content15\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content16\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content16\"\n        },\n         {\n             \"contentType\":\"webPageContent\",\n            \"title\":\"Content17\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content17\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content18\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content18\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content19\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content19\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content20\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content20\"\n        }\n        \n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Move",
+			"item": [
+				{
+					"name": "CreateMoveSystemWorkflow",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log(\"Running test\")",
+									"",
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"actionId\", jsonData.entity.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"stepId\": \"dc3c9cd0-8467-404b-bf95-cb7df3fbc293\",\n    \"actionName\": \"Move Test\",\n    \"schemeId\": \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\",\n    \"actionCondition\": \"\",\n    \"actionNextStep\": \"currentstep\",\n    \"actionNextAssign\": \"654b0931-1027-41f7-ad4d-173115ed8ec1\",\n    \"actionRoleHierarchyForAssign\": false,\n    \"actionAssignable\": false,\n    \"actionCommentable\": true,\n    \"whoCanUse\": [],\n    \"showOn\": [\n        \"UNPUBLISHED\",\n        \"NEW\",\n        \"LOCKED\",\n        \"PUBLISHED\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add move actionlet",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"actionletClass\":\"com.dotmarketing.portlets.workflows.actionlet.MoveContentActionlet\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/{{actionId}}/actionlets",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"{{actionId}}",
+								"actionlets"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CreatesTestingContentlet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"contentletIdentifier\", jsonData.entity.identifier);",
+									"pm.collectionVariables.set(\"contentletInode\", jsonData.entity.inode);",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"webPageContent\",\n        \"title\":\"Test\",\n        \"body\":\"Test\",\n        \"contentHost\":\"SYSTEM_HOST\"\n\n    }\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						},
+						"description": "Fire any action using the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here.\n\n@Path(\"/actions/{actionId}/fire\")"
+					},
+					"response": []
+				},
+				{
+					"name": "Fire Move",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.collectionVariables.set(\"folderId\", jsonData.entity.folder);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"pathToMove\":\"//default/moveto\",\n    \"contentlet\":{}\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/{{actionId}}/fire?identifier={{contentletIdentifier}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"{{actionId}}",
+								"fire"
+							],
+							"query": [
+								{
+									"key": "identifier",
+									"value": "{{contentletIdentifier}}"
+								}
+							]
+						},
+						"description": "Fire any action using the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here.\n\n@Path(\"/actions/{actionId}/fire\")"
+					},
+					"response": []
+				},
+				{
+					"name": "Check Folder",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(jsonData.entity.path).to.eq(\"/moveto/\");",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/{{folderId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"{{folderId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"event": [
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "9b1e1122-a28c-4ccf-a679-71a032e5361e",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -11724,7 +13084,6 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "ef4c1982-a4e3-49e0-9269-3390ea296b7e",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -11734,55 +13093,56 @@
 	],
 	"variable": [
 		{
-			"id": "35f6395f-fd37-4430-a8b5-fd7c138ab286",
 			"key": "serverURL",
 			"value": "http://localhost:8080"
 		},
 		{
-			"id": "de0e1519-2ef8-4238-a6bf-f322c2c622ff",
 			"key": "actionId",
 			"value": "47c38af4-209b-499a-9628-b2a8409cf03c"
 		},
 		{
-			"id": "793b353b-e4a3-4229-98f6-124a7e5a88f3",
 			"key": "schemeId",
 			"value": "2e96562e-495c-4a29-8cd1-0410608e9a65"
 		},
 		{
-			"id": "a452544b-8109-4178-a189-9d3a5106424b",
 			"key": "schemeIdShorty",
 			"value": "2e96562e49"
 		},
 		{
-			"id": "ef1e915b-59ac-4458-a051-11df71586017",
 			"key": "stepId",
 			"value": "1c156cd2-eb58-4b57-986b-dc728cc3ea09"
 		},
 		{
-			"id": "84be34e0-cf68-45f9-99f8-ce3e2bfcf3d4",
 			"key": "stepIdShorty",
 			"value": "1c156cd2eb"
 		},
 		{
-			"id": "98f6e9dc-8424-40dc-8a52-8f383bd542e8",
 			"key": "actionIdShorty",
 			"value": "47c38af420"
 		},
 		{
-			"id": "2e16f778-15d6-4e12-9226-5269d63eca24",
 			"key": "contentletIdentifier",
-			"value": null
+			"value": "6f88e2ed-71cb-49ad-90a4-8c74d906c3fe"
 		},
 		{
-			"id": "285deb86-e879-46b5-a7be-8d9384e4245d",
 			"key": "contentletInode",
-			"value": null
+			"value": "94926188-341a-40a3-8422-03af9e3a3634"
 		},
 		{
-			"id": "293a13c6-307e-4b5b-8c97-ae19c216bc7b",
 			"key": "contentletIdShorty",
 			"value": "14c31e4294"
+		},
+		{
+			"key": "fireActionLanguageKey",
+			"value": "SucessRequest1615939422"
+		},
+		{
+			"key": "genericContentletInode",
+			"value": "811e3dda-049f-48d9-a96c-10f0dc341047"
+		},
+		{
+			"key": "folderId",
+			"value": ""
 		}
-	],
-	"protocolProfileBehavior": {}
+	]
 }

@@ -59,11 +59,6 @@ public class Task03130ActionletsFromPlugin extends AbstractJDBCStartupTask {
     }
 
     @Override
-    public String getH2Script () {
-        return UPDATE_QUERY;
-    }
-
-    @Override
     protected List<String> getTablesToDropConstraints () {
         return null;
     }

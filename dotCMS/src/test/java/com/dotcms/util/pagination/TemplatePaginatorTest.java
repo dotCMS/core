@@ -1,25 +1,29 @@
 package com.dotcms.util.pagination;
 
-import com.dotcms.rest.api.v1.template.TemplateHelper;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.templates.business.TemplateAPI;
-import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.PaginatedArrayList;
-import com.dotmarketing.util.UUIDUtil;
-import com.liferay.portal.model.User;
-import org.junit.Test;
-
-import java.util.Date;
-import java.util.Map;
-
 import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import com.dotcms.rest.api.v1.template.TemplateHelper;
+import com.dotcms.rest.api.v1.template.TemplateView;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.Versionable;
+import com.dotmarketing.business.VersionableAPI;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.business.ContainerAPI;
+import com.dotmarketing.portlets.templates.business.TemplateAPI;
+import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.PaginatedArrayList;
+import com.liferay.portal.model.User;
+import io.vavr.control.Try;
+import java.util.Map;
+import java.util.Optional;
+import org.junit.Test;
 
 /**
  * test {@link TemplatePaginator}
@@ -38,7 +42,7 @@ public class TemplatePaginatorTest {
         final int totalRecords = 10;
         final User user = mock(User.class);
         final String filter = "filter";
-        final Map<String, Object> params = map("title", filter);
+        final Map<String, Object> params = map("filter", filter);
         final String hostId = "1";
         final int offset = 5;
         final int limit = 10;
@@ -47,94 +51,30 @@ public class TemplatePaginatorTest {
         final Host host = mock(Host.class);
         when(host.getIdentifier()).thenReturn(hostId);
 
-        final PaginatedArrayList<Template> templatesExpected = new PaginatedArrayList<>();
-        templatesExpected.setTotalResults(totalRecords);
-
         final TemplateAPI templateAPI     = mock(TemplateAPI.class);
-        final PermissionAPI permissionAPI = mock(PermissionAPI.class);
-        final RoleAPI       roleAPI       = mock(RoleAPI.class);
-
-        when(templateAPI.findTemplates(user, false, params, hostId,
-                null, null, null, offset, limit, "title asc")).thenReturn(templatesExpected);
-
-        final TemplatePaginator templatePaginator = new TemplatePaginator(templateAPI, new TemplateHelper(permissionAPI, roleAPI));
-
-        final PaginatedArrayList<TemplateView> templateViews = templatePaginator.getItems(user, filter, limit, offset, orderby,
-                OrderDirection.ASC, map(ContainerPaginator.HOST_PARAMETER_ID, hostId));
-
-        assertEquals(templateViews.getTotalResults(), totalRecords);
-    }
-
-    /**
-     * Method to test: getItems
-     * Given Scenario: Just recovery an empty list of elements
-     * ExpectedResult: Perform ok, just with zero results
-     *
-     */
-    @Test
-    public void testGetTemplateList() throws DotDataException, DotSecurityException {
-
-        final int totalRecords = 10;
-        final User user = mock(User.class);
-        final String filter = "filter";
-        final Map<String, Object> params = map("title", filter);
-        final String hostId = "1";
-        final int offset = 5;
-        final int limit = 10;
-        final String orderby = "title";
-
-        final Host host = mock(Host.class);
-        when(host.getIdentifier()).thenReturn(hostId);
+        final TemplateHelper templateHelper = mock(TemplateHelper.class);
+        final TemplateView templateView = mock(TemplateView.class);
 
         final PaginatedArrayList<Template> templatesExpected = new PaginatedArrayList<>();
-        templatesExpected.add(newTemplate(1));
-        templatesExpected.add(newTemplate(2));
-        templatesExpected.add(newTemplate(3));
-        templatesExpected.setTotalResults(totalRecords);
-
-        final TemplateAPI templateAPI     = mock(TemplateAPI.class);
-        final PermissionAPI permissionAPI = mock(PermissionAPI.class);
-        final RoleAPI       roleAPI       = mock(RoleAPI.class);
-
-        when(templateAPI.findTemplates(user, false, params, hostId,
-                null, null, null, offset, limit, "title asc")).thenReturn(templatesExpected);
-
-        final TemplatePaginator templatePaginator = new TemplatePaginator(templateAPI, new TemplateHelper(permissionAPI, roleAPI));
-
-        final PaginatedArrayList<TemplateView> templateViews = templatePaginator.getItems(user, filter, limit, offset, orderby,
-                OrderDirection.ASC, map(ContainerPaginator.HOST_PARAMETER_ID, hostId));
-
-        assertEquals(templateViews.getTotalResults(), totalRecords);
-        int i = 0;
-        for (final TemplateView templateView : templateViews) {
-
-            final Template template = templatesExpected.get(i++);
-            assertEquals(templateView.getIdentifier(), template.getIdentifier());
-            assertEquals(templateView.getInode(),      template.getInode());
-            assertEquals(templateView.getBody(),       template.getBody());
-            assertEquals(templateView.getTitle(),      template.getTitle());
+        for(int i=0;i<10;i++){
+            final Template template = mock(Template.class);
+            templatesExpected.add(template);
+            when(templateHelper.toTemplateView(template,user)).thenReturn(templateView);
         }
-    }
+        templatesExpected.setTotalResults(totalRecords);
 
-    private Template newTemplate (final int sortOrder) {
 
-        final Template template = new Template();
+        when(templateAPI.findTemplates(user, false, params, host.getIdentifier(),
+                null, null, null, offset, limit, "title asc")).thenReturn(templatesExpected);
+        when(templateAPI.findTemplates(user, false, params, host.getIdentifier(),
+                null, null, null, 0, -1, "title asc")).thenReturn(templatesExpected);
 
-        template.setIdentifier(UUIDUtil.uuid());
-        template.setInode(UUIDUtil.uuid());
-        template.setBody("<p>This is a template: " + template.getIdentifier() + "</p>");
-        template.setDrawed(false);
-        template.setDrawedBody((String)null);
-        template.setShowOnMenu(true);
-        template.setCountAddContainer(0);
-        template.setCountContainers(0);
-        template.setFriendlyName("");
-        template.setModDate(new Date());
-        template.setModUser("dotcms.org.1");
-        template.setTitle("template" + sortOrder);
-        template.setSortOrder(sortOrder);
+        final TemplatePaginator templatePaginator = new TemplatePaginator(templateAPI, templateHelper);
 
-        return template;
+        final PaginatedArrayList<TemplateView> templateViews = templatePaginator.getItems(user, filter, limit, offset, orderby,
+                OrderDirection.ASC, map(ContainerPaginator.HOST_PARAMETER_ID, host.getIdentifier()));
+
+        assertEquals(totalRecords, templateViews.getTotalResults());
     }
 
 }

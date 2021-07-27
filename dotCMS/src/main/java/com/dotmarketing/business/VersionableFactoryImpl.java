@@ -1,12 +1,19 @@
 package com.dotmarketing.business;
 
+import static com.dotcms.util.CollectionsUtils.set;
+
+import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.VersionInfo;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -14,13 +21,17 @@ import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import org.apache.commons.beanutils.BeanUtils;
-
-import java.util.*;
-
-import static com.dotcms.util.CollectionsUtils.set;
 
 /**
  * Implementation class for the {@link VersionableFactory} class.
@@ -39,6 +50,10 @@ public class VersionableFactoryImpl extends VersionableFactory {
 	UserAPI userApi = null;
 	ContainerAPI containerApi = null;
 	TemplateAPI templateApi = null;
+
+	private static final String CREATE_CONTENTLET_VERSION_INFO_SQL = "INSERT INTO contentlet_version_info (identifier, lang, working_inode, deleted, locked_by, locked_on, version_ts) VALUES (?,?,?,?,?,?,?)";
+	private static final String INSERT_CONTENTLET_VERSION_INFO_SQL = "INSERT INTO contentlet_version_info (identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts) VALUES (?,?,?,?,?,?,?,?)";
+	private static final String UPDATE_CONTENTLET_VERSION_INFO_SQL = "UPDATE contentlet_version_info SET working_inode=?, live_inode=?, deleted=?, locked_by=?, locked_on=?, version_ts=? WHERE identifier=? AND lang=?";
 
 	/**
 	 * Default class constructor.
@@ -182,22 +197,37 @@ public class VersionableFactoryImpl extends VersionableFactory {
 			throw new DotDataException("identifier:" + identifier +" not found");
 		}
 
-		final Class<?> clazz = InodeUtils.getClassByDBType(identifier.getAssetType());
-		if(clazz.equals(Inode.class)) {
+		if ("contentlet".equals(identifier.getAssetType())){
+            try {
+                return Collections.unmodifiableList(FactoryLocator.getContentletFactory()
+                        .findAllVersions(identifier, true, maxResults.isPresent()?maxResults.get():null));
+            } catch (DotSecurityException e) {
+                throw new DotDataException("Cannot get versions for contentlet with identifier:" + identifier);
+            }
+        } else{
+            final Class<?> clazz = InodeUtils.getClassByDBType(identifier.getAssetType());
+            if(clazz.equals(Inode.class)) {
 
-			return new ArrayList<Versionable>(1);
-		}
+                return new ArrayList<Versionable>(1);
+            }
+            if(clazz.equals(Template.class)){
+                final List<Versionable> templateAllVersions = new ArrayList<>();
+                templateAllVersions.addAll(FactoryLocator.getTemplateFactory().findAllVersions(identifier,true));
+                return templateAllVersions;
+            }
 
-		final HibernateUtil dh = new HibernateUtil(clazz);
-		dh.setQuery("from inode in class " + clazz.getName() + " where inode.identifier = ? and inode.type='" + identifier.getAssetType() + "' order by mod_date desc");
-		dh.setParam(id);
+            final HibernateUtil dh = new HibernateUtil(clazz);
 
-		if (maxResults.isPresent()) {
-			dh.setMaxResults(maxResults.get());
-		}
+            dh.setQuery("from inode in class " + clazz.getName() + " where inode.identifier = ? and inode.type='" + identifier.getAssetType() + "' order by mod_date desc");
+            dh.setParam(id);
 
-		Logger.debug(this.getClass(), "findAllVersions query: " + dh.getQuery());
-		return (List<Versionable>) dh.list();
+            if (maxResults.isPresent()) {
+                dh.setMaxResults(maxResults.get());
+            }
+
+            Logger.debug(this.getClass(), "findAllVersions query: " + dh.getQuery());
+            return (List<Versionable>) dh.list();
+        }
 	}
 
     @Override
@@ -209,15 +239,29 @@ public class VersionableFactoryImpl extends VersionableFactory {
             if(ident==null || !UtilMethods.isSet(ident.getId()))
                 return null;
             Class<?> clazz = UtilMethods.getVersionInfoType(ident.getAssetType());
-            HibernateUtil dh = new HibernateUtil(clazz);
-            dh.setQuery("from "+clazz.getName()+" where identifier=?");
-            dh.setParam(identifier);
-            Logger.debug(this.getClass(), "getVersionInfo query: "+dh.getQuery());
-            vi=(VersionInfo)dh.load();
-            if(!UtilMethods.isSet(vi.getIdentifier())) {
-            	vi.setIdentifier(identifier);
-            	vi.setWorkingInode("NOTFOUND");
-            }
+            if(Objects.equals(clazz, ContentletVersionInfo.class)) {
+            	Optional<ContentletVersionInfo> info =
+						getContentletVersionInfo(identifier,
+								APILocator.getLanguageAPI().getDefaultLanguage().getId());
+
+				if(!info.isPresent()) {
+					throw new DotDataException("Can't find ContentletVersionInfo. Identifier: "
+							+ identifier + ". Lang: " + APILocator.getLanguageAPI()
+							.getDefaultLanguage().getId());
+				}
+
+				vi = info.get();
+			} else {
+				HibernateUtil dh = new HibernateUtil(clazz);
+				dh.setQuery("from " + clazz.getName() + " where identifier=?");
+				dh.setParam(identifier);
+				Logger.debug(this.getClass(), "getVersionInfo query: " + dh.getQuery());
+				vi = (VersionInfo) dh.load();
+				if (!UtilMethods.isSet(vi.getIdentifier())) {
+					vi.setIdentifier(identifier);
+					vi.setWorkingInode("NOTFOUND");
+				}
+			}
             this.icache.addVersionInfoToCache(vi);
         }
         if(vi.getWorkingInode().equals("NOTFOUND")) {
@@ -278,92 +322,121 @@ public class VersionableFactoryImpl extends VersionableFactory {
     }
 
     @Override
-    protected ContentletVersionInfo getContentletVersionInfo(String identifier, long lang) throws DotDataException, DotStateException {
+    protected Optional<ContentletVersionInfo> getContentletVersionInfo(String identifier, long lang) throws DotDataException, DotStateException {
         if (DbConnectionFactory.inTransaction()) {
             return findContentletVersionInfoInDB(identifier, lang);
         }
-        ContentletVersionInfo contv = this.icache.getContentVersionInfo(identifier, lang);
-        if(contv!=null && fourOhFour.equals(contv.getWorkingInode())) {
-        	return null;
-        }else if(contv!=null ){
-        	return contv;
+        ContentletVersionInfo contentVersionInfo = this.icache.getContentVersionInfo(identifier, lang);
+        if(contentVersionInfo!=null && fourOhFour.equals(contentVersionInfo.getWorkingInode())) {
+        	return Optional.empty();
+        }else if(contentVersionInfo!=null ){
+        	return Optional.of(contentVersionInfo);
         }
 
-    	contv = findContentletVersionInfoInDB(identifier, lang);
-        if(contv!=null && UtilMethods.isSet(contv.getIdentifier())){
-        	this.icache.addContentletVersionInfoToCache(contv);
+    	final Optional<ContentletVersionInfo> optionalInfo = findContentletVersionInfoInDB(identifier, lang);
+        if(optionalInfo.isPresent()){
+        	this.icache.addContentletVersionInfoToCache(optionalInfo.get());
         }else{
-        	contv = new ContentletVersionInfo();
-        	contv.setIdentifier(identifier);
-        	contv.setLang(lang);
-        	contv.setWorkingInode(fourOhFour);
-        	this.icache.addContentletVersionInfoToCache(contv);
-			return null;
+        	contentVersionInfo = new ContentletVersionInfo();
+        	contentVersionInfo.setIdentifier(identifier);
+        	contentVersionInfo.setLang(lang);
+        	contentVersionInfo.setWorkingInode(fourOhFour);
+        	this.icache.addContentletVersionInfoToCache(contentVersionInfo);
+			return Optional.empty();
         }
 
-        return contv;
+        return optionalInfo;
     }
 
     @Override
-    protected ContentletVersionInfo findContentletVersionInfoInDB(String identifier, long lang)throws DotDataException, DotStateException {
-    	ContentletVersionInfo contv = null;
-    	 HibernateUtil dh = new HibernateUtil(ContentletVersionInfo.class);
-         dh.setQuery("from "+ContentletVersionInfo.class.getName()+" where identifier=? and lang=?");
-         dh.setParam(identifier);
-         dh.setParam(lang);
-         Logger.debug(this.getClass(), "getContentletVersionInfo query: "+dh.getQuery());
-         contv = (ContentletVersionInfo)dh.load();
-         return contv;
+    protected Optional<ContentletVersionInfo> findContentletVersionInfoInDB(String identifier, long lang)throws DotDataException, DotStateException {
+		final DotConnect dotConnect = new DotConnect()
+				.setSQL("SELECT * FROM contentlet_version_info WHERE identifier=? AND lang=?")
+				.addParam(identifier)
+				.addParam(lang);
+
+		List<ContentletVersionInfo> versionInfos = TransformerLocator
+				.createContentletVersionInfoTransformer(dotConnect.loadObjectResults()).asList();
+
+		return !versionInfos.isEmpty() ? Optional.of(versionInfos.get(0)) : Optional.empty();
     }
     @Override
     protected List<ContentletVersionInfo> findAllContentletVersionInfos(final String identifier)throws DotDataException, DotStateException {
+        final DotConnect dotConnect = new DotConnect()
+                .setSQL("SELECT * FROM contentlet_version_info WHERE identifier=?")
+                .addParam(identifier);
 
-         HibernateUtil dh = new HibernateUtil(ContentletVersionInfo.class);
-         dh.setQuery("from "+ContentletVersionInfo.class.getName()+" where identifier=? ");
-         dh.setParam(identifier);
+        List<ContentletVersionInfo> versionInfos = TransformerLocator
+                .createContentletVersionInfoTransformer(dotConnect.loadObjectResults()).asList();
 
-         Logger.debug(this.getClass(), "getContentletVersionInfo query: "+dh.getQuery());
-         return (List<ContentletVersionInfo>)dh.list();
+		return versionInfos==null || versionInfos.isEmpty()
+				? Collections.emptyList()
+				: versionInfos;
 
     }
     @Override
     protected void saveContentletVersionInfo(ContentletVersionInfo cvInfo, boolean updateVersionTS) throws DotDataException, DotStateException {
-    	Identifier ident = this.iapi.find(cvInfo.getIdentifier());
-    	ContentletVersionInfo vi= null;
-    	if(ident!=null && InodeUtils.isSet(ident.getId())){
-    		vi= findContentletVersionInfoInDB(ident.getId(), cvInfo.getLang());
-    	}
-    	boolean isNew = vi==null || !InodeUtils.isSet(vi.getIdentifier());
-        try {
-			BeanUtils.copyProperties(vi, cvInfo);
-		} catch (Exception e) {
-			throw new DotDataException(e.getMessage(),e);
+		boolean isNew = true;
+		if (UtilMethods.isSet(cvInfo.getIdentifier())) {
+			try {
+				final Optional<ContentletVersionInfo> fromDB =
+						findContentletVersionInfoInDB(cvInfo.getIdentifier(), cvInfo.getLang());
+				if (fromDB.isPresent()) {
+					isNew = false;
+				}
+			} catch (final Exception e) {
+				Logger.debug(this.getClass(), e.getMessage(), e);
+			}
+		} else {
+			cvInfo.setIdentifier(UUIDGenerator.generateUuid());
 		}
-        if(updateVersionTS){
-        	vi.setVersionTs(new Date());
-        }
+
+		if(updateVersionTS){
+			cvInfo.setVersionTs(new Date());
+		}
+
+		final DotConnect dotConnect = new DotConnect();
+
     	if(isNew) {
-            HibernateUtil.save(vi);
-        }
-        else {
-            HibernateUtil.saveOrUpdate(vi);
+			dotConnect.setSQL(INSERT_CONTENTLET_VERSION_INFO_SQL);
+			dotConnect.addParam(cvInfo.getIdentifier());
+			dotConnect.addParam(cvInfo.getLang());
+			dotConnect.addParam(cvInfo.getWorkingInode());
+			dotConnect.addParam(cvInfo.getLiveInode());
+			dotConnect.addParam(cvInfo.isDeleted());
+			dotConnect.addParam(cvInfo.getLockedBy());
+			dotConnect.addParam(cvInfo.getLockedOn());
+			dotConnect.addParam(cvInfo.getVersionTs());
+			dotConnect.loadResult();
+        } else {
+			dotConnect.setSQL(UPDATE_CONTENTLET_VERSION_INFO_SQL);
+			dotConnect.addParam(cvInfo.getWorkingInode());
+			dotConnect.addParam(cvInfo.getLiveInode());
+			dotConnect.addParam(cvInfo.isDeleted());
+			dotConnect.addParam(cvInfo.getLockedBy());
+			dotConnect.addParam(cvInfo.getLockedOn());
+			dotConnect.addParam(cvInfo.getVersionTs());
+			dotConnect.addParam(cvInfo.getIdentifier());
+			dotConnect.addParam(cvInfo.getLang());
+			dotConnect.loadResult();
         }
     	this.icache.removeContentletVersionInfoToCache(cvInfo.getIdentifier(),cvInfo.getLang());
     }
 
     @Override
     protected ContentletVersionInfo createContentletVersionInfo(Identifier identifier, long lang, String workingInode) throws DotStateException, DotDataException {
-        ContentletVersionInfo cVer=new ContentletVersionInfo();
-        cVer.setDeleted(false);
-        cVer.setLockedBy(null);
-        cVer.setLockedOn(new Date());
-        cVer.setIdentifier(identifier.getId());
-        cVer.setLang(lang);
-        cVer.setWorkingInode(workingInode);
-        cVer.setVersionTs(new Date());
+		DotConnect dotConnect = new DotConnect();
+		dotConnect.setSQL(CREATE_CONTENTLET_VERSION_INFO_SQL);
+		dotConnect.addParam(identifier.getId());
+		dotConnect.addParam(lang);
+		dotConnect.addParam(workingInode);
+		dotConnect.addParam(false);
+		dotConnect.addParam((String) null);
+		dotConnect.addParam(new Date());
+		dotConnect.addParam(new Date());
+		dotConnect.loadResult();
 
-        HibernateUtil.save(cVer); 
-        return cVer;
+		return findContentletVersionInfoInDB(identifier.getId(), lang).get();
     }
 
     @Override
@@ -398,17 +471,9 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
 	@Override
 	protected void deleteContentletVersionInfo(String id, long lang) throws DotDataException {
-		HibernateUtil dh = new HibernateUtil(ContentletVersionInfo.class);
-        dh.setQuery("from "+ContentletVersionInfo.class.getName()+" where identifier=? and lang=?");
-        dh.setParam(id);
-        dh.setParam(lang);
-        Logger.debug(this.getClass(), "getContentletVersionInfo query: "+dh.getQuery());
-        ContentletVersionInfo contv = (ContentletVersionInfo)dh.load();
-
-        if(UtilMethods.isSet(contv.getIdentifier())) {
-        	HibernateUtil.delete(contv);
-        	this.icache.removeContentletVersionInfoToCache(id, lang);
-        }
+		new DotConnect().setSQL("DELETE FROM contentlet_version_info WHERE identifier=? AND lang=?")
+				.addParam(id).addParam(lang).loadResult();
+		this.icache.removeContentletVersionInfoToCache(id, lang);
 	}
 
 	/**

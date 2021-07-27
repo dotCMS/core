@@ -90,7 +90,7 @@
 		buildRolesTree ();
 		dwr.engine.setErrorHandler(function(message, error) {
 			console.log(error);
-			showDotCMSErrorMessage("A system error as occurred " + message);
+			showDotCMSErrorMessage("A system error has occurred: " + message);
 			console.log('Error ', message);
 		});
 		dojo.style('roleTabs', { display: 'none' });
@@ -1106,6 +1106,13 @@
 			currentLayout = findLayout(layoutId, allLayoutsList);
 			dijit.byId('layoutName').attr('value', currentLayout.name);
 			dijit.byId('layoutDescription').attr('value', currentLayout.description);
+
+            var iconPicker = document.querySelector('dot-material-icon-picker');
+            iconPicker.value = currentLayout.description[0];
+            iconPicker.addEventListener('dotValueChange', function (event) {
+                dijit.byId('layoutDescription').attr('value', event.detail.value);
+			}, false);
+
 			dijit.byId('layoutOrder').attr('value', currentLayout.tabOrder);
 			var itemsHTML = new Array();
 			for (var i = 0; i < currentLayout.portletTitles.length; i++) {
@@ -1140,6 +1147,7 @@
 			newLayout = true;
 			dijit.byId('layoutName').attr('value', '');
 			dijit.byId('layoutDescription').attr('value', '');
+            document.querySelector('dot-material-icon-picker').value = '';
 			dijit.byId('layoutOrder').attr('value', '0');
 			dojo.style('deleteLayoutButtonWrapper', { display: 'none' })
 			dojo.byId('addLayoutErrorMessagesList').innerHTML = ''
@@ -1220,6 +1228,7 @@
 	    data.portletName =dijit.byId("customPortletName").attr('value');
 	    data.baseTypes =dijit.byId("customPortletBaseTypes").attr('value');
 	    data.contentTypes =dijit.byId("customPortletContentTypes").attr('value');
+	    data.dataViewMode = dojo.query('input[type=radio][name=dataViewMode]:checked')[0].value;;
 
 	      var xhrArgs = {
 	          url : "/api/v1/portlet/custom",

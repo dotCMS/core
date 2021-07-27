@@ -66,7 +66,7 @@ import com.dotcms.datagen.TestWorkflowUtils;
 import com.dotcms.datagen.WorkflowDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockAsyncResponse;
 import com.dotcms.rest.ContentHelper;
@@ -931,7 +931,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                final List<Contentlet> contentlets = samples.get(ct);
                if(UtilMethods.isSet(contentlets)){
                    final Contentlet contentlet = contentlets.get(0);
-                   DateUtil.sleep(DateUtil.TWO_SECOND_MILLIS);
+//                   DateUtil.sleep(DateUtil.TWO_SECOND_MILLIS);
                    workflowAPI.deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, adminUser);
                    contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
                    APILocator.getContentletIndexAPI().addContentToIndex(contentlet);
@@ -1492,7 +1492,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                  builder1.contentlet(contentletFormData);
 
                 final FireActionForm fireActionForm1 = new FireActionForm(builder1);
-                final HttpServletRequest request1 = mock(HttpServletRequest.class);
+                final HttpServletRequest request1 = getHttpRequest();
                 final Response response1 = workflowResource
                         .fireAction(request1, new EmptyHttpResponse(), saveAndPublishActionId, null, null, "-1",  fireActionForm1);
 
@@ -1512,7 +1512,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 builder2.contentlet(contentletFormData2);
 
                 final FireActionForm fireActionForm2 = new FireActionForm(builder2);
-                final HttpServletRequest request2 = mock(HttpServletRequest.class);
+                final HttpServletRequest request2 = getHttpRequest();
                 final Response response2 = workflowResource
                      .fireAction(request2, new EmptyHttpResponse(), saveAndPublishActionId, brandNewContentlet.getInode(), null, "-1", fireActionForm2);
 
@@ -1638,7 +1638,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 //Save Action (Creates the initial content)
                 // body multi part with title, file1, file2
                 FormDataMultiPart formDataMultiPart = this.createFormMultiPart(contentType, inputFile1Text, inputFile2Text);
-                final HttpServletRequest request1 = mock(HttpServletRequest.class);
+                final HttpServletRequest request1 = getHttpRequest();
                 final Response response1 = workflowResource
                         .fireActionMultipart(request1, new EmptyHttpResponse(), SAVE_ACTION_ID, null,null,"-1", formDataMultiPart);
                 final int statusCode1 = response1.getStatus();
@@ -1650,7 +1650,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
                 // update existing by content inode.
                 formDataMultiPart = this.createFormMultiPart(contentType, inputFile1Text,inputFile2Text);
-                final HttpServletRequest request2 = mock(HttpServletRequest.class);
+                final HttpServletRequest request2 = getHttpRequest();
                 final Response response2 = workflowResource
                         .fireActionMultipart(request2, new EmptyHttpResponse(), SAVE_ACTION_ID, brandNewContentlet.getInode(),null,"-1", formDataMultiPart);
                 final int statusCode2 = response2.getStatus();
@@ -1664,7 +1664,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
                 // update existing by identifier
                 formDataMultiPart = this.createFormMultiPart(contentType, inputFile1Text, inputFile2Text);
-                final HttpServletRequest request3 = mock(HttpServletRequest.class);
+                final HttpServletRequest request3 = getHttpRequest();
                 identifier = brandNewContentlet.getIdentifier();
                 final Response response3 = workflowResource
                         .fireActionMultipart(request3, new EmptyHttpResponse(), SAVE_ACTION_ID, null,identifier,"-1", formDataMultiPart);
@@ -1790,7 +1790,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 builder1.contentlet(contentletFormData);
 
                 final FireActionForm fireActionForm1 = new FireActionForm(builder1);
-                final HttpServletRequest request1 = mock(HttpServletRequest.class);
+                final HttpServletRequest request1 = getHttpRequest();
                 final Response response1 = workflowResource
                         .fireAction(request1, new EmptyHttpResponse(), SAVE_ACTION_ID, null,null,"-1", fireActionForm1);
 
@@ -1814,7 +1814,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 builder2.contentlet(contentletFormData2);
 
                 final FireActionForm fireActionForm2 = new FireActionForm(builder2);
-                final HttpServletRequest request2 = mock(HttpServletRequest.class);
+                final HttpServletRequest request2 = getHttpRequest();
                 final Response response2 = workflowResource
                         .fireAction(request2, new EmptyHttpResponse(), SAVE_ACTION_ID, brandNewContentlet.getInode(), null, "-1", fireActionForm2);
 
@@ -1871,7 +1871,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             }
             builder1.contentlet(contentletFormData);
             final FireActionForm fireActionForm1 = new FireActionForm(builder1);
-            final HttpServletRequest request1 = mock(HttpServletRequest.class);
+            final HttpServletRequest request1 = getHttpRequest();
             final Response response1 = workflowResource
                     .fireAction(request1, new EmptyHttpResponse(), SAVE_ACTION_ID, null, null, "-1", fireActionForm1);
 
@@ -1894,7 +1894,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             }
             builder2.contentlet(contentletFormData2);
             final FireActionForm fireActionForm2 = new FireActionForm(builder2);
-            final HttpServletRequest request2 = mock(HttpServletRequest.class);
+            final HttpServletRequest request2 = getHttpRequest();
             final Response response2 = workflowResource
                     .fireAction(request2, new EmptyHttpResponse(), SAVE_ACTION_ID, brandNewContentlet.getInode(), null, "-1", fireActionForm2);
 
@@ -1941,7 +1941,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
             builder1.contentlet(contentletFormData);
             final FireActionForm fireActionForm1 = new FireActionForm(builder1);
-            final HttpServletRequest request1 = mock(HttpServletRequest.class);
+            final HttpServletRequest request1 = getHttpRequest();
             final Response response1 = workflowResource
                     .fireAction(request1, new EmptyHttpResponse(), SAVE_ACTION_ID, null, null, "-1", fireActionForm1);
 
@@ -1964,7 +1964,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             builder2.contentlet(contentletFormData2);
 
             final FireActionForm fireActionForm2 = new FireActionForm(builder2);
-            final HttpServletRequest request2 = mock(HttpServletRequest.class);
+            final HttpServletRequest request2 = getHttpRequest();
             final Response response2 = workflowResource
                     .fireAction(request2, new EmptyHttpResponse(), SAVE_ACTION_ID, brandNewContentlet.getInode(), null, "-1", fireActionForm2);
 
@@ -2010,7 +2010,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
             builder1.contentlet(contentletFormData);
             final FireActionForm fireActionForm1 = new FireActionForm(builder1);
-            final HttpServletRequest request1 = mock(HttpServletRequest.class);
+            final HttpServletRequest request1 = getHttpRequest();
             final Response response1 = workflowResource
                     .fireAction(request1, new EmptyHttpResponse(), SAVE_ACTION_ID, null, null, "-1", fireActionForm1);
 
@@ -2030,7 +2030,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             builder2.contentlet(contentletFormData2);
 
             final FireActionForm fireActionForm2 = new FireActionForm(builder2);
-            final HttpServletRequest request2 = mock(HttpServletRequest.class);
+            final HttpServletRequest request2 = getHttpRequest();
             final Response response2 = workflowResource
                     .fireAction(request2, new EmptyHttpResponse(), SAVE_ACTION_ID, brandNewContentlet.getInode(), null, "-1", fireActionForm2);
 
@@ -2355,7 +2355,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
     private static HttpServletRequest getHttpRequest() {
         MockHeaderRequest request = new MockHeaderRequest(
                 (
-                        new MockSessionRequest(new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                        new MockSessionRequest(new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 ).request()
         );
 

@@ -13,6 +13,7 @@ public enum TransformOptions {
     FILTER_BINARIES(true), //This one is used to simply prevent the binaries from making it into the final resulting map.
     CATEGORIES_NAME(true), //This instructs to render only the category name (key=name)
     CATEGORIES_INFO(true), //This instructs rendering much more info.
+    TAGS(true), //This instructs rendering much more info.
     USE_ALIAS(true),  //This will include stuff like ('live' and 'isLive')
 
     LOAD_META, // If this is on meta data will be included for FileAssets.
@@ -20,7 +21,13 @@ public enum TransformOptions {
     IDENTIFIER_VIEW, //This instructs the transformer to emulate the old IdentifierToMapTransformer.
     LANGUAGE_VIEW, //This instructs the transformer to emulate the old IdentifierToMapTransformer.
     BINARIES_VIEW, //This Emulates the old BinaryToMapTransformer.
-    CATEGORIES_VIEW; //This emulates the Category To MapTransformer.
+    KEY_VALUE_VIEW,
+    CATEGORIES_VIEW, //This emulates the Category To MapTransformer.
+    FILEASSET_VIEW,
+    SITE_VIEW,
+
+    AVOID_MAP_SUFFIX_FOR_VIEWS,
+    RENDER_FIELDS; // will velocity-render the render-able fields
 
     private boolean defaultProperty;
 

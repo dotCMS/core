@@ -2,12 +2,10 @@ package com.dotcms.util.pagination;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.template.TemplateHelper;
+import com.dotcms.rest.api.v1.template.TemplateView;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.web.HostWebAPI;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
@@ -17,11 +15,8 @@ import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import io.vavr.control.Try;
 
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -40,7 +35,9 @@ public class TemplatePaginator implements PaginatorOrdered<TemplateView> {
 
     public TemplatePaginator() {
         this(APILocator.getTemplateAPI(),
-                new TemplateHelper(APILocator.getPermissionAPI(), APILocator.getRoleAPI()));
+                new TemplateHelper(APILocator.getPermissionAPI(),
+                        APILocator.getRoleAPI(),
+                        APILocator.getContainerAPI()));
     }
 
     @VisibleForTesting
@@ -52,26 +49,28 @@ public class TemplatePaginator implements PaginatorOrdered<TemplateView> {
 
     @Override
     public PaginatedArrayList<TemplateView> getItems(final User user, final String filter, final int limit, final int offset,
-                                                  final String orderby, final OrderDirection direction,
-                                                  final Map<String, Object> extraParams) {
-        String hostId = null;
+                                                     final String orderby, final OrderDirection direction,
+                                                     final Map<String, Object> extraParams) {
+        String hostId   = null;
+        boolean archive = false;
 
         if (extraParams != null) {
-            hostId = (String) extraParams.get(HOST_PARAMETER_ID);
+            hostId  = (String) extraParams.get(HOST_PARAMETER_ID);
+            archive = (boolean)extraParams.getOrDefault("archive", false);
         }
 
-        final Map<String, Object> params = map("title", filter);
+        final Map<String, Object> params = map("filter", filter);
 
         String orderByDirection = orderby;
         if (UtilMethods.isSet(direction) && UtilMethods.isSet(orderby)) {
-            orderByDirection = new StringBuffer(orderByDirection)
+            orderByDirection = new StringBuffer(this.mapOrderBy(orderByDirection))
                     .append(" ")
                     .append(direction.toString().toLowerCase()).toString();
         }
 
         try {
             final PaginatedArrayList<Template> allTemplates =
-                    (PaginatedArrayList<Template>) templateAPI.findTemplates(user, false, params, hostId,
+                    (PaginatedArrayList<Template>) templateAPI.findTemplates(user, archive, params, hostId,
                     null, null, null, offset, limit, orderByDirection);
 
             if (UtilMethods.isSet(hostId)) {
@@ -85,7 +84,8 @@ public class TemplatePaginator implements PaginatorOrdered<TemplateView> {
                     new PaginatedArrayList<>();
             templates.addAll(allTemplates.stream().map(template -> this.templateHelper.toTemplateView(template, user)).collect(Collectors.toList()));
             templates.setQuery(allTemplates.getQuery());
-            templates.setTotalResults(allTemplates.getTotalResults());
+            templates.setTotalResults(templateAPI.findTemplates(user, archive, params, hostId,
+                    null, null, null, 0, -1, orderByDirection).size());
 
             return templates;
         } catch (DotSecurityException | DotDataException e) {
@@ -93,6 +93,12 @@ public class TemplatePaginator implements PaginatorOrdered<TemplateView> {
             Logger.error(this, e.getMessage(), e);
             throw new PaginationException(e);
         }
+    }
+
+    private final Map<String, String> orderByMapping = CollectionsUtils.map("name", "title", "modDate", "mod_date");
+
+    private String mapOrderBy(final String orderBy) {
+        return this.orderByMapping.getOrDefault(orderBy.trim(), orderBy);
     }
 
     private String hostname (final Template template) {

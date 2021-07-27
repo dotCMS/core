@@ -5,9 +5,7 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.DISABLE_WORK
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.DONT_VALIDATE_ME;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.DOT_NAME_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.IS_TEST_MODE;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.LAST_REVIEW_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.NULL_PROPERTIES;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.REVIEW_INTERNAL_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ACTION_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ASSIGN_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_COMMENTS_KEY;
@@ -35,8 +33,6 @@ public abstract class AbstractTransformStrategy<T extends Contentlet> {
             .of(NULL_PROPERTIES,
                 DISABLE_WORKFLOW,
                 DONT_VALIDATE_ME,
-                LAST_REVIEW_KEY,
-                REVIEW_INTERNAL_KEY,
                 DISABLED_WYSIWYG_KEY,
                 DOT_NAME_KEY,
                 WORKFLOW_IN_PROGRESS,

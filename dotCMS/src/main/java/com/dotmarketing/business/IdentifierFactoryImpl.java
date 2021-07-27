@@ -9,6 +9,7 @@ import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
@@ -21,7 +22,6 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.Parameter;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -29,8 +29,9 @@ import com.liferay.util.StringPool;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.sql.Connection;
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -278,6 +279,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		if(versionable instanceof Folder) {
 			identifier.setAssetType(Identifier.ASSET_TYPE_FOLDER);
 			identifier.setAssetName(((Folder) versionable).getName());
+            identifier.setOwner(((Folder) versionable).getOwner());
 		} else {
 			String uri = versionable.getVersionType() + "." + versionable.getInode();
 			if(versionable instanceof Contentlet){
@@ -308,6 +310,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 				identifier.setAssetType(Identifier.ASSET_TYPE_CONTENTLET);
 				identifier.setParentPath(parentId.getPath());
 				identifier.setAssetName(uri);
+				identifier.setAssetSubType(contentlet.getContentType().variable());
 			} else if (versionable instanceof WebAsset) {
 				identifier.setURI(((WebAsset) versionable).getURI(folder));
 				identifier.setAssetType(versionable.getVersionType());
@@ -317,6 +320,9 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 				identifier.setURI(uri);
 				identifier.setAssetType(versionable.getVersionType());
 			}
+
+            identifier.setOwner((versionable instanceof WebAsset)
+                    ? ((WebAsset) versionable).getOwner() : versionable.getModUser());
 		}
 		Host site;
 		try {
@@ -331,6 +337,19 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		}
 		identifier.setHostId(site.getIdentifier());
 		identifier.setParentPath(parentId.getPath());
+
+        final Inode inode;
+        try {
+            if (versionable.getInode() != null) {
+                inode = InodeUtils.getInode(versionable.getInode());
+                identifier.setCreateDate(inode.getIDate());
+            } else {
+                identifier.setCreateDate(new Date());
+            }
+        } catch (DotSecurityException e) {
+            throw new DotStateException(e.getMessage(), e);
+        }
+
 
 		saveIdentifier(identifier);
 
@@ -356,6 +375,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
             identifier.setAssetType(Identifier.ASSET_TYPE_FOLDER);
 			identifier.setAssetName(((Folder) versionable).getName());
             identifier.setParentPath( "/" );
+            identifier.setOwner(((Folder) versionable).getOwner());
         } else {
             String uri = versionable.getVersionType() + "." + versionable.getInode();
             if ( versionable instanceof Contentlet) {
@@ -378,6 +398,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
                 identifier.setAssetType(Identifier.ASSET_TYPE_CONTENTLET);
                 identifier.setParentPath( "/" );
                 identifier.setAssetName( uri );
+                identifier.setAssetSubType(cont.getContentType().variable());
             } else if ( versionable instanceof Link ) {
                 identifier.setAssetName( versionable.getInode() );
                 identifier.setParentPath("/");
@@ -385,11 +406,27 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 				identifier.setAssetName(versionable.getInode());
 				identifier.setAssetType(Identifier.ASSET_TYPE_CONTENTLET);
 				identifier.setParentPath("/");
+				identifier.setAssetSubType(Host.HOST_VELOCITY_VAR_NAME);
 			} else {
                 identifier.setURI( uri );
             }
+
+            identifier.setOwner((versionable instanceof WebAsset)
+                    ? ((WebAsset) versionable).getOwner() : versionable.getModUser());
         }
         identifier.setHostId( site != null ? site.getIdentifier() : null );
+
+        final Inode inode;
+        try {
+            if (versionable.getInode() != null) {
+                inode = InodeUtils.getInode(versionable.getInode());
+                identifier.setCreateDate(inode!=null?inode.getIDate():new Date());
+            } else {
+                identifier.setCreateDate(new Date());
+            }
+        } catch (DotSecurityException e) {
+            throw new DotDataException(e.getMessage(), e);
+        }
 
         saveIdentifier( identifier );
 
@@ -409,24 +446,14 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 	@Override
 	protected boolean isIdentifier(String identifierInode) {
-		DotConnect dc = new DotConnect();
-		dc.setSQL("select count(1) as count from identifier where id = ?");
-		dc.addParam(identifierInode);
-		ArrayList<Map<String, String>> results = new ArrayList<Map<String, String>>();
-		try {
-			results = dc.getResults();
-		} catch (DotDataException e) {
-			Logger.error(IdentifierFactoryImpl.class, e.getMessage(), e);
-		}
-		int count = Parameter.getInt(results.get(0).get("count"), 0);
-		if (count > 0) {
-			return true;
-		}
-		return false;
+        return new DotConnect()
+                        .setSQL("select count(id) as test from identifier where id=?")
+                        .addParam(identifierInode)
+                        .getInt("test")>0;
 	}
 
 	@Override
-	protected Identifier find(final String identifier) throws DotStateException, DotDataException {
+	protected Identifier find(final String identifier) throws DotDataException {
 
 		Identifier id = ic.getIdentifier(identifier);
 		if (id != null && UtilMethods.isSet(id.getId())) {
@@ -440,47 +467,48 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		return check404(id);
 	}
 
-	@Override
-	protected Identifier saveIdentifier(final Identifier id) throws DotDataException {
-		String query;
-		if (id != null) {
-			if (UtilMethods.isSet(id.getId())) {
+    @Override
+    protected Identifier saveIdentifier(final Identifier id) throws DotDataException {
+        if (id == null) {
+            throw new DotRuntimeException("identifier to save cannot be null");
+        }
 
-				if (isIdentifier(id.getId())) {
-					query = "UPDATE identifier set parent_path=?, asset_name=?, host_inode=?, asset_type=?, syspublish_date=?, sysexpire_date=? where id=?";
-				} else{
-					query = "INSERT INTO identifier (parent_path,asset_name,host_inode,asset_type,syspublish_date,sysexpire_date,id) values (?,?,?,?,?,?,?)";
-				}
-			} else {
-				id.setId(UUIDGenerator.generateUuid());
-				query = "INSERT INTO identifier (parent_path,asset_name,host_inode,asset_type,syspublish_date,sysexpire_date,id) values (?,?,?,?,?,?,?)";
-			}
+        String query;
+        if (UtilMethods.isSet(id.getId())) {
+            if (isIdentifier(id.getId())) {
+                query = "UPDATE identifier set parent_path=?, asset_name=?, host_inode=?, asset_type=?, syspublish_date=?, sysexpire_date=?, owner=?, create_date=?, asset_subtype=? where id=?";
+            } else {
+                query = "INSERT INTO identifier (parent_path,asset_name,host_inode,asset_type,syspublish_date,sysexpire_date,owner,create_date,asset_subtype,id) values (?,?,?,?,?,?,?,?,?,?)";
+            }
+        } else {
+            id.setId(UUIDGenerator.generateUuid());
+            query = "INSERT INTO identifier (parent_path,asset_name,host_inode,asset_type,syspublish_date,sysexpire_date,owner,create_date,asset_subtype,id) values (?,?,?,?,?,?,?,?,?,?)";
+        }
 
-			DotConnect dc = new DotConnect();
-			dc.setSQL(query);
+        DotConnect dc = new DotConnect();
+        dc.setSQL(query);
 
-			dc.addParam(id.getParentPath());
-			dc.addParam(id.getAssetName());
-			dc.addParam(id.getHostId());
-			dc.addParam(id.getAssetType());
-			dc.addParam(id.getSysPublishDate());
-			dc.addParam(id.getSysExpireDate());
-			dc.addParam(id.getId());
+        dc.addParam(id.getParentPath());
+        dc.addParam(id.getAssetName());
+        dc.addParam(id.getHostId());
+        dc.addParam(id.getAssetType());
+        dc.addParam(id.getSysPublishDate());
+        dc.addParam(id.getSysExpireDate());
 
-			try{
-				dc.loadResult();
-			}catch(DotDataException e){
-				Logger.error(IdentifierFactoryImpl.class, "saveIdentifier failed:" + e, e);
-				throw new DotDataException(e);
-			}
+        dc.addParam(id.getOwner());
+        dc.addParam(id.getCreateDate());
+        dc.addParam(id.getAssetSubType());
+        dc.addParam(id.getId());
+
+        
+        dc.loadResult();
 
 
-			ic.removeFromCacheByIdentifier(id.getId());
-			ic.removeFromCacheByURI(id.getHostId(), id.getURI());
-			return id;
-		}
-		return null;
-	}
+        ic.removeFromCacheByIdentifier(id.getId());
+        ic.removeFromCacheByURI(id.getHostId(), id.getURI());
+        return id;
+
+    }
 
     @Override
     protected void deleteIdentifier(Identifier ident) throws DotDataException {
@@ -575,4 +603,24 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		return assetType;
 	}
 
+	@Override
+	protected void updateUserReferences(final String userId, final String replacementUserId)throws DotDataException, DotSecurityException{
+		DotConnect dc = new DotConnect();
+
+		//Get all ids that will be updated, to remove it from cache
+		dc.setSQL("select id from identifier where owner = ?");
+		dc.addParam(userId);
+		final List<HashMap<String, String>> identifiers = dc.loadResults();
+
+		//Update owner
+		dc.setSQL("update identifier set owner = ? where owner = ?");
+		dc.addParam(replacementUserId);
+		dc.addParam(userId);
+		dc.loadResult();
+
+		//Remove all identifier that were updated from cache
+		for(final HashMap<String,String> id : identifiers){
+			ic.removeFromCacheByIdentifier(id.get("id"));
+		}
+	}
 }

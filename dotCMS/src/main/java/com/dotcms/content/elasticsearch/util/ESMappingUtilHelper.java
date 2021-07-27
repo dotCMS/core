@@ -13,9 +13,11 @@ import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.MultiSelectField;
 import com.dotcms.contenttype.model.field.RadioField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.SelectField;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.field.TimeField;
@@ -29,6 +31,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
@@ -42,6 +45,7 @@ import io.vavr.Tuple2;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -116,11 +120,11 @@ public class ESMappingUtilHelper {
                     .variable())
                     .toLowerCase();
 
-            final Optional<Tuple2<String, JSONObject>> mapping = getMappingForField(field,
+            final Optional<List<Tuple2<String, JSONObject>>> mapping = getMappingForField(field,
                     fieldVariableName);
             if (mapping.isPresent()) {
-                putContentTypeMapping(contentType,
-                        CollectionsUtils.map(mapping.get()._1(), mapping.get()._2()), indexes);
+                putContentTypeMapping(contentType,mapping.get().stream()
+                        .collect(Collectors.toMap(tuple -> tuple._1(), tuple -> tuple._2())), indexes);
             }
         }
     }
@@ -336,9 +340,10 @@ public class ESMappingUtilHelper {
         final String fieldVariableName = (contentType.variable() + StringPool.PERIOD + field.variable())
                         .toLowerCase();
         if (!mappedFields.contains(fieldVariableName)) {
-            final Optional<Tuple2<String, JSONObject>> mappingForField = getMappingForField(field, fieldVariableName);
+            final Optional<List<Tuple2<String, JSONObject>>> mappingForField = getMappingForField(field, fieldVariableName);
             if (mappingForField.isPresent()) {
-                    contentTypeMapping.put(mappingForField.get()._1(), mappingForField.get()._2());
+                contentTypeMapping.putAll(mappingForField.get().stream()
+                        .collect(Collectors.toMap(tuple -> tuple._1(), tuple -> tuple._2())));
                     //Adds to the set the mapped already set for this field
                     mappedFields.add(fieldVariableName);
 
@@ -352,31 +357,68 @@ public class ESMappingUtilHelper {
      * @param fieldVariableName
      * @return A map with just one element
      */
-    private Optional<Tuple2<String, JSONObject>> getMappingForField(final Field field, final String fieldVariableName)
+    private Optional<List<Tuple2<String, JSONObject>>> getMappingForField(final Field field, final String fieldVariableName)
             throws JSONException {
         final Map<DataTypes, String> dataTypesMap = ImmutableMap
                 .of(DataTypes.BOOL, "boolean", DataTypes.FLOAT, "double", DataTypes.INTEGER,
                         "long");
         String mappingForField = null;
+
+        if (!matchesExclusions(fieldVariableName)) {
         if (field instanceof DateField || field instanceof DateTimeField
                 || field instanceof TimeField) {
             mappingForField = "{\n\"type\":\"date\",\n";
-            mappingForField += "\"format\": \"yyyy-MM-dd't'HH:mm:ss||MMM d, yyyy h:mm:ss a||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis\"\n}";
+            mappingForField += "\"format\": \"yyyy-MM-dd't'HH:mm:ss||MMM d, yyyy h:mm:ss a||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd HH:mm:ss.SSS||yyyy-MM-dd||epoch_millis\"\n}";
         } else if (field instanceof TextField || field instanceof TextAreaField
                 || field instanceof WysiwygField || field instanceof RadioField
-                || field instanceof SelectField) {
+                    || field instanceof SelectField || field instanceof MultiSelectField
+                    || field instanceof TagField) {
+
             if (dataTypesMap.containsKey(field.dataType())) {
-                mappingForField = String.format("{\n\"type\":\"%s\"\n}", dataTypesMap.get(field.dataType()));
-            } else if (!matchesExclusions(fieldVariableName)){
+                    mappingForField = String
+                            .format("{\n\"type\":\"%s\"\n}",
+                                    dataTypesMap.get(field.dataType()));
+                } else {
+                    if (field.unique() || field instanceof TagField) {
+                        mappingForField = "{\n\"type\":\"keyword\"\n}";
+                    } else {
                 mappingForField = "{\n"
-                        + "\"type\":\"text\",\n"
+                                + ("\"type\":\"text\",\n")
                         + "\"analyzer\":\"my_analyzer\""
                         + "\n}";
             }
         }
+            }
+        }
 
-        return mappingForField!= null? Optional.of(Tuple.of(field.variable().toLowerCase(),
-                new JSONObject(mappingForField))): Optional.empty();
+        if (mappingForField!= null){
+            final List<Tuple2<String, JSONObject>> mappingList = new ArrayList<>();
+            mappingList.add(Tuple.of(field.variable().toLowerCase(),
+                    new JSONObject(mappingForField)));
+
+            //Put mapping for _dotraw, _sha256 and _text fields if needed
+            mappingList.add(Tuple.of(field.variable().toLowerCase() + "_dotraw",
+                    new JSONObject("{\n"
+                            + "\"type\":\"keyword\",\n"
+                            + "\"ignore_above\": 8191"
+                            + "\n}")));
+
+            mappingList.add(Tuple.of(field.variable().toLowerCase() + ESUtils.SHA_256,
+                    new JSONObject("{\n"
+                            + "\"type\":\"keyword\",\n"
+                            + "\"ignore_above\": 8191"
+                            + "\n}")));
+
+            if (Config
+                    .getBooleanProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", false)) {
+                mappingList.add(Tuple.of(field.variable().toLowerCase() + ESMappingAPIImpl.TEXT,
+                        new JSONObject("{\n\"type\":\"text\"\n}")));
+            }
+
+            return Optional.of(mappingList);
+        }else{
+            return Optional.empty();
+        }
     }
 
     /**

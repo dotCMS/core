@@ -1,5 +1,12 @@
 package com.dotcms.datagen;
 
+
+
+import static com.dotmarketing.business.ModDateTestUtil.updateContainerModeDate;
+import static com.dotmarketing.business.ModDateTestUtil.updateContainerVersionDate;
+import static com.dotmarketing.business.ModDateTestUtil.updateContentletModeDate;
+import static com.dotmarketing.business.ModDateTestUtil.updateTemplateVersionDate;
+
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
@@ -46,8 +53,10 @@ public class ContainerDataGen extends AbstractDataGen<Container> {
     private static final String type = "containers";
 
     private Map<ContentType, String> contentTypes = new HashMap<>();
+    private boolean noContentTypes = false;
+    private Date modDate;
 
-	/**
+    /**
 	 * Sets friendlyName property to the ContainerDataGen instance. This will be
 	 * used when a new {@link Container} instance is created
 	 * 
@@ -122,6 +131,7 @@ public class ContainerDataGen extends AbstractDataGen<Container> {
      */
     public ContainerDataGen clearContentTypes() {
         contentTypes.clear();
+        noContentTypes = true;
         return this;
     }
 
@@ -236,7 +246,7 @@ public class ContainerDataGen extends AbstractDataGen<Container> {
 
         try {
 
-            if (contentTypes.isEmpty()) {
+            if (contentTypes.isEmpty() && !noContentTypes) {
                 ContentType pageContentType = APILocator.getContentTypeAPI(APILocator.systemUser())
                         .find("htmlpageasset");
                 withContentType(pageContentType, "Sample Code" + System.currentTimeMillis());
@@ -255,6 +265,12 @@ public class ContainerDataGen extends AbstractDataGen<Container> {
 
             container = APILocator.getContainerAPI()
                     .save(container, csList, site, owner, false);
+
+            if (modDate != null) {
+                updateContainerModeDate(container, modDate);
+                updateContainerVersionDate(container, modDate);
+            }
+
         } catch (Exception e) {
             throw new RuntimeException("Error persisting Container", e);
         }
@@ -284,4 +300,8 @@ public class ContainerDataGen extends AbstractDataGen<Container> {
         }
     }
 
+    public ContainerDataGen modDate(Date modDate) {
+        this.modDate = modDate;
+        return this;
+    }
 }

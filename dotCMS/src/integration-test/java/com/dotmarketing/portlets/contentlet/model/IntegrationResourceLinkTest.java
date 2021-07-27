@@ -11,11 +11,11 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.ResourceLink.ResourceLinkBuilder;
@@ -87,9 +87,9 @@ public class IntegrationResourceLinkTest extends IntegrationTestBase {
     public void test_Text_ResourceLink_Expect_Downloadable_No_Port_Number_Dot_Asset() throws Exception{
 
         final Host host = APILocator.systemHost();
-        final String mimeType = "text/plain";
+        final String mimeType = "text/plain; charset=ISO-8859-1";
         final boolean isSecure = false;
-        final File file = FileUtil.createTemporalFile("comments-list", "txt", "This is a test temporal file");
+        final File file = FileUtil.createTemporaryFile("comments-list", "txt", "This is a test temporal file");
         final String htmlFileName = file.getName();
         final User adminUser = TestUserUtils.getAdminUser();
 
@@ -111,18 +111,21 @@ public class IntegrationResourceLinkTest extends IntegrationTestBase {
         assertEquals(mimeType, link.getMimeType());
         assertFalse(link.isDownloadRestricted());
 
-        assertTrue(link.getIdPath().contains("/dA/") && link.getIdPath().contains("/"+htmlFileName)
-                && link.getIdPath().contains(APILocator.getShortyAPI().shortify(contentlet.getIdentifier())));
-        assertTrue(link.getVersionPath().contains("/dA/") && link.getVersionPath().contains("/"+htmlFileName)
-                && link.getVersionPath().contains(APILocator.getShortyAPI().shortify(contentlet.getInode())));
-        assertTrue(link.getConfiguredImageURL().contains("/dA/")
-                && link.getConfiguredImageURL().contains(contentlet.getIdentifier()) && link.getConfiguredImageURL().contains("language_id"));
+        assertTrue(link.getIdPath().contains("/dA/"));
+        assertTrue(link.getIdPath().contains("/"+htmlFileName));
+        assertTrue(link.getIdPath().contains(APILocator.getShortyAPI().shortify(contentlet.getIdentifier())));
+        assertTrue(link.getVersionPath().contains("/dA/"));
+        assertTrue(link.getVersionPath().contains("/"+htmlFileName));
+        assertTrue(link.getVersionPath().contains(APILocator.getShortyAPI().shortify(contentlet.getInode())));
+        assertTrue(link.getConfiguredImageURL().contains("/dA/"));
+        assertTrue(link.getConfiguredImageURL().contains(APILocator.getShortyAPI().shortify(contentlet.getInode())));
+        assertTrue(link.getConfiguredImageURL().contains(contentlet.getTitle()));
     }
 
     private User mockLimitedUser(){
         final User adminUser = mock(User.class);
         when(adminUser.getUserId()).thenReturn("anonymous");
-        when(adminUser.getEmailAddress()).thenReturn("anonymous@dotcmsfakeemail.org");
+        when(adminUser.getEmailAddress()).thenReturn("anonymous@dotcms.anonymoususer");
         when(adminUser.getFirstName()).thenReturn("anonymous user");
         when(adminUser.getLastName()).thenReturn("anonymous");
         return adminUser;
@@ -139,7 +142,8 @@ public class IntegrationResourceLinkTest extends IntegrationTestBase {
 
         final Host host = APILocator.systemHost();
         final boolean isSecure = false;
-        final File file = FileUtil.createTemporalFile("comments-list", ".vtl", "This is a test temporal file");
+        final File file = FileUtil.createTemporaryFile("comments-list", ".vtl", "This is a test temporal file");
+        //This test works with the filename because the contentType passed is dotAsset if it was FileAsset the expected name would be identifier.getAssetName()
         final String htmlFileName = file.getName();
 
         final User limitedUser = mockLimitedUser();
@@ -158,12 +162,15 @@ public class IntegrationResourceLinkTest extends IntegrationTestBase {
         final ResourceLinkBuilder resourceLinkBuilder = new ResourceLinkBuilder();
         final ResourceLink link = resourceLinkBuilder.build(request, limitedUser, contentlet);
         assertTrue(link.isDownloadRestricted());
-        assertTrue(link.getIdPath().contains("/dA/") && link.getIdPath().contains("/"+htmlFileName)
-                && link.getIdPath().contains(APILocator.getShortyAPI().shortify(contentlet.getIdentifier())));
-        assertTrue(link.getVersionPath().contains("/dA/") && link.getVersionPath().contains("/"+htmlFileName)
-                && link.getVersionPath().contains(APILocator.getShortyAPI().shortify(contentlet.getInode())));
-        assertTrue(link.getConfiguredImageURL().contains("/dA/")
-                && link.getConfiguredImageURL().contains(contentlet.getIdentifier()) && link.getConfiguredImageURL().contains("language_id"));
+        assertTrue(link.getIdPath().contains("/dA/"));
+        assertTrue(link.getIdPath().contains("/"+htmlFileName));
+        assertTrue(link.getIdPath().contains(APILocator.getShortyAPI().shortify(contentlet.getIdentifier())));
+        assertTrue(link.getVersionPath().contains("/dA/"));
+        assertTrue(link.getVersionPath().contains("/"+htmlFileName));
+        assertTrue(link.getVersionPath().contains(APILocator.getShortyAPI().shortify(contentlet.getInode())));
+        assertTrue(link.getConfiguredImageURL().contains("/dA/"));
+        assertTrue(link.getConfiguredImageURL().contains(APILocator.getShortyAPI().shortify(contentlet.getInode())));
+        assertTrue(link.getConfiguredImageURL().contains(contentlet.getTitle()));
 
     }
 
@@ -179,7 +186,7 @@ public class IntegrationResourceLinkTest extends IntegrationTestBase {
 
         final Host host = APILocator.systemHost();
         final boolean isSecure = false;
-        final File file = FileUtil.createTemporalFile("comments-list", "txt", "This is a test temporal file");
+        final File file = FileUtil.createTemporaryFile("comments-list", "txt", "This is a test temporal file");
         final User adminUser = mockLimitedUser();
 
         final Tuple2<Field, ContentType> fieldDotTextAssetContentType = this.createDotAssetContentType(host,
@@ -196,6 +203,38 @@ public class IntegrationResourceLinkTest extends IntegrationTestBase {
         contentlet.setProperty(DotAssetContentType.ASSET_FIELD_VAR, null);
         final ResourceLinkBuilder resourceLinkBuilder = new ResourceLinkBuilder();
         final ResourceLink link = resourceLinkBuilder.build(request, adminUser, contentlet);
+        assertTrue(link.isDownloadRestricted());
+        assertEquals(StringPool.BLANK, link.getResourceLinkAsString());
+        assertEquals(StringPool.BLANK, link.getVersionPath());
+        assertEquals(StringPool.BLANK, link.getIdPath());
+    }
+
+    /**
+     * Method to test:  build
+     * Given Scenario: this contentlet is a checked-out version thus it does not have an inode set
+     * ExpectedResult: resource link should be blank
+     * @throws Exception
+     */
+    @Test
+    public void test_contentletWithoutInode_expectEmptyLink() throws Exception{
+
+        final Host host = APILocator.systemHost();
+        final boolean isSecure = false;
+        final User adminUser = mockLimitedUser();
+
+        final Contentlet contentlet = TestDataUtils.getMultipleImageBinariesContent(true,
+                APILocator.getLanguageAPI().getDefaultLanguage().getId(), null);
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getAttribute(ResourceLink.HOST_REQUEST_ATTRIBUTE)).thenReturn(host.getIdentifier());
+        when(request.isSecure()).thenReturn(isSecure);
+        when(request.getServerPort()).thenReturn(80);
+
+        final Contentlet checkedoutContentlet = ContentletDataGen.checkout(contentlet);
+
+        final ResourceLinkBuilder resourceLinkBuilder = new ResourceLinkBuilder();
+        final ResourceLink link = resourceLinkBuilder.build(request, adminUser, checkedoutContentlet,
+                "image1");
         assertTrue(link.isDownloadRestricted());
         assertEquals(StringPool.BLANK, link.getResourceLinkAsString());
         assertEquals(StringPool.BLANK, link.getVersionPath());

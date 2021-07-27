@@ -22,7 +22,10 @@
 
 package com.liferay.portal.model;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.portlets.user.ajax.UserAjax;
 import com.dotmarketing.util.UtilMethods;
@@ -96,7 +99,8 @@ public class User extends UserModel implements Recipient {
 				String refreshRate, String layoutIds, String comments,
 				Date createDate, Date loginDate, String loginIP,
 				Date lastLoginDate, String lastLoginIP, int failedLoginAttempts,
-				boolean agreedToTermsOfUse, boolean active, boolean deleteInProgress, Date deleteDate) {
+				boolean agreedToTermsOfUse, boolean active, boolean deleteInProgress, Date deleteDate,
+                final Map<String, String> additionalInfo) {
 
 		super(userId, companyId, password, passwordEncrypted,
 			  passwordExpirationDate, passwordReset, firstName, middleName,
@@ -113,6 +117,7 @@ public class User extends UserModel implements Recipient {
 		setTimeZoneId(timeZoneId);
 		setResolution(resolution);
 		setRefreshRate(refreshRate);
+		setAdditionalInfo(additionalInfo);
 	}
 
 	public boolean isDefaultUser() {
@@ -345,7 +350,14 @@ public class User extends UserModel implements Recipient {
 
   }
 
-	
+
+  @JsonIgnore
+  public Role getUserRole() {
+
+      return Try.of(() -> APILocator.getRoleAPI().loadRoleByKey(this.getUserId())).getOrElseThrow(e->new DotStateException("Unable to find user role for user:" + this.getUserId()));
+
+    }
+  
   public boolean hasConsoleAccess() {
     return Try.of(() -> {
       if (isAnonymousUser() || UserAPI.SYSTEM_USER_ID.equals(this.getUserId()) ) {
@@ -393,7 +405,7 @@ public class User extends UserModel implements Recipient {
         map.put("id", getUserId());
         map.put("type", UserAjax.USER_TYPE_VALUE);
         map.put("gravitar", DigestUtils.md5Hex(this.getEmailAddress().toLowerCase()).toString());
-
+        map.put("additionalInfo", getAdditionalInfo());
         return map;
     }
 

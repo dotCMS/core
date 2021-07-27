@@ -1,10 +1,16 @@
 package com.dotcms.rest.api.v1.system.logger;
 
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -17,6 +23,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -112,22 +121,39 @@ public class LoggerResource {
             throw new DotSecurityException("User is not admin");
         }
 
-        final String loggerName = changeLoggerForm.getName();
-        final String level      = changeLoggerForm.getLevel();
+        final String [] loggerNames = null != changeLoggerForm.getName()?
+                changeLoggerForm.getName().split(StringPool.COMMA):new String[]{};
+        final String level          = changeLoggerForm.getLevel();
 
         if (!Logger.isValidLevel(level)) {
 
             throw new IllegalArgumentException("Level: " + level + " is not valid");
         }
 
-        final Object logger     = Logger.setLevel(loggerName, level);
+        if (UtilMethods.isSet(loggerNames)) {
 
-        if (null != logger) {
+            final List<LoggerView> loggerViewList = new ArrayList<>();
+            for (final String loggerName : loggerNames) {
+                final Object logger = Logger.setLevel(loggerName, level);
 
-            return Response.ok(new ResponseEntityView(this.toView(logger))).build();
+                if (null != logger) {
+
+                    loggerViewList.add(this.toView(logger));
+                } else {
+                    Logger.warn(this, "Logger: " + loggerName + " does not exists");
+                }
+            }
+
+            Try.run(()->APILocator.getSystemEventsAPI().
+                    pushAsync(SystemEventType.CLUSTER_WIDE_EVENT,
+                            new Payload(
+                                    new ChangeLoggerLevelEvent(
+                                            changeLoggerForm.getName(), changeLoggerForm.getLevel()
+                                    )))).onFailure(e -> Logger.error(LoggerResource.this, e.getMessage()));
+            return Response.ok(new ResponseEntityView(loggerViewList)).build();
         }
 
-        throw new DoesNotExistException("Logger: " + loggerName + " does not exists");
+        throw new DoesNotExistException("Loggers: " + Arrays.toString(loggerNames) + " do not exists");
     }
 
     private LoggerView toView (final Object loggerObject) {
@@ -140,6 +166,6 @@ public class LoggerResource {
             return new LoggerView(log4jLogger.getName(), log4jLogger.getLevel().name());
         }
 
-        return new LoggerView("unkown", "unkown");
+        return new LoggerView("unknown", "unknown");
     }
 }

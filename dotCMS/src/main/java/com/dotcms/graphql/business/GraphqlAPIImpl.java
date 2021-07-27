@@ -7,13 +7,16 @@ import static graphql.schema.GraphQLList.list;
 import static graphql.schema.GraphQLNonNull.nonNull;
 import static graphql.schema.GraphQLObjectType.newObject;
 
+import com.dotcms.concurrent.Debouncer;
 import com.dotcms.graphql.InterfaceType;
 import com.dotcms.graphql.datafetcher.ContentletDataFetcher;
 import com.dotcms.util.LogTime;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.google.common.annotations.VisibleForTesting;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
@@ -25,24 +28,34 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 public class GraphqlAPIImpl implements GraphqlAPI {
-
-    private volatile GraphQLSchema schema;
 
     private final Set<GraphQLTypesProvider> typesProviders = new HashSet<>();
     private final Set<GraphQLFieldsProvider> fieldsProviders = new HashSet<>();
 
-    public GraphqlAPIImpl() {
+    private GraphQLSchemaCache schemaCache;
+
+    @VisibleForTesting
+    protected GraphqlAPIImpl(final GraphQLSchemaCache schemaCache) {
         typesProviders.add(ContentAPIGraphQLTypesProvider.INSTANCE);
         typesProviders.add(PageAPIGraphQLTypesProvider.INSTANCE);
         typesProviders.add(QueryMetadataTypeProvider.INSTANCE);
         fieldsProviders.add(ContentAPIGraphQLFieldsProvider.INSTANCE);
         fieldsProviders.add(PageAPIGraphQLFieldsProvider.INSTANCE);
         fieldsProviders.add(QueryMetadataFieldProvider.INSTANCE);
+        this.schemaCache = schemaCache;
+    }
+
+    public GraphqlAPIImpl() {
+        this(CacheLocator.getGraphQLSchemaCache());
     }
 
     /**
@@ -60,30 +73,49 @@ public class GraphqlAPIImpl implements GraphqlAPI {
      */
     @Override
     public GraphQLSchema getSchema() throws DotDataException {
-        GraphQLSchema innerSchema = this.schema;
-        if(innerSchema == null) {
-            synchronized (this) {
-                innerSchema = this.schema;
-                if(innerSchema == null) {
-                    this.schema = innerSchema = generateSchema();
-                }
+        Optional<GraphQLSchema> schema = schemaCache.getSchema();
+
+        if(schema.isPresent()) {
+            return schema.get();
+        }
+        synchronized (this) {
+            schema = schemaCache.getSchema();
+            if(schema.isPresent()) {
+                return schema.get();
             }
+            final GraphQLSchema generatedSchema = generateSchema();
+            schemaCache.putSchema(generatedSchema);
+            return generatedSchema;
         }
 
-        printSchema();
-        return innerSchema;
     }
+
+    final Debouncer debouncer = new Debouncer();
+    final Runnable removeSchema = ()->{schemaCache.removeSchema();};
 
     /**
      * Nullifies the schema so it is regenerated next time it is fetched
+     * This method is debounced for 5 seconds to prevent overloading when
+     * content types are saved.
      */
     @Override
     public void invalidateSchema() {
-        this.schema = null;
+        final int delay = Config.getIntProperty("GRAPHQL_SCHEMA_DEBOUNCE_DELAY_MILLIS", 5000);
+        
+        if(delay<=0) {
+            removeSchema.run();
+            return;
+        }
+
+        debouncer.debounce("invalidateGraphSchema", removeSchema , delay, TimeUnit.MILLISECONDS);;
+
+
     }
 
-    private void printSchema() {
-        if (Config.getBooleanProperty("PRINT_GRAPHQL_SCHEMA", false)) {
+
+    @Override
+    public void printSchema() {
+        if (Config.getBooleanProperty("GRAPHQL_PRINT_SCHEMA", false)) {
             SchemaPrinter printer = new SchemaPrinter();
             try {
                 File graphqlDirectory = new File(ConfigUtils.getGraphqlPath());
@@ -94,15 +126,16 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
                 File schemaFile = new File(graphqlDirectory.getPath() + File.separator + "schema.graphqls");
                 schemaFile.createNewFile();
-                Files.write(schemaFile.toPath(), printer.print(schema).getBytes());
-            } catch (IOException e) {
+                Files.write(schemaFile.toPath(), printer.print(getSchema()).getBytes());
+            } catch (DotDataException | IOException e) {
                 Logger.error(this, "Error printing schema", e);
             }
         }
     }
 
     @LogTime(loggingLevel = "INFO")
-    private GraphQLSchema generateSchema() {
+    @VisibleForTesting
+    protected GraphQLSchema generateSchema() {
         final Set<GraphQLType> graphQLTypes = new HashSet<>();
 
         for (GraphQLTypesProvider typesProvider : typesProviders) {
@@ -113,6 +146,22 @@ public class GraphqlAPIImpl implements GraphqlAPI {
                         .getClass(), e);
             }
         }
+
+        // let's log if we are including dupe types
+        final Map<String, GraphQLType> localTypesMap = new HashMap<>();
+        graphQLTypes.forEach((type)-> {
+            if(localTypesMap.containsKey(type.getName())) {
+                Logger.warn(this, "Dupe GraphQLType detected!: " + type.getName());
+                // removing dupes based on Config property
+                if(Config.getBooleanProperty("GRAPHQL_REMOVE_DUPLICATED_TYPES", false)) {
+                    return;
+                }
+            }
+            localTypesMap.put(type.getName(), type);
+        });
+
+        final Set<GraphQLType> finalTypesSet = new HashSet<>(localTypesMap.values());
+
 
         List<GraphQLFieldDefinition> fieldDefinitions = new ArrayList<>();
 
@@ -127,7 +176,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         // Root Type
         GraphQLObjectType.Builder rootTypeBuilder = createRootTypeBuilder().fields(fieldDefinitions);
 
-        return new GraphQLSchema.Builder().query(rootTypeBuilder.build()).additionalTypes(graphQLTypes).build();
+        return new GraphQLSchema.Builder().query(rootTypeBuilder.build()).additionalTypes(finalTypesSet).build();
     }
 
     private Builder createRootTypeBuilder() {

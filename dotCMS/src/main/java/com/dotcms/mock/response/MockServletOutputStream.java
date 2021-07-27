@@ -25,6 +25,11 @@ class MockServletOutputStream extends ServletOutputStream {
 
   }
 
+  public MockServletOutputStream(OutputStream os) {
+      this.os = os;
+
+  }
+
   OutputStream os = null;
 
   @Override

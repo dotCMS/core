@@ -81,10 +81,10 @@
 
 	}
 
-	boolean canUserPublishContentlet = conPerAPI.doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_PUBLISH,user);
+	boolean canUserPublishContentlet = conPerAPI.doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_PUBLISH,user, PageMode.get(request).respectAnonPerms);
 
 	if(!InodeUtils.isSet(contentlet.getInode())) {
-		canUserPublishContentlet = conPerAPI.doesUserHavePermission(structure,PermissionAPI.PERMISSION_PUBLISH,user);
+		canUserPublishContentlet = conPerAPI.doesUserHavePermission(structure,PermissionAPI.PERMISSION_PUBLISH,user, PageMode.get(request).respectAnonPerms);
 		//Set roles = conPerAPI.getPublishRoles();
 		if(!canUserPublishContentlet){
 			canUserPublishContentlet = conPerAPI.doesRoleHavePermission(structure, PermissionAPI.PERMISSION_PUBLISH,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSOwnerRole());
@@ -118,8 +118,8 @@
 
 	//Variable used to return after the work is done with the contentlet
 	String referer = "";
-	if (request.getHeader("referer") != null && 
-	                (request.getHeader("referer").contains("baseType") || 
+	if (request.getHeader("referer") != null &&
+	                (request.getHeader("referer").contains("baseType") ||
 	                                request.getHeader("referer").contains("structure_id"))){
 	    referer = request.getHeader("referer");
 	}
@@ -176,15 +176,15 @@
 		}
 	}
 
-	boolean canEditAsset = conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
+	boolean canEditAsset = conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user, PageMode.get(request).respectAnonPerms);
 	final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
     boolean canSeeRules = layoutAPI.doesUserHaveAccessToPortlet("rules", user)
-            && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user)
-            && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "RULES: " + PermissionAPI.PERMISSION_USE, user);
-    
+            && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user, PageMode.get(request).respectAnonPerms)
+            && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "RULES: " + PermissionAPI.PERMISSION_USE, user, PageMode.get(request).respectAnonPerms);
+
     boolean hasViewPermision = layoutAPI.doesUserHaveAccessToPortlet("permissions", user)
-            && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user)
-            && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "PERMISSIONS: " + PermissionAPI.PERMISSION_USE, user);
+            && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user, PageMode.get(request).respectAnonPerms)
+            && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "PERMISSIONS: " + PermissionAPI.PERMISSION_USE, user, PageMode.get(request).respectAnonPerms);
 
     Boolean isContentEditable = (Boolean) request.getAttribute(com.dotmarketing.util.WebKeys.CONTENT_EDITABLE);
 	isContentEditable = isContentEditable != null ? isContentEditable : false;
@@ -212,6 +212,7 @@
 	<input name="wfActionAssign" id="wfActionAssign" type="hidden" value="">
 	<input name="wfActionComments" id="wfActionComments" type="hidden" value="">
 	<input name="wfActionId" id="wfActionId" type="hidden" value="">
+	<input name="wfPathToMove" id="wfPathToMove" type="hidden" value="">
 
 	<!-- PUSH PUBLISHING ACTIONLET -->
 	<input name="wfPublishDate" id="wfPublishDate" type="hidden" value="">
@@ -220,6 +221,8 @@
 	<input name="wfExpireTime" id="wfExpireTime" type="hidden" value="">
 	<input name="wfNeverExpire" id="wfNeverExpire" type="hidden" value="">
 	<input name="whereToSend" id="wfWhereToSend" type="hidden" value="">
+	<input name="wfiWantTo" id="wfiWantTo" type="hidden" value="">
+	<input name="wfFilterKey" id="wfFilterKey" type="hidden" value="">
 
 
 	<div dojoAttachPoint="cmsFileBrowserImage" currentView="thumbnails" jsId="cmsFileBrowserImage" onFileSelected="addFileImageCallback" mimeTypes="image" sortBy="modDate" sortByDesc="true" dojoType="dotcms.dijit.FileBrowserDialog"></div>
@@ -337,7 +340,7 @@
                             		<% } %>
                                 <%=f.getFieldName()%>:</span>
                             </div>
-                            <div class="fieldValue">
+								<div class="fieldValue" style="overflow-x: scroll">
                                 <%
                                     if(f.getFieldType().equals(Field.FieldType.RELATIONSHIP.toString())){
                                         //field on the other side of the relationship
@@ -381,27 +384,6 @@
                         } else {
                             formValue = (Object) contentletForm.getFieldValueByVar(f.getVelocityVarName());
 
-                            //We need to verify for the metadata field cached data
-                            if ( Contentlet.isMetadataFieldCached( contentletForm.getStructureInode(), f.getVelocityVarName(), formValue ) ) {
-
-                                /*
-                                 If we populated the information using another language we should use the contentlet used
-                                 for that language in order to get the cached metadata.
-                                */
-                                if ( !InodeUtils.isSet( request.getParameter( "inode" ) )
-                                        && UtilMethods.isSet( request.getSession().getAttribute( "ContentletForm_lastLanguage" ) ) ) {
-
-                                    if ( !InodeUtils.isSet( request.getParameter( "inode" ) )
-                                            && (UtilMethods.isSet( request.getParameter( "reuseLastLang" ) )
-                                            && Boolean.parseBoolean( request.getParameter( "reuseLastLang" ) )) ) {
-
-                                        ContentletForm reusedForm = (ContentletForm) request.getSession().getAttribute( "ContentletForm_lastLanguage" );
-                                        //Load its content from cache
-                                        formValue = reusedForm.getFieldValueByVar( f.getVelocityVarName() );
-                                    }
-                                }
-
-                            }
                         }
                         request.setAttribute("value", formValue);
 
@@ -429,7 +411,7 @@
                                 Host host = APILocator.getHostAPI().findSystemHost();
 
                                 String hostId = host.getIdentifier();
-                                if (!conPerAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user)) {
+                                if (!conPerAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, PageMode.get(request).respectAnonPerms)) {
                                     hostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
                                 }
 
@@ -602,7 +584,7 @@
 <script type="text/javascript">
 	dojo.addOnLoad(function () {
 		dojo.style(dijit.byId('savingContentDialog').closeButtonNode, 'visibility', 'hidden');
-		
+
         var tab = dijit.byId("mainTabContainer");
  		dojo.connect(tab, 'selectChild', function (evt) {
             selectedTab = tab.selectedChildWidget;
@@ -630,7 +612,7 @@
             name = shortenString(name, 100);
             resourceLink.text = name;
         }
-        
+
 	});
 
 	var onBeforeUnloadHandle = dojo.connect(dijit.byId('mainTabContainer'), "onkeypress", activateOnBeforeUnload);
@@ -655,7 +637,7 @@ String populateaccept = request.getParameter("populateaccept");
 if(!InodeUtils.isSet(inode) && UtilMethods.isSet(sib) && !UtilMethods.isSet(populateaccept)){
 	// Sibbling content
 	Contentlet sibbling=conAPI.find(sib, user,false);
-	Language previousLanguage = APILocator.getLanguageAPI().getLanguage(sibbling.getLanguageId());   
+	Language previousLanguage = APILocator.getLanguageAPI().getLanguage(sibbling.getLanguageId());
 	Language newLanguage=APILocator.getLanguageAPI().getLanguage(contentletForm.getLanguageId());
 
    	Map<String, String[]> params = new HashMap<String, String[]>();
@@ -742,7 +724,7 @@ if(!InodeUtils.isSet(inode) && UtilMethods.isSet(sib) && !UtilMethods.isSet(popu
         </div>
 
 	<%}
-    
+
 	/*########################## END  DOTCMS-2692 ###############################*/
 
 

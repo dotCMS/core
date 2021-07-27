@@ -654,11 +654,6 @@ public class HibernateUtil {
 				cfg.addResource("com/dotmarketing/beans/DotCMSSeq_NOSQLGEN.hbm.xml");
 				getPluginsHBM("Seq",cfg);
 				cfg.setProperty("hibernate.dialect", "com.dotcms.repackage.net.sf.hibernate.dialect.OracleDialect");
-			} else if (DbConnectionFactory.isH2()) {
-			    cfg.addResource("com/dotmarketing/beans/DotCMSId.hbm.xml");
-                cfg.addResource("com/dotmarketing/beans/DotCMSId_NOSQLGEN.hbm.xml");
-                getPluginsHBM("Id",cfg);
-                cfg.setProperty("hibernate.dialect", "com.dotcms.repackage.net.sf.hibernate.dialect.HSQLDialect");
 			}
 
 			cfg.setInterceptor(new NoDirtyFlushInterceptor());
@@ -718,16 +713,21 @@ public class HibernateUtil {
 	}
 
 
+	public static Optional<Session> getSessionIfOpened() {
+		if (sessionFactory == null) {
+			buildSessionFactory();
+		}
+		return Optional.ofNullable(sessionHolder.get());
+	}
+
 	/**
 	 * Attempts to find a session associated with the Thread. If there isn't a
 	 * session, it will create one.
 	 */
 	public static Session getSession() {
 		try{
-			if (sessionFactory == null) {
-				buildSessionFactory();
-			}
-			Session session = sessionHolder.get();
+			final Optional<Session> sessionOptional = getSessionIfOpened();
+			Session session = sessionOptional.isPresent() ? sessionOptional.get() : null;
 
 			if (session == null) {
 					session = sessionFactory.openSession(DbConnectionFactory.getConnection());
@@ -1287,9 +1287,11 @@ public class HibernateUtil {
     }
 
     public static void evict(Object obj) throws DotHibernateException{
-        Session session = getSession();
-        try {
-            session.evict(obj);
+		final Optional<Session> sessionOptional = getSessionIfOpened();
+		try {
+        	if (sessionOptional.isPresent()) {
+				sessionOptional.get().evict(obj);
+			}
         } catch (HibernateException e) {
         	throw new DotHibernateException("Unable to evict from Hibernate Session ", e);
         }

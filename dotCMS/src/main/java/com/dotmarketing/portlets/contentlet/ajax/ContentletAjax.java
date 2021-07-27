@@ -11,6 +11,7 @@ import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.enterprise.FormAJAXProxy;
 import com.dotcms.keyvalue.model.KeyValue;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
+import com.dotcms.rest.api.v1.workflow.ActionInputView;
 import com.dotcms.util.LogTime;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -39,6 +40,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletValidationExce
 import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -94,6 +96,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -708,7 +711,7 @@ public class ContentletAjax {
 				}
 				if(fieldName.equalsIgnoreCase("conhost")){
 					fieldValue = fieldValue.equalsIgnoreCase("current") ?
-							(String) sess.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)
+							Host.class.cast(sess.getAttribute(WebKeys.CURRENT_HOST)).getIdentifier()
 							: fieldValue;
 
 					if(!filterSystemHost  && !fieldValue.equals(Host.SYSTEM_HOST)){
@@ -813,6 +816,7 @@ public class ContentletAjax {
 								final boolean hasQuotes = fieldValue != null && fieldValue.length() > 1 && fieldValue.endsWith("\"") && fieldValue.startsWith("\"");
 								if(hasQuotes){
 									fieldValue = CharMatcher.is('\"').trimFrom(fieldValue);
+									fieldValue = fieldValue.trim();
 								}
 
 								String valueDelimiter = wildCard;
@@ -1031,7 +1035,7 @@ public class ContentletAjax {
 		if (page == 0)
 			counters.put("hasNext", false);
 		else
-			counters.put("hasNext", perPage < hits.size());
+			counters.put("hasNext", perPage * page < total);
 
 		// Data to show in the bottom content listing page
 		String luceneQueryToShow2= luceneQuery.toString();
@@ -1240,7 +1244,14 @@ public class ContentletAjax {
 					if (hasLiveVersion) {
 						searchResult.put("hasLiveVersion", "true");
 						searchResult.put("allowUnpublishOfLiveVersion", "true");
-						searchResult.put("inodeOfLiveVersion", APILocator.getVersionableAPI().getContentletVersionInfo(con.getIdentifier(), con.getLanguageId()).getLiveInode());
+
+						Optional<ContentletVersionInfo> cvi = APILocator.getVersionableAPI()
+								.getContentletVersionInfo(con.getIdentifier(), con.getLanguageId());
+
+						if(cvi.isPresent()) {
+							searchResult.put("inodeOfLiveVersion",
+									cvi.get().getLiveInode());
+						}
 					}
 				}
 
@@ -1452,6 +1463,10 @@ public class ContentletAjax {
                 wfActionMap.put("assignable", action.isAssignable());
                 wfActionMap.put("commentable", action.isCommentable() || UtilMethods.isSet(action.getCondition()));
                 wfActionMap.put("requiresCheckout", action.requiresCheckout());
+				if (action.hasMoveActionletActionlet() && !action.hasMoveActionletHasPathActionlet()) {
+
+					wfActionMap.put("moveable", "true");
+				}
 
                 final List<WorkflowActionClass> actionlets =
 						APILocator.getWorkflowAPI().findActionClasses(action);
@@ -2272,7 +2287,7 @@ public class ContentletAjax {
 		try{
 			HibernateUtil.startTransaction();
 			Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<Relationship, List<Contentlet>>();
-			List<Relationship> rels =  FactoryLocator.getRelationshipFactory().byContentType(structure);
+			List<Relationship> rels =  APILocator.getRelationshipAPI().byContentType(structure);
 			for (Relationship r : rels) {
 				if (!contentRelationships.containsKey(r)) {
 					contentRelationships
@@ -2451,15 +2466,15 @@ public class ContentletAjax {
 			currentContentlet = conAPI.find(contentletIdentifier, currentUser, false);
 			contentletToUnrelate = conAPI.find(identifierToUnrelate, currentUser, false);
 
-			relationship =  FactoryLocator.getRelationshipFactory().byInode(relationshipInode);
+			relationship =  APILocator.getRelationshipAPI().byInode(relationshipInode);
 
 			conList.add(contentletToUnrelate);
-			FactoryLocator.getRelationshipFactory().deleteByContent(currentContentlet, relationship, conList);
+			APILocator.getRelationshipAPI().deleteByContent(currentContentlet, relationship, conList);
 
 			//if contentletToUnrelate is related as new content, there exists the below relation which also needs to be deleted.
 			conList.clear();
 			conList.add(currentContentlet);
-			FactoryLocator.getRelationshipFactory().deleteByContent(contentletToUnrelate, relationship, conList);
+			APILocator.getRelationshipAPI().deleteByContent(contentletToUnrelate, relationship, conList);
 
 			conAPI.refresh(currentContentlet);
 			conAPI.refresh(contentletToUnrelate);
@@ -2492,8 +2507,12 @@ public class ContentletAjax {
 		ret.put("lockedIdent", contentletInode );
 		try{
 			conAPI.lock(c, currentUser, false);
+			Optional<Date> lockedOn = APILocator.getVersionableAPI().getLockedOn(c);
 
-			ret.put("lockedOn", UtilMethods.capitalize(DateUtil.prettyDateSince(APILocator.getVersionableAPI().getLockedOn(c), currentUser.getLocale()) ));
+			if(lockedOn.isPresent()) {
+				ret.put("lockedOn", UtilMethods
+						.capitalize(DateUtil.prettyDateSince(lockedOn.get(), currentUser.getLocale())));
+			}
 			ret.put("lockedBy", currentUser.getFullName() );
 
 		}

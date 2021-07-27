@@ -18,7 +18,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import javax.servlet.ServletContext;
 import org.apache.commons.io.FileUtils;
 import org.apache.felix.framework.util.FelixConstants;
 import org.apache.felix.http.proxy.DispatcherTracker;
@@ -30,7 +29,6 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.launch.Framework;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.osgi.OSGIProxyServlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
@@ -80,24 +78,11 @@ public class OSGIUtil {
         private static OSGIUtil instance = new OSGIUtil();
     }
     
-    private OSGIUtil () {
-        this.servletContext = Config.CONTEXT;
-    }
+
 
     private Framework felixFramework;
-    final private ServletContext servletContext;
-
-    /**
-     * Initializes the OSGi framework
-     *
-     * @return Framework
-     */
-    public Framework initializeFramework() {
-
-        return initializeFramework(servletContext);
 
 
-    }
 
     /**
      * Loads the default properties
@@ -107,15 +92,20 @@ public class OSGIUtil {
     private Properties defaultProperties() {
 
         Properties felixProps = new Properties();
-        final String felixDirectory = getFelixBaseDirFromConfig(null);
+        final String felixDirectory = getFelixBaseDirFromConfig();
 
         Logger.info(this, () -> "Felix base dir: " + felixDirectory);
 
+        final String felixAutoDeployDirectory = Config.getStringProperty(AUTO_DEPLOY_DIR_PROPERTY,  felixDirectory + File.separator + "bundle") ;
+        final String felixLoadDirectory =       Config.getStringProperty(FELIX_FILEINSTALL_DIR,     felixDirectory + File.separator + "load") ;
+        final String felixUndeployDirectory =   Config.getStringProperty(FELIX_UNDEPLOYED_DIR,      felixDirectory + File.separator + "undeployed") ;
+        final String felixCacheDirectory =      Config.getStringProperty(FELIX_FRAMEWORK_STORAGE,   felixDirectory + File.separator + "felix-cache") ;
+
         felixProps.put(FELIX_BASE_DIR, felixDirectory);
-        felixProps.put(AUTO_DEPLOY_DIR_PROPERTY, felixDirectory + File.separator + "bundle");
-        felixProps.put(FELIX_FRAMEWORK_STORAGE, felixDirectory + File.separator + "felix-cache");
-        felixProps.put(FELIX_FILEINSTALL_DIR, felixDirectory + File.separator + "load");
-        felixProps.put(FELIX_UNDEPLOYED_DIR, felixDirectory + File.separator + "undeployed");
+        felixProps.put(AUTO_DEPLOY_DIR_PROPERTY, felixAutoDeployDirectory);
+        felixProps.put(FELIX_FRAMEWORK_STORAGE, felixCacheDirectory);
+        felixProps.put(FELIX_FILEINSTALL_DIR, felixLoadDirectory);
+        felixProps.put(FELIX_UNDEPLOYED_DIR, felixUndeployDirectory);
 
         felixProps.put("felix.auto.deploy.action", "install,start");
         felixProps.put("felix.fileinstall.start.level", "1");
@@ -128,7 +118,6 @@ public class OSGIUtil {
 
         // Create host activator;
         HostActivator hostActivator = HostActivator.instance();
-        hostActivator.setServletContext(servletContext);
         felixProps.put(FelixConstants.SYSTEMBUNDLE_ACTIVATORS_PROP, ImmutableList.of(hostActivator));
 
         return felixProps;
@@ -140,16 +129,14 @@ public class OSGIUtil {
      * @param context The servlet context
      * @return Framework
      */
-    public synchronized Framework initializeFramework(ServletContext context) {
+    public synchronized Framework initializeFramework() {
 
         if(felixFramework!=null) {
             return felixFramework;
         }
         long start = System.currentTimeMillis();
 
-        if (null == Config.CONTEXT) {
-            Config.setMyApp(servletContext);
-        }
+
 
         // load all properties and set base directory
         Properties felixProps = loadConfig();
@@ -166,7 +153,7 @@ public class OSGIUtil {
         FELIX_EXTRA_PACKAGES_FILE_GENERATED = felixProps.getProperty(FELIX_BASE_DIR) + File.separator + "osgi-extra-generated.conf";
 
         // Verify the bundles are in the right place
-        verifyBundles(felixProps, context);
+        verifyBundles(felixProps);
 
         // Set all OSGI Packages
         String extraPackages;
@@ -204,8 +191,7 @@ public class OSGIUtil {
 
             // Start the framework.
             felixFramework.start();
-            
-            startProxyServlet() ;
+
             
             Logger.info(this, () -> "osgi felix framework started");
         } catch (Exception ex) {
@@ -221,32 +207,7 @@ public class OSGIUtil {
         return felixFramework;
     }
 
-    private boolean startProxyServlet() {
-        if (Config.getBooleanProperty("felix.felix.enable.osgi.proxyservlet", false)) {
-            if (OSGIProxyServlet.bundleContext == null) {
 
-                final Object bundleContext = servletContext.getAttribute(BundleContext.class.getName());
-                if (bundleContext instanceof BundleContext) {
-
-                    OSGIProxyServlet.bundleContext = (BundleContext) bundleContext;
-
-                    try {
-                        OSGIProxyServlet.tracker = new DispatcherTracker(OSGIProxyServlet.bundleContext, null,
-                                        OSGIProxyServlet.servletConfig);
-                        OSGIProxyServlet.tracker.open();
-                    } catch (Exception e) {
-                        Logger.error(OSGIUtil.class, "Error loading HttpService.", e);
-                        return false;
-                    }
-
-
-                }
-            }
-        }
-        return true;
-
-    }
-    
     
     
     /**
@@ -345,19 +306,37 @@ public class OSGIUtil {
         Iterator<String> it = Config.getKeys();
         while (it.hasNext()) {
             final String key = it.next();
-            if (key != null && key.startsWith("felix.")) {
-                if (key.equals(FELIX_BASE_DIR)) {
-                    // Allow the property in the file to be felix.base.dir
-                    properties.put(key, Config.getStringProperty(key));
-                    Logger.info(this,
-                            () -> "Found property  " + key + "=" + Config.getStringProperty(key));
-                } else {
-                    String value = (UtilMethods.isSet(Config.getStringProperty(key, null))) ? Config.getStringProperty(key) : null;
-                    String felixKey = key.substring(6);
-                    properties.put(felixKey, value);
-                    Logger.info(OSGIUtil.class, () -> "Found property  " + felixKey + "=" + value);
-                }
+            if(key==null) {
+                continue;
             }
+            if (key.startsWith("felix.")) {
+
+                final String value = (UtilMethods.isSet(Config.getStringProperty(key, null))) ? Config.getStringProperty(key)
+                                : null;
+                String felixKey = key.substring(6);
+                properties.put(felixKey, value);
+                Logger.info(OSGIUtil.class, () -> "Found property  " + felixKey + "=" + value);
+
+            }
+            if (key.startsWith("DOT_FELIX_FELIX")) {
+                final String felixKey = key.replace("DOT_FELIX_FELIX", "FELIX").replace("_", ".").toLowerCase();
+                String value = (UtilMethods.isSet(Config.getStringProperty(key, null))) ? Config.getStringProperty(key)
+                                : null;
+                properties.put(felixKey, value);
+                Logger.info(OSGIUtil.class, () -> "Found property  " + felixKey + "=" + value);
+            }
+            if (key.startsWith("DOT_FELIX_OSGI")) {
+                final String felixKey = key.replace("DOT_FELIX_OSGI", "OSGI").replace("_", ".").toLowerCase();
+                String value = (UtilMethods.isSet(Config.getStringProperty(key, null))) ? Config.getStringProperty(key)
+                                : null;
+                properties.put(felixKey, value);
+                Logger.info(OSGIUtil.class, () -> "Found property  " + felixKey + "=" + value);
+            }
+
+            
+            
+            
+            
         }
         return properties;
     }
@@ -527,9 +506,9 @@ public class OSGIUtil {
      * @param props The properties
      * @param context The servlet context
      */
-    private void verifyBundles(Properties props, ServletContext context) {
+    private void verifyBundles(Properties props) {
         String bundlePath = props.getProperty(AUTO_DEPLOY_DIR_PROPERTY);
-        String baseDirectory = getBaseDirectory(context);
+        String baseDirectory = getBaseDirectory();
 
         String defaultFelixPath = baseDirectory + File.separator + "felix";
         String defaultBundlePath = defaultFelixPath + File.separator + "bundle";
@@ -568,7 +547,7 @@ public class OSGIUtil {
      * @param context The servlet context
      * @return String
      */
-    public String getBaseDirectory(ServletContext context) {
+    public String getBaseDirectory() {
 
         String baseDirectory = null;
 
@@ -579,7 +558,7 @@ public class OSGIUtil {
         }
 
         if (!UtilMethods.isSet(baseDirectory)) {
-            baseDirectory = getFelixBaseDirFromConfig(context);
+            baseDirectory = getFelixBaseDirFromConfig();
         }
 
         if (!UtilMethods.isSet(baseDirectory)) {
@@ -592,15 +571,10 @@ public class OSGIUtil {
         return baseDirectory;
     }
 
-    private String getFelixBaseDirFromConfig(ServletContext context) {
+    private String getFelixBaseDirFromConfig() {
 
-        String defaultBasePath;
-
-        if (context != null) {
-            defaultBasePath = context.getRealPath(WEB_INF_FOLDER);
-        } else {
-            defaultBasePath = Config.CONTEXT.getRealPath(WEB_INF_FOLDER);
-        }
+        String defaultBasePath = Config.CONTEXT.getRealPath(WEB_INF_FOLDER);
+        
 
         return new File(Config
                 .getStringProperty(FELIX_BASE_DIR,

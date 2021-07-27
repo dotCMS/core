@@ -11,7 +11,7 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.util.CollectionsUtils;
@@ -94,7 +94,7 @@ public class DotAssetBaseTypeToContentTypeStrategyImplTest  extends IntegrationT
         Assert.assertTrue(baseTypeToContentTypeStrategy.isPresent());
         MockHeaderRequest request = new MockHeaderRequest(
                 (
-                        new MockSessionRequest(new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                        new MockSessionRequest(new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 ).request()
         );
 
@@ -104,7 +104,7 @@ public class DotAssetBaseTypeToContentTypeStrategyImplTest  extends IntegrationT
         request.setHeader("Origin", "localhost");
         request.setAttribute(WebKeys.USER, APILocator.systemUser());
 
-        final File file = FileUtil.createTemporalFile("test", "txt");
+        final File file = FileUtil.createTemporaryFile("test", "txt");
         final String content = "This is a test temporal file";
         try (final FileWriter fileWriter = new FileWriter(file)) {
 

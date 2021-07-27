@@ -15,7 +15,7 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
 import com.dotcms.mock.request.MockAttributeRequest;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.util.FiltersUtil;
 import com.dotcms.util.IntegrationTestInitService;
@@ -309,7 +309,7 @@ public class VelocityServletIntegrationTest {
                 .nextPersisted();
 
         final HttpServletRequest mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest(host.getName(), ((HTMLPageAsset) page).getURI()).request()).request()
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest(host.getName(), ((HTMLPageAsset) page).getURI()).request()).request()
         )
                 .request();
 
@@ -343,6 +343,6 @@ public class VelocityServletIntegrationTest {
         velocityServlet.service(mockRequest, mockResponse);
 
         verify(mockResponse, never()).sendError(anyInt());
-        verify(outputStream).write("<div> content1</div>".getBytes());
+        verify(outputStream).write("<div>content1</div>".getBytes());
     }
 }

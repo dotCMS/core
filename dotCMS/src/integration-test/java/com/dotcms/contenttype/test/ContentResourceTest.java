@@ -36,9 +36,8 @@ import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.WorkflowDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
-import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
@@ -112,6 +111,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -780,7 +780,7 @@ public class ContentResourceTest extends IntegrationTestBase {
 
             // Build request and response
             final HttpServletRequest request = createHttpRequest(null, null);
-            final HttpServletResponse response = new MockHttpResponse(new BaseResponse().response());
+            final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
 
             // Send request
             final ContentResource contentResource = new ContentResource();
@@ -1334,7 +1334,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         MockHeaderRequest request = new MockHeaderRequest(
 
                 (
-                        new MockSessionRequest(new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                        new MockSessionRequest(new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 ).request()
         );
 
@@ -1440,4 +1440,126 @@ public class ContentResourceTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to test: {@link ContentResource#getContent(HttpServletRequest, HttpServletResponse, String)}
+     * Given scenario: Create a Category with 3 levels of depth:
+     *          Parent Category
+     *                  Child Category
+     *                          Grand Child Category
+     *
+     *                  Create a Content Type with a Category field, and a contentlet of it. To
+     *                  the contentlet add the Grand Child Category.
+     * Expected result: json response must include the grand child category info
+     */
+    @Test
+    public void test_getContent_includeGrandChildCategory_success()
+            throws Exception {
+
+        final long currentTime = System.currentTimeMillis();
+        //Create Parent Category.
+        final Category parentCategory = new CategoryDataGen()
+                .setCategoryName("CT-Category-Parent"+currentTime)
+                .setKey("parent"+currentTime)
+                .setCategoryVelocityVarName("parent"+currentTime)
+                .nextPersisted();
+
+        //Create First Child Category.
+        final Category childCategoryA = new CategoryDataGen()
+                .setCategoryName("CT-Category-A"+currentTime)
+                .setKey("categoryA"+currentTime)
+                .setCategoryVelocityVarName("categoryA"+currentTime)
+                .next();
+
+        //Second Level Category.
+        final Category childCategoryA_1 = new CategoryDataGen()
+                .setCategoryName("CT-Category-A-1"+currentTime)
+                .setKey("categoryA-1"+currentTime)
+                .setCategoryVelocityVarName("categoryA-1"+currentTime)
+                .next();
+
+        APILocator.getCategoryAPI().save(parentCategory, childCategoryA, user, false);
+        APILocator.getCategoryAPI().save(childCategoryA, childCategoryA_1, user, false);
+
+        // Content Type with category field
+        final List<Field> fields = new ArrayList<>();
+        fields.add(new FieldDataGen().name("Title").velocityVarName("title").next());
+        fields.add(new FieldDataGen().type(CategoryField.class)
+                .name(parentCategory.getCategoryName()).velocityVarName(parentCategory.getCategoryVelocityVarName())
+                .values(parentCategory.getInode()).next());
+        final ContentType contentType = new ContentTypeDataGen().host(host).fields(fields).nextPersisted();
+
+        // Save content with grand child category
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .setProperty("title", "Test Contentlet"+currentTime)
+                .addCategory(childCategoryA_1)
+                .nextPersisted();
+
+
+        //Call resource
+        final Response responseResource = new ContentResource().getContent(createHttpRequest(),new MockHttpResponse(),"/id/"+contentlet.getIdentifier() + "/live/false/type/json");
+
+        // Verify result
+        assertEquals(Status.OK.getStatusCode(), responseResource.getStatus());
+
+        // Verify JSON result
+        final JSONObject json = new JSONObject(responseResource.getEntity().toString());
+        final JSONArray contentlets = json.getJSONArray("contentlets");
+        assertEquals(1, contentlets.length());
+        assertTrue(contentlets.toString().contains(childCategoryA_1.getCategoryName()));
+    }
+
+    /**
+     * Method to test: {@link ContentResource#getContent(HttpServletRequest, HttpServletResponse, String)}
+     * Given scenario: Create a ContentType with a text field and a SelfJoined Relationship.
+     *                  Create 3 contentlets and relate as below:
+     *          Parent Contentlet
+     *                  Child Contentlet
+     *                          Grand Child Contentlet
+     *
+     * Expected result: json response must include the grand child contentlet info, since depth = 3
+     */
+    @Test
+    public void test_getContent_SelfRelatedWith3LevelsOfDepth_shouldReturnRelationships() throws Exception{
+        final ContentType contentType = createSampleContentType(false);
+
+        final Field textField = FieldBuilder.builder(TextField.class).name("title")
+                .contentTypeId(contentType.id()).build();
+        fieldAPI.save(textField, user);
+
+        final Field relationshipField = createRelationshipField("selfRelationship",
+                contentType,contentType.variable(),RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
+        final Relationship relationship = relationshipAPI.getRelationshipFromField(relationshipField,user);
+
+        //creates contentlets
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
+        final Contentlet grandChild = contentletDataGen.languageId(1).setProperty(textField.name(),"grandChild").nextPersisted();
+        Contentlet child = contentletDataGen.languageId(1).setProperty(textField.name(),"child").next();
+        child = contentletAPI.checkin(child,CollectionsUtils.map(relationship,CollectionsUtils.list(grandChild)),user,false);
+        Contentlet parent = contentletDataGen.languageId(1).setProperty(textField.name(),"parent").next();
+        parent = contentletAPI.checkin(parent,CollectionsUtils.map(relationship,CollectionsUtils.list(child)),user,false);
+
+        final ContentResource contentResource = new ContentResource();
+        final HttpServletRequest request = createHttpRequest(null, null);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final Response endpointResponse = contentResource.getContent(request, response,
+                "/id/" + parent.getIdentifier() + "/live/false/depth/3");
+
+        assertEquals(200,endpointResponse.getStatus());
+        final JSONObject json = new JSONObject(endpointResponse.getEntity().toString());
+        final JSONArray contentlets = json.getJSONArray("contentlets");
+
+        final JSONObject parentJSONContentlet = (JSONObject) contentlets.get(0);
+        assertEquals(parent.getIdentifier(), parentJSONContentlet.get(IDENTIFIER));
+        assertEquals("parent", parentJSONContentlet.get("title"));
+
+        final JSONArray jsonArrayParentRelationships = (JSONArray) parentJSONContentlet.get(relationshipField.variable());
+        final JSONObject childJSONContentlet = (JSONObject) jsonArrayParentRelationships.get(0);
+        assertEquals(child.getIdentifier(), childJSONContentlet.get(IDENTIFIER));
+        assertEquals("child", childJSONContentlet.get("title"));
+
+        final JSONArray jsonArrayChildRelationships = (JSONArray) childJSONContentlet.get(relationshipField.variable());
+        final JSONObject grandChildJSONContentlet = (JSONObject) jsonArrayChildRelationships.get(0);
+        assertEquals(grandChild.getIdentifier(), grandChildJSONContentlet.get(IDENTIFIER));
+        assertEquals("grandChild", grandChildJSONContentlet.get("title"));
+    }
 }

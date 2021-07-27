@@ -3,6 +3,7 @@ package com.dotmarketing.startup.runonce;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.Params;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
@@ -20,12 +21,20 @@ import java.util.stream.Collectors;
  */
 public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
 
-    final String GET_TEMPLATES_QUERY = "SELECT DISTINCT contentlet.title as host_name, template.inode, template.drawed_body, template.body " +
-            "FROM ((identifier " +
-                "INNER JOIN template ON identifier.id = template.identifier) " +
-                "INNER JOIN contentlet ON contentlet.identifier = identifier.host_inode) " +
-            "where template.drawed_body is not null";
+    final static String GET_TEMPLATES_QUERY = "SELECT contentlet.%s as host_name, template.inode, template.identifier, template.drawed_body, template.body " +
+        "FROM identifier " +
+            "INNER JOIN template ON identifier.id = template.identifier " +
+            "INNER JOIN contentlet_version_info cvi on identifier.host_inode = cvi.identifier " +
+            "INNER JOIN contentlet ON cvi.working_inode = contentlet.inode " +
+        "WHERE template.drawed_body is not null order by template.inode";
 
+    final static String GET_HOSTNAME_COLUMN = "SELECT field.field_contentlet\n"
+            + "FROM field JOIN structure s ON field.structure_inode = s.inode\n"
+            + "WHERE s.velocity_var_name = 'Host' AND field.velocity_var_name = 'hostName'";
+
+    final static String UPDATE_TEMPLATES = "update template set drawed_body = ?, body = ? where inode =?";
+
+    final static String UPDATE_TEMPLATES_ORACLE = "update template set drawed_body = TO_CLOB(?), body = ? where inode =?";
 
     @Override
     public boolean forceRun() {
@@ -41,7 +50,9 @@ public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
 
             if (!params.isEmpty()) {
                 final DotConnect dotConnect = new DotConnect();
-                dotConnect.executeBatch("update template set drawed_body = ?, body = ? where inode =?", params);
+                dotConnect.executeBatch(
+                        DbConnectionFactory.isOracle() ? UPDATE_TEMPLATES_ORACLE : UPDATE_TEMPLATES,
+                        params);
             }
         }
     }
@@ -98,6 +109,13 @@ public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
     }
 
     private List<Map<String, Object>> getAllDrawedTemplates() throws DotDataException {
-        return new DotConnect().setSQL(GET_TEMPLATES_QUERY).loadObjectResults();
+        final Map<String, Object> results = new DotConnect().setSQL(GET_HOSTNAME_COLUMN)
+                .loadObjectResults().get(0);
+
+        final String hostNameColumnName = (String) results.get("field_contentlet");
+
+        return new DotConnect()
+                .setSQL(String.format(GET_TEMPLATES_QUERY,hostNameColumnName))
+                .loadObjectResults();
     }
 }

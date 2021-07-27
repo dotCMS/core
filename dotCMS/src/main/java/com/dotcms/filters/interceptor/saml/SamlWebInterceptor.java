@@ -188,8 +188,10 @@ public class SamlWebInterceptor implements WebInterceptor {
 
             Logger.error(this,  "Error [" + exception.getMessage() + "] Unable to get idpConfig for Site '" +
                     request.getServerName() + "'. Incoming URL: " + request.getRequestURL(), exception);
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            return Result.SKIP_NO_CHAIN;
+            //response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            //return Result.SKIP_NO_CHAIN;
+            // todo: do a better error handling
+            return Result.NEXT;
         } finally {
             if (null != identityProviderConfiguration) {
                 identityProviderConfiguration.destroy();
@@ -458,7 +460,7 @@ public class SamlWebInterceptor implements WebInterceptor {
         User user       = null;
 
         final HttpSession session = request.getSession(false);
-        if (session == null || request.isRequestedSessionIdValid()) {
+        if (session == null) {
 
             Logger.error(this, "Could not retrieve user from session as the session doesn't exist!");
             return null;
@@ -580,7 +582,10 @@ public class SamlWebInterceptor implements WebInterceptor {
                     uriWithoutQueryString.endsWith(".png")  ||
                     uriWithoutQueryString.endsWith(".gif")  ||
                     uriWithoutQueryString.endsWith(".css")  ||
-                    uriWithoutQueryString.endsWith(".js");
+                    uriWithoutQueryString.endsWith(".js")   ||
+                    uriWithoutQueryString.endsWith(".js.map")         ||
+                    uriWithoutQueryString.endsWith("manifest.json")   ||
+                    uriWithoutQueryString.endsWith(".ttf");
         }
 
         return true;

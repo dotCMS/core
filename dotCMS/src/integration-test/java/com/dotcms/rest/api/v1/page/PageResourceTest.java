@@ -412,7 +412,7 @@ public class PageResourceTest {
         assertFalse(containerIds.contains(container2.getIdentifier()));
 
         for (final ContainerRaw pageContainer : pageContainers) {
-            final Map<String, List<Map<String, Object>>> contentlets = pageContainer.getContentlets();
+            final Map<String, List<Contentlet>> contentlets = pageContainer.getContentlets();
             final Container container = pageContainer.getContainer();
             final List<Structure> structures = APILocator.getContainerAPI().getStructuresInContainer(container);
             if(container.getIdentifier().equals(localContainer1.getIdentifier())){

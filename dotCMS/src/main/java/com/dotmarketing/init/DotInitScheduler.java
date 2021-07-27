@@ -1,27 +1,20 @@
 package com.dotmarketing.init;
 
+import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_ELASTIC_READONLY_MONITOR;
 import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_WEBSOCKET_PROTOCOL;
 
-import java.lang.management.ManagementFactory;
+import com.dotmarketing.quartz.job.DeleteInactiveLiveWorkingIndicesJob;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.MBeanRegistrationException;
-import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
-import javax.management.NotCompliantMBeanException;
-import javax.management.ObjectName;
-
+import com.dotmarketing.quartz.job.EsReadOnlyMonitorJob;
 import org.quartz.CronTrigger;
 import org.quartz.Job;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
-
-import com.dotcms.enterprise.DashboardProxy;
 import com.dotcms.enterprise.linkchecker.LinkCheckerJob;
 import com.dotcms.job.system.event.DeleteOldSystemEventsJob;
 import com.dotcms.job.system.event.SystemEventsJob;
@@ -29,21 +22,18 @@ import com.dotcms.publisher.business.PublisherQueueJob;
 import com.dotcms.workflow.EscalationThread;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.job.BinaryCleanupJob;
-import com.dotmarketing.quartz.job.CalendarReminderThread;
 import com.dotmarketing.quartz.job.CleanUnDeletedUsersJob;
-import com.dotmarketing.quartz.job.ContentFromEmailJob;
 import com.dotmarketing.quartz.job.ContentReindexerThread;
-import com.dotmarketing.quartz.job.ContentReviewThread;
 import com.dotmarketing.quartz.job.DeleteOldClickstreams;
 import com.dotmarketing.quartz.job.FreeServerFromClusterJob;
 import com.dotmarketing.quartz.job.ServerHeartbeatJob;
 import com.dotmarketing.quartz.job.TrashCleanupJob;
 import com.dotmarketing.quartz.job.UsersToDeleteThread;
 import com.dotmarketing.quartz.job.WebDavCleanupJob;
-import com.dotmarketing.servlets.InitServlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import io.vavr.control.Try;
 
 /**
  * Initializes all dotCMS startup jobs.
@@ -57,6 +47,7 @@ public class DotInitScheduler {
 
 	private static final String DOTCMS_JOB_GROUP_NAME = "dotcms_jobs";
 	public static final String SCHEDULER_COREPOOLSIZE = "SCHEDULER_CORE_POOL_SIZE";
+	public static final String CRON_EXPRESSION_EVERY_5_MINUTES = "0 */5 * ? * *";
 
 	private static ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = null;
 
@@ -90,49 +81,14 @@ public class DotInitScheduler {
 	 */
 	public static void start() throws SchedulerException {
 		try {
-			Scheduler sched = QuartzUtils.getStandardScheduler();
+			final Scheduler sched = QuartzUtils.getScheduler();
 			JobDetail job;
 			CronTrigger trigger;
 			Calendar calendar;
 			boolean isNew;
 
-		        if(Config.getBooleanProperty("ENABLE_CONTENT_REVIEW_THREAD")) {
-				try {
-					isNew = false;
 
-					try {
-						if ((job = sched.getJobDetail("ContentReviewJob", DOTCMS_JOB_GROUP_NAME)) == null) {
-							job = new JobDetail("ContentReviewJob", DOTCMS_JOB_GROUP_NAME, ContentReviewThread.class);
-							isNew = true;
-						}
-					} catch (SchedulerException se) {
-						sched.deleteJob("ContentReviewJob", DOTCMS_JOB_GROUP_NAME);
-						job = new JobDetail("ContentReviewJob", DOTCMS_JOB_GROUP_NAME, ContentReviewThread.class);
-						isNew = true;
-					}
-					calendar = GregorianCalendar.getInstance();
-					calendar.add(Calendar.SECOND, Config.getIntProperty("EXEC_INIT_DELAY"));
-					trigger = new CronTrigger("trigger3", "group3", "ContentReviewJob", DOTCMS_JOB_GROUP_NAME, calendar.getTime(), null, Config.getStringProperty("CONTENT_REVIEW_THREAD_CRON_EXPRESSION"));
-					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
-					sched.addJob(job, true);
-
-					if (isNew)
-						sched.scheduleJob(trigger);
-					else
-						sched.rescheduleJob("trigger3", "group3", trigger);
-				} catch (Exception e) {
-					Logger.info(DotInitScheduler.class, e.toString());
-				}
-			} else {
-		        Logger.info(DotInitScheduler.class, "Content Review Cron Thread schedule disabled on this server");
-		        Logger.info(DotInitScheduler.class, "Deleting ContentReviewJob Job");
-				if ((job = sched.getJobDetail("ContentReviewJob", DOTCMS_JOB_GROUP_NAME)) != null) {
-					sched.deleteJob("ContentReviewJob", DOTCMS_JOB_GROUP_NAME);
-				}
-			}
-
-
-			if(Config.getBooleanProperty("ENABLE_CONTENT_REINDEXATION_THREAD")) {
+			if(Config.getBooleanProperty("ENABLE_CONTENT_REINDEXATION_THREAD", false)) {
 				try {
 					ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(1);
 					scheduledThreadPoolExecutor.scheduleWithFixedDelay(new ContentReindexerThread(), Config.getIntProperty("EXEC_CONTENT_REINDEXATION_INIT_DELAY"), Config.getIntProperty("EXEC_CONTENT_REINDEXATION_DELAY"), TimeUnit.SECONDS);
@@ -182,44 +138,6 @@ public class DotInitScheduler {
 				}
 			}
 
-			//Calendar Reminder Job
-
-			if(Config.getBooleanProperty("CALENDAR_REMINDER_THREAD")) {
-				try {
-					isNew = false;
-
-					try {
-						if ((job = sched.getJobDetail("CalendarReminderJob", DOTCMS_JOB_GROUP_NAME)) == null) {
-							job = new JobDetail("CalendarReminderJob", DOTCMS_JOB_GROUP_NAME, CalendarReminderThread.class);
-							isNew = true;
-						}
-					} catch (SchedulerException se) {
-						sched.deleteJob("CalendarReminderJob", DOTCMS_JOB_GROUP_NAME);
-						job = new JobDetail("CalendarReminderJob", DOTCMS_JOB_GROUP_NAME, CalendarReminderThread.class);
-						isNew = true;
-					}
-					calendar = GregorianCalendar.getInstance();
-					calendar.add(Calendar.SECOND,Config.getIntProperty("CALENDAR_REMINDER_THREAD_INIT_DELAY"));
-					trigger = new CronTrigger("trigger8", "group8", "CalendarReminderJob", DOTCMS_JOB_GROUP_NAME, calendar.getTime(), null, Config.getStringProperty("CALENDAR_REMINDER_THREAD_CRON_EXPRESSION"));
-					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
-					sched.addJob(job, true);
-
-					if (isNew)
-						sched.scheduleJob(trigger);
-					else
-						sched.rescheduleJob("trigger8", "group8", trigger);
-				} catch (Exception e) {
-					Logger.info(DotInitScheduler.class, e.toString());
-				}
-			} else {
-		        Logger.info(DotInitScheduler.class, "Calendar Reminder Cron Thread schedule disabled on this server");
-		        Logger.info(DotInitScheduler.class, "Deleting CalendarReminderJob Job");
-				if ((job = sched.getJobDetail("CalendarReminderJob", DOTCMS_JOB_GROUP_NAME)) != null) {
-					sched.deleteJob("CalendarReminderJob", DOTCMS_JOB_GROUP_NAME);
-				}
-			}
-
-			//END Calendar Reminder Job
 
 
 
@@ -328,78 +246,6 @@ public class DotInitScheduler {
 
 
 
-			if(UtilMethods.isSet(Config.getStringProperty("DASHBOARD_POPULATE_TABLES_CRON_EXPRESSION"))) {
-				try {
-					isNew = false;
-
-					try {
-						if ((job = sched.getJobDetail("DashboardJobImpl", DOTCMS_JOB_GROUP_NAME)) == null) {
-							job = new JobDetail("DashboardJobImpl", DOTCMS_JOB_GROUP_NAME, DashboardProxy.getDashboardJobImplClass());
-							isNew = true;
-						}
-					} catch (SchedulerException se) {
-						sched.deleteJob("DashboardJobImpl", DOTCMS_JOB_GROUP_NAME);
-						job = new JobDetail("DashboardJobImpl", DOTCMS_JOB_GROUP_NAME, DashboardProxy.getDashboardJobImplClass());
-						isNew = true;
-					}catch(IllegalArgumentException e){
-						//Only enter here in case of "Job class must implement the Job interface." exception after version migration
-						job = new JobDetail("DashboardJobImpl", DOTCMS_JOB_GROUP_NAME, DashboardProxy.getDashboardJobImplClass());
-						isNew = false;
-					}
-					calendar = GregorianCalendar.getInstance();
-				    trigger = new CronTrigger("trigger15", "group15", "DashboardJobImpl", DOTCMS_JOB_GROUP_NAME, calendar.getTime(), null,Config.getStringProperty("DASHBOARD_POPULATE_TABLES_CRON_EXPRESSION"));
-					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
-					sched.addJob(job, true);
-
-					if (isNew)
-						sched.scheduleJob(trigger);
-					else
-						sched.rescheduleJob("trigger15", "group15", trigger);
-				} catch (Exception e) {
-					Logger.error(DotInitScheduler.class, e.getMessage(),e);
-				}
-			} else {
-		        Logger.info(DotInitScheduler.class, "DashboardJobImpl Cron Job schedule disabled on this server");
-		        Logger.info(DotInitScheduler.class, "Deleting DashboardJobImpl Job");
-				if ((job = sched.getJobDetail("DashboardJobImpl", DOTCMS_JOB_GROUP_NAME)) != null) {
-					sched.deleteJob("DashboardJobImpl", DOTCMS_JOB_GROUP_NAME);
-				}
-			}
-
-			if(Config.getBooleanProperty("ENABLE_CREATE_CONTENT_FROM_EMAIL")) {
-				try {
-					isNew = false;
-
-					try {
-						if ((job = sched.getJobDetail("ContentFromEmailJob", DOTCMS_JOB_GROUP_NAME)) == null) {
-							job = new JobDetail("ContentFromEmailJob", DOTCMS_JOB_GROUP_NAME, ContentFromEmailJob.class);
-							isNew = true;
-						}
-					} catch (SchedulerException se) {
-						sched.deleteJob("ContentFromEmailJob", DOTCMS_JOB_GROUP_NAME);
-						job = new JobDetail("ContentFromEmailJob", DOTCMS_JOB_GROUP_NAME, ContentFromEmailJob.class);
-						isNew = true;
-					}
-					calendar = GregorianCalendar.getInstance();
-					calendar.add(Calendar.SECOND, Config.getIntProperty("CONTENT_FROM_EMAIL_INIT_DELAY"));
-					trigger = new CronTrigger("trigger17", "group17", "ContentFromEmailJob", DOTCMS_JOB_GROUP_NAME, calendar.getTime(), null, Config.getStringProperty("CONTENT_FROM_EMAIL_CRON_EXPRESSION"));
-					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
-					sched.addJob(job, true);
-
-					if (isNew)
-						sched.scheduleJob(trigger);
-					else
-						sched.rescheduleJob("trigger17", "group17", trigger);
-				} catch (Exception e) {
-					Logger.info(DotInitScheduler.class, e.toString());
-				}
-			} else {
-		        Logger.info(DotInitScheduler.class, "Content From Email Job schedule disabled on this server");
-		        Logger.info(DotInitScheduler.class, "Deleting ContentFromEmailJob Job");
-				if ((job = sched.getJobDetail("ContentFromEmailJob", DOTCMS_JOB_GROUP_NAME)) != null) {
-					sched.deleteJob("ContentFromEmailJob", DOTCMS_JOB_GROUP_NAME);
-				}
-			}
 
 			if(Config.getBooleanProperty("ENABLE_DELETE_OLDER_CLICKSTREAMS", false)){
 				try {
@@ -430,7 +276,7 @@ public class DotInitScheduler {
 			}
 
 			//SCHEDULE PUBLISH QUEUE JOB
-			if(Config.getBooleanProperty("ENABLE_PUBLISHER_QUEUE_THREAD")) {
+			if(Config.getBooleanProperty("ENABLE_PUBLISHER_QUEUE_THREAD", true)) {
 				try {
 					isNew = false;
 
@@ -467,7 +313,7 @@ public class DotInitScheduler {
 
 			final String lc="linkchecker";
             final String lg=DOTCMS_JOB_GROUP_NAME;
-			if(Config.getBooleanProperty("linkchecker.enablejob",true)) {
+			if(Config.getBooleanProperty("linkchecker.enablejob",false)) {
                 try {
                     isNew = false;
 
@@ -505,75 +351,11 @@ public class DotInitScheduler {
                 }
             }
 
-			if(Config.getBooleanProperty("org.dotcms.XMLSitemap.ENABLE",false)) {
-                try {
 
-                    isNew = false;
+			
 
-                    try {
-                        if ((job = sched.getJobDetail("XMLSitemap", DOTCMS_JOB_GROUP_NAME)) == null) {
-                            job = new JobDetail("XMLSitemap",DOTCMS_JOB_GROUP_NAME, com.dotcms.xmlsitemap.XMLSitemapJob.class);
-                            isNew = true;
-                        }
-                    } catch (SchedulerException se) {
-                        sched.deleteJob("XMLSitemap",DOTCMS_JOB_GROUP_NAME);
-                        job = new JobDetail("XMLSitemap",DOTCMS_JOB_GROUP_NAME, com.dotcms.xmlsitemap.XMLSitemapJob.class);
-                        isNew = true;
-                    }
-                    calendar = GregorianCalendar.getInstance();
-                    trigger = new CronTrigger("trigger21", "group21", "XMLSitemap",DOTCMS_JOB_GROUP_NAME, calendar.getTime(),
-                                  null,Config.getStringProperty("org.dotcms.XMLSitemap.CRON_EXPRESSION","1 1 1 * * ?"));
-                    trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
-                    sched.addJob(job, true);
+                
 
-                    if (isNew)
-                        sched.scheduleJob(trigger);
-                    else {
-                        CronTrigger existing=(CronTrigger)sched.getTrigger("trigger21", "group21");
-                        if(!existing.getCronExpression().equals(trigger.getCronExpression())) {
-                            sched.rescheduleJob("trigger21", "group21", trigger);
-                        }
-                    }
-                } catch (Exception e) {
-                    Logger.error(DotInitScheduler.class, e.getMessage(),e);
-                }
-            } else {
-                Logger.info(DotInitScheduler.class, "XMLSitemapJob Cron Job schedule disabled on this server");
-                if ((job = sched.getJobDetail("XMLSitemap", DOTCMS_JOB_GROUP_NAME)) != null) {
-                    sched.deleteJob("XMLSitemap", DOTCMS_JOB_GROUP_NAME);
-                }
-            }
-
-            /*
-              SCHEDULE SERVER HEARTBEAT JOB
-              For this JOB we will use a local Scheduler in order to store the scheduling information within memory.
-             */
-            if ( Config.getBooleanProperty( "ENABLE_SERVER_HEARTBEAT", true ) ) {
-
-                Scheduler localScheduler = QuartzUtils.getLocalScheduler();
-                String jobName = "ServerHeartbeatJob";
-                String jobGroup = DOTCMS_JOB_GROUP_NAME;
-                String triggerName = "trigger22";
-                String triggerGroup = "group22";
-
-                try {
-                    //Job detail
-                    job = new JobDetail( jobName, jobGroup, ServerHeartbeatJob.class );
-                    calendar = GregorianCalendar.getInstance();
-                    //Trigger
-                    trigger = new CronTrigger( triggerName, triggerGroup, jobName, jobGroup, calendar.getTime(), null, Config.getStringProperty( "HEARTBEAT_CRON_EXPRESSION" ) );
-                    trigger.setMisfireInstruction( CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW );
-
-                    //Schedule the Job
-                    localScheduler.addJob( job, true );
-                    localScheduler.scheduleJob( trigger );
-
-                    //Starting the local quartz Scheduler
-                    QuartzUtils.startLocalScheduler();
-                } catch ( Exception e ) {
-                    Logger.error( DotInitScheduler.class, e.getMessage(), e );
-                }
-            }
 
 			//SCHEDULE ESCALATION THREAD JOB
 			String ETjobName = "EscalationThreadJob";
@@ -695,8 +477,18 @@ public class DotInitScheduler {
 				addSystemEventsJob();
 			}
 
+			// start the server heartbeat job
+			addServerHeartbeatJob();
+
 			// Enabling the Delete Old System Events Job
 			addDeleteOldSystemEvents(sched);
+
+			if ( !Config.getBooleanProperty(DOTCMS_DISABLE_ELASTIC_READONLY_MONITOR, false) ) {
+				// Enabling the Read only monitor
+				addElasticReadyOnlyMonitor(sched);
+			}
+
+			addDeleteOldESIndicesJob(sched);
 
             //Starting the sequential and standard Schedulers
 	        QuartzUtils.startSchedulers();
@@ -745,6 +537,77 @@ public class DotInitScheduler {
 		}
 	} // addSystemEventsJob.
 
+	private static void addElasticReadyOnlyMonitor (final Scheduler scheduler) {
+
+		try {
+
+			final String jobName      = "EsReadOnlyMonitorJob";
+			final String triggerName  = "trigger29";
+			final String triggerGroup = "group98";
+
+			if (Config.getBooleanProperty( "ENABLE_ELASTIC_READ_ONLY_MONITOR", true)) {
+
+					final JobBuilder elasticReadOnlyMonitorJob = new JobBuilder().setJobClass(EsReadOnlyMonitorJob.class)
+							.setJobName(jobName)
+							.setJobGroup(DOTCMS_JOB_GROUP_NAME)
+							.setTriggerName(triggerName)
+							.setTriggerGroup(triggerGroup)
+							.setCronExpressionProp("ELASTIC_READ_ONLY_MONITOR_CRON_EXPRESSION")
+							.setCronExpressionPropDefault(Config.getStringProperty("ELASTIC_READ_ONLY_MONITOR_CRON_EXPRESSION", CRON_EXPRESSION_EVERY_5_MINUTES))
+							.setCronMissfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+					scheduleJob(elasticReadOnlyMonitorJob);
+			} else {
+
+				if ((scheduler.getJobDetail(jobName, DOTCMS_JOB_GROUP_NAME)) != null) {
+					scheduler.deleteJob(jobName, DOTCMS_JOB_GROUP_NAME);
+				}
+			}
+		} catch (Exception e) {
+
+			Logger.info(DotInitScheduler.class, e.toString());
+		}
+	} // addElasticReadyOnlyMonitor.
+
+	private static void addDeleteOldESIndicesJob (final Scheduler scheduler) {
+		try {
+			final String jobName      = "DeleteOldESIndicesJob";
+			final String triggerName  = "trigger30";
+			final String triggerGroup = "group30";
+
+			if (Config.getBooleanProperty( "ENABLE_DELETE_OLD_ES_INDICES_JOB", true)) {
+
+				final JobBuilder deleteOldESIndicesJob = new JobBuilder().setJobClass(
+						DeleteInactiveLiveWorkingIndicesJob.class)
+						.setJobName(jobName)
+						.setJobGroup(DOTCMS_JOB_GROUP_NAME)
+						.setTriggerName(triggerName)
+						.setTriggerGroup(triggerGroup)
+						.setCronExpressionProp("DELETE_OLD_ES_INDICES_JOB_CRON_EXPRESSION")
+						.setCronExpressionPropDefault("0 0 1 ? * *")
+						.setCronMissfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+				scheduleJob(deleteOldESIndicesJob);
+			} else {
+				if ((scheduler.getJobDetail(jobName, DOTCMS_JOB_GROUP_NAME)) != null) {
+					scheduler.deleteJob(jobName, DOTCMS_JOB_GROUP_NAME);
+				}
+			}
+		} catch (Exception e) {
+
+			Logger.info(DotInitScheduler.class, e.toString());
+		}
+	}
+
+   private static void addServerHeartbeatJob () {
+
+       final int initialDelay = Config.getIntProperty("SERVER_HEARTBEAT_INITIAL_DELAY_SECONDS", 60);
+       final int delaySeconds = Config.getIntProperty("SERVER_HEARTBEAT_RUN_EVERY_SECONDS", 60); // runs every 5 seconds.
+       
+       DotInitScheduler.getScheduledThreadPoolExecutor().scheduleAtFixedRate(() -> {
+           Try.run(() -> new ServerHeartbeatJob().execute(null)).onFailure(e->Logger.warnAndDebug(DotInitScheduler.class, e));
+       }, initialDelay, delaySeconds, TimeUnit.SECONDS);
+    } 
+	
+
 	/**
 	 * Creates a Quartz Job and schedules it for execution. If the Job has
 	 * already been registered, it will be re-scheduled to run again.
@@ -755,7 +618,7 @@ public class DotInitScheduler {
 	 */
 	private static void scheduleJob(final JobBuilder jobBuilder) {
 		try {
-			Scheduler sched = QuartzUtils.getStandardScheduler();
+			Scheduler sched = QuartzUtils.getScheduler();
 			Calendar calendar;
 			JobDetail job;
 			CronTrigger trigger;

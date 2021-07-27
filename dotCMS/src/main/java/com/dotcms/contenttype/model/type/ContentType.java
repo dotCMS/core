@@ -158,6 +158,17 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     return Host.SYSTEM_HOST;
   }
 
+  @Nullable
+  @Value.Default
+  public String icon() {
+    return null;
+  }
+
+  @Value.Default
+  public int sortOrder() {
+    return 0;
+  }
+
   @JsonIgnore
   @Value.Lazy
   public List<Field> fields() {
@@ -187,11 +198,11 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   @JsonIgnore
   @Value.Lazy
   public List<Field> fields(final Class<? extends Field> clazz) {
-    final String clazzName = clazz.getName().replace(".Immutable",".");
+    final String clazzName = UtilMethods.replace(clazz.getName(),".Immutable",".");
     return this.fields()
         .stream()
         .filter(field -> 
-        field.getClass().getName().replace(".Immutable",".").equals(clazzName) 
+        UtilMethods.replace(field.getClass().getName(),".Immutable",".").equals(clazzName) 
     )
     .collect(Collectors.toList());
   }

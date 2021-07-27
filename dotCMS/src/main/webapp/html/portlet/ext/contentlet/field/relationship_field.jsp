@@ -90,7 +90,86 @@
 		relationName = relationship.getParentRelationName();
         isParent="no";
 	}
-	
+
+	// issue-19204
+	double randomNumber = Math.random();
+
+    final Map<String, String> specialFields = ImmutableMap.of(
+            "title", "Title",
+            "titleImage", "Title-Image",
+            "languageId", "Language");
+    final com.dotcms.contenttype.model.field.Field relatedField =
+            (com.dotcms.contenttype.model.field.Field) request.getAttribute("relatedField");
+    final List<String> showFieldNames = relatedField
+            .fieldVariables()
+            .stream()
+            .filter(fv -> fv.key().equals("showFields"))
+            .findFirst()
+            .map(fieldVariable -> Arrays
+                    .stream(fieldVariable.value().split(","))
+                    .map(String::trim)
+                    .collect(Collectors.toList()))
+            .orElse(Collections.emptyList());
+    final Optional<Structure> structure = recordList
+            .stream()
+            .map(record -> record.getRelationship().getParentStructureInode().equals(contentlet.getContentTypeId())
+                    ? record.getRelationship().getChildStructure()
+                    : record.getRelationship().getParentStructure())
+            .findFirst();
+    final Map<String, Field> relatedFields = structure
+            .map(st -> st
+                    .getFields()
+                    .stream()
+                    .collect(Collectors.toMap(Field::getVelocityVarName, Function.identity())))
+            .orElse(Collections.emptyMap());
+    final List<Tuple2<String, String>> showFields = showFieldNames
+            .stream()
+            .map(fieldName -> {
+                final Field field = relatedFields.get(fieldName);
+                final String fieldTitle  = (field != null)
+                        ? field.getFieldName()
+                        : specialFields.getOrDefault(fieldName, null);
+                return fieldTitle != null ? new Tuple2<>(fieldName, fieldTitle) : null;
+            })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+    final boolean overrideRelated = !showFields.isEmpty() && showFields.size() == showFieldNames.size();
+    final String jsFieldNames = overrideRelated
+            ? showFieldNames
+                    .stream()
+                    .map(fieldName -> String.format("'%s'", fieldName.trim()))
+                    .collect(Collectors.joining(","))
+            : "";
+    final List<Contentlet> relatedContentlets = recordList
+            .stream()
+            .findFirst()
+            .map(ContentletRelationshipRecords::getRecords)
+            .orElse(Collections.emptyList());
+    final Optional<Contentlet> relatedContentlet = relatedContentlets.stream().findFirst();
+    final String jsSpecialFields = specialFields
+           .keySet()
+           .stream()
+           .map(key -> {
+               String fieldValue;
+               if (key.equals("title")) {
+                   fieldValue = relatedContentlet.map(Contentlet::getTitle).orElse(null);
+                   if (fieldValue == null) {
+                       final Field field = relatedFields.get(key);
+                       fieldValue = field != null ? field.getTitle() : "";
+                   }
+               } else if (key.equals("titleImage")) {
+                   final Optional <com.dotcms.contenttype.model.field.Field> titleImage =
+                           relatedContentlet.flatMap(Contentlet::getTitleImage);
+                   fieldValue = titleImage
+                           .map(field -> relatedContentlet.get().getInode() + "/" + field.variable())
+                           .orElse("");
+               } else {
+                   fieldValue = "";
+               }
+               return String.format("%s: \"%s\"", key, fieldValue);
+           })
+           .collect(Collectors.joining(","));
+
 %>
     <style type="text/css" media="all">
         @import url(/html/portlet/ext/contentlet/field/relationship_field.css);
@@ -108,6 +187,22 @@
 						<div id="<%=relationJsName%>relateMenu" style="background: white"></div>
 					</div>
 				</th>
+<%
+			if (!overrideRelated) {
+%>
+                <th style="min-width: 100px"></th>
+                <th width="100%"><%=LanguageUtil.get(pageContext, "Title")%></th>
+<%
+			} else {
+                for (final Tuple2<String, String> field : showFields) {
+%>
+                    <th style="min-width: 80px"><%=LanguageUtil.get(pageContext, field._2())%></th>
+<%
+                }
+			}
+%>
+				<th style="min-width: 60px"></th>
+				<th style="min-width: 60px"></th>
 			</tr>
 		</thead>
 		<tbody id="<%=relationJsName%>Table"></tbody>
@@ -131,15 +226,16 @@
 		var <%= relationJsName %>_Contents = new Array ();
 
          function getCurrentLanguageIndex(o) {
-             var languageName = document.getElementById("langcombo").value.split(' ')[0].toLowerCase();
-             var index = 0;
-             for (var sibIndex = 0; sibIndex < o['siblings'].length ; sibIndex++) {
-                 if (o['siblings'][sibIndex]['langName'].toLowerCase() === languageName) {
-                     index = sibIndex;
-                 }
-             }
+              var index = 0;
 
-             return index;
+              for (var sibIndex = 0; sibIndex < o['siblings'].length ; sibIndex++) {
+                  if (o['langCode'].toLowerCase() === o['siblings'][sibIndex]['langCode'].toLowerCase()) {
+                      index = sibIndex;
+                      break;
+                  }
+              }
+             
+              return index;
          }
 
 		//Function used to render language id
@@ -463,8 +559,57 @@
                     langTD.innerHTML = <%= relationJsName %>_lang(item);
                     setTimeout(function () { dojo.parser.parse(item.id); }, 0);
                 }
-			<%}%>
-		    
+            <%}%>
+        }
+
+        function createImageCell(row, item) {
+            var imgCell = row.insertCell (row.cells.length);
+            imgCell.style.whiteSpace="nowrap";
+            imgCell.style.textAlign = 'center';
+            var imageValue;
+            if (typeof item === 'object') {
+                imgCell.innerHTML = (item.hasTitleImage === 'true')
+                    ? '<img class="listingTitleImg" src="/dA/' + item.inode + '/titleImage/64w"  >'
+                    : '<span class="'+item.iconClass+'" style="font-size:24px;width:auto;"></span>';
+            } else {
+                imgCell.innerHTML = item
+                    ? '<img class="listingTitleImg" src="/dA/' + item + '/titleImage/64w"  >'
+                    : '<span style="font-size:24px;width:auto;"></span>';
+            }
+        }
+
+        function CreateRow<%= relationJsName %>(item, hint) {
+            var row = document.createElement("tr");
+            row.className="dataRow<%= relationJsName %>";
+
+            // displays edit(pencil icon) and delete(X).
+            var actionTD = document.createElement("td");
+            dojo.style(actionTD, "text-align", "center");
+            actionTD.innerHTML = <%= relationJsName %>unrelateAction(item);
+            row.appendChild(actionTD);
+
+            if (<%= relationJsName%>_jsOverrideRelated === false) {
+                createImageCell(row, item);
+
+                var titleCell = row.insertCell (row.cells.length);
+                titleCell.innerHTML = <%= relationJsName%>WriteLinkTitle (item);
+
+                createLangTd(row, item);
+            } else {
+                <%= relationJsName %>_showFields.forEach(function(fieldName) {
+                    var fieldValue = '';
+                    if (fieldName === 'languageId') {
+                        createLangTd(row, item);
+                    } else if (fieldName === 'titleImage') {
+                        createImageCell(row, <%= relationJsName %>_specialFields[fieldName]);
+                    } else {
+                        fieldValue = <%= relationJsName %>_specialFields[fieldName] || item[fieldName] || '';
+                        var fieldCell = row.insertCell(row.cells.length);
+                        fieldCell.innerHTML = '<span>' + fieldValue + '</span>'
+                    }
+                });
+            }
+
 			// displays the publish/unpublish/archive status of the content only.
 			var statusTD = document.createElement("td");
 			statusTD.style.whiteSpace="nowrap";
@@ -487,13 +632,6 @@
 			dojo.addClass(order,"<%= relationJsName %>orderBox");
 			order.value = <%= relationJsName %>_order_tf();
 			row.appendChild(order);
-
-            // displays edit(pencil icon) and delete(X).
-            var actionTD = document.createElement("td");
-            dojo.style(actionTD, "text-align", "center");
-            actionTD.innerHTML = <%= relationJsName %>unrelateAction(item);
-            row.appendChild(actionTD);
-
 
 			return {node: row, data: item, type: "text"};
 		}
@@ -704,10 +842,10 @@
          useRelateContentOnSelect="true"
 		 selectButtonLabel='<%= LanguageUtil.get(pageContext, "Relate")%>'
 	     title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %>" 
-	     counter_radio="<%= System.currentTimeMillis() %>" 
-	     searchCounter="<%= System.currentTimeMillis() %>" 
+	     counter_radio="<%= randomNumber %>"
+	     searchCounter="<%= randomNumber %>"
 	     contentletLanguageId="<%=contentlet.getLanguageId() %>"
-	     dialogCounter="<%= System.currentTimeMillis() %>">
+	     dialogCounter="<%= randomNumber %>">
 	 </div>
 
 

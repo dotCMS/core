@@ -40,6 +40,7 @@ import com.dotcms.graphql.util.TypeUtil;
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
@@ -103,18 +104,24 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
 
     @Override
     public Collection<? extends GraphQLType> getTypes() throws DotDataException {
-
-        // we want to generate them always - no cache
-        getContentAPITypes().forEach((graphQLType)->
-                typesMap.put(graphQLType.getName(), graphQLType));
+        fillTypesMap();
 
         return typesMap.values();
     }
 
+    private void fillTypesMap() throws DotDataException {
+        typesMap.clear();
+        // we want to generate them always - no cache
+        Set<GraphQLType> contentAPITypes = getContentAPITypes();
+
+        for (GraphQLType graphQLType : contentAPITypes) {
+            typesMap.put(graphQLType.getName(), graphQLType);
+        }
+    }
+
     Map<String, GraphQLType> getCachedTypesAsMap() throws DotDataException {
         if (!UtilMethods.isSet(typesMap)) {
-            getContentAPITypes().forEach((graphQLType)->
-                    typesMap.put(graphQLType.getName(), graphQLType));
+            fillTypesMap();
         }
         return typesMap;
     }
@@ -126,7 +133,16 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         contentAPITypes.addAll(CustomFieldType.getCustomFieldTypes());
 
         List<ContentType> allTypes = APILocator.getContentTypeAPI(APILocator.systemUser())
-                .findAllRespectingLicense();
+                .search("", null, 100000, 0);
+
+        // let's log if we are including dupe types
+        final Map<String, ContentType> localTypesMap = new HashMap<>();
+        allTypes.forEach((type)-> {
+            if(localTypesMap.containsKey(type.variable())) {
+                Logger.warn(this, "Dupe Content Type detected!: " + type.variable());
+            }
+            localTypesMap.put(type.variable(), type);
+        });
 
         allTypes.forEach((type) -> {
             try {
@@ -140,7 +156,6 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
     }
 
     private GraphQLObjectType createType(ContentType contentType) {
-
         DotPreconditions.checkArgument(contentType.variable()
                 .matches(TYPES_AND_FIELDS_VALID_NAME_REGEX),
                 "Content Type variable does not conform to naming rules",
@@ -178,7 +193,6 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                     Logger.error(this, "Unable to generate GraphQL Field for field: " + field.variable(), e);
                 }
             }
-
         });
 
         // add CONTENT interface fields

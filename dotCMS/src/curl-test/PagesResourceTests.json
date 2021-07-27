@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "5ca31711-c63c-4116-a0fa-85bae897a396",
+		"_postman_id": "e3335521-0cf9-490a-bfef-43b14d99a15c",
 		"name": "Page API - [api/v1/page]",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -14,7 +14,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "c1be4522-30db-40f1-9703-aa4810fd7728",
 								"exec": [
 									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -67,10 +66,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/assets.tar.gz"
 								}
-							],
-							"options": {
-								"formdata": {}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/bundle?sync=true",
@@ -103,7 +99,6 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "3745b616-0ecd-4a17-b58a-f2239ce1f6bd",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -113,15 +108,13 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "a8340c4b-d183-4116-8ab7-9efa129bb4b6",
 						"type": "text/javascript",
 						"exec": [
 							""
 						]
 					}
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "JSON [api/v1/page/json]",
@@ -132,7 +125,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b973ed43-58f3-41b1-b9ad-bd0855f023d8",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -165,7 +157,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b126da97-3ad9-41f2-a476-490e2e1969aa",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 401, Need credentials\", function () {",
@@ -213,7 +204,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d07bf3be-4467-489e-ba82-b92b85baa9a9",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -343,7 +333,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "cf6d7282-2169-4a64-a386-f5ac2385ef24",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -376,7 +365,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b78040ce-5647-4c38-92c3-b65c327fb9de",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 404\", function () {",
@@ -438,7 +426,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "3ebef232-3df5-44b4-8785-bd7b9f0254a1",
 								"exec": [
 									"pm.test(\"No errors\", function () {",
 									"    ",
@@ -556,7 +543,6 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "1fc4897b-8ef0-4dbb-a52a-6ffc7de3bf71",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -566,15 +552,13 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "a673228c-dfaf-4a44-b77c-40444e15329e",
 						"type": "text/javascript",
 						"exec": [
 							""
 						]
 					}
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "Render [api/v1/page/render]",
@@ -585,7 +569,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "5e71f885-b1c3-4476-887b-4f08d33d0e41",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -618,7 +601,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "e6574938-ad43-40b3-b217-fa8b36ba63e4",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 401, Need credentials\", function () {",
@@ -665,7 +647,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "6632cbd5-7f5d-425e-bec1-800c4b969fde",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 200\", function () {",
@@ -788,7 +769,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d5759ce1-3a25-431e-85b9-11aa88dab4c9",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 404\", function () {",
@@ -847,7 +827,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "06301ae6-fad1-420c-90f9-a806e3a87b73",
 								"exec": [
 									"pm.test(\"No errors\", function () {",
 									"    ",
@@ -970,8 +949,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "Layout [/api/v1/page/{page-id}/layout]",
@@ -982,7 +960,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "861780bc-af3d-4b95-a22b-e1461d916cc2",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1015,7 +992,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b1bbc805-5276-4397-be65-3596f11803f2",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 401, Need credentials\", function () {",
@@ -1071,7 +1047,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "916aeb70-c49b-47ff-a9f3-f2bf9066ba21",
 								"exec": [
 									"pm.test(\"Response code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1188,7 +1163,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "6eceebfa-248f-4531-8a44-0148daf18879",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 404\", function () {",
@@ -1257,7 +1231,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "1508e187-d710-4767-afe5-70a61649d81b",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 400\", function () {",
@@ -1326,7 +1299,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "fb3a9d53-0ecb-4ae4-a928-60570d2ba8fb",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 400\", function () {",
@@ -1394,7 +1366,6 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "3dded212-c89a-4c19-864f-0b65e054c34e",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -1404,15 +1375,13 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "87ac19c1-e797-48b0-b42c-a0859da6de7a",
 						"type": "text/javascript",
 						"exec": [
 							""
 						]
 					}
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "Add Content [/api/v1/page/{page-id}/content]",
@@ -1423,7 +1392,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "3782d2a6-bd25-47de-8103-6cd148b1e279",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1456,7 +1424,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d3f0d16e-dd52-4e6f-908a-1ecdd36d1140",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 401, Need credentials\", function () {",
@@ -1512,7 +1479,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "53b371f7-dfc0-4f70-8a2d-3fbcd4e66ebd",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1580,7 +1546,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "cd5a463a-6263-446d-bd58-66d4fbdcb3b4",
 								"exec": [
 									"pm.test(\"Status code is 404\", function () {",
 									"    pm.response.to.have.status(404);",
@@ -1649,7 +1614,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "8ca5b74e-e655-4f5c-aa17-fcc398270917",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 400\", function () {",
@@ -1718,7 +1682,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "5850f8ff-4735-4a75-acd1-2ef2b1451771",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 400\", function () {",
@@ -1787,7 +1750,6 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "b1029e1b-7342-49f9-8815-b3400a0acff9",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -1797,15 +1759,13 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "28bfec6a-6d50-4b71-9300-9a1e4c39c153",
 						"type": "text/javascript",
 						"exec": [
 							""
 						]
 					}
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "Render HTML [/api/v1/page/renderHTML]",
@@ -1816,7 +1776,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "76e28d5e-67bc-4d1f-a5cc-1bba9fc9df58",
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -1849,7 +1808,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "28e63333-7dc0-474f-bd04-9f0f43f9d0cd",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 401, Need credentials\", function () {",
@@ -1892,12 +1850,171 @@
 					"response": []
 				},
 				{
+					"name": "pre_ImportBundleWithDemoHost",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"demo.dotcms.com.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/GraphQL/demo.dotcms.com.tar.gz"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* Imports demo.dotcms.com"
+					},
+					"response": []
+				},
+				{
+					"name": "Switch site to 'demo.dotcms.com'",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    var jsonData = pm.response.json();",
+									"",
+									"    pm.expect(jsonData.entity.hostSwitched).equal(true);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site/switch/48190c8c-42c4-46af-8d1a-0cd5db894797",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"switch",
+								"48190c8c-42c4-46af-8d1a-0cd5db894797"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "SuccessRequest",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "f8af4d19-91af-46e3-ad5f-9dba0780fd3f",
 								"exec": [
 									"",
 									"",
@@ -1961,7 +2078,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "e5b59bea-f6c1-4b49-9a87-06a17b89a7ae",
 								"exec": [
 									"",
 									"pm.test(\"Status code is 404\", function () {",
@@ -2025,7 +2141,6 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "897c5bc3-687c-42dd-9cf6-e2373e0507df",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -2035,22 +2150,124 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "015bd781-395f-4e0a-a2b8-2b8dbad9aec2",
 						"type": "text/javascript",
 						"exec": [
 							""
 						]
 					}
 				}
+			]
+		},
+		{
+			"name": "Put Create Page With CacheTTL 55",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Identifier must contains path\", function () {",
+							"    pm.expect(jsonData.entity.template).contains(\"//default/application/templates/system/\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
 			],
-			"protocolProfileBehavior": {}
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"contentlet\":{\n\t\t\"stName\": \"htmlpageasset\",\n\t\t\"title\": \"PageAsset SystemTemplate\",\n        \"url\": \"pageassetsystemtemplate\",\n        \"friendlyName\":\"pageassetsystemtemplate\",\n        \"template\": \"//demo.dotcms.com/application/templates/system/\",\n        \"sortOrder\": \"0\",\n        \"cachettl\": \"100\",\n        \"hostFolder\":\"48190c8c-42c4-46af-8d1a-0cd5db894797\"\n\t}\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/NEW",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"actions",
+						"default",
+						"fire",
+						"NEW"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Check Cache-Control",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Cache-Control is correct\", function () {",
+							"    pm.response.to.be.header('Cache-Control','max-age=55');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/pageassetsystemtemplate",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"pageassetsystemtemplate"
+					]
+				}
+			},
+			"response": []
 		}
 	],
 	"event": [
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "3f2366fc-0e8c-45e3-95a5-6ab044b919e1",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -2060,7 +2277,6 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "f7a5496c-90c7-4a9b-8ff6-06b3f33fa97e",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -2070,10 +2286,8 @@
 	],
 	"variable": [
 		{
-			"id": "02e8ed2f-e41f-4449-b666-f76ed9d8936f",
 			"key": "serverURL",
 			"value": "http://localhost:8080"
 		}
-	],
-	"protocolProfileBehavior": {}
+	]
 }

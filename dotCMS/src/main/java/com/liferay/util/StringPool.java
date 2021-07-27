@@ -41,7 +41,7 @@ public class StringPool {
 
 	public static final String BLANK = "";
 
-	public static final String CLOSE_BRACKET = "[";
+	public static final String CLOSE_BRACKET = "]";
 
 	public static final String CLOSE_CURLY_BRACE = "}";
 
@@ -70,6 +70,8 @@ public class StringPool {
 	public static final String SEMICOLON = ";";
 
 	public static final String SLASH = FORWARD_SLASH;
+
+    public static final String DOUBLE_SLASH = "//";
 
 	public static final String SPACE = " ";
 

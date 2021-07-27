@@ -1,4 +1,6 @@
-
+<%@page import="com.dotmarketing.image.focalpoint.FocalPoint"%>
+<%@page import="java.util.Optional"%>
+<%@page import="com.dotmarketing.image.focalpoint.FocalPointAPIImpl"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
@@ -486,6 +488,13 @@
        </div>
 
     <%}else{ %>
+
+        <%
+         final Optional<FocalPoint> focalPoint =new FocalPointAPIImpl().readFocalPoint(binInode, field.getVelocityVarName());
+         final String fpStr = focalPoint.isPresent() ? focalPoint.get().x + "," + focalPoint.get().y :"0.0,0.0";
+        %>
+
+
        <div id="thumbnailParent<%=field.getVelocityVarName()%>">
            <div dojoType="dotcms.dijit.image.ImageEditor"
                 editImageText="<%= LanguageUtil.get(pageContext, "Edit-Image") %>"
@@ -493,6 +502,7 @@
                 fieldName="<%=field.getVelocityVarName()%>"
                 binaryFieldId="<%=field.getFieldContentlet()%>"
                 fieldContentletId="<%=field.getFieldContentlet()%>"
+                focalPoint="<%=fpStr %>"
                 saveAsFileName="<%=fileName %>"
                 class="thumbnailDiv<%=field.getVelocityVarName()%>"
            >
@@ -540,6 +550,7 @@
     <%-- File uploader --%>
 
     <div
+            assetName="<%= contentlet.isFileAsset() ? resourceLink.getAssetName() : "" %>"
             resourceLink="<%= contentlet.isFileAsset() ? resourceLink.getResourceLinkAsString() : "" %>"
             resourceLinkUri="<%= contentlet.isFileAsset() ? resourceLink.getResourceLinkUriAsString() : "" %>"
             resourceLinkLabel="<%= contentlet.isFileAsset() ? LanguageUtil.get(pageContext, "Resource-Link") : "" %>"
@@ -698,7 +709,7 @@
     //SELECT kind of field rendering
 } else if (field.getFieldType().equals(Field.FieldType.SELECT.toString())) {
 %>
-    <select dojoType="dijit.form.FilteringSelect"   onChange="emmitFieldDataChange(true)" autocomplete="true" id="<%=field.getVelocityVarName()%>" name="<%=field.getFieldContentlet()%>" <%=field.isReadOnly()?"readonly=\"\"":""%>>
+    <select dojoType="dijit.form.FilteringSelect"   onChange="emmitFieldDataChange(true)" autocomplete="true" id="<%=field.getVelocityVarName()%>Select" name="<%=field.getFieldContentlet()%>" <%=field.isReadOnly()?"readonly=\"\"":""%>>
         <%
             String[] pairs = fieldValues.contains("\r\n") ? fieldValues.split("\r\n") : fieldValues.split("\n");
             for (int j = 0; j < pairs.length; j++)
@@ -763,8 +774,8 @@
         }
     %>
     </select>
-    <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>" value="<%= value %>"/>
-    <script type="text/javascript">
+    <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>MultiSelectHF" value="<%= value %>"/>
+        <script type="text/javascript">
         function update<%=field.getVelocityVarName()%>MultiSelect() {
             var valuesList = "";
             var multiselect = $('<%=field.getVelocityVarName()%>MultiSelect');
@@ -776,7 +787,7 @@
                     valuesList += multiselect.options[i].value;
                 }
             }
-            $('<%=field.getVelocityVarName()%>').value = valuesList;
+            $('<%=field.getVelocityVarName()%>MultiSelectHF').value = valuesList;
         }
 
         update<%=field.getVelocityVarName()%>MultiSelect();
@@ -823,7 +834,7 @@
     <%
         }
     %>
-    <input type="hidden" name="<%=fieldName%>" id="<%=field.getVelocityVarName()%>"
+    <input type="hidden" name="<%=fieldName%>" id="<%=field.getVelocityVarName()%>Checkbox"
            value="<%=value%>">
 
     <script type="text/javascript">
@@ -834,7 +845,7 @@
             checkedInputs.forEach(function(checkedInput) {
                 valuesList.push(checkedInput.value);
             });
-            $("<%=field.getVelocityVarName()%>").value = valuesList.join(",");
+            $("<%=field.getVelocityVarName()%>Checkbox").value = valuesList.join(",");
         }
 
         update<%=field.getVelocityVarName()%>Checkbox();

@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.util;
 
+import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotmarketing.util.Logger;
 import java.util.HashSet;
 import java.util.List;
@@ -8,7 +9,6 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -61,8 +61,9 @@ public class WorkflowEmailUtil {
             }
 
             // get the host of the content
-            Host host = APILocator.getHostAPI().find(processor.getContentlet().getHost(),
-                    APILocator.getUserAPI().getSystemUser(), false);
+            Host host = APILocator
+                    .getHostAPI()
+                    .find(processor.getContentlet(), APILocator.getUserAPI().getSystemUser(), false);
             if (host.isSystemHost()) {
                 host = APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), false);
             }
@@ -86,7 +87,7 @@ public class WorkflowEmailUtil {
                 link += "/dotAdmin/#/c/workflow";
             }
 
-            HttpServletRequest requestProxy = new MockHttpRequest(host.getHostname(), null).request();
+            HttpServletRequest requestProxy = new FakeHttpRequest(host.getHostname(), null).request();
             HttpServletResponse responseProxy = new BaseResponse().response();
             org.apache.velocity.context.Context ctx = VelocityUtil.getWebContext(requestProxy, responseProxy);
             ctx.put("host", host);

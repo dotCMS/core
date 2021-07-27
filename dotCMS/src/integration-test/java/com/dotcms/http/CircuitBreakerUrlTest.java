@@ -1,6 +1,8 @@
 package com.dotcms.http;
 
+import com.dotcms.rest.exception.BadRequestException;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -123,9 +125,8 @@ public class CircuitBreakerUrlTest {
      * @BeforeClass public static void prepare() throws Exception{ //Setting web app environment
      * IntegrationTestInitService.getInstance().init(); }
      */
-
     @Test
-    public void testRecovery() throws ExecutionException, InterruptedException, IOException {
+    public void testRecovery() throws  InterruptedException, IOException {
 
 
         final NullOutputStream nos = new NullOutputStream();
@@ -189,7 +190,7 @@ public class CircuitBreakerUrlTest {
     }
 
     @Test
-    public void testBreakerPool() throws ExecutionException, InterruptedException, IOException {
+    public void testBreakerPool() {
 
 
         final String key = UUIDUtil.uuid();
@@ -256,7 +257,7 @@ public class CircuitBreakerUrlTest {
     }
 
     @Test
-    public void testGet() throws Exception {
+    public void testGet() {
         for (int i = 0; i < 10; i++) {
             try {
                 String x = new CircuitBreakerUrl(goodUrl, 2000).doString();
@@ -269,5 +270,25 @@ public class CircuitBreakerUrlTest {
         }
     }
 
+    /**
+     * Method to test: {@link CircuitBreakerUrl#doOut(OutputStream)}
+     * Given scenario: Invoke {@link CircuitBreakerUrl#doOut(OutputStream)} using a bad request
+     * Expected Result: {@link BadRequestException}
+     */
+    @Test(expected = BadRequestException.class)
+    public void testBadRequest() throws Exception {
+        final NullOutputStream nos = new NullOutputStream();
+
+        final String key = "testBreaker";
+        final int timeout = 2000;
+
+        CircuitBreaker breaker = CurcuitBreakerPool.getBreaker(key);
+
+        assert (breaker.isClosed());
+
+        CircuitBreakerUrl cburl = CircuitBreakerUrl.builder().setUrl("http://sdsfsf.com")
+                .setMethod(Method.POST).setTimeout(timeout).setCircuitBreaker(breaker).build();
+        cburl.doOut(nos);
+    }
 
 }

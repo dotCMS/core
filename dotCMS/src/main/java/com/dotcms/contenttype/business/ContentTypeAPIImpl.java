@@ -6,7 +6,6 @@ import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.event.ContentTypeDeletedEvent;
 import com.dotcms.contenttype.model.event.ContentTypeSavedEvent;
@@ -20,6 +19,7 @@ import com.dotcms.contenttype.model.type.EnterpriseType;
 import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.BaseRuntimeInternationalizationException;
 import com.google.common.collect.ImmutableList;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
@@ -421,9 +421,9 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     // Sets the host:
     try {
       if (contentType.host() == null || contentType.fixed()) {
-        final List<Field> existinFields = contentType.fields();
+        final List<Field> existingFields = contentType.fields();
         contentType = ContentTypeBuilder.builder(contentType).host(Host.SYSTEM_HOST).build();
-        contentType.constructWithFields(existinFields);
+        contentType.constructWithFields(existingFields);
       }
       if (!UUIDUtil.isUUID(contentType.host()) && !Host.SYSTEM_HOST.equalsIgnoreCase(contentType.host())) {
         HostAPI hapi = APILocator.getHostAPI();
@@ -536,7 +536,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
         field = this.checkContentTypeFields(contentTypeToSave, field);
         if (!varNamesCantDelete.containsKey(field.variable())) {
-          fieldAPI.save(field, APILocator.systemUser());
+          fieldAPI.save(field, APILocator.systemUser(), false);
         } else {
           // We replace the newField-ID with the oldField-ID in order to be able to update the
           // Field
@@ -547,7 +547,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
             // Create a copy of the new Field with the oldField-ID,
             field = FieldBuilder.builder(field).id(oldField.id()).build();
-            fieldAPI.save(field, APILocator.systemUser());
+            fieldAPI.save(field, APILocator.systemUser(), false);
           } else {
             // If the field don't match on VariableName and DBColumn we log an error.
             Logger.error(this, "Can't save Field with already existing VariableName: " + field.variable() + ", id: "
@@ -612,4 +612,10 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
             ContentTypeBuilder.builder(contentType).urlMapPattern(null).detailPage(null);
     save(builder.build());
   }
+
+    @Override
+    public boolean isContentTypeAllowed(ContentType contentType) {
+        return LicenseManager.getInstance().isEnterprise() || !BaseContentType
+                .getEnterpriseBaseTypes().contains(contentType.baseType());
+    }
 }

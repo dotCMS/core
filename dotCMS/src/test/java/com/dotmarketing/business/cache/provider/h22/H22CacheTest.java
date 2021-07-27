@@ -2,9 +2,17 @@ package com.dotmarketing.business.cache.provider.h22;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.google.common.io.Files;
 import com.liferay.util.FileUtil;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.control.Try;
 import java.io.File;
 import java.sql.Connection;
@@ -19,7 +27,9 @@ import java.util.concurrent.Executors;
 import org.apache.commons.lang.RandomStringUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+@RunWith(DataProviderRunner.class)
 public class H22CacheTest {
 
 	final String[] GROUPNAMES = { "testGroup", "testGroup2", "myBigGroup" };
@@ -265,6 +275,107 @@ public class H22CacheTest {
 	
 	public final class CantCacheMeObject {
 		final String notSerializable = "fail!";
+
+	}
+
+	public H22Cache newCacheInstance(){
+		File dir = Files.createTempDir();
+		dir.mkdirs();
+
+		final H22Cache cache = new H22Cache(dir.getAbsolutePath());
+		try {
+			cache.init();
+		} catch(Exception e) {
+			throw new DotRuntimeException(e);
+		}
+		return cache;
+	}
+
+	/**
+	 * Given scenario: We create a cache instance then we feed it with remove-task. The cache
+	 * it-self internally decides whether or not (according to the capacity) if some task should be
+	 * executed or not asynchronously
+	 * Expected Results:  The test must match a criteria specified
+	 * within the test-case. That helps to predict a behavior.
+	 * In any case we should never ever get a RejectedExecutionException
+	 */
+	@Test
+	@UseDataProvider("toleranceTestCases")
+	public void Test_Exhaust_Thread_Pool(final ToleranceTestCase testCase) throws Exception {
+
+		final boolean shouldAsync = Config.getBooleanProperty("cache_h22_async", true);
+		final int numberOfAsyncThreads = Config.getIntProperty("cache_h22_async_threads", 10);
+		final int asyncTaskQueueSize = Config.getIntProperty("cache_h22_async_task_queue", 10000);
+		final float threadAllocationTolerance = Config.getFloatProperty("cache_h22_async_tolerance", 0.9F);
+
+		Config.setProperty("cache_h22_async", true);
+		Config.setProperty("cache_h22_async_threads", testCase.numberOfThreads);
+		Config.setProperty("cache_h22_async_task_queue", testCase.queueSize);
+		Config.setProperty("cache_h22_async_tolerance", testCase.tolerance);
+
+		final H22Cache cache = newCacheInstance();
+
+		try {
+			final String randomAlphanumeric = RandomStringUtils.randomAlphanumeric(10);
+			final Object object = new Object();
+
+			assertTrue(cache.shouldAsync);
+			int count = 0;
+			for (int i = 1; i <= testCase.numberOfTask; i++) {
+				cache.put(randomAlphanumeric, randomAlphanumeric, object);
+				cache.remove(randomAlphanumeric, randomAlphanumeric);
+
+				if (!cache.isAllocationWithinTolerance()) {
+					count++;
+				}
+			}
+			if (testCase.expectAllocationExceeded) {
+				assertTrue(count > 0);
+			} else {
+				assertEquals(count, 0);
+			}
+
+		} finally {
+
+			Config.setProperty("cache_h22_async", shouldAsync);
+			Config.setProperty("cache_h22_async_threads", numberOfAsyncThreads);
+			Config.setProperty("cache_h22_async_task_queue", asyncTaskQueueSize);
+			Config.setProperty("cache_h22_async_tolerance", threadAllocationTolerance);
+
+			cache.shutdown();
+		}
+
+	}
+
+	@DataProvider
+	public static Object[] toleranceTestCases() throws Exception {
+		return new Object[]{
+
+				new ToleranceTestCase(.98F, 1, 3000, 10000, false),
+				new ToleranceTestCase(.98F, 1, 3000, 5000, false),
+				new ToleranceTestCase(.98F, 1, 3000, 2000, true), // The queue is too small
+
+				new ToleranceTestCase(.2F, 1, 3000, 10000, true), // Tolerance is too low
+				new ToleranceTestCase(.9F, 10, 10000, 10000, false), //Tolerance is high but there are many workers
+				new ToleranceTestCase(.9F, 2, 50000, 10000, true),
+				new ToleranceTestCase(.5F, 10, 50000, 10000, true)
+		};
+	}
+
+	static class ToleranceTestCase{
+	    final float tolerance;
+	    final int numberOfThreads;
+	    final int numberOfTask;
+	    final int queueSize;
+	    final boolean expectAllocationExceeded;
+
+	    ToleranceTestCase(final float tolerance, final int numberOfThreads, final int numberOfTask, final int queueSize, final boolean expectAllocationExceeded) {
+			this.tolerance = tolerance;
+			this.numberOfThreads = numberOfThreads;
+			this.numberOfTask = numberOfTask;
+			this.queueSize = queueSize;
+			this.expectAllocationExceeded = expectAllocationExceeded;
+		}
 
 	}
 

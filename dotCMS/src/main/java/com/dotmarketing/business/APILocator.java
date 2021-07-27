@@ -28,6 +28,8 @@ import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.business.FieldAPIImpl;
 import com.dotcms.device.DeviceAPI;
 import com.dotcms.device.DeviceAPIImpl;
+import com.dotcms.dotpubsub.DotPubSubProvider;
+import com.dotcms.dotpubsub.DotPubSubProviderLocator;
 import com.dotcms.enterprise.ESSeachAPI;
 import com.dotcms.enterprise.RulesAPIProxy;
 import com.dotcms.enterprise.ServerActionAPIImplProxy;
@@ -44,6 +46,8 @@ import com.dotcms.keyvalue.business.KeyValueAPI;
 import com.dotcms.keyvalue.business.KeyValueAPIImpl;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.languagevariable.business.LanguageVariableAPIImpl;
+import com.dotcms.mail.MailAPI;
+import com.dotcms.mail.MailAPIImpl;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.notifications.business.NotificationAPIImpl;
 import com.dotcms.publisher.assets.business.PushedAssetsAPI;
@@ -63,6 +67,10 @@ import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPI;
 import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPIFactory;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.security.apps.AppsAPI;
+import com.dotcms.storage.FileMetadataAPI;
+import com.dotcms.storage.FileMetadataAPIImpl;
+import com.dotcms.storage.FileStorageAPI;
+import com.dotcms.storage.FileStorageAPIImpl;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPIFactory;
 import com.dotcms.timemachine.business.TimeMachineAPI;
@@ -72,6 +80,7 @@ import com.dotcms.util.FileWatcherAPIImpl;
 import com.dotcms.util.ReflectionUtils;
 import com.dotcms.util.SecurityLoggerServiceAPI;
 import com.dotcms.util.SecurityLoggerServiceAPIFactory;
+import com.dotcms.uuid.shorty.LegacyShortyIdAPIImpl;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.uuid.shorty.ShortyIdAPIImpl;
 import com.dotcms.vanityurl.business.VanityUrlAPI;
@@ -84,10 +93,11 @@ import com.dotmarketing.business.portal.PortletAPIImpl;
 import com.dotmarketing.cms.urlmap.URLMapAPIImpl;
 import com.dotmarketing.common.reindex.ReindexQueueAPI;
 import com.dotmarketing.common.reindex.ReindexQueueAPIImpl;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.factories.MultiTreeAPIImpl;
+import com.dotmarketing.image.focalpoint.FocalPointAPI;
+import com.dotmarketing.image.focalpoint.FocalPointAPIImpl;
 import com.dotmarketing.plugin.business.PluginAPI;
 import com.dotmarketing.plugin.business.PluginAPIImpl;
 import com.dotmarketing.portlets.calendar.business.CalendarReminderAPI;
@@ -139,6 +149,7 @@ import com.dotmarketing.tag.business.TagAPIImpl;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Queue;
@@ -172,6 +183,25 @@ public class APILocator extends Locator<APIIndex>{
 		if(instance != null) {
 			return;
 		}
+
+		String apiLocatorClass = Config.getStringProperty("API_LOCATOR_IMPLEMENTATION", null);
+		if (apiLocatorClass != null) {
+			instance = (APILocator) ReflectionUtils.newInstance(apiLocatorClass);
+		}
+		if (instance == null) {
+			instance = new APILocator();
+		}
+	}
+
+	/**
+	 * Destroy the current instance and Creates a single instance of this class.
+	 * this is only for testing
+	 */
+	@VisibleForTesting
+	public synchronized static void destroyAndForceInit(){
+
+		destroy();
+		instance = null;
 
 		String apiLocatorClass = Config.getStringProperty("API_LOCATOR_IMPLEMENTATION", null);
 		if (apiLocatorClass != null) {
@@ -229,6 +259,11 @@ public class APILocator extends Locator<APIIndex>{
 	 * @return The {@link CompanyAPI} class.
 	 */
 	public static CompanyAPI getCompanyAPI() {
+		return getAPILocatorInstance().getCompanyAPIImpl();
+	}
+
+	@VisibleForTesting
+	protected CompanyAPI getCompanyAPIImpl() {
 		return (CompanyAPI) getInstance(APIIndex.COMPANY_API);
 	}
 
@@ -268,6 +303,14 @@ public class APILocator extends Locator<APIIndex>{
 		return (UserAPI)getInstance(APIIndex.USER_API);
 	}
 
+	private static Lazy<MailAPI> lazyMail = Lazy.of(MailAPIImpl::new);
+	                
+    public static MailAPI getMailApi() {
+        return lazyMail.get();
+    }
+
+	
+	
 	/**
 	 * Creates a single instance of the {@link LoginAsAPI} class.
 	 *
@@ -285,6 +328,10 @@ public class APILocator extends Locator<APIIndex>{
 	public static EventAPI getEventAPI() {
 		return (EventAPI)getInstance(APIIndex.EVENT_API);
 	}
+	
+    public static DotPubSubProvider getDotPubSubProvider() {
+        return (DotPubSubProvider) DotPubSubProviderLocator.provider.get();
+    }
 
 	/**
 	 * Creates a single instance of the {@link CategoryAPI} class.
@@ -345,6 +392,16 @@ public class APILocator extends Locator<APIIndex>{
 	public static ContentletAPI getContentletAPI() {
 		return (ContentletAPI)getInstance(APIIndex.CONTENTLET_API_INTERCEPTER);
 	}
+
+    /**
+     * This is the contentletAPI which an application should use to do ALL
+     * normal {@link ContentletAPI} logic.
+     *
+     * @return The {@link ContentletAPI} class.
+     */
+    public static FocalPointAPI getFocalPointAPI() {
+        return (FocalPointAPI)getInstance(APIIndex.FOCAL_POINT_API);
+    }
 
 	/**
 	 * Creates a single instance of the {@link IdentifierAPI} class.
@@ -527,6 +584,22 @@ public class APILocator extends Locator<APIIndex>{
 	 */
 	public static FileAssetAPI getFileAssetAPI(){
 		return (FileAssetAPI) getInstance(APIIndex.FILEASSET_API);
+	}
+
+	/**
+	 * Creates the {@link FileStorageAPI}
+	 * @return FileStorageAPI
+	 */
+	public static FileStorageAPI getFileStorageAPI(){
+		return (FileStorageAPI) getInstance(APIIndex.FILESTORAGE_API);
+	}
+
+	/**
+	 * Creates the {@link FileStorageAPI}
+	 * @return FileStorageAPI
+	 */
+	public static FileMetadataAPI getFileMetadataAPI(){
+		return (FileMetadataAPI) getInstance(APIIndex.CONTENTLET_METADATA_API);
 	}
 
 	/**
@@ -994,6 +1067,14 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	/**
+	 * Creates a single instance of the {@link com.dotmarketing.business.DeterministicIdentifierAPI} class.
+	 * @return The {@link com.dotmarketing.business.DeterministicIdentifierAPI} class.
+	 */
+	public static DeterministicIdentifierAPI getDeterministicIdentifierAPI(){
+		return (DeterministicIdentifierAPI) getInstance(APIIndex.DETERMINISTIC_IDENTIFIER_API);
+	}
+
+	/**
 	 * Generates a unique instance of the specified dotCMS API.
 	 *
 	 * @param index
@@ -1132,10 +1213,14 @@ enum APIIndex
 	URLMAP_API,
 	CONTENT_TYPE_FIELD_LAYOUT_API,
 	PUBLISH_AUDIT_API,
+	FOCAL_POINT_API,
 	APPS_API,
 	DOT_ASSET_API,
 	BROWSER_API,
-	DEVICE_API;
+	FILESTORAGE_API,
+	CONTENTLET_METADATA_API,
+	DEVICE_API,
+	DETERMINISTIC_IDENTIFIER_API;
 
 
 
@@ -1196,7 +1281,7 @@ enum APIIndex
     		case ES_SEARCH_API: return new ESSearchProxy();
     		case RULES_API: return new RulesAPIProxy();
     		case VISITOR_API: return new VisitorAPIImpl();
-    		case SHORTY_ID_API: return new ShortyIdAPIImpl();
+    		case SHORTY_ID_API: return Config.getBooleanProperty("dotshortyapi_use_legacy", false)? new LegacyShortyIdAPIImpl(): new ShortyIdAPIImpl();
     		case SYSTEM_EVENTS_API: return SystemEventsFactory.getInstance().getSystemEventsAPI();
     		case WEB_SOCKET_CONTAINER_API:return WebSocketContainerAPIFactory.getInstance().getWebSocketContainerAPI();
     		case COMPANY_API: return CompanyAPIFactory.getInstance().getCompanyAPI();
@@ -1214,10 +1299,14 @@ enum APIIndex
 			case URLMAP_API: return new URLMapAPIImpl();
 			case CONTENT_TYPE_FIELD_LAYOUT_API: return new ContentTypeFieldLayoutAPIImpl();
 			case PUBLISH_AUDIT_API: return PublishAuditAPIImpl.getInstance();
+			case FOCAL_POINT_API: return new FocalPointAPIImpl();
 			case APPS_API: return AppsAPI.INSTANCE.get();
 			case DOT_ASSET_API: return new DotAssetAPIImpl();
 			case BROWSER_API: return new BrowserAPIImpl();
+			case FILESTORAGE_API: return new FileStorageAPIImpl();
+			case CONTENTLET_METADATA_API: return new FileMetadataAPIImpl();
 			case DEVICE_API: return new DeviceAPIImpl();
+			case DETERMINISTIC_IDENTIFIER_API: return new DeterministicIdentifierAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

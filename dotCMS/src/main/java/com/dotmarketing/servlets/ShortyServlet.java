@@ -5,6 +5,7 @@ import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FileField;
 import com.dotcms.contenttype.model.field.ImageField;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
@@ -16,12 +17,14 @@ import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.image.filter.ImageFilterApiImpl;
 import com.dotmarketing.image.focalpoint.FocalPoint;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.PortalException;
@@ -29,13 +32,14 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-
+import io.vavr.control.Try;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
@@ -68,6 +72,9 @@ public class ShortyServlet extends HttpServlet {
   private static final Pattern focalPointPattern               = Pattern.compile("/(\\.\\d+,\\.\\d+)fp");
   
   private static final Pattern qualityPattern               = Pattern.compile("/(\\d+)q");
+  
+  private static final Pattern resampleOptsPattern               = Pattern.compile("/(\\d+)ro");
+  
   
   @CloseDBIfOpened
   protected void service(final HttpServletRequest request, final HttpServletResponse response)
@@ -208,6 +215,23 @@ public class ShortyServlet extends HttpServlet {
     return quality;
   }
   
+  
+  private int getResampleOpt(final String uri) {
+
+      final Matcher resampleOptMatcher = resampleOptsPattern.matcher(uri);
+
+      
+      
+      return Try.of(() -> resampleOptMatcher.find() ?
+                      Integer.parseInt(resampleOptMatcher.group(1)) :
+                          ImageFilterApiImpl.DEFAULT_RESAMPLE_OPT).getOrElse(ImageFilterApiImpl.DEFAULT_RESAMPLE_OPT);
+
+  }
+  
+  
+  
+  
+  
   private void serve(final HttpServletRequest request,
                      final HttpServletResponse response) throws Exception {
 
@@ -253,13 +277,14 @@ public class ShortyServlet extends HttpServlet {
     final int      width   = this.getWidth(lowerUri, 0);
     final int      height  = this.getHeight(lowerUri, 0);
     final int      quality  = this.getQuality(lowerUri, 0);
-    final Optional<FocalPoint> focalPoint = this.getFocalPoint(lowerUri);
+    final int      resampleOpt = this.getResampleOpt(lowerUri);
+    Optional<FocalPoint> focalPoint = Optional.empty();
     final int      cropWidth  = this.cropWidth(lowerUri);
     final int      cropHeight  = this.cropHeight(lowerUri);
     final boolean  jpeg    = lowerUri.contains(JPEG);
     final boolean  jpegp   = jpeg && lowerUri.contains(JPEGP);
     final boolean  webp    = lowerUri.contains(WEBP);
-    final boolean  isImage = webp || jpeg || width+height > 0 || quality>0 || focalPoint.isPresent() || cropHeight>0 || cropWidth>0;
+    final boolean  isImage = webp || jpeg || width+height > 0 || quality>0 || cropHeight>0 || cropWidth>0;
     final ShortyId shorty  = shortOpt.get();
     final String   path    = isImage? "/contentAsset/image" : "/contentAsset/raw-data";
     final User systemUser  = APILocator.systemUser();
@@ -277,6 +302,16 @@ public class ShortyServlet extends HttpServlet {
               response.sendError(HttpServletResponse.SC_NOT_FOUND);
               return;
           }
+
+          if(cropWidth+cropHeight>0 ) {
+              focalPoint = this.getFocalPoint(lowerUri);
+              Optional<Tag> focalPointTag = APILocator.getTagAPI().getTagsByInode(conOpt.get().getInode()).stream().filter(t->t.getTagName().startsWith("fp:"+fieldName+":")).findAny();
+              if(focalPointTag.isPresent()) {
+                  focalPoint = Try.of(()->new FocalPoint(focalPointTag.get().getTagName().replace("fp:", ""))).toJavaOptional();
+              }
+          }
+
+
           id=this.inodePath(conOpt.get(), fieldName, live);
         }else {
           id="/" + shorty.longId + "/temp";
@@ -287,7 +322,7 @@ public class ShortyServlet extends HttpServlet {
       final StringBuilder pathBuilder = new StringBuilder(path)
               .append(id).append("/byInode/true");
 
-      this.addImagePath(width, height, quality, jpeg, jpegp,webp, isImage, pathBuilder, focalPoint, cropWidth,cropHeight);
+      this.addImagePath(width, height, quality, jpeg, jpegp,webp, isImage, pathBuilder, focalPoint, cropWidth,cropHeight,resampleOpt);
       this.doForward(request, response, pathBuilder.toString());
     } catch (DotContentletStateException e) {
 
@@ -321,7 +356,8 @@ public class ShortyServlet extends HttpServlet {
                             final StringBuilder pathBuilder,
                             final Optional<FocalPoint> focalPoint,
                             final int cropWidth,
-                            final int cropHeight ) {
+                            final int cropHeight,
+                            final int resampleOpt) {
         if (isImage) {
 
             if (quality > 0) {
@@ -338,6 +374,7 @@ public class ShortyServlet extends HttpServlet {
 
             pathBuilder.append(width > 0 ? "/resize_w/" + width : StringPool.BLANK);
             pathBuilder.append(height > 0 ? "/resize_h/" + height : StringPool.BLANK);
+            pathBuilder.append(resampleOpt > 0 ? "/resize_ro/" + resampleOpt : StringPool.BLANK);
         }
   }
 
@@ -370,7 +407,7 @@ public class ShortyServlet extends HttpServlet {
   protected final String inodePath(final Contentlet contentlet,
                                    final String tryField,
                                    final boolean live)
-            throws DotStateException, DotDataException {
+          throws DotStateException, DotDataException, DotSecurityException {
 
         final Optional<Field> fieldOpt = resolveField(contentlet, tryField);
 
@@ -382,14 +419,21 @@ public class ShortyServlet extends HttpServlet {
         if (field instanceof ImageField || field instanceof FileField) {
 
             final String relatedImageId = contentlet.getStringProperty(field.variable());
-            final ContentletVersionInfo contentletVersionInfo =
+            final Optional<ContentletVersionInfo> contentletVersionInfo =
                     this.versionableAPI.getContentletVersionInfo(relatedImageId, contentlet.getLanguageId());
 
-            if (contentletVersionInfo != null) {
+            if (contentletVersionInfo.isPresent()) {
+                final String inode = live ? contentletVersionInfo.get().getLiveInode()
+                        : contentletVersionInfo.get().getWorkingInode();
 
-                final String inode = live ? contentletVersionInfo.getLiveInode() : contentletVersionInfo.getWorkingInode();
+                final Contentlet  imageContentlet = APILocator.getContentletAPI()
+                        .find(inode, APILocator.systemUser(), false);
+
+                final String fieldVar = imageContentlet.isDotAsset() ?
+                        DotAssetContentType.ASSET_FIELD_VAR : FILE_ASSET_DEFAULT;
+
                 return new StringBuilder(StringPool.FORWARD_SLASH).append(inode)
-                        .append(StringPool.FORWARD_SLASH).append(FILE_ASSET_DEFAULT).toString();
+                    .append(StringPool.FORWARD_SLASH).append(fieldVar).toString();
             }
         }
 

@@ -33,7 +33,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
  *
  * @author Jonathan Gamba 9/25/18
  */
-@PowerMockIgnore({"javax.management.*", "javax.crypto.*"})
+@PowerMockIgnore({"javax.management.*", "javax.crypto.*", "jdk.internal.reflect.*"})
 @PrepareForTest({SecurityLogger.class})
 @RunWith(PowerMockRunner.class)
 public class DefaultBackEndLoginRequiredWebInterceptorTest extends UnitTestBase {
