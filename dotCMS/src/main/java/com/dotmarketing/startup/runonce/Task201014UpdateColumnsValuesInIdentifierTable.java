@@ -18,7 +18,7 @@ public class Task201014UpdateColumnsValuesInIdentifierTable extends AbstractJDBC
 
         final StringBuilder query = new StringBuilder();
 
-        query.append("ALTER TABLE identifier DISABLE TRIGGER ALL;\n");
+        query.append("SET session_replication_role TO 'replica';\n");
 
         //update templates
         query.append(getQueryToUpdateNonContentletsPostgres("template"));
@@ -44,7 +44,7 @@ public class Task201014UpdateColumnsValuesInIdentifierTable extends AbstractJDBC
                 .append(" WHERE  id=myID;\n");
 
 
-        query.append("ALTER TABLE identifier ENABLE TRIGGER ALL;\n");
+        query.append("SET session_replication_role TO 'origin';\n");
         return query.toString();
     }
 
