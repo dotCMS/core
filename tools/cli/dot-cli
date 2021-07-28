@@ -38,13 +38,9 @@ if [[ -z ${PASS} ]]; then
  export PASS=${JSON_WEB_TOKEN}
 fi
 
-export identifiersFile="identifiers-$timestamp"
+identifiersFile=$(mktemp) || exit 1;
 
-# the file must be created in the parent process so it can endure
-touch $identifiersFile
-
-cli_log "identifiers file is $identifiersFile"
-
+export identifiersFile;
 
 case "$1" in
   --bundle|-b|-B)
@@ -66,8 +62,7 @@ esac
 
 
 if [[  -f ${identifiersFile} ]]; then
-  cat ${identifiersFile}
-  rm ${identifiersFile}
+  rm "${identifiersFile}"
 fi
 
 unset identifiersFile

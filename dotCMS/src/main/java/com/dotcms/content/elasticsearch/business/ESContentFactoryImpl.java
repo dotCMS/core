@@ -1991,31 +1991,17 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 null == contentlet.getNullProperties() || !contentlet.getNullProperties()
                         .contains(Contentlet.TITTLE_KEY);
 
-        String name = "";
-        if (allowTitle) {
-            try {
-                // If the contentlet doesn't have the identifier is pointless to call ContentletAPI().getName().
-                if (UtilMethods.isSet(contentlet) && UtilMethods.isSet(contentlet.getIdentifier())) {
-                    name = APILocator.getContentletAPI().getName(
-                            contentlet, APILocator.getUserAPI().getSystemUser(), true);
-                } else{
-                    name = contentlet.getStringProperty(Contentlet.TITTLE_KEY);
-                }
-            } catch (DotSecurityException e) {
+        String name = (String) contentlet.getMap().get(Contentlet.TITTLE_KEY);
 
-            }
-        }
-
+        //insert title
         upsertValues.add(name);
         upsertValues.add(new Timestamp(contentlet.getModDate().getTime()));
         upsertValues.add(contentlet.getModUser());
         upsertValues.add(new Long(contentlet.getSortOrder()).intValue());
 
-        if (allowTitle) { // if the title was not intentionally set to null.
-            upsertValues.add(name); //friendly name
-        } else {
-            upsertValues.add(null);
-        }
+        //insert friendly name
+        upsertValues.add(name);
+
 
         upsertValues.add(contentlet.getContentTypeId());
 
