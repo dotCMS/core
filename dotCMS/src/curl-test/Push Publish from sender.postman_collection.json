@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "5456fe1f-f24c-4c32-ac62-17c46e540837",
+		"_postman_id": "78066042-7091-4bc7-aa60-5a6dd3512d0b",
 		"name": "Push Publish from sender",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -3554,7 +3554,7 @@
 					"",
 					"        htmlWithoutSpace = $.html().replace(/(\\r\\n|\\n|\\r)/gm, \"\");",
 					"",
-					"        if (htmlWithoutSpace.includes(bundleWaitingPublish) || htmlWithoutSpace.includes(pendingStatus) || htmlWithoutSpace.includes(bundlingStatus) || htmlWithoutSpace.includes(noResultFound) || htmlWithoutSpace.includes(publishingBundle) || htmlWithoutSpace.includes(bundleReceived) || htmlWithoutSpace.includes(bundleReceived)) {",
+					"        if (htmlWithoutSpace.includes(bundleWaitingPublish) || htmlWithoutSpace.includes(pendingStatus) || htmlWithoutSpace.includes(bundlingStatus) || htmlWithoutSpace.includes(noResultFound) || htmlWithoutSpace.includes(publishingBundle) || htmlWithoutSpace.includes(bundleReceived) || htmlWithoutSpace.includes('No bundle found with the given ID.')) {",
 					"            console.log('No bundle found with the given ID.');",
 					"            postman.setNextRequest(\"check success status\");",
 					"        } else {",
