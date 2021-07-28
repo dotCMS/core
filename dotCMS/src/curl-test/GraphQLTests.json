@@ -6023,7 +6023,12 @@
 							"response": []
 						}
 					]
-				},
+				}
+			]
+		},
+		{
+			"name": "Cats",
+			"item": [
 				{
 					"name": "No value for cats field should return empty list Copy",
 					"item": [
