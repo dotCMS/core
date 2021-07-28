@@ -51,7 +51,7 @@ if [[ 200 == ${code} ]]; then
               echo "pushing dir $path"
               json="[\"${path}\"]"
               response=$(curl -s -X POST "${DOTCMS_BASE_URL}/api/v1/folder/createfolders/${siteName}" --header "Authorization: Bearer ${JSON_WEB_TOKEN}"  --header 'Content-Type: application/json' --data-raw  "$json"  --compressed)
-              echo $response
+              echo "$response" | jq --color-output .
            fi
         fi
 
@@ -63,7 +63,8 @@ if [[ 200 == ${code} ]]; then
               fileName=$(basename "${path}")
               ##TODO: discard hidden files here
               response=$(curl -s -T ${line} "${DOTCMS_BASE_URL}/webdav/live/${langId}${siteInclusivePath}" -u "${USER}:${PASS}" --compressed)
-              echo ${response}
+              # Webdav end-points do not respond in json
+              echo "$response"
           fi
         fi
 
