@@ -269,6 +269,11 @@ export const EDIT_PAGE_JS = `
             return false;
         }
 
+        // Container reached max contentlet's limit
+        if (container.querySelectorAll('[data-dot-object="contentlet"]').length === parseInt(container.dataset.maxContentlets, 10)) {
+            return false;
+        }
+
         return true;
     }
 
@@ -329,11 +334,15 @@ export const EDIT_PAGE_JS = `
                 }
             }
 
-        } else if (container && !container.querySelectorAll('[data-dot-object="contentlet"]').length) { // Empty container
-            if (isContainerValid(container) && isContentletPlaceholderInDOM()) { 
+        } else if (
+                container && 
+                !container.querySelectorAll('[data-dot-object="contentlet"]').length && 
+                isContainerValid(container)
+            ) { // Empty container
+
+            if (isContentletPlaceholderInDOM()) { 
                 removeElementById('contentletPlaceholder');
             }
-
             container.appendChild(setPlaceholderContentlet()); 
         }
     }
