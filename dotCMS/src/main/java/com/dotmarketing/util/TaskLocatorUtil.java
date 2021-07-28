@@ -183,7 +183,6 @@ public class TaskLocatorUtil {
 		.add(Task01096CreateContainerStructuresTable.class)
 		.add(Task03005CreateModDateForFieldIfNeeded.class)
 		.add(Task03010AddContentletIdentifierIndex.class)
-		.add(Task201102UpdateColumnSitelicTable.class)
 		.add(Task03015CreateClusterConfigModel.class)
 		.add(Task03020PostgresqlIndiciesFK.class)
 		.add(Task03025CreateFoundationForNotificationSystem.class)
@@ -292,6 +291,7 @@ public class TaskLocatorUtil {
 		//New task date-based naming convention starts here
         .add(Task201013AddNewColumnsToIdentifierTable.class)
         .add(Task201014UpdateColumnsValuesInIdentifierTable.class)
+        .add(Task201102UpdateColumnSitelicTable.class)
 		.add(Task210218MigrateUserProxyTable.class)
 		.add(Task210316UpdateLayoutIcons.class)
         .add(Task210319CreateStorageTable.class)
