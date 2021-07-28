@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.structure.model;
 
+import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_ONE;
 import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_MANY;
 
@@ -7,12 +8,16 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.publisher.util.PusheableAsset;
+import com.dotcms.publishing.manifest.ManifestItem;
+import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.liferay.util.StringPool;
 
 /**
@@ -25,7 +30,7 @@ import com.liferay.util.StringPool;
  * @author root
  * @since Mar 22, 2012
  */
-public class Relationship extends Inode {
+public class Relationship extends Inode implements ManifestItem {
 	
 	private static final long serialVersionUID = 1L;
 	
@@ -271,4 +276,13 @@ public class Relationship extends Inode {
 	    
 	}
 
+	@JsonIgnore
+	@Override
+	public ManifestInfo getManifestInfo(){
+		return new ManifestInfoBuilder()
+			.objectType(PusheableAsset.RELATIONSHIP.getType())
+			.id(this.inode)
+			.title(this.getTitle())
+			.build();
+	}
 }

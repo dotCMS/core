@@ -38,6 +38,7 @@ import com.dotcms.publishing.PublisherAPIImplTest;
 import com.dotcms.publishing.PublisherFilterImplTest;
 import com.dotcms.publishing.PushPublishFiltersInitializerTest;
 import com.dotcms.publishing.job.SiteSearchJobImplTest;
+import com.dotcms.publishing.manifest.CSVManifestBuilderTest;
 import com.dotcms.rendering.velocity.directive.DotParseTest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateToolTest;
@@ -434,6 +435,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task210510UpdateStorageTableDropMetadataColumnTest.class,
         StaticPushPublishBundleGeneratorTest.class,
         CookieToolTest.class,
+        CSVManifestBuilderTest.class,
         MoveContentActionletTest.class,
         ImageFilterAPIImplTest.class,
         DeterministicIdentifierAPITest.class,
