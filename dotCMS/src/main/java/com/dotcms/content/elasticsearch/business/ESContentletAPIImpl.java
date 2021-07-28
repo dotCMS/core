@@ -376,7 +376,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         final Tuple2<String, Host> hostPathTuple = Try.of(()->HostUtil.splitPathHost(hostAndFolderPath, user,
-                StringPool.FORWARD_SLASH, HostUtil::findCurrentHost)).getOrElseThrow(e -> new DotRuntimeException(e));
+                StringPool.FORWARD_SLASH)).getOrElseThrow(e -> new DotRuntimeException(e));
 
         return this.move(contentlet, user, hostPathTuple._2(), hostPathTuple._1(), respectFrontendRoles);
     }
@@ -395,13 +395,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
         // we need a / at the end to check if exits
         final String folderPath = folderPathParam.endsWith(StringPool.SLASH)?folderPathParam: folderPathParam + StringPool.SLASH;
 
+        //Check if the folder exists via Admin user, b/c user couldn't have VIEW Permissions over the folder
         Folder folder = Try.of(()-> APILocator.getFolderAPI()
-                .findFolderByPath(folderPath, host, user, respectFrontendRoles)).getOrNull();
+                .findFolderByPath(folderPath, host, APILocator.systemUser(), respectFrontendRoles)).getOrNull();
 
         if (null == folder || !UtilMethods.isSet(folder.getInode())) {
 
             // if the folder does not exists try, let's see if the current user can create it.
-            if (this.permissionAPI.doesUserHavePermission(host, PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles)) {
                 Logger.debug(this, ()->"On Moving Contentlet, creating the Folders: " + folderPath);
 
                 try {
@@ -427,11 +427,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     Logger.warn(getClass(),t.getMessage(),t);
                     folder = null;
                 }
-            }
+
 
             if (null == folder || !UtilMethods.isSet(folder.getInode())) {
-
-                throw new DoesNotExistException("The folder does not exists: " + folderPath + " and could not be created");
+                throw new IllegalArgumentException("The folder does not exists: " + folderPath + " and could not be created");
             }
         }
 
@@ -460,9 +459,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotSecurityException("CONTENT_APIS_ALLOW_ANONYMOUS setting does not allow anonymous content WRITEs");
         }
 
-        // if the user can write and add a children to the host
+        // if the user can write and add a children to the folder
         if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles) ||
-                !permissionAPI.doesUserHavePermission(host, PERMISSION_CAN_ADD_CHILDREN, user)) {
+                !permissionAPI.doesUserHavePermission(folder, PERMISSION_CAN_ADD_CHILDREN, user)) {
 
             this.throwSecurityException(contentlet, user);
         }
