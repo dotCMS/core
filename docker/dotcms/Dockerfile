@@ -31,7 +31,7 @@ RUN chmod -R 666 /srv && find /srv/ -type d -exec chmod a+x {} \;
 # Stage 2:  Construct our container using the minimal-java image
 #           and copying the prebuilt dotcms
 # ----------------------------------------------
-FROM dotcms/java-base:erick-test as container-base
+FROM dotcms/java-base:latest as container-base
 
 WORKDIR /srv
 
