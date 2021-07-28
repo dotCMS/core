@@ -5952,7 +5952,7 @@
 										{
 											"key": "file",
 											"type": "file",
-											"src": "/Users/danielsilva/Documents/core-release/dotCMS/src/curl-test/resources/GraphQL/contentWithTags2807.tar.gz"
+											"src": "resources/GraphQL/contentWithTags2807.tar.gz"
 										}
 									]
 								},
@@ -6088,7 +6088,7 @@
 										{
 											"key": "file",
 											"type": "file",
-											"src": "/Users/danielsilva/Documents/core-release/dotCMS/src/curl-test/resources/GraphQL/contentWithCats2807.tar.gz"
+											"src": "resources/GraphQL/contentWithCats2807.tar.gz"
 										}
 									]
 								},
