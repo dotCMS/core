@@ -224,6 +224,9 @@ abstract class DotCSSCompiler {
         if (f.exists())
           continue;
         String assetUri = asset.getURI();
+        if (assetUri.endsWith(".scss") && areSiblings(uri, assetUri)) {
+          continue;
+        }
         getAllImportedURI().add(assetUri);
         f.getParentFile().mkdirs();
         FileUtil.copyFile(asset.getFileAsset(), f);
@@ -232,6 +235,10 @@ abstract class DotCSSCompiler {
     }
 
     return compDir;
+  }
+
+  private boolean areSiblings(final String uri, final String otherUri) {
+    return uri.substring(0, uri.lastIndexOf("/")).equals(otherUri.substring(0, otherUri.lastIndexOf("/")));
   }
 
   private String addImportUnderscore(String url) {
