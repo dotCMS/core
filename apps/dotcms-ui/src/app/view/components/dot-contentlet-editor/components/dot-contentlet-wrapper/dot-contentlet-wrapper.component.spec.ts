@@ -278,6 +278,25 @@ describe('DotContentletWrapperComponent', () => {
                     };
                     dotIframeDialog.triggerEventHandler('custom', params);
                     expect(component.custom.emit).toHaveBeenCalledWith(params);
+                });
+
+                it('should reload content dialog if is not a new content', () => {
+                    const params = {
+                        detail: {
+                            name: 'save-page',
+                            payload: {
+                                hello: 'world',
+                                contentletInode: 'inode123'
+                            }
+                        }
+                    };
+
+                    spyOnProperty(dotRouterService, 'currentPortlet').and.returnValue({
+                        url: '/test/inode123',
+                        id: '123'
+                    });
+
+                    dotIframeDialog.triggerEventHandler('custom', params);
                     expect(dotIframeService.reload).toHaveBeenCalledTimes(1);
                 });
             });

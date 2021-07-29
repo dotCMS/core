@@ -167,7 +167,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
      * @memberof DotEditContentComponent
      */
     reload(contentlet: DotCMSContentlet): void {
-        debugger;
         contentlet
             ? this.dotRouterService.goToEditPage({
                   url: contentlet.url,

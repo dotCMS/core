@@ -66,8 +66,10 @@ export class DotContentletWrapperComponent {
                 'edit-contentlet-data-updated': (e: CustomEvent) => {
                     this.isContentletModified = e.detail.payload;
                 },
-                'save-page': () => {
-                    this.dotIframeService.reload();
+                'save-page': (data: any) => {
+                    if (this.shouldRefresh(data)) {
+                        this.dotIframeService.reload();
+                    }
                     this.isContentletModified = false;
                 },
                 'edit-contentlet-loaded': (e: CustomEvent) => {
@@ -149,5 +151,12 @@ export class DotContentletWrapperComponent {
         if (this.dotContentletEditorService.load) {
             this.dotContentletEditorService.load($event);
         }
+    }
+
+    private shouldRefresh(data: any): boolean {
+        // is not new content
+        return this.dotRouterService.currentPortlet.url.includes(
+            data?.detail?.payload?.contentletInode
+        );
     }
 }
