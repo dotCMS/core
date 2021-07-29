@@ -71,7 +71,7 @@ export class DotEditContentToolbarHtmlService {
      */
     updateContainerToolbar(container: HTMLElement): void {
         if (container.parentNode) {
-            const toolbar = container.parentNode.querySelector('.dotedit-container__toolbar');
+            const toolbar = container.parentNode.querySelector(`[data-dot-container-inode="${container.dataset['dotInode']}"]`);
             container.parentNode.removeChild(toolbar);
             this.createContainerToolbar(container);
         }
@@ -191,6 +191,7 @@ export class DotEditContentToolbarHtmlService {
     private createContainerToolbar(container: HTMLElement) {
         const containerToolbar = document.createElement('div');
         containerToolbar.classList.add('dotedit-container__toolbar');
+        containerToolbar.setAttribute('data-dot-container-inode', container.dataset['dotInode']);
 
         if (!container.dataset.dotCanAdd.length) {
             container.classList.add('disabled');

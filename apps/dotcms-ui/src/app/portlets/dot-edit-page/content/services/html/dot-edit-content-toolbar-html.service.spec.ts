@@ -279,7 +279,7 @@ describe('DotEditContentToolbarHtmlService', () => {
         describe('default', () => {
             beforeEach(() => {
                 dummyContainer.innerHTML = `
-                    <div data-dot-object="container">
+                    <div data-dot-object="container" data-dot-inode="854ac983-9a18-4a9a-874b-dd18d8be91f5">
                         <div data-dot-object="contentlet" data-dot-can-edit="false" data-dot-has-page-lang-version="true">
                             <div class="large-column"></div>
                         </div>
@@ -295,6 +295,11 @@ describe('DotEditContentToolbarHtmlService', () => {
                 expect(testDoc.querySelectorAll('.dotedit-contentlet__edit').length).toEqual(1);
                 expect(testDoc.querySelectorAll('.dotedit-contentlet__remove').length).toEqual(1);
                 expect(testDoc.querySelectorAll('.dotedit-contentlet__code').length).toEqual(0);
+            });
+
+            it('should create toolbar with dotInode asociated with the container', () => {
+                const toolbar: HTMLElement = testDoc.querySelector(`[data-dot-object="container"]`);
+                expect(toolbar.dataset['dotInode']).toEqual('854ac983-9a18-4a9a-874b-dd18d8be91f5');
             });
 
             it('should have edit button disabled', () => {
