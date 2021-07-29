@@ -2211,7 +2211,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		if (UtilMethods.isSet(task.getId())) {
 			try {
 				final WorkflowTask test = this.findWorkFlowTaskById(task.getId());
-				if (test != null) {
+				if (test != null && UtilMethods.isSet(test.getId())) {
 					isNew = false;
 				}
 			} catch (final Exception e) {
