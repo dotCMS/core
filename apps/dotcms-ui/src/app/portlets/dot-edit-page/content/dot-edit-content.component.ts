@@ -6,7 +6,7 @@ import { Component, OnInit, ViewChild, ElementRef, NgZone, OnDestroy } from '@an
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { SiteService } from '@dotcms/dotcms-js';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
@@ -104,14 +104,14 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                     }
                 },
                 'in-iframe': () => {
-                    this.reload();
+                    this.reload(null);
                 },
                 'reorder-menu': (reorderMenuUrl: string) => {
                     this.reorderMenuUrl = reorderMenuUrl;
                 },
                 'save-menu-order': () => {
                     this.reorderMenuUrl = '';
-                    this.reload();
+                    this.reload(null);
                 },
                 'error-saving-menu-order': () => {
                     this.reorderMenuUrl = '';
@@ -162,12 +162,19 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Reload the edit page
-     *
+     * Reload the edit page. If content comes reload with the provided contentlet.
+     ** @param DotCMSContentlet contentlet
      * @memberof DotEditContentComponent
      */
-    reload(): void {
-        this.dotPageStateService.reload();
+    reload(contentlet: DotCMSContentlet): void {
+        debugger;
+        contentlet
+            ? this.dotRouterService.goToEditPage({
+                  url: contentlet.url,
+                  host_id: contentlet.host,
+                  language_id: contentlet.languageId
+              })
+            : this.dotPageStateService.reload();
     }
 
     /**
@@ -184,7 +191,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                     this.saveToPage(model)
                         .pipe(take(1))
                         .subscribe(() => {
-                            this.reload();
+                            this.reload(null);
                         });
                 }
             });
@@ -219,7 +226,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         this.saveToPage(event.model)
             .pipe(filter(() => this.shouldReload(event.type)))
             .subscribe(() => {
-                this.reload();
+                this.reload(null);
             });
     }
 
@@ -308,7 +315,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 this.dotContentletEditorService.clear();
             },
             save: () => {
-                this.reload();
+                this.reload(null);
             }
         };
 
@@ -413,7 +420,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
     private subscribeSwitchSite(): void {
         this.siteService.switchSite$.pipe(skip(1), takeUntil(this.destroy$)).subscribe(() => {
-            this.reload();
+            this.reload(null);
         });
     }
 

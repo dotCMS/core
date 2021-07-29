@@ -3,6 +3,7 @@ import { DotContentletEditorService } from '../../services/dot-contentlet-editor
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 
 export interface DotCMSEditPageEvent {
     name: string;
@@ -38,7 +39,8 @@ export class DotContentletWrapperComponent {
         private dotContentletEditorService: DotContentletEditorService,
         private dotAlertConfirmService: DotAlertConfirmService,
         private dotMessageService: DotMessageService,
-        private dotRouterService: DotRouterService
+        private dotRouterService: DotRouterService,
+        private dotIframeService: DotIframeService
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
@@ -65,6 +67,7 @@ export class DotContentletWrapperComponent {
                     this.isContentletModified = e.detail.payload;
                 },
                 'save-page': () => {
+                    this.dotIframeService.reload();
                     this.isContentletModified = false;
                 },
                 'edit-contentlet-loaded': (e: CustomEvent) => {
@@ -78,7 +81,7 @@ export class DotContentletWrapperComponent {
      * Habdle the before close dialog event
      *
      * @param * $event
-     * @memberof DotEditContentletComponent
+     * @memberof DotContentletWrapperComponent
      */
     onBeforeClose($event?: { close: () => void }): void {
         if (this.isContentletModified) {
@@ -114,7 +117,7 @@ export class DotContentletWrapperComponent {
      * Handle the custome events from the DotDialogIframe component
      *
      * @param CustomEvent $event
-     * @memberof DotAddContentletComponent
+     * @memberof DotContentletWrapperComponent
      */
     onCustomEvent($event: CustomEvent): void {
         if (this.customEventsHandler[$event.detail.name]) {
@@ -128,7 +131,7 @@ export class DotContentletWrapperComponent {
      * Call the keyDown method from the service if exist
      *
      * @param any $event
-     * @memberof DotAddContentletComponent
+     * @memberof DotContentletWrapperComponent
      */
     onKeyDown($event): void {
         if (this.dotContentletEditorService.keyDown) {
@@ -140,7 +143,7 @@ export class DotContentletWrapperComponent {
      * Call the load method from the service if exist
      *
      * @param any $event
-     * @memberof DotAddContentletComponent
+     * @memberof DotContentletWrapperComponent
      */
     onLoad($event): void {
         if (this.dotContentletEditorService.load) {

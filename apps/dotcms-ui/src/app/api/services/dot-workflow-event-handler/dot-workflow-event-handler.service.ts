@@ -153,6 +153,7 @@ export class DotWorkflowEventHandlerService {
             delete data.environment;
             delete data.pushActionSelected;
         }
+        data['contentlet'] = {}; // needed for indexPolicy=WAIT_FOR
         return data;
     }
 

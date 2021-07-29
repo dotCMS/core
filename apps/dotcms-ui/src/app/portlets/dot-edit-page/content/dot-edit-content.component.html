@@ -11,7 +11,7 @@
     <ng-container *ngIf="pageState$ | async as pageState">
         <dot-edit-page-toolbar
             (cancel)="onCancelToolbar()"
-            (actionFired)="reload()"
+            (actionFired)="reload($event)"
             (whatschange)="showWhatsChanged = $event"
             [pageState]="pageState"
             class="dot-edit__toolbar"

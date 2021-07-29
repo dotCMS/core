@@ -207,7 +207,7 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
                         pushActionSelected: 'publishexpire'
                     };
 
-                    const mappedData = {
+                    const mappedData: { [key: string]: any } = {
                         assign: '654b0931-1027-41f7-ad4d-173115ed8ec1',
                         comments: 'ds',
                         expireDate: '2020-08-11',
@@ -217,7 +217,8 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
                         publishDate: '2020-08-05',
                         publishTime: '17-59',
                         whereToSend: '37fe23d5-588d-4c61-a9ea-70d01e913344',
-                        pathToMove: '/test/'
+                        pathToMove: '/test/',
+                        contentlet: {}
                     };
 
                     let dotWizardService: DotWizardService;

@@ -27,6 +27,8 @@ import { Observable, Subject } from 'rxjs';
 
 const NO_SPECIAL_CHAR = /^[a-zA-Z0-9._/-]*$/g;
 const REPLACE_SPECIAL_CHAR = /[^a-zA-Z0-9._/-]/g;
+const NO_SPECIAL_CHAR_WHITE_SPACE = /^[a-zA-Z0-9._/-\s]*$/g;
+const REPLACE_SPECIAL_CHAR_WHITE_SPACE = /[^a-zA-Z0-9._/-\s]/g;
 enum SearchType {
     SITE = 'site',
     FOLDER = 'folder',
@@ -123,14 +125,7 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
             this.selected.emit(page);
             this.propagateChange(page.identifier);
         } else if (this.searchType === 'folder') {
-            const folder = <DotFolder>item.payload;
-            if (folder.addChildrenAllowed) {
-                this.selected.emit(`//${folder.hostName}${folder.path}`);
-                this.propagateChange(`//${folder.hostName}${folder.path}`);
-            } else {
-                this.message = this.dotMessageService.get('page.selector.folder.permissions');
-                this.isError = true;
-            }
+            this.handleFolderSelection(<DotFolder>item.payload);
         }
 
         this.resetResults();
@@ -185,6 +180,13 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
             } else {
                 this.message = this.getEmptyMessage(this.searchType);
             }
+        } else if (
+            this.searchType === SearchType.FOLDER &&
+            this.currentHost &&
+            (<DotFolder>data[0].payload).path === '/'
+        ) {
+            //select the root folder of a host.
+            this.handleFolderSelection(<DotFolder>data[0].payload);
         }
         this.suggestions$.next(data);
         this.autoComplete.show();
@@ -208,7 +210,7 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
     }
 
     private fullSearch(param: string): Observable<DotPageSelectorItem[]> {
-        const host = this.parseUrl(param).host;
+        const host = decodeURI(this.parseUrl(param).host);
         return this.dotPageSelectorService.getSites(host, true).pipe(
             take(1),
             switchMap((results: DotPageSelectorItem[]) => {
@@ -243,11 +245,11 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
             : this.dotPageSelectorService.getPages(param);
     }
 
-    private isTwoStepSearch(param: string): boolean {
+    private isTwoStepSearch(query: string): boolean {
         return (
-            param.startsWith('//') &&
-            param.length > 2 &&
-            (this.isHostAndPath(param) || param.endsWith('/'))
+            query.startsWith('//') &&
+            query.length > 2 &&
+            (this.isHostAndPath(query) || query.endsWith('/'))
         );
     }
 
@@ -278,7 +280,17 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
     }
 
     private cleanAndValidateQuery(query: string): string {
-        const cleanedQuery = this.cleanQuery(query);
+        let cleanedQuery = '';
+        if (this.isTwoStepSearch(query)) {
+            const url = this.parseUrl(query);
+            url.host = this.cleanHost(decodeURI(url.host));
+            url.pathname = this.cleanPath(url.pathname);
+            cleanedQuery = `//${url.host}/${url.pathname}`;
+        } else if (query.startsWith('//')) {
+            cleanedQuery = this.cleanHost(query);
+        } else {
+            cleanedQuery = this.cleanPath(query);
+        }
         this.autoComplete.inputEL.nativeElement.value = cleanedQuery;
         return cleanedQuery.startsWith('//')
             ? cleanedQuery
@@ -287,7 +299,13 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
             : '';
     }
 
-    private cleanQuery(query: string): string {
+    private cleanHost(query: string): string {
+        return !NO_SPECIAL_CHAR_WHITE_SPACE.test(query)
+            ? query.replace(REPLACE_SPECIAL_CHAR_WHITE_SPACE, '')
+            : query;
+    }
+
+    private cleanPath(query: string): string {
         return !NO_SPECIAL_CHAR.test(query) ? query.replace(REPLACE_SPECIAL_CHAR, '') : query;
     }
 
@@ -300,6 +318,16 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
                 return this.dotMessageService.get('page.selector.no.page.results');
             case 'folder':
                 return this.dotMessageService.get('page.selector.no.folder.results');
+        }
+    }
+
+    private handleFolderSelection(folder: DotFolder): void {
+        if (folder.addChildrenAllowed) {
+            this.selected.emit(`//${folder.hostName}${folder.path}`);
+            this.propagateChange(`//${folder.hostName}${folder.path}`);
+        } else {
+            this.message = this.dotMessageService.get('page.selector.folder.permissions');
+            this.isError = true;
         }
     }
 }

@@ -22,7 +22,7 @@ const emptyHostQuery = {
 const hostQuery = {
     query: {
         query_string: {
-            query: `+contenttype:Host -identifier:SYSTEM_HOST +host.hostName:*demo.dotcms.com*`
+            query: `+contenttype:Host -identifier:SYSTEM_HOST +host.hostName:*demo.dot?cms.com*`
         }
     }
 };
@@ -180,7 +180,7 @@ describe('DotPageSelectorService', () => {
     });
 
     it('should make a host search', () => {
-        dotPageSelectorService.getSites('//demo.dotcms.com').subscribe((res: any) => {
+        dotPageSelectorService.getSites('//demo.dot cms.com').subscribe((res: any) => {
             expect(res).toEqual(expectedSitesMap);
             expect(req.request.method).toEqual('POST');
             expect(req.request.body).toEqual(hostQuery);

@@ -40,7 +40,7 @@ export class DotWorkflowActionsFireService {
             .requestView({
                 body: data,
                 method: 'PUT',
-                url: `v1/workflow/actions/${actionId}/fire?inode=${inode}`
+                url: `v1/workflow/actions/${actionId}/fire?inode=${inode}&indexPolicy=WAIT_FOR`
             })
             .pipe(pluck('entity'));
     }

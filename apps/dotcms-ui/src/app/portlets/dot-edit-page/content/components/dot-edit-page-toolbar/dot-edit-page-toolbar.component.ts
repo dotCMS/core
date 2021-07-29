@@ -17,6 +17,7 @@ import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DotEvent } from '@shared/models/dot-event/dot-event';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-edit-page-toolbar',
@@ -28,7 +29,7 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy
 
     @Output() cancel = new EventEmitter<boolean>();
 
-    @Output() actionFired = new EventEmitter<boolean>();
+    @Output() actionFired = new EventEmitter<DotCMSContentlet>();
 
     @Output() whatschange = new EventEmitter<boolean>();
 

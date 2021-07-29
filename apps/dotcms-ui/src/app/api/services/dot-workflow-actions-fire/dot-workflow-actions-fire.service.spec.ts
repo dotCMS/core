@@ -170,7 +170,9 @@ describe('DotWorkflowActionsFireService', () => {
             ]);
         });
 
-        const req = httpMock.expectOne('v1/workflow/actions/new/fire?inode=123');
+        const req = httpMock.expectOne(
+            'v1/workflow/actions/new/fire?inode=123&indexPolicy=WAIT_FOR'
+        );
         expect(req.request.method).toBe('PUT');
         req.flush({
             entity: [

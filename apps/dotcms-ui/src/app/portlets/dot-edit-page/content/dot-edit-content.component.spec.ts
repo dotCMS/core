@@ -23,7 +23,7 @@ import {
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { ConfirmationService } from 'primeng/api';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
 import { DotAlertConfirmService } from '@services/dot-alert-confirm/index';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
@@ -335,8 +335,23 @@ describe('DotEditContentComponent', () => {
                 });
 
                 it('actionFired > should reload', () => {
-                    toolbarElement.triggerEventHandler('actionFired', {});
+                    toolbarElement.triggerEventHandler('actionFired', null);
                     expect(dotPageStateService.reload).toHaveBeenCalledTimes(1);
+                });
+
+                it('actionFired > should reload', () => {
+                    const contentlet: DotCMSContentlet = {
+                        url: '/test',
+                        host: '123',
+                        languageId: 1
+                    } as DotCMSContentlet;
+
+                    toolbarElement.triggerEventHandler('actionFired', contentlet);
+                    expect(dotRouterService.goToEditPage).toHaveBeenCalledOnceWith({
+                        url: contentlet.url,
+                        host_id: contentlet.host,
+                        language_id: contentlet.languageId
+                    });
                 });
 
                 it('whatschange > should show dot-whats-changed', () => {

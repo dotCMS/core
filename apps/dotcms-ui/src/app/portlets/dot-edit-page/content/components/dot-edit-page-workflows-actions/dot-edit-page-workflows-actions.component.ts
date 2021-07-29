@@ -11,7 +11,7 @@ import {
 import { tap, map, catchError, pluck, take } from 'rxjs/operators';
 import { MenuItem } from 'primeng/api';
 
-import { DotCMSWorkflowAction } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 
 import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
@@ -123,18 +123,17 @@ export class DotEditPageWorkflowsActionsComponent implements OnChanges {
             .fireTo(this.page.workingInode, workflow.id, data)
             .pipe(
                 take(1),
-                pluck('inode'),
                 catchError((error) => {
                     this.httpErrorManagerService.handle(error);
                     return currentMenuActions;
                 })
             )
-            .subscribe((inode: string) => {
+            .subscribe((contentlet: DotCMSContentlet) => {
                 this.dotGlobalMessageService.display(
                     this.dotMessageService.get('editpage.actions.fire.confirmation', workflow.name)
                 );
-                const newInode = inode || this.page.workingInode;
-                this.fired.emit();
+                const newInode = contentlet.inode || this.page.workingInode;
+                this.fired.emit(contentlet);
                 this.actions = this.getWorkflowActions(newInode);
             });
     }

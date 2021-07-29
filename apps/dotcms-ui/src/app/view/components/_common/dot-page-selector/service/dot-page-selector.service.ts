@@ -124,7 +124,7 @@ export class DotPageSelectorService {
     }
 
     private getSiteName(site: string): string {
-        return site.replace(/\//g, '');
+        return site.replace(/\//g, '').replace(' ', '?');
     }
 
     private getPageSelectorItem(item: DotPageAsset | DotFolder): DotPageSelectorItem {

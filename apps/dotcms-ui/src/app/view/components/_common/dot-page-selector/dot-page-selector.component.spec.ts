@@ -129,7 +129,14 @@ describe('DotPageSelectorComponent', () => {
     const searchFolderObj = { originalEvent: { target: { value: 'folder' } }, query: 'folder' };
     const invalidSearchPageObj = { originalEvent: { target: { value: 'd' } }, query: 'd' };
     const searchHostObj = { originalEvent: { target: { value: '//' } }, query: '//' };
-    const specialSearchObj = { originalEvent: { target: { value: 'd#emo$%' } }, query: 'd#emo$%' };
+    const specialSearchObj = {
+        originalEvent: { target: { value: 'd#e mo$%' } },
+        query: 'd#e mo$%'
+    };
+    const whiteSpaceHosts = {
+        originalEvent: { target: { value: '//new site' } },
+        query: '//new site'
+    };
     const fullSearchObj = {
         originalEvent: { target: { value: '//demo/folder' } },
         query: '//demo/folder'
@@ -201,6 +208,12 @@ describe('DotPageSelectorComponent', () => {
             spyOn(dotPageSelectorService, 'getSites').and.callThrough();
             autocomplete.triggerEventHandler('completeMethod', searchHostObj);
             expect(dotPageSelectorService.getSites).toHaveBeenCalledWith('');
+        });
+
+        it('should allow white spaces in host', () => {
+            spyOn(dotPageSelectorService, 'getSites').and.callThrough();
+            autocomplete.triggerEventHandler('completeMethod', whiteSpaceHosts);
+            expect(dotPageSelectorService.getSites).toHaveBeenCalledWith('new site');
         });
 
         it('should search for pages when the host is complete', () => {
