@@ -27,7 +27,6 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
-import io.vavr.control.Try;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -392,7 +391,7 @@ public class UserResourceTest extends UnitTestBase {
     }
 
 
-    @Test
+    @Test(expected=ForbiddenException.class)
     public void testLoginAsData_Without_LoginAs_Role() throws DotDataException {
 
         HttpServletRequest request = RestUtilTest.getMockHttpRequest();
@@ -416,7 +415,6 @@ public class UserResourceTest extends UnitTestBase {
         final User user = new User();
         final Role loginAsRole = new Role();
         when(initDataObject.getUser()).thenReturn(user);
-        // final InitDataObject initData = webResource.init(null, httpServletRequest, httpServletResponse, true, null);
         when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
         when(roleAPI.loadRoleByKey(Role.LOGIN_AS)).thenReturn(loginAsRole);
         // does not have permissions
@@ -434,14 +432,7 @@ public class UserResourceTest extends UnitTestBase {
 
         UserResource resource =
                 new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper, paginationUtil, roleAPI);
-        try {
 
-            Response response = resource.loginAsData(request, httpServletResponse, filter, page, perPage);
-            fail("Should throw ForbiddenException");
-        } catch (ForbiddenException e) {
-
-            //  good
-        }
-
+        Response response = resource.loginAsData(request, httpServletResponse, filter, page, perPage);
     }
 }
