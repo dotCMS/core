@@ -2,6 +2,7 @@ package com.dotcms.integritycheckers;
 
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.repackage.com.csvreader.CsvWriter;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -20,7 +21,7 @@ import com.dotmarketing.util.UtilMethods;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -96,7 +97,7 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
         try {
             CsvReader folders = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator
                     + endpointId + File.separator + getIntegrityType().getDataToCheckCSVName(),
-                    '|', Charset.forName("UTF-8"));
+                    '|', StandardCharsets.UTF_8);
 
             boolean tempCreated = false;
             DotConnect dc = new DotConnect();
@@ -161,6 +162,9 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
             	return false;
             }
 
+            final String hostNameColumnName = dc.setSQL("select f.field_contentlet from field f join structure s on s.inode = f.structure_inode "
+                    + "where s.velocity_var_name='Host' and f.velocity_var_name='hostName' ").getString("field_contentlet");
+
             // compare the data from the CSV to the local db data and see if we
             // have conflicts
             dc.setSQL("select 1 from identifier iden "
@@ -169,19 +173,18 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
                     + " ft on iden.full_path_lc = ft.full_path_lc "
                     + "join contentlet c on iden.host_inode = c.identifier and ft.host_identifier = iden.host_inode "
                     + "join contentlet_version_info cvi on c.inode = cvi.working_inode "
-                    + "where asset_type = 'folder' and f.inode <> ft.inode order by c.title, iden.asset_name");
+                    + "where asset_type = 'folder' and f.inode <> ft.inode order by c."+hostNameColumnName+", iden.asset_name");
 
             final List<Map<String, Object>> results = dc.loadObjectResults();
 
             if (!results.isEmpty()) {
                 // if we have conflicts, lets create a table out of them
-
-                String fullFolder = " c.title || iden.parent_path || iden.asset_name ";
+                String fullFolder = " c."+hostNameColumnName+" || iden.parent_path || iden.asset_name ";
 
                 if (DbConnectionFactory.isMySql()) {
-                    fullFolder = " concat(c.title,iden.parent_path,iden.asset_name) ";
+                    fullFolder = " concat(c."+hostNameColumnName+",iden.parent_path,iden.asset_name) ";
                 } else if (DbConnectionFactory.isMsSql()) {
-                    fullFolder = " c.title + iden.parent_path + iden.asset_name ";
+                    fullFolder = " c."+hostNameColumnName+" + iden.parent_path + iden.asset_name ";
                 }
 
                 final String INSERT_INTO_RESULTS_TABLE = "insert into "
@@ -199,7 +202,7 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
                         + " ft on iden.full_path_lc = ft.full_path_lc "
                         + "join contentlet c on iden.host_inode = c.identifier and ft.host_identifier = iden.host_inode "
                         + "join contentlet_version_info cvi on c.inode = cvi.working_inode "
-                        + "where asset_type = 'folder' and f.inode <> ft.inode order by c.title, iden.asset_name";
+                        + "where asset_type = 'folder' and f.inode <> ft.inode order by c."+hostNameColumnName+", iden.asset_name";
 
                 dc.executeStatement(INSERT_INTO_RESULTS_TABLE);
 
@@ -229,28 +232,36 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
         try {
             // lets remove from the index all the content under each conflicted
             // folder
-            dc.setSQL("select local_inode, remote_inode, local_identifier, remote_identifier from "
+            dc.setSQL("select folder, local_inode, remote_inode, local_identifier, remote_identifier from "
                     + getIntegrityType().getResultsTableName() + " where endpoint_id = ?");
             dc.addParam(key);
             final List<Map<String, Object>> results = dc.loadObjectResults();
 
             for (final Map<String, Object> result : results) {
 
-                String oldFolderInode = (String) result.get("local_inode");
-                String newFolderInode = (String) result.get("remote_inode");
-                String oldFolderIdentifier = (String) result.get("local_identifier");
-                String newFolderIdentifier = (String) result.get("remote_identifier");
+                final String folder = (String) result.get("folder");
+                final String oldFolderInode = (String) result.get("local_inode");
+                final String newFolderInode = (String) result.get("remote_inode");
+                final String oldFolderIdentifier = (String) result.get("local_identifier");
+                final String newFolderIdentifier = (String) result.get("remote_identifier");
 
                 //First we need to verify if the new folder identifier already exist
                 final Identifier identifierFound = APILocator.getIdentifierAPI().find(newFolderIdentifier);
                 if ( identifierFound != null && UtilMethods.isSet(identifierFound.getId()) ) {
 
+                    final Host site = APILocator.getHostAPI().find(identifierFound.getHostId(),APILocator.systemUser(),false);
+                    String fullFolderPath = (site.getName() + "/" + identifierFound.getURI()).replaceAll("//","/");
+
                     //We need to change the ids of the existing folder
                     String existingFolderNewIdentifier = UUIDGenerator.generateUuid();
                     String existingFolderNewInode = UUIDGenerator.generateUuid();
-
-                    //If the identifier already exist on another location we need to change it first before to apply the real fix
-                    applyFixTo(dc, newFolderInode, existingFolderNewInode, newFolderIdentifier, existingFolderNewIdentifier);
+                    //Since we're now using deterministic or contextual ids which are generated in a predictable way
+                    //Finding two folders with identical identifier point at the exact on the exact location is now a case we need to consider.
+                    //Therefore now we need to take into account we're not looking at the same folder when attempting to change an identifier. Prior to applying the fix.
+                    if(!fullFolderPath.equals(folder)){
+                      //If the identifier already exist on another location we need to change it first before applying the real fix
+                      applyFixTo(dc, newFolderInode, existingFolderNewInode, newFolderIdentifier, existingFolderNewIdentifier);
+                    }
                 }
 
                 applyFixTo(dc, oldFolderInode, newFolderInode, oldFolderIdentifier, newFolderIdentifier);
