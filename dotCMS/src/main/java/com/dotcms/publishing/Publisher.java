@@ -1,5 +1,6 @@
 package com.dotcms.publishing;
 
+import com.dotcms.enterprise.publishing.staticpublishing.LanguageFolder;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.pusher.PushUtils;
 import com.dotcms.publishing.output.BundleOutput;
@@ -12,6 +13,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
@@ -29,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TreeSet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.collections.map.CompositeMap;
@@ -129,8 +132,6 @@ public abstract class Publisher implements IPublisher {
 
 	}
 
-<<<<<<< Updated upstream
-=======
     protected TreeSet<LanguageFolder> getLanguageFolders(File hostFolder)
             throws DotPublishingException {
         final TreeSet<LanguageFolder> languagesFolders = new TreeSet<>();
@@ -162,7 +163,6 @@ public abstract class Publisher implements IPublisher {
 		}
 	}
 
->>>>>>> Stashed changes
 	public String getUriFromFilePath(File file) throws DotPublishingException{
 
 		try{
