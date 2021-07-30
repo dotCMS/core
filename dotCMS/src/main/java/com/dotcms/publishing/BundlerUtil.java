@@ -1,17 +1,13 @@
 package com.dotcms.publishing;
 
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
-import com.dotcms.enterprise.publishing.staticpublishing.LanguageFolder;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publishing.output.BundleOutput;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.XMLUtils;
@@ -22,12 +18,8 @@ import com.thoughtworks.xstream.io.xml.DomDriver;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Date;
-import java.util.List;
-import java.util.TreeSet;
 
 public class BundlerUtil {
 
@@ -379,55 +371,4 @@ public class BundlerUtil {
         }
     }
 
-    public static Collection<LanguageFolder> getLanguageFolders(final PublisherConfig config, final File hostFolder)
-            throws DotPublishingException {
-        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
-
-        final File[] bundleLanguagesFolders = hostFolder.listFiles(FileUtil.getOnlyFolderFileFilter());
-        final Collection<LanguageFolder> languagesFolders = new TreeSet<>(
-                (languageFolder1, languageFolder2) -> {
-                    final long languageId1 = languageFolder1.getLanguage().getId();
-                    final long languageId2 = languageFolder2.getLanguage().getId();
-                    if (languageId1 == defaultLanguage.getId() && languageId2 == defaultLanguage.getId()) {
-                        return 0;
-                    } else if (languageId1 == defaultLanguage.getId()) {
-                        return 1;
-                    } else if (languageId2 == defaultLanguage.getId()) {
-                        return -1;
-                    } else {
-                        return 0;
-                    }
-                });
-
-        for (final File bundleLanguagesFolder : bundleLanguagesFolders) {
-            languagesFolders.add(new LanguageFolder(bundleLanguagesFolder,
-                    BundlerUtil.getLanguageFromFilePath(config, bundleLanguagesFolder)));
-        }
-        return languagesFolders;
-    }
-
-    /**
-     * Return the {@link Language} object from a language File into a Bundle
-     * @param config
-     * @param file
-     * @return
-     * @throws DotPublishingException
-     */
-    private static Language getLanguageFromFilePath(final PublisherConfig config, final File file) throws DotPublishingException {
-        try{
-            if(!file.getAbsolutePath().contains(config.getId())){
-                throw new DotPublishingException("no bundle file found");
-            }
-
-            String fileSeparator = File.separator.equals("\\")?"\\\\":File.separator;
-            List<String> path = Arrays.asList( file.getAbsolutePath().split( fileSeparator ) );
-
-            String language = path.get(path.indexOf(config.getName())+3);
-
-            return APILocator.getLanguageAPI().getLanguage(language);
-        }
-        catch(Exception e){
-            throw new DotPublishingException("Error getting Language:" + e.getMessage());
-        }
-    }
 }
