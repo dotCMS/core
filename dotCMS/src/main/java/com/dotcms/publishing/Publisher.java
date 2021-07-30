@@ -129,24 +129,6 @@ public abstract class Publisher implements IPublisher {
 
 	}
 
-	public Language getLanguageFromFilePath(File file) throws DotPublishingException{
-		try{
-			if(!file.getAbsolutePath().contains(config.getId())){
-				throw new DotPublishingException("no bundle file found");
-			}
-
-			String fileSeparator = File.separator.equals("\\")?"\\\\":File.separator;
-			List<String> path = Arrays.asList( file.getAbsolutePath().split( fileSeparator ) );
-
-			String language = path.get(path.indexOf(config.getName())+3);
-
-			return APILocator.getLanguageAPI().getLanguage(language);
-		}
-		catch(Exception e){
-			throw new DotPublishingException("Error getting Language:" + e.getMessage());
-		}
-	}
-
 	public String getUriFromFilePath(File file) throws DotPublishingException{
 
 		try{
