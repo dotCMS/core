@@ -5,8 +5,10 @@ import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publishing.output.BundleOutput;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -18,8 +20,10 @@ import com.thoughtworks.xstream.io.xml.DomDriver;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 
 public class BundlerUtil {
 
@@ -371,4 +375,28 @@ public class BundlerUtil {
         }
     }
 
+    /**
+     * Return the {@link Language} object from a language File into a Bundle
+     * @param config
+     * @param file
+     * @return
+     * @throws DotPublishingException
+     */
+    public static Language getLanguageFromFilePath(final PublisherConfig config, final File file) throws DotPublishingException {
+        try{
+            if(!file.getAbsolutePath().contains(config.getId())){
+                throw new DotPublishingException("no bundle file found");
+            }
+
+            String fileSeparator = File.separator.equals("\\")?"\\\\":File.separator;
+            List<String> path = Arrays.asList( file.getAbsolutePath().split( fileSeparator ) );
+
+            String language = path.get(path.indexOf(config.getName())+3);
+
+            return APILocator.getLanguageAPI().getLanguage(language);
+        }
+        catch(Exception e){
+            throw new DotPublishingException("Error getting Language:" + e.getMessage());
+        }
+    }
 }
