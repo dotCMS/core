@@ -129,6 +129,40 @@ public abstract class Publisher implements IPublisher {
 
 	}
 
+<<<<<<< Updated upstream
+=======
+    protected TreeSet<LanguageFolder> getLanguageFolders(File hostFolder)
+            throws DotPublishingException {
+        final TreeSet<LanguageFolder> languagesFolders = new TreeSet<>();
+
+        final File[] bundleLanguagesFolders = hostFolder.listFiles(FileUtil.getOnlyFolderFileFilter());
+
+        for (final File bundleLanguagesFolder : bundleLanguagesFolders) {
+            languagesFolders.add(new LanguageFolder(bundleLanguagesFolder,
+                    getLanguageFromFilePath(bundleLanguagesFolder)));
+        }
+        return languagesFolders;
+    }
+
+	private Language getLanguageFromFilePath(File file) throws DotPublishingException{
+		try{
+			if(!file.getAbsolutePath().contains(config.getId())){
+				throw new DotPublishingException("no bundle file found");
+			}
+
+			String fileSeparator = File.separator.equals("\\")?"\\\\":File.separator;
+			List<String> path = Arrays.asList( file.getAbsolutePath().split( fileSeparator ) );
+
+			String language = path.get(path.indexOf(config.getName())+3);
+
+			return APILocator.getLanguageAPI().getLanguage(language);
+		}
+		catch(Exception e){
+			throw new DotPublishingException("Error getting Language:" + e.getMessage());
+		}
+	}
+
+>>>>>>> Stashed changes
 	public String getUriFromFilePath(File file) throws DotPublishingException{
 
 		try{
