@@ -51,6 +51,7 @@ import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.servlet.SessionMessages;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -574,7 +575,10 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 
 		// Get parents of the old version so you can update the working
 		// information to this new version.
-		List<Object> parents = (List<Object>) InodeFactory.getParentsOfClass(currentLink, Category.class);
+
+		final List<Object> parents = new ArrayList<>();
+		parents.addAll(getCategoryAPI().getParents(currentLink, user, false));
+
 		menuLinkAPI.getParentContentlets(currentLink.getInode()).forEach(contentlet -> {
             final Inode inode = new Inode();
             inode.setInode(contentlet.getInode());
@@ -697,7 +701,9 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 
 		// Get parents of the old version so you can update the working
 		// information to this new version.
-		List<Inode> parents = (List<Inode>) InodeFactory.getParentsOfClass(linkVersion, Category.class);
+		List<Inode> parents = new ArrayList<>();
+
+		getCategoryAPI().getParents(linkVersion, user, true);
 
 		menuLinkAPI.getParentContentlets(linkVersion.getInode()).forEach(contentlet -> {
 		    final Inode inode = new Inode();
