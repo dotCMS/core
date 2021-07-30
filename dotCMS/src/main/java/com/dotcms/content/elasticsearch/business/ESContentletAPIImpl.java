@@ -474,6 +474,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DoesNotExistException("The identifier does not exists: " + contentlet.getIdentifier());
         }
 
+        //Check if another content with the same name already exists in the new folder
+        if(APILocator.getFileAssetAPI().fileNameExists(host, folder, identifier.getAssetName(), contentlet.getIdentifier())){
+            throw new IllegalArgumentException("Content with the same name already exists at the new path");
+        }
+
         // update with the new host and path
         identifier.setHostId(host.getIdentifier());
         identifier.setParentPath(folder.getPath());
