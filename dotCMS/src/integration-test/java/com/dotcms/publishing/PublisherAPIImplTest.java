@@ -31,6 +31,7 @@ import com.dotcms.datagen.WorkflowActionDataGen;
 import com.dotcms.datagen.WorkflowDataGen;
 import com.dotcms.datagen.WorkflowStepDataGen;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
+import com.dotcms.publisher.assets.bean.PushedAsset;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.bundle.business.BundleFactoryImpl;
 import com.dotcms.publisher.business.DotPublisherException;
@@ -41,6 +42,7 @@ import com.dotcms.publisher.endpoint.bean.impl.PushPublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.util.dependencies.DependencyManager;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -97,6 +99,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
 
 @RunWith(DataProviderRunner.class)
 public class PublisherAPIImplTest {
@@ -373,9 +376,9 @@ public class PublisherAPIImplTest {
 
         final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
 
-            return new TestAsset(contentType,
-                set(host, workflowScheme, systemWorkflowScheme, contentTypeChild, relationship, category),
-                "/bundlers-test/content_types/content_types_with_category_and_relationship.contentType.json");
+        return new TestAsset(contentType,
+            set(host, workflowScheme, systemWorkflowScheme, contentTypeChild, relationship, category),
+            "/bundlers-test/content_types/content_types_with_category_and_relationship.contentType.json");
     }
 
     private static TestAsset getContainerWithDependencies() throws DotDataException, DotSecurityException {
@@ -419,7 +422,6 @@ public class PublisherAPIImplTest {
         config.setOperation(PublisherConfig.Operation.PUBLISH);
         config.setLuceneQueries(list());
         config.setId("PublisherAPIImplTest_" + System.currentTimeMillis());
-
 
         new BundleDataGen()
                 .pushPublisherConfig(config)
@@ -471,6 +473,7 @@ public class PublisherAPIImplTest {
 
         final Collection<Object> dependencies = new HashSet<>();
         dependencies.addAll(testAsset.expectedInBundle);
+        dependencies.add(testAsset.asset);
 
         createLanguageVariableIfNeeded();
         addLanguageVariableDependencies(dependencies, testAsset.addLanguageVariableDependencies);
@@ -503,6 +506,36 @@ public class PublisherAPIImplTest {
         } finally {
             httpServer.stop(0);
         }
+
+        assertPushAsset(bundle, environment, publishingEndPoint, dependencies);
+    }
+
+    private void assertPushAsset(final Bundle bundle,
+            final Environment environment,
+            PushPublishingEndPoint publishingEndPoint,
+            final Collection<Object> dependencies) throws DotDataException {
+
+        final List<PushedAsset> pushedAssets = APILocator.getPushedAssetsAPI()
+                .getPushedAssetsByBundleIdAndEnvironmentId(bundle.getId(), environment.getId());
+
+        for (Object asset : dependencies) {
+            final String assetId = DependencyManager.getBundleKey(asset);
+
+            final List<PushedAsset> pushedAssetsByAsset = pushedAssets.stream()
+                    .filter(pushedAsset -> pushedAsset.getAssetId().equals(assetId))
+                    .collect(Collectors.toList());
+
+            assertEquals(1, pushedAssetsByAsset.size());
+
+            for (PushedAsset pushedAsset : pushedAssetsByAsset) {
+                assertEquals(assetId, pushedAsset.getAssetId());
+                assertEquals(bundle.getId(), pushedAsset.getBundleId());
+                assertEquals(environment.getId(), pushedAsset.getEnvironmentId());
+                assertEquals(publishingEndPoint.getId(), pushedAsset.getEndpointIds());
+                assertEquals(PushPublisher.class, publishingEndPoint.getPublisher());
+            }
+        }
+
     }
 
     private HttpServer createHttpServer(File tempFile) throws IOException {

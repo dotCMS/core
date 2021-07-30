@@ -6,6 +6,8 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.google.common.collect.ImmutableMap;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 public class FilterDescriptorDataGen extends AbstractDataGen<FilterDescriptor> {
@@ -16,6 +18,7 @@ public class FilterDescriptorDataGen extends AbstractDataGen<FilterDescriptor> {
     private boolean defaultFilter = true;
     private String title;
     private String key;
+    private List<String> excludeDependencyClasses =  Collections.emptyList();
 
     public FilterDescriptorDataGen dependencies(boolean dependencies) {
         this.dependencies = dependencies;
@@ -48,7 +51,8 @@ public class FilterDescriptorDataGen extends AbstractDataGen<FilterDescriptor> {
         final Map<String,Object> filtersMap = ImmutableMap.of(
                 "dependencies",dependencies,
                 "relationships",relationships,
-                "forcePush",forcePush
+                "forcePush",forcePush,
+                "excludeDependencyClasses", excludeDependencyClasses
         );
 
         try {
@@ -69,5 +73,10 @@ public class FilterDescriptorDataGen extends AbstractDataGen<FilterDescriptor> {
         PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).getFilterDescriptorMap().clear();
         APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
         return APILocator.getPublisherAPI().getFilterDescriptorByKey(filterDescriptor.getKey());
+    }
+
+    public FilterDescriptorDataGen excludeDependencyClasses(final List<String> excludeDependencyClasses) {
+        this.excludeDependencyClasses = excludeDependencyClasses;
+        return this;
     }
 }
