@@ -27,10 +27,10 @@ TOMCAT_HOME=/srv/dotserver/tomcat-${TOMCAT_VERSION}
 : ${CMS_SMTP_HOST:="smtp"}
 
 # dotCMS runas user UID
-: ${CMS_RUNAS_UID:="999999"}
+: ${CMS_RUNAS_UID:="1000000000"}
 
 # dotCMS runas group GID
-: ${CMS_RUNAS_GID:="999999"}
+: ${CMS_RUNAS_GID:="1000000000"}
 
 ## Plugins init (not implemented yet!!)
 : ${CMS_PLUGINS_OSGI_OVERWRITE_SHARED:="false"}
