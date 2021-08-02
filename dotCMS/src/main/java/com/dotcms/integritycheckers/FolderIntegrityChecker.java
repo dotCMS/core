@@ -256,7 +256,7 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
                     String existingFolderNewIdentifier = UUIDGenerator.generateUuid();
                     String existingFolderNewInode = UUIDGenerator.generateUuid();
                     //Since we're now using deterministic or contextual ids which are generated in a predictable way
-                    //Finding two folders with identical identifier point at the exact on the exact location is now a case we need to consider.
+                    //Finding two folders with identical identifiers at the exact same time and at the exact same location is now a case we need to consider.
                     //Therefore now we need to take into account we're not looking at the same folder when attempting to change an identifier. Prior to applying the fix.
                     if(!fullFolderPath.equals(folder)){
                       //If the identifier already exist on another location we need to change it first before applying the real fix
