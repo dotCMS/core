@@ -58,7 +58,7 @@ export class DotLoginAsComponent implements OnInit, OnDestroy {
     ) {}
 
     ngOnInit(): void {
-        this.paginationService.url = 'v2/users/loginAsData';
+        this.paginationService.url = 'v1/users/loginAsData';
         this.getUsersList();
 
         this.form = this.fb.group({

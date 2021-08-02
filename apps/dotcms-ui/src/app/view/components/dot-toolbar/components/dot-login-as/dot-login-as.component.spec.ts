@@ -167,7 +167,7 @@ describe('DotLoginAsComponent', () => {
         fixture.detectChanges();
 
         expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
-        expect(paginatorService.url).toEqual('v2/users/loginAsData');
+        expect(paginatorService.url).toEqual('v1/users/loginAsData');
         expect(paginatorService.filter).toEqual('');
         expect(comp.userCurrentPage).toEqual(users);
     });
