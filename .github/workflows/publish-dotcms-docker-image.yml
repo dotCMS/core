@@ -8,15 +8,15 @@ on:
       update_stable:
         description: 'Update stable tags'
         required: true
-        default: 'true'
+        default: 'false'
       also_latest:
         description: 'Update also the "latest" tag (relies on update_stable input to be set to true)'
         required: false
         default: 'false'
       dry_run:
-        description: 'Runs publish image in dry-run mode'
+        description: 'Dry Run (does not publish to docker hub)'
         required: false
-        default: 'true'
+        default: 'false'
 jobs:
   publish_image:
     name: Publish DotCMS docker image
@@ -44,11 +44,10 @@ jobs:
         id: discover-docker-tags
         uses: dotcms/discover-docker-tags-action@main
         with:
-          version: ${{ env.DOTCMS_VERSION }}
+          version: ${{ ENV.DOTCMS_VERSION }}
           hash: ${{ env.BUILD_HASH }}
           label: ${{ github.event.inputs.custom_label }}
-          update_stable: ${{ github.event.inputs.update_stable }}
-          also_latest: ${{ github.event.inputs.also_latest }}
+          update_stable: ${{ github.event.inputs.updata_stable_tags }}
       - name: Publish docker image
         id: publish-docker-image
         uses: dotcms/publish-docker-image-action@main

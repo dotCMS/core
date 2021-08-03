@@ -376,7 +376,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         final Tuple2<String, Host> hostPathTuple = Try.of(()->HostUtil.splitPathHost(hostAndFolderPath, user,
-                StringPool.FORWARD_SLASH, HostUtil::findCurrentHost)).getOrElseThrow(e -> new DotRuntimeException(e));
+                StringPool.FORWARD_SLASH)).getOrElseThrow(e -> new DotRuntimeException(e));
 
         return this.move(contentlet, user, hostPathTuple._2(), hostPathTuple._1(), respectFrontendRoles);
     }
@@ -395,13 +395,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
         // we need a / at the end to check if exits
         final String folderPath = folderPathParam.endsWith(StringPool.SLASH)?folderPathParam: folderPathParam + StringPool.SLASH;
 
+        //Check if the folder exists via Admin user, b/c user couldn't have VIEW Permissions over the folder
         Folder folder = Try.of(()-> APILocator.getFolderAPI()
-                .findFolderByPath(folderPath, host, user, respectFrontendRoles)).getOrNull();
+                .findFolderByPath(folderPath, host, APILocator.systemUser(), respectFrontendRoles)).getOrNull();
 
         if (null == folder || !UtilMethods.isSet(folder.getInode())) {
 
             // if the folder does not exists try, let's see if the current user can create it.
-            if (this.permissionAPI.doesUserHavePermission(host, PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles)) {
                 Logger.debug(this, ()->"On Moving Contentlet, creating the Folders: " + folderPath);
 
                 try {
@@ -427,11 +427,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     Logger.warn(getClass(),t.getMessage(),t);
                     folder = null;
                 }
-            }
+
 
             if (null == folder || !UtilMethods.isSet(folder.getInode())) {
-
-                throw new DoesNotExistException("The folder does not exists: " + folderPath + " and could not be created");
+                throw new IllegalArgumentException("The folder does not exists: " + folderPath + " and could not be created");
             }
         }
 
@@ -460,9 +459,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotSecurityException("CONTENT_APIS_ALLOW_ANONYMOUS setting does not allow anonymous content WRITEs");
         }
 
-        // if the user can write and add a children to the host
+        // if the user can write and add a children to the folder
         if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles) ||
-                !permissionAPI.doesUserHavePermission(host, PERMISSION_CAN_ADD_CHILDREN, user)) {
+                !permissionAPI.doesUserHavePermission(folder, PERMISSION_CAN_ADD_CHILDREN, user)) {
 
             this.throwSecurityException(contentlet, user);
         }
@@ -473,6 +472,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (null == identifier || !UtilMethods.isSet(identifier.getId())) {
 
             throw new DoesNotExistException("The identifier does not exists: " + contentlet.getIdentifier());
+        }
+
+        //Check if another content with the same name already exists in the new folder
+        if(APILocator.getFileAssetAPI().fileNameExists(host, folder, identifier.getAssetName(), contentlet.getIdentifier())){
+            throw new IllegalArgumentException("Content with the same name: '" + identifier.getAssetName() + "' already exists at the new path: " + host.getHostname() + folder.getPath());
         }
 
         // update with the new host and path
@@ -5950,7 +5954,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if(conVariable.equals(Contentlet.INODE_KEY)){
                     contentlet.setInode((String)value);
                 }else if(conVariable.equals(Contentlet.LANGUAGEID_KEY)){
-                    contentlet.setLanguageId((Long)value);
+                    contentlet.setLanguageId(ConversionUtils.toLong(value, 0L));
                 }else if(conVariable.equals(Contentlet.STRUCTURE_INODE_KEY)){
                     contentlet.setStructureInode((String)value);
                 }else if(conVariable.equals(Contentlet.DISABLED_WYSIWYG_KEY)){
@@ -5964,7 +5968,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }else if(conVariable.equals(Contentlet.IDENTIFIER_KEY)){
                     contentlet.setIdentifier((String)value);
                 }else if(conVariable.equals(Contentlet.SORT_ORDER_KEY)){
-                    contentlet.setSortOrder((Long)value);
+                    contentlet.setSortOrder(ConversionUtils.toLong(value, 0L));
                 }else if(conVariable.equals(Contentlet.HOST_KEY)){
                     contentlet.setHost((String)value);
                 }else if(conVariable.equals(Contentlet.FOLDER_KEY)){

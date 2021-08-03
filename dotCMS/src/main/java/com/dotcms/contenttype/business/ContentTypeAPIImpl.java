@@ -420,15 +420,17 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     }
     // Sets the host:
     try {
-      if (contentType.host() == null || contentType.fixed()) {
+      if (UtilMethods.isNotSet(contentType.host()) || contentType.fixed()) {
         final List<Field> existingFields = contentType.fields();
         contentType = ContentTypeBuilder.builder(contentType).host(Host.SYSTEM_HOST).build();
         contentType.constructWithFields(existingFields);
       }
       if (!UUIDUtil.isUUID(contentType.host()) && !Host.SYSTEM_HOST.equalsIgnoreCase(contentType.host())) {
         HostAPI hapi = APILocator.getHostAPI();
+        final List<Field> existingFields = contentType.fields();
         contentType = ContentTypeBuilder.builder(contentType)
             .host(hapi.resolveHostName(contentType.host(), APILocator.systemUser(), true).getIdentifier()).build();
+        contentType.constructWithFields(existingFields);
       }
     } catch (DotDataException e) {
       throw new DotDataException("unable to resolve host:" + contentType.host(), e);

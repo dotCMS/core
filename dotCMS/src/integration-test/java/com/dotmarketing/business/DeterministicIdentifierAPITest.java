@@ -27,6 +27,8 @@ import com.dotmarketing.cms.urlmap.URLMapAPIImpl;
 import com.dotmarketing.cms.urlmap.UrlMapContext;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.categories.business.CategoryAPI;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -465,6 +467,84 @@ public class DeterministicIdentifierAPITest {
             Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, generateConsistentIdentifiers);
         }
 
+    }
+
+    /**
+     * This is small test to verify the seed used to generate categories looks ok
+     * @throws Exception
+     */
+    @Test
+    public void Test_Category_Path_Seed_And_Id() throws Exception{
+        final boolean generateConsistentIdentifiers = Config
+                .getBooleanProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+        try {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+            final CategoryAPI api = APILocator.getCategoryAPI();
+            final String parentName = "Parent:" + System.currentTimeMillis();
+            //Create First Child Category.
+            final Category parent = new Category();
+            parent.setCategoryName(parentName);
+            parent.setKey("key");
+            parent.setCategoryVelocityVarName(parentName);
+            parent.setSortOrder(1);
+            parent.setKeywords(null);
+
+            final String child1Name = "Child1:" + System.currentTimeMillis();
+
+            final Category child1 = new Category();
+            child1.setCategoryName(child1Name);
+            child1.setKey("key");
+            child1.setCategoryVelocityVarName(child1Name);
+            child1.setSortOrder(1);
+            child1.setKeywords(null);
+
+            final String child2Name = "Child2:" + System.currentTimeMillis();
+
+            final Category child2 = new Category();
+            child2.setCategoryName(child2Name);
+            child2.setKey("key");
+            child2.setCategoryVelocityVarName(child2Name);
+            child2.setSortOrder(1);
+            child2.setKeywords(null);
+
+            api.save(null, parent, APILocator.systemUser(), false);
+            api.save(parent, child1, APILocator.systemUser(), false);
+            api.save(child1, child2, APILocator.systemUser(), false);
+
+            String out = defaultGenerator.deterministicIdSeed(parent, null);
+            assertEquals(String.format("Category:{%s}", parentName), out);
+            out = defaultGenerator.deterministicIdSeed(child1, parent);
+            assertEquals(String.format("Category:{%s > %s}", parentName, child1Name), out);
+
+            out = defaultGenerator.deterministicIdSeed(child2, child1);
+            assertEquals(String.format("Category:{%s > %s > %s}", parentName, child1Name, child2Name), out);
+
+        }finally {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, generateConsistentIdentifiers);
+        }
+    }
+
+    /**
+     *
+     * @throws Exception
+     */
+    @Test
+    public void Test_Category_None_Persisted_Category_Should_Return_Deterministic_Id() throws Exception{
+
+            final String name = "Root:" + System.currentTimeMillis();
+            //Create First Child Category.
+            final Category category = new Category();
+            category.setCategoryName(name);
+            category.setKey("key");
+            category.setCategoryVelocityVarName(name);
+            category.setSortOrder(1);
+            category.setKeywords(null);
+
+            String out = defaultGenerator.deterministicIdSeed(category,null);
+            assertEquals(String.format("Category:{%s}", name), out);
+
+            final String identifier1 = defaultGenerator.generateDeterministicIdBestEffort(category,(Category) null);
+            assertTrue(defaultGenerator.isDeterministicId(identifier1));
     }
 
 }

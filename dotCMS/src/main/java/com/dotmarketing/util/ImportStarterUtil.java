@@ -26,6 +26,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.logConsole.model.LogMapperRow;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -746,11 +747,11 @@ public class ImportStarterUtil {
             else {
                 String id;
                 if (Relationship.class.equals(_importClass) || Template.class.equals(_importClass)
-                        || Contentlet.class.equals(_importClass)) {
+                        || Contentlet.class.equals(_importClass) || Category.class.equals(_importClass)) {
                     id = "inode";
                 } else if(_importClass.equals(ContentletVersionInfo.class)) {
                     id = "identifier";
-                }else {
+                } else {
                     _dh = new HibernateUtil(_importClass);
                     id = HibernateUtil.getSession().getSessionFactory().getClassMetadata(_importClass)
                                     .getIdentifierPropertyName();
@@ -789,7 +790,9 @@ public class ImportStarterUtil {
                                 }
 
                             } else {
-                                if (obj instanceof Contentlet) {
+                                if(obj instanceof Category){
+                                    FactoryLocator.getCategoryFactory().save((Category) obj);
+                                } else if (obj instanceof Contentlet) {
                                     FactoryLocator.getContentletFactory().save((Contentlet) obj);
                                 } else if (obj instanceof Relationship) {
                                     Relationship rel = (Relationship) obj;

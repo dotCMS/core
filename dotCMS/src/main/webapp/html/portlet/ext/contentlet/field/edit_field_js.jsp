@@ -342,10 +342,10 @@ var cmsfile=null;
 				"image/tiff",
 				"image/png",
 			];
-			const { mimeType, idPath } = results.entity[asset.titleImage];
+			const { mimeType, idPath, configuredImageURL } = results.entity[asset.titleImage];
 			const image = `
 					<img
-					src="/contentAsset/image/${asset.identifier}/${asset.titleImage}"
+					src="${configuredImageURL}"
 					alt="${asset.title}"
 					data-field-name="${asset.titleImage}"
 					data-inode="${asset.inode}"

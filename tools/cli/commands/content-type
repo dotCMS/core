@@ -36,31 +36,43 @@ sitePlaceHolder=$(jq -r ' try .host' <<< "$jsonContentType")
 
 ## if the property site on the incoming content-type json file has a place holder instead of an identifier do string substitution
 if [[ ${sitePlaceHolder} == \$* ]]; then
-    #Make a copy of the json file so we can work on it
-    working="$file.working";
-    cp ${file} ${working}
 
     siteIndentifiers=$(< $identifiersFile)
     site=$(echo $sitePlaceHolder | sed "s/\\$//g")
     var=$(echo "$siteIndentifiers" | grep "$site")
     identifier=$(echo $var | sed "s/.*=//g")
-    #replace the place holder in the file with the real identifier
-    sed -i ' ' "s/\\$sitePlaceHolder/$identifier/g" "${working}";
-    #Now that we have done the substitution on our working copy
-    #We can refresh the jsonContentType var
-    jsonContentType=$(<${working})
+
+    printf "Site identifier is '%s'. " "${identifier}"
+
+    if [[ -z ${identifier} ]]; then
+      # printf "${RED}Unable to replace site-place-holder ${sitePlaceHolder} With a valid site identifier.\n${NC}This option is useful only when the script has previously created a site using the ${GREEN}--bundle${NC} command.\nYou need to replace the site-place-holder in your content-type file with a valid site identifier."
+      printf "Empty site identifier make the CT System wide.";
+    fi
+
+      #Make a copy of the json file using a temp file so we can work on it.
+      tmp=$(mktemp) || exit 1
+      cp ${file} ${tmp}
+
+      #replace the place holder in the file with the real identifier
+      sed -i ' ' "s/\\$sitePlaceHolder/$identifier/g" "${tmp}";
+      #Now that we have done the substitution on our tmp copy
+      #We can refresh the jsonContentType var
+      jsonContentType=$(<${tmp})
+      #And kiss goodbye the tmp
+      rm -f "${tmp}"
+
 fi
 
 
 contentTypeVar=$(jq -r ' try .variable' <<< "$jsonContentType")
 
-if [[ ! -z contentTypeVar ]]; then
+if [[ ! -z ${contentTypeVar} ]]; then
 
     echo "Content-type Variable name loaded is $contentTypeVar verifying against remote host."
 
     code=$(curl -s -o /dev/null --head -w "%{http_code}" --header "Authorization: Bearer ${JSON_WEB_TOKEN}" "${DOTCMS_BASE_URL}/api/v1/contenttype/id/${contentTypeVar}" )
 
-    echo " response code was $code"
+    #echo " response code was $code"
 
     if [[ ${code} = 401 ]]; then
          echo "Unauthorized Request - Verify your Credentials."
@@ -72,7 +84,9 @@ if [[ ! -z contentTypeVar ]]; then
        echo "Content-type does not exists on remote site. Add will be attempted."
 
        response=$(curl -s "${DOTCMS_BASE_URL}/api/v1/contenttype"  --header "Authorization: Bearer ${JSON_WEB_TOKEN}" --header 'Content-Type: application/json' --data-raw  "$jsonContentType"  --compressed)
-       echo "$response"
+
+       echo "$response" | jq --color-output .
+
        identifier=$(jq -r ' try .entity[].id' <<< "$response")
 
            if [[ -z ${identifier} ]];
@@ -87,9 +101,10 @@ if [[ ! -z contentTypeVar ]]; then
           echo "A content type named $contentTypeVar already exists. Update will be attempted."
 
           response=$(curl -s -X PUT "${DOTCMS_BASE_URL}/api/v1/contenttype/id/${contentTypeVar}"  --header "Authorization: Bearer ${JSON_WEB_TOKEN}" --header 'Content-Type: application/json' --data-raw  "$jsonContentType"  --compressed)
-          echo "$response"
 
-          identifier=$(jq -r ' try .entity[].id' <<< "$response")
+          echo "$response" | jq --color-output .
+
+          identifier=$(jq -r ' try .entity.id' <<< "$response")
 
           if [[ -z ${identifier} ]];
           then
@@ -103,15 +118,12 @@ if [[ ! -z contentTypeVar ]]; then
     fi
 
 else
-  echo "Unable to get content type variable"
+  echo "Unable to get content type variable from the input json content-type file."
 fi
 
 #catch
 } || {
-   echo " Unexpected Exception generating CT"
+   echo " Unexpected Exception pushing CT."
 }
 
 #finally
-if [[  -f ${working} ]]; then
-     rm ${working}
-fi

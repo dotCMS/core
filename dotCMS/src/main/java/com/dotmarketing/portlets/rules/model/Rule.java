@@ -1,6 +1,11 @@
 package com.dotmarketing.portlets.rules.model;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.publisher.util.PusheableAsset;
+import com.dotcms.publishing.manifest.ManifestItem;
+import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotmarketing.business.*;
@@ -29,7 +34,7 @@ import java.util.List;
  * @since Mar 10, 2015
  *
  */
-public class Rule implements Permissionable, Serializable {
+public class Rule implements Permissionable, Serializable, ManifestItem {
 
     private static final long serialVersionUID = 1L;
 
@@ -349,6 +354,17 @@ public class Rule implements Permissionable, Serializable {
                + ", shortCircuit=" + shortCircuit + ", parent=" + parent
                + ", folder=" + folder + ", priority=" + priority
                + ", enabled=" + enabled + ", modDate=" + modDate + "]";
+    }
+
+    @JsonIgnore
+    @Override
+    public ManifestInfo getManifestInfo(){
+        return new ManifestInfoBuilder()
+                .objectType(PusheableAsset.RULE.getType())
+                .id(this.id)
+                .title(this.name)
+                .folderId(this.folder)
+                .build();
     }
 
     private final class GroupLogicalCondition implements LogicalCondition {

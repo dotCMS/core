@@ -269,7 +269,7 @@
 		],
 		"fixed":false,
 		"folder":"SYSTEM_FOLDER",
-		"host":"$my.cool-bike.com",
+		"host":"my.cool-bike.com",
 		"iDate":1623251909000,
 		"id":"eab1ad11292a6052b90a6247b122858b",
 		"layout":[

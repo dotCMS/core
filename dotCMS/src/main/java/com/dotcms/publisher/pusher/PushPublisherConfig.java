@@ -1,8 +1,12 @@
 package com.dotcms.publisher.pusher;
 
+
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publisher.util.dependencies.DependencyManager;
 import com.dotcms.publisher.util.dependencies.DependencyProcessor;
+import com.dotcms.publishing.manifest.ManifestItem;
+
+import com.dotmarketing.util.UtilMethods;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -34,7 +38,7 @@ import java.util.concurrent.ExecutionException;
  */
 public class PushPublisherConfig extends PublisherConfig {
 
-	public enum AssetTypes {
+    public enum AssetTypes {
 		TEMPLATES,
 		HTMLPAGES,
 		CONTAINERS,
@@ -54,6 +58,7 @@ public class PushPublisherConfig extends PublisherConfig {
 	private boolean downloading = false;
 	private DependencyProcessor dependencyProcessor;
 	private BundleAssets bundleAssets = new BundleAssets();
+	private Set<String> excludes = new HashSet<>();
 
 	public PushPublisherConfig() {
 		super();
@@ -193,8 +198,7 @@ public class PushPublisherConfig extends PublisherConfig {
 		return bundleAssets.getHosts();
 	}
 
-	@Override
-	public Set<String> getLanguages() {
+	public Set<String> getIncludedLanguages() {
 		return bundleAssets.getLanguages();
 	}
 
@@ -214,31 +218,76 @@ public class PushPublisherConfig extends PublisherConfig {
 		return bundleAssets;
 	}
 
-	public <T> boolean addWithDependencies(final T asset, final PusheableAsset pusheableAsset) {
+	public <T> boolean addWithDependencies(final T asset, final PusheableAsset pusheableAsset,
+			final String reason) {
 		final String key = DependencyManager.getBundleKey(asset);
+		final boolean added = bundleAssets.isAdded(key, pusheableAsset);
 		final boolean isAlreadyAdded = bundleAssets.isDependenciesAdded(key, pusheableAsset);
 
 		if(!isAlreadyAdded) {
 			bundleAssets.addWithDependencies(key, pusheableAsset);
 			this.dependencyProcessor.addAsset(asset, pusheableAsset);
+
+			if (!added) {
+				writeIncludeManifestItem(asset, reason);
+			}
 		}
 
 		return !isAlreadyAdded;
 	}
 
-	public <T> boolean add(final T asset, final PusheableAsset pusheableAsset) {
+	public <T> boolean add(final T asset, final PusheableAsset pusheableAsset, final String reason) {
 		final String key = DependencyManager.getBundleKey(asset);
 
 		if(!bundleAssets.isAdded(key, pusheableAsset)) {
 			bundleAssets.add(key, pusheableAsset);
+			writeIncludeManifestItem(asset, reason);
 			return true;
 		} else {
 			return false;
 		}
 	}
 
+	public <T> boolean contains(final T asset, final PusheableAsset pusheableAsset) {
+		final String key = DependencyManager.getBundleKey(asset);
+		return bundleAssets.isAdded(key, pusheableAsset);
+	}
+
+	public <T> boolean exclude(final T asset, final PusheableAsset pusheableAsset, final String reason) {
+		final String key = DependencyManager.getBundleKey(asset);
+
+		if(!excludes.contains(key)) {
+			excludes.add(key);
+			writeExcludeManifestItem(asset, reason);
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	private <T> void writeIncludeManifestItem(final T asset, final String reason) {
+		if (ManifestItem.class.isAssignableFrom(asset.getClass())) {
+			if (UtilMethods.isSet(manifestBuilder)) {
+				manifestBuilder.include((ManifestItem) asset, reason);
+			}
+		} else {
+			Logger.warn(PushPublisherConfig.class,
+					String.format("It is not possible add %s into the manifest", asset));
+		}
+	}
+
+	private <T> void writeExcludeManifestItem(final T asset, final String reason) {
+		if (ManifestItem.class.isAssignableFrom(asset.getClass())) {
+			if (UtilMethods.isSet(manifestBuilder)) {
+				manifestBuilder.exclude((ManifestItem) asset, reason);
+			}
+		} else {
+			Logger.warn(PushPublisherConfig.class,
+					String.format("It is not possible add %s into the manifest", asset));
+		}
+	}
+
 	public void waitUntilResolveAllDependencies() throws ExecutionException {
 		this.dependencyProcessor.waitUntilResolveAllDependencies();
 	}
-
 }
