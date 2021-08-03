@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * Upgrade task used to add columns `icon` and `sort_order` in `structure` table if needed
  */
-public class Task210702UpdateStructureTable extends AbstractJDBCStartupTask {
+public class Task210802UpdateStructureTable extends AbstractJDBCStartupTask {
 
     private final DotDatabaseMetaData dotDatabaseMetaData = new DotDatabaseMetaData();
 
