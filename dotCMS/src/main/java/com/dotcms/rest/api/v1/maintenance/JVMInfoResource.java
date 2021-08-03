@@ -82,17 +82,18 @@ public class JVMInfoResource implements Serializable {
         com.sun.management.OperatingSystemMXBean os = (com.sun.management.OperatingSystemMXBean)
                         java.lang.management.ManagementFactory.getOperatingSystemMXBean();
         
+        
+        
         resultMap.put("physicalMemory",   UtilMethods.prettyByteify(os.getTotalPhysicalMemorySize()));
         resultMap.put("processors",  os.getAvailableProcessors());
         resultMap.put("committedMemory",  UtilMethods.prettyByteify(os.getCommittedVirtualMemorySize()));
         resultMap.put("freePhysicalMemory",  UtilMethods.prettyByteify(os.getFreePhysicalMemorySize()));
-        resultMap.put("cpuLoad",  percentage.format(os.getProcessCpuLoad()));
+        resultMap.put("cpuLoadJava",  percentage.format(os.getProcessCpuLoad()));
         resultMap.put("arch",  os.getArch());
-        resultMap.put("systemCpuLoad",  percentage.format(os.getSystemCpuLoad()));
+        resultMap.put("cpuLoadSystem",  percentage.format(os.getSystemCpuLoad()));
         resultMap.put("systemLoadAverage",  percentage.format(os.getSystemLoadAverage()));
         resultMap.put("os",  os.getName());
         resultMap.put("osVersion",  os.getVersion());
-        resultMap.put("processCpuTime",  os.getProcessCpuTime());
         resultMap.put("hostname", Try.of(()->InetAddress.getLocalHost().getHostName()).getOrElse("ukn") );
         
         
@@ -110,7 +111,10 @@ public class JVMInfoResource implements Serializable {
         long jvmStartTime = ManagementFactory.getRuntimeMXBean().getStartTime();
         
         String duration = DateUtil.prettyDateSince(new Date(jvmStartTime));
-        
+        resultMap.put("maxMemory",UtilMethods.prettyByteify( Runtime.getRuntime().maxMemory() ));
+        resultMap.put("allocatedMemory",UtilMethods.prettyByteify( Runtime.getRuntime().totalMemory() ));
+        resultMap.put("freeMemory", UtilMethods.prettyByteify( Runtime.getRuntime().freeMemory()));
+       
         resultMap.put("vmName", ManagementFactory.getRuntimeMXBean().getVmName());
         resultMap.put("vmVendor", ManagementFactory.getRuntimeMXBean().getVmVendor());
         resultMap.put("vmVersion", ManagementFactory.getRuntimeMXBean().getVmVersion());
