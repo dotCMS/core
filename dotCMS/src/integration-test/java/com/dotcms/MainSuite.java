@@ -31,7 +31,7 @@ import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleAPITest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
-import com.dotcms.publisher.receiver.TestBundlePublisher;
+import com.dotcms.publisher.receiver.BundlePublisherTest;
 import com.dotcms.publisher.util.DependencyManagerTest;
 import com.dotcms.publisher.util.DependencyModDateUtilTest;
 import com.dotcms.publishing.PublisherAPIImplTest;
@@ -448,7 +448,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task210719CleanUpTitleFieldTest.class,
         Task210802UpdateStructureTableTest.class,
         MaintenanceUtilTest.class,
-        TestBundlePublisher.class,
+        BundlePublisherTest.class,
         CategoryFactoryTest.class
 })
 public class MainSuite {
