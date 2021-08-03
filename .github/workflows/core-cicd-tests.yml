@@ -11,7 +11,7 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-latest
     env:
-      DOT_CICD_BRANCH: release-21.08
+      DOT_CICD_BRANCH: master
       EXPORT_REPORTS: true
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}

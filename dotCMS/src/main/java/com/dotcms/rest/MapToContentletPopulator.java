@@ -14,7 +14,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.RelationshipAPI;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -357,12 +356,8 @@ public class MapToContentletPopulator  {
                                 categories.add(category);
                             } else {
                                 // try it as variable
-                                // FIXME: https://github.com/dotCMS/dotCMS/issues/2847
-                                final HibernateUtil hu = new HibernateUtil(Category.class);
-                                hu.setQuery("from " + Category.class.getCanonicalName()
-                                        + " WHERE category_velocity_var_name=?");
-                                hu.setParam(categoryValue);
-                                category = (Category) hu.load();
+                                category = APILocator.getCategoryAPI()
+                                        .findByVariable(categoryValue, user, respectFrontendRoles);
                                 if (category != null && InodeUtils.isSet(category.getCategoryId())) {
                                     categories.add(category);
                                 }

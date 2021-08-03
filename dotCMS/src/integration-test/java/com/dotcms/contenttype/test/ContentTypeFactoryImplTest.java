@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import org.junit.Assert;
 import org.junit.Test;
 
 public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
@@ -493,5 +494,146 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 				}
 			}
 		}
+	}
+
+	/***
+	 * Creates Content Types and sets values for icon and sort_order
+	 *
+	 */
+	@Test
+	public void test_AddingContentType_SetIconAndSortOrder() throws Exception {
+		final long currentTimeMilis = System.currentTimeMillis();
+		ContentType type = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(BaseContentType.CONTENT.getType())).description("description" + currentTimeMilis)
+				.folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("ContentTypeFacTestingIconSortOrder" + currentTimeMilis).owner("owner").icon("testingIcon").sortOrder(2)
+				.variable("velocityVarNameTesting" + currentTimeMilis).build();
+		type = contentTypeFactory.save(type);
+		addFields(type);
+
+		final ContentType contentTypeSearched = contentTypeFactory.find(type.id());
+		Assert.assertNotNull(contentTypeSearched);
+		Assert.assertEquals("testingIcon",contentTypeSearched.icon());
+		Assert.assertEquals(2,contentTypeSearched.sortOrder());
+	}
+
+	/***
+	 * Creates Content Types and sets value for icon but no sort_order
+	 *
+	 */
+	@Test
+	public void test_AddingContentType_SetIcon() throws Exception {
+		final long currentTimeMilis = System.currentTimeMillis();
+		ContentType type = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(BaseContentType.CONTENT.getType())).description("description" + currentTimeMilis)
+				.folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("ContentTypeFacTestingIcon" + currentTimeMilis).owner("owner").icon("testingIcon")
+				.variable("velocityVarNameTesting" + currentTimeMilis).build();
+		type = contentTypeFactory.save(type);
+		addFields(type);
+
+		final ContentType contentTypeSearched = contentTypeFactory.find(type.id());
+		Assert.assertNotNull(contentTypeSearched);
+		Assert.assertEquals("testingIcon",contentTypeSearched.icon());
+		Assert.assertEquals(0,contentTypeSearched.sortOrder());
+	}
+
+	/***
+	 * Creates Content Types and sets value for sort_order but no icon
+	 *
+	 */
+	@Test
+	public void test_AddingContentType_SetSortOrder() throws Exception {
+		final long currentTimeMilis = System.currentTimeMillis();
+		ContentType type = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(BaseContentType.CONTENT.getType())).description("description" + currentTimeMilis)
+				.folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("ContentTypeFacTestingSortOrder" + currentTimeMilis).owner("owner").sortOrder(10)
+				.variable("velocityVarNameTesting" + currentTimeMilis).build();
+		type = contentTypeFactory.save(type);
+		addFields(type);
+
+		final ContentType contentTypeSearched = contentTypeFactory.find(type.id());
+		Assert.assertNotNull(contentTypeSearched);
+		Assert.assertNotNull(contentTypeSearched.icon());
+		Assert.assertEquals(10,contentTypeSearched.sortOrder());
+		Assert.assertEquals(BaseContentType.iconFallbackMap.get(contentTypeSearched.baseType()),contentTypeSearched.icon());
+	}
+
+	/***
+	 * Creates and Updates Content Types and sets values for icon and sort_order
+	 *
+	 */
+	@Test
+	public void test_UpdateContentType_SetIconAndSortOrder() throws Exception {
+		final long currentTimeMilis = System.currentTimeMillis();
+		ContentType type = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(BaseContentType.CONTENT.getType())).description("description" + currentTimeMilis)
+				.folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("ContentTypeFacTestingIconSortOrder" + currentTimeMilis).owner("owner").icon("testingIcon").sortOrder(2)
+				.variable("velocityVarNameTesting" + currentTimeMilis).build();
+		type = contentTypeFactory.save(type);
+		addFields(type);
+
+		ContentType contentTypeSearched = contentTypeFactory.find(type.id());
+		Assert.assertNotNull(contentTypeSearched);
+		Assert.assertEquals("testingIcon",contentTypeSearched.icon());
+		Assert.assertEquals(2,contentTypeSearched.sortOrder());
+
+		final ContentTypeBuilder builder = ContentTypeBuilder.builder(type);
+		builder.icon("updatedIcon");
+		builder.sortOrder(10);
+		contentTypeFactory.save(builder.build());
+
+		contentTypeSearched = contentTypeFactory.find(type.id());
+		Assert.assertNotNull(contentTypeSearched);
+		Assert.assertEquals("updatedIcon",contentTypeSearched.icon());
+		Assert.assertEquals(10,contentTypeSearched.sortOrder());
+	}
+
+	/***
+	 * Creates and Updates Content Types and sets value for icon but no sort_order
+	 *
+	 */
+	@Test
+	public void test_UpdateContentType_SetIcon() throws Exception {
+		final long currentTimeMilis = System.currentTimeMillis();
+		ContentType type = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(BaseContentType.CONTENT.getType())).description("description" + currentTimeMilis)
+				.folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("ContentTypeFacTestingIcon" + currentTimeMilis).owner("owner").icon("testingIcon")
+				.variable("velocityVarNameTesting" + currentTimeMilis).build();
+		type = contentTypeFactory.save(type);
+		addFields(type);
+
+		ContentType contentTypeSearched = contentTypeFactory.find(type.id());
+		Assert.assertNotNull(contentTypeSearched);
+		Assert.assertEquals("testingIcon",contentTypeSearched.icon());
+		Assert.assertEquals(0,contentTypeSearched.sortOrder());
+
+		final ContentTypeBuilder builder = ContentTypeBuilder.builder(type);
+		builder.icon("updatedIcon");
+		contentTypeFactory.save(builder.build());
+
+		contentTypeSearched = contentTypeFactory.find(type.id());
+		Assert.assertNotNull(contentTypeSearched);
+		Assert.assertEquals("updatedIcon",contentTypeSearched.icon());
+		Assert.assertEquals(0,contentTypeSearched.sortOrder());
+	}
+
+	/***
+	 * Creates and Updates Content Types and sets value for sort_order but no icon
+	 *
+	 */
+	@Test
+	public void test_UpdateContentType_SetSortOrder() throws Exception {
+		final long currentTimeMilis = System.currentTimeMillis();
+		ContentType type = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(BaseContentType.CONTENT.getType())).description("description" + currentTimeMilis)
+				.folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("ContentTypeFacTestingSortOrder" + currentTimeMilis).owner("owner").sortOrder(10).icon("testIcon")
+				.variable("velocityVarNameTesting" + currentTimeMilis).build();
+		type = contentTypeFactory.save(type);
+		addFields(type);
+
+		ContentType contentTypeSearched = contentTypeFactory.find(type.id());
+		Assert.assertNotNull(contentTypeSearched);
+		Assert.assertEquals(10,contentTypeSearched.sortOrder());
+
+		final ContentTypeBuilder builder = ContentTypeBuilder.builder(type);
+		builder.sortOrder(1);
+		contentTypeFactory.save(builder.build());
+
+		contentTypeSearched = contentTypeFactory.find(type.id());
+		Assert.assertNotNull(contentTypeSearched);
+		Assert.assertEquals(1,contentTypeSearched.sortOrder());
 	}
 }

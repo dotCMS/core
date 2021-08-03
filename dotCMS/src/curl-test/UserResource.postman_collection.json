@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "75053fc6-3e87-4330-aafb-a7f91e193792",
+		"_postman_id": "670e1994-0ef9-4bec-a5f8-35ed59622175",
 		"name": "UserResource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -309,6 +309,63 @@
 					]
 				},
 				"description": "* <b>Given scenario:</b> Get All the Users from the system.\n     * <b>Expected result:</b> The Total field should be greaterThan 0, so at least 1 user must be returned."
+			},
+			"response": []
+		},
+		{
+			"name": "Get User Current",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 \", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Valid response\", function () {",
+							"    pm.expect(jsonData.email).to.eq(\"admin@dotcms.com\");",
+							"    pm.expect(jsonData.loginAs).to.eq(true);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/users/current",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"users",
+						"current"
+					]
+				},
+				"description": "Method to test: current <br/>\nGiven Scenario: request the current endpoint and expects to recovery the loginAs <br/>\nExpectedResult: The login as should be true"
 			},
 			"response": []
 		}

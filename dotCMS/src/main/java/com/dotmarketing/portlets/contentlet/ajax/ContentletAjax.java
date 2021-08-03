@@ -11,6 +11,7 @@ import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.enterprise.FormAJAXProxy;
 import com.dotcms.keyvalue.model.KeyValue;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
+import com.dotcms.rest.api.v1.workflow.ActionInputView;
 import com.dotcms.util.LogTime;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -95,6 +96,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -1461,6 +1463,10 @@ public class ContentletAjax {
                 wfActionMap.put("assignable", action.isAssignable());
                 wfActionMap.put("commentable", action.isCommentable() || UtilMethods.isSet(action.getCondition()));
                 wfActionMap.put("requiresCheckout", action.requiresCheckout());
+				if (action.hasMoveActionletActionlet() && !action.hasMoveActionletHasPathActionlet()) {
+
+					wfActionMap.put("moveable", "true");
+				}
 
                 final List<WorkflowActionClass> actionlets =
 						APILocator.getWorkflowAPI().findActionClasses(action);

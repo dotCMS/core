@@ -1,6 +1,12 @@
 package com.dotmarketing.portlets.folders.model;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
 import com.dotcms.api.tree.Parentable;
+import com.dotcms.publisher.util.PusheableAsset;
+import com.dotcms.publishing.manifest.ManifestItem;
+import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
+import com.dotcms.repackage.net.sf.hibernate.sql.Template;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -8,6 +14,7 @@ import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.struts.FolderForm;
 import com.dotmarketing.util.InodeUtils;
@@ -25,7 +32,8 @@ import java.util.List;
 import java.util.Map;
 
 /** @author Hibernate CodeGenerator */
-public class Folder extends Inode implements Serializable, Permissionable, Treeable, Ruleable, Parentable {
+public class Folder extends Inode implements Serializable, Permissionable, Treeable, Ruleable,
+		Parentable, ManifestItem {
 
 	private static final long serialVersionUID = 1L;
 
@@ -344,6 +352,26 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 		return true;
 	}
 
+	public ManifestInfo getManifestInfo(){
+		Folder parent = null;
 
+		try {
+			final Permissionable parentPermissionable = this.getParentPermissionable();
+
+			if (Folder.class.isInstance(parentPermissionable)) {
+				parent = (Folder) parentPermissionable;
+			}
+		} catch (DotDataException e) {
+
+		}
+
+		return new ManifestInfoBuilder()
+			.objectType(PusheableAsset.FOLDER.getType())
+			.id(this.getIdentifier())
+			.title(this.getTitle())
+			.site(this.getHost())
+			.folder(parent)
+			.build();
+	}
 
 }

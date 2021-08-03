@@ -1883,4 +1883,11 @@ public interface ContentletAPIPreHook {
     default boolean findContentletByIdentifierAnyLanguage(String identifier, boolean includeDeleted) {
         return true;
     }
+
+    default boolean move(Contentlet contentlet, User user, String hostAndFolderPath, boolean respectFrontendRoles) { return true; }
+
+	default boolean move(Contentlet contentlet, User user, Host host, String folderFolderPath, boolean respectFrontendRoles) { return  true; }
+
+	default boolean move(final Contentlet contentlet, User user, Host host, Folder folder, boolean respectFrontendRoles) { return true; }
+
 }

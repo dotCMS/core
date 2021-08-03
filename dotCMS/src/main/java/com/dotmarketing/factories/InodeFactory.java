@@ -24,6 +24,7 @@ import com.dotmarketing.util.Parameter;
 import com.dotmarketing.util.UtilMethods;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -31,6 +32,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
+import org.junit.experimental.categories.Categories;
 
 /**
  * 
@@ -57,11 +59,14 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		try {
-			String tableName = ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
-			String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
+			final String tableName = ((Inode) c.newInstance()).getType();
+			final HibernateUtil dh = new HibernateUtil(c);
+			final String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
 			+ tableName + "_1_ where tree.parent = ? and tree.child = " + tableName + ".inode and " + tableName
 			+ "_1_.inode = " + tableName + ".inode and "+tableName+"_1_.type = '"+tableName+"'";
 
@@ -100,11 +105,14 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		try {
-			String tableName = ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
-			String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
+			final String tableName = ((Inode) c.newInstance()).getType();
+			final HibernateUtil dh = new HibernateUtil(c);
+			final String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
 			+ tableName + "_1_ where tree.parent = ? and tree.child = " + tableName + ".inode and " + tableName
 			+ "_1_.inode = " + tableName + ".inode and "+tableName+"_1_.type = '"+tableName+"' and " + condition;
 
@@ -149,11 +157,14 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		try {
-			String tableName = ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
-			String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
+			final String tableName = ((Inode) c.newInstance()).getType();
+			final HibernateUtil dh = new HibernateUtil(c);
+			final String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
 			+ tableName + "_1_ where tree.parent = ? and tree.child = " + tableName + ".inode and " + tableName
 			+ "_1_.inode = " + tableName + ".inode and "+tableName+"_1_.type = '"+tableName+"' and tree.relation_type=? and " + condition;
 
@@ -197,15 +208,14 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		try {
-			String tableName = ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
-
-			// dh.setQuery("from inode in class " + c.getName() + " where ? in
-			// (select tree.parent from com.dotmarketing.beans.Tree tree
-			// where inode.inode = tree.child and tree.relationType = ?)");
-			String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
+			final String tableName = ((Inode) c.newInstance()).getType();
+			final HibernateUtil dh = new HibernateUtil(c);
+			final String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
 			+ tableName + "_1_ where tree.parent = ? and tree.child = " + tableName + ".inode and " + tableName
 			+ "_1_.inode = " + tableName + ".inode and "+tableName+"_1_.type = '"+tableName+"' and tree.relation_type = ? ";
 
@@ -247,12 +257,15 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		try {
-			String tableName = ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
+            final String tableName = ((Inode) c.newInstance()).getType();
+            final HibernateUtil dh = new HibernateUtil(c);
 
-			String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
+            final String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
 			+ tableName + "_1_ where tree.parent = ? and tree.child = " + tableName + ".inode and " + tableName
 			+ "_1_.inode = " + tableName + ".inode and "+tableName+"_1_.type = '"+tableName+"'";
 
@@ -295,13 +308,16 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		try {
 
-			String tableName = ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
+            final String tableName = ((Inode) c.newInstance()).getType();
+            final HibernateUtil dh = new HibernateUtil(c);
 
-			String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
+            final String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
 			+ tableName + "_1_ where tree.parent = ? and tree.child = " + tableName + ".inode and " + tableName
 			+ "_1_.inode = " + tableName + ".inode and "+tableName+"_1_.type = '"+tableName+"' order by " + orderBy;
 
@@ -344,12 +360,15 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		try {
-			String tableName = ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
+            final String tableName = ((Inode) c.newInstance()).getType();
+            final HibernateUtil dh = new HibernateUtil(c);
 
-			String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
+            final String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
 			+ tableName + "_1_ where tree.parent = ? and tree.child = " + tableName + ".inode and " + tableName
 			+ "_1_.inode = " + tableName + ".inode and "+tableName+"_1_.type = '"+tableName+"' and " + condition;
 
@@ -392,12 +411,15 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		try {
-			String tableName = ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
+            final String tableName = ((Inode) c.newInstance()).getType();
+            final HibernateUtil dh = new HibernateUtil(c);
 
-			String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
+            final String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
 			+ tableName + "_1_ where tree.parent = ? and tree.child = " + tableName + ".inode and " + tableName
 			+ "_1_.inode = " + tableName + ".inode and "+tableName+"_1_.type = '"+tableName+"' order by  " + order;
 
@@ -442,12 +464,15 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		try {
-			String tableName = ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
+            final String tableName = ((Inode) c.newInstance()).getType();
+            final HibernateUtil dh = new HibernateUtil(c);
 
-			String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
+            final String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
 			+ tableName + "_1_ where tree.parent = ? and tree.child = " + tableName + ".inode and " + tableName
 			+ "_1_.inode = " + tableName + ".inode and "+tableName+"_1_.type = '"+tableName+"' order by  rand()";
 
@@ -504,11 +529,14 @@ public class InodeFactory {
 			if(c.equals(Template.class)){
 				throw new DotStateException("Template mapping was deleted from hibernate files");
 			}
-			
-			String tableName = ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
+            if(c.equals(Categories.class)){
+                throw new DotStateException("Categories mapping was deleted from hibernate files");
+            }
 
-			String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName
+            final String tableName = ((Inode) c.newInstance()).getType();
+            final HibernateUtil dh = new HibernateUtil(c);
+
+            final String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName
 			+ ", tree tree, tree tree2, inode " + tableName
 			+ "_1_ where tree.parent = ? and tree2.parent = ?  and tree.child = " + tableName
 			+ ".inode  and tree2.child = " + tableName + ".inode  and " + tableName + "_1_.inode = "
@@ -553,6 +581,9 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		if (inodes == null || inodes.length == 0) {
 			return InodeFactory.getInodesOfClassByConditionAndOrderBy(c, condition, orderBy);
@@ -560,10 +591,10 @@ public class InodeFactory {
 
 		try {
 
-			String tableName = ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
+            final String tableName = ((Inode) c.newInstance()).getType();
+            final HibernateUtil dh = new HibernateUtil(c);
 
-			StringBuffer sql = new StringBuffer("SELECT {" + tableName + ".*} from " + tableName + " " + tableName);
+            final StringBuffer sql = new StringBuffer("SELECT {" + tableName + ".*} from " + tableName + " " + tableName);
 
 			for (int x = 1; x < inodes.length + 1; x++) {
 				if (x == 1) {
@@ -635,12 +666,15 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		try {
-			String tableName = ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
+            final String tableName = ((Inode) c.newInstance()).getType();
+            final HibernateUtil dh = new HibernateUtil(c);
 
-			String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName
+            final String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName
 			+ ", tree tree, tree tree2, inode " + tableName
 			+ "_1_ where tree.parent = ? and tree2.parent = ?  and tree.child = " + tableName
 			+ ".inode  and tree2.child = " + tableName + ".inode  and " + tableName + "_1_.inode = "
@@ -705,6 +739,9 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		if (inodes == null || inodes.size() == 0) {
 			return InodeFactory.getInodesOfClassByConditionAndOrderBy(c, condition, orderBy);
@@ -713,10 +750,10 @@ public class InodeFactory {
 
 		try {
 
-			String tableName = ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
+            final String tableName = ((Inode) c.newInstance()).getType();
+            final HibernateUtil dh = new HibernateUtil(c);
 
-			StringBuffer sql = new StringBuffer("SELECT {" + tableName + ".*} from " + tableName + " " + tableName);
+            final StringBuffer sql = new StringBuffer("SELECT {" + tableName + ".*} from " + tableName + " " + tableName);
 
 			for (int x = 1; x < inodes.size() + 1; x++) {
 				if (x == 1) {
@@ -791,13 +828,16 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 
 		try {
 
-			String tableName = ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
+            final String tableName = ((Inode) c.newInstance()).getType();
+            final HibernateUtil dh = new HibernateUtil(c);
 
-			StringBuffer sql = new StringBuffer("SELECT {" + tableName + ".*} from " + tableName + " " + tableName);
+            final StringBuffer sql = new StringBuffer("SELECT {" + tableName + ".*} from " + tableName + " " + tableName);
 
 			for (int x = 1; x < inodes.size() + 1; x++) {
 				if (x == 1) {
@@ -873,10 +913,13 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		try {
-			String tableName = ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
+            final String tableName = ((Inode) c.newInstance()).getType();
+            final HibernateUtil dh = new HibernateUtil(c);
 
 			String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
 			+ tableName + "_1_ where tree.parent = ? and tree.child = " + tableName + ".inode and " + tableName
@@ -979,6 +1022,9 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		return getInodesOfClass(c, 0, 0);
 	}
@@ -996,10 +1042,13 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		try {
-			HibernateUtil dh = new HibernateUtil(c);
-			String type = ((Inode) c.newInstance()).getType();
+            final HibernateUtil dh = new HibernateUtil(c);
+            final String type = ((Inode) c.newInstance()).getType();
 			dh.setQuery("from inode in class " + c.getName()+" where inode.type='"+type+"'");
 
 			if (limit != 0) {
@@ -1033,10 +1082,13 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		try {
-			HibernateUtil dh = new HibernateUtil(c);
-			String type = ((Inode) c.newInstance()).getType();
+            final HibernateUtil dh = new HibernateUtil(c);
+            final String type = ((Inode) c.newInstance()).getType();
 			dh.setQuery("from inode in class " + c.getName() + " where inode.type='"+type+"' and " + condition);
 
 			if (limit != 0) {
@@ -1067,10 +1119,13 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		try {
-			HibernateUtil dh = new HibernateUtil(c);
-			String type = ((Inode) c.newInstance()).getType();
+            final HibernateUtil dh = new HibernateUtil(c);
+            final String type = ((Inode) c.newInstance()).getType();
 			dh.setQuery("from inode in class " + c.getName() + " where inode.type='"+type+"' and " + condition);
 			Logger.debug(InodeFactory.class, "getInodeOfClassByCondition query: " + dh.getQuery());
 			return dh.load();
@@ -1109,10 +1164,13 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		try {
-			HibernateUtil dh = new HibernateUtil(c);
-			String type = ((Inode) c.newInstance()).getType();
+            final HibernateUtil dh = new HibernateUtil(c);
+            final String type = ((Inode) c.newInstance()).getType();
 			dh.setQuery("from inode in class " + c.getName() + " where inode.type='"+type+"' and " + condition + " order by " + orderby);
 			if (limit != 0) {
 				dh.setFirstResult(offset);
@@ -1142,10 +1200,13 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		try {
-			HibernateUtil dh = new HibernateUtil(c);
-			String type = ((Inode) c.newInstance()).getType();
+            final HibernateUtil dh = new HibernateUtil(c);
+            final String type = ((Inode) c.newInstance()).getType();
 			dh.setMaxResults(maxRows);
 			dh.setQuery("from inode in class " + c.getName()+" where inode.type='"+type+"' ");
 
@@ -1176,10 +1237,13 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		try {
-			HibernateUtil dh = new HibernateUtil(c);
-			String type = ((Inode) c.newInstance()).getType();
+            final HibernateUtil dh = new HibernateUtil(c);
+            final String type = ((Inode) c.newInstance()).getType();
 			dh.setQuery("from inode in class " + c.getName() + " where inode.type='"+type+"' order by " + orderBy);
 
 			if (limit != 0) {
@@ -1208,6 +1272,9 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		Object obj ;
 		try {
@@ -1236,11 +1303,14 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		try {
-			String tableName = ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
-			String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
+            final String tableName = ((Inode) c.newInstance()).getType();
+            final HibernateUtil dh = new HibernateUtil(c);
+            final String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
 			+ tableName + "_1_ where tree.child = ? and tree.parent = " + tableName + ".inode and " + tableName
 			+ "_1_.inode = " + tableName + ".inode and "+tableName+"_1_.type = '"+tableName+"'";
 
@@ -1251,7 +1321,7 @@ public class InodeFactory {
 
 			Logger.debug(InodeFactory.class, "inode:  " + i + "\n");
 
-			List list = dh.list();
+            final List list = dh.list();
 
 			if ((list != null) && (list.size() != 0)) {
 				return list.get(0);
@@ -1288,11 +1358,14 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		try {
-			String tableName = ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
-			String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName
+            final String tableName = ((Inode) c.newInstance()).getType();
+            final HibernateUtil dh = new HibernateUtil(c);
+            final String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName
 			+ " with (nolock), tree tree with (nolock), inode " + tableName + "_1_ with (nolock) where tree.child = ? and tree.parent = "
 			+ tableName + ".inode and " + tableName + "_1_.inode = " + tableName + ".inode and "+tableName+"_1_.type = '"+tableName+"'";
 
@@ -1329,15 +1402,15 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		try {
-			String tableName = ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
+            final String tableName = ((Inode) c.newInstance()).getType();
+            final HibernateUtil dh = new HibernateUtil(c);
 
-			// dh.setQuery("from inode in class " + c.getName() + " where ? in
-			// (select tree.parent from com.dotmarketing.beans.Tree tree
-			// where inode.inode = tree.child and tree.relationType = ?)");
-			String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
+            final String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
 			+ tableName + "_1_ where tree.child = ? and tree.parent = " + tableName + ".inode and " + tableName
 			+ "_1_.inode = " + tableName + ".inode and tree.relation_type = ? and "+tableName+"_1_.type = '"+tableName+"' ";
 
@@ -1370,12 +1443,15 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		try {
-			String tableName = ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
+            final String tableName = ((Inode) c.newInstance()).getType();
+            final HibernateUtil dh = new HibernateUtil(c);
 
-			String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
+            final String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
 			+ tableName + "_1_ where tree.child = ? and tree.parent = " + tableName + ".inode and " + tableName
 			+ "_1_.inode = " + tableName + ".inode and "+tableName+"_1_.type = '"+tableName+"' and " + condition;
 
@@ -1411,11 +1487,14 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-		
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
+
 		try 
 		{
-			String tableName = ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
+            final String tableName = ((Inode) c.newInstance()).getType();
+            final HibernateUtil dh = new HibernateUtil(c);
 
 			String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
 			+ tableName + "_1_ where tree.child = ? and tree.parent = " + tableName + ".inode and " + tableName
@@ -1461,10 +1540,13 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		try {
-			String tableName = ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
+			final String tableName = ((Inode) c.newInstance()).getType();
+            final HibernateUtil dh = new HibernateUtil(c);
 			String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
 			+ tableName + "_1_ where tree.child = ? and tree.parent = " + tableName + ".inode and " + tableName
 			+ "_1_.inode = " + tableName + ".inode and "+tableName+"_1_.type = '"+tableName+"' ";
@@ -1505,11 +1587,14 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		try {
-			String tableName = ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
-			String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
+			final String tableName = ((Inode) c.newInstance()).getType();
+			final HibernateUtil dh = new HibernateUtil(c);
+			final String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
 			+ tableName + "_1_ where tree.child = ? and tree.parent = " + tableName + ".inode and " + tableName
 			+ "_1_.inode = " + tableName + ".inode and "+tableName+"_1_.type = '"+tableName+"' and " + condition;
 
@@ -1597,9 +1682,12 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
-		java.util.List children = getChildrenClass(parent, c);
-		java.util.Iterator childrenIter = children.iterator();
+		final List children = getChildrenClass(parent, c);
+		final Iterator childrenIter = children.iterator();
 
 		while (childrenIter.hasNext()) {
 			parent.deleteChild((Inode) childrenIter.next());
@@ -1696,15 +1784,15 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		try {
-			String tableName = ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
+			final String tableName = ((Inode) c.newInstance()).getType();
+			final HibernateUtil dh = new HibernateUtil(c);
 
-			// dh.setQuery("from inode in class " + c.getName() + " where ? in
-			// (select tree.parent from com.dotmarketing.beans.Tree tree
-			// where inode.inode = tree.child and tree.relationType = ?)");
-			String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
+			final String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
 			+ tableName + "_1_ where tree.parent = ? and tree.child = " + tableName + ".inode and " + tableName
 			+ "_1_.inode = " + tableName + ".inode and "+tableName+"_1_.type = '"+tableName+"' and tree.relation_type = ?";
 
@@ -1753,10 +1841,13 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		try {
-			String tableName = ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
+			final String tableName = ((Inode) c.newInstance()).getType();
+			final HibernateUtil dh = new HibernateUtil(c);
 			String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
 			+ tableName + "_1_ where tree.parent = ? and tree.child = " + tableName + ".inode and " + tableName
 			+ "_1_.inode = " + tableName + ".inode and "+tableName+"_1_.type = '"+tableName+"' ";
@@ -1805,14 +1896,16 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-		
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 
 		orderby = SQLUtil.sanitizeSortBy(orderby);
 		direction = SQLUtil.sanitizeParameter(direction);
 
 		try {
-			HibernateUtil dh = new HibernateUtil(c);
-			String type = ((Inode) c.newInstance()).getType();
+			final HibernateUtil dh = new HibernateUtil(c);
+			final String type = ((Inode) c.newInstance()).getType();
 			String query = "from inode in class " + c.getName();
 			// condition
 			query += (UtilMethods.isSet(condition) ? " where inode.type ='"+type+"' and " + condition : " where inode.type ='"+type+"'");
@@ -1849,12 +1942,15 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		try {
-			String tableName = ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
+			final String tableName = ((Inode) c.newInstance()).getType();
+			final HibernateUtil dh = new HibernateUtil(c);
 
-			String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName
+			final String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName
 			+ ", tree tree, inode " + tableName + "_1_ where tree.parent = ? and tree.child = "
 			+ tableName + ".inode and " + tableName + "_1_.inode = " + tableName + ".inode and "+ tableName + "_1_.type = '" + tableName + "' and tree.relation_type = '" + relationType + "'";
 
@@ -1887,12 +1983,15 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		try {
-			String tableName = ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
+			final String tableName = ((Inode) c.newInstance()).getType();
+			final HibernateUtil dh = new HibernateUtil(c);
 
-			String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName
+			final String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName
 			+ ", tree tree, inode " + tableName + "_1_ where tree.child = ? and tree.parent = "
 			+ tableName + ".inode and " + tableName + "_1_.inode = " + tableName + ".inode and "+tableName+"_1_.type = '"+tableName+"' and tree.relation_type = ?";
 
@@ -1930,6 +2029,9 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
+        }
 		
 		if (inodes == null || inodes.length == 0)
 		{        	
@@ -1938,10 +2040,10 @@ public class InodeFactory {
 
 		try {
 
-			String tableName = ((Inode) c.newInstance()).getType();
-			HibernateUtil dh = new HibernateUtil(c);
+			final String tableName = ((Inode) c.newInstance()).getType();
+			final HibernateUtil dh = new HibernateUtil(c);
 
-			StringBuffer sql = new StringBuffer("SELECT {" + tableName + ".*} from " + tableName + " " + tableName);
+			final StringBuffer sql = new StringBuffer("SELECT {" + tableName + ".*} from " + tableName + " " + tableName);
 
 			for (int x = 1; x < inodes.length + 1; x++) {
 				if (x == 1) {

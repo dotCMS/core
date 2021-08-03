@@ -216,7 +216,6 @@
 <jsp:include page="/html/portlet/ext/folders/menu_actions_js.jsp" />
 
 <script type="text/javascript">
-
     var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
 
     var dataItems = {
@@ -240,30 +239,12 @@
                         continue;
                     }
 
-                    String labelAndIcon = (contentType.getStructureType()==1)
-                          ? "<span class='contentIcon'></span>"
-                              : (contentType.getStructureType()==2)
-                                  ? "<span class='gearIcon'></span>"
-                                      : (contentType.getStructureType()==3)
-                                          ? "<span class='fa-columns'></span>"
-                                              : (contentType.getStructureType()==4)
-                                              ? "<span class='fileIcon'></span>"
-                                                  : (contentType.getStructureType()==5)
-                                                  ? "<span class='pageIcon'></span> "
-                                                      : (contentType.getStructureType()==6)
-                                                      ? "<span class='personaIcon'></span>"
-                                                        : (contentType.getStructureType()==7)
-                                                        ? "<span class='vanityIcon'></span>"
-                                                            : (contentType.getStructureType()==8)
-                                                            ? "<span class='languageVarIcon'></span>"
-                                                              : (contentType.getStructureType()==9)
-                                                              ? "<span class='dotAssetIcon'></span>"
-                                                                :"<span class='blankIcon'></span>";
+                    String labelAndIcon = "<i class='material-icons'>" + contentType.getIcon() +"</i>";
 
-                    String contentTypeName= UtilMethods.javaScriptify(contentType.getName());
-                    labelAndIcon+="&nbsp; &nbsp;" + contentTypeName;
+                    String contentTypeName = UtilMethods.javaScriptify(contentType.getName());
+                    labelAndIcon+=contentTypeName;
                     if(contentType.getStructureType() != baseType){
-                      labelAndIcon = "<div style='height:1px;margin:-1px -10px 0px -10px;background:silver;'></div>" + labelAndIcon;
+                      labelAndIcon = labelAndIcon;
                       baseType = contentType.getStructureType();
                     }
             %>

@@ -92,12 +92,12 @@ function editPage(url, languageId) {
 <%if(schemesAvailable.size()>1){%>
    <div style="margin-bottom:10px;">
    	<select id="select-workflow-scheme-dropdown" dojoType="dijit.form.FilteringSelect" onchange="setMyWorkflowScheme()" style="width:100%">
-   
+
    	   <option value=""><%=LanguageUtil.get(pageContext, "dot.common.select.workflow")%></option>
    		<%for(String key :schemesAvailable.keySet()) {%>
-   
+
    		  <option value="<%=key%>"><%=schemesAvailable.get(key) %></option>
-   
+
    		<%} %>
    	</select>
    </div>
@@ -195,8 +195,8 @@ function editPage(url, languageId) {
 
 			<a
 			style="<%if(schemesAvailable.size()>1){%>display:none;<%} %>" class="schemeId<%=action.getSchemeId()%> schemeActionsDiv"
-			onclick="contentAdmin.executeWfAction('<%=action.getId()%>', <%= action.hasPushPublishActionlet() || action.isAssignable() || action.isCommentable() || UtilMethods.isSet(action.getCondition()) %>)">
-				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, action.getName())) %>   
+			onclick="contentAdmin.executeWfAction('<%=action.getId()%>', <%= action.hasPushPublishActionlet() || action.isAssignable() || action.isCommentable() || (action.hasMoveActionletActionlet() && !action.hasMoveActionletHasPathActionlet()) || UtilMethods.isSet(action.getCondition()) %>)">
+				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, action.getName())) %>
 				<%if(action.hasSaveActionlet()){ %>
                     <i class="fa fa-save" style="opacity:.35;float:right"></i>
                 <%} %>

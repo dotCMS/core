@@ -521,9 +521,10 @@ public class PublishFactory {
             java.util.Iterator<Container> identifiersIter = identifiers.iterator();
             while ( identifiersIter.hasNext() ) {
 
-                Container container = identifiersIter.next();
+                final Container container = identifiersIter.next();
 
-                List categories = InodeFactory.getParentsOfClass( container, Category.class );
+                final List categories = APILocator.getCategoryAPI()
+                        .getParents(container, APILocator.getUserAPI().getSystemUser(), false);
                 List contentlets;
 
                 if ( categories.size() == 0 ) {

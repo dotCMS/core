@@ -48,7 +48,7 @@
 	List<WorkflowScheme> fileWorkflows = APILocator.getWorkflowAPI().findSchemesForStruct(fileStructure);
 
 	String frameName = (String)request.getSession().getAttribute(WebKeys.FRAME);
-	
+
 	%>
 
 
@@ -110,19 +110,19 @@
 					strHTML += '</a>';
 				}
 
-				
+
 				if(isAdminUser || userRoles.fileModifiable) {
-					
-					
+
+
 					strHTML += '<a class="context-menu__item" href="javascript: addHTMLPage(\'' + objId + '\',\'' + referer + '\')">';
 					//strHTML += '<span class="newPageIcon"></span>&nbsp;';
 					strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "HTML-Page")) %>';
 					strHTML += '</a>';
-					
-					
-					
-					
-					
+
+
+
+
+
 					strHTML += '<a class="context-menu__item" href="javascript:addFile(\'' + objId + '\',\'' + referer + '\',false);hidePopUp(\'context_menu_popup_'+objId+'\');">';
 					    strHTML += '<span class="fileNewIcon"></span>';
 					    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Image-or-File")) %>';
@@ -182,7 +182,7 @@
 
 	function showFolderPopUp(folder, cmsAdminUser, origReferer, e) {
 		if(actionLoading) return;
-		
+
 		var referer = encodeURIComponent(origReferer);
 
 		var objId = folder.inode;
@@ -327,7 +327,7 @@
 
 		showPopUp('context_menu_popup_'+objId, e);
 	}
-	
+
 	function wfActionsMenu(objId, content) {
 		contentAdmin = new dotcms.dijit.contentlet.ContentAdmin('','',1);
 		var strHTML = "";
@@ -336,6 +336,7 @@
             	var name = content.wfActionMapList[i].name;
             	var id = content.wfActionMapList[i].id;
             	var assignable = content.wfActionMapList[i].assignable;
+				var moveable = !!content.wfActionMapList[i].moveable
             	var hasPushPublishActionlet = content.wfActionMapList[i].hasPushPublishActionlet;
 	            var commentable = content.wfActionMapList[i].commentable;
 	            var icon = content.wfActionMapList[i].icon;
@@ -344,7 +345,7 @@
 	            var isLocked = content.isLocked;
 	            var contentEditable = content.contentEditable;
 
-                strHTML += '<a href="javascript: contentAdmin.executeWfAction(\'' + id + '\', ' + assignable +', ' + commentable+', ' +hasPushPublishActionlet +', \'' + objId +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
+                strHTML += '<a href="javascript: contentAdmin.executeWfAction(\'' + id + '\', ' + assignable +', ' + commentable+', ' +hasPushPublishActionlet +', \'' + objId +'\' , ' + moveable +'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
                 strHTML += '<span class=\''+icon+'\'></span>';
                 strHTML += wfActionNameStr;
                 strHTML += '</a>';
@@ -414,10 +415,10 @@
 		}
 
 		strHTML += wfActionsMenu(objId, file);
-		
+
 
 		if (working && publish && !archived ) {
-	
+
 	        if (enterprise) {
 	             if (sendingEndpoints) {
 	                strHTML += '<a class="context-menu__item" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
@@ -425,14 +426,14 @@
 	                strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
 	                strHTML += '</a>';
 	            }
-	
+
 				strHTML += '<a class="context-menu__item" href="javascript: addToBundle(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
 				strHTML += '<span class="bundleIcon"></span>';
 				strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>';
 				strHTML += '</a>';
 			}
 		}
-			
+
 		// If archived, only display the "Remove" option in the Push Dialog
 		if (archived) {
 			if (enterprise) {
@@ -445,7 +446,7 @@
 			}
 		}
 
-	
+
 		if (locked && write) {
 			strHTML += '<a href="javascript: unlockFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
 		    strHTML += '<span class="keyIcon"></span>';
@@ -454,9 +455,9 @@
 		}
 
 
-		
+
 		if (write && !archived)  {
-			
+
 			strHTML += '<div class="pop_divider" ></div>';
 
             strHTML += '<a href="javascript: markForCopy(\'' + objId + '\',\'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
@@ -525,7 +526,7 @@
                 }
             }
         }
-        
+
 		if (!live && working && publish && !hasLiveVersion) {
 			if (!archived) {
 				strHTML += '<a href="javascript: archiveLink(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
@@ -650,8 +651,8 @@
 
 				var editFunction = page.isContentlet ?
 						                  "editHTMLPageAsset('" + objId + "','" + page.stInode + "')"
-						                : "editHTMLPage('" + objId + "', '" + referer + "')";  
-				
+						                : "editHTMLPage('" + objId + "', '" + referer + "')";
+
 				strHTML += "<a href=\"javascript: "+editFunction+";\" class=\"context-menu__item\">";
     				strHTML += '<span class="pagePropIcon"></span>';
            			strHTML += actionLabel;
@@ -669,7 +670,7 @@
             strHTML += wfActionsMenu(objId, page);
 
 			if (working && !archived && publish) {
-	
+
 	            if (enterprise) {
 	                if (sendingEndpoints) {
 	                    strHTML += '<a href="javascript: remotePublish(\'' + objIden + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
@@ -677,15 +678,15 @@
 	                    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
 	                    strHTML += '</a>';
 	                }
-	
+
 					strHTML += '<a class="context-menu__item" href="javascript: addToBundle(\'' + objIden + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');">';
 					strHTML += '<span class="bundleIcon"></span>';
 					strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>';
 					strHTML += '</a>';
 				}
-	
+
 			}
-			
+
 			// If archived, only display the "Remove" option in the Push Dialog
 			if (archived) {
 				if (enterprise) {
@@ -697,7 +698,7 @@
                     }
 				}
 			}
-	
+
 			if (locked && write) {
 				strHTML += '<a href="javascript: unlockHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';
 			    	strHTML += '<span class="keyIcon"></span>';
@@ -869,7 +870,7 @@
 				var objId = host.identifier;
 				var referer = unescape(encodeURIComponent(origReferer));
 			    var isAdminUser = <%= APILocator.getUserAPI().isCMSAdmin(user)%>;
-                
+
                 if (isAdminUser || userRoles.folderModifiable) {
 					menuOptions += '<div data-dojo-type="dijit/MenuItem" onclick="addTopFolder(\'' + objId + '\',\''+referer+'\')">';
 					menuOptions += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Folder")) %>';
@@ -915,7 +916,7 @@
 
 		if (menuOptions) {
 			var htmlCode = '';
-			htmlCode += '<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props=\'iconClass:"actionIcon", class:"dijitDropDownActionButton"\'>';
+			htmlCode += '<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props=\'iconClass:"fa-plus", class:"dijitDropDownActionButton"\'>';
 			htmlCode += '<span></span>';
 			htmlCode += '<div data-dojo-type="dijit/Menu" class="contentlet-menu-actions">';
 			htmlCode += menuOptions;
@@ -949,12 +950,10 @@
     		this.languageId=languageId;
     	},
 
-    	executeWfAction: function(wfId, assignable, commentable, hasPushPublishActionlet, inode ){
-
+    	executeWfAction: function(wfId, assignable, commentable, hasPushPublishActionlet, inode, moveable ){
     		this.wfActionId = wfId;
 
-    		if(assignable || commentable || hasPushPublishActionlet){
-
+    		if(assignable || commentable || hasPushPublishActionlet || moveable){
                 let workflow = {
                     actionId:wfId,
                     inode:inode
@@ -975,8 +974,9 @@
 		    		var expireDate 			= "";
 		    		var expireTime 			= "";
 		    		var neverExpire 		= "";
+					var pathToMove 			= "";
 					BrowserAjax.saveFileAction(selectedItem,wfActionAssign,wfActionId,wfActionComments,wfConId, publishDate,
-		    				publishTime, expireDate, expireTime, neverExpire, fileActionCallback
+		    				publishTime, expireDate, expireTime, neverExpire, pathToMove, fileActionCallback
                     );
  			}
 
@@ -985,7 +985,6 @@
     });
 
 	function saveAssignCallBack(actionId, formData) {
-
 	    var pushPublish = formData.pushPublish;
         var assignComment = formData.assignComment;
 
@@ -993,6 +992,7 @@
         var wfConId =  pushPublish.inode;
         var comments = assignComment.comment;
         var assignRole = assignComment.assign;
+		var pathToMove = assignComment.pathToMove;
 
         var whereToSend = pushPublish.whereToSend;
         var publishDate = pushPublish.publishDate;
@@ -1003,7 +1003,7 @@
         var neverExpire = pushPublish.neverExpire;
 
         BrowserAjax.saveFileAction(selectedItem, assignRole, actionId, comments, wfConId, publishDate,
-            publishTime, expireDate, expireTime, neverExpire, whereToSend, forcePush, fileActionCallback
+            publishTime, expireDate, expireTime, neverExpire, whereToSend, forcePush, pathToMove, fileActionCallback
         );
     }
 
