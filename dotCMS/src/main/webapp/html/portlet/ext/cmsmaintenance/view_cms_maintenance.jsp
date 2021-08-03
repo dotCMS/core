@@ -1076,13 +1076,19 @@ function showSystemVars(){
     
     const keys = ["release", "jvm", "host" ,"environment","system"];
     const currentDiv = document.getElementById("systemInfoDiv");
-    currentDiv.innerHTML= "";
+    
 
     fetch('/api/v1/jvm')
     .then(response => response.json())
     .then(data => {
-        keys.forEach(key=>{
+        const headerDiv = document.createElement("h2");
+        headerDiv.innerHTML="Version: " + data.release.version + " (" +data.release.buildDate + ")" ;
+        currentDiv.appendChild(headerDiv);
 
+
+        keys.forEach(key=>{
+            const myDiv = document.createElement("div");
+            myDiv.className="propDiv";
             const fieldSet = document.createElement("fieldset");
             fieldSet.className="propFieldSet";
             const label = document.createElement("label");
@@ -1090,8 +1096,8 @@ function showSystemVars(){
             label.innerHTML=key;
             const table = document.createElement("table");
 
-            
-            currentDiv.appendChild(fieldSet);
+            myDiv.appendChild(fieldSet);
+            currentDiv.appendChild(myDiv);
             fieldSet.appendChild(label);
             
             table.className="listingTable propTable";
@@ -1159,6 +1165,10 @@ dd.leftdl {
     font-size: 1%;
 }
 
+.propDiv{
+
+    margin:30px;
+}
 .propTh{
     width:40%;
     text-align: right;
