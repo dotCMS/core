@@ -5,6 +5,9 @@ import io.lettuce.core.api.StatefulConnection;
 import io.lettuce.core.api.StatefulRedisConnection;
 import io.vavr.control.Try;
 
+import java.util.concurrent.Future;
+import java.util.function.Consumer;
+
 /**
  * Redis client
  * @param <K>
@@ -62,6 +65,41 @@ public interface RedisClient<K, V> {
     void set (final K key, final V value, final long ttlMillis);
 
     /**
+     * Set a value async
+     * @param key K
+     * @param value V
+     * @return Future String
+     */
+    Future<String> setAsync (final K key, final V value);
+
+    /**
+     * Set a value async with ttl in millis
+     * @param key K
+     * @param value V
+     * @param ttlMillis long
+     * @return Future String
+     */
+    Future<String> setAsync (final K key, final V value, final long ttlMillis);
+
+    /**
+     * Add members
+     * @param key K
+     * @param values V
+     * @return long
+     */
+    long addMembers (final K key, final V... values);
+
+    /**
+     * Add members async
+     * @param key K
+     * @param values V
+     * @return Future long
+     */
+    Future<Long> addAsyncMembers (final K key, final V... values);
+
+
+
+    /**
      * Set the value of a key, only if the key does not exist.
      * @param key  K
      * @param value V
@@ -97,5 +135,27 @@ public interface RedisClient<K, V> {
      * @return V
      */
     V delete(final K key);
+
+    /**
+     * Deletes one of more keys, returns the number of keys already deleted
+     * @param keys Array of K
+     * @return Long number of keys deletes
+     */
+    long delete(final K... keys);
+
+    /**
+     * Flush all cache
+     * @return
+     */
+    String flushAll();
+
+    /**
+     * Scan the keys, the results are consumed by keyConsumer
+     * @param matchesPattern {@link String} matches pattern
+     * @param keyBatchingSize {@link Integer} how many records do you want to fetch by iteration
+     * @param keyConsumer {@link Consumer} consumer for each key
+     */
+    void scanKeys(final String matchesPattern, int keyBatchingSize, final Consumer<K> keyConsumer);
+
 }
 

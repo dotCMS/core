@@ -3,11 +3,14 @@ package com.dotcms.cache.lettuce;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import io.lettuce.core.KeyScanCursor;
 import io.lettuce.core.ReadFrom;
 import io.lettuce.core.RedisURI;
+import io.lettuce.core.ScanArgs;
 import io.lettuce.core.SetArgs;
 import io.lettuce.core.api.StatefulConnection;
 import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.api.sync.RedisCommands;
 import io.lettuce.core.codec.CompressionCodec;
 import io.lettuce.core.masterreplica.MasterReplica;
 import io.lettuce.core.masterreplica.StatefulRedisMasterReplicaConnection;
@@ -15,17 +18,21 @@ import io.lettuce.core.resource.DefaultClientResources;
 import io.lettuce.core.resource.DirContextDnsResolver;
 import io.lettuce.core.support.ConnectionPoolSupport;
 import io.vavr.control.Try;
+import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Future;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
 
     private final static String OK_RESPONSE = "OK";
+    private final static String ERROR_RESPONSE = "ERROR";
     private final List<RedisURI> redisUris = Arrays
                     .asList(Config.getStringArrayProperty("REDIS_LETTUCECLIENT_URLS",
                                     new String[] {"redis://password@oboxturbo"}))
@@ -101,6 +108,50 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
     }
 
     @Override
+    public Future<String> setAsync (final K key, final V value) {
+
+        try (StatefulRedisConnection<K,V> conn = this.getConn()) {
+
+            if (this.isOpen(conn)) {
+
+                return conn.async().set(key, value);
+            }
+        }
+
+        return ConcurrentUtils.constantFuture(ERROR_RESPONSE);
+    }
+
+    @Override
+    public long addMembers (final K key, final V... values) {
+
+        long membersCount = 0;
+
+        try (StatefulRedisConnection<K,V> conn = this.getConn()) {
+
+            if (this.isOpen(conn)) {
+
+                membersCount = conn.sync().sadd(key, values);
+            }
+        }
+
+        return membersCount;
+    }
+
+    @Override
+    public Future<Long> addAsyncMembers (final K key, final V... values) {
+
+        try (StatefulRedisConnection<K,V> conn = this.getConn()) {
+
+            if (this.isOpen(conn)) {
+
+                return conn.async().sadd(key, values);
+            }
+        }
+
+        return ConcurrentUtils.constantFuture(0l);
+    }
+
+    @Override
     public void set (final K key, final V value, final long ttlMillis) {
 
         try (StatefulRedisConnection<K,V> conn = this.getConn()) {
@@ -111,6 +162,21 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
                         SetArgs.Builder.px(ttlMillis));
             }
         }
+    }
+
+    @Override
+    public Future<String> setAsync (final K key, final V value, final long ttlMillis) {
+
+        try (StatefulRedisConnection<K,V> conn = this.getConn()) {
+
+            if (this.isOpen(conn)) {
+
+                return conn.async().set(key, value,
+                        SetArgs.Builder.px(ttlMillis));
+            }
+        }
+
+        return ConcurrentUtils.constantFuture(ERROR_RESPONSE);
     }
 
     @Override
@@ -184,6 +250,28 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
     }
 
     @Override
+    public void scanKeys(final String matchesPattern, int keyBatchingSize, final Consumer<K> keyConsumer) {
+
+        KeyScanCursor<K> scanCursor = null;
+
+        try (StatefulRedisConnection<K,V> conn = this.getConn()) {
+
+            if (isOpen(conn)) {
+
+                final RedisCommands<K, V> syncCommand = conn.sync();
+                final ScanArgs scanArgs = ScanArgs.Builder.matches(matchesPattern).limit(keyBatchingSize);
+                do {
+
+                    scanCursor = scanCursor == null?
+                            syncCommand.scan(scanArgs):syncCommand.scan(scanCursor, scanArgs);
+
+                    scanCursor.getKeys().forEach(keyConsumer);
+                } while (!scanCursor.isFinished());
+            }
+        }
+    }
+
+    @Override
     public V delete(final K key) {
 
         try (StatefulRedisConnection<K,V> conn = this.getConn()) {
@@ -194,6 +282,32 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
         }
 
         return null;
+    }
+
+    @Override
+    public long delete(final K... keys) {
+
+        try (StatefulRedisConnection<K,V> conn = this.getConn()) {
+
+            if (this.isOpen(conn)) {
+                return conn.sync().del(keys);
+            }
+        }
+
+        return 0;
+    }
+
+    @Override
+    public String flushAll() {
+
+        try (StatefulRedisConnection<K,V> conn = this.getConn()) {
+
+            if (this.isOpen(conn)) {
+                return conn.sync().flushall();
+            }
+        }
+
+        return "Error";
     }
 
     private GenericObjectPool<StatefulRedisConnection<K, V>> buildPool() {
