@@ -5,6 +5,9 @@ import io.lettuce.core.api.StatefulConnection;
 import io.lettuce.core.api.StatefulRedisConnection;
 import io.vavr.control.Try;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
@@ -53,8 +56,9 @@ public interface RedisClient<K, V> {
      * Set a value
      * @param key K
      * @param value V
+     * @return boolean true is set
      */
-    void set (final K key, final V value);
+    SetResult set (final K key, final V value);
 
     /**
      * Set a value with ttl in millis
@@ -74,6 +78,7 @@ public interface RedisClient<K, V> {
 
     /**
      * Set a value async with ttl in millis
+     * if ttl is -1, wil persist the key without ttl
      * @param key K
      * @param value V
      * @param ttlMillis long
@@ -97,21 +102,19 @@ public interface RedisClient<K, V> {
      */
     Future<Long> addAsyncMembers (final K key, final V... values);
 
-
-
     /**
      * Set the value of a key, only if the key does not exist.
      * @param key  K
      * @param value V
-     * @return V
+     * @return SetResult
      */
-    V setIfAbsent (final K key, final V value);
+    SetResult setIfAbsent (final K key, final V value);
 
     /**
      * Set the value only if the key is present
      * @param key
      * @param value
-     * @return V returns null of the operation is not successfull, otherwise returns value
+     * @return V returns null of the operation is not successful, otherwise returns value
      */
     V setIfPresent (final K key, final V value);
 
@@ -122,6 +125,12 @@ public interface RedisClient<K, V> {
      */
     V get(final K key);
 
+    /**
+     * Get members
+     * @param key
+     * @return Set
+     */
+    Set<V> getMembers (final K key);
     /**
      * Return ttl in millis for a key
      * @param key K
@@ -144,18 +153,33 @@ public interface RedisClient<K, V> {
     long delete(final K... keys);
 
     /**
+     * Non Blocking Deletes one of more keys, returns the number of keys already deleted
+     * @param keys Array of K
+     * @return Future Long number of keys deletes
+     */
+    Future<Long> deleteNonBlocking(final K... keys);
+
+    /**
      * Flush all cache
      * @return
      */
     String flushAll();
 
     /**
-     * Scan the keys, the results are consumed by keyConsumer
+     * Scan each the key (one by one, the results are consumed by keyConsumer
      * @param matchesPattern {@link String} matches pattern
      * @param keyBatchingSize {@link Integer} how many records do you want to fetch by iteration
      * @param keyConsumer {@link Consumer} consumer for each key
      */
-    void scanKeys(final String matchesPattern, int keyBatchingSize, final Consumer<K> keyConsumer);
+    void scanEachKey(final String matchesPattern, int keyBatchingSize, final Consumer<K> keyConsumer);
+
+    /**
+     * Scan the keys, the results are consumed by keyConsumer that receives a collection of keys
+     * @param matchesPattern {@link String} matches pattern
+     * @param keyBatchingSize {@link Integer} how many records do you want to fetch by iteration
+     * @param keyConsumer {@link Consumer} consumer a collection each key
+     */
+    void scanKeys(final String matchesPattern, int keyBatchingSize, final Consumer<Collection<K>> keyConsumer);
 
 }
 

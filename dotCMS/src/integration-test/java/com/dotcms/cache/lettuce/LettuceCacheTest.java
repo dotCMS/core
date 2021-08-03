@@ -1,7 +1,7 @@
 package com.dotcms.cache.lettuce;
 
 import java.util.Set;
-import java.util.UUID;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -10,11 +10,11 @@ import com.dotmarketing.util.UUIDGenerator;
 public class LettuceCacheTest {
     
     
-    static LettuceCache cache = null;
+    static RedisCache cache = null;
     
     @BeforeClass
     public static void startup() throws Exception {
-        cache = new  LettuceCache();
+        cache = new RedisCache();
     }
     
     
