@@ -11,7 +11,7 @@ import java.sql.SQLException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class Task210702UpdateStructureTableTest {
+public class Task210802UpdateStructureTableTest {
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -32,7 +32,7 @@ public class Task210702UpdateStructureTableTest {
                     .dropColumn(DbConnectionFactory.getConnection(), "structure", "sort_order");
         }
 
-        final Task210702UpdateStructureTable upgradeTask = new Task210702UpdateStructureTable();
+        final Task210802UpdateStructureTable upgradeTask = new Task210802UpdateStructureTable();
         assertTrue(upgradeTask.forceRun());
         upgradeTask.executeUpgrade();
         assertFalse(upgradeTask.forceRun());//columns were created
