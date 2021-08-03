@@ -3,14 +3,9 @@ package com.dotcms.vanityurl.business;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.stream.Collectors;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.FiltersUtil;
@@ -22,10 +17,13 @@ import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -33,6 +31,19 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
+import java.util.stream.Collectors;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * This class test the {@link VanityUrlAPI} methods
@@ -903,6 +914,86 @@ public class VanityUrlAPITest {
         Assert.assertNotNull(v2.vanityUrlId);
         Assert.assertEquals(v2.forwardTo,forwardTo);
 
+    }
+
+    /**
+     * Method to Test {@link VanityUrlAPIImpl#findInDb(Host, Language)}
+     * Scenario: Support wants to catch vanity urls which made it into the db with any missing fields maybe through a import or data  manipulation
+     * Expected: Once cache is cleared Vanities are loaded from the db a validation layer has been added so we can confirm the integrity of the loaded vanities
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void Test_Vanity_URI_Missing_URI_Expect_Validation_Exception()
+            throws DotSecurityException, DotDataException {
+
+        final String exceptionMessage = "Missing field: %s, id: %s";
+
+        //Load the VanityUrl structure  contentlet fields
+        final DotConnect dotConnect = new DotConnect();
+        dotConnect.setSQL(
+          "select f.velocity_var_name, f.field_contentlet from structure s join field f on s.inode = f.structure_inode where s.velocity_var_name = ?"
+        ).addParam("Vanityurl");
+        final List<Map<String, Object>> maps = dotConnect.loadObjectResults();
+        final Map<String, Object> fieldsToColumns = new HashMap<>();
+        maps.forEach(map -> {
+            fieldsToColumns.put(map.get("velocity_var_name").toString(), map.get("field_contentlet").toString());
+        });
+
+        final Language altLang = new LanguageDataGen().nextPersisted();
+
+        final List<Contentlet> vanityUrls = new ArrayList<>();
+
+        //To simplify the logic lets use a separate site for each vanity
+        vanityUrls.add(createVanity(new SiteDataGen().nextPersisted(), altLang));
+        vanityUrls.add(createVanity(new SiteDataGen().nextPersisted(), altLang));
+        vanityUrls.add(createVanity(new SiteDataGen().nextPersisted(), altLang));
+
+        final List<Tuple2<String,String>> mandatoryFields = new ArrayList<>();
+
+        mandatoryFields.add( Tuple.of(fieldsToColumns.get("uri").toString(),"uri"));
+        mandatoryFields.add( Tuple.of(fieldsToColumns.get("forwardTo").toString(),"forwardTo"));
+        mandatoryFields.add( Tuple.of(fieldsToColumns.get("title").toString(),"title"));
+
+        final HostAPI hostAPI = APILocator.getHostAPI();
+        final VanityUrlCache vanityURLCache = CacheLocator.getVanityURLCache();
+        final User systemUser = APILocator.systemUser();
+
+        for(int i=0; i < mandatoryFields.size(); i++) {
+            //Set one of the mandatory fields as null on the db
+            final String statement = String.format("UPDATE contentlet SET %s = null WHERE inode = ?", mandatoryFields.get(i)._1());
+            final Contentlet vanity = vanityUrls.get(i);
+            dotConnect.setSQL(statement).addParam(vanity.getInode()).loadResult();
+            //Then find it via db. This only works if cache has been cleared.
+            try {
+                vanityURLCache.remove(vanity);
+                final Host site = hostAPI.find(vanity, systemUser, false);
+                vanityUrlAPI.findInDb(site, altLang);
+            }catch (DotStateException stateException){
+                 //We should get a validation error
+                final String message = stateException.getMessage();
+                assertEquals(String.format(exceptionMessage,mandatoryFields.get(i)._2(), vanityUrls.get(i).getIdentifier()),message);
+                continue;
+            }
+            //If we dont get a validation error something wrong
+            fail("We should have caught an error triggered by field "+mandatoryFields.get(i));
+        }
+    }
+
+
+    private Contentlet createVanity(final Host site, final Language lang) throws DotDataException, DotSecurityException {
+        final long timeMark = System.nanoTime();
+        final String title = "VanityURL" + timeMark;
+        final String uri = "/test1_" + timeMark + "/" ;
+        final String forwardTo = "/about-us/lol?language_id="+lang.getId() ;
+        final int action = 200;
+        final int order = 1;
+
+        final Contentlet vanityURL = filtersUtil.createVanityUrl(title, site.getIdentifier(), uri,
+                forwardTo, action, order, lang.getId());
+        Assert.assertNotNull(vanityURL);
+        filtersUtil.publishVanityUrl(vanityURL);
+        return vanityURL;
     }
 
 }
