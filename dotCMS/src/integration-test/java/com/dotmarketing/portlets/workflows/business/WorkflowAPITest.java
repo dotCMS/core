@@ -33,6 +33,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
@@ -4001,5 +4002,79 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
         assertTrue(moveToFolderAction.get().hasMoveActionletActionlet());
         assertTrue(moveToFolderAction.get().hasMoveActionletHasPathActionlet());
+    }
+
+    /**
+     * Method to test: {@link WorkflowFactoryImpl#saveWorkflowTask(WorkflowTask)}
+     * when: Save a new {@link WorkflowTask} to a new {@link Contentlet}, later Update the {@link WorkflowStep}
+     * should: first create a new {@link WorkflowTask} and later update it with the new {@link WorkflowStep}
+     *
+     * @throws DotDataException
+     */
+    @Test()
+    public void saveWorkflowTask() throws DotDataException {
+        final String title = "title";
+        final String description = "description";
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).nextPersisted();
+        final User user = APILocator.systemUser();
+
+        final WorkflowTask task = new WorkflowTask();
+        final Date now = new Date();
+
+        final WorkflowStep newWorkflowStep = workflowAPI.findStep(SystemWorkflowConstants.WORKFLOW_NEW_STEP_ID);
+
+        task.setTitle(title);
+        task.setDescription(description);
+        task.setAssignedTo(APILocator.getRoleAPI().getUserRole(user).getId());
+        task.setModDate(now);
+        task.setCreationDate(now);
+        task.setCreatedBy(user.getUserId());
+        task.setStatus(newWorkflowStep.getId());
+        task.setDueDate(null);
+        task.setWebasset(contentlet.getIdentifier());
+        task.setLanguageId(contentlet.getLanguageId());
+
+        workflowAPI.saveWorkflowTask(task);
+
+        final WorkflowTask taskByContentlet = FactoryLocator.getWorkFlowFactory()
+                .findTaskByContentlet(contentlet);
+
+        assertNotNull(taskByContentlet);
+        assertNotNull(taskByContentlet.getId());
+        assertEquals(taskByContentlet.getTitle(), title);
+        assertEquals(taskByContentlet.getDescription(), description);
+        assertEquals(taskByContentlet.getStatus(), newWorkflowStep.getId());
+
+        final WorkflowStep publishWorkflowStep = workflowAPI.findStep(SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID);
+        task.setStatus(publishWorkflowStep.getId());
+        workflowAPI.saveWorkflowTask(task);
+
+        assertNotNull(taskByContentlet);
+        assertNotNull(taskByContentlet.getId());
+        assertEquals(taskByContentlet.getStatus(), publishWorkflowStep.getId());
+
+    }
+    
+    public WorkflowTask createWorkflowTask(final Contentlet contentlet, final User user,
+            final WorkflowStep workflowStep, final String title, String description) throws DotDataException {
+
+        final WorkflowTask task = new WorkflowTask();
+        final Date now          = new Date();
+
+        task.setTitle(title);
+        task.setDescription(description);
+        task.setAssignedTo(APILocator.getRoleAPI().getUserRole(user).getId());
+        task.setModDate(now);
+        task.setCreationDate(now);
+        task.setCreatedBy(user.getUserId());
+        task.setStatus(workflowStep.getId());
+        task.setDueDate(null);
+        task.setWebasset(contentlet.getIdentifier());
+        task.setLanguageId(contentlet.getLanguageId());
+
+        return task;
     }
 }
