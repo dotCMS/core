@@ -412,13 +412,13 @@ public String getGravatar(String postedBy){
 		                %>
 		                    <tr <%=str_style %>>
 		                        <td>
-		                            <img border="0" src="/icon?i=<%= UtilMethods.encodeURIComponent(file.getFileName()) %>"> &nbsp;
+		                            <img border="0" src="/html/images/icons/<%= UtilMethods.getFileExtension(file.getFileName()).toLowerCase() %>.png"> &nbsp;
 
 		                                <%= file.getFileName() %>
 
 		                        </td>
 		                        <td>
-		                            <button dojoType="dijit.form.Button" type="button" class="dijitButtonDanger" style="float: right;" href="javascript:removeFile('<%= file.getInode() %>')"><%= LanguageUtil.get(pageContext, "remove") %></button>
+		                            <button dojoType="dijit.form.Button" type="button" class="dijitButtonDanger" style="float: right;" onClick="removeFile('<%= file.getInode() %>')"><%= LanguageUtil.get(pageContext, "remove") %></button>
 		                        </td>
 		                    </tr>
 		                <% } %>
@@ -429,7 +429,7 @@ public String getGravatar(String postedBy){
 		                            <div class="noResultsMessage"><%= LanguageUtil.get(pageContext, "None") %></div>
 		                        </td>
 		                    </tr>
-		                <% } else { %>
+                        <% } else if (UtilMethods.isSet(errorRetrievingFilesMsg)) { %>
 		                    <tr>
 		                        <td colspan="2">
 		                            <div class="noResultsMessage"><%= errorRetrievingFilesMsg %></div>

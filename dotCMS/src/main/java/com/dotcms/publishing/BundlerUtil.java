@@ -95,7 +95,7 @@ public class BundlerUtil {
 		final String bundleXmlFilePath = File.separator + "bundle.xml";
 
 		try (final OutputStream outputStream = output.addFile(bundleXmlFilePath)) {
-            objectToXML(config, outputStream);
+            objectToXML(config.getMap(), outputStream);
         } catch ( IOException e ) {
             Logger.error( BundlerUtil.class, e.getMessage(), e );
         }

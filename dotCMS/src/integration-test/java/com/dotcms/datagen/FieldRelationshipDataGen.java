@@ -60,7 +60,9 @@ public class FieldRelationshipDataGen extends AbstractDataGen<Relationship>  {
                 .name(parent.variable())
                 .contentTypeId(parent.id())
                 .values(String.valueOf(cardinality.ordinal()))
-                .relationType(child.variable()).required(false).build();
+                .relationType(child.variable())
+                .required(false)
+                .build();
 
         final User systemUser = APILocator.systemUser();
         try {

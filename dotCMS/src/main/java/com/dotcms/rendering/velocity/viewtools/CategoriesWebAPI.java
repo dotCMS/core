@@ -154,7 +154,7 @@ public class CategoriesWebAPI implements ViewTool {
 	@SuppressWarnings("unchecked")
 	public List<Category> getChildrenCategories(Inode inode) {
 		try {
-			List<Category> categories = InodeFactory.getChildrenClass(inode, Category.class);
+			final List<Category> categories = categoryAPI.getChildren(inode, user, true);
 			return perAPI.filterCollection(categories, PermissionAPI.PERMISSION_READ, true, user);
 		} catch (Exception e) {
 			Logger.error(this, "An unknown error happening while trying to retrieve categories : ", e);
@@ -167,7 +167,7 @@ public class CategoriesWebAPI implements ViewTool {
 		try {
 			Inode inodeObj = new Inode();
 			inodeObj.setInode(inode);
-			List<Category> categories = InodeFactory.getChildrenClass(inodeObj, Category.class);
+			List<Category> categories = categoryAPI.getChildren(inodeObj, user, true);
 			return perAPI.filterCollection(categories, PermissionAPI.PERMISSION_READ, true, user);
 		} catch (Exception e) {
 			Logger.error(this, "An unknown error happening while trying to retrieve categories : ", e);
@@ -555,9 +555,7 @@ public class CategoriesWebAPI implements ViewTool {
 			} catch (DotDataException e) {
 				Logger.error(this, "Unable to look up contentlet with inode " + contentletInode, e);
 			}
-			List<Category> category = categoryAPI.getParents(contentlet, user, true);
-			// Category category = (Category)
-			// InodeFactory.getParentOfClass(contentlet,Category.class);
+			final List<Category> category = categoryAPI.getParents(contentlet, user, true);
 			String key = category.get(0).getKey();
 			return key;
 		} catch (DotSecurityException se) {

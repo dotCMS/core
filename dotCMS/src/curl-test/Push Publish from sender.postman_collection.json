@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "4026b86b-7de7-4a82-93f1-48c9b9f265ba",
+		"_postman_id": "78066042-7091-4bc7-aa60-5a6dd3512d0b",
 		"name": "Push Publish from sender",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -61,7 +61,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "909a38ca-a3aa-4993-951c-8a0f522f0463",
 										"exec": [
 											"",
 											"",
@@ -75,7 +74,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "6a8a2cd5-5043-4a10-ae91-2bfad204e283",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -155,7 +153,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "079ce1ea-86a0-44c4-ac1d-228ea2b9a016",
 										"exec": [
 											"endpointName = 'endpoint-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"endpointName\", endpointName);",
@@ -167,7 +164,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "1deca11d-b221-4020-b4da-530e2c0036f0",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -261,7 +257,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "65eb296a-4fc4-4c94-8004-36d1c1f88cad",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -309,10 +304,7 @@
 											"type": "file",
 											"src": "resources/Push_publish/content_type_and_content_demo.tar.gz"
 										}
-									],
-									"options": {
-										"formdata": {}
-									}
+									]
 								},
 								"url": {
 									"raw": "{{serverURL}}/api/bundle/sync",
@@ -335,7 +327,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "b4bf4f6e-a149-4b8e-b529-abc4c01d091f",
 										"exec": [
 											"bundleName = 'bundleName-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"bundleName\", bundleName);",
@@ -347,7 +338,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "a769d0e8-ed38-4426-877a-88cafe3a2fea",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -419,7 +409,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "bfd9650d-7060-4d16-a5eb-4324d8c4d133",
 										"exec": [
 											""
 										],
@@ -429,7 +418,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "7ee3dc8e-4a3c-4d17-b5f2-98c0d9c73e57",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -510,7 +498,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "fd67897f-360f-4a29-8246-b095fd6e8239",
 										"exec": [
 											"",
 											""
@@ -521,7 +508,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "9a070817-34fb-4382-9bdf-0d4464435af9",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"",
@@ -631,9 +617,7 @@
 							},
 							"response": []
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "Invalid token",
@@ -673,7 +657,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "1614a4d5-a3e0-497d-8a2a-9476b957fc74",
 										"exec": [
 											"",
 											"environmentName = 'environment-' + new Date().getMilliseconds();",
@@ -686,7 +669,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "b1251507-9abd-4d73-9e72-ddab256379ea",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -766,7 +748,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "938611ff-fa47-4e14-a301-114ea266d588",
 										"exec": [
 											"endpointName = 'endpoint-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"endpointName\", endpointName);",
@@ -859,7 +840,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "0cb82b80-2149-4b21-af7b-401a7d2c2b13",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -907,10 +887,7 @@
 											"type": "file",
 											"src": "resources/Push_publish/content_type_and_content_demo.tar.gz"
 										}
-									],
-									"options": {
-										"formdata": {}
-									}
+									]
 								},
 								"url": {
 									"raw": "{{serverURL}}/api/bundle/sync",
@@ -933,7 +910,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "e511452d-c412-4c99-8c24-4af13af0c182",
 										"exec": [
 											"bundleName = 'bundleName-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"bundleName\", bundleName);",
@@ -945,7 +921,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "ced11670-164c-4e6c-802f-6732662a3e2f",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -1017,7 +992,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "9f0aa61a-4e1f-4814-89c4-b582f0e74c99",
 										"exec": [
 											""
 										],
@@ -1027,7 +1001,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "15522605-e81a-4ecc-9cbc-d970bc8d3bde",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -1108,7 +1081,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "670ecb0c-199b-4603-8c9a-52059917282d",
 										"exec": [
 											"",
 											""
@@ -1119,7 +1091,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "2dce1bb7-9d56-4058-91a1-23c3c32917bf",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"",
@@ -1230,16 +1201,13 @@
 							},
 							"response": []
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				}
 			],
 			"event": [
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "fc384e85-227b-4eff-b8db-047c4265636a",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -1249,15 +1217,13 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "bbed5b33-b2c2-4555-bf34-92f2e71dff75",
 						"type": "text/javascript",
 						"exec": [
 							""
 						]
 					}
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "Push Publish JWT token",
@@ -1271,7 +1237,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "11b11bff-9d77-4d39-8710-d0de1bbbf5a6",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -1334,7 +1299,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "9e0b7b2a-fb31-43d4-b814-f9846affd184",
 										"exec": [
 											"",
 											"environmentName = 'environment-' + new Date().getMilliseconds();",
@@ -1347,7 +1311,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "13bc3de6-ce59-44a8-91b9-8484764cc8a8",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -1427,7 +1390,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "83dd9c02-0fd2-4fd1-bfa9-61d915441651",
 										"exec": [
 											"endpointName = 'endpoint-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"endpointName\", endpointName);",
@@ -1439,7 +1401,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "125693ae-7c9f-46dd-a6bb-2ae45a8c307b",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -1533,7 +1494,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "2fd1a70f-5dca-4f31-b136-20d85e36fc0a",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -1581,10 +1541,7 @@
 											"type": "file",
 											"src": "resources/Push_publish/content_type_and_content_demo.tar.gz"
 										}
-									],
-									"options": {
-										"formdata": {}
-									}
+									]
 								},
 								"url": {
 									"raw": "{{serverURL}}/api/bundle/sync",
@@ -1607,7 +1564,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "eda5916a-468f-4af3-8ca8-d54c92e559f5",
 										"exec": [
 											"bundleName = 'bundleName-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"bundleName\", bundleName);",
@@ -1619,7 +1575,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "006a440a-e3ab-4a84-9b46-b757d26e119b",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -1691,7 +1646,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "521f87a0-6c49-43f8-b7f1-4ee70a13afd1",
 										"exec": [
 											""
 										],
@@ -1770,7 +1724,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "4d851b79-a122-4fef-b0d0-017e10e214ad",
 										"exec": [
 											"",
 											""
@@ -1781,7 +1734,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "1c10be4d-d044-48f4-b44e-e2bcf383b8c3",
 										"exec": [
 											"",
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
@@ -1848,9 +1800,7 @@
 							},
 							"response": []
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "Expired token",
@@ -1861,7 +1811,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "531dd557-9ef6-480c-ae53-b45e33d59369",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -1926,7 +1875,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "c18b8236-4f10-4652-ba66-cafe4a4970cd",
 										"exec": [
 											"",
 											"environmentName = 'environment-' + new Date().getMilliseconds();",
@@ -1939,7 +1887,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "5f674e23-3541-45c1-8ad5-f5382a847e1f",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -2019,7 +1966,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "2d622022-c721-46ce-bbab-4b8888a9a1e2",
 										"exec": [
 											"endpointName = 'endpoint-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"endpointName\", endpointName);",
@@ -2031,7 +1977,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "263c5c62-a656-48ad-b6db-846db3ee5607",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -2125,7 +2070,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "ea410b21-953b-46d8-b042-e2eff8639a89",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -2173,10 +2117,7 @@
 											"type": "file",
 											"src": "resources/Push_publish/content_type_and_content_demo.tar.gz"
 										}
-									],
-									"options": {
-										"formdata": {}
-									}
+									]
 								},
 								"url": {
 									"raw": "{{serverURL}}/api/bundle/sync",
@@ -2199,7 +2140,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "29f15d25-82b8-4995-9ce3-df7a5f101be0",
 										"exec": [
 											"bundleName = 'bundleName-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"bundleName\", bundleName);",
@@ -2211,7 +2151,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "c68efa2e-56ed-4210-a53e-3c46763d9530",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -2283,7 +2222,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "2861f8cf-87e5-4c97-8b5e-d6d4ae6b8198",
 										"exec": [
 											""
 										],
@@ -2362,7 +2300,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "2cc47e71-b66c-4c6a-b600-d4f44d2c869e",
 										"exec": [
 											"",
 											""
@@ -2373,7 +2310,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "e5082360-797d-4d6a-9e37-87f7c24bfae8",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"",
@@ -2440,9 +2376,7 @@
 							},
 							"response": []
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "Invalid token",
@@ -2453,7 +2387,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "5ec6951d-99d6-4613-a61d-0937201eb386",
 										"exec": [
 											"",
 											"environmentName = 'environment-' + new Date().getMilliseconds();",
@@ -2466,7 +2399,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "625e4122-514e-4298-9247-550ec6796b5a",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -2546,7 +2478,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "aa424a3f-7947-4205-939d-a7a29a22278d",
 										"exec": [
 											"endpointName = 'endpoint-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"endpointName\", endpointName);",
@@ -2558,7 +2489,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "a32c489e-8e23-4a18-ab17-c0deca46ca14",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -2652,7 +2582,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "6f5a4460-e561-4288-8b01-43e7b317046e",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -2700,10 +2629,7 @@
 											"type": "file",
 											"src": "resources/Push_publish/content_type_and_content_demo.tar.gz"
 										}
-									],
-									"options": {
-										"formdata": {}
-									}
+									]
 								},
 								"url": {
 									"raw": "{{serverURL}}/api/bundle/sync",
@@ -2726,7 +2652,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "7ef4e50a-fbde-4a1a-91d5-a1b148be072c",
 										"exec": [
 											"bundleName = 'bundleName-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"bundleName\", bundleName);",
@@ -2738,7 +2663,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "75dfdfe7-b6e0-4ea0-ba97-368b1146ac89",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -2810,7 +2734,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "56fafb0a-e735-4f8f-9e59-bf3ca9019e9e",
 										"exec": [
 											""
 										],
@@ -2889,7 +2812,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "c5057065-dd01-4dcf-ad16-ed1d8b39ec92",
 										"exec": [
 											"",
 											""
@@ -2900,7 +2822,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "4d388a05-305f-4708-a53f-802bac8fc4e9",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"",
@@ -2972,7 +2893,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "c906b96f-2e4a-480c-b436-0a88eca89462",
 								"type": "text/javascript",
 								"exec": [
 									""
@@ -2982,16 +2902,13 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "a5e3cc9f-2623-4e49-99aa-2b35c3b8944c",
 								"type": "text/javascript",
 								"exec": [
 									""
 								]
 							}
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "When JWT fail should use old way",
@@ -3002,7 +2919,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "ec44b151-fc06-43cf-a3b0-5c2ae806630e",
 										"exec": [
 											"",
 											"environmentName = 'environment-' + new Date().getMilliseconds();",
@@ -3015,7 +2931,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "70777da2-187c-4216-8827-32a6a6a5ef0f",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -3095,7 +3010,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "f738cafa-015e-45f0-ab03-9b3adba0dd35",
 										"exec": [
 											"endpointName = 'endpoint-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"endpointName\", endpointName);",
@@ -3107,7 +3021,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "f4061cd6-b0fe-479e-8dfb-0f40d80153de",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -3201,7 +3114,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "327303b0-9278-4783-845a-850330ee507e",
 										"exec": [
 											"receiverName = 'receiverName-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"receiverName\", receiverName);",
@@ -3213,7 +3125,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "836f3514-79e0-468e-aa4f-4837dee2f4e8",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -3298,7 +3209,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "ef9113b7-0a23-4931-b1ee-1cf83685e33a",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -3346,10 +3256,7 @@
 											"type": "file",
 											"src": "resources/Push_publish/content_type_and_content_demo.tar.gz"
 										}
-									],
-									"options": {
-										"formdata": {}
-									}
+									]
 								},
 								"url": {
 									"raw": "{{serverURL}}/api/bundle/sync",
@@ -3372,7 +3279,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "27ea95ee-06fc-4490-95df-15ccb2477bff",
 										"exec": [
 											"bundleName = 'bundleName-' + new Date().getMilliseconds();",
 											"pm.collectionVariables.set(\"bundleName\", bundleName);",
@@ -3384,7 +3290,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "5add608f-211c-4ae2-a949-69810e0454fe",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -3456,7 +3361,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "674bdf6a-4682-46f9-8ff3-dfcefffd08e8",
 										"exec": [
 											""
 										],
@@ -3466,7 +3370,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "8b38a0f4-afb9-4312-b183-93bf1a7e31b1",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -3547,7 +3450,6 @@
 								{
 									"listen": "prerequest",
 									"script": {
-										"id": "19dd5b3f-814a-4442-9d96-f505f36d1c89",
 										"exec": [
 											"",
 											""
@@ -3558,7 +3460,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "c8dde6ca-320b-40bf-824a-aa17c8ec3fe8",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"",
@@ -3624,19 +3525,15 @@
 							},
 							"response": []
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		}
 	],
 	"event": [
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "5938650b-422d-4d28-a127-012e66327ffb",
 				"type": "text/javascript",
 				"exec": [
 					"checkBundleStatus = (responseBody, casesToTest, requestToRepeat) => {",
@@ -3657,8 +3554,8 @@
 					"",
 					"        htmlWithoutSpace = $.html().replace(/(\\r\\n|\\n|\\r)/gm, \"\");",
 					"",
-					"        if (htmlWithoutSpace.includes(bundleWaitingPublish) || htmlWithoutSpace.includes(pendingStatus) || htmlWithoutSpace.includes(bundlingStatus) || htmlWithoutSpace.includes(noResultFound) || htmlWithoutSpace.includes(publishingBundle) || htmlWithoutSpace.includes(bundleReceived)) {",
-					"            console.log('AGAIN');",
+					"        if (htmlWithoutSpace.includes(bundleWaitingPublish) || htmlWithoutSpace.includes(pendingStatus) || htmlWithoutSpace.includes(bundlingStatus) || htmlWithoutSpace.includes(noResultFound) || htmlWithoutSpace.includes(publishingBundle) || htmlWithoutSpace.includes(bundleReceived) || htmlWithoutSpace.includes('No bundle found with the given ID.')) {",
+					"            console.log('No bundle found with the given ID.');",
 					"            postman.setNextRequest(\"check success status\");",
 					"        } else {",
 					"            casesToTest.forEach((caseToTest) => {",
@@ -3727,7 +3624,6 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "82216258-8d43-4d44-b5ea-4b0cd188d9fb",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -3737,95 +3633,96 @@
 	],
 	"variable": [
 		{
-			"id": "911a500b-b210-451a-9805-26597e35ab75",
 			"key": "origin",
 			"value": "http://localhost:8080"
 		},
 		{
-			"id": "f71a28c5-22cd-4e88-8663-0502898564f0",
 			"key": "environmentName",
-			"value": "environment-353"
+			"value": "environment-553"
 		},
 		{
-			"id": "90fb0915-0e61-41a5-8d94-73c7ab5147e4",
 			"key": "endpointName",
-			"value": "endpoint-496"
+			"value": "endpoint-90"
 		},
 		{
-			"id": "c56799ea-4b11-48a7-a477-ed99f6184094",
 			"key": "environmentId",
-			"value": "a4d2cc7a-1566-4b0d-9c31-b22d84814506"
+			"value": "8c65af5b-902f-4097-8538-f30b2b2c8fad"
 		},
 		{
-			"id": "6e55f1a7-6932-4993-a2b7-e79cee3b2b7c",
 			"key": "receiverName",
 			"value": "receiverName-976"
 		},
 		{
-			"id": "df7e4a53-662a-4a3c-b937-0ba32f600074",
 			"key": "bundleName",
-			"value": "bundleName-461"
+			"value": "bundleName-289"
 		},
 		{
-			"id": "71bfc8d8-5269-4a1d-a164-b7ca4fa37f7f",
 			"key": "bundleID",
 			"value": null
 		},
 		{
-			"id": "bd4ab460-c243-4327-95fe-182917635cc1",
 			"key": "bundleId",
-			"value": "01EK0WTHC89J1KJKSD1SY418QQ"
+			"value": "01FBJV0N46Q1KC0F1JMTQ3MWQ6"
 		},
 		{
-			"id": "bb3cb2f4-dff9-48e1-a2ec-92c88425dbdf",
 			"key": "token",
 			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGk5MGY5MzgwZS03MGE0LTRlYmMtOGQ1Yy1hYjY2ZTc2NjI2NjkiLCJ4bW9kIjoxNjAwODk1ODY1MDAwLCJuYmYiOjE2MDA4OTU4NjUsImlzcyI6Ijc1MzI4OGMwODYiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2OTU0NjcyMzAsImlhdCI6MTYwMDg5NTg2NSwianRpIjoiNmNjOTUxYzctMTIyNi00NzkxLTk4NzMtNDA1OTdjMWNhM2VmIn0.DNcI9_MIorM1HVWN3dERS5TAfjY72DfxQlhZ7s6lcik"
 		},
 		{
-			"id": "3ffa053a-a968-4260-ad99-a2b5f9dc6504",
 			"key": "bundleSuccessExpected",
 			"value": "<tr>        <th>Title</th>        <td>                            <b><span>ea533f67-4883-42bb-9701-83293e7313e5</span></b> (contentlet)                                </td>    </tr>    <tr>        <th>Status:</th>        <td> Success</td>    </tr>"
 		},
 		{
-			"id": "8e4d8952-e713-443e-9a78-6feb4f5c94d2",
 			"key": "bundleFailedExpected",
 			"value": " <th>Status:</th>        <td> Failed to send to all environments</td>"
 		},
 		{
-			"id": "16c86aae-e9c7-40eb-af17-74f252d66cbb",
 			"key": "endpointInvalidtoken",
 			"value": "<td valign=\"top\">Authentication error</td>\t\t\t\t        <td valign=\"top\">Invalid token</td>\t"
 		},
 		{
-			"id": "a423ef3b-a657-4df7-8e55-5a3d2625d3e0",
 			"key": "endpointSuccess",
-			"value": "<td valign=\"top\">Success</td>\t\t\t\t        <td valign=\"top\">Everything ok</td>"
+			"value": "Everything ok"
 		},
 		{
-			"id": "7e156e73-18f1-4607-80e0-e2eecf6c1cab",
 			"key": "bundleFailed",
 			"value": " <th>Status:</th>        <td> Failed to send to all environments</td>"
 		},
 		{
-			"id": "04f2c0a9-24f2-462d-a969-803eb42364a9",
 			"key": "bundleSuccess",
 			"value": "<th>Status:</th>        <td> Success</td>    </tr>"
 		},
 		{
-			"id": "4ed694b5-9c16-4acb-857f-9a9a9f40ecbb",
 			"key": "bundleWaitingPublish",
 			"value": "<th>Status:</th>        <td> Waiting for Publishing</td>    </tr>"
 		},
 		{
-			"id": "8d8115fb-4b56-4f3d-9a76-2ecaaf71ca45",
 			"key": "checkBundleStatus",
-			"value": "(responseBody, casesToTest, requestToRepeat) => {\n    console.log(responseBody.trim().length, responseBody.trim().length === 0);\n    if (responseBody.trim().length === 0){\n        console.log('AGAIN 1');\n        postman.setNextRequest(requestToRepeat);\n    } else {\n\n        const $ = cheerio.load(responseBody);\n\n        bundleWaitingPublish = pm.collectionVariables.get(\"bundleWaitingPublish\");\n        htmlWithoutSpace = $.html().replace(/(\\r\\n|\\n|\\r)/gm, \"\");\n\n        if (htmlWithoutSpace.includes(bundleWaitingPublish)) {\n            console.log('AGAIN');\n            postman.setNextRequest(\"check success status\");\n        } else {\n            casesToTest.forEach((caseToTest) => {\n                expectedInclude = pm.collectionVariables.get(caseToTest);\n                pm.expect(htmlWithoutSpace).to.contain(expectedInclude);\n            });\n\n        }\n    }\n}"
+			"value": "(responseBody, casesToTest, requestToRepeat) => {\n    console.log(responseBody.trim().length, responseBody.trim().length === 0);\n    if (responseBody.trim().length === 0){\n        console.log('AGAIN 1');\n        postman.setNextRequest(requestToRepeat);\n    } else {\n\n        const $ = cheerio.load(responseBody);\n\n        bundleWaitingPublish = pm.collectionVariables.get(\"bundleWaitingPublish\");\n        pendingStatus = pm.collectionVariables.get(\"pendingStatus\");\n        bundlingStatus = pm.collectionVariables.get(\"bundlingStatus\");\n        noResultFound = pm.collectionVariables.get(\"noResultFound\");\n        publishingBundle = pm.collectionVariables.get(\"publishingBundle\");\n        bundleReceived = pm.collectionVariables.get(\"bundleReceived\");\n\n        htmlWithoutSpace = $.html().replace(/(\\r\\n|\\n|\\r)/gm, \"\");\n\n        if (htmlWithoutSpace.includes(bundleWaitingPublish) || htmlWithoutSpace.includes(pendingStatus) || htmlWithoutSpace.includes(bundlingStatus) || htmlWithoutSpace.includes(noResultFound) || htmlWithoutSpace.includes(publishingBundle) || htmlWithoutSpace.includes(bundleReceived) || htmlWithoutSpace.includes(bundleReceived)) {\n            console.log('No bundle found with the given ID.');\n            postman.setNextRequest(\"check success status\");\n        } else {\n            casesToTest.forEach((caseToTest) => {\n                expectedInclude = pm.collectionVariables.get(caseToTest);\n                pm.expect(htmlWithoutSpace).to.contain(expectedInclude);\n            });\n\n        }\n    }\n}"
 		},
 		{
-			"id": "dd817701-4989-45b9-b9a1-194c4daa9abf",
 			"key": "wait",
 			"value": "(ms) => {\n   var start = new Date().getTime();\n   var end = start;\n   while(end < start + ms) {\n     end = new Date().getTime();\n  }\n}"
+		},
+		{
+			"key": "bundleReceived",
+			"value": "Bundle Received"
+		},
+		{
+			"key": "bundlingStatus",
+			"value": "th>Status:</th>        <td> Bundling</td"
+		},
+		{
+			"key": "noResultFound",
+			"value": "No results found"
+		},
+		{
+			"key": "pendingStatus",
+			"value": "th>Status:</th>        <td> Pending</td"
+		},
+		{
+			"key": "publishingBundle",
+			"value": "Publishing bundle"
 		}
-	],
-	"protocolProfileBehavior": {}
+	]
 }
