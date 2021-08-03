@@ -30,6 +30,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import java.util.Objects;
 import org.apache.http.HttpStatus;
 
 import java.text.MessageFormat;
@@ -129,7 +130,14 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
           vanityUrls.stream().map(vanity -> vanity.get("live_inode").toString()).collect(Collectors.toList());
       final List<Contentlet> contentlets = this.contentletAPI.findContentlets(vanityUrlInodes);
 
-      return contentlets.stream().map(contentlet -> new CachedVanityUrl(this.fromContentlet(contentlet))).sorted().collect(Collectors.toList());
+      return contentlets.stream().map(contentlet -> {
+        try {
+          return new CachedVanityUrl(this.fromContentlet(contentlet));
+        } catch (DotStateException e) {
+          Logger.error(VanityUrlAPIImpl.class, String.format("Validation error loading vanityURL[%S] from db.",contentlet.getIdentifier()), e);
+        }
+        return null;
+      }).filter(Objects::nonNull).sorted().collect(Collectors.toList());
 
     } catch (final Exception e) {
       Logger.error(this,

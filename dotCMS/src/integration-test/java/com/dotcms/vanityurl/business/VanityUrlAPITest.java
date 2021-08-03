@@ -2,6 +2,7 @@ package com.dotcms.vanityurl.business;
 
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.dotcms.business.WrapInTransaction;
@@ -39,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -927,8 +929,6 @@ public class VanityUrlAPITest {
     public void Test_Vanity_URI_Missing_URI_Expect_Validation_Exception()
             throws DotSecurityException, DotDataException {
 
-        final String exceptionMessage = "Missing field: %s, id: %s";
-
         //Load the VanityUrl structure  contentlet fields
         final DotConnect dotConnect = new DotConnect();
         dotConnect.setSQL(
@@ -959,25 +959,34 @@ public class VanityUrlAPITest {
         final VanityUrlCache vanityURLCache = CacheLocator.getVanityURLCache();
         final User systemUser = APILocator.systemUser();
 
+        //Now lets test with each and everyone of the fields. We should always get an empty list since we're creating them on a separate sites.
         for(int i=0; i < mandatoryFields.size(); i++) {
-            //Set one of the mandatory fields as null on the db
+            //Set one of the mandatory fields as null in the db.
             final String statement = String.format("UPDATE contentlet SET %s = null WHERE inode = ?", mandatoryFields.get(i)._1());
             final Contentlet vanity = vanityUrls.get(i);
             dotConnect.setSQL(statement).addParam(vanity.getInode()).loadResult();
             //Then find it via db. This only works if cache has been cleared.
-            try {
-                vanityURLCache.remove(vanity);
-                final Host site = hostAPI.find(vanity, systemUser, false);
-                vanityUrlAPI.findInDb(site, altLang);
-            }catch (DotStateException stateException){
-                 //We should get a validation error
-                final String message = stateException.getMessage();
-                assertEquals(String.format(exceptionMessage,mandatoryFields.get(i)._2(), vanityUrls.get(i).getIdentifier()),message);
-                continue;
-            }
-            //If we dont get a validation error something wrong
-            fail("We should have caught an error triggered by field "+mandatoryFields.get(i));
+            vanityURLCache.remove(vanity);
+            final Host site = hostAPI.find(vanity, systemUser, false);
+            List<CachedVanityUrl> inDb = vanityUrlAPI.findInDb(site, altLang);
+            assertTrue("The collection should have returned empty since it only had one entry and the Vanity had errors.", inDb.isEmpty());
         }
+
+        vanityUrls.clear();
+
+        //Now test that even if one Vanity comes with errors we will still get the others.
+        final Host site = new SiteDataGen().nextPersisted();
+        vanityUrls.add(createVanity(site, altLang));
+        vanityUrls.add(createVanity(site, altLang));
+        vanityUrls.add(createVanity(site, altLang));
+
+        final int mandatoryField = ThreadLocalRandom.current().nextInt(0, mandatoryFields.size());
+        final Contentlet vanity = vanityUrls.get(0);
+        final String statement = String.format("UPDATE contentlet SET %s = null WHERE inode = ?", mandatoryFields.get(mandatoryField)._1());
+        dotConnect.setSQL(statement).addParam(vanity.getInode()).loadResult();
+        final List<CachedVanityUrl> inDb = vanityUrlAPI.findInDb(site, altLang);
+        assertEquals(2, inDb.size());
+
     }
 
 
