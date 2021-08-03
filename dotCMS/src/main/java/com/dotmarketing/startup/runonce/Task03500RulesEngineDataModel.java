@@ -266,68 +266,6 @@ public class Task03500RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("value text")
             .append(");");
 
-    private final StringBuilder H2 = new StringBuilder()
-            // create RULE table
-            .append("create table dot_rule(")
-            .append("id varchar(36) primary key,")
-            .append("name varchar(255) not null,")
-            .append("fire_on varchar(20),")
-            .append("short_circuit boolean default false,")
-            .append("parent_id varchar(36) not null,")
-            .append("folder varchar(36) not null,")
-            .append("priority int default 0,")
-            .append("enabled boolean default false,")
-            .append("mod_date timestamp")
-            .append(");")
-
-            .append("create index idx_rules_fire_on on dot_rule (fire_on);")
-
-			// create RULE_CONDITION_GROUP table
-            .append("create table rule_condition_group(")
-            .append("id varchar(36) primary key,")
-            .append("rule_id varchar(36) references dot_rule(id),")
-            .append("operator varchar(10) not null,")
-            .append("priority int default 0,")
-            .append("mod_date timestamp")
-            .append(");")
-
-			// create RULE_CONDITION table
-            .append("create table rule_condition(")
-            .append("id varchar(36) primary key,")
-            .append("conditionlet text not null,")
-            .append("condition_group varchar(36) references rule_condition_group(id),")
-            .append("comparison varchar(36) not null,")
-            .append("operator varchar(10) not null,")
-            .append("priority int default 0,")
-            .append("mod_date timestamp")
-            .append(");")
-
-			// create RULE_CONDITION_VALUE table
-            .append("create table rule_condition_value(")
-            .append("id varchar(36) primary key,")
-            .append("condition_id varchar(36) references rule_condition(id),")
-            .append("paramkey varchar(255) not null,")
-            .append("value text,")
-            .append("priority int default 0")
-            .append(");")
-
-			// create RULE_ACTION  table
-            .append("create table rule_action (")
-            .append("id varchar(36) primary key,")
-            .append("rule_id varchar(36) references dot_rule(id),")
-            .append("priority int default 0,")
-            .append("actionlet text not null,")
-            .append("mod_date timestamp")
-            .append(");")
-
-            // create RULE_CONDITION_VALUE table
-            .append("create table rule_action_pars(")
-            .append("id varchar(36) primary key,")
-            .append("rule_action_id varchar(36) references rule_action(id),")
-            .append("paramkey varchar(255) not null,")
-            .append("value text")
-            .append(");");
-
 
     @Override
     public boolean forceRun() {
@@ -372,16 +310,6 @@ public class Task03500RulesEngineDataModel extends AbstractJDBCStartupTask {
     @Override
     public String getMSSQLScript() {
         return MSSQL.toString();
-    }
-
-    /**
-     * The SQL for H2
-     *
-     * @return
-     */
-    @Override
-    public String getH2Script() {
-        return H2.toString();
     }
 
     /**

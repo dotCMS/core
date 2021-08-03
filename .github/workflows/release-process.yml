@@ -5,7 +5,7 @@ on:
 jobs:
   release-process:
     name: Release Process Automation
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     env:
       DOT_CICD_BRANCH: master
       GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
@@ -14,6 +14,7 @@ jobs:
       REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      DEBUG: true
     steps:
       - name: GITHUB CONTEXT
         env:
@@ -40,7 +41,7 @@ jobs:
           eval $(cat dotCMS/gradle.properties| grep dotcmsReleaseVersion)
           DOTCMS_VERSION="${dotcmsReleaseVersion}"
 
-          if [[ ${BUILD_ID} =~ ^release-.*|^v[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$ ]]; then
+          if [[ ${BUILD_ID} =~ ^release-[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$|^v[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$ ]]; then
             IS_RELEASE='true'
             DRY_RUN='false'
           else
@@ -65,7 +66,8 @@ jobs:
         with:
           version: ${{ ENV.DOTCMS_VERSION }}
           hash: ${{ env.BUILD_HASH }}
-          updateStable: true
+          update_stable: true
+          also_latest: true
       - name: Publish docker image
         id: publish-docker-image
         uses: dotcms/publish-docker-image-action@main

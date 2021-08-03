@@ -17,6 +17,7 @@ import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.image.filter.ImageFilterApiImpl;
 import com.dotmarketing.image.focalpoint.FocalPoint;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -71,6 +72,9 @@ public class ShortyServlet extends HttpServlet {
   private static final Pattern focalPointPattern               = Pattern.compile("/(\\.\\d+,\\.\\d+)fp");
   
   private static final Pattern qualityPattern               = Pattern.compile("/(\\d+)q");
+  
+  private static final Pattern resampleOptsPattern               = Pattern.compile("/(\\d+)ro");
+  
   
   @CloseDBIfOpened
   protected void service(final HttpServletRequest request, final HttpServletResponse response)
@@ -211,6 +215,23 @@ public class ShortyServlet extends HttpServlet {
     return quality;
   }
   
+  
+  private int getResampleOpt(final String uri) {
+
+      final Matcher resampleOptMatcher = resampleOptsPattern.matcher(uri);
+
+      
+      
+      return Try.of(() -> resampleOptMatcher.find() ?
+                      Integer.parseInt(resampleOptMatcher.group(1)) :
+                          ImageFilterApiImpl.DEFAULT_RESAMPLE_OPT).getOrElse(ImageFilterApiImpl.DEFAULT_RESAMPLE_OPT);
+
+  }
+  
+  
+  
+  
+  
   private void serve(final HttpServletRequest request,
                      final HttpServletResponse response) throws Exception {
 
@@ -256,6 +277,7 @@ public class ShortyServlet extends HttpServlet {
     final int      width   = this.getWidth(lowerUri, 0);
     final int      height  = this.getHeight(lowerUri, 0);
     final int      quality  = this.getQuality(lowerUri, 0);
+    final int      resampleOpt = this.getResampleOpt(lowerUri);
     Optional<FocalPoint> focalPoint = Optional.empty();
     final int      cropWidth  = this.cropWidth(lowerUri);
     final int      cropHeight  = this.cropHeight(lowerUri);
@@ -300,7 +322,7 @@ public class ShortyServlet extends HttpServlet {
       final StringBuilder pathBuilder = new StringBuilder(path)
               .append(id).append("/byInode/true");
 
-      this.addImagePath(width, height, quality, jpeg, jpegp,webp, isImage, pathBuilder, focalPoint, cropWidth,cropHeight);
+      this.addImagePath(width, height, quality, jpeg, jpegp,webp, isImage, pathBuilder, focalPoint, cropWidth,cropHeight,resampleOpt);
       this.doForward(request, response, pathBuilder.toString());
     } catch (DotContentletStateException e) {
 
@@ -334,7 +356,8 @@ public class ShortyServlet extends HttpServlet {
                             final StringBuilder pathBuilder,
                             final Optional<FocalPoint> focalPoint,
                             final int cropWidth,
-                            final int cropHeight ) {
+                            final int cropHeight,
+                            final int resampleOpt) {
         if (isImage) {
 
             if (quality > 0) {
@@ -351,6 +374,7 @@ public class ShortyServlet extends HttpServlet {
 
             pathBuilder.append(width > 0 ? "/resize_w/" + width : StringPool.BLANK);
             pathBuilder.append(height > 0 ? "/resize_h/" + height : StringPool.BLANK);
+            pathBuilder.append(resampleOpt > 0 ? "/resize_ro/" + resampleOpt : StringPool.BLANK);
         }
   }
 

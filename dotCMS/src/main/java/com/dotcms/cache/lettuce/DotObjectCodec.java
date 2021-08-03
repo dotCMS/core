@@ -16,37 +16,44 @@ import io.lettuce.core.codec.RedisCodec;
  *
  */
 public class DotObjectCodec implements RedisCodec<String, Object> {
-    private Charset charset = Charset.forName("UTF-8");
 
-
+    private final Charset charset = Charset.forName("UTF-8");
 
     @Override
-    public String decodeKey(ByteBuffer bytes) {
+    public String decodeKey(final ByteBuffer bytes) {
+
         return charset.decode(bytes).toString();
     }
 
     @Override
-    public Object decodeValue(ByteBuffer bytes) {
-        try (ObjectInputStream in =  new ObjectInputStream(new ByteArrayInputStream(bytes.array()))){
+    public Object decodeValue(final ByteBuffer bytes) {
+
+        try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(bytes.array()))){
         
             return in.readObject();
-        }catch(Exception e) {
+        } catch(Exception e) {
+
             throw new DotRuntimeException(e);
         }
     }
 
     @Override
-    public ByteBuffer encodeKey(String key) {
+    public ByteBuffer encodeKey(final String key) {
+
         return charset.encode(key);
     }
 
     @Override
-    public ByteBuffer encodeValue(Object value) {
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();ObjectOutputStream output = new ObjectOutputStream(baos)) {
+    public ByteBuffer encodeValue(final Object value) {
+
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             ObjectOutputStream output = new ObjectOutputStream(baos)) {
+
             output.writeObject(value);
             output.flush();
             return ByteBuffer.wrap(baos.toByteArray());
-        }catch(Exception e) {
+        } catch(Exception e) {
+
             throw new DotRuntimeException(e);
         }
     }

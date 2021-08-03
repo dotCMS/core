@@ -15,8 +15,7 @@ import com.dotmarketing.startup.AbstractJDBCStartupTask;
  * 
  */
 public class Task03140AddFileAssetsIntegrityResultTable extends AbstractJDBCStartupTask {
-    private final String LANGUAGE_ID_COLUMN = DbConnectionFactory.isH2()
-            || DbConnectionFactory.isMySql() ? " language_id bigint " : DbConnectionFactory
+    private final String LANGUAGE_ID_COLUMN = DbConnectionFactory.isMySql() ? " language_id bigint " : DbConnectionFactory
             .isPostgres() ? " language_id int8 "
             : DbConnectionFactory.isOracle() ? " language_id number(19,0) " : DbConnectionFactory
                     .isMsSql() ? " language_id numeric(19,0) " : "";
@@ -80,16 +79,6 @@ public class Task03140AddFileAssetsIntegrityResultTable extends AbstractJDBCStar
      */
     @Override
     public String getMSSQLScript() {
-        return NON_ORACLE_SQL;
-    }
-
-    /**
-     * The SQL for H2
-     *
-     * @return
-     */
-    @Override
-    public String getH2Script() {
         return NON_ORACLE_SQL;
     }
 

@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import com.dotcms.cache.lettuce.LettuceClient;
+import com.dotcms.cache.lettuce.RedisClient;
 import com.dotcms.cache.lettuce.MasterReplicaLettuceClient;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.enterprise.cluster.ClusterFactory;
@@ -29,7 +29,7 @@ public class LettucePubSubImpl implements DotPubSubProvider {
     private final boolean testing;
     private final String clusterId;
     private final String serverId;
-    private final LettuceClient<String, String> lettuce;
+    private final RedisClient<String, String> lettuce;
     private final Map<Comparable<String>, DotPubSubTopic> topicMap = new ConcurrentHashMap<>();
 
     private final long PUBSUB_THREAD_PAUSE_MS=Config.getLongProperty("PUBSUB_THREAD_PAUSE_MS", 200);
@@ -90,7 +90,7 @@ public class LettucePubSubImpl implements DotPubSubProvider {
                 final String redisTopic = redisTopic(topic);
 
                 try {
-                    RedisAsyncCommands<String, String> asyncCommands = lettuce.get().async();
+                    RedisAsyncCommands<String, String> asyncCommands = lettuce.getConn().async();
                     Logger.info(LettucePubSubImpl.class, "Creating Redis Stream : " + redisTopic);
                     asyncCommands.xgroupCreate(StreamOffset.lastConsumed(redisTopic), serverId,
                                     XGroupCreateArgs.Builder.mkstream(true));
@@ -128,10 +128,10 @@ public class LettucePubSubImpl implements DotPubSubProvider {
 
         void eventsIn(DotPubSubTopic topic) {
             final String redisTopic = redisTopic(topic);
-            List<StreamMessage<String, String>> messages = lettuce.get().sync().xreadgroup(
+            List<StreamMessage<String, String>> messages = lettuce.getConn().sync().xreadgroup(
                             Consumer.from(serverId, serverId), XReadArgs.StreamOffset.lastConsumed(redisTopic));
             // ACK Attack
-            messages.forEach(m -> lettuce.get().async().xack(redisTopic, serverId, m.getId()));
+            messages.forEach(m -> lettuce.getConn().async().xack(redisTopic, serverId, m.getId()));
 
             for (final StreamMessage<String, String> messageIn : messages) {
                 List<DotPubSubEvent> bodyEvents = Try.of(() -> messageIn.getBody().entrySet().stream()
@@ -212,7 +212,7 @@ public class LettucePubSubImpl implements DotPubSubProvider {
     public boolean publish(final DotPubSubEvent eventIn) {
         final DotPubSubEvent eventOut = new DotPubSubEvent.Builder(eventIn).withOrigin(serverId).build();
 
-        lettuce.get().async().xadd(redisTopic(eventOut.getTopic()), XAddArgs.Builder.maxlen(maxStreamSize), "e",
+        lettuce.getConn().async().xadd(redisTopic(eventOut.getTopic()), XAddArgs.Builder.maxlen(maxStreamSize), "e",
                         eventOut.toString());
 
         return true;

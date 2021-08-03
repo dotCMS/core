@@ -7,14 +7,19 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
+import io.vavr.Tuple2;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
@@ -167,5 +172,32 @@ public class HostUtilTest extends IntegrationTestBase {
         assertNotNull( hostOpt );
         assertTrue( hostOpt.isPresent() );
         assertEquals("should return the custom one", hostOpt.get().getIdentifier(), defaultHost.getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link HostUtil#splitPathHost(String, User, String, Supplier)}
+     * Given Scenario: Sends a valid url to parse
+     * ExpectedResult: Expects the host and the path
+     *
+     */
+    @Test
+    public void getsplitPathHost_not_null_expected() throws DotDataException, DotSecurityException {
+
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+        final String hostName = "custom" + System.currentTimeMillis() + ".dotcms.com";
+        final Host host = new SiteDataGen().name(hostName).nextPersisted(true);
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpSession        session = mock(HttpSession.class);
+        when(request.getSession(false)).thenReturn(session);
+        when(session.getAttribute(WebKeys.CMS_SELECTED_HOST_ID)).thenReturn(defaultHost.getIdentifier());
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+        final Tuple2<String, Host> pathHostOpt = HostUtil.splitPathHost("//" + hostName + "/application/containers/custom-container",
+                APILocator.systemUser(),
+                StringPool.FORWARD_SLASH,
+                ()-> APILocator.systemHost());
+        assertNotNull( pathHostOpt._1 );
+        assertNotNull( pathHostOpt._2 );
+        assertEquals("should return the custom one", pathHostOpt._1(), "/application/containers/custom-container");
+        assertEquals("should return the custom one", pathHostOpt._2().getIdentifier(), host.getIdentifier());
     }
 }

@@ -39,11 +39,6 @@ public class Task03030CreateIndicesForVersionTables extends AbstractJDBCStartupT
     }
 
     @Override
-    public String getH2Script() {
-    	return createIndices;
-    }
-
-    @Override
     protected List<String> getTablesToDropConstraints() {
         return null;
     }

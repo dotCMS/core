@@ -16,10 +16,8 @@ abstract class CategorySQL {
 			return new PostgresCategorySQL();
 		} else if (MSSQL.equals(x)) {
 			return new MSSQLCategorySQL();
-		} else if (ORACLE.equals(x))  {
+		} else  {
 			return new OracleCategorySQL();
-		}else {
-			return new H2CategorySQL();
 		}
 	}
 	

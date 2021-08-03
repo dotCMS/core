@@ -1,33 +1,38 @@
 package com.dotmarketing.image.filter;
 
-import com.dotmarketing.util.Logger;
-import com.twelvemonkeys.image.ResampleOp;
+import java.awt.Dimension;
 import java.awt.image.BufferedImage;
-import java.awt.image.BufferedImageOp;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.Map;
 import javax.imageio.ImageIO;
+import com.dotmarketing.exception.DotRuntimeException;
+import io.vavr.control.Try;
 
 public class ResizeImageFilter extends ImageFilter {
 	public String[] getAcceptedParameters(){
 		return  new String[] {
 				"w (int) specifies width",
 				"h (int) specifies height",
+				"i (int) interpolation"
 		};
 	}
-	public File runFilter(File file,    Map<String, String[]> parameters) {
-		double w = parameters.get(getPrefix() +"w") != null?Integer.parseInt(parameters.get(getPrefix() +"w")[0]):0;
-		double h = parameters.get(getPrefix() +"h") != null?Integer.parseInt(parameters.get(getPrefix() +"h")[0]):0;
-		
+	public File runFilter(final File file,    Map<String, String[]> parameters) {
+
+		final String[] widthParam = parameters.get(getPrefix() + "w");
+		int w = widthParam != null?Integer.parseInt(widthParam[0]):0;
+
+		final String[] heightParam = parameters.get(getPrefix() + "h");
+		int h = heightParam != null?Integer.parseInt(heightParam[0]):0;
+		final int resampleOpts = Try.of(()-> Integer.parseInt(parameters.get(getPrefix() +"ro")[0])).getOrElse(ImageFilterApiImpl.DEFAULT_RESAMPLE_OPT);
 		
 		if(file.getName().endsWith(".gif")) {
 		  return new ResizeGifImageFilter().runFilter(file, parameters);
 		}
 		
 		
-		
+        if(w ==0 && h ==0){
+            return file;
+        }
 		
 		File resultFile = getResultsFile(file, parameters);
 		
@@ -36,38 +41,35 @@ public class ResizeImageFilter extends ImageFilter {
 		}
 		resultFile.delete();
 		
-		try {
-			
-			
-			if(w ==0 && h ==0){
-				return file;
-			}
-			BufferedImage srcImage = ImageIO.read(file);
-			
-			if(w ==0 && h >0){
-				w = Math.round(h * srcImage.getWidth() / srcImage.getHeight());
-			}
-			if(w >0 && h ==0){
-				h = Math.round(w * srcImage.getHeight() / srcImage.getWidth());
-			}
-			
-			int width    =      (int) w;    
-			int hieght     =     (int) h;
-
-
-			BufferedImageOp resampler = new ResampleOp(width, hieght, ResampleOp.FILTER_LANCZOS); // A good default filter, see class documentation for more info
-			BufferedImage output = resampler.filter(srcImage, null);
-			ImageIO.write(output, "png", resultFile);
-			output.flush();
-			return resultFile;
-
-		} catch (FileNotFoundException e) {
-			Logger.error(this.getClass(), e.getMessage());
-		} catch (IOException e) {
-			Logger.error(this.getClass(), e.getMessage());
-		}
 		
-		return resultFile;
-	}
+		final Dimension originalSize = ImageFilterAPI.apiInstance.get().getWidthHeight(file);
+		
+        final int width = (int) (w == 0 && h > 0 ? Math.round(h * originalSize.getWidth()) / originalSize.getHeight()
+                        : w);
+
+        final int height = (int) (w > 0 && h == 0 ? Math.round(w * originalSize.getHeight() / originalSize.getWidth())
+                        : h);
+		
+
+
+        try {
+            File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() + ".tmp");
+            // resample from stream
+            BufferedImage srcImage = ImageFilterAPI.apiInstance.get().intelligentResize(file, width, height,resampleOpts);
+            ImageIO.write(srcImage, "png", tempResultFile);
+            srcImage.flush();
+            srcImage = null;
+            tempResultFile.renameTo(resultFile);
+
+            return resultFile;
+
+        } catch (Exception e) {
+            throw new DotRuntimeException("unable to convert file:" +file + " : " +  e.getMessage(),e);
+        }
+
+    }
+
+	
+
 
 }

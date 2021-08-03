@@ -38,7 +38,6 @@ public class DbConnectionFactory {
     protected static final String POSTGRESQL = "PostgreSQL";
     protected static final String ORACLE = "Oracle";
     protected static final String MSSQL = "Microsoft SQL Server";
-    protected static final String H2 = "H2";
 
     private static DataSource defaultDataSource = null;
 
@@ -97,7 +96,7 @@ public class DbConnectionFactory {
 
     
     public enum DataBaseType {
-        POSTGRES, MySQL, MSSQL, ORACLE, H2;
+        POSTGRES, MySQL, MSSQL, ORACLE;
     }
 
     private static String _dbType = null;
@@ -517,7 +516,7 @@ public class DbConnectionFactory {
 
         if (MYSQL.equals(x) || MSSQL.equals(x) || ORACLE.equals(x)) {
             return "1".equals(value.trim()) || "true".equals(value.trim());
-        } else if (POSTGRESQL.equals(x) || H2.equals(x)) {
+        } else if (POSTGRESQL.equals(x)) {
             return "t".equals(value.trim()) || "true".equals(value.trim());
         }
         return false;
@@ -535,7 +534,7 @@ public class DbConnectionFactory {
 
         if (MYSQL.equals(x) || MSSQL.equals(x) || ORACLE.equals(x)) {
             return "0".equals(value.trim()) || "false".equals(value.trim());
-        } else if (POSTGRESQL.equals(x) || H2.equals(x)) {
+        } else if (POSTGRESQL.equals(x)) {
             return "f".equals(value.trim()) || "false".equals(value.trim());
         }
         return false;
@@ -566,10 +565,6 @@ public class DbConnectionFactory {
 
     public static boolean isMySql() {
         return MYSQL.equals(getDBType());
-    }
-
-    public static boolean isH2() {
-        return H2.equals(getDBType());
     }
 
     public static int getDbVersion() {

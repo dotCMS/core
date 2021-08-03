@@ -132,35 +132,6 @@ public abstract class UpsertCommand implements DatabaseCommand {
 
 }
 
-final class H2UpsertCommand extends UpsertCommand {
-
-    /**
-     * H2 Upsert Example
-     * MERGE INTO table (columns) KEY (conditionalColumn) VALUES (values)
-     */
-    private static final String H2_UPSERT_QUERY =
-            "MERGE INTO %s (%s) KEY (%s) VALUES (%s) ";
-
-
-    @Override
-    public String generateSQLQuery(SimpleMapAppContext replacements) {
-        return
-            String.format(H2_UPSERT_QUERY,
-                replacements.getAttribute(QueryReplacements.TABLE),
-                getInsertColumnsString(replacements),
-                replacements.getAttribute(QueryReplacements.CONDITIONAL_COLUMN),
-                getInsertValuesString(replacements)
-            );
-    }
-
-    @Override
-    public void execute(DotConnect dotConnect, SimpleMapAppContext queryReplacements, Object... parameters) throws DotDataException {
-        String query = generateSQLQuery(queryReplacements);
-        DotConnect dc = (dotConnect != null) ? dotConnect : new DotConnect();
-        dc.executeUpdate(query, parameters);
-    }
-}
-
 final class PostgreUpsertCommand extends UpsertCommand {
 
     /**

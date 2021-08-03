@@ -63,11 +63,6 @@ public class Task04100DeleteUnusedJobEntries extends AbstractJDBCStartupTask {
         return null;
     }
 
-    @Override
-    public String getH2Script() {
-        return null;
-    }
-
     /**
      * Creates the delete script for unused classes on jobs
      *

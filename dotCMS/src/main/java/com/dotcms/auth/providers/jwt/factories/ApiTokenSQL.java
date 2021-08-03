@@ -17,8 +17,7 @@ public class ApiTokenSQL {
     
     public static ApiTokenSQL getInstance() {
         if (instance == null){
-            instance = DbConnectionFactory.isH2() ? new ApiTokenSQL() :
-                DbConnectionFactory.isMySql() ? new ApiTokenSQLMySQL() :
+            instance = DbConnectionFactory.isMySql() ? new ApiTokenSQLMySQL() :
                     DbConnectionFactory.isPostgres() ? new ApiTokenSQL()
                         : DbConnectionFactory.isMsSql() ? new ApiTokenSQLMSSQL() :
                             new ApiTokenSQL();

@@ -1,16 +1,5 @@
 package com.dotcms.cache.lettuce;
 
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.repackage.com.google.common.base.Objects;
@@ -24,20 +13,57 @@ import com.dotmarketing.util.UtilMethods;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.annotations.VisibleForTesting;
+import com.liferay.util.StringPool;
 import io.lettuce.core.KeyScanCursor;
 import io.lettuce.core.ScanArgs;
 import io.lettuce.core.ScriptOutputType;
 import io.lettuce.core.api.StatefulRedisConnection;
 
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
+/**
+ * Redis Cache implementation
+ */
 public class LettuceCache extends CacheProvider {
-    private final LettuceClient<String, Object> lettuce;
+
+    private static final Long ZERO = new Long(0);
+    private static final String KEY_DATE_FORMAT = "yyyy-MM-dd_hh:mm:ss.S";
 
     private final String clusterId;
-    
-    
-    public LettuceCache(LettuceClient<String,Object> client, final String clusterId) {
-        lettuce = client;
+    private final RedisClient<String, Object> lettuce;
+    private final static String PREFIX_UNSET = "PREFIX_UNSET";
+
+    private final String LETTUCE_GROUP_KEY;
+    private final String LETTUCE_PREFIX_KEY;
+
+    private final long dirtyReadDelayMs   = Config.getLongProperty("redis.lettucecache.dirtyread.delay.ms", 10000L);
+    private final long dirtyReadCacheSize = Config.getLongProperty("redis.lettucecache.dirtyread.size", 100000L);
+
+    /**
+     * The dirtyReadCache caches every write (put/remove) sent to Redis and will not allow a get for
+     * that key until 10 seconds has passed. This allows us to do async writes with confidence.
+     */
+    private final Cache<String, Boolean> dirtyReadCache = Caffeine.newBuilder().maximumSize(dirtyReadCacheSize)
+            .expireAfterWrite(dirtyReadDelayMs, TimeUnit.MILLISECONDS).build();
+
+    private static final long serialVersionUID = -855583393078878276L;
+    private final int keyBatchingSize = Config.getIntProperty("redis.server.key.batch.size", 1000);
+    final static AtomicReference<String> prefixKey = new AtomicReference(PREFIX_UNSET);
+
+    public LettuceCache(final RedisClient<String,Object> client, final String clusterId) {
+
+        this.lettuce = client;
         this.clusterId = clusterId;
         this.LETTUCE_GROUP_KEY = clusterId + "LETTUCE_GROUP_KEY";
         this.LETTUCE_PREFIX_KEY = clusterId + "LETTUCE_PREFIX_KEY";
@@ -46,29 +72,6 @@ public class LettuceCache extends CacheProvider {
     public LettuceCache() {
         this(new MasterReplicaLettuceClient<>(), APILocator.getShortyAPI().shortify(ClusterFactory.getClusterId()));
     }
-
-    private final static String PREFIX_UNSET="PREFIX_UNSET";
-
-
-    private final String LETTUCE_GROUP_KEY;
-    private final String LETTUCE_PREFIX_KEY;
-
-    private final long dirtyReadDelayMs = Config.getLongProperty("redis.lettucecache.dirtyread.delay.ms", 10000L);
-    private final long dirtyReadCacheSize = Config.getLongProperty("redis.lettucecache.dirtyread.size", 100000L);
-
-    /**
-     * The dirtyReadCache caches every write (put/remove) sent to Redis and will not allow a get for
-     * that key until 10 seconds has passed. This allows us to do async writes with confidence.
-     */
-    private final Cache<String, Boolean> dirtyReadCache = Caffeine.newBuilder().maximumSize(dirtyReadCacheSize)
-                    .expireAfterWrite(dirtyReadDelayMs, TimeUnit.MILLISECONDS).build();
-
-
-
-    private static final long serialVersionUID = -855583393078878276L;
-    private int keyBatching = Config.getIntProperty("redis.server.key.batch.size", 1000);
-    final static AtomicReference<String> prefixKey = new AtomicReference(PREFIX_UNSET);
-
 
     @Override
     public String getName() {
@@ -85,7 +88,6 @@ public class LettuceCache extends CacheProvider {
         return true;
     }
 
-
     /**
      * all key values that are put into redis are prefixed by a random key. When a flushall is called,
      * this key is cycled, which basically invalidates all cached entries. The prefix key is stored in
@@ -94,12 +96,13 @@ public class LettuceCache extends CacheProvider {
      */
     @VisibleForTesting
     String loadPrefix() {
+
         String key = prefixKey.get();
         if(!PREFIX_UNSET.equals(key)) {
             return key;
         }
         if (PREFIX_UNSET.equals(key)) {
-            key = loadPrefixFromRedis(); 
+            key = this.loadPrefixFromRedis();
         }
         if (PREFIX_UNSET.equals(key)) {
             key = setOrGet();
@@ -113,18 +116,21 @@ public class LettuceCache extends CacheProvider {
     }
     
     String loadPrefixFromRedis() {
-        try (StatefulRedisConnection<String,Object> conn = lettuce.get()) {
-            return (String) lettuce.get().sync().get(LETTUCE_PREFIX_KEY);
+
+        try (StatefulRedisConnection<String,Object> conn = lettuce.getConn()) {
+
+            return (String) conn.sync().get(LETTUCE_PREFIX_KEY);
         } catch (Exception e) {
+
             Logger.debug(this.getClass(), ()-> "unable to get prefix:" + e.getMessage());
             return PREFIX_UNSET;
         }
     }
-    
-    
+
     String generateNewKey() {
-        return clusterId + "_" + new SimpleDateFormat("yyyy-MM-dd_hh:mm:ss.S"
-                        + "").format(new Date());
+
+        return clusterId + StringPool.UNDERLINE +
+                new SimpleDateFormat(KEY_DATE_FORMAT).format(new Date());
     }
 
     /**
@@ -134,39 +140,37 @@ public class LettuceCache extends CacheProvider {
      */
     @VisibleForTesting
     String cycleKey() {
-        final String newKey = generateNewKey();
-        try (StatefulRedisConnection<String,Object> conn = lettuce.get()) {
+
+        final String newKey = this.generateNewKey();
+        try (StatefulRedisConnection<String,Object> conn = lettuce.getConn()) {
             if (!conn.isOpen()) {
                 return PREFIX_UNSET;
             }
             conn.sync().set(LETTUCE_PREFIX_KEY, newKey);
         }
+
         prefixKey.set(newKey);
-
-
         return newKey;
-
     }
 
     /**
      * This checks if there is a prefix key in redis. If so, it will return the value stored in redis,
      * otherwise, it will set redis to the value of the newKey and return it.
      * 
-     * @param newKey
      * @return
      */
     @VisibleForTesting
     String setOrGet() {
-        final String newKey = generateNewKey();
-        try (StatefulRedisConnection<String,Object> conn = lettuce.get()) {
+
+        final String newKey = this.generateNewKey();
+        try (StatefulRedisConnection<String,Object> conn = lettuce.getConn()) {
             if (!conn.isOpen()) {
                 return PREFIX_UNSET;
             }
-            return conn.sync().setnx(LETTUCE_PREFIX_KEY, newKey) ? newKey : loadPrefixFromRedis();
+            return conn.sync().setnx(LETTUCE_PREFIX_KEY, newKey)?
+                    newKey : this.loadPrefixFromRedis();
         }
-
     }
-
 
     /**
      * returns a cache key
@@ -177,8 +181,14 @@ public class LettuceCache extends CacheProvider {
      */
     @VisibleForTesting
     String cacheKey(final String group, final String key) {
-        return loadPrefix()
-                        + (group != null && key != null ? "." + group + "." + key : (group != null) ? "." + group + "." : ".");
+        return loadPrefix() +
+                        (
+                                group != null && key != null ?
+                                "." + group + "." + key :
+                                      group != null ?
+                                                "." + group + "." :
+                                                "."
+                        );
     }
 
     @VisibleForTesting
@@ -188,6 +198,7 @@ public class LettuceCache extends CacheProvider {
 
     @Override
     public void init() {
+
         Logger.info(this.getClass(), "*** Initializing [" + getName() + "].");
         Logger.info(this.getClass(), "          prefix [" + this.loadPrefix() + "]");
         Logger.info(this.getClass(), "          inited [" + this.isInitialized() + "]");
@@ -201,16 +212,19 @@ public class LettuceCache extends CacheProvider {
     }
 
     @Override
-    public void put(final String group, final String key, Object content) {
+    public void put(final String group, final String key, final Object content) {
 
         if (key == null || group == null) {
             return;
         }
-        final String cacheKey = cacheKey(group, key);
-        dirtyReadCache.put(cacheKey, true);
 
-        try (StatefulRedisConnection<String,Object> conn = lettuce.get()) {
+        final String cacheKey = this.cacheKey(group, key);
+        this.dirtyReadCache.put(cacheKey, true); // todo: this should not be handle by the cache chain?
+
+        try (StatefulRedisConnection<String,Object> conn = lettuce.getConn()) {
+
             if (conn.isOpen()) {
+
                 conn.async().sadd(LETTUCE_GROUP_KEY, group);
                 conn.async().set(cacheKey, content);
             }
@@ -224,22 +238,21 @@ public class LettuceCache extends CacheProvider {
         if (key == null || group == null) {
             return null;
         }
+
         final String cacheKey = cacheKey(group, key);
 
-        if (dirtyReadCache.get(cacheKey(group), k -> {
-            return false;
-        })) {
+        if (this.dirtyReadCache.get(cacheKey(group), k -> false)) {
             return null;
         }
 
-        try (StatefulRedisConnection<String,Object> conn = lettuce.get()) {
+        try (StatefulRedisConnection<String,Object> conn = lettuce.getConn()) {
+
             if (conn.isOpen()) {
-                return conn.sync().get(cacheKey.toString());
+                return conn.sync().get(cacheKey);
             }
         }
+
         return null;
-
-
     }
 
     /**
@@ -248,18 +261,24 @@ public class LettuceCache extends CacheProvider {
      * @param keys
      */
     private void remove(final String... keys) {
+
         if (keys == null || keys.length == 0) {
+
             return;
         }
-        for (String key : keys) {
+
+        for (final String key : keys) {
+
             dirtyReadCache.put(key, true);
         }
-        try (StatefulRedisConnection<String,Object> conn = lettuce.get()) {
+
+        try (StatefulRedisConnection<String,Object> conn = lettuce.getConn()) {
+
             if (conn.isOpen()) {
+
                 conn.async().unlink(keys);
             }
         }
-
     }
 
 
@@ -268,152 +287,87 @@ public class LettuceCache extends CacheProvider {
     public void remove(final String group, final String key) {
 
         final String cacheKey = cacheKey(group, key);
-
-        this.remove(new String[] {cacheKey.toString()});
-
-
+        this.remove(cacheKey);
     }
 
     @Override
     public void remove(final String group) {
 
         if (UtilMethods.isEmpty(group)) {
+
             return;
         }
-        dirtyReadCache.put(cacheKey(group), true);
-        String prefix = cacheKey(group) + "*";
+
+        this.dirtyReadCache.put(cacheKey(group), true);  // todo: why true
+
+        final String prefix = cacheKey(group) + "*";
         // Getting all the keys for the given groups
-        CacheWiper wiper = new CacheWiper(prefix);
+        final CacheWiper wiper = new CacheWiper(prefix);
 
         DotConcurrentFactory.getInstance().getSingleSubmitter(CacheWiper.class.getSimpleName()).submit(wiper);
-
     }
 
-    class CacheWiper  implements Runnable{
-
-        @Override
-        public String toString() {
-            return "CacheWiper prefix:" + prefix;
-        }
-
-        public CacheWiper(final String prefix) {
-            this.prefix = prefix;
-        }
-
-        final String prefix;
-
-        @Override
-        public void run() {
-            KeyScanCursor<String> scanCursor = null;
-
-            try (StatefulRedisConnection<String,Object> conn = lettuce.get()) {
-                if (!conn.isOpen()) {
-                    return;
-                }
-                do {
-                    if (scanCursor == null) {
-                        scanCursor = conn.sync().scan(ScanArgs.Builder.matches(prefix).limit(keyBatching));
-                    } else {
-                        scanCursor = conn.sync().scan(scanCursor, ScanArgs.Builder.matches(prefix).limit(keyBatching));
-                    }
-                    remove(scanCursor.getKeys().toArray(new String[0]));
-
-
-                } while (!scanCursor.isFinished());
-            }
-
-        }
-    };
-
-    class PrefixChecker  implements Runnable{
-
-        @Override
-        public void run() {
-
-
-            final String ourPrefix =  prefixKey.get();
-            final String redisPrefix = loadPrefixFromRedis();
-            // force a reload if needed
-            if(!Objects.equal(ourPrefix, redisPrefix)) {
-                prefixKey.set(PREFIX_UNSET);
-            }
-            
-
-        }
-    };
-    
-    
-    
-    
     @Override
     public void removeAll() {
 
-
         final String prefix = cacheKey("*");
-        cycleKey();
+        cycleKey(); // todo: why call this?
         // Getting all the keys for the given groups
-        CacheWiper wiper = new CacheWiper(prefix);
+        final CacheWiper wiper = new CacheWiper(prefix);
         DotConcurrentFactory.getInstance().getSingleSubmitter(CacheWiper.class.getSimpleName()).submit(wiper);
-
-
-
     }
 
     @Override
     public Set<String> getKeys(final String group) {
+
         final String prefix = cacheKey(group) + "*";
         KeyScanCursor<String> scanCursor = null;
+        final Set<String> keys = new HashSet<>();
 
-        Set<String> keys = new HashSet<String>();
-        try (StatefulRedisConnection<String,Object> conn = lettuce.get()) {
+        try (StatefulRedisConnection<String,Object> conn = lettuce.getConn()) {
+
             if (!conn.isOpen()) {
-                return new HashSet<>();
-            }
-            do {
-                if (scanCursor == null) {
-                    scanCursor = conn.sync().scan(ScanArgs.Builder.matches(prefix).limit(keyBatching));
-                } else {
-                    scanCursor = conn.sync().scan(scanCursor, ScanArgs.Builder.matches(prefix).limit(keyBatching));
-                }
 
+                return Collections.emptySet();
+            }
+
+            do {
+
+                scanCursor = scanCursor == null?
+                        conn.sync().scan(ScanArgs.Builder.matches(prefix).limit(keyBatchingSize)):
+                        conn.sync().scan(scanCursor, ScanArgs.Builder.matches(prefix).limit(keyBatchingSize));
 
                 keys.addAll(scanCursor.getKeys());
-
             } while (!scanCursor.isFinished());
         }
 
         return keys;
-
-
     }
 
 
     @VisibleForTesting
     Set<String> getAllKeys() {
+
         final String prefix = cacheKey(null) + "*";
         KeyScanCursor<String> scanCursor = null;
-        Set<String> keys = new HashSet<String>();
-        try (StatefulRedisConnection<String,Object> conn = lettuce.get()) {
+        final Set<String> keys = new HashSet<>();
+        try (StatefulRedisConnection<String,Object> conn = lettuce.getConn()) {
             if (!conn.isOpen()) {
-                return new HashSet<>();
+
+                return Collections.emptySet();
             }
             do {
-                if (scanCursor == null) {
-                    scanCursor = conn.sync().scan(ScanArgs.Builder.matches(prefix).limit(keyBatching));
-                } else {
-                    scanCursor = conn.sync().scan(scanCursor, ScanArgs.Builder.matches(prefix).limit(keyBatching));
-                }
-
+                scanCursor = scanCursor == null?
+                        conn.sync().scan(ScanArgs.Builder.matches(prefix).limit(keyBatchingSize)):
+                        conn.sync().scan(scanCursor, ScanArgs.Builder.matches(prefix).limit(keyBatchingSize));
 
                 keys.addAll(scanCursor.getKeys());
-
             } while (!scanCursor.isFinished());
         }
 
         return keys;
-
-
     }
+
 
     /**
      * returns the number of cache keys in any given group
@@ -427,47 +381,55 @@ public class LettuceCache extends CacheProvider {
 
         final String script = "return #redis.pcall('keys', '" + prefix + "')";
 
-        Object j = null;
-        try (StatefulRedisConnection<String,Object> conn = lettuce.get()) {
+        Object keyCount = ZERO;
+        try (StatefulRedisConnection<String,Object> conn = lettuce.getConn()) {
+
             if (!conn.isOpen()) {
                 return 0;
             }
-            j = conn.sync().eval(script, ScriptOutputType.INTEGER, "0");
+
+            keyCount = conn.sync().eval(script, ScriptOutputType.INTEGER, "0");
         }
 
-        return (Long) j;
-
-
-
+        return (Long) keyCount;
     }
 
 
 
     @Override
     public Set<String> getGroups() {
-        try (StatefulRedisConnection<String,Object> conn = lettuce.get()) {
+
+        try (StatefulRedisConnection<String,Object> conn = lettuce.getConn()) {
+
             if (!conn.isOpen()) {
-                return new HashSet<>();
+
+                return Collections.emptySet();
             }
-            return conn.sync().smembers(LETTUCE_GROUP_KEY).stream().map(k -> k.toString()).collect(Collectors.toSet());
+
+            return conn.sync().smembers(LETTUCE_GROUP_KEY).stream()
+                    .map(k -> k.toString()).collect(Collectors.toSet());
         }
     }
 
     @Override
     public CacheProviderStats getStats() {
-        CacheStats providerStats = new CacheStats();
-        CacheProviderStats ret = new CacheProviderStats(providerStats, getName());
+
+        final CacheStats providerStats = new CacheStats();
+        final CacheProviderStats cacheProviderStats = new CacheProviderStats(providerStats, getName());
         String memoryStats = null;
-        try (StatefulRedisConnection<String,Object> conn = lettuce.get()) {
+
+        try (StatefulRedisConnection<String,Object> conn = lettuce.getConn()) {
+
             if (!conn.isOpen()) {
-                return ret;
+
+                return cacheProviderStats;
             }
+
             memoryStats = conn.sync().info();
         }
 
         // Read the total memory usage
-
-        Map<String, String> redis = getRedisProperties(memoryStats);
+        final Map<String, String> redis = getRedisProperties(memoryStats);
 
         for (Map.Entry<String, String> entry : redis.entrySet()) {
             CacheStats stats = new CacheStats();
@@ -486,10 +448,10 @@ public class LettuceCache extends CacheProvider {
             stats.addStat(CacheStats.REGION, "dotCMS: " + group);
             stats.addStat(CacheStats.REGION_SIZE, nf.format(keyCount(group)));
 
-            ret.addStatRecord(stats);
+            cacheProviderStats.addStatRecord(stats);
         }
 
-        return ret;
+        return cacheProviderStats;
     }
 
     @Override
@@ -497,6 +459,7 @@ public class LettuceCache extends CacheProvider {
 
         Logger.info(this.getClass(), "*** Shutdown [" + getName() + "] .");
         prefixKey.set(PREFIX_UNSET);
+        // todo: should not do  redisClient.shutdown(Duration.ZERO, Duration.ZERO);
     }
 
     /**
@@ -504,29 +467,78 @@ public class LettuceCache extends CacheProvider {
      * specific required property.
      *
      * @param redisReport
-     * @param property
-     * @return
+     * @return Map
      */
     private Map<String, String> getRedisProperties(final String redisReport) {
 
-        Map<String, String> map = new LinkedHashMap<>();
+        final Map<String, String> map = new LinkedHashMap<>();
+        final String[] readLines = redisReport.split("\r\n");
 
-        String[] readLines = redisReport.split("\r\n");
-        for (String readLine : readLines) {
+        for (final String readLine : readLines) {
 
-            String[] lineValues = readLine.split(":", 2);
+            final String[] lineValues = readLine.split(":", 2);
 
             // First check if it is a property or a header
             if (lineValues.length > 1) {
 
                 map.put(lineValues[0], lineValues[1]);
-
             }
         }
 
         return map;
     }
 
+    class CacheWiper implements Runnable {
 
+        final String prefix;
 
+        @Override
+        public String toString() {
+            return "CacheWiper prefix:" + prefix;
+        }
+
+        public CacheWiper(final String prefix) {
+            this.prefix = prefix;
+        }
+
+        @Override
+        public void run() {
+
+            KeyScanCursor<String> scanCursor = null;
+
+            try (StatefulRedisConnection<String,Object> conn = lettuce.getConn()) {
+
+                if (!conn.isOpen()) {
+
+                    return;
+                }
+
+                do {
+                    if (scanCursor == null) {
+                        scanCursor = conn.sync().scan(ScanArgs.Builder.matches(prefix).limit(keyBatchingSize));
+                    } else {
+                        scanCursor = conn.sync().scan(scanCursor, ScanArgs.Builder.matches(prefix).limit(keyBatchingSize));
+                    }
+
+                    remove(scanCursor.getKeys().toArray(new String[0]));
+                } while (!scanCursor.isFinished());
+            }
+
+        }
+    }
+
+    // todo: what is the goal of this?
+    class PrefixChecker  implements Runnable {
+
+        @Override
+        public void run() {
+
+            final String ourPrefix =  prefixKey.get();
+            final String redisPrefix = loadPrefixFromRedis();
+            // force a reload if needed
+            if(!Objects.equal(ourPrefix, redisPrefix)) {
+                prefixKey.set(PREFIX_UNSET);
+            }
+        }
+    }
 }

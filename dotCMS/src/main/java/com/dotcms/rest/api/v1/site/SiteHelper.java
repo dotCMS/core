@@ -4,6 +4,8 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.AlreadyExistException;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -109,7 +111,7 @@ public class SiteHelper implements Serializable {
 	}
 
 	/**
-	 * Save a new or existing site
+	 * Saves a new. Validates if it already exist
 	 * @param site
 	 * @param user
 	 * @param respectAnonPerms
@@ -117,9 +119,26 @@ public class SiteHelper implements Serializable {
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
-	public Host save(final Host site, final User user, final boolean respectAnonPerms) throws DotSecurityException, DotDataException {
+	public Host save(final Host site, final User user, final boolean respectAnonPerms) throws DotSecurityException, DotDataException, AlreadyExistException {
+		if(null != hostAPI.findByName(site.getHostname(), user, respectAnonPerms)){
+		   throw new AlreadyExistException(String.format("A site named `%s` already exists.",site.getHostname()));
+		}
+		return hostAPI.save(site, user, respectAnonPerms);
+	}
 
-		return APILocator.getHostAPI().save(site, user, respectAnonPerms);
+	/**
+	 * Saves an existing site
+	 * @param site
+	 * @param user
+	 * @param respectAnonPerms
+	 * @return
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 * @throws AlreadyExistException
+	 */
+	public Host update(final Host site, final User user, final boolean respectAnonPerms) throws DotSecurityException, DotDataException, DoesNotExistException {
+
+		return hostAPI.save(site, user, respectAnonPerms);
 	}
 
 	/**
@@ -134,7 +153,7 @@ public class SiteHelper implements Serializable {
 	public Future<Boolean> delete(final Host site, final User user, final boolean respectAnonPerms) throws DotSecurityException, DotDataException {
 
 		final Optional<Future<Boolean>> hostDeleteResultOpt = hostAPI.delete(site, user, respectAnonPerms, true);
-		return hostDeleteResultOpt.isPresent()?hostDeleteResultOpt.get():null;
+		return hostDeleteResultOpt.orElse(null);
 	}
 
 	/**

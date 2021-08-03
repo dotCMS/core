@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import static com.dotcms.util.CollectionsUtils.map;
 
 import com.dotmarketing.beans.Host;
 
@@ -163,5 +164,14 @@ public class FileAssetContainer extends Container {
 
     public Host getHost() {
         return host;
+    }
+
+    @Override
+    public ManifestInfo getManifestInfo(){
+        return ManifestInfoBuilder.merge(super.getManifestInfo(),
+                new ManifestInfoBuilder()
+                    .site(this.getHost())
+                    .path(this.getPath())
+                    .build());
     }
 }

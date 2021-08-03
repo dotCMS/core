@@ -54,7 +54,11 @@ public class HostUtil {
 			Optional.empty();
 	}
 
-	private static Host findCurrentHost () {
+	/**
+	 * Tries to find the current host
+	 * @return  Host
+	 */
+	public static Host findCurrentHost () {
 
 		final Optional<Host> hostOpt = tryToFindCurrentHost(APILocator.systemUser());
 		return hostOpt.isPresent()? hostOpt.get():null;
@@ -95,9 +99,10 @@ public class HostUtil {
 
 		final HostAPI hostAPI        = APILocator.getHostAPI();
 		final int hostIndicatorIndex = inputPath.indexOf(HOST_INDICATOR);
-		final int applicationContainerFolderStartsIndex =
-				inputPath.indexOf(posHostToken);
 		final boolean hasHost        = hostIndicatorIndex != -1;
+		final int     hostIndicatorLength = HOST_INDICATOR.length();
+		final int applicationContainerFolderStartsIndex = hasHost?
+				inputPath.substring(hostIndicatorLength).indexOf(posHostToken)+hostIndicatorLength:inputPath.indexOf(posHostToken);
 		final boolean hasPos         = applicationContainerFolderStartsIndex != -1;
 		final String hostName        = hasHost && hasPos?
 				inputPath.substring(hostIndicatorIndex+2, applicationContainerFolderStartsIndex):null;
@@ -105,6 +110,32 @@ public class HostUtil {
 		final Host host 	         = hasHost?hostAPI.findByName(hostName, user, false):resourceHost.get();
 
 		return Tuple.of(path, null == host? hostAPI.findDefaultHost(user, false): host);
+	}
+
+	/**
+	 * Based on a path tries to split the host and the relative path. If the path is already relative, gets the host from the resourceHost or gets the default one
+	 * @param inputPath {@link String} relative or absolute path
+	 * @param user {@link User} user
+	 * @param posHostToken {@link String} is the token that become immediate to the host, for instance if getting the host from a container postHostToken could be "/application/containers"
+	 * @return Tuple2 path and host
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	public static Tuple2<String, Host> splitPathHost(final String inputPath, final User user, final String posHostToken) throws DotSecurityException, DotDataException {
+
+		final HostAPI hostAPI        = APILocator.getHostAPI();
+		final int hostIndicatorIndex = inputPath.indexOf(HOST_INDICATOR);
+		final boolean hasHost        = hostIndicatorIndex != -1;
+		final int     hostIndicatorLength = HOST_INDICATOR.length();
+		final int applicationContainerFolderStartsIndex = hasHost?
+				inputPath.substring(hostIndicatorLength).indexOf(posHostToken)+hostIndicatorLength:inputPath.indexOf(posHostToken);
+		final boolean hasPos         = applicationContainerFolderStartsIndex != -1;
+		final String hostName        = hasHost && hasPos?
+				inputPath.substring(hostIndicatorIndex+2, applicationContainerFolderStartsIndex):null;
+		final String path            = hasHost && hasPos?inputPath.substring(applicationContainerFolderStartsIndex):inputPath;
+		final Host host 	         = hasHost?hostAPI.findByName(hostName, user, false):null;
+
+		return Tuple.of(path, host);
 	}
 
 	/**

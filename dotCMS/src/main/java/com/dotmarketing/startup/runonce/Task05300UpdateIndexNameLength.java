@@ -44,9 +44,4 @@ public class Task05300UpdateIndexNameLength extends AbstractJDBCStartupTask {
 		return true;
 	}
 
-    @Override
-    public String getH2Script() {
-        return "alter table indicies alter column index_name type varchar(100);";
-    }
-
 }

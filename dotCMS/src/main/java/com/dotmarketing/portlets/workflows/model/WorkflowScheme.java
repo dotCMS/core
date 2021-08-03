@@ -1,5 +1,10 @@
 package com.dotmarketing.portlets.workflows.model;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
+import com.dotcms.publisher.util.PusheableAsset;
+import com.dotcms.publishing.manifest.ManifestItem;
+import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.util.UtilMethods;
@@ -12,7 +17,7 @@ import java.util.Date;
 import java.util.Objects;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class WorkflowScheme implements Serializable {
+public class WorkflowScheme implements Serializable, ManifestItem {
 
 	private static final long serialVersionUID = 1L;
 
@@ -151,6 +156,14 @@ public class WorkflowScheme implements Serializable {
 
 		return Objects.hash(id);
 	}
-	
-	
+
+	@JsonIgnore
+	@Override
+	public ManifestInfo getManifestInfo(){
+		return new ManifestInfoBuilder()
+			.objectType(PusheableAsset.WORKFLOW.getType())
+			.id(this.id)
+			.title(this.name)
+			.build();
+	}
 }

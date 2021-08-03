@@ -971,6 +971,8 @@ create table structure (
    expire_date_var NVARCHAR(255) null,
    publish_date_var NVARCHAR(255) null,
    mod_date datetime null,
+   sort_order int null,
+   icon NVARCHAR(255) null,
    primary key (inode)
 );
 create table cms_role (

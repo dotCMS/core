@@ -7,6 +7,7 @@ import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.manifest.ManifestBuilder;
 import com.dotcms.publishing.output.BundleOutput;
 import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.test.util.FileTestUtil;
@@ -17,6 +18,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.FileUtil;
+import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -85,22 +87,25 @@ public class HostBundlerTest {
 
         final PushPublisherConfig config = new PushPublisherConfig();
 
-        hosts.stream().forEach(host -> config.add(host, PusheableAsset.SITE));
-        config.setOperation(PublisherConfig.Operation.PUBLISH);
+        try (ManifestBuilder manifestBuilder = new TestManifestBuilder()) {
+            config.setManifestBuilder(manifestBuilder);
+            hosts.stream().forEach(host -> config.add(host, PusheableAsset.SITE, StringPool.BLANK));
+            config.setOperation(PublisherConfig.Operation.PUBLISH);
 
-        final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config);
+            final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config);
 
-        new BundleDataGen()
-                .pushPublisherConfig(config)
-                .addAssets(list(hosts.get(0)))
-                .filter(filterDescriptor)
-                .nextPersisted();
+            new BundleDataGen()
+                    .pushPublisherConfig(config)
+                    .addAssets(list(hosts.get(0)))
+                    .filter(filterDescriptor)
+                    .nextPersisted();
 
-        bundler.setConfig(config);
-        bundler.generate(directoryBundleOutput, status);
+            bundler.setConfig(config);
+            bundler.generate(directoryBundleOutput, status);
 
-        for (final Host host : hosts) {
-            FileTestUtil.assertBundleFile(directoryBundleOutput.getFile(), host, testCase.expectedFilePath);
+            for (final Host host : hosts) {
+                FileTestUtil.assertBundleFile(directoryBundleOutput.getFile(), host, testCase.expectedFilePath);
+            }
         }
     }
 
