@@ -1,6 +1,10 @@
 package com.dotcms.contenttype.model.type;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.publisher.util.PusheableAsset;
+import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
@@ -50,7 +54,8 @@ import java.util.stream.Collectors;
         @Type(value = KeyValueContentType.class),
         @Type(value = DotAssetContentType.class)
 })
-public abstract class ContentType implements Serializable, Permissionable, ContentTypeIf {
+public abstract class ContentType implements Serializable, Permissionable, ContentTypeIf,
+        ManifestItem {
 
   @Value.Check
   protected void check() {
@@ -156,6 +161,17 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   @Value.Default
   public String host() {
     return Host.SYSTEM_HOST;
+  }
+
+  @Nullable
+  @Value.Default
+  public String icon() {
+    return null;
+  }
+
+  @Value.Default
+  public int sortOrder() {
+    return 0;
   }
 
   @JsonIgnore
@@ -327,6 +343,18 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   public boolean languageFallback() {
 
       return languageFallbackMap.getOrDefault(baseType(), false);
+  }
+
+  @JsonIgnore
+  @Override
+  public ManifestInfo getManifestInfo(){
+    return new ManifestInfoBuilder()
+        .objectType(PusheableAsset.CONTENT_TYPE.getType())
+        .id(this.id())
+        .title(this.name())
+        .siteId(this.host())
+        .folderId(this.folder())
+        .build();
   }
 
 }

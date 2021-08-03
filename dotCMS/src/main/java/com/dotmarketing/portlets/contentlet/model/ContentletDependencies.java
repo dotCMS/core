@@ -23,6 +23,7 @@ public class ContentletDependencies {
     private final String                  workflowWhereToSend;
     private final String                  workflowFilterKey;
     private final String                  workflowIWantTo;
+    private String workflowPathToMove;
     private final List<Category>          categories;
     private final boolean                 respectAnonymousPermissions;
     private final boolean                 generateSystemEvent;
@@ -51,6 +52,7 @@ public class ContentletDependencies {
         this.workflowWhereToSend = builder.workflowWhereToSend;
         this.workflowFilterKey = builder.workflowFilterKey;
         this.workflowIWantTo = builder.workflowIWantTo;
+        this.workflowPathToMove = builder.workflowPathToMove;
 
     }
 
@@ -128,6 +130,8 @@ public class ContentletDependencies {
         return workflowIWantTo;
     }
 
+    public String getWorkflowPathToMove(){ return workflowPathToMove;}
+
     public static final class Builder {
 
         private User modUser;
@@ -143,6 +147,7 @@ public class ContentletDependencies {
         private String workflowWhereToSend;
         private String workflowFilterKey;
         private String workflowIWantTo;
+        private String workflowPathToMove;
         private List<Category> categories;
         private boolean respectAnonymousPermissions;
         private boolean generateSystemEvent;
@@ -226,6 +231,11 @@ public class ContentletDependencies {
 
         public ContentletDependencies.Builder workflowIWantTo(final String workflowIWantTo) {
             this.workflowIWantTo = workflowIWantTo;
+            return this;
+        }
+
+        public ContentletDependencies.Builder workflowPathToMove(final String workflowPathToMove){
+            this.workflowPathToMove = workflowPathToMove;
             return this;
         }
 

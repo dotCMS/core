@@ -14,6 +14,7 @@ import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.publishing.PublisherFilter;
+import com.dotcms.publishing.manifest.ManifestReason;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -323,9 +324,7 @@ public class DependencyManager {
 		}
 
 		try {
-			if (publisherFilter.isDependencies()) {
-				config.waitUntilResolveAllDependencies();
-			}
+			config.waitUntilResolveAllDependencies();
 		} catch (ExecutionException e) {
 			final Optional<Throwable> causeOptional = ExceptionUtil
 					.getCause(e, set(DotBundleException.class));
@@ -340,7 +339,8 @@ public class DependencyManager {
 	}
 
 	private <T> void add(final T asset, final PusheableAsset pusheableAsset) {
-		final boolean added = config.addWithDependencies(asset, pusheableAsset);
+		final boolean added = config.addWithDependencies(asset, pusheableAsset,
+				ManifestReason.INCLUDE_BY_USER.getMessage());
 
 		if (added) {
 			pushedAssetUtil.savePushedAssetForAllEnv(asset, pusheableAsset);

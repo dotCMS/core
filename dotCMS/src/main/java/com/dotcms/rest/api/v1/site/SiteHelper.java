@@ -137,9 +137,7 @@ public class SiteHelper implements Serializable {
 	 * @throws AlreadyExistException
 	 */
 	public Host update(final Host site, final User user, final boolean respectAnonPerms) throws DotSecurityException, DotDataException, DoesNotExistException {
-		if(null == hostAPI.findByName(site.getHostname(), user, respectAnonPerms)){
-			throw new DoesNotExistException(String.format("Invalid attempt to update a non existing site `%s` .",site.getHostname()));
-		}
+
 		return hostAPI.save(site, user, respectAnonPerms);
 	}
 

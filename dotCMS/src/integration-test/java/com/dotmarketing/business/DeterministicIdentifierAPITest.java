@@ -10,6 +10,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -22,8 +23,12 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.cms.urlmap.URLMapAPIImpl;
+import com.dotmarketing.cms.urlmap.UrlMapContext;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.categories.business.CategoryAPI;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -44,6 +49,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -74,7 +80,7 @@ public class DeterministicIdentifierAPITest {
     /**
      * Given scenario: We have created contentlets having turned off the deterministic id generation therefore it all comes with random ids
      * Meaning that any deterministic id request does not exist in the database
-     * Expected behavior: The best effort must give us deterministic ids unitl they're inserted on te database.
+     * Expected behavior: The best effort must give us deterministic ids until they're inserted on te database.
      * @param testCase
      * @throws Exception
      */
@@ -236,9 +242,16 @@ public class DeterministicIdentifierAPITest {
 
     }
 
+    /**
+     * Given Scenario: We get a bunch of Content-types then we revise the generation of the name based on the info provided on the test-case
+     * methodToTest {@link DeterministicIdentifierAPIImpl#generateDeterministicIdBestEffort(ContentType, Supplier)}
+     * methodToTest {@link DeterministicIdentifierAPIImpl#generateDeterministicIdBestEffort(Field, Supplier)}
+     * Expected Results: Both tested methods must be idempotent for a given set of inputs the outcome should always remain the same
+     * @param testCase
+     */
     @Test
     @UseDataProvider("getContentTypeTestCases")
-    public void Test_create_Content_Type(final ContentTypeTestCase testCase) {
+    public void Test_Generate_Content_Type_Identifier(final ContentTypeTestCase testCase) {
         final boolean generateConsistentIdentifiers = Config
                 .getBooleanProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
         try {
@@ -256,6 +269,17 @@ public class DeterministicIdentifierAPITest {
                             testCase.contentType::variable);
             //Test it is idempotent
             assertEquals(generatedId1, generatedId2);
+
+            for(final Field field : testCase.contentType.fields()){
+
+                final String fieldIdentifier1 = defaultGenerator.generateDeterministicIdBestEffort(field, field::variable);
+                assertTrue(UUIDUtil.isUUID(fieldIdentifier1));
+                final String fieldIdentifier2 = defaultGenerator.generateDeterministicIdBestEffort(field, field::variable);
+                //Test it is idempotent
+                assertEquals(fieldIdentifier1, fieldIdentifier2);
+                assertEquals(field.variable(), defaultGenerator.resolveName(field, field::variable));
+            }
+
         } finally {
             Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, generateConsistentIdentifiers);
         }
@@ -399,6 +423,128 @@ public class DeterministicIdentifierAPITest {
                     ", country='" + country + '\'' +
                     '}';
         }
+    }
+
+    /**
+     * Test Two separate Content-Types sharing a pretty much identical structure dont generate a conflict identifier wise
+     */
+    @Test
+    public void Test_Similar_Content_Type_Wont_Clash() {
+        final boolean generateConsistentIdentifiers = Config
+                .getBooleanProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+        try {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+            final ContentType contentGenericType1 = new ContentTypeDataGen()
+                    .workflowId(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID)
+                    .baseContentType(BaseContentType.CONTENT)
+                    .field(new FieldDataGen().name("title").velocityVarName("title").next())
+                    .field(new FieldDataGen().name("body").velocityVarName("body").next())
+                    .field(new FieldDataGen().name("bin1").velocityVarName("bin1").next())
+                    .field(new FieldDataGen().name("bin2").velocityVarName("bin2").next())
+                    .nextPersisted();
+
+            final ContentType contentGenericType2 = new ContentTypeDataGen()
+                    .workflowId(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID)
+                    .baseContentType(BaseContentType.CONTENT)
+                    .field(new FieldDataGen().name("title").velocityVarName("title").next())
+                    .field(new FieldDataGen().name("body").velocityVarName("body").next())
+                    .field(new FieldDataGen().name("bin1").velocityVarName("bin1").next())
+                    .field(new FieldDataGen().name("bin2").velocityVarName("bin2").next())
+                    .nextPersisted();
+
+            assertTrue(defaultGenerator.isDeterministicId(contentGenericType1.id()));
+            assertTrue(defaultGenerator.isDeterministicId(contentGenericType2.id()));
+
+            contentGenericType1.fields().forEach(field -> {
+                assertTrue(defaultGenerator.isDeterministicId(field.id()));
+            });
+
+            contentGenericType2.fields().forEach(field -> {
+                assertTrue(defaultGenerator.isDeterministicId(field.id()));
+            });
+
+        }finally {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, generateConsistentIdentifiers);
+        }
+
+    }
+
+    /**
+     * This is small test to verify the seed used to generate categories looks ok
+     * @throws Exception
+     */
+    @Test
+    public void Test_Category_Path_Seed_And_Id() throws Exception{
+        final boolean generateConsistentIdentifiers = Config
+                .getBooleanProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+        try {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+            final CategoryAPI api = APILocator.getCategoryAPI();
+            final String parentName = "Parent:" + System.currentTimeMillis();
+            //Create First Child Category.
+            final Category parent = new Category();
+            parent.setCategoryName(parentName);
+            parent.setKey("key");
+            parent.setCategoryVelocityVarName(parentName);
+            parent.setSortOrder(1);
+            parent.setKeywords(null);
+
+            final String child1Name = "Child1:" + System.currentTimeMillis();
+
+            final Category child1 = new Category();
+            child1.setCategoryName(child1Name);
+            child1.setKey("key");
+            child1.setCategoryVelocityVarName(child1Name);
+            child1.setSortOrder(1);
+            child1.setKeywords(null);
+
+            final String child2Name = "Child2:" + System.currentTimeMillis();
+
+            final Category child2 = new Category();
+            child2.setCategoryName(child2Name);
+            child2.setKey("key");
+            child2.setCategoryVelocityVarName(child2Name);
+            child2.setSortOrder(1);
+            child2.setKeywords(null);
+
+            api.save(null, parent, APILocator.systemUser(), false);
+            api.save(parent, child1, APILocator.systemUser(), false);
+            api.save(child1, child2, APILocator.systemUser(), false);
+
+            String out = defaultGenerator.deterministicIdSeed(parent, null);
+            assertEquals(String.format("Category:{%s}", parentName), out);
+            out = defaultGenerator.deterministicIdSeed(child1, parent);
+            assertEquals(String.format("Category:{%s > %s}", parentName, child1Name), out);
+
+            out = defaultGenerator.deterministicIdSeed(child2, child1);
+            assertEquals(String.format("Category:{%s > %s > %s}", parentName, child1Name, child2Name), out);
+
+        }finally {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, generateConsistentIdentifiers);
+        }
+    }
+
+    /**
+     *
+     * @throws Exception
+     */
+    @Test
+    public void Test_Category_None_Persisted_Category_Should_Return_Deterministic_Id() throws Exception{
+
+            final String name = "Root:" + System.currentTimeMillis();
+            //Create First Child Category.
+            final Category category = new Category();
+            category.setCategoryName(name);
+            category.setKey("key");
+            category.setCategoryVelocityVarName(name);
+            category.setSortOrder(1);
+            category.setKeywords(null);
+
+            String out = defaultGenerator.deterministicIdSeed(category,null);
+            assertEquals(String.format("Category:{%s}", name), out);
+
+            final String identifier1 = defaultGenerator.generateDeterministicIdBestEffort(category,(Category) null);
+            assertTrue(defaultGenerator.isDeterministicId(identifier1));
     }
 
 }

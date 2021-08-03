@@ -1,7 +1,12 @@
 package com.dotmarketing.portlets.structure.model;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
+import com.dotcms.publisher.util.PusheableAsset;
+import com.dotcms.publishing.manifest.ManifestItem;
+import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
@@ -27,7 +32,8 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 
 
 
-public class Structure extends Inode implements Permissionable, Treeable,ContentTypeIf  {
+public class Structure extends Inode implements Permissionable, Treeable,ContentTypeIf,
+        ManifestItem {
 
     public static final String STRUCTURE_TYPE_ALL       = "catchall";
 
@@ -86,6 +92,8 @@ public class Structure extends Inode implements Permissionable, Treeable,Content
     private String publishDateVar;
     private String expireDateVar;
     private Date modDate;
+    private String icon;
+    private int sortOrder;
 
 
 
@@ -404,4 +412,31 @@ public class Structure extends Inode implements Permissionable, Treeable,Content
         this.modDate = modDate;
     }
 
+    @JsonIgnore
+    @Override
+    public ManifestInfo getManifestInfo() {
+        return new ManifestInfoBuilder()
+                .objectType(PusheableAsset.CONTENT_TYPE.getType())
+                .id(this.identifier)
+                .title(this.name)
+                .siteId(this.host)
+                .folderId(this.folder)
+                .build();
+    }
+
+    public void setIcon(final String icon) {
+        this.icon = icon;
+    }
+
+    public void setSortOrder(final int sortOrder) {
+        this.sortOrder = sortOrder;
+    }
+
+    public String getIcon() {
+        return icon;
+    }
+
+    public int getSortOrder() {
+        return sortOrder;
+    }
 }

@@ -341,18 +341,18 @@ public class UtilHTML {
 
 	public static String getSelectCategories(Inode parent, int level, Inode current, int maxlevel, 
 			User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-		ArrayList idList = new ArrayList();
+		final ArrayList idList = new ArrayList();
 		if (current instanceof Category) {
 			idList.add(current.getInode());
 		} else {
-			List cats = InodeFactory.getParentsOfClass(current, Category.class);
-			Iterator it = cats.iterator();
+			final List cats = categoryAPI.getParents(current, user, respectFrontendRoles);
+			final Iterator it = cats.iterator();
 			while (it.hasNext()) {
 				Category cat = (Category) it.next();
 				idList.add(cat.getInode());
 			}
 		}
-		String[] catsArr = (String[]) idList.toArray(new String[0]);
+		final String[] catsArr = (String[]) idList.toArray(new String[0]);
 		return getSelectCategories(parent, level, catsArr, maxlevel, user, respectFrontendRoles);
 	}
 
