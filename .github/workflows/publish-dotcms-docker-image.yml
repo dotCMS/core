@@ -48,6 +48,7 @@ jobs:
           hash: ${{ env.BUILD_HASH }}
           label: ${{ github.event.inputs.custom_label }}
           update_stable: ${{ github.event.inputs.update_stable }}
+          also_latest: ${{ github.event.inputs.also_latest }}
       - name: Publish docker image
         id: publish-docker-image
         uses: dotcms/publish-docker-image-action@main
