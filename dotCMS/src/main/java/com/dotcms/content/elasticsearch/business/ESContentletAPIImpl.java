@@ -3165,7 +3165,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
-    @WrapInTransaction
+    // Most of operations here are checking if the user can lock or permission.
+    // the Transaction will place only on the setLocked, the rest of the method is ok to be just closeable.
+    @CloseDBIfOpened
     @Override
     public void lock(final Contentlet contentlet, final User user,  boolean respectFrontendRoles) throws DotContentletStateException, DotDataException, DotSecurityException {
 
@@ -3173,7 +3175,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             throw new DotContentletStateException("The contentlet cannot Be null");
         }
-
 
         final String contentPushPublishDate = UtilMethods.get(contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE), ND_SUPPLIER);
         final String contentPushExpireDate  = UtilMethods.get(contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE),  ND_SUPPLIER);

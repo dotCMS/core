@@ -248,7 +248,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
                 try {
                     return conn.sync().get(key);
                 } catch (RedisCommandTimeoutException e) {
-                    throw new CacheTimeoutException(e);
+                        throw new CacheTimeoutException(e);
                 }
             }
         }

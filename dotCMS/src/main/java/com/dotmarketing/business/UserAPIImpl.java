@@ -255,40 +255,49 @@ public class UserAPIImpl implements UserAPI {
         return Try.of(() -> getAnonymousUser()).getOrElseThrow(e->new DotRuntimeException(e));
     }
 
-    @WrapInTransaction
+    @CloseDBIfOpened
     private synchronized User _getAnonymousUser() throws DotDataException {
-        if(this.anonUser!=null) {
+
+        if(this.anonUser != null) {
+
             return this.anonUser;
         }
+
         User user = null;
         try {
+
             user = userFactory.loadUserById(CMS_ANON_USER_ID);
-        } catch (DotDataException e) {
-            user = createUser(CMS_ANON_USER_ID, CMS_ANON_USER_EMAIL);
-            user.setUserId(CMS_ANON_USER_ID);
-            user.setFirstName("Anonymous");
-            user.setLastName("User");
-            user.setCreateDate(new java.util.Date());
-            user.setCompanyId(APILocator.getCompanyAPI().getDefaultCompany().getCompanyId());
-            userFactory.save(user);
-        } catch (NoSuchUserException e) {
-            user = createUser(CMS_ANON_USER_ID, CMS_ANON_USER_EMAIL);
-            user.setUserId(CMS_ANON_USER_ID);
-            user.setFirstName("Anonymous");
-            user.setLastName("User");
-            user.setCreateDate(new java.util.Date());
-            user.setCompanyId(APILocator.getCompanyAPI().getDefaultCompany().getCompanyId());
-            userFactory.save(user);
+        } catch (DotDataException | NoSuchUserException e) {
+            user = this.createAnonUser();
         }
+
+        this.anonUser = user;
+        return this.anonUser;
+    }
+
+    @WrapInTransaction
+    private User createAnonUser () throws DotDataException {
+
+        final User user = createUser(CMS_ANON_USER_ID, CMS_ANON_USER_EMAIL);
+        user.setUserId(CMS_ANON_USER_ID);
+        user.setFirstName("Anonymous");
+        user.setLastName("User");
+        user.setCreateDate(new java.util.Date());
+        user.setCompanyId(APILocator.getCompanyAPI().getDefaultCompany().getCompanyId());
+        userFactory.save(user);
+
 
         // Assure CMS ANON has the anon role and the Front End User Role
         Role cmsAnon = APILocator.getRoleAPI().loadCMSAnonymousRole();
+
         if(cmsAnon!=null) {
+
             APILocator.getRoleAPI().addRoleToUser(cmsAnon, user);
         }
+
         APILocator.getRoleAPI().addRoleToUser(Role.DOTCMS_FRONT_END_USER, user);
-        this.anonUser=user;
-        return this.anonUser;
+
+        return user;
     }
 
     @CloseDBIfOpened

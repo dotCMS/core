@@ -4,6 +4,8 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.repackage.EDU.oswego.cs.dl.util.concurrent.ConcurrentHashMap;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.RoleCache;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.provider.CacheStats;
