@@ -66,8 +66,8 @@ jobs:
         with:
           version: ${{ ENV.DOTCMS_VERSION }}
           hash: ${{ env.BUILD_HASH }}
-          update_stable: true
-          also_latest: true
+          update_stable: ${{ env.IS_RELEASE }}
+          also_latest: ${{ env.IS_RELEASE }}
       - name: Publish docker image
         id: publish-docker-image
         uses: dotcms/publish-docker-image-action@main

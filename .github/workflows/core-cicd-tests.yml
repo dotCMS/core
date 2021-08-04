@@ -11,11 +11,12 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-latest
     env:
-      DOT_CICD_BRANCH: master
+      DOT_CICD_BRANCH: fix-postman-tests
       EXPORT_REPORTS: true
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
+      DEBUG: true
     steps:
       - name: GITHUB CONTEXT
         env:
@@ -58,11 +59,12 @@ jobs:
     name: Curl Tests
     runs-on: ubuntu-latest
     env:
-      DOT_CICD_BRANCH: master
+      DOT_CICD_BRANCH: fix-postman-tests
       EXPORT_REPORTS: true
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
+      DEBUG: true
     steps:
       - name: GITHUB CONTEXT
         env:
@@ -123,11 +125,12 @@ jobs:
       matrix:
         databaseType: [ postgres, mysql, oracle, mssql ]
     env:
-      DOT_CICD_BRANCH: master
+      DOT_CICD_BRANCH: fix-postman-tests
       EXPORT_REPORTS: true
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
+      DEBUG: true
     steps:
       - name: GITHUB CONTEXT
         env:
