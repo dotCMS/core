@@ -14,5 +14,9 @@ import java.lang.annotation.*;
 @Target(ElementType.METHOD)
 public @interface WrapInTransaction {
 
-
+    /**
+     * By default in false, set to true if you want to start a new transaction (externalize the transaction)
+     * @return boolean
+     */
+    boolean externalize() default false;
 } // E:O:F:WrapInTransaction
