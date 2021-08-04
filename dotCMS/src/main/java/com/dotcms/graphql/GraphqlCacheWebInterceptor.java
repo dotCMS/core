@@ -22,6 +22,7 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
     private static final String API_CALL = "/api/v1/graphql";
     private static final String INTROSPECTION_OPERATION_NAME = "\"operationName\":\"IntrospectionQuery\"";
     private static final String GRAPHQL_BYPASS_CACHE = "GRAPHQL_BYPASS_CACHE";
+    private static final int INVALIDATE_CACHE = -1;
 
     private final GraphQLCache graphCache = GraphQLCache.INSTANCE.get();
 
@@ -77,14 +78,20 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
     }
 
     private boolean bypassCacheByTTL(HttpServletRequest requestIn) {
-        return getCacheTTL(requestIn) <=0;
+        final Optional<Integer> cacheTTL = getCacheTTL(requestIn);
+        return cacheTTL.isPresent() && cacheTTL.get() <=0;
     }
 
-    private int getCacheTTL(HttpServletRequest requestIn) {
+    private Optional<Integer> getCacheTTL(HttpServletRequest requestIn) {
         final Optional<String> paramOrHeader = getParamOrHeader(requestIn, GRAPHQL_CACHE_TTL_PARAM);
 
-        return Try.of(() -> paramOrHeader.map(Integer::parseInt).orElse(0)
-        ).getOrElse(0);
+        if(paramOrHeader.isPresent()) {
+            return Try.of(()->
+                Optional.of(Integer.parseInt(paramOrHeader.get()))
+            ).getOrElse(Optional.empty());
+        }
+
+        return Optional.empty();
     }
 
     @Override
@@ -103,9 +110,12 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
             Try.run(() -> mockResponse.originalResponse.getWriter().write(graphqlResponse));
 
             final boolean bypassCache = (boolean) request.getAttribute(GRAPHQL_BYPASS_CACHE);
+            final Optional<Integer> cacheTTL = getCacheTTL(request);
 
-            if(map!=null && map.get("data")!=null && !bypassCache) {
-                graphCache.put(cacheKey, graphqlResponse, getCacheTTL(request));
+            if(map!=null && map.get("data")!=null && !bypassCache && cacheTTL.isPresent()) {
+                graphCache.put(cacheKey, graphqlResponse, cacheTTL.get());
+            } else if(cacheTTL.isPresent() && cacheTTL.get()==INVALIDATE_CACHE) {
+                graphCache.remove(cacheKey);
             }
         }
         return true;
