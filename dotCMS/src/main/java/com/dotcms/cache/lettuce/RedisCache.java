@@ -14,9 +14,12 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
 import com.liferay.util.StringPool;
+import io.lettuce.core.RedisCommandTimeoutException;
 import io.lettuce.core.ScriptOutputType;
 import io.lettuce.core.api.StatefulRedisConnection;
+import io.vavr.control.Try;
 
+import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
@@ -25,6 +28,8 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -209,12 +214,26 @@ public class RedisCache extends CacheProvider {
 
             Logger.debug(this, ()-> "In Transaction, Skipping the put to Redis cache for group: "
                     + group + "key" + key);
-        } else if (key != null && group != null) {
+        } else if (key != null && group != null /*&& content instanceof Serializable*/) {
 
+            Logger.debug(this, ()-> "Redis, putting group: " + group + "key" + key);
             final long   ttl      = this.getTTL(group);
             final String cacheKey = this.cacheKey(group, key);
+            final Future<String> future = this.client.setAsync(cacheKey, content, ttl);
             this.client.addAsyncMembers(REDIS_GROUP_KEY, group);
-            this.client.setAsync(cacheKey, content, ttl);
+            if (Logger.isDebugEnabled(this.getClass())) {
+
+                String msg = "Error";
+                try {
+                    msg = future.get();
+                } catch (InterruptedException | ExecutionException e) {
+                    msg = e.getMessage();
+                }
+                if (!"OK".equalsIgnoreCase(msg)) {
+                    Logger.debug(this, "Redis, putting group: " + group +
+                            "key" + key + "result: " + msg);
+                }
+            }
         }
     }
 
@@ -238,7 +257,14 @@ public class RedisCache extends CacheProvider {
         } else if (null != key && null != group) {
 
             final String cacheKey = this.cacheKey(group, key);
-            return this.client.get(cacheKey);
+            try {
+                return this.client.get(cacheKey);
+            } catch (CacheTimeoutException e) {
+
+                Logger.debug(this, "Timeout error on getting Redis cache for group: "
+                        + group + "key" + key + " msg: " + e.getMessage());
+                return null;
+            }
         }
 
         return null;

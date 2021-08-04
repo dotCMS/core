@@ -118,8 +118,9 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
     @Override
     public Optional<CachedVanityUrl> getDirectMapping(final String url, final Host host, final Language lang) {
 
-        return (Optional<CachedVanityUrl>) cache.getNoThrow(key(host, lang, url), VANITY_URL_DIRECT_GROUP);
-
+        final CachedVanityUrl cachedVanityUrl = (CachedVanityUrl) cache.getNoThrow(key(host, lang, url), VANITY_URL_DIRECT_GROUP);
+        return null == cachedVanityUrl || cachedVanityUrl == NOT_FOUND404 || NOT_FOUND404.vanityUrlId.equals(cachedVanityUrl.vanityUrlId)?
+                Optional.empty(): Optional.ofNullable(cachedVanityUrl);
     }
     
 
@@ -130,7 +131,7 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
         if(vanityUrl==null) {
             throw new DotRuntimeException("Unable to put null value in cache:" + key(host, lang, url));
         }
-        cache.put(key(host, lang, url), vanityUrl, VANITY_URL_DIRECT_GROUP);
+        cache.put(key(host, lang, url), vanityUrl.isPresent()?vanityUrl.get():NOT_FOUND404, VANITY_URL_DIRECT_GROUP);
 
     }
 

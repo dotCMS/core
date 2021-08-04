@@ -5,6 +5,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import io.lettuce.core.KeyScanCursor;
 import io.lettuce.core.ReadFrom;
+import io.lettuce.core.RedisCommandTimeoutException;
 import io.lettuce.core.RedisURI;
 import io.lettuce.core.ScanArgs;
 import io.lettuce.core.SetArgs;
@@ -29,6 +30,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -243,7 +245,11 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
 
             if (this.isOpen(conn)) {
 
-                return conn.sync().get(key);
+                try {
+                    return conn.sync().get(key);
+                } catch (RedisCommandTimeoutException e) {
+                    throw new CacheTimeoutException(e);
+                }
             }
         }
 
@@ -364,6 +370,10 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
     private GenericObjectPool<StatefulRedisConnection<K, V>> buildPool() {
 
         final GenericObjectPoolConfig config = new GenericObjectPoolConfig();
+
+        config.setTestOnBorrow(true);
+        config.setMinEvictableIdleTimeMillis(TimeUnit.MINUTES.toMillis(5));
+
         config.setMinIdle(this.minIdleConnections);
         config.setMaxTotal(this.maxConnections);
 
@@ -372,30 +382,55 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
 
         final io.lettuce.core.RedisClient lettuceClient = io.lettuce.core.RedisClient.create(clientResources);
 
-        return ConnectionPoolSupport.createGenericObjectPool(() -> {
+        if (redisUris.size() == 1) { // only one node
 
-            try {
-                StatefulRedisConnection<K, V> connection =
-                                (StatefulRedisConnection<K, V>) MasterReplica
-                                                .connect(lettuceClient,
-                                                                // todo: remove this in favor of Snappy compressor
-                                                                // make this configurable in order to use to use gzip or snappy
-                                                                CompressionCodec.valueCompressor(new DotObjectCodec(),
-                                                                                CompressionCodec.CompressionType.GZIP),
-                                                                redisUris);
+            return ConnectionPoolSupport.createGenericObjectPool(() -> {
 
-                ((StatefulRedisMasterReplicaConnection) connection).setReadFrom(ReadFrom.REPLICA_PREFERRED);
-                if (timeout > 0) {
-                    connection.setTimeout(Duration.ofMillis(timeout));
+                try {
+
+                    final StatefulRedisConnection<K, V> connection =
+                            (StatefulRedisConnection<K, V>) lettuceClient.connect(
+                                    CompressionCodec.valueCompressor(new DotObjectCodec(), CompressionCodec.CompressionType.GZIP),
+                                    redisUris.get(0));
+
+                    if (timeout > 0) {
+                        connection.setTimeout(Duration.ofMillis(timeout));
+                    }
+
+                    return connection;
+                } catch (Exception e) {
+
+                    Logger.warnAndDebug(this.getClass(), e);
+                    throw new DotStateException(e);
                 }
+            }, config, true);
+        } else {
 
-                return connection;
-            } catch (Exception e) {
+            return ConnectionPoolSupport.createGenericObjectPool(() -> {
 
-                Logger.warnAndDebug(this.getClass(), e);
-                throw new DotStateException(e);
-            }
-        }, config, true);
+                try {
+
+                    final StatefulRedisConnection<K, V> connection =
+                            (StatefulRedisConnection<K, V>) MasterReplica
+                                    .connect(lettuceClient,
+                                            // todo: remove this in favor of Snappy compressor
+                                            // make this configurable in order to use to use gzip or snappy
+                                            CompressionCodec.valueCompressor(new DotObjectCodec(), CompressionCodec.CompressionType.GZIP),
+                                            redisUris);
+
+                    ((StatefulRedisMasterReplicaConnection) connection).setReadFrom(ReadFrom.REPLICA_PREFERRED);
+                    if (timeout > 0) {
+                        connection.setTimeout(Duration.ofMillis(timeout));
+                    }
+
+                    return connection;
+                } catch (Exception e) {
+
+                    Logger.warnAndDebug(this.getClass(), e);
+                    throw new DotStateException(e);
+                }
+            }, config, true);
+        }
     }
 
 }

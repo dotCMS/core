@@ -15,22 +15,23 @@ import io.lettuce.core.codec.RedisCodec;
  * @author will
  *
  */
-public class DotObjectCodec implements RedisCodec<String, Object> {
+public class DotObjectCodec<K,V> implements RedisCodec<K, V> {
 
     private final Charset charset = Charset.forName("UTF-8");
 
     @Override
-    public String decodeKey(final ByteBuffer bytes) {
+    public K decodeKey(final ByteBuffer bytes) {
 
-        return charset.decode(bytes).toString();
+        return (K)charset.decode(bytes).toString();
     }
 
     @Override
-    public Object decodeValue(final ByteBuffer bytes) {
+    public V decodeValue(final ByteBuffer bytes) {
 
         try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(bytes.array()))){
         
-            return in.readObject();
+            final Object o = in.readObject();
+            return  (V)o;
         } catch(Exception e) {
 
             throw new DotRuntimeException(e);
@@ -38,13 +39,13 @@ public class DotObjectCodec implements RedisCodec<String, Object> {
     }
 
     @Override
-    public ByteBuffer encodeKey(final String key) {
+    public ByteBuffer encodeKey(final K key) {
 
-        return charset.encode(key);
+        return charset.encode(key.toString());
     }
 
     @Override
-    public ByteBuffer encodeValue(final Object value) {
+    public ByteBuffer encodeValue(final V value) {
 
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
              ObjectOutputStream output = new ObjectOutputStream(baos)) {
