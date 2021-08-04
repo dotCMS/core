@@ -3,6 +3,7 @@ package com.dotmarketing.db;
 
 import java.sql.Connection;
 
+import com.dotcms.repackage.net.sf.hibernate.Session;
 import com.dotcms.util.ReturnableDelegate;
 import com.dotcms.util.VoidDelegate;
 import com.dotmarketing.exception.DotDataException;
@@ -10,6 +11,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
+import com.microsoft.sqlserver.jdbc.ISQLServerConnection;
 import io.vavr.control.Try;
 
 public class LocalTransaction {
@@ -24,6 +26,64 @@ public class LocalTransaction {
 
 
     private final static String WARN_MESSAGE = "Transaction broken - Connection that started the transaction is not the same as the one who is commiting";
+
+    /**
+     *
+     * @param delegate {@link ReturnableDelegate}
+     * @return T result of the {@link ReturnableDelegate}
+     * @throws DotDataException
+     *
+     * This class can be used to wrap methods in a "externalized transaction" pattern including the listeners (commit and rollback listeners)
+     * this pattern will use a new connection (if the parent caller is already in a transaction, that transaction will be restored after this method gets done)
+     * If the SQL call fails, it will rollback the work, close  the db connection
+     * and throw the error up the stack.
+     *
+     * Since it uses a new connection, that one will be closed at the end of the transaction.
+     *
+     *  How to use:
+     *
+     *	return new LocalTransaction().externalizeTransaction(() ->{
+     *		return myDBMethod(args);
+     *  });
+     */
+    static public <T> T externalizeTransaction(final ReturnableDelegate<T> delegate) throws Exception {
+
+        // gets the current conn
+        final Connection currentConnection        = DbConnectionFactory.getConnection();
+        final Session    currentSession           = HibernateUtil.getSession();
+        // creates a new one
+        final Connection newTransactionConnection = DbConnectionFactory.getDataSource().getConnection();
+        if (DbConnectionFactory.MSSQL.equals(DbConnectionFactory.getDBType())) {
+            newTransactionConnection.setTransactionIsolation(ISQLServerConnection.TRANSACTION_SNAPSHOT);
+        }
+        // overrides the current thread
+        DbConnectionFactory.setConnection(newTransactionConnection);
+        final Session newSession = HibernateUtil.createNewSession(newTransactionConnection);
+        HibernateUtil.setSession(newSession);
+
+        HibernateUtil.startTransaction();
+
+        T result = null;
+
+        try {
+            final StackTraceElement[] threadStack = Thread.currentThread().getStackTrace();
+            result = delegate.execute();
+            handleTransactionInteruption(newTransactionConnection, threadStack);
+            HibernateUtil.commitTransaction();
+        } catch (Throwable e) {
+
+            HibernateUtil.rollbackTransaction();
+            throwException(e);
+        } finally {
+
+            HibernateUtil.closeSessionSilently();
+            // return the previous conn, if needed
+            HibernateUtil.setSession(currentSession);
+            DbConnectionFactory.setConnection(currentConnection);
+        }
+
+        return result;
+    } // transaction.
 
     /**
      *
