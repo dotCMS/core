@@ -16,10 +16,12 @@ import javax.servlet.http.HttpServletResponse;
 
 public class GraphqlCacheWebInterceptor implements WebInterceptor {
 
-    final static String GRAPHQL_QUERY = "GRAPHQL_QUERY";
-    final static String GRAPHQL_CACHE_TTL = "dotcachettl";
-    final static String GRAPHQL_CACHE_KEY = "dotcachekey";
+    final static String GRAPHQL_CACHE_KEY = "GRAPHQL_CACHE_KEY";
+    final static String GRAPHQL_CACHE_TTL_PARAM = "dotcachettl";
+    final static String GRAPHQL_CACHE_KEY_PARAM = "dotcachekey";
     private static final String API_CALL = "/api/v1/graphql";
+    private static final String INTROSPECTION_OPERATION_NAME = "\"operationName\":\"IntrospectionQuery\"";
+    private static final String GRAPHQL_BYPASS_CACHE = "GRAPHQL_BYPASS_CACHE";
 
     private final GraphQLCache graphCache = GraphQLCache.INSTANCE.get();
 
@@ -37,14 +39,15 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
         final  HttpRequestReaderWrapper wrapper = new HttpRequestReaderWrapper(requestIn);
 
         final Optional<String> query = wrapper.getGraphQLQuery();
-        if (!query.isPresent()) {
+        if (!query.isPresent() ) {
             return Result.NEXT;
         }
 
-        final String syncKey = getParamOrHeader(requestIn, GRAPHQL_CACHE_KEY)
+        final String syncKey = getParamOrHeader(requestIn, GRAPHQL_CACHE_KEY_PARAM)
                 .orElseGet(() -> query.get().intern());
 
-        final boolean bypassCache = bypassCache(requestIn);
+        final boolean bypassCache = bypassCacheByTTL(requestIn) ||
+                query.get().contains(INTROSPECTION_OPERATION_NAME);
 
         Optional<String> graphResponseFromCache = bypassCache ? Optional.empty() : graphCache.get(syncKey);
 
@@ -67,25 +70,29 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
                 return Result.SKIP_NO_CHAIN;
             }
 
-            wrapper.setAttribute(GRAPHQL_QUERY, syncKey);
+            wrapper.setAttribute(GRAPHQL_CACHE_KEY, syncKey);
+            wrapper.setAttribute(GRAPHQL_BYPASS_CACHE, bypassCache);
             return new Result.Builder().wrap(new MockHttpCaptureResponse(response)).wrap(wrapper).next().build();
         }
     }
 
-    private Boolean bypassCache(HttpServletRequest requestIn) {
-        final Optional<String> paramOrHeader = getParamOrHeader(requestIn, GRAPHQL_CACHE_TTL);
+    private boolean bypassCacheByTTL(HttpServletRequest requestIn) {
+        return getCacheTTL(requestIn) <=0;
+    }
 
-        return Try.of(() -> paramOrHeader.isPresent() &&
-                        Integer.parseInt(paramOrHeader.get()) <= 0
-        ).getOrElse(false);
+    private int getCacheTTL(HttpServletRequest requestIn) {
+        final Optional<String> paramOrHeader = getParamOrHeader(requestIn, GRAPHQL_CACHE_TTL_PARAM);
+
+        return Try.of(() -> paramOrHeader.map(Integer::parseInt).orElse(0)
+        ).getOrElse(0);
     }
 
     @Override
     public boolean afterIntercept(final HttpServletRequest request, final HttpServletResponse response) {
-        final String query = (String) request.getAttribute(GRAPHQL_QUERY);
+        final String cacheKey = (String) request.getAttribute(GRAPHQL_CACHE_KEY);
 
         if(response.getStatus() ==200 && response instanceof MockHttpCaptureResponse
-                && UtilMethods.isSet(query)) {
+                && UtilMethods.isSet(cacheKey)) {
 
             final MockHttpCaptureResponse mockResponse = (MockHttpCaptureResponse) response;
             response.setHeader("x-graphql-cache", "miss, writing to cache");
@@ -93,13 +100,12 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
 
             Map<String,Object> map = Try.of(()->new ObjectMapper().readValue(graphqlResponse, Map.class)).getOrNull();
 
-
             Try.run(() -> mockResponse.originalResponse.getWriter().write(graphqlResponse));
-            final int cacheTTL = Try.of(()->Integer.parseInt(request.getParameter(GRAPHQL_CACHE_TTL)))
-                    .getOrElse(0);
-            if(map!=null && map.get("data")!=null && cacheTTL>0) {
-                final String key = getParamOrHeader(request, GRAPHQL_CACHE_KEY).orElse(query);
-                graphCache.put(key, graphqlResponse, cacheTTL);
+
+            final boolean bypassCache = (boolean) request.getAttribute(GRAPHQL_BYPASS_CACHE);
+
+            if(map!=null && map.get("data")!=null && !bypassCache) {
+                graphCache.put(cacheKey, graphqlResponse, getCacheTTL(request));
             }
         }
         return true;

@@ -33,8 +33,7 @@ public class GraphQLCache implements Cachable {
 
             if (expireTime.isAfter(LocalDateTime.now())) {
                 result = Optional.of(resultExpireTimeTuple._1());
-            } else {
-            // expired, let's remove from cache
+            } else { // expired, let's remove from cache
                 remove(cacheKey);
             }
         }
