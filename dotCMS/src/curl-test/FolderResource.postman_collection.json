@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "ce39a1f3-e3c4-4c34-8e31-311fad508282",
+		"_postman_id": "9b8a43ec-c851-4136-bf40-fdca59687c60",
 		"name": "FolderResource",
 		"description": "Test for FolderResource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -147,11 +147,11 @@
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"Folder Check\", function () {",
-									"    pm.expect(jsonData.entity[0].path).to.eql('/testfindfolder1/');",
+									"    pm.expect(jsonData.entity[1].path).to.eql('/testfindfolder1/');",
 									"});",
 									"",
 									"pm.test(\"Length Check\", function () {",
-									"    pm.expect(jsonData.entity.length).to.eql(3);",
+									"    pm.expect(jsonData.entity.length).to.eql(4);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -199,11 +199,11 @@
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"Folder Check\", function () {",
-									"    pm.expect(jsonData.entity[0].path).to.eql('/testfindfolder1/');",
+									"    pm.expect(jsonData.entity[1].path).to.eql('/testfindfolder1/');",
 									"});",
 									"",
 									"pm.test(\"Length Check\", function () {",
-									"    pm.expect(jsonData.entity.length).to.eql(3);",
+									"    pm.expect(jsonData.entity.length).to.eql(4);",
 									"});"
 								],
 								"type": "text/javascript"

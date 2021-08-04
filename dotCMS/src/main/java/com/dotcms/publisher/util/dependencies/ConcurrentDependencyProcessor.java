@@ -6,10 +6,15 @@ import com.dotcms.publisher.util.PusheableAsset;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -47,6 +52,8 @@ import org.eclipse.jetty.util.ConcurrentHashSet;
  */
 public class ConcurrentDependencyProcessor implements DependencyProcessor {
 
+    private List<Throwable> errors;
+
     private static class DependencyProcessorItem {
         static final  String FINISHED_ASSET_KEY = "finished";
         static final DependencyProcessorItem FINISHED_DEPENDENCY_PROCESSOR_ITEM =
@@ -65,7 +72,6 @@ public class ConcurrentDependencyProcessor implements DependencyProcessor {
     private Map<PusheableAsset, Set<String>> assetsRequestToProcess;
     private AtomicInteger finishReceived;
     private DotSubmitter submitter;
-
     private Map<PusheableAsset, Consumer<Object>> consumerDependencies = new HashMap<>();
 
     ConcurrentDependencyProcessor() {
@@ -140,6 +146,11 @@ public class ConcurrentDependencyProcessor implements DependencyProcessor {
                     throw new RuntimeException(e);
                 }
             }
+
+            if (this.errors != null && !this.errors.isEmpty()) {
+                throw new ExecutionException(this.errors.get(0));
+            }
+
             Logger.info(ConcurrentDependencyProcessor.class, "DependencyProcessor Finished");
         } finally {
             submitter.shutdownNow();
@@ -189,11 +200,25 @@ public class ConcurrentDependencyProcessor implements DependencyProcessor {
                         () -> String.format("%s : We have something to process - %s %s",
                                 Thread.currentThread().getName(), dependencyProcessorItem.asset, pusheableAsset));
 
-                consumerDependencies.get(pusheableAsset).accept(dependencyProcessorItem.asset);
+                final Consumer<Object> proccesor = consumerDependencies.get(pusheableAsset);
+
+                if (UtilMethods.isSet(proccesor)) {
+                    proccesor.accept(dependencyProcessorItem.asset);
+                }
+            } catch(Exception e) {
+                addError(e);
             } finally {
                 sendFinishNotification();
                 DbConnectionFactory.closeConnection();
             }
         }
+    }
+
+    private void addError(Exception error) {
+        if (!UtilMethods.isSet(this.errors)) {
+            this.errors = new ArrayList<>();
+        }
+
+        this.errors.add(error);
     }
 }
