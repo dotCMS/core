@@ -1,9 +1,11 @@
 package com.dotcms.contenttype.model.type;
 
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -143,5 +145,18 @@ public enum BaseContentType {
 				EnterpriseType.class.isAssignableFrom(baseType.immutableClass()))
 				.collect(Collectors.toList());
 	}
+
+	public final static Map<BaseContentType, String> iconFallbackMap =
+			CollectionsUtils.imap(
+					BaseContentType.CONTENT,"event_note",
+					BaseContentType.WIDGET,"settings",
+					BaseContentType.FILEASSET,"insert_drive_file",
+					BaseContentType.DOTASSET,"file_copy",
+					BaseContentType.HTMLPAGE,"description",
+					BaseContentType.PERSONA,"person",
+					BaseContentType.FORM,"format_list_bulleted",
+					BaseContentType.VANITY_URL,"format_strikethrough",
+					BaseContentType.KEY_VALUE,"public"
+			);
 
 }

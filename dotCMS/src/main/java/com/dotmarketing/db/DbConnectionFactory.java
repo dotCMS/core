@@ -34,10 +34,10 @@ import javax.sql.DataSource;
 public class DbConnectionFactory {
 
 
-    protected static final String MYSQL = "MySQL";
-    protected static final String POSTGRESQL = "PostgreSQL";
-    protected static final String ORACLE = "Oracle";
-    protected static final String MSSQL = "Microsoft SQL Server";
+    public static final String MYSQL = "MySQL";
+    public static final String POSTGRESQL = "PostgreSQL";
+    public static final String ORACLE = "Oracle";
+    public static final String MSSQL = "Microsoft SQL Server";
 
     private static DataSource defaultDataSource = null;
 
@@ -181,9 +181,31 @@ public class DbConnectionFactory {
     }
     
     private static long connectionsCalledFor=0;
-    
-    
-    
+
+    /**
+     * This method sets on the current thread a connection
+     * @param connection {@link Connection}
+     */
+    public static void setConnection(final Connection connection) {
+
+        try {
+
+            if (null != connection && !connection.isClosed()) {
+
+                HashMap<String, Connection> connectionsList = connectionsHolder.get();
+                if (connectionsList == null) {
+                    connectionsList = new HashMap<>();
+                    connectionsHolder.set(connectionsList);
+                }
+
+                connectionsList.put(DATABASE_DEFAULT_DATASOURCE, connection);
+            }
+        } catch (Exception e) {
+            Logger.error(DbConnectionFactory.class, "---------- DBConnectionFactory: error : " + e);
+            Logger.debug(DbConnectionFactory.class, "---------- DBConnectionFactory: error ", e);
+            throw new DotRuntimeException(e.getMessage(), e);
+        }
+    }
     
     /**
      * This method retrieves the default connection to the dotCMS DB

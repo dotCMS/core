@@ -136,7 +136,7 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 			@Override
 			public String icon() {
 				final String icon = (String) map.get("icon");
-				return ( UtilMethods.isSet(icon))  ? icon : null;
+				return ( UtilMethods.isSet(icon))  ? icon : BaseContentType.iconFallbackMap.get(base);
 			}
 
 			@Override

@@ -12,7 +12,7 @@ else
 		touch /data/shared/$CUSTOM_STARTER
 		echo "Downloading Custom Starter:" $CUSTOM_STARTER_URL
 		mkdir -p  /data/shared
-		wget -O /data/shared/$CUSTOM_STARTER $CUSTOM_STARTER_URL || echo ""
+		curl -s -L -o /data/shared/$CUSTOM_STARTER $CUSTOM_STARTER_URL
 		if [[ -s /data/shared/$CUSTOM_STARTER ]] ; then
 			cp -af /data/shared/$CUSTOM_STARTER ${TOMCAT_HOME}/webapps/ROOT/starter.zip
 		else

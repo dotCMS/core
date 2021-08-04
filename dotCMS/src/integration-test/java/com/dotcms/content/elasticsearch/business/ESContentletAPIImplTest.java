@@ -31,6 +31,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -51,11 +52,14 @@ import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsRequest;
@@ -747,7 +751,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      * Given Scenario: sends a not null host and folder path, but invalid b/c does not starts with //
      * ExpectedResult: The method should not throw a {@link IllegalArgumentException}
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = DoesNotExistException.class)
     public void test_move_not_exists_path() throws DotDataException, DotSecurityException {
 
         final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
@@ -786,6 +790,27 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 .move(contentlet, null, host, folder,false);
     }
 
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#copyProperties(Contentlet, Map)}<br>
+     * Given Scenario: {@link Long} properties set as {@link BigDecimal} are copied to the {@link Contentlet} object <br>
+     * ExpectedResult: should success
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void testCopyProperties() throws DotSecurityException {
+        final Contentlet contentlet = TestDataUtils
+                .getPageContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        final Map<String, Object> propertiesToCopy = new HashMap<>();
+        propertiesToCopy.put(Contentlet.LANGUAGEID_KEY, new BigDecimal(1));
+        propertiesToCopy.put(Contentlet.SORT_ORDER_KEY, new BigDecimal(2));
+        contentletAPI.copyProperties(contentlet, propertiesToCopy);
+
+        assertEquals(1, contentlet.getLanguageId());
+        assertEquals(2, contentlet.getSortOrder());
+    }
 
     private void addPermission(
             final Role role,

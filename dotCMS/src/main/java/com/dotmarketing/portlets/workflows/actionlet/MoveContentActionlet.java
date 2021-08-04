@@ -49,7 +49,7 @@ public class MoveContentActionlet extends WorkFlowActionlet {
     public List<WorkflowActionletParameter> getParameters() {
         List<WorkflowActionletParameter> params = new ArrayList<>();
 
-        params.add(new WorkflowActionletParameter("path", "Optional path to move, for example: //demo.dotcms.com/application", "", false));
+        params.add(new WorkflowActionletParameter(PATH_KEY, "Optional path to move, for example: //demo.dotcms.com/application", "", false));
 
         return params;
     }

@@ -126,55 +126,52 @@ pagePath=<%=pagePath%>
 		<input type="hidden" name="depth" value="<%=((Integer)request.getAttribute("depth")).intValue()%>">
 		<input type="hidden" name="reorder_result" id="reorder_result">
 
-<style>
-td li{
-font-size:12px;
-	border-top:3px solid white;
-	border-left:3px solid white;
-	background:#eee;
-	line-height:30px;
-	padding-left:10px;
-	font-weight: bold;
-}
-td li li{
-	margin-left:20px;
-	font-weight: normal;
-}
-</style>
-	<table class="listingTable">
-		<tr>
-		    <th><%= LanguageUtil.get(pageContext, "Reorder-Menu-Items") %></th>
-		</tr>
-		<tr>
-			<td>
-				<div style="width:800px;margin-left:auto;margin-right:auto;padding:10px;">
-				
-
-
-
-
-				
-					<%= htmlTree %>
-					<p align="center">
-					<%= LanguageUtil.get(pageContext, "Drag-and-drop-the-items-to-the-desired-position-and-then-save-your-changes") %>
-					</p>
-				</div>
-			</td>
-		</tr>
-	</table>
-					
-	<div class="buttonRow">
-	
-		<% if(showSaveButton){%>
-	                    <button dojoType="dijit.form.Button" onClick="savechanges()" iconClass="saveIcon">
-			   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-changes")) %>
-	                    </button>       
-		<%} %>
-        <button dojoType="dijit.form.Button" onClick="triggerCustomEvent('cancel-save-menu-order')" iconClass="cancelIcon">
-
-         <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
-       </button>
-
-	</div>
+        <style>
+            .reorderMenuContent .reorderMenuContentWrapper {
+                left: -50%;
+                position: relative;
+            }
+            td li {
+                font-size:12px;
+                border-top:3px solid white;
+                border-left:3px solid white;
+                background:#eee;
+                line-height:30px;
+                padding-left:10px;
+                font-weight: bold;
+            }
+            td li li {
+                margin-left:20px;
+                font-weight: normal;
+            }
+        </style>
+        <table class="listingTable">
+            <tr>
+                <th><%= LanguageUtil.get(pageContext, "Reorder-Menu-Items") %></th>
+            </tr>
+            <tr>
+                <td>
+                    <div class="reorderMenuContent" style="position:absolute;left:50%;padding:10px;">
+                        <div class="reorderMenuContentWrapper">
+                            <%= htmlTree %>
+                            <p align="center" style="margin-top: 2em;">
+                                <%= LanguageUtil.get(pageContext, "Drag-and-drop-the-items-to-the-desired-position-and-then-save-your-changes") %>
+                            </p>
+    
+                            <div class="buttonRow">
+                                <% if(showSaveButton){%>
+                                    <button dojoType="dijit.form.Button" onClick="savechanges()" iconClass="saveIcon">
+                                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-changes")) %>
+                                    </button>       
+                                <%} %>
+                                <button dojoType="dijit.form.Button" onClick="triggerCustomEvent('cancel-save-menu-order')" iconClass="cancelIcon">
+                                    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </table>
 	</form>
 </liferay:box>

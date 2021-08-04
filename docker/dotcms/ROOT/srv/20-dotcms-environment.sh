@@ -8,9 +8,8 @@ echo "dotCMS environment ...."
 # Default opts
 JAVA_OPTS="-Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -server -XX:+DisableExplicitGC"
 # Memory opts
-JAVA_OPTS="$JAVA_OPTS -XX:MaxMetaspaceSize=512m -Xms${CMS_HEAP_SIZE} -Xmx${CMS_HEAP_SIZE}"
-# GC opts
-JAVA_OPTS="$JAVA_OPTS -XX:+UseG1GC"
+JAVA_OPTS="$JAVA_OPTS -Xms${CMS_HEAP_SIZE} -Xmx${CMS_HEAP_SIZE}"
+
 # Agent opts
 JAVA_OPTS="$JAVA_OPTS -javaagent:${TOMCAT_HOME}/webapps/ROOT/WEB-INF/lib/byte-buddy-agent-1.9.0.jar"
 # PDFbox cache location

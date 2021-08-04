@@ -107,7 +107,6 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 			.add(com.dotcms.rest.elasticsearch.ESContentResourcePortlet.class)
 			.add(PersonaResource.class)
 			.add(UserResource.class)
-			.add(com.dotcms.rest.api.v2.user.UserResource.class)
 			.add(TagResource.class)
 			.add(RulesEnginePortlet.class)
 			.add(RuleResource.class)
