@@ -17,8 +17,7 @@ public interface ManifestBuilder extends Closeable {
      * @throws {@link DotRuntimeException} if any {@link IOException} is thrown
      */
      void create();
-
-
+     
     /**
      * Add a INCLUDE register into the Manifest
      * @param manifestItem Asset information
