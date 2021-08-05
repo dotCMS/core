@@ -218,26 +218,37 @@ public class UserAPIImpl implements UserAPI {
         return this.systemUser;
     }
 
-    @WrapInTransaction
+    @CloseDBIfOpened
     private User _getSystemUser() throws DotDataException {
+
         User user = null;
-        RoleAPI roleAPI = com.dotmarketing.business.APILocator.getRoleAPI();
-        Role cmsAdminRole = roleAPI.loadCMSAdminRole();
+        final RoleAPI roleAPI   = APILocator.getRoleAPI();
+        final Role cmsAdminRole = roleAPI.loadCMSAdminRole();
+
         try {
             user = userFactory.loadUserById(SYSTEM_USER_ID);
         } catch (NoSuchUserException e) {
-            user = createUser(SYSTEM_USER_ID, SYSTEM_USER_EMAIL);
-            user.setUserId(SYSTEM_USER_ID);
-            user.setFirstName("system user");
-            user.setLastName("system user");
-            user.setCreateDate(new java.util.Date());
-            user.setCompanyId(APILocator.getCompanyAPI().getDefaultCompany().getCompanyId());
-            userFactory.save(user);
+            user = createSystemUser();
         }
-        if(!roleAPI.doesUserHaveRole(user, cmsAdminRole))
+
+        if(!roleAPI.doesUserHaveRole(user, cmsAdminRole)) {
             roleAPI.addRoleToUser(cmsAdminRole.getId(), user);
+        }
 
         return user;
+    }
+
+    @WrapInTransaction
+    private User createSystemUser () throws DotDataException {
+
+        Logger.debug(this, ()-> "Creating the system user");
+        final User user = createUser(SYSTEM_USER_ID, SYSTEM_USER_EMAIL);
+        user.setUserId(SYSTEM_USER_ID);
+        user.setFirstName("system user");
+        user.setLastName("system user");
+        user.setCreateDate(new java.util.Date());
+        user.setCompanyId(APILocator.getCompanyAPI().getDefaultCompany().getCompanyId());
+        userFactory.save(user);
     }
 
 

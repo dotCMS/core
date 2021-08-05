@@ -87,7 +87,7 @@ public class UserManagerUtil {
 		}
 	}
 
-	@WrapInTransaction
+	@CloseDBIfOpened
 	public static int authenticateByUserId(java.lang.String companyId,
 		java.lang.String userId, java.lang.String password)
 		throws com.liferay.portal.PortalException, 

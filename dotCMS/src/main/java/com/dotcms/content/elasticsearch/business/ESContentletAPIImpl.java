@@ -4046,12 +4046,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return relatedContentList.stream();
     }
 
-    @WrapInTransaction
+    // it is just close db, since the other relate content runs on transacional mode. So, that we can take advance of the cache.
+    @CloseDBIfOpened
     @Override
-    public void relateContent(Contentlet contentlet, Relationship rel, List<Contentlet> records, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException, DotContentletStateException {
-        Structure st = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
-        boolean hasParent = APILocator.getRelationshipAPI().isParent(rel, st);
-        ContentletRelationshipRecords related = new ContentletRelationships(contentlet).new ContentletRelationshipRecords(rel, hasParent);
+    public void relateContent(final Contentlet contentlet,
+                              final Relationship rel,
+                              final List<Contentlet> records,
+                              final User user, boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException, DotContentletStateException {
+
+        final Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
+        final boolean hasParent = APILocator.getRelationshipAPI().isParent(rel, structure);
+        final ContentletRelationshipRecords related = new ContentletRelationships(contentlet).new ContentletRelationshipRecords(rel, hasParent);
         related.setRecords(records);
         relateContent(contentlet, related, user, respectFrontendRoles);
     }
@@ -4068,9 +4074,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return TreeFactory.getTreesByChild(inode);
     }
 
+    // it is just Close db, b.c internally the code is handling their own transaction
+    @CloseDBIfOpened
     @Override
-    public void relateContent(Contentlet contentlet, ContentletRelationshipRecords related, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException, DotContentletStateException {
-        if(!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)){
+    public void relateContent(final Contentlet contentlet,
+                              final ContentletRelationshipRecords related,
+                              final User user,
+                              final boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException, DotContentletStateException {
+
+        if(!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)) {
+
             throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
                     + " cannot edit Contentlet: " + (contentlet != null ? contentlet.getInode() : "Unknown"));
         }
@@ -4084,17 +4098,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final List<Relationship> relationships = this.getRelationships(contentType);
         final Relationship relationship = related.getRelationship();
 
-        if(!relationships.contains(related.getRelationship())){
+        if(!relationships.contains(related.getRelationship())) {
+
             throw new DotContentletStateException(
                     "Error adding relationships in contentlet:  " + (contentlet != null ? contentlet
                             .getInode() : "Unknown"));
         }
 
-        boolean child = !related.isHasParent();
+        final boolean child = !related.isHasParent();
 
         List<Tree> contentParents = null;
-        if (child)
+        if (child) {
             contentParents = this.getContentParents(contentlet.getIdentifier());
+        }
 
         boolean localTransaction = false;
         final boolean isNewConnection    = !DbConnectionFactory.connectionExists();

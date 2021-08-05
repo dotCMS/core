@@ -192,40 +192,53 @@ public class RoleFactoryImpl extends RoleFactory {
 	}
 
 	@Override
-	protected Role findRoleByName(String rolename, Role parent) throws DotDataException {
+	protected Role findRoleByName(final String rolename, final Role parent) throws DotDataException {
+
 		HibernateUtil hu = new HibernateUtil(Role.class);
-		if(parent == null){
+		if(parent == null) {
+
 			hu.setQuery("from " + Role.class.getName() + " as r where r.name = ? and r.parent = r.id");
-		}else{
+		}else {
+
 			hu.setQuery("from " + Role.class.getName() + " as r where r.name = ? and r.parent = ? and r.parent <> r.id");
 		}
+
 		hu.setParam(rolename);
-		if(parent != null){
+		if(parent != null) {
+
 			hu.setParam(parent.getId());
 		}
-		List<Role> roles = (List<Role>)hu.list();
+
+		final List<Role> roles = (List<Role>)hu.list();
 		try {
+
 			populatChildrenForRoles(roles);
-			for (Role role : roles) {
+			for (final Role role : roles) {
 				translateFQNFromDB(role);
 			}
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
 		}
-		if(roles != null){
-			for (Role role : roles) {
+
+		if(roles != null) {
+
+			for (final Role role : roles) {
 				HibernateUtil.evict(role);
 				rc.add(role);
 			}
 		}
+
 		Role role = null;
-		if(roles != null && roles.size()>0){
+		if(roles != null && roles.size()>0) {
+
 			role = roles.get(0);
-			if(roles.size()>1){
+
+			if(roles.size()>1) {
 				Logger.error(this, "Found more then one role with the same name : " + rolename != null ? rolename : "");
 			}
 		}
+
 		return role;
 	}
 

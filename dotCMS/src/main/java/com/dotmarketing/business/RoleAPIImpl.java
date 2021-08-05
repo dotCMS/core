@@ -218,7 +218,7 @@ public class RoleAPIImpl implements RoleAPI {
 		}
 	}
 
-    @WrapInTransaction
+    @CloseDBIfOpened
 	@Override
 	public boolean roleExistsByName(final String roleName, final Role parent) throws DotDataException {
 		Role r = roleFactory.findRoleByName(roleName, parent);
