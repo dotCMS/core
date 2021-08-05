@@ -1,18 +1,14 @@
 package com.dotcms.graphql;
 
-import com.dotcms.cache.DotJSONCache.DotJSONCacheKey;
 import com.dotcms.enterprise.license.LicenseManager;
-import com.dotcms.util.DotPreconditions;
+import com.dotmarketing.business.Cachable;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotCacheAdministrator;
+import com.dotmarketing.util.UtilMethods;
 import io.vavr.Tuple2;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoField;
 import java.util.Optional;
-import com.dotmarketing.business.Cachable;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotCacheAdministrator;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.UtilMethods;
-import io.vavr.control.Try;
 
 public class GraphQLCache implements Cachable {
 
@@ -100,7 +96,8 @@ public class GraphQLCache implements Cachable {
     }
 
     public void remove(final String key) {
-        this.cache.remove(key, getPrimaryGroup());
+        final String cacheKey = hashQuery(key);
+        this.cache.remove(cacheKey, getPrimaryGroup());
     }
 
 }

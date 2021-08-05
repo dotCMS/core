@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "8275f508-dd48-4804-afee-43bb0e1e3318",
+		"_postman_id": "e45ed1ce-0d56-4616-8155-f63f8d7729bc",
 		"name": "GraphQL",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -4091,12 +4091,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/Test_GraphQL_Image_Field_fields/Readme18005.md"
 								}
-							],
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
@@ -4163,12 +4158,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/Test_GraphQL_Image_Field_fields/tommylee18005.jpeg"
 								}
-							],
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
@@ -5242,12 +5232,7 @@
 									"type": "file",
 									"src": "resources/GraphQL/Test_GraphQL_Image_Field_fields/actn-legioss.jpg"
 								}
-							],
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
@@ -6157,6 +6142,2123 @@
 								"description": "Given scenario: a piece of content with a tag field but no value for the field\nExpected result: requesting the content should return an empty tag field without errors"
 							},
 							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Query Cache",
+			"item": [
+				{
+					"name": "dotcachettl",
+					"item": [
+						{
+							"name": "As query param",
+							"item": [
+								{
+									"name": "Create ContentType",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"var jsonData = pm.response.json();",
+													"pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"name": "Content-Type",
+												"type": "text",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"My Structure\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"My Custom Structure {{$randomBankAccount}}\",\n\t\"variable\": \"myStructure{{$randomBankAccount}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 2,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t]\n}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Save Content v1",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"var jsonData = pm.response.json();",
+													"",
+													"pm.test(\"Content created properly\", function () {",
+													"    pm.expect(jsonData.entity.name).to.eql(\"content v1\");",
+													"});",
+													"",
+													"pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"name": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlet\": {\n       \"contentType\":\"{{contentTypeVariable}}\",\n       \"contentHost\":\"demo.dotcms.com\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"languageId\":\"1\",\n       \"name\":\"content v1\"\n    }\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=wait_for",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											],
+											"query": [
+												{
+													"key": "indexPolicy",
+													"value": "wait_for"
+												}
+											]
+										},
+										"description": "Saving new piece of content to test"
+									},
+									"response": []
+								},
+								{
+									"name": "Get Content - Cache: 30s - Return v1",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Get content v1\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
+													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v1\");",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  {{contentTypeVariable}}Collection(query: \"+identifier: {{contentIdentifier}}\") {\n    name\n  }\n}",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql?dotcachettl=30",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											],
+											"query": [
+												{
+													"key": "dotcachettl",
+													"value": "30"
+												}
+											]
+										},
+										"description": "* Given scenario: get content passing dotcachettl=30\n* Expected result: should fetch content v1 and put it into cache for 30 seconds"
+									},
+									"response": []
+								},
+								{
+									"name": "Update Content v1 to v2",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"var jsonData = pm.response.json();",
+													"",
+													"pm.test(\"Content created properly\", function () {",
+													"    pm.expect(jsonData.entity.name).to.eql(\"content v2\");",
+													"});",
+													"",
+													"pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"name": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlet\": {\n       \"identifier\": \"{{contentIdentifier}}\",\n       \"name\":\"content v2\",\n       \"contentType\":\"{{contentTypeVariable}}\",\n       \"contentHost\":\"demo.dotcms.com\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"languageId\":\"1\"\n    }\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=wait_for",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											],
+											"query": [
+												{
+													"key": "indexPolicy",
+													"value": "wait_for"
+												}
+											]
+										},
+										"description": "Updating the content"
+									},
+									"response": []
+								},
+								{
+									"name": "Get Content - Cache: 0 - Return v2",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Get content v1\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
+													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v2\");",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  {{contentTypeVariable}}Collection(query: \"+identifier: {{contentIdentifier}}\") {\n    name\n  }\n}",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql?dotcachettl=0",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											],
+											"query": [
+												{
+													"key": "dotcachettl",
+													"value": "0"
+												}
+											]
+										},
+										"description": "* Given scenario: getting the content with dotcachettl=0\n* Expected result: should bypass cache and get content v2"
+									},
+									"response": []
+								},
+								{
+									"name": "Get Content - No Cache Param - Return v1",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Get content v1\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
+													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v1\");",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  {{contentTypeVariable}}Collection(query: \"+identifier: {{contentIdentifier}}\") {\n    name\n  }\n}",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										},
+										"description": "* Given scenario: getting the content with no cache param\n* Expected result: should hit cache and get content v1"
+									},
+									"response": []
+								},
+								{
+									"name": "Get Content - Cache: -1 - Return v2",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Get content v1\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
+													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v2\");",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  {{contentTypeVariable}}Collection(query: \"+identifier: {{contentIdentifier}}\") {\n    name\n  }\n}",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql?dotcachettl=-1",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											],
+											"query": [
+												{
+													"key": "dotcachettl",
+													"value": "-1"
+												}
+											]
+										},
+										"description": "* Given scenario: getting content with dotcachettl=-1\n* Expected result: should bypass cache and get content v2 AND also remove the entry from cache"
+									},
+									"response": []
+								},
+								{
+									"name": "Get Content - No Cache Param - Return v2",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Get content v1\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
+													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v2\");",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  {{contentTypeVariable}}Collection(query: \"+identifier: {{contentIdentifier}}\") {\n    name\n  }\n}",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										},
+										"description": "* Given scenario: get the content with no cache param\n* Expected result: should return v2 since cache entry was removed in the previous request"
+									},
+									"response": []
+								},
+								{
+									"name": "Get Content - Cache: 30s - Return v2",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Get content v1\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
+													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v1\");",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  {{contentTypeVariable}}Collection(query: \"+identifier: {{contentIdentifier}}\") {\n    name\n  }\n}",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql?dotcachettl=30",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											],
+											"query": [
+												{
+													"key": "dotcachettl",
+													"value": "30"
+												}
+											]
+										},
+										"description": "* Given scenario: get the content with dotcachettl=30\n* Expected result: get content v2 and put it into cache for 30 seconds"
+									},
+									"response": []
+								},
+								{
+									"name": "Update Content v2 to v3",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"var jsonData = pm.response.json();",
+													"",
+													"pm.test(\"Content created properly\", function () {",
+													"    pm.expect(jsonData.entity.name).to.eql(\"content v3\");",
+													"});",
+													"",
+													"pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"name": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlet\": {\n       \"identifier\": \"{{contentIdentifier}}\",\n       \"name\":\"content v3\",\n       \"contentType\":\"{{contentTypeVariable}}\",\n       \"contentHost\":\"demo.dotcms.com\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"languageId\":\"1\"\n    }\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=wait_for",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											],
+											"query": [
+												{
+													"key": "indexPolicy",
+													"value": "wait_for"
+												}
+											]
+										},
+										"description": "Updates content v2 to v3"
+									},
+									"response": []
+								},
+								{
+									"name": "Get Content - No Cache Param - Return v2",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Get content v1\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
+													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v2\");",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  {{contentTypeVariable}}Collection(query: \"+identifier: {{contentIdentifier}}\") {\n    name\n  }\n}",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										},
+										"description": "* Given scenario: Getting content with no cache param\n* Expected result: Should hit cache and return v2"
+									},
+									"response": []
+								},
+								{
+									"name": "Wait Until Expire, Get Content - No Cache Param - Return v3",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Get content v1\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
+													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v3\");",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"setTimeout(function(){}, [40000]);"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  {{contentTypeVariable}}Collection(query: \"+identifier: {{contentIdentifier}}\") {\n    name\n  }\n}",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										},
+										"description": "* Given scenario: waits until content v2 in cache expires, gets content with no cache param\n* Expected result: should get content v3"
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "As request header",
+							"item": [
+								{
+									"name": "Create ContentType",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"var jsonData = pm.response.json();",
+													"pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"name": "Content-Type",
+												"type": "text",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"My Structure\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"My Custom Structure {{$randomBankAccount}}\",\n\t\"variable\": \"myStructure{{$randomBankAccount}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 2,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t]\n}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Save Content v1",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"var jsonData = pm.response.json();",
+													"",
+													"pm.test(\"Content created properly\", function () {",
+													"    pm.expect(jsonData.entity.name).to.eql(\"content v1\");",
+													"});",
+													"",
+													"pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"name": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlet\": {\n       \"contentType\":\"{{contentTypeVariable}}\",\n       \"contentHost\":\"demo.dotcms.com\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"languageId\":\"1\",\n       \"name\":\"content v1\"\n    }\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=wait_for",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											],
+											"query": [
+												{
+													"key": "indexPolicy",
+													"value": "wait_for"
+												}
+											]
+										},
+										"description": "Saving new piece of content to test"
+									},
+									"response": []
+								},
+								{
+									"name": "Get Content - Cache: 30s - Return v1",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Get content v1\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
+													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v1\");",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "dotcachettl",
+												"value": "30",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  {{contentTypeVariable}}Collection(query: \"+identifier: {{contentIdentifier}}\") {\n    name\n  }\n}",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										},
+										"description": "* Given scenario: get content passing dotcachettl=30\n* Expected result: should fetch content v1 and put it into cache for 30 seconds"
+									},
+									"response": []
+								},
+								{
+									"name": "Update Content v1 to v2",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"var jsonData = pm.response.json();",
+													"",
+													"pm.test(\"Content created properly\", function () {",
+													"    pm.expect(jsonData.entity.name).to.eql(\"content v2\");",
+													"});",
+													"",
+													"pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"name": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlet\": {\n       \"identifier\": \"{{contentIdentifier}}\",\n       \"name\":\"content v2\",\n       \"contentType\":\"{{contentTypeVariable}}\",\n       \"contentHost\":\"demo.dotcms.com\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"languageId\":\"1\"\n    }\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=wait_for",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											],
+											"query": [
+												{
+													"key": "indexPolicy",
+													"value": "wait_for"
+												}
+											]
+										},
+										"description": "Updating the content"
+									},
+									"response": []
+								},
+								{
+									"name": "Get Content - Cache: 0 - Return v2",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Get content v1\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
+													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v2\");",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "dotcachettl",
+												"value": "0",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  {{contentTypeVariable}}Collection(query: \"+identifier: {{contentIdentifier}}\") {\n    name\n  }\n}",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										},
+										"description": "* Given scenario: getting the content with dotcachettl=0\n* Expected result: should bypass cache and get content v2"
+									},
+									"response": []
+								},
+								{
+									"name": "Get Content - No Cache Param - Return v1",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Get content v1\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
+													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v1\");",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  {{contentTypeVariable}}Collection(query: \"+identifier: {{contentIdentifier}}\") {\n    name\n  }\n}",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										},
+										"description": "* Given scenario: getting the content with no cache param\n* Expected result: should hit cache and get content v1"
+									},
+									"response": []
+								},
+								{
+									"name": "Get Content - Cache: -1 - Return v2",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Get content v1\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
+													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v2\");",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "dotcachettl",
+												"value": "-1",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  {{contentTypeVariable}}Collection(query: \"+identifier: {{contentIdentifier}}\") {\n    name\n  }\n}",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										},
+										"description": "* Given scenario: getting content with dotcachettl=-1\n* Expected result: should bypass cache and get content v2 AND also remove the entry from cache"
+									},
+									"response": []
+								},
+								{
+									"name": "Get Content - No Cache Param - Return v2",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Get content v1\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
+													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v2\");",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  {{contentTypeVariable}}Collection(query: \"+identifier: {{contentIdentifier}}\") {\n    name\n  }\n}",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										},
+										"description": "* Given scenario: get the content with no cache param\n* Expected result: should return v2 since cache entry was removed in the previous request"
+									},
+									"response": []
+								},
+								{
+									"name": "Get Content - Cache: 30s - Return v2",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Get content v1\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
+													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v1\");",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "dotcachettl",
+												"value": "30",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  {{contentTypeVariable}}Collection(query: \"+identifier: {{contentIdentifier}}\") {\n    name\n  }\n}",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										},
+										"description": "* Given scenario: get the content with dotcachettl=30\n* Expected result: get content v2 and put it into cache for 30 seconds"
+									},
+									"response": []
+								},
+								{
+									"name": "Update Content v2 to v3",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"var jsonData = pm.response.json();",
+													"",
+													"pm.test(\"Content created properly\", function () {",
+													"    pm.expect(jsonData.entity.name).to.eql(\"content v3\");",
+													"});",
+													"",
+													"pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"name": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlet\": {\n       \"identifier\": \"{{contentIdentifier}}\",\n       \"name\":\"content v3\",\n       \"contentType\":\"{{contentTypeVariable}}\",\n       \"contentHost\":\"demo.dotcms.com\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"languageId\":\"1\"\n    }\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=wait_for",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											],
+											"query": [
+												{
+													"key": "indexPolicy",
+													"value": "wait_for"
+												}
+											]
+										},
+										"description": "Updates content v2 to v3"
+									},
+									"response": []
+								},
+								{
+									"name": "Get Content - No Cache Param - Return v2",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Get content v1\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
+													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v2\");",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  {{contentTypeVariable}}Collection(query: \"+identifier: {{contentIdentifier}}\") {\n    name\n  }\n}",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										},
+										"description": "* Given scenario: Getting content with no cache param\n* Expected result: Should hit cache and return v2"
+									},
+									"response": []
+								},
+								{
+									"name": "Wait Until Expire, Get Content - No Cache Param - Return v3",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Get content v1\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
+													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v3\");",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"setTimeout(function(){}, [40000]);"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  {{contentTypeVariable}}Collection(query: \"+identifier: {{contentIdentifier}}\") {\n    name\n  }\n}",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										},
+										"description": "* Given scenario: waits until content v2 in cache expires, gets content with no cache param\n* Expected result: should get content v3"
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "dotcachekey",
+					"item": [
+						{
+							"name": "As query param",
+							"item": [
+								{
+									"name": "Create ContentType",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"var jsonData = pm.response.json();",
+													"pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"name": "Content-Type",
+												"type": "text",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"My Structure\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"My Custom Structure {{$randomBankAccount}}\",\n\t\"variable\": \"myStructure{{$randomBankAccount}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 2,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t]\n}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Save Content v1",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"var jsonData = pm.response.json();",
+													"",
+													"pm.test(\"Content created properly\", function () {",
+													"    pm.expect(jsonData.entity.name).to.eql(\"content v1\");",
+													"});",
+													"",
+													"pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"name": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlet\": {\n       \"contentType\":\"{{contentTypeVariable}}\",\n       \"contentHost\":\"demo.dotcms.com\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"languageId\":\"1\",\n       \"name\":\"content v1\"\n    }\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=wait_for",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											],
+											"query": [
+												{
+													"key": "indexPolicy",
+													"value": "wait_for"
+												}
+											]
+										},
+										"description": "Saving new piece of content to test"
+									},
+									"response": []
+								},
+								{
+									"name": "Get Content - Cache: 30s with Custom Key - Return v1",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Get content v1\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
+													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v1\");",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  {{contentTypeVariable}}Collection(query: \"+identifier: {{contentIdentifier}}\") {\n    name\n  }\n}",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql?dotcachettl=30&dotcachekey=mykey",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											],
+											"query": [
+												{
+													"key": "dotcachettl",
+													"value": "30"
+												},
+												{
+													"key": "dotcachekey",
+													"value": "mykey"
+												}
+											]
+										},
+										"description": "* Given scenario: get content passing dotcachettl=30\n* Expected result: should fetch content v1 and put it into cache for 30 seconds"
+									},
+									"response": []
+								},
+								{
+									"name": "Update Content v1 to v2",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"var jsonData = pm.response.json();",
+													"",
+													"pm.test(\"Content created properly\", function () {",
+													"    pm.expect(jsonData.entity.name).to.eql(\"content v2\");",
+													"});",
+													"",
+													"pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"name": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlet\": {\n       \"identifier\": \"{{contentIdentifier}}\",\n       \"name\":\"content v2\",\n       \"contentType\":\"{{contentTypeVariable}}\",\n       \"contentHost\":\"demo.dotcms.com\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"languageId\":\"1\"\n    }\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=wait_for",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											],
+											"query": [
+												{
+													"key": "indexPolicy",
+													"value": "wait_for"
+												}
+											]
+										},
+										"description": "Updating the content"
+									},
+									"response": []
+								},
+								{
+									"name": "Get Content - No Cache Param - Return v2",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Get content v1\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
+													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v2\");",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  {{contentTypeVariable}}Collection(query: \"+identifier: {{contentIdentifier}}\") {\n    name\n  }\n}",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										},
+										"description": "* Given scenario: getting the content with no cache param\n* Expected result: should hit cache and get content v1"
+									},
+									"response": []
+								},
+								{
+									"name": "Get Content - Only Custom Key - Return v1",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Get content v1\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
+													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v1\");",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  {{contentTypeVariable}}Collection(query: \"+identifier: {{contentIdentifier}}\") {\n    name\n  }\n}",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql?dotcachekey=mykey",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											],
+											"query": [
+												{
+													"key": "dotcachekey",
+													"value": "mykey"
+												}
+											]
+										},
+										"description": "* Given scenario: get content passing dotcachettl=30\n* Expected result: should fetch content v1 and put it into cache for 30 seconds"
+									},
+									"response": []
+								},
+								{
+									"name": "Get Content - Cache: -1 with Custom Key - Return v2",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Get content v1\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
+													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v2\");",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  {{contentTypeVariable}}Collection(query: \"+identifier: {{contentIdentifier}}\") {\n    name\n  }\n}",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql?dotcachettl=-1&dotcachekey=mykey",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											],
+											"query": [
+												{
+													"key": "dotcachettl",
+													"value": "-1"
+												},
+												{
+													"key": "dotcachekey",
+													"value": "mykey"
+												}
+											]
+										},
+										"description": "* Given scenario: get content passing dotcachettl=30\n* Expected result: should fetch content v1 and put it into cache for 30 seconds"
+									},
+									"response": []
+								},
+								{
+									"name": "Get Content - Only Custom Key - Return v2",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Get content v1\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
+													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v2\");",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  {{contentTypeVariable}}Collection(query: \"+identifier: {{contentIdentifier}}\") {\n    name\n  }\n}",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql?dotcachekey=mykey",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											],
+											"query": [
+												{
+													"key": "dotcachekey",
+													"value": "mykey"
+												}
+											]
+										},
+										"description": "* Given scenario: get content passing dotcachettl=30\n* Expected result: should fetch content v1 and put it into cache for 30 seconds"
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "As request header",
+							"item": [
+								{
+									"name": "Create ContentType",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"var jsonData = pm.response.json();",
+													"pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"name": "Content-Type",
+												"type": "text",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"My Structure\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"My Custom Structure {{$randomBankAccount}}\",\n\t\"variable\": \"myStructure{{$randomBankAccount}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 2,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t]\n}"
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/contenttype",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"contenttype"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Save Content v1",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"var jsonData = pm.response.json();",
+													"",
+													"pm.test(\"Content created properly\", function () {",
+													"    pm.expect(jsonData.entity.name).to.eql(\"content v1\");",
+													"});",
+													"",
+													"pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"name": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlet\": {\n       \"contentType\":\"{{contentTypeVariable}}\",\n       \"contentHost\":\"demo.dotcms.com\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"languageId\":\"1\",\n       \"name\":\"content v1\"\n    }\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=wait_for",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											],
+											"query": [
+												{
+													"key": "indexPolicy",
+													"value": "wait_for"
+												}
+											]
+										},
+										"description": "Saving new piece of content to test"
+									},
+									"response": []
+								},
+								{
+									"name": "Get Content - Cache: 30s with Custom Key - Return v1",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Get content v1\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
+													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v1\");",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "dotcachettl",
+												"value": "30",
+												"type": "text"
+											},
+											{
+												"key": "dotcachekey",
+												"value": "mykey",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  {{contentTypeVariable}}Collection(query: \"+identifier: {{contentIdentifier}}\") {\n    name\n  }\n}",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										},
+										"description": "* Given scenario: get content passing dotcachettl=30\n* Expected result: should fetch content v1 and put it into cache for 30 seconds"
+									},
+									"response": []
+								},
+								{
+									"name": "Update Content v1 to v2",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"var jsonData = pm.response.json();",
+													"",
+													"pm.test(\"Content created properly\", function () {",
+													"    pm.expect(jsonData.entity.name).to.eql(\"content v2\");",
+													"});",
+													"",
+													"pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"name": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlet\": {\n       \"identifier\": \"{{contentIdentifier}}\",\n       \"name\":\"content v2\",\n       \"contentType\":\"{{contentTypeVariable}}\",\n       \"contentHost\":\"demo.dotcms.com\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"languageId\":\"1\"\n    }\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=wait_for",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											],
+											"query": [
+												{
+													"key": "indexPolicy",
+													"value": "wait_for"
+												}
+											]
+										},
+										"description": "Updating the content"
+									},
+									"response": []
+								},
+								{
+									"name": "Get Content - No Cache Param - Return v2",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Get content v1\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
+													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v2\");",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  {{contentTypeVariable}}Collection(query: \"+identifier: {{contentIdentifier}}\") {\n    name\n  }\n}",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										},
+										"description": "* Given scenario: getting the content with no cache param\n* Expected result: should hit cache and get content v1"
+									},
+									"response": []
+								},
+								{
+									"name": "Get Content - Only Custom Key - Return v1",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Get content v1\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
+													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v1\");",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "dotcachekey",
+												"value": "mykey",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  {{contentTypeVariable}}Collection(query: \"+identifier: {{contentIdentifier}}\") {\n    name\n  }\n}",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										},
+										"description": "* Given scenario: get content passing dotcachettl=30\n* Expected result: should fetch content v1 and put it into cache for 30 seconds"
+									},
+									"response": []
+								},
+								{
+									"name": "Get Content - Cache: -1 with Custom Key - Return v2",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Get content v1\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
+													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v2\");",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "dotcachettl",
+												"value": "-1",
+												"type": "text"
+											},
+											{
+												"key": "dotcachekey",
+												"value": "mykey",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  {{contentTypeVariable}}Collection(query: \"+identifier: {{contentIdentifier}}\") {\n    name\n  }\n}",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										},
+										"description": "* Given scenario: get content passing dotcachettl=30\n* Expected result: should fetch content v1 and put it into cache for 30 seconds"
+									},
+									"response": []
+								},
+								{
+									"name": "Get Content - Only Custom Key - Return v2",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Get content v1\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
+													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v2\");",
+													"});"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "dotcachekey",
+												"value": "mykey",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  {{contentTypeVariable}}Collection(query: \"+identifier: {{contentIdentifier}}\") {\n    name\n  }\n}",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										},
+										"description": "* Given scenario: get content passing dotcachettl=30\n* Expected result: should fetch content v1 and put it into cache for 30 seconds"
+									},
+									"response": []
+								}
+							]
 						}
 					]
 				}
