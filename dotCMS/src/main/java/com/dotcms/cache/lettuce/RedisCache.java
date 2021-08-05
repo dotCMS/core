@@ -216,7 +216,7 @@ public class RedisCache extends CacheProvider {
 
             Logger.debug(this, ()-> "In Transaction, Skipping the put to Redis cache for group: "
                     + group + "key" + key);
-        } else if (key != null && group != null /*&& content instanceof Serializable*/) {
+        } else if (key != null && group != null /*&& content instanceof Serializable*/) {  // todo: we should admit only
 
             Logger.debug(this, ()-> "Redis, putting group: " + group + "key" + key);
             final long   ttl      = this.getTTL(group);
@@ -260,6 +260,8 @@ public class RedisCache extends CacheProvider {
 
             final String cacheKey = this.cacheKey(group, key);
             try {
+                // todo: by configuration (if feature is turn on) we will see if the object implements DotCloneable and
+                // return a clone of the object instead of the actual object, this will help us a bit with the mutability of the code
                 return this.client.get(cacheKey);
             } catch (CacheTimeoutException e) {
 

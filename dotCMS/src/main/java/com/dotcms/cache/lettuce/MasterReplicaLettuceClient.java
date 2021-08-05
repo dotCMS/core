@@ -369,6 +369,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
 
     private GenericObjectPool<StatefulRedisConnection<K, V>> buildPool() {
 
+        //todo: we have to have a mechanism when the connection is wrong on a bad space, to remove it from the pool and create a new one
         final GenericObjectPoolConfig config = new GenericObjectPoolConfig();
 
         config.setTestOnBorrow(true);
