@@ -57,7 +57,8 @@ public class VanityUrlRequestWrapper extends HttpServletRequestWrapper {
         this.queryParamMap = ImmutableMap.copyOf(tempMap);
 
         this.responseCode = vanityUrlResult.getResponseCode();
-
+        request.setAttribute(CMS_FILTER_URI_OVERRIDE, vanityUrlResult.getRewrite());
+        request.setAttribute(CMS_FILTER_QUERY_STRING_OVERRIDE, this.newQueryString);
         this.setAttribute(CMS_FILTER_URI_OVERRIDE, vanityUrlResult.getRewrite());
         this.setAttribute(CMS_FILTER_QUERY_STRING_OVERRIDE, this.newQueryString);
 

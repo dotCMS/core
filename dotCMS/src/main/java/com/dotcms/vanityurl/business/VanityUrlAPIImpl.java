@@ -4,11 +4,14 @@ package com.dotcms.vanityurl.business;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
+import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.vanityurl.cache.VanityUrlCache;
+import com.dotcms.vanityurl.filters.VanityUrlRequestWrapper;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.DefaultVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
+import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.dotcms.vanityurl.util.VanityUrlUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -18,6 +21,7 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -25,6 +29,7 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
@@ -36,6 +41,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * Implementation class for the {@link VanityUrlAPI}.
@@ -285,4 +291,34 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     }
   }
 
+  
+  
+  /**
+   * Product of refactoring handling 301 and 302 previously executed by CachedVanityUrl
+   *
+   * @return weather or not the redirect was handled
+   */
+  @Override
+  public boolean handleVanityURLRedirects(final VanityUrlRequestWrapper request, final HttpServletResponse response,
+                  final VanityUrlResult vanityUrlResult) {
+      if (!response.isCommitted()) {
+          final String uri = vanityUrlResult.getRewrite();
+          final String queryString = request.getQueryString();
+          final int responseCode = request.getResponseCode();
+
+          final String newUrl = uri + (queryString != null ? StringPool.QUESTION + queryString : StringPool.BLANK);
+          if (responseCode == 301 || responseCode == 302) {
+              response.setStatus(responseCode);
+              response.setHeader("Location", newUrl);
+              return true;
+          }
+
+          // if the vanity is a proxy request
+          if (responseCode == 200 && UtilMethods.isSet(uri) && uri.contains("//")) {
+              Try.run(() -> new CircuitBreakerUrl(newUrl).doOut(response)).onFailure(DotRuntimeException::new);
+              return true;
+          }
+      }
+      return false;
+  }
 }

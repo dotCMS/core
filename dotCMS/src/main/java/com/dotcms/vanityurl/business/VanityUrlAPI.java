@@ -3,9 +3,11 @@ package com.dotcms.vanityurl.business;
 import com.dotcms.keyvalue.model.KeyValue;
 import java.util.List;
 import java.util.Optional;
-
+import javax.servlet.http.HttpServletResponse;
+import com.dotcms.vanityurl.filters.VanityUrlRequestWrapper;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
+import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -73,6 +75,14 @@ public interface VanityUrlAPI {
      * @return The list of Vanity URLs.
      */
     List<CachedVanityUrl> findInDb(Host host, Language language);
+
+    /**
+       * Product of refactoring handling 301 and 302 previously executed by CachedVanityUrl
+       *
+       * @return weather or not the redirect was handled
+       */
+    boolean handleVanityURLRedirects(VanityUrlRequestWrapper request, HttpServletResponse response,
+                    VanityUrlResult vanityUrlResult);
 
 
 

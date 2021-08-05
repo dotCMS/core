@@ -97,7 +97,7 @@ public class VanityURLFilter implements Filter {
               final VanityUrlResult vanityUrlResult = cachedVanity.get().handle( uri, response);
               final VanityUrlRequestWrapper vanityUrlRequestWrapper = new VanityUrlRequestWrapper(request, vanityUrlResult);
               // If the handler already resolved the requested URI we stop the processing here
-              if (handleVanityURLRedirects(vanityUrlRequestWrapper, response, vanityUrlResult)) {
+              if (this.vanityApi.handleVanityURLRedirects(vanityUrlRequestWrapper, response, vanityUrlResult)) {
                 return;
               }
               filterChain.doFilter(vanityUrlRequestWrapper, response);
@@ -122,35 +122,7 @@ public class VanityURLFilter implements Filter {
     
   }
 
-    /**
-     * Product of refactoring handling 301 and 302 previously executed by CachedVanityUrl
-     *
-     * @return weather or not the redirect was handled
-     */
-  private boolean handleVanityURLRedirects(final VanityUrlRequestWrapper request,
-            final HttpServletResponse response, final VanityUrlResult vanityUrlResult) {
-        if (!response.isCommitted()) {
-            final String uri = vanityUrlResult.getRewrite();
-            final String queryString = request.getQueryString();
-            final int responseCode = request.getResponseCode();
 
-            final String newUrl = uri + (queryString != null ? StringPool.QUESTION + queryString
-                    : StringPool.BLANK);
-            if (responseCode == 301 || responseCode == 302) {
-                response.setStatus(responseCode);
-                response.setHeader("Location", newUrl);
-                return true;
-            }
-
-            // if the vanity is a proxy request
-            if (responseCode == 200 && UtilMethods.isSet(uri) && uri.contains("//")) {
-                Try.run(() -> new CircuitBreakerUrl(newUrl).doOut(response)).onFailure(
-                        DotRuntimeException::new);
-                return true;
-            }
-        }
-        return false;
-  }
 
 
 } // E:O:F:VanityURLFilter.

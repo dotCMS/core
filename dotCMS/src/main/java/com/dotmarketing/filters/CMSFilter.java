@@ -14,6 +14,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.rules.business.RulesEngine;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.*;
+import io.vavr.control.Try;
 import org.apache.commons.logging.LogFactory;
 
 import javax.servlet.*;
@@ -57,29 +58,28 @@ public class CMSFilter implements Filter {
 
         final HttpServletRequest request = (HttpServletRequest) req;
         final HttpServletResponse response = (HttpServletResponse) res;
-
-        IAm iAm = IAm.NOTHING_IN_THE_CMS;
-
-        // Set the request in the thread local.
-
+        final Host site = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+        final long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
+        
+        // Set the request/response in the thread local.
+        this.requestThreadLocal.setRequest(request);
         this.responseThreadLocal.setResponse(response);
 
-        // Get the URI and query string from the request
-        String uri = urlUtil.getURIFromRequest(request);
-        final boolean overriddenURI = urlUtil.wasURIOverridden(request);
-        String queryString = urlUtil.getURLQueryStringFromRequest(request);
+        // run rules engine for all requests
+        RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
 
-        // Check for possible XSS hacks
-        String xssRedirect = urlUtil.xssCheck(uri, queryString);
-        if (xssRedirect != null) {
-            response.sendRedirect(xssRedirect);
+        //if we have committed the response, die
+        if (response.isCommitted()) {
             return;
         }
+        
+        
+        // Get the URI and query string from the request
+        final String uri = urlUtil.getURIFromRequest(request);
+        String queryString = urlUtil.getURLQueryStringFromRequest(request);
 
-        LogFactory.getLog(this.getClass()).debug("CMS Filter URI = " + uri);
 
-
-        Host site = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+        Logger.debug(this.getClass(), ()->"CMS Filter URI = " + uri);
 
         /*
          * If someone is trying to go right to an asset without going through the cms, give them a
@@ -90,39 +90,16 @@ public class CMSFilter implements Filter {
             return;
         }
 
-        // Get the user language
-        final long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
 
-        iAm = this.urlUtil.resolveResourceType(iAm, uri, site, languageId);
+        final IAm iAm  = this.urlUtil.resolveResourceType(IAm.NOTHING_IN_THE_CMS, uri, site, languageId);
 
-        if (iAm == IAm.FOLDER) {
-
-            // if we are not rewriting anything, use the uri
-            if (!uri.endsWith("/")) {
-
-                if (UtilMethods.isSet(queryString)) {
-                    response.setHeader("Location", uri + "/?" + queryString);
-                } else {
-                    response.setHeader("Location", uri + "/");
-
-                }
-
-                /*
-                 * At this point if the URI was overridden is probably because a VanityURL set it,
-                 * and in that case we need to respect the status code set by the VanityURL.
-                 */
-                if (!overriddenURI) {
-                    response.setStatus(301);
-                }
-                DbConnectionFactory.closeSilently();
-                return;
-            } else {
-                uri = uri + CMS_INDEX_PAGE;
-                if (urlUtil.isPageAsset(uri, site, languageId)) {
-                    iAm = IAm.PAGE;
-                }
-            }
+        // if I am a folder without a slash
+        if (iAm == IAm.FOLDER && !uri.endsWith("/")) {
+            response.setHeader("Location", UtilMethods.isSet(queryString) ? uri + "/?" + queryString : uri + "/");
+            Try.run(()->response.setStatus(301));
+            return;
         }
+        
 
         if (iAm == IAm.PAGE) {
             countPageVisit(request);
@@ -131,14 +108,6 @@ public class CMSFilter implements Filter {
                     this.urlUtil.getUriWithoutQueryString(uri));
             queryString = (null == queryString)?
                     this.urlUtil.getQueryStringFromUri (uri):queryString;
-        }
-
-        // run rules engine for all requests
-        RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
-
-        //if we have committed the response, die
-        if (response.isCommitted()) {
-            return;
         }
 
         if (iAm == IAm.FILE) {
@@ -156,8 +125,8 @@ public class CMSFilter implements Filter {
 
                 request.getRequestDispatcher(forward.toString()).forward(request, response);
 
-            } catch (DotDataException e) {
-                Logger.error(CMSFilter.class, e.getMessage(), e);
+            } catch (Exception e) {
+                Logger.warnAndDebug(CMSFilter.class, e.getMessage(), e);
                 throw new IOException(e.getMessage(),e);
             }
             return;
@@ -178,14 +147,9 @@ public class CMSFilter implements Filter {
             return;
         }
 
-        if (uri.startsWith("/contentAsset/")) {
-            if (response.isCommitted()) {
-                /*
-                 * Some form of redirect, error, or the request has already been fulfilled in some
-                 * fashion by one or more of the actionlets.
-                 */
-                return;
-            }
+        // nothing to do here
+        if (uri.startsWith("/contentAsset/") && response.isCommitted()) {
+            return;
         }
         
         // allow vanities to forward to a dA asset

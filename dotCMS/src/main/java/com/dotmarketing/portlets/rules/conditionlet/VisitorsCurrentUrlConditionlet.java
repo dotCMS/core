@@ -10,6 +10,7 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.ST
 
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.filters.CMSFilter;
+import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotPresentException;
@@ -17,6 +18,7 @@ import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
 import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
+import com.dotmarketing.portlets.rules.parameter.comparison.RegexComparison;
 import com.dotmarketing.portlets.rules.parameter.display.TextInput;
 import com.dotmarketing.portlets.rules.parameter.type.TextType;
 import com.dotmarketing.util.Logger;
@@ -24,6 +26,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
+import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -45,6 +48,8 @@ public class VisitorsCurrentUrlConditionlet extends Conditionlet<VisitorsCurrent
 
 	private static final long serialVersionUID = 1L;
 
+	public static final String CURRENT_URL_CONDITIONLET_MATCHER = "CURRENT_URL_CONDITIONLET_MATCHER";
+
 	public static final String PATTERN_URL_INPUT_KEY = "current-url";
 
 	public VisitorsCurrentUrlConditionlet() {
@@ -57,22 +62,9 @@ public class VisitorsCurrentUrlConditionlet extends Conditionlet<VisitorsCurrent
 
 	@Override
     public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
-        String requestUri = null;
+        String requestUri = CMSUrlUtil.getInstance().getURIFromRequest(request);
 
-        //Attribute set when it is an URL Map Content
-        if(UtilMethods.isSet(request.getAttribute(WebKeys.WIKI_CONTENTLET_URL))){
-        	requestUri = request.getAttribute(WebKeys.WIKI_CONTENTLET_URL).toString();
-		}else {
-			try {
-				requestUri = HttpRequestDataUtil.getUri(request);
-				Object rewriteOpt = request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE);
-				if (rewriteOpt != null)
-					requestUri = (String) rewriteOpt;
-			} catch (UnsupportedEncodingException e) {
-				Logger.error(this, "Could not retrieved a valid URI from request: "
-						+ request.getRequestURL());
-			}
-		}
+
 
 		String index = CMSFilter.CMS_INDEX_PAGE;
 		String pattern = processUrl(instance.patternUrl,index, instance);
@@ -81,7 +73,16 @@ public class VisitorsCurrentUrlConditionlet extends Conditionlet<VisitorsCurrent
 	}
 
 	public boolean evaluate(HttpServletRequest request, Instance instance, String requestUri, String pattern) {
-		return instance.comparison.perform(requestUri, pattern);
+	    
+	    if( instance.comparison.perform(requestUri, pattern)) {
+	        if(instance.comparison.getId().equals(REGEX.getId())){
+	            Pattern regex= RegexComparison.patternsCache.get(pattern, k-> Pattern.compile(k));
+	            request.setAttribute(CURRENT_URL_CONDITIONLET_MATCHER, regex);
+	        }
+		    
+		    return true;
+		}
+		return false;
 	}
 
 	/**

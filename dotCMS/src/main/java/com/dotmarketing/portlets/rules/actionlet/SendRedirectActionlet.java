@@ -1,30 +1,64 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
-import com.dotcms.repackage.com.google.common.base.Preconditions;
-import com.dotmarketing.portlets.rules.RuleComponentInstance;
-import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
-import com.dotmarketing.portlets.rules.exception.InvalidActionInstanceException;
-import com.dotmarketing.portlets.rules.model.ParameterModel;
-import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
-import com.dotmarketing.portlets.rules.parameter.display.TextInput;
-import com.dotmarketing.portlets.rules.parameter.type.TextType;
-import com.dotmarketing.util.Logger;
-import java.io.IOException;
-import java.net.URI;
 import java.util.Map;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import static com.dotcms.repackage.com.google.common.base.Preconditions.checkState;
+import com.dotcms.vanityurl.filters.VanityUrlRequestWrapper;
+import com.dotcms.vanityurl.model.VanityUrlResult;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.filters.CMSUrlUtil;
+import com.dotmarketing.portlets.rules.RuleComponentInstance;
+import com.dotmarketing.portlets.rules.conditionlet.VisitorsCurrentUrlConditionlet;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
+import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
+import com.dotmarketing.portlets.rules.parameter.display.DropdownInput;
+import com.dotmarketing.portlets.rules.parameter.display.TextInput;
+import com.dotmarketing.portlets.rules.parameter.type.TextType;
+import io.vavr.control.Try;
 
 public class SendRedirectActionlet extends RuleActionlet<SendRedirectActionlet.Instance> {
 
+    private static final long serialVersionUID = 1L;
     private static final String INPUT_URL_KEY = "URL";
+    private static final String INPUT_REDIRECT_METHOD = "REDIRECT_METHOD";
 
+    enum REDIRECT_METHOD{
+        FORWARD(200),
+        MOVED_TEMP(302),
+        MOVED_PERM(301);
+        
+        private final int responseCode;
+        
+        REDIRECT_METHOD(int responseCode){
+            this.responseCode= responseCode;
+        }
 
+        static int getResponse(final String method) {
+            return FORWARD.name().equalsIgnoreCase(method) 
+                ? FORWARD.responseCode 
+                : MOVED_TEMP.name().equalsIgnoreCase(method) 
+                    ? MOVED_TEMP.responseCode 
+                    : MOVED_PERM.responseCode;
+        }
+        
+        
+    }
+    
     public SendRedirectActionlet() {
         super("api.system.ruleengine.actionlet.send_redirect",
-              new ParameterDefinition<>(1, INPUT_URL_KEY, new TextInput<>(new TextType().required())));
+                new ParameterDefinition<>(0, INPUT_REDIRECT_METHOD,
+                                        new DropdownInput()
+                                        .minSelections(1)
+                                        .maxSelections(1)
+                                        .option(REDIRECT_METHOD.FORWARD.name())
+                                        .option(REDIRECT_METHOD.MOVED_TEMP.name())
+                                        .option(REDIRECT_METHOD.MOVED_PERM.name())),
+                new ParameterDefinition<>(1, INPUT_URL_KEY, new TextInput<>(new TextType().required()))
+
+                        );
     }
 
     @Override
@@ -34,38 +68,61 @@ public class SendRedirectActionlet extends RuleActionlet<SendRedirectActionlet.I
 
     @Override
     public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
-        boolean success = false;
-        try {
-            response.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
-            response.setHeader("Location", instance.redirectToUrl);
-            response.flushBuffer();
-            success = true;
-        } catch (IOException e) {
-            Logger.error(SendRedirectActionlet.class, "Error executing Redirect Actionlet.", e);
+        final String myURL = CMSUrlUtil.getInstance().getURIFromRequest(request);
+        final Optional<Pattern> patternOpt = Optional.ofNullable(
+                        (Pattern) request.getAttribute(VisitorsCurrentUrlConditionlet.CURRENT_URL_CONDITIONLET_MATCHER));
+
+
+
+        final String rewriteUrl = instance.rewriteUrl(myURL, patternOpt);
+        // nothing to do
+        if (myURL.equals(rewriteUrl)) {
+            return true;
         }
-        return success;
+        response.setHeader("X-DOT-SendRedirectRuleAction", "true" );
+        
+        VanityUrlResult result = new VanityUrlResult(rewriteUrl, request.getQueryString(), instance.responseCode);
+        VanityUrlRequestWrapper wrapper = new VanityUrlRequestWrapper(request, result);
+        if (APILocator.getVanityUrlAPI().handleVanityURLRedirects(wrapper, response, result)) {
+            Try.run(() -> response.flushBuffer());
+        }
+        return true;
     }
 
     public class Instance implements RuleComponentInstance {
-
+        private final int responseCode;
         private final String redirectToUrl;
 
         public Instance(Map<String, ParameterModel> parameters) {
-            checkState(parameters != null && parameters.size() == 1,
-                       "Send Redirect Condition Type requires parameter '%s'.", INPUT_URL_KEY);
             assert parameters != null;
-            this.redirectToUrl = parameters.get(INPUT_URL_KEY).getValue();
+            this.redirectToUrl = parameters.getOrDefault(INPUT_URL_KEY, new ParameterModel()).getValue();
+            this.responseCode = Try.of(() -> REDIRECT_METHOD.getResponse(parameters.get(INPUT_REDIRECT_METHOD).getValue()))
+                            .getOrElse(301);
 
-            try {
-                //noinspection unused
-                URI uri = URI.create(this.redirectToUrl);
-            } catch (IllegalStateException | NullPointerException e) {
-                /* It isn't necessary to wrap and re-throw exceptions, but doing so can help provide more readable stack traces. */
-                throw new InvalidActionInstanceException(e, "SendRedirectActionlet: '%s' is not a valid URI", redirectToUrl);
+
+        }
+
+
+        String rewriteUrl(String urlIn, Optional<Pattern> patternOpt) {
+
+            if (!patternOpt.isPresent()) {
+                return redirectToUrl;
             }
-            /* A blank URI is a legitimate URI, but as far as redirects go it tends to generate infinite loops. */
-            /* While '.' might be valid, we probably shouldn't accept it as a redirect target either. */
-            Preconditions.checkArgument(!".".equals(this.redirectToUrl), "URL parameter cannot refer to self for SendRedirectActionlet.");
+
+            final Pattern pattern = patternOpt.get();
+            final Matcher matcher = pattern.matcher(urlIn);
+            if (!matcher.matches()) {
+                return urlIn;
+            }
+            String newForward = this.redirectToUrl;
+            for (int i = 1; i <= matcher.groupCount(); i++) {
+                newForward = newForward.replace("$" + i, matcher.group(i));
+            }
+
+
+            return newForward;
+
         }
     }
+    
 }

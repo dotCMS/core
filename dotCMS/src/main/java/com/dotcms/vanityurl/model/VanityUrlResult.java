@@ -36,7 +36,7 @@ public class VanityUrlResult {
      * @param queryString
      * @param responseCode
      */
-    VanityUrlResult(final String rewrite, final String queryString, final int responseCode) {
+    public VanityUrlResult(final String rewrite, final String queryString, final int responseCode) {
         this.rewrite = rewrite;
         this.queryString = queryString;
         this.resolved = false;
