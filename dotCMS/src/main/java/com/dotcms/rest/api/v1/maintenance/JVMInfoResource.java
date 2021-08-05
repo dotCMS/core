@@ -34,7 +34,7 @@ import io.vavr.control.Try;
 @SuppressWarnings("serial")
 public class JVMInfoResource implements Serializable {
 
-    final Pattern obfuscatePattern = Pattern.compile(Config.getStringProperty("OBFUSCATE_SYSTEM_ENVIRONMENTAL_VARIABLES", "/passw|pass|secret|key|pwd/gi"));
+    final Pattern obfuscatePattern = Pattern.compile(Config.getStringProperty("OBFUSCATE_SYSTEM_ENVIRONMENTAL_VARIABLES", "/passw|pass|secret|key|pwd/gi"),Pattern.CASE_INSENSITIVE);
 
 
     @Path("/")
@@ -162,9 +162,6 @@ public class JVMInfoResource implements Serializable {
         resultMap.put("serverInfo",ReleaseInfo.getServerInfo());
         resultMap.put("releaseInfo",ReleaseInfo.getReleaseInfo());
 
-
-
-        
         return resultMap;
         
     }
@@ -178,11 +175,9 @@ public class JVMInfoResource implements Serializable {
     }
     
     private String obfuscate(final String value) {
-        StringWriter sw = new StringWriter();
-        sw.append(value.charAt(0))
-        .append("*********")
-        .append(value.charAt(value.length()-1));
-        return sw.toString();
+        return value.charAt(0)
+                + "*********"
+                + value.charAt(value.length() - 1);
     }
     
 
