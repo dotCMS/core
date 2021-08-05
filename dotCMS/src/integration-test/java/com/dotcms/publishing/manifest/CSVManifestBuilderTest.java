@@ -239,7 +239,7 @@ public class CSVManifestBuilderTest {
      * when: Create a ManifestBuilder but don't include or exclude anything
      * should: Create the manifest file with just the headers
      */
-    @Test
+    @Test (expected = IllegalStateException.class)
     public void emptyManifestFile() throws IOException {
         File manifestFile = null;
 
@@ -247,9 +247,6 @@ public class CSVManifestBuilderTest {
             manifestBuilder.create();
             manifestFile = manifestBuilder.getManifestFile();
         }
-
-        final List<String> expected = list(headers);
-        assertManifestLines(manifestFile, expected);
     }
 
     /**
