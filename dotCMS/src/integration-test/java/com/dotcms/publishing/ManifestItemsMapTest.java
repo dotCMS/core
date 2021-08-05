@@ -4,6 +4,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import io.vavr.collection.Stream;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -37,6 +38,7 @@ public class ManifestItemsMapTest {
                 includeExclude,
                 manifestInfo.objectType(),
                 manifestInfo.id(),
+                manifestInfo.inode(),
                 manifestInfo.title(),
                 manifestInfo.site(),
                 manifestInfo.folder(),
@@ -47,8 +49,12 @@ public class ManifestItemsMapTest {
 
     public void addDependencies(final Map<ManifestItem, Collection<ManifestItem>> dependencies){
         for (Entry<ManifestItem, Collection<ManifestItem>> dependencyEntry : dependencies.entrySet()) {
-            final String id = dependencyEntry.getKey().getManifestInfo().id();
-            final String dependencyReeason = "Dependency from: " + id;
+            final ManifestItem key = dependencyEntry.getKey();
+            final String id = key.getManifestInfo().id();
+            final String dependencyReeason = Contentlet.class.isInstance(key) ?
+                    String.format("ID: %s Title: %s", key.getManifestInfo().id(),
+                            Contentlet.class.cast(key).getTitle()):
+                    "Dependency from: " + id;
 
             final Collection<ManifestItem> entryDependencies = dependencyEntry.getValue();
 

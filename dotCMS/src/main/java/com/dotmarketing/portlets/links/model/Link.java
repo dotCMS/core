@@ -333,6 +333,7 @@ public class Link extends WebAsset implements Serializable, Comparable, Manifest
 		return new ManifestInfoBuilder()
 			.objectType(PusheableAsset.LINK.getType())
 			.id(this.getIdentifier())
+			.inode(this.getInode())
 			.title(this.getTitle())
 			.build();
 	}

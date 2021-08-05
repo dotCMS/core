@@ -24,6 +24,7 @@ public interface ManifestItem {
         private String siteId;
         private String folderId;
         private String folderPath;
+        private String inode;
 
         public static ManifestInfo merge(final ManifestInfo manifestInfo1, final ManifestInfo manifestInfo2){
             final ManifestInfoBuilder builder = new ManifestInfoBuilder();
@@ -39,6 +40,8 @@ public interface ManifestItem {
                     manifestInfo1.folderId;
             builder.folderPath = UtilMethods.isSet(manifestInfo2.folderPath) ? manifestInfo2.folderPath :
                     manifestInfo1.folderPath;
+            builder.inode = UtilMethods.isSet(manifestInfo2.inode) ? manifestInfo2.inode :
+                    manifestInfo1.inode;
 
             return builder.build();
         }
@@ -50,6 +53,11 @@ public interface ManifestItem {
 
         public ManifestInfoBuilder id(String id){
             this.id = id;
+            return this;
+        }
+
+        public ManifestInfoBuilder inode(String inode){
+            this.inode = inode;
             return this;
         }
 
@@ -96,6 +104,7 @@ public interface ManifestItem {
     class ManifestInfo {
         private String objectType;
         private String id;
+        private String inode;
         private String title;
         private String siteId;
         private String folderId;
@@ -108,6 +117,7 @@ public interface ManifestItem {
             this.siteId = builder.siteId;
             this.folderId = builder.folderId;
             this.folderPath = builder.folderPath;
+            this.inode = builder.inode;
         }
 
         public String objectType(){
@@ -120,6 +130,10 @@ public interface ManifestItem {
 
         public String title(){
             return this.title;
+        }
+
+        public String inode(){
+            return UtilMethods.isSet(this.inode) ? this.inode : StringPool.BLANK;
         }
 
         public String site(){
