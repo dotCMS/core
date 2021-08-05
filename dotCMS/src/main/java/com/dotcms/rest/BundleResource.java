@@ -948,8 +948,7 @@ public class BundleResource {
                 throw new DoesNotExistException("Manifest not exists in bundle: " + bundleId);
         }
 
-        final String manifestFileName = String.format("manifest_%s.csv",
-                APILocator.getShortyAPI().getShorty(bundleId).get());
+        final String manifestFileName = String.format("manifest_%s.csv", bundleId);
 
         final ContentDisposition contentDisposition = ContentDisposition.type("attachment")
                 .fileName(manifestFileName)
@@ -957,8 +956,10 @@ public class BundleResource {
 
         return javax.ws.rs.core.Response
                 .ok( (StreamingOutput) output -> {
-                    IOUtils.copy(manifestInputStreamOptional.get(), output);
-                    output.flush();
+                    try (final Reader reader = manifestInputStreamOptional.get()) {
+                        IOUtils.copy(reader, output);
+                        output.flush();
+                    }
                 })
                 .type(MediaType.APPLICATION_OCTET_STREAM_TYPE)
                 .header( "Content-Disposition", contentDisposition ).build();
