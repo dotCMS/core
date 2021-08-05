@@ -1213,7 +1213,6 @@ public class DependencyBundlerTest {
 
         try (CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
 
-            manifestBuilder.create();
             config.setManifestBuilder(manifestBuilder);
 
             new BundleDataGen()
@@ -1360,7 +1359,6 @@ public class DependencyBundlerTest {
 
         try (CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
 
-            manifestBuilder.create();
             config.setManifestBuilder(manifestBuilder);
 
             bundler.setConfig(config);
