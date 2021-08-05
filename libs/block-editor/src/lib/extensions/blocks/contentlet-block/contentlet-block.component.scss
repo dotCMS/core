@@ -1,0 +1,35 @@
+.p-card {
+    background: #ffffff;
+    color: #495057;
+    box-shadow: 0 2px 1px -1px rgb(0 0 0 / 20%), 0 1px 1px 0 rgb(0 0 0 / 14%),
+        0 1px 3px 0 rgb(0 0 0 / 12%);
+    border-radius: 3px;
+
+    .p-card-body, .p-card-header {
+        padding: 1rem;
+    }
+
+    .p-card-body .p-card-content {
+        padding: 0;
+    }
+
+    .p-card-content {
+        padding: 1rem 0;
+    }
+
+    .p-card-title, .p-card-header {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .p-card-subtitle {
+        font-weight: 400;
+        margin-bottom: 0.5rem;
+        color: #6c757d;
+    }
+
+    .p-card .p-card-footer {
+        padding: 1rem 0 0 0;
+    }
+}

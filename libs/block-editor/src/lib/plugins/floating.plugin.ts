@@ -1,13 +1,16 @@
 import { Editor, posToDOMRect, Range } from '@tiptap/core';
 import { EditorState, Plugin, PluginKey } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
-import { range } from 'rxjs';
 import tippy, { Instance, Props } from 'tippy.js';
 export interface FloatingActionsPluginProps {
     editor: Editor;
     element: HTMLElement;
     tippyOptions?: Partial<Props>;
-    command: (props: { rect: DOMRect, range: Range, editor: Editor }) => void;
+    on: {
+        command: (props: { rect: DOMRect, range: Range, editor: Editor }) => void;
+        keydown: (view: EditorView, event: KeyboardEvent) => void;
+    }
+
 }
 
 export type FloatingActionsViewProps = FloatingActionsPluginProps & {
@@ -27,7 +30,7 @@ export class FloatingActionsView {
 
     public command: (props: { rect: DOMRect, range: Range, editor: Editor }) => void;
 
-    constructor({ editor, element, view, tippyOptions, command }: FloatingActionsViewProps) {
+    constructor({ editor, element, view, tippyOptions, on: { command } }: FloatingActionsViewProps) {
         console.log('constructor');
         this.editor = editor;
         this.element = element;
@@ -56,23 +59,11 @@ export class FloatingActionsView {
         setTimeout(() => this.update(this.editor.view));
     };
 
-    blurHandler = ({ event }: { event: FocusEvent }) => {
+    blurHandler = () => {
         console.log('blurHandler');
-        if (this.preventHide) {
-            this.preventHide = false;
-
-            return;
-        }
-
-        if (
-            event?.relatedTarget &&
-            this.element.parentNode?.contains(event.relatedTarget as Node)
-        ) {
-            return;
-        }
-
-        this.hide();
+        this.view.focus()
     };
+
 
     createTooltip(options: Partial<Props> = {}) {
         this.tippy = tippy(this.view.dom, {
@@ -127,7 +118,6 @@ export class FloatingActionsView {
         this.tippy.destroy();
         this.element.removeEventListener('mousedown', this.mousedownHandler);
         this.editor.off('focus', this.focusHandler);
-        this.editor.off('blur', this.blurHandler);
     }
 }
 
@@ -136,6 +126,14 @@ export const FloatingActionsPluginKey = new PluginKey('menuFloating');
 export const FloatingActionsPlugin = (options: FloatingActionsPluginProps) => {
     return new Plugin({
         key: FloatingActionsPluginKey,
-        view: (view) => new FloatingActionsView({ view, ...options })
+        view: (view) => new FloatingActionsView({ view, ...options }),
+        props: {
+            handleKeyDown(view: EditorView, event: KeyboardEvent) {
+                console.log('handleKeyDown')
+                options.on.keydown(view, event);
+
+                return false
+            },
+        }
     });
 };

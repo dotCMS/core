@@ -8,8 +8,8 @@ import {
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 
-import { ActionsMenu } from '../extentions/actions-menu.extension';
-import { ContentletBlock } from '../extentions/blocks/contentlet-block/contentlet-block.extension';
+import { ActionsMenu } from '../extensions/actions-menu.extension';
+import { ContentletBlock } from '../extensions/blocks/contentlet-block/contentlet-block.extension';
 
 @Component({
     selector: 'dotcms-block-editor',
