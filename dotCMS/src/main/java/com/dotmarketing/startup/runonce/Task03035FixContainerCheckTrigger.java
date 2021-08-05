@@ -56,11 +56,6 @@ public class Task03035FixContainerCheckTrigger extends AbstractJDBCStartupTask {
     }
 
     @Override
-    public String getH2Script() {
-    	return "";
-    }
-
-    @Override
     protected List<String> getTablesToDropConstraints() {
         return null;
     }

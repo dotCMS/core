@@ -20,6 +20,7 @@ import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublishStatus;
+import com.dotcms.publishing.PublisherAPIImplTest;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.repackage.org.apache.struts.Globals;
@@ -213,12 +214,18 @@ public class PublisherTest extends IntegrationTestBase {
         assertTrue(bundlerStatus.isPresent());
         assertTrue("We should have 1 page on: " + folderPage.folder, bundlerStatus.get().getCount() != 0);
 
+        File tarGzipFile = new File(pushResult.bundlePath + ".tar.gz");
+        assertTrue(tarGzipFile.exists());
+
+        PublisherAPIImplTest.extractTarArchive(tarGzipFile, new File(pushResult.bundlePath));
+
         assertTrue(PublisherTestUtil.existsFolder(pushResult.bundlePath, folderPage.folder));
         assertTrue(PublisherTestUtil.existsPage(pushResult.bundlePath, host, folderPage.folder, folderPage.page));
     }
 
     private void assertRemoveFolder(final FolderPage folderPage, final PushResult pushResult) throws Exception {
-
+        File tarGzipFile = new File(pushResult.bundlePath + ".tar.gz");
+        PublisherAPIImplTest.extractTarArchive(tarGzipFile, new File(pushResult.bundlePath));
         assertTrue(PublisherTestUtil.existsFolder(pushResult.bundlePath, folderPage.folder));
     }
 

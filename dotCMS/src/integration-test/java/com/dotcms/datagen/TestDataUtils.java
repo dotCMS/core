@@ -33,8 +33,10 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -48,6 +50,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -601,10 +604,57 @@ public class TestDataUtils {
 
         return dotAssetType;
     }
-    
-    
-    
-    
+
+    public static ContentType getRichTextLikeContentType() {
+        return getRichTextLikeContentType("RichText" + System.currentTimeMillis(), null);
+    }
+
+    @WrapInTransaction
+    public static ContentType getRichTextLikeContentType(final String contentTypeName, final Set<String> workflowIds) {
+
+        ContentType richTextLike = null;
+        try {
+            try {
+                richTextLike = APILocator.getContentTypeAPI(APILocator.systemUser())
+                        .find(contentTypeName);
+            } catch (NotFoundInDbException e) {
+                //Do nothing...
+            }
+            if (richTextLike == null) {
+
+                List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
+                fields.add(
+                        new FieldDataGen()
+                                .name("Title")
+                                .velocityVarName("title")
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("Site")
+                                .velocityVarName("contentHost")
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("Body")
+                                .velocityVarName("body")
+                                .next()
+                );
+
+                richTextLike = new ContentTypeDataGen()
+                        .name(contentTypeName)
+                        .velocityVarName(contentTypeName)
+                        .fields(fields)
+                        .workflowId(workflowIds)
+                        .nextPersisted();
+            }
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
+
+        return richTextLike;
+    }
     
     
     public static ContentType getWikiLikeContentType() {
@@ -805,6 +855,21 @@ public class TestDataUtils {
                     .setProperty("widgetTitle", null).skipValidation(true).nextPersisted();
         } catch (Exception e) {
             throw new DotRuntimeException(e);
+        }
+    }
+
+    public static Contentlet getRichTextContent(Boolean persist, long languageId, String body) {
+        String contentTypeId = getRichTextLikeContentType().id();
+        ContentletDataGen contentletDataGen = new ContentletDataGen(contentTypeId)
+                .languageId(languageId)
+                .setProperty("title", "Rich Text Title")
+                .setProperty("contentHost", "Some content host")
+                .setProperty("body", body);
+
+        if (persist) {
+            return contentletDataGen.nextPersisted();
+        } else {
+            return contentletDataGen.next();
         }
     }
 
@@ -1907,7 +1972,7 @@ public class TestDataUtils {
         return contentType;
     }
 
-    public static Contentlet getMultipleBinariesContent(Boolean persist, long languageId,
+    public static Contentlet getMultipleImageBinariesContent(Boolean persist, long languageId,
             String contentTypeId) {
 
         if (null == contentTypeId) {
@@ -1917,23 +1982,54 @@ public class TestDataUtils {
         final Contentlet fileAssetJpgContent = TestDataUtils
                 .getFileAssetContent(true, languageId, TestFile.JPG);
 
+        return persistBinaries(persist, languageId, contentTypeId, ImmutableMap
+                .of(FILE_ASSET_1, TestFile.JPG, FILE_ASSET_2, TestFile.PNG, "image1",
+                        fileAssetJpgContent.getIdentifier()));
+
+    }
+
+    public static Contentlet getMultipleBinariesContent(Boolean persist, long languageId,
+            String contentTypeId) {
+
+        if (null == contentTypeId) {
+            contentTypeId = getMultipleBinariesContentType().id();
+        }
+
+        return persistBinaries(persist, languageId, contentTypeId,
+                ImmutableMap.of(FILE_ASSET_1, TestFile.PDF, FILE_ASSET_2, TestFile.TEXT));
+    }
+
+    private static Contentlet persistBinaries(final Boolean persist, final long languageId,
+            final String contentTypeId, final Map<String, Object> files ) {
         try {
 
-           final ContentletDataGen contentletDataGen = new ContentletDataGen(contentTypeId)
+            final ContentletDataGen contentletDataGen = new ContentletDataGen(contentTypeId)
                     .languageId(languageId)
-                    .setProperty("title", "blah")
-                    .setProperty(FILE_ASSET_1, nextBinaryFile(TestFile.JPG))
-                    .setProperty(FILE_ASSET_2, nextBinaryFile(TestFile.PNG))
-                    .setProperty("image1", fileAssetJpgContent.getIdentifier());
+                    .setProperty("title", "blah");
+
+                   files.forEach((fileName, file) ->{
+                               try {
+                                     if(file instanceof TestFile) {
+                                         final TestFile testFile = (TestFile) file;
+                                         contentletDataGen.setProperty(fileName, nextBinaryFile(testFile));
+                                     } else {
+                                         contentletDataGen.setProperty(fileName, file);
+                                     }
+
+                               } catch (Exception e) {
+                                   Logger.error(TestDataUtils.class,e);
+                               }
+                           }
+                   );
 
             if (persist) {
                 final Contentlet persisted = contentletDataGen.nextPersisted();
-
-                final File fileAsset1 = (File) persisted.get(FILE_ASSET_1);
-                removeAnyMetadata(fileAsset1);
-                final File fileAsset2 = (File) persisted.get(FILE_ASSET_2);
-                removeAnyMetadata(fileAsset2);
-
+                files.forEach((fileName, testFile) -> {
+                    final Object file = persisted.get(fileName);
+                    if(file instanceof File) {
+                        removeAnyMetadata((File)file);
+                    }
+                });
                 return persisted;
             } else {
                 return contentletDataGen.next();

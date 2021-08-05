@@ -135,6 +135,7 @@
         //Connecting the action of clicking a user row
         dojo.connect( usersDataGrid, "onRowClick", function (evt) {
                 var id = evt.grid.getItem(evt.rowIndex).id[0];
+                getUserStarterPageData(id);
                 editUser(id);
         });
 
@@ -254,6 +255,23 @@
 		UserAjax.getUserById(userId, editUserCallback);
 	}
 
+    function getUserStarterPageData(userId) {
+        var xhrArgs = {
+                url: `/api/v1/toolgroups/gettingstarted/_userHasLayout?userid=${userId}`,
+                headers: {
+                    "Accept" : "application/json",
+                    "Content-Type" : "application/json"
+                },
+                handleAs : "json",
+                load: function(data) {
+                    // set checkbox
+                    dijit.byId("showStarter").attr('checked', data.entity.message);
+
+             }
+         };
+         dojo.xhrGet(xhrArgs);
+    }
+
 	
 	
 	function changeUserAccess(evt){
@@ -266,15 +284,35 @@
         
         
 	}
+
+    function setStarterPage(evt) {
+        if (!currentUser) return;
+
+        var xhrArgs = {
+            headers: {
+                "Accept" : "application/json",
+                "Content-Type" : "application/json"
+            },
+            handleAs : "json"
+        }
+
+
+        if (evt.checked) {
+            // set starter
+            xhrArgs.url = `/api/v1/toolgroups/gettingstarted/_addtouser?userid=${currentUser.id}`;
+            dojo.xhrPut(xhrArgs);
+        } else {
+            // unset starter
+            xhrArgs.url = `/api/v1/toolgroups/gettingstarted/_removefromuser?userid=${currentUser.id}`;
+            dojo.xhrPut(xhrArgs);
+        }
+    }
 	
 	
 	function assignUserAccessCallback(data){
 	    
 	    dojo.byId("canLoginToConsole").innerHTML=data.user.hasConsoleAccess
 	   
-	    console.log("data", data)	    
-	
-	
 	}
 	
 	
@@ -340,15 +378,13 @@
 		}
 
         dojo.byId("canLoginToConsole").innerHTML=user.hasConsoleAccess
-		
-		
-		
-		
-		
+
 		initStructures();
 		loadUserRolesTree(currentUser.id);
+
+		loadUserAdditionalInfo(currentUser);
+
 		buildRolesTree();
-		//dijit.byId('userTabsContainer').selectChild(dijit.byId('userRolesTab'));
 	}
 
 	//Setting up tab actions
@@ -1197,32 +1233,35 @@
 
 
 	//User additional info
+    function loadUserAdditionalInfo(user) {
+		 if(user!=null && user.additionalInfo!= null){
+             dijit.byId('userActive').attr('value', user.active?'on':false);
+             dijit.byId('prefix').attr('value', user.additionalInfo.prefix?user.additionalInfo.prefix:'');
+             dijit.byId('suffix').attr('value', user.additionalInfo.suffix?user.additionalInfo.suffix:'');
+             dijit.byId('title').attr('value', user.additionalInfo.title?user.additionalInfo.title:'');
+             dijit.byId('company').attr('value', user.additionalInfo.company?user.additionalInfo.company:'');
+             dijit.byId('website').attr('value', user.additionalInfo.website?user.additionalInfo.website:'');
 
-	function loadUserAdditionalInfo(user) {
+             for (var i = 1; i <= additionalVariablesCount; i++) {
+                 var value = user.additionalInfo['var' + i];
+                 if(value) {
+                     dijit.byId('var' + i).attr('value', value);
+                 } else {
+                     dijit.byId('var' + i).attr('value', '');
+                 }
+             }
+          }else{
+              dijit.byId('userActive').attr('value', true);
+              dijit.byId('prefix').attr('value', '');
+              dijit.byId('suffix').attr('value', '');
+              dijit.byId('title').attr('value', '');
+              dijit.byId('company').attr('value', '');
+              dijit.byId('website').attr('value', '');
 
-		 if(user!=null){
-				dijit.byId('userActive').attr('value', user.active?'on':false);
-				dijit.byId('prefix').attr('value', user.prefix);
-				dijit.byId('suffix').attr('value', user.suffix);
-				dijit.byId('title').attr('value', user.title);
-				dijit.byId('company').attr('value', user.company);
-				dijit.byId('website').attr('value', user.website);
-
-				for (var i = 1; i <= additionalVariablesCount; i++) {
-					var value = user['var' + i];
-					if(value) {
-						dijit.byId('var' + i).attr('value', value);
-					}
-				}
-			 }else{
-					dijit.byId('userActive').attr('value', true);
-					dijit.byId('prefix').attr('value', '');
-					dijit.byId('suffix').attr('value', '');
-					dijit.byId('title').attr('value', '');
-					dijit.byId('company').attr('value', '');
-					dijit.byId('website').attr('value', '');
-
-				}
+              for (var i = 1; i <= additionalVariablesCount; i++) {
+                 dijit.byId('var' + i).attr('value', '');
+             }
+         }
 	}
 
 	
@@ -1502,7 +1541,7 @@
 			return;
 		}
 
-		UserAjax.saveUserAddittionalInfo(currentUser.id, active, prefix, suffix, title, company, website, additionalVars, saveUserAdditionalInfoCallback);
+		UserAjax.saveUserAdditionalInfo(currentUser.id, active, prefix, suffix, title, company, website, additionalVars, saveUserAdditionalInfoCallback);
 	}
 
 	function saveUserAdditionalInfoCallback(){

@@ -4,7 +4,7 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockHeaderRequest;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockParameterRequest;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.exception.DotDataException;
@@ -36,6 +36,8 @@ public class LayoutAPITest extends IntegrationTestBase {
         IntegrationTestInitService.getInstance().init();
 
         layoutAPI = APILocator.getLayoutAPI();
+
+        deleteGettingStartedLayout();
     }
 
 
@@ -98,7 +100,7 @@ public class LayoutAPITest extends IntegrationTestBase {
     String referer = "/c/portal/layout?p_l_id=" + layout2.getId()
         + "&p_p_id=content&p_p_action=0&&dm_rlout=1&r=1563999037622&in_frame=true&frame=detailFrame&container=true&angularCurrentPortlet=content";
 
-    HttpServletRequest request = new MockHttpRequest("localhost", uri).request();
+    HttpServletRequest request = new MockHttpRequestIntegrationTest("localhost", uri).request();
     HttpServletRequest headerRequest = new MockHeaderRequest(request, "referer", referer).request();
     HttpServletRequest paramRequest = new MockParameterRequest(request, ImmutableMap.of("p_l_id", layout1.getId())).request();
 
@@ -113,7 +115,7 @@ public class LayoutAPITest extends IntegrationTestBase {
     
     
     // if there is nothing specified (no param, referer or session, you get nothing)
-    Assert.assertFalse(layoutAPI.resolveLayout(new MockHttpRequest("localhost", uri).request()).isPresent());
+    Assert.assertFalse(layoutAPI.resolveLayout(new MockHttpRequestIntegrationTest("localhost", uri).request()).isPresent());
 
   }
     
@@ -150,19 +152,27 @@ public class LayoutAPITest extends IntegrationTestBase {
      */
     @Test
     public void test_findGettingStartedLayout_Success() throws DotDataException {
+        //Create the Getting Started Layout
+      layoutAPI.findGettingStartedLayout();
       //Find the Getting Started Layout
-      Layout gettingStartedLayout = layoutAPI.findLayout(LayoutAPI.GETTING_STARTED_LAYOUT_ID);
-      //If it finds the layout remove it
-      if(gettingStartedLayout != null && UtilMethods.isSet(gettingStartedLayout.getId())){
-          layoutAPI.removeLayout(gettingStartedLayout);
-      }
-      //Create the Getting Started Layout
-      gettingStartedLayout = layoutAPI.findGettingStartedLayout();
-      //Find the Getting Started Layout
-      gettingStartedLayout = layoutAPI.findLayout(LayoutAPI.GETTING_STARTED_LAYOUT_ID);
+        Layout gettingStartedLayout = layoutAPI.findLayout(LayoutAPI.GETTING_STARTED_LAYOUT_ID);
       assertNotNull(gettingStartedLayout);
       assertEquals("Getting Started",gettingStartedLayout.getName());
       assertEquals("whatshot",gettingStartedLayout.getDescription());
+    }
+
+    static private void deleteGettingStartedLayout() throws DotDataException {
+        Layout gettingStartedLayout = layoutAPI.findLayout(LayoutAPI.GETTING_STARTED_LAYOUT_ID);
+        //If it finds the layout remove it
+        if(gettingStartedLayout != null && UtilMethods.isSet(gettingStartedLayout.getId())){
+            layoutAPI.removeLayout(gettingStartedLayout);
+        } else {
+            // try by name, which is unique as well
+            gettingStartedLayout = layoutAPI.findLayoutByName(LayoutAPI.GETTING_STARTED_LAYOUT_NAME);
+            if(gettingStartedLayout != null && UtilMethods.isSet(gettingStartedLayout.getId())){
+                layoutAPI.removeLayout(gettingStartedLayout);
+            }
+        }
     }
 
     /**

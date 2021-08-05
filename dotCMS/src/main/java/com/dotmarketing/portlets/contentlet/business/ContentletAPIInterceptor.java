@@ -426,38 +426,6 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
-	public com.dotmarketing.portlets.contentlet.business.Contentlet convertContentletToFatContentlet(Contentlet cont,com.dotmarketing.portlets.contentlet.business.Contentlet fatty)	throws DotDataException {
-		for(ContentletAPIPreHook pre : preHooks){
-			boolean preResult = pre.convertContentletToFatContentlet(cont, fatty);
-			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
-			}
-		}
-		com.dotmarketing.portlets.contentlet.business.Contentlet c = conAPI.convertContentletToFatContentlet(cont, fatty);
-		for(ContentletAPIPostHook post : postHooks){
-			post.convertContentletToFatContentlet(cont, fatty, c);
-		}
-		return c;
-	}
-
-	@Override
-	public Contentlet convertFatContentletToContentlet(com.dotmarketing.portlets.contentlet.business.Contentlet fatty) throws DotDataException, DotSecurityException {
-		for(ContentletAPIPreHook pre : preHooks){
-			boolean preResult = pre.convertFatContentletToContentlet(fatty);
-			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
-			}
-		}
-		Contentlet c = conAPI.convertFatContentletToContentlet(fatty);
-		for(ContentletAPIPostHook post : postHooks){
-			post.convertFatContentletToContentlet(fatty, c);
-		}
-		return c;
-	}
-
-	@Override
 	public void copyProperties(Contentlet contentlet, Map<String, Object> properties) throws DotContentletStateException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.copyProperties(contentlet, properties);
@@ -676,7 +644,58 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         }
     }
 
-    @Override
+	@Override
+	public Contentlet move(final Contentlet contentlet, final User user, final String hostAndFolderPath, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		for(ContentletAPIPreHook pre : preHooks){
+			final boolean preResult = pre.move(contentlet, user, hostAndFolderPath, respectFrontendRoles);
+			if(!preResult){
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+
+		final Contentlet resultContentlet = conAPI.move(contentlet, user, hostAndFolderPath, respectFrontendRoles);
+		for(ContentletAPIPostHook post : postHooks){
+			post.move(contentlet, user, hostAndFolderPath, respectFrontendRoles);
+		}
+		return resultContentlet;
+	}
+
+	@Override
+	public Contentlet move(final Contentlet contentlet, final User user, final Host host, final String folderFolderPath, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		for(ContentletAPIPreHook pre : preHooks){
+			final boolean preResult = pre.move(contentlet, user, host, folderFolderPath, respectFrontendRoles);
+			if(!preResult){
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+
+		final Contentlet c = conAPI.move(contentlet, user, host, folderFolderPath, respectFrontendRoles);
+		for(ContentletAPIPostHook post : postHooks){
+			post.move(contentlet, user, host, folderFolderPath, respectFrontendRoles);
+		}
+		return c;
+	}
+
+	@Override
+	public Contentlet move(final Contentlet contentlet, User user, Host host, Folder folder, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		for(ContentletAPIPreHook pre : preHooks){
+			final boolean preResult = pre.move(contentlet, user, host, folder, respectFrontendRoles);
+			if(!preResult){
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+
+		final Contentlet c = conAPI.move(contentlet, user, host, folder, respectFrontendRoles);
+		for(ContentletAPIPostHook post : postHooks){
+			post.move(contentlet, user, host, folder, respectFrontendRoles);
+		}
+		return c;
+	}
+
+	@Override
 	public Contentlet find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.find(inode, user, respectFrontendRoles);
@@ -1167,22 +1186,6 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		String c = conAPI.getName(contentlet, user, respectFrontendRoles);
 		for(ContentletAPIPostHook post : postHooks){
 			post.getName(contentlet, user, respectFrontendRoles,c);
-		}
-		return c;
-	}
-
-	@Override
-	public Date getNextReview(Contentlet content, User user, boolean respectFrontendRoles) throws DotSecurityException {
-		for(ContentletAPIPreHook pre : preHooks){
-			boolean preResult = pre.getNextReview(content, user, respectFrontendRoles);
-			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
-			}
-		}
-		Date c = conAPI.getNextReview(content, user, respectFrontendRoles);
-		for(ContentletAPIPostHook post : postHooks){
-			post.getNextReview(content, user, respectFrontendRoles,c);
 		}
 		return c;
 	}

@@ -37,15 +37,13 @@
         <versionTs>2021-01-20 20:20:42.234 UTC</versionTs>
     </cvi>
     <operation>PUBLISH</operation>
-    <csList class="com.google.common.collect.RegularImmutableList" resolves-to="com.google.common.collect.ImmutableList$SerializedForm">
-        <elements>
-            <com.dotmarketing.beans.ContainerStructure>
-                <id>__container_structure_id__</id>
-                <structureId>__content_type_id__</structureId>
-                <containerInode>__inode__</containerInode>
-                <containerId>__id__</containerId>
-                <code>__code__</code>
-            </com.dotmarketing.beans.ContainerStructure>
-        </elements>
+    <csList>
+        <com.dotmarketing.beans.ContainerStructure>
+            <id>__container_structure_id__</id>
+            <structureId>__content_type_id__</structureId>
+            <containerInode>__inode__</containerInode>
+            <containerId>__id__</containerId>
+            <code>__code__</code>
+        </com.dotmarketing.beans.ContainerStructure>
     </csList>
 </com.dotcms.publisher.pusher.wrapper.ContainerWrapper>

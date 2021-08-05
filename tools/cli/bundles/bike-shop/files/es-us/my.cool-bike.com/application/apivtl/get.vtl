@@ -1,0 +1,38 @@
+
+
+
+#foreach($file in $dotcontent.pull("+contentType:FileAsset +metaData.isImage:true",2,"modDate desc"))
+  <ul>
+    <li>   
+    <div>Tipo de contenido:</div><div id="ct">$file.metaData.contentType</div>
+    </li>
+    <li>
+    <div>Tamano de Archivo:</div> <div id="fileSize">$file.metaData.fileSize</div>
+    </li>
+    <li>
+    <div>Fecha :</div> <div id="modDate">$file.metaData.modDate</div>
+    </li>
+    <li>
+    <div>Longitud:</div> <div id="fileSize">$file.metaData.fileSize</div>
+    </li>
+    <li>
+    <div>Es imagen:</div><div id="isImage">$file.metaData.isImage</div>
+    </li>
+    <li>
+    <div>Ancho:</div> <div id="width">$file.metaData.width</div>
+    </li>
+    <li>
+    <div>Alto:</div> <div id="height">$file.metaData.height</div>
+    </li>
+    <li>
+    <div>Nombre:</div> <div id="name">$file.metaData.name</div>
+    </li>
+    <div>Ruta al archivo:</div> <div id="path">$file.metaData.path</div>
+    <li>
+    <div>sha256:</div> <div id="sha256">$file.metaData.sha256</div>
+    </li>
+    <li>
+    <div>Titulo:</div><div id="title">$file.metaData.title</div>
+    </li>
+  </ul>
+#end

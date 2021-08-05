@@ -7,7 +7,9 @@ import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.FilterDescriptor;
+import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -35,13 +37,16 @@ public class BundleDataGen extends AbstractDataGen<Bundle> {
     private Set<AssetsItem> assets = new HashSet<>();
     private FilterDescriptor filter;
     private List<String> luceneQueries = new ArrayList<>();
+    private boolean downloading = true;
+    private Operation operation = Operation.PUBLISH;
+    private boolean forcePush = false;
 
     static{
         howAddInBundle = new AssignableFromMap<>();
 
         howAddInBundle.put(ContentType.class, new MetaData(
                 (PushPublisherConfig config) -> config.getStructures(),
-                (Object asset) -> ((ContentType) asset).id(),
+                (Object asset) -> ((ContentType) asset).inode(),
                 PusheableAsset.CONTENT_TYPE
             )
         );
@@ -110,11 +115,22 @@ public class BundleDataGen extends AbstractDataGen<Bundle> {
         );
 
         howAddInBundle.put(Language.class, new MetaData(
-                        (PushPublisherConfig config) -> config.getLanguages(),
+                        (PushPublisherConfig config) -> config.getIncludedLanguages(),
                         (Object asset) -> Long.toString(((Language) asset).getId()),
                         PusheableAsset.LANGUAGE
                 )
         );
+    }
+
+
+    public BundleDataGen forcePush(final boolean forcePush) {
+        this.forcePush = forcePush;
+        return this;
+    }
+
+    public BundleDataGen operation(final Operation operation) {
+        this.operation = operation;
+        return this;
     }
 
     public BundleDataGen name(final String name) {
@@ -136,6 +152,8 @@ public class BundleDataGen extends AbstractDataGen<Bundle> {
     public Bundle next() {
         final String bundleName = name != name ? name : "testBundle" + System.currentTimeMillis();
         final Bundle bundle = new Bundle(bundleName, new Date(), null, user.getUserId());
+        bundle.setOperation(operation.ordinal());
+        bundle.setForcePush(forcePush);
 
         if (filter != null) {
             bundle.setFilterKey(filter.getKey());
@@ -173,8 +191,8 @@ public class BundleDataGen extends AbstractDataGen<Bundle> {
             if (config != null) {
                 config.setAssets(getPublishQueueElements(bundleFromDataBase));
                 config.setId(bundleFromDataBase.getId());
-                config.setOperation(PublisherConfig.Operation.PUBLISH);
-                config.setDownloading(true);
+                config.setOperation(operation);
+                config.setDownloading(downloading);
                 config.setLuceneQueries(luceneQueries);
             }
 
@@ -200,6 +218,11 @@ public class BundleDataGen extends AbstractDataGen<Bundle> {
             }
         }
 
+        return this;
+    }
+
+    public BundleDataGen downloading(boolean downloading) {
+        this.downloading = downloading;
         return this;
     }
 

@@ -20,8 +20,10 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.ZipUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -42,7 +44,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
@@ -52,7 +53,6 @@ import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
-import joptsimple.internal.Strings;
 import org.apache.commons.lang.StringUtils;
 import org.apache.tools.zip.ZipEntry;
 import org.elasticsearch.ElasticsearchException;
@@ -126,6 +126,7 @@ public class ESIndexAPI {
 	final private ContentletIndexAPI iapi;
 	final private ESIndexHelper esIndexHelper;
 
+	final private Lazy<String> clusterPrefix;
 	public enum Status { ACTIVE("active"), INACTIVE("inactive"), PROCESSING("processing");
 		private final String status;
 
@@ -138,10 +139,16 @@ public class ESIndexAPI {
 		}
 	}
 
-	public ESIndexAPI(){
-		this.iapi = new ContentletIndexAPIImpl();
-		this.esIndexHelper = ESIndexHelper.getInstance();
-	}
+    @VisibleForTesting
+    ESIndexAPI(Lazy<String> clusterPrefix) {
+        this.iapi = new ContentletIndexAPIImpl();
+        this.esIndexHelper = ESIndexHelper.getInstance();
+        this.clusterPrefix = clusterPrefix;
+    }
+     
+    public ESIndexAPI() {
+        this(Lazy.of(() -> CLUSTER_PREFIX + ClusterFactory.getClusterId() + "."));
+    }
 
     private class IndexSortByDate implements Comparator<String> {
         public int compare(String o1, String o2) {
@@ -355,26 +362,109 @@ public class ESIndexAPI {
 		}
 	}
 
+	/**
+	 * Deletes the index which name matches the provided name
+	 * @param indexName the name of the index to delete
+	 * @return true if the response of the deletion was acknowledged, false if not
+	 */
 	public boolean delete(String indexName) {
 		if(indexName==null) {
 			Logger.error(this.getClass(), "Failed to delete a null ES index");
 			return true;
 		}
 
+		return deleteMultiple(indexName);
+	}
+
+	/**
+	 * Deletes the indices which names match the provided names
+	 * @param indexNames vararg with the names of the indices to delete
+	 * @return true if the response of the deletion was acknowledged, false if not
+	 */
+	public boolean deleteMultiple(String...indexNames) {
+		if(indexNames==null || indexNames.length==0) {
+			return true;
+		}
+
+		List<String> indicesWithClusterPrefix = Arrays.stream(indexNames)
+				.map(this::getNameWithClusterIDPrefix).collect(Collectors.toList());
 		try {
-            AdminLogger.log(this.getClass(), "delete", "Trying to delete index: " + indexName);
-			DeleteIndexRequest request = new DeleteIndexRequest(getNameWithClusterIDPrefix(indexName));
+			DeleteIndexRequest request = new DeleteIndexRequest(indicesWithClusterPrefix
+					.toArray(new String[0]));
 			request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 			AcknowledgedResponse deleteIndexResponse =
 					RestHighLevelClientProvider.getInstance().getClient()
 							.indices().delete(request, RequestOptions.DEFAULT);
 
-            AdminLogger.log(this.getClass(), "delete", "Index: " + indexName + " deleted.");
-
-            return deleteIndexResponse.isAcknowledged();
+			return deleteIndexResponse.isAcknowledged();
 		} catch (Exception e) {
 			throw new ElasticsearchException(e.getMessage(),e);
 		}
+	}
+
+	/**
+	 * Deletes the inactive live/working indices older than the inactive live/working sets indicated to be
+	 * kept.
+	 * @param inactiveLiveWorkingSetsToKeep indicates how many live/working sets to keep
+	 */
+
+	public void deleteInactiveLiveWorkingIndices(final int inactiveLiveWorkingSetsToKeep) {
+		// get list of indices ordered by created desc and in sets of live/working
+		List<String> indices = getLiveWorkingIndicesSortedByCreationDateDesc();
+
+		removeActiveLiveAndWorkingFromList(indices);
+
+		int kept = 0;
+		String lastTimestamp="";
+		List<String> indicesToRemove = new ArrayList<>(indices);
+
+		for (String index : indices) {
+			if(kept==inactiveLiveWorkingSetsToKeep) {
+				break;
+			}
+
+			final String indexTimestamp = getIndexTimestamp(index);
+
+			deleteLiveWorkinSetFromList(indicesToRemove, index, indexTimestamp);
+
+			if(!indexTimestamp.equals(lastTimestamp)) {
+				kept++;
+			}
+
+			lastTimestamp = indexTimestamp;
+		}
+
+		deleteMultiple(indicesToRemove.toArray(new String[0]));
+
+		if(!indicesToRemove.isEmpty()) {
+			Logger.info(this, "The following indices were deleted: "
+					+ String.join(",", indicesToRemove));
+		}
+
+	}
+
+	private void deleteLiveWorkinSetFromList(List<String> indicesToRemove, String index, String indexTimestamp) {
+		indicesToRemove.remove(index);
+		// let's check if the next one has the same timestamp - if so remove it, because it is the
+		// the other index in the live/working set that we want to delete.
+		final String nextIndex = Try.of(()-> indicesToRemove.get(0)).getOrNull();
+		if(UtilMethods.isSet(nextIndex) && indexTimestamp.equals(getIndexTimestamp(nextIndex))) {
+			indicesToRemove.remove(0);
+		}
+	}
+
+	private void removeActiveLiveAndWorkingFromList(List<String> indices) {
+		final IndiciesInfo info = Try.of(()->APILocator.getIndiciesAPI().loadIndicies())
+				.getOrNull();
+
+		if(info!=null) {
+			indices.remove(removeClusterIdFromName(info.getLive()));
+			indices.remove(removeClusterIdFromName(info.getWorking()));
+		}
+	}
+
+	private String getIndexTimestamp(final String indexName) {
+		return Try.of(()->indexName.substring(indexName.lastIndexOf("_") + 1)).getOrNull();
 	}
 
 	/**
@@ -883,9 +973,47 @@ public class ESIndexAPI {
 		return indexes;
 	}
 
+	/**
+	 * Gets a {@link List} of all live/working indices names - without the cluster-id prefix - sorted by creation date desc
+	 *
+	 * @return the list
+	 */
+
+	public List<String> getLiveWorkingIndicesSortedByCreationDateDesc() {
+		final List<String> indexes = new ArrayList<>();
+		try {
+
+			GetIndexRequest request = new GetIndexRequest(IndexType.WORKING.getPattern(),
+					IndexType.LIVE.getPattern());
+
+			request.indicesOptions(
+					IndicesOptions.fromOptions(
+							false, true, true,
+							true
+					)
+			);
+
+			indexes.addAll(Arrays.asList(
+					RestHighLevelClientProvider.getInstance().getClient().indices()
+							.get(request, RequestOptions.DEFAULT).getIndices()));
+
+			return indexes.stream()
+					.filter(this::hasClusterPrefix)
+					.map(this::removeClusterIdFromName)
+					.sorted(new IndexSortByDate())
+					.collect(Collectors.toList());
+		} catch (ElasticsearchStatusException | IOException e) {
+			Logger.warnAndDebug(ContentletIndexAPIImpl.class, "The list of indexes cannot be returned. Reason: " + e.getMessage(), e);
+		}
+
+		return indexes;
+	}
+
 	boolean hasClusterPrefix(final String indexName) {
-        final String clusterId = getClusterIdFromIndexName(indexName).orElse(null);
-        return clusterId != null && clusterId.equals(ClusterFactory.getClusterId());
+	    
+	    return indexName!=null && indexName.startsWith(clusterPrefix.get());
+	    
+
     }
 
     /**
@@ -897,25 +1025,14 @@ public class ESIndexAPI {
      * @return Index name or alias without the cluster id prefix
      */
     public String removeClusterIdFromName(final String name) {
-        if (name == null){
-            return Strings.EMPTY;
-        }
-		final String[] indexNameSplit = name.split("\\.");
-		return indexNameSplit.length == 1 ?
-				indexNameSplit[0] :
-				indexNameSplit[1];
+        if(name==null) return "";
+        return name.indexOf(".")>-1 
+                        ? name.substring(name.lastIndexOf(".")+1, name.length()) 
+                        : name;
+
 	}
 
-	private Optional<String> getClusterIdFromIndexName(final String indexName) {
-        if (indexName != null) {
-            final String[] indexNameSplit = indexName.split("\\.");
-            if (indexNameSplit.length > 1 && indexNameSplit[0].split("_").length > 1) {
-                return Optional.of(indexNameSplit[0].split("_")[1]);
-            }
-        }
 
-		return Optional.empty();
-	}
 
 	public List<String> getClosedIndexes() {
 
@@ -997,6 +1114,7 @@ public class ESIndexAPI {
 		}
 	}
 
+	
     /**
      * Given an alias or index name, this method will return the full name including the cluster id,
      * using this format: <b>{@link IndiciesInfo#CLUSTER_PREFIX CLUSTER_PREFIX}_{id}.{name}</b>
@@ -1005,8 +1123,7 @@ public class ESIndexAPI {
      */
     public String getNameWithClusterIDPrefix(final String name) {
         return hasClusterPrefix(name) ? name
-                : new StringBuilder(CLUSTER_PREFIX).append(ClusterFactory.getClusterId())
-                        .append(".").append(name).toString();
+                : clusterPrefix.get() + name;
     }
 
     /**

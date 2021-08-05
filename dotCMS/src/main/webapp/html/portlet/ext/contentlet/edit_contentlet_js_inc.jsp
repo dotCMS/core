@@ -397,7 +397,6 @@
         var fmData = new Array();
 
         fmData = getFormData("fm","<%= com.dotmarketing.util.WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR %>");
-
         if(isInodeSet(currentContentletInode)){
             isCheckin = false;
             isAutoSave=false;
@@ -502,9 +501,9 @@
         catch (e) {
             console.error('Error smoothScroll()', e);
         }
-        
+
     }
-    
+
     function resetHasChanged(){
         _hasUserChanged = false;
         emmitUserHasChange(_hasUserChanged);
@@ -642,15 +641,19 @@
 
             if((data["referer"] != null && data["referer"] != '' && !data["contentletLocked"])) {
                 if (data['isHtmlPage'] && workingContentletInode.length === 0 && !data["referer"].includes("relend")) {
-                    customEventDetail = {	
-                        name: 'close'	
-                    };
                     var params = data['htmlPageReferer'].split('?')[1].split('&');
                     var languageQueryParam = params.find(function(queryParam) {
                         return queryParam.startsWith('com.dotmarketing.htmlpage.language');
                     });
                     var languageId = languageQueryParam.split('=')[1];
-                    window.top.location = '/dotAdmin/#/edit-page/content?url=' + data['htmlPageReferer'].split('?')[0] + '&language_id=' + languageId;
+
+                    customEventDetail = {
+                        name: 'close',
+                        data: {
+                            redirectUrl: data['htmlPageReferer'].split('?')[0],
+                            languageId
+                        }
+                    };
                 }
             }
         } else {
@@ -685,7 +688,7 @@
         if (dojoDigit) {
         	dojoDigit.destroyRecursive(false);
         }
-        
+
         var myCp = dijit.byId("contentletPermissionCp");
         if (myCp) {
         	myCp.destroyRecursive(false);
@@ -701,8 +704,8 @@
         }).placeAt(myDiv);
     }
 
-    
-    
+
+
     function refreshVersionCp(){
         var x = dijit.byId("versions");
         var y =Math.floor(Math.random()*1123213213);
@@ -722,8 +725,8 @@
             href: "/html/portlet/ext/contentlet/contentlet_versions_inc.jsp?contentletId=" +contentAdmin.contentletIdentifier + "&r=" + y
         }).placeAt("contentletVersionsDiv");
     }
-    
-    
+
+
 
     function refreshRulesCp(){
 
@@ -751,7 +754,7 @@
     }
 
 
-    
+
 
     //*************************************
     //
@@ -811,6 +814,7 @@
         dojo.byId("wfActionAssign").value = formData.assign;
         dojo.byId("wfActionComments").value = formData.comments;
         dojo.byId("wfActionId").value = actionId;
+        dojo.byId("wfPathToMove").value = formData.pathToMove;
 
         // BEGIN: PUSH PUBLISHING ACTIONLET
         dojo.byId("wfPublishDate").value = formData.publishDate;
@@ -858,7 +862,7 @@
         saveContent(false);
 
     }
-    
+
     var contentAdmin = new dotcms.dijit.contentlet.ContentAdmin('<%= contentlet.getIdentifier() %>','<%= contentlet.getInode() %>','<%= contentlet.getLanguageId() %>');
 
     function makeEditable(contentletInode){
@@ -883,7 +887,7 @@
     function stealLock(contentletInode){
         ContentletAjax.unlockContent(contentletInode, stealLockContentCallback);
     }
-    
+
     function stealLockContentCallback(data){
 
         if(data["Error"]){
@@ -922,7 +926,7 @@
 
 
     }
-    
+
 
 
     function refreshActionPanel(inode){

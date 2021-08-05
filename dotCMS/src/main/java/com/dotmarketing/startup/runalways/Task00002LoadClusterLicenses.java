@@ -52,7 +52,7 @@ public class Task00002LoadClusterLicenses implements StartupTask {
             File oldPack = new File(pack.getParent() + File.separator + IMPORTED_LICENSE_PACK_PREFIX + now  + "_" + pack.getName());
             try(InputStream in = Files.newInputStream(pack.toPath())){
                 LicenseUtil.uploadLicenseRepoFile(in);
-                if(Config.getBooleanProperty("ARCHIVE_IMPORTED_LICENSE_PACKS", true)){
+                if(Config.getBooleanProperty("ARCHIVE_IMPORTED_LICENSE_PACKS", false)){
                     boolean status = pack.renameTo(oldPack);
                     if(status == false)
                         Logger.warn(this.getClass(), "Unable to rename license file - consider setting ARCHIVE_IMPORTED_LICENSE_PACKS to false if you do not want license file renamed after it is loaded.");

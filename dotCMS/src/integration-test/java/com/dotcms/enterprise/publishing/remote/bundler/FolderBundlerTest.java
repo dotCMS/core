@@ -2,20 +2,24 @@ package com.dotcms.enterprise.publishing.remote.bundler;
 
 import com.dotcms.datagen.*;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.manifest.ManifestBuilder;
+import com.dotcms.publishing.output.BundleOutput;
+import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.FileUtil;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -65,7 +69,7 @@ public class FolderBundlerTest {
 
 
     /**
-     * Method to Test: {@link FolderBundler#generate(File, BundlerStatus)}
+     * Method to Test: {@link FolderBundler#generate(BundleOutput, BundlerStatus)}
      * When: Add a {@link Folder} in a bundle
      * Should:
      * - The file should be create in:
@@ -80,29 +84,35 @@ public class FolderBundlerTest {
 
         final BundlerStatus status = mock(BundlerStatus.class);
         final FolderBundler bundler = new FolderBundler();
-        final File bundleRoot = FileUtil.createTemporaryDirectory("FolderBundlerTest_addFolderInBundle_");
 
-        final FilterDescriptor filterDescriptor = new FileDescriptorDataGen().nextPersisted();
+        final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
 
         final PushPublisherConfig config = new PushPublisherConfig();
-        config.setFolders(set(folder.getIdentifier()));
-        config.setOperation(PublisherConfig.Operation.PUBLISH);
 
-        new BundleDataGen()
-                .pushPublisherConfig(config)
-                .addAssets(list(folder))
-                .filter(filterDescriptor)
-                .nextPersisted();
+        try (ManifestBuilder manifestBuilder = new TestManifestBuilder()) {
+            config.setManifestBuilder(manifestBuilder);
+            config.add(folder, PusheableAsset.FOLDER, StringPool.BLANK);
+            config.setOperation(PublisherConfig.Operation.PUBLISH);
 
-        bundler.setConfig(config);
-        bundler.generate(bundleRoot, status);
+            new BundleDataGen()
+                    .pushPublisherConfig(config)
+                    .addAssets(list(folder))
+                    .filter(filterDescriptor)
+                    .nextPersisted();
 
-        final User systemUser = APILocator.systemUser();
+            final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config);
 
-        while(folder != null && !folder.isSystemFolder()) {
-            FileTestUtil.assertBundleFile(bundleRoot, folder, testCase.expectedFilePath);
+            bundler.setConfig(config);
+            bundler.generate(directoryBundleOutput, status);
 
-            folder = APILocator.getFolderAPI().findParentFolder(folder, systemUser, false);
+            final User systemUser = APILocator.systemUser();
+
+            while (folder != null && !folder.isSystemFolder()) {
+                FileTestUtil.assertBundleFile(directoryBundleOutput.getFile(), folder,
+                        testCase.expectedFilePath);
+
+                folder = APILocator.getFolderAPI().findParentFolder(folder, systemUser, false);
+            }
         }
     }
 

@@ -25,6 +25,7 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships.Content
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import java.io.Serializable;
 import java.util.Date;
@@ -47,6 +48,21 @@ import java.util.Set;
 public interface ContentletAPI {
 
 	/**
+	 * Default formats for contentlets including timezones
+	 */
+	public static final String[] DEFAULT_DATE_FORMATS = new String[] {
+			// time zone
+			"yyyy-MM-dd HH:mm:ss z Z", "d-MMM-yy z Z", "dd-MMM-yyyy z Z", "MM/dd/yy HH:mm:ss z Z",
+			"MM/dd/yy hh:mm:ss z Z", "MMMM dd, yyyy z Z", "M/d/y z Z", "MM/dd/yyyy z Z", "yyyy-MM-dd z Z",
+
+			"yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "d-MMM-yy", "MMM-yy", "MMMM-yy", "d-MMM", "dd-MMM-yyyy",
+			"MM/dd/yyyy hh:mm:ss aa", "MM/dd/yyyy hh:mm aa", "MM/dd/yy HH:mm:ss", "MM/dd/yy HH:mm:ss", "MM/dd/yy HH:mm",
+			"MM/dd/yy hh:mm:ss aa", "MM/dd/yy hh:mm:ss", "MM/dd/yyyy HH:mm:ss", "MM/dd/yyyy HH:mm", "MMMM dd, yyyy",
+			"M/d/y", "M/d", "EEEE, MMMM dd, yyyy", "MM/dd/yyyy",
+			"hh:mm:ss aa", "hh:mm aa", "HH:mm:ss", "HH:mm", "yyyy-MM-dd"
+	};
+
+	/**
 	 * Use to retrieve all version of all content in the database.  This is not a common method to use. 
 	 * Only use if you need to do maintenance tasks like search and replace something in every piece 
 	 * of content.  Doesn't respect permissions.
@@ -64,6 +80,60 @@ public interface ContentletAPI {
 	 * @throws DotDataException
 	 */
 	public Contentlet find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Move the contentlet to a host path for instance //demo.dotcms.com/application
+	 * Indexing will be based on the {@link Contentlet#getIndexPolicy()}
+	 *
+	 * It has to start with // and the host has to exists.
+	 * If the folderPath does not exists, will try to create it (if enough grants)
+	 *
+	 * @param contentlet {@link Contentlet} existing contentlet
+	 * @param user   {@link User} user that does the action
+	 * @param hostAndFolderPath {@link String} host and path to move the content, throw and exception if do not exists or can not write in there
+	 * @param respectFrontendRoles
+	 * @return Contentlet updated contentlet
+	 */
+	default Contentlet move(Contentlet contentlet, User user, String hostAndFolderPath, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+
+		Logger.info(this, "Move not implemented");
+		return contentlet;
+	}
+
+	/**
+	 * Move the contentlet to a particular host and path for instance /application on the demo.dotcms.com
+	 * Indexing will be based on the {@link Contentlet#getIndexPolicy()}
+	 *
+	 * If the folderPath does not exists, will try to create it (if enough grants)
+	 *
+	 * @param contentlet {@link Contentlet} existing contentlet
+	 * @param user   {@link User} user that does the action
+	 * @param host   {@link Host} host to move
+	 * @param folderPath {@link String} path of the destiny folder
+	 * @param respectFrontendRoles
+	 * @return Contentlet updated contentlet
+	 */
+	default Contentlet move(Contentlet contentlet, User user, Host host, String folderPath, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+		Logger.info(this, "Move not implemented");
+		return contentlet;
+	}
+
+	/**
+	 * Move the contentlet to a particular host and path
+	 * Indexing will be based on the {@link Contentlet#getIndexPolicy()}
+	 *
+	 * @param contentlet {@link Contentlet} existing contentlet
+	 * @param user   {@link User} user that does the action
+	 * @param host   {@link Host} host to move
+	 * @param folder {@link Folder} destiny folder
+	 * @param respectFrontendRoles
+	 * @return Contentlet updated contentlet
+	 */
+	default Contentlet move(final Contentlet contentlet, final User user, final Host host, final Folder folder,
+					final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+		Logger.info(this, "Move not implemented");
+		return contentlet;
+	}
 
 	/**
 	 * Returns a working Contentlet Object for a given language
@@ -409,15 +479,6 @@ public interface ContentletAPI {
 	 */
 	public void cleanHostField(Structure structure, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotMappingException;
 
-	/**
-	 * Finds the next date that a contentlet must be reviewed
-	 * @param content 
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return Date
-	 * @throws DotSecurityException
-	 */
-	public Date getNextReview(Contentlet content, User user, boolean respectFrontendRoles) throws DotSecurityException;
 
 	/**
 	 * Retrieves all references for a Contentlet. The result is an ArrayList of type Map whose key will 
@@ -1676,23 +1737,6 @@ public interface ContentletAPI {
 	 */
 	public boolean isFieldTypeFloat(Field field);
 
-	/**
-	 * Converts a "fat" (legacy) contentlet into a new contentlet.
-	 * @param fatty Fat contentlet to be converted.
-	 * @return A "light" contentlet.
-	 * @throws DotDataException
-	 * @throws DotSecurityException 
-	 */
-	public Contentlet convertFatContentletToContentlet (com.dotmarketing.portlets.contentlet.business.Contentlet fatty) throws DotDataException, DotSecurityException;
-	
-	/**
-	 * Converts a "light" contentlet into a "fat" (legacy) contentlet.
-	 * @param cont A "light" contentlet to be converted.
-	 * @return fatty Fat contentlet.
-	 * @throws DotDataException
-	 */
-	public com.dotmarketing.portlets.contentlet.business.Contentlet convertContentletToFatContentlet (Contentlet cont, com.dotmarketing.portlets.contentlet.business.Contentlet fatty) throws DotDataException;
-    
    /**
     * Delete old versions contents that are older than a given date
 	* Used by the Drop Old Assets Version Tool. For regular deletion

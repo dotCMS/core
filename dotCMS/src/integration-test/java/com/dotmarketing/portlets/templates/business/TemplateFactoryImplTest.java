@@ -1,21 +1,30 @@
 package com.dotmarketing.portlets.templates.business;
 
-import static org.junit.Assert.assertNull;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateAsFileDataGen;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
+import com.dotmarketing.util.Constants;
 import java.util.List;
+import java.util.Map;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.rest.api.v1.template.TemplateHelper;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotcms.util.PaginationUtil;
-import com.dotcms.util.pagination.OrderDirection;
-import com.dotcms.util.pagination.TemplatePaginator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.common.util.SQLUtilTest;
-import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.UUIDGenerator;
@@ -106,5 +115,115 @@ public class TemplateFactoryImplTest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Method to test: {@link TemplateFactoryImpl#findTemplates(User, boolean, Map, String, String, String, String, int, int, String)} ()}
+     * Given Scenario: Try to get all the templates of a specific host, no other param is set.
+     * ExpectedResult: empty list since there are no templates for that host
+     *
+     */
+    @Test
+    public void test_findTemplates_usingHostId_hostWithNoTemplates_returnEmptyList()
+            throws DotDataException, DotSecurityException {
+        final Host newHost = new SiteDataGen().nextPersisted();
 
+        final TemplateFactory templateFactory = new TemplateFactoryImpl();
+
+        final List<Template> templates = templateFactory.
+                findTemplates(user, false, null, newHost.getIdentifier(), null, null, null, 0, 10, "title");
+
+        Assert.assertTrue(templates.isEmpty());
+    }
+
+    /**
+     * Method to test: {@link TemplateFactoryImpl#findTemplates(User, boolean, Map, String, String, String, String, int, int, String)} ()}
+     * Given Scenario: Create a new host and File Template under it and find all the templates under the host
+     * ExpectedResult: the fileTemplate should be returned in the list
+     *
+     */
+    @Test
+    public void test_findTemplates_fileTemplate_success()
+            throws DotDataException, DotSecurityException {
+        final Host newHost = new SiteDataGen().nextPersisted();
+
+        final FileAssetTemplate fileAssetTemplate = new TemplateAsFileDataGen()
+                .host(newHost)
+                .nextPersisted();
+
+        final TemplateFactory templateFactory = new TemplateFactoryImpl();
+
+        final List<Template> templates = templateFactory.
+                findTemplates(user, false, null, newHost.getIdentifier(), null, null, null, 0, 10, "title");
+
+        assertNotNull(templates);
+        Assert.assertFalse(templates.isEmpty());
+        assertEquals(1,templates.size());
+        assertEquals(fileAssetTemplate.getIdentifier(),templates.get(0).getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link TemplateFactoryImpl#getTemplateByFolder(Host, Folder, User, boolean)}
+     * Given Scenario: Create a new host and File Template under it and find the template using the folder where
+     * the files lives.
+     * ExpectedResult: the fileTemplate created.
+     *
+     */
+    @Test
+    public void test_getTemplateByFolder_success() throws DotDataException, DotSecurityException {
+        final Host newHost = new SiteDataGen().nextPersisted();
+
+        final FileAssetTemplate fileAssetTemplate = new TemplateAsFileDataGen()
+                .host(newHost)
+                .nextPersisted();
+
+        final Folder templateFolder = APILocator.getFolderAPI()
+                .findFolderByPath(fileAssetTemplate.getPath(), newHost, user, false);
+
+        final TemplateFactory templateFactory = new TemplateFactoryImpl();
+
+        final Template template = templateFactory.getTemplateByFolder(newHost,templateFolder,user,false);
+
+        assertNotNull(template);
+        assertTrue(template.getIdentifier().contains(Constants.TEMPLATE_FOLDER_PATH));
+        assertEquals(fileAssetTemplate.getIdentifier(),template.getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link TemplateFactoryImpl#getTemplateByFolder(Host, Folder, User, boolean)}
+     * Given Scenario: Create a new host and a folder under it, try to get the template using that folder.
+     * ExpectedResult: NotFoundInDbException, since to be a fileTemplate must live under /application/templates
+     *
+     */
+    @Test(expected = NotFoundInDbException.class)
+    public void test_getTemplateByFolder_folderDoesNotLiveUnderApplicationTemplates_returnNotFoundInDbException()
+            throws DotSecurityException, DotDataException {
+        final Host newHost = new SiteDataGen().nextPersisted();
+
+        final Folder folder = new FolderDataGen().site(newHost).nextPersisted();
+
+        final TemplateFactory templateFactory = new TemplateFactoryImpl();
+
+        templateFactory.getTemplateByFolder(newHost,folder,user,false);
+    }
+
+    /**
+     * Method to test: {@link TemplateFactoryImpl#getTemplateByFolder(Host, Folder, User, boolean)}
+     * Given Scenario: Create a new host and a folder under /application/templates, try to get the template using that folder.
+     * ExpectedResult: NotFoundInDbException, since to be a fileTemplate must have the properties.vtl under it.
+     *
+     */
+    @Test(expected = NotFoundInDbException.class)
+    public void test_getTemplateByFolder_propertiesVtlDoesNotExist_returnNotFoundInDbException()
+            throws DotSecurityException, DotDataException {
+        final Host newHost = new SiteDataGen().nextPersisted();
+
+        final String templateFolderName = "/testTemplateFolder" + System.currentTimeMillis();
+
+        final Folder folder = APILocator.getFolderAPI()
+                .createFolders(Constants.TEMPLATE_FOLDER_PATH + templateFolderName, host, APILocator.systemUser(),
+                        false);
+
+        final TemplateFactory templateFactory = new TemplateFactoryImpl();
+
+        templateFactory.getTemplateByFolder(newHost,folder,user,false);
+    }
 }

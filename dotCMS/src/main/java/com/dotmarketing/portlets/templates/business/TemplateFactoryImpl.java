@@ -1,7 +1,12 @@
 package com.dotmarketing.portlets.templates.business;
 
+import static com.dotcms.util.FunctionUtils.ifOrElse;
+
+import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.rendering.velocity.services.TemplateLoader;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -14,11 +19,16 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.design.bean.*;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.*;
 import com.google.common.io.LineReader;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import org.apache.commons.beanutils.BeanUtils;
 
 import java.io.IOException;
@@ -258,26 +268,38 @@ public class TemplateFactoryImpl implements TemplateFactory {
 				dc.addParam(filter);
 			}
 
-			while(!done) {
-				dc.setStartRow(internalOffset);
-				dc.setMaxRows(internalLimit);
+			// adding the templates from the site browser
+			toReturn.addAll(this.findFolderAssetTemplate(user, hostId, orderBy,
+					includeArchived, params != null ? params.get("filter").toString(): null));
 
-				resultList = TransformerLocator.createTemplateTransformer(dc.loadObjectResults()).asList();
+			if(countLimit > 0 && toReturn.size() < countLimit + offset) {//If haven't reach the amount of templates requested
+				while (!done) {
+					dc.setStartRow(internalOffset);
+					dc.setMaxRows(internalLimit);
 
-				//Search by inode
-				if(resultList.isEmpty()){
-					final Template templateInode = find(params.get("filter").toString());
-					resultList = templateInode != null ? Collections.singletonList(templateInode) : Collections.emptyList();
+					resultList = TransformerLocator
+							.createTemplateTransformer(dc.loadObjectResults()).asList();
+
+					//Search by inode
+					if (resultList.isEmpty()) {
+						final Template templateInode =
+								params != null ? find(params.get("filter").toString()) : null;
+						resultList =
+								templateInode != null ? Collections.singletonList(templateInode)
+										: Collections.emptyList();
+					}
+
+					PermissionAPI permAPI = APILocator.getPermissionAPI();
+					toReturn.addAll(
+							permAPI.filterCollection(resultList, PermissionAPI.PERMISSION_READ,
+									false, user));
+					if (countLimit > 0 && toReturn.size() >= countLimit + offset)
+						done = true;
+					else if (resultList.size() < internalLimit)
+						done = true;
+
+					internalOffset += internalLimit;
 				}
-
-				PermissionAPI permAPI = APILocator.getPermissionAPI();
-				toReturn.addAll(permAPI.filterCollection(resultList, PermissionAPI.PERMISSION_READ, false, user));
-				if(countLimit > 0 && toReturn.size() >= countLimit + offset)
-					done = true;
-				else if(resultList.size() < internalLimit)
-					done = true;
-
-				internalOffset += internalLimit;
 			}
 
 			if(offset > toReturn.size()) {
@@ -644,5 +666,274 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		dc.setSQL(templateSQL.FIND_TEMPLATES_BY_CONTAINER_INODE);
 		dc.addParam(containerInode);
 		return TransformerLocator.createTemplateTransformer(dc.loadObjectResults()).asList();
+	}
+
+	/**
+	 * Get a template based on a folder (non-db) A folder could be considered as a template if:
+	 * 1) Is under /application/templates
+	 * 2) Has a file called properties.vtl
+	 *
+	 * And convert it into a Template
+	 * @param site site where the folder lives
+	 * @param folder folder that should be a template
+	 * @return Template
+	 */
+	@Override
+	public Template getTemplateByFolder(final Host site, final Folder folder, final User user, final boolean showLive) throws DotDataException, DotSecurityException {
+
+		if (!this.isValidTemplateFolderPath(folder)) {
+
+			throw new NotFoundInDbException("On getting the template by folder, the folder: " + (folder != null ? folder.getPath() : "Unknown" ) +
+					" is not valid, it must be under: " + Constants.TEMPLATE_FOLDER_PATH + " and must have a child file asset called: " +
+					Constants.TEMPLATE_META_INFO_FILE_NAME);
+		}
+
+		final Identifier propertiesIdentifer = getTemplatePropertiesIdentifer(site, folder);
+		if(propertiesIdentifer==null) {
+			throw new NotFoundInDbException("No template found under: " + folder.getPath() );
+		}
+
+		final Optional<ContentletVersionInfo> contentletVersionInfo = APILocator.getVersionableAPI().
+				getContentletVersionInfo(propertiesIdentifer.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
+
+		if(!contentletVersionInfo.isPresent()) {
+			throw new DotDataException("Can't find ContentletVersionInfo. Identifier:"
+					+ propertiesIdentifer.getId() + ". Lang:"
+					+ APILocator.getLanguageAPI().getDefaultLanguage().getId());
+		}
+
+		final String inode = showLive  ?
+				contentletVersionInfo.get().getLiveInode() : contentletVersionInfo.get().getWorkingInode();
+		Template template = templateCache.get(inode);
+
+		if(template==null || !InodeUtils.isSet(template.getInode())) {
+
+			synchronized (propertiesIdentifer) {
+
+				if(template==null || !InodeUtils.isSet(template.getInode())) {
+
+					template = FileAssetTemplateUtil.getInstance().fromAssets (site, folder,
+							this.findTemplateAssets(folder, user, showLive));
+					if(template != null && InodeUtils.isSet(template.getInode())) {
+
+						templateCache.add(inode, template);
+					}
+				}
+			}
+		}
+
+		return template;
+	}
+
+	/**
+	 * Determine if the folder lives under /application/templates
+	 * @param folder to check
+	 * @return true if the folder lives under /application/templates
+	 */
+	private boolean isValidTemplateFolderPath(final Folder folder) {
+		return null != folder && UtilMethods.isSet(folder.getPath()) && folder.getPath().contains(Constants.TEMPLATE_FOLDER_PATH);
+	}
+
+	/**
+	 * Finds the Identifier of the properties.vtl file of the template folder
+	 * @param host    site where the folder lives
+	 * @param folder  template folder
+	 * @return identifier of the properties.vtl file
+	 */
+	private Identifier getTemplatePropertiesIdentifer(final Host host, final Folder folder) {
+		try {
+
+			final Identifier identifier = APILocator.getIdentifierAPI().find(host, StringUtils.builder(folder.getPath(),
+					Constants.TEMPLATE_META_INFO_FILE_NAME).toString());
+			return identifier!=null  && UtilMethods.isSet(identifier.getId()) ? identifier : null;
+		} catch (Exception  e) {
+			Logger.warnAndDebug(this.getClass(),e);
+			return null;
+		}
+	}
+
+	/**
+	 * Finds the list of file assets of a template based on a folder.
+	 * First search in the index then in the DB(this is because of PP)
+	 * @param folder where the files live
+	 * @param user
+	 * @param showLive get the working or the live assets
+	 * @return list of assets
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	private List<FileAsset> findTemplateAssets(final Folder folder, final User user, final boolean showLive) throws DotDataException, DotSecurityException {
+		List<FileAsset> assetList = APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, null, showLive, user, false);
+		if(assetList.isEmpty()){
+			final List<Contentlet> dbSearch = showLive ? APILocator.getFolderAPI().getLiveContent(folder,user,false).stream()
+					.filter(contentlet -> contentlet.getBaseType().get().equals(BaseContentType.FILEASSET))
+					.collect(Collectors.toList()):
+					 APILocator.getFolderAPI().getWorkingContent(folder,user,false).stream()
+							 .filter(contentlet -> contentlet.getBaseType().get().equals(BaseContentType.FILEASSET))
+							.collect(Collectors.toList());
+			assetList = APILocator.getFileAssetAPI().fromContentlets(dbSearch);
+		}
+		return assetList;
+	}
+
+	/**
+	 * Finds all the properties.vtl on a specific host
+	 * returns even working versions but not archived
+	 * the search is based on the ES Index.
+	 * If exists multiple language version, will consider only the versions based on the default language,
+	 * so if only exists a properties.vtl with a non-default language it will be skipped.
+	 *
+	 * @param host {@link Host}
+	 * @param user {@link User}
+	 * @param includeArchived {@link Boolean} if wants to include archive templates
+	 * @return List of Folder where the files lives
+	 */
+	private List<Folder> findTemplatesAssetsByHost(final Host host, final User user, final boolean includeArchived) {
+
+		List<Contentlet>           templates = null;
+		final List<Folder>         folders   = new ArrayList<>();
+
+		try {
+			final StringBuilder queryBuilder = StringUtils.builder("+structureType:", BaseContentType.FILEASSET.getType(),
+					" +path:",    Constants.TEMPLATE_FOLDER_PATH, "/*",
+					" +path:*/" + Constants.TEMPLATE_META_INFO_FILE_NAME,
+					" +working:true",
+					includeArchived? StringPool.BLANK : " +deleted:false");
+
+			if (null != host) {
+				queryBuilder.append(" +conhost:" + host.getIdentifier());
+			}
+
+			final String query = queryBuilder.toString();
+
+			templates =
+					this.filterTemplatesAssetsByLanguage (APILocator.getPermissionAPI().filterCollection(
+							APILocator.getContentletAPI().search(query,-1, 0, null , user, false),
+							PermissionAPI.PERMISSION_READ, false, user),
+							APILocator.getLanguageAPI().getDefaultLanguage().getId());
+
+
+
+			for(final Contentlet template : templates) {
+				folders.add(APILocator.getFolderAPI().find(template.getFolder(), user, false));
+			}
+		} catch (Exception e) {
+
+			Logger.error(this.getClass(), e.getMessage(), e);
+			throw new DotRuntimeException(e.getMessage(), e);
+		}
+
+		return folders;
+	}
+
+	/**
+	 * Filters a list of contentlets (templates as files) .
+	 *
+	 * Groups the templates by identifier (could be that the files were created multilanguage) and gets the one in the language specified
+	 * if not get any.
+	 * @param contentTemplates list of contentlets that are templates
+	 * @param languageId
+	 * @return list of contentlets (template properties.vtl) one per Identifier
+	 */
+	private List<Contentlet> filterTemplatesAssetsByLanguage(final List<Contentlet> contentTemplates, final long languageId) {
+
+		final List<Contentlet> uniqueContentTemplates = new ArrayList<>();
+		final Map<String, List<Contentlet>> contentletsGroupByIdentifier = CollectionsUtils
+				.groupByKey(contentTemplates, Contentlet::getIdentifier);
+
+		for (final Map.Entry<String, List<Contentlet>> entry : contentletsGroupByIdentifier.entrySet()) {
+
+			if (entry.getValue().size() <= 1) {
+				uniqueContentTemplates.addAll(entry.getValue());
+			} else {
+				ifOrElse(entry.getValue().stream()
+								.filter(contentlet -> contentlet.getLanguageId() == languageId).findFirst(), // if present the one with the default lang take it
+						uniqueContentTemplates::add,
+						()->uniqueContentTemplates.add(entry.getValue().get(0))); // otherwise take any one, such as the first one
+			}
+		}
+
+		return uniqueContentTemplates;
+	}
+
+	/**
+	 * Converts the folders into templates.
+	 * @param host {@link Host}
+	 * @param user {@link User}
+	 * @param subFolders {@link List}
+	 * @param includeHostOnPath {@link Boolean} true if you want to  include the host on the template path
+	 * @return List of Templates
+	 * @throws DotDataException
+	 */
+	private List<Template> convertFoldersToTemplates(final Host host, final User user,
+			final List<Folder> subFolders, final boolean includeHostOnPath) throws DotDataException {
+
+		final List<Template> templates = new ArrayList<>();
+		for (final Folder subFolder : subFolders) {
+
+			try {
+
+				final User      userFinal = null != user? user: APILocator.systemUser();
+				final Template template = this.getTemplateByFolder(null != host? host :
+								APILocator.getHostAPI().find(subFolder.getHostId(), user, includeHostOnPath),
+						subFolder, userFinal, false);
+				templates.add(template);
+			} catch (DotSecurityException e) {
+				Logger.debug(this, () -> "Does not have permission to read the folder template: " + subFolder.getPath());
+			} catch (NotFoundInDbException e) {
+				Logger.debug(this, () -> "The folder: " + subFolder.getPath() + ", is not a template");
+			}
+		}
+
+		return templates;
+	}
+
+	/**
+	 * Finds all file based templates for an user. Also order by orderByParam values (title asc, title desc, modDate asc, modDate desc)
+	 * @param user {@link User} to check the permissions
+	 * @param hostId {@link String} host id to find the containers
+	 * @param orderByParam {@link String} order by parameter
+	 * @param includeArchived {@link Boolean} if wants to include archive containers
+	 **/
+	private Collection<? extends Permissionable> findFolderAssetTemplate(final User user, final String hostId,
+			final String orderByParam, final boolean includeArchived,
+			final String filter) {
+
+		try {
+
+			final Host host     		   = APILocator.getHostAPI().find(hostId, user, false);
+			final List<Folder> listOfTemplatesFolders  = this.findTemplatesAssetsByHost(host, user, includeArchived);
+			List<Template> templates       = this.convertFoldersToTemplates(host, user, listOfTemplatesFolders, false);
+
+			if (UtilMethods.isSet(filter)) {
+				templates = templates.stream().filter(template ->
+						template.getTitle().toLowerCase().contains(filter))
+						.collect(Collectors.toList());
+			}
+
+			if (UtilMethods.isSet(orderByParam)) {
+				switch (orderByParam.toLowerCase()) {
+					case "title asc":
+						templates.sort(Comparator.comparing(Template::getTitle));
+						break;
+
+					case "title desc":
+						templates.sort(Comparator.comparing(Template::getTitle).reversed());
+						break;
+
+					case "moddate asc":
+						templates.sort(Comparator.comparing(Template::getModDate));
+						break;
+
+					case "moddate desc":
+						templates.sort(Comparator.comparing(Template::getModDate).reversed());
+						break;
+				}
+			}
+			return templates;
+		} catch (Exception e) {
+			Logger.error(this, e.getMessage(), e);
+			return Collections.emptyList();
+		}
 	}
 }

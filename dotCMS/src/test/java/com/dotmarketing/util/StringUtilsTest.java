@@ -345,4 +345,29 @@ public class StringUtilsTest {
         final List<String> strings = StringUtils.quotedLiteral(textBlock);
         assertEquals(strings.size(), expectedResult);
     }
+
+    @Test
+    public void Test_Has_White_Spaces(){
+        assertTrue(StringUtils.hasWhiteSpaces("/test-folder/file-name 123.jpg"));
+        assertTrue(StringUtils.hasWhiteSpaces("/test folder/file-name-123.jpg"));
+        assertTrue(StringUtils.hasWhiteSpaces(" /test-folder/file-name 123.jpg"));
+        assertFalse(StringUtils.hasWhiteSpaces(""));
+        assertFalse(StringUtils.hasWhiteSpaces("lol"));
+    }
+
+    @Test
+    public void test_getBasePath() {
+        assertEquals("/a/b/c", StringUtils.getBasePath("/a/b/c/d.ext"));
+        assertEquals("", StringUtils.getBasePath(""));
+        assertEquals("", StringUtils.getBasePath(null));
+    }
+
+    @Test
+    public void test_shareSamePath() {
+        assertTrue(StringUtils.shareSamePath("/a/b/c/d.ext", "/a/b/c/z.ext"));
+        assertTrue(StringUtils.shareSamePath("", ""));
+        assertTrue(StringUtils.shareSamePath(null, null));
+        assertFalse(StringUtils.shareSamePath("/a/b/c/d.ext", "/g/f/e/d.ext"));
+    }
+
 }

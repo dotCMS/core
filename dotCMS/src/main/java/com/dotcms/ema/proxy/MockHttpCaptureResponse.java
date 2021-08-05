@@ -18,7 +18,7 @@ import com.dotcms.mock.response.MockResponse;
 public class MockHttpCaptureResponse extends HttpServletResponseWrapper implements MockResponse {
 
 
-    ByteArrayOutputStream bout = new ByteArrayOutputStream(4096);
+    ByteArrayOutputStream bout = new ByteArrayOutputStream(4096*8);
     ServletOutputStream out = null;
 
     public MockHttpCaptureResponse(HttpServletResponse response) {

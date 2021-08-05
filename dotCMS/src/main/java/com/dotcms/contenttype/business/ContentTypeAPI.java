@@ -120,8 +120,7 @@ public interface ContentTypeAPI {
 
   /**
    * Finds all the Content Types in the system, orders it according the given column.
-   * 
-   * @param type Base Content Type that will be search
+   *
    * @param orderBy Specifies an order criteria for the results
    * @return List of Content Types Objects
    * @throws DotDataException Error occurred when performing the action.
@@ -307,4 +306,12 @@ public interface ContentTypeAPI {
    */
   void unlinkPageFromContentType(ContentType contentType)
           throws DotSecurityException, DotDataException;
+
+    /**
+     * Given a content type, verifies if the content type can be used considering the {@link LicenseLevel}.
+     * If the {@link LicenseLevel} is Community, only the content types that are not an {@link com.dotcms.contenttype.model.type.EnterpriseType} will be allowed
+     * @param contentType
+     * @return
+     */
+    boolean isContentTypeAllowed(ContentType contentType);
 }

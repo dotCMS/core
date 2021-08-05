@@ -20,6 +20,7 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FilterDescriptorDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.publisher.bundle.bean.Bundle;
@@ -36,6 +37,8 @@ import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.api.v1.authentication.ResetPasswordForm;
+import com.dotcms.rest.api.v1.authentication.ResetPasswordResource;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -119,114 +122,18 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
         //Make sure some default Languages exist
         getSpanishLanguage();
 
-    }
+        new FilterDescriptorDataGen().nextPersisted();
 
-    private Language newLanguageInstance(final String languageCode, final String countryCode,
-            final String language, final String country) {
-        return new Language(0, languageCode, countryCode,
-                language, country
-        );
     }
 
     /**
-     * This method simply tests that languages are pushed-published
+     * This Test indirectly test the use of : {@link PublisherConfig#mapRemoteLanguage(Long, Language)}
+     * Given scenario: We simulate a language clash between a sender an a receiver. The languages are "the same" but the they exist on each end under a different id
+     * Expected Results: So by using a map internally PP must verify if the incoming lang already exists under the receiver and re-use the existing local lang
+     * @throws Exception
      */
-
     @Test
-    public void test_create_languages_create_bundle_then_publish_then_read_languages()
-            throws Exception {
-
-        // Any CT should do it.
-        ContentType contentType = getWikiLikeContentType();
-
-        final List<Language> newLanguages = new ImmutableList.Builder<Language>().
-                add(newLanguageInstance("eu" + languagesSuffix, "", "Basque", "")).
-                add(newLanguageInstance("hi" + languagesSuffix, "hi", "Hindi", "India")).
-                build();
-
-        final List<String> assetIds = new ArrayList<>();
-        final List<Language> languages = new ArrayList<>(3);
-
-        for (final Language language : newLanguages) {
-            languageAPI.saveLanguage(language);
-            languages.add(language);
-        }
-
-        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
-
-        final List<Contentlet> contentlets = new ArrayList<>();
-        for (final Language language : languages) {
-            final Contentlet contentlet = contentletDataGen.host(host).setProperty("title","lang is "+language.toString()).languageId(language.getId()).nextPersisted();
-            assetIds.add(contentlet.getIdentifier());
-            contentlets.add(contentlet);
-        }
-
-        final PublisherAPI publisherAPI = PublisherAPI.getInstance();
-        final BundleAPI bundleAPI = APILocator.getBundleAPI();
-        Environment environment = null;
-        PublishingEndPoint endpoint = null;
-        Bundle bundle = null;
-
-        File file = null;
-        try {
-
-            environment = createEnvironment(adminUser);
-            endpoint = createEndpoint(environment);
-
-            //Save the endpoint.
-            bundle = new Bundle("testBundle", null, null, adminUser.getUserId());
-            bundleAPI.saveBundle(bundle);
-
-            publisherAPI.saveBundleAssets(assetIds, bundle.getId(), adminUser);
-
-            final Map<String, Object> bundleData = generateBundle(bundle.getId(),
-                    Operation.PUBLISH);
-            assertNotNull(bundleData);
-            assertNotNull(bundleData.get(FILE));
-            file = File.class.cast(bundleData.get(FILE));
-            final String fileName = file.getName();
-
-            final String bundleFolder = fileName.substring(0, fileName.indexOf(".tar.gz"));
-
-            final PublishAuditStatus status = PublishAuditAPI
-                    .getInstance()
-                    .updateAuditTable(endpoint.getId(), endpoint.getGroupId(), bundleFolder, true);
-
-            final PublisherConfig publisherConfig = new PublisherConfig();
-            final BundlePublisher bundlePublisher = new BundlePublisher();
-            publisherConfig.setId(fileName);
-            publisherConfig.setEndpoint(endpoint.getId());
-            publisherConfig.setGroupId(endpoint.getGroupId());
-            publisherConfig.setPublishAuditStatus(status);
-
-            bundlePublisher.init(publisherConfig);
-            bundlePublisher.process(null);
-
-            //extract and Test Results...
-
-            for (final Language language : languages) {
-                assertNotNull(languageAPI
-                        .getLanguage(language.getLanguageCode(), language.getCountryCode())
-                );
-            }
-
-
-
-        } finally {
-
-            if (null != file) {
-                try {
-                    file.delete();
-                } catch (Exception e) {
-                    //Do nothing...
-                }
-            }
-        }
-    }
-
-
-    @Test
-    public void test_create_dupe_languages_create_bundle_then_publish_bundle_then_read_languages_verify_dupes_are_ignored()
+    public void Test_Create_Dupe_Languages_Create_Bundle_Then_Publish_Bundle_Then_Read_Languages_Verify_Dupes_Are_Ignored()
             throws Exception {
 
         // Any CT should do it.
@@ -234,8 +141,8 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
 
         //We assume these languages already exist in the db
         final List<Language> dupeLanguages = new ImmutableList.Builder<Language>().
-                add(newLanguageInstance("en", "US", "English", "United States")).
-                add(newLanguageInstance("es", "ES", "Spanish", "Spain")).
+                add(new Language(0, "en", "US", "English", "United States")).
+                add(new Language(0,"es", "ES", "Spanish", "Spain")).
                 build();
 
         final List<Language> savedDupeLanguages = new ArrayList<>();
@@ -335,35 +242,38 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
 
     }
 
+    /**
+     * This Test indirectly test the use of : {@link PublisherConfig#mapRemoteLanguage(Long, Language)}
+     * Given scenario: We simulate a language clash between a sender an a receiver. The languages are "the same" but the they exist on each end under a different id
+     * Expected Results: Similarly we repeat the last test but this time we include additional languages which are expected to make it into the destination node
+     * @throws Exception
+     */
     @Test
-    public void test_create_new_languages_create_bundle_then_publish_bundle_then_read_verify_dupes_are_ignored_and_new_languges_were_created()
+    public void Test_Create_New_Languages_Create_Bundle_Then_Publish_Bundle_Then_Read_Verify_Dupes_Are_Ignored_And_New_Languges_Were_Created()
             throws Exception {
 
         // Any CT should do it.
         ContentType contentType = getWikiLikeContentType();
 
         final List<Language> newLanguages = new ImmutableList.Builder<Language>().
-                add(newLanguageInstance("ep" + languagesSuffix, "", "Esperanto", "")).
-                add(newLanguageInstance("de" + languagesSuffix, "DE", "German", "Germany")).
-                add(newLanguageInstance("ru" + languagesSuffix, "RUS", "Russian", "Russia")).
-                add(newLanguageInstance("da" + languagesSuffix, "DK ", "Danish", "Denmark")).
-                add(newLanguageInstance("en" + languagesSuffix, "NZ ", "English", "New Zealand")).
+                add(new Language(0,"ep" + languagesSuffix, "", "Esperanto", "")).
+                add(new Language(0,"de" + languagesSuffix, "DE", "German", "Germany")).
+                add(new Language(0,"ru" + languagesSuffix, "RUS", "Russian", "Russia")).
+                add(new Language(0,"da" + languagesSuffix, "DK ", "Danish", "Denmark")).
+                add(new Language(0,"en" + languagesSuffix, "NZ ", "English", "New Zealand")).
                 build();
 
-        final List<Language> savedNewLanguages = new ArrayList<>();
-        for (final Language language : newLanguages) {
-            languageAPI.saveLanguage(language);
-            savedNewLanguages.add(language);
-        }
+        final List<Language> savedNewLanguages = newLanguages.stream().map(language -> {
+             languageAPI.saveLanguage(language);
+             return language;
+        } ).collect(Collectors.toList());
 
-        final List<String> assetIds = new ArrayList<>();
         final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
         final List<Contentlet> contentlets = new ArrayList<>();
-        for (final Language dupeLanguage : savedNewLanguages) {
+        for (final Language language : savedNewLanguages) {
             final Contentlet contentlet = contentletDataGen.host(host)
-                    .setProperty("title", "lang is " + dupeLanguage.toString())
-                    .languageId(dupeLanguage.getId()).nextPersisted();
-            assetIds.add(contentlet.getIdentifier());
+                    .setProperty("title", "lang is " + language.toString())
+                    .languageId(language.getId()).nextPersisted();
             contentlets.add(contentlet);
         }
 
@@ -385,7 +295,7 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
             bundle = new Bundle("testBundle", null, null, adminUser.getUserId());
             bundleAPI.saveBundle(bundle);
 
-            publisherAPI.saveBundleAssets(assetIds, bundle.getId(), adminUser);
+            publisherAPI.saveBundleAssets(contentlets.stream().map(Contentlet::getIdentifier).collect(Collectors.toList()), bundle.getId(), adminUser);
 
             final Map<String, Object> bundleData = generateBundle(bundle.getId(), Operation.PUBLISH);
             assertNotNull(bundleData);
@@ -425,9 +335,10 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
 
             //Now recreate a few languages to simulate a conflict on the receiver. They will be re-inserted under a different id. so that creates a clash.
             //Now the contentlets generated out of pp should come with these codes.
+            //HERE WE FORCE A RANDOM ID TO MAKE A CLASH But with the new deterministic lang id it should never be the case
             final List<Language> reinsertLanguages = new ImmutableList.Builder<Language>().
-                    add(newLanguageInstance("ep" + languagesSuffix, "", "Esperanto", "")).
-                    add(newLanguageInstance("de" + languagesSuffix, "DE", "German", "Germany")).
+                    add(new Language(System.nanoTime(),"ep" + languagesSuffix, "", "Esperanto", "")).
+                    add(new Language(System.nanoTime(),"de" + languagesSuffix, "DE", "German", "Germany")).
                     build();
 
             final List<Language> savedReinsertedLanguages = new ArrayList<>();

@@ -3,10 +3,14 @@ package com.dotcms.enterprise.publishing.remote.bundler;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.manifest.ManifestBuilder;
+import com.dotcms.publishing.output.BundleOutput;
+import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -16,6 +20,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.util.FileUtil;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -24,8 +29,6 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashSet;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.set;
@@ -80,7 +83,7 @@ public class ContainerBundlerTest {
     }
 
     /**
-     * Method to Test: {@link ContainerBundler#generate(File, BundlerStatus)}
+     * Method to Test: {@link ContainerBundler#generate(BundleOutput, BundlerStatus)}
      * When: Add a {@link Container} in a bundle
      * Should:
      * - The file should be create in:
@@ -98,34 +101,42 @@ public class ContainerBundlerTest {
 
         final BundlerStatus status = mock(BundlerStatus.class);
         final ContainerBundler bundler = new ContainerBundler();
-        final File bundleRoot = FileUtil.createTemporaryDirectory("ContentTypeBundlerTest_addContentTypeInBundle_");
 
-        final FilterDescriptor filterDescriptor = new FileDescriptorDataGen().nextPersisted();
+        final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
 
         final PushPublisherConfig config = new PushPublisherConfig();
-        config.setContainers(set(container.getIdentifier()));
-        config.setOperation(PublisherConfig.Operation.PUBLISH);
 
-        new BundleDataGen()
-                .pushPublisherConfig(config)
-                .addAssets(list(container))
-                .filter(filterDescriptor)
-                .nextPersisted();
+        try (ManifestBuilder manifestBuilder = new TestManifestBuilder()) {
+            config.setManifestBuilder(manifestBuilder);
+            config.add(container, PusheableAsset.CONTAINER, StringPool.BLANK);
+            config.setOperation(PublisherConfig.Operation.PUBLISH);
 
-        bundler.setConfig(config);
-        bundler.generate(bundleRoot, status);
+            final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config);
 
-        final User systemUser = APILocator.systemUser();
-        final Container workingContainer = APILocator.getContainerAPI()
-                .getWorkingContainerById(container.getIdentifier(), systemUser, false);
+            new BundleDataGen()
+                    .pushPublisherConfig(config)
+                    .addAssets(list(container))
+                    .filter(filterDescriptor)
+                    .nextPersisted();
 
-        FileTestUtil.assertBundleFile(bundleRoot, workingContainer, testCase.expectedFilePath);
+            bundler.setConfig(config);
+            bundler.generate(directoryBundleOutput, status);
 
-        final Container liveContainer = APILocator.getContainerAPI()
-                .getLiveContainerById(container.getIdentifier(), systemUser, false);
+            final User systemUser = APILocator.systemUser();
+            final Container workingContainer = APILocator.getContainerAPI()
+                    .getWorkingContainerById(container.getIdentifier(), systemUser, false);
 
-        if(liveContainer != null && !liveContainer.getInode().equals(workingContainer.getInode())){
-            FileTestUtil.assertBundleFile(bundleRoot, liveContainer, testCase.expectedFilePath);
+            FileTestUtil.assertBundleFile(directoryBundleOutput.getFile(), workingContainer,
+                    testCase.expectedFilePath);
+
+            final Container liveContainer = APILocator.getContainerAPI()
+                    .getLiveContainerById(container.getIdentifier(), systemUser, false);
+
+            if (liveContainer != null && !liveContainer.getInode()
+                    .equals(workingContainer.getInode())) {
+                FileTestUtil.assertBundleFile(directoryBundleOutput.getFile(), liveContainer,
+                        testCase.expectedFilePath);
+            }
         }
     }
 

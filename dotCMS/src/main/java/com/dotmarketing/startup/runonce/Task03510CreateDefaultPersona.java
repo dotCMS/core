@@ -228,17 +228,6 @@ public class Task03510CreateDefaultPersona extends AbstractJDBCStartupTask {
     }
 
 
-
-
-    @Override
-    public String getH2Script() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-
-
-
     @Override
     protected List<String> getTablesToDropConstraints() {
         // TODO Auto-generated method stub

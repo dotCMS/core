@@ -16,6 +16,7 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.UtilMethods;
+import java.nio.charset.StandardCharsets;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
@@ -97,7 +98,7 @@ public class IntegrityUtil {
                     break;
             	case FOLDERS:
             		sbSelectTempTable.append(
-            			"select remote_inode, local_inode, remote_identifier, local_identifier from "
+            			"select folder, remote_inode, local_inode, remote_identifier, local_identifier from "
             		);
             		break;
             	case CMS_ROLES:
@@ -146,6 +147,7 @@ public class IntegrityUtil {
                     if (type == IntegrityType.FOLDERS) {
                         writer.write(rs.getString("remote_identifier"));
                         writer.write(rs.getString("local_identifier"));
+                        writer.write(rs.getString("folder"));
                     }
 
                     writer.endRecord();
@@ -614,7 +616,7 @@ public class IntegrityUtil {
         try {
             final CsvReader csvFile = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator
                     + key + File.separator + type.getDataToFixCSVName(), '|',
-                    Charset.forName("UTF-8"));
+                    StandardCharsets.UTF_8);
 
             final String resultsTable = type.getResultsTableName();
             if (!type.hasResultsTable()) {
@@ -632,7 +634,7 @@ public class IntegrityUtil {
 	                ).append(type.getFirstDisplayColumnLabel()).append(", endpoint_id, language_id) values(?,?,?,?,?,?,?,?,?)");
 	                break;
             	case FOLDERS:
-                    sbInsertTempTable.append(" (local_inode, remote_inode, local_identifier, remote_identifier, endpoint_id) values(?,?,?,?,?)");
+                    sbInsertTempTable.append(" (local_inode, remote_inode, local_identifier, remote_identifier, folder, endpoint_id) values(?,?,?,?,?,?)");
                     break;
             	case CMS_ROLES:
             		sbInsertTempTable.append(" (name, role_key, local_role_id, remote_role_id, local_role_fqn, remote_role_fqn, endpoint_id) values(?,?,?,?,?,?,?)");
@@ -668,6 +670,7 @@ public class IntegrityUtil {
 	                } else if (type == IntegrityType.FOLDERS) {
 	                    dc.addParam(csvFile.get(2)); // localIdentifier
 	                    dc.addParam(csvFile.get(3)); // remoteIdentifier
+                        dc.addParam(csvFile.get(4)); // folder
 	                }
                 }
 
@@ -716,11 +719,6 @@ public class IntegrityUtil {
         } else if (DbConnectionFactory.isMsSql()) {
             dc.setSQL("SELECT COUNT(*) as exist FROM sysobjects WHERE name = '" + tableName + "'");
             int existTable = (Integer) dc.loadObjectResults().get(0).get("exist");
-            return existTable > 0;
-        } else if (DbConnectionFactory.isH2()) {
-            dc.setSQL("SELECT COUNT(1) as exist FROM information_schema.tables WHERE Table_Name = '"
-                    + tableName.toUpperCase() + "' ");
-            long existTable = (Long) dc.loadObjectResults().get(0).get("exist");
             return existTable > 0;
         }
 

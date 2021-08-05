@@ -1,6 +1,5 @@
 package com.dotcms.rest.config;
 
-import com.dotcms.auth.providers.saml.v1.DotSamlResource;
 import com.dotcms.contenttype.model.field.FieldTypeResource;
 import com.dotcms.rest.PublishQueueResource;
 import com.dotcms.rest.RulesEnginePortlet;
@@ -18,6 +17,7 @@ import com.dotcms.rest.api.v1.browsertree.BrowserTreeResource;
 import com.dotcms.rest.api.v1.categories.CategoriesResource;
 import com.dotcms.rest.api.v1.container.ContainerResource;
 import com.dotcms.rest.api.v1.content.ContentRelationshipsResource;
+import com.dotcms.rest.api.v1.content.ContentResource;
 import com.dotcms.rest.api.v1.content.ContentVersionResource;
 import com.dotcms.rest.api.v1.content.ResourceLinkResource;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeResource;
@@ -33,8 +33,8 @@ import com.dotcms.rest.api.v1.page.NavResource;
 import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotcms.rest.api.v1.personalization.PersonalizationResource;
 import com.dotcms.rest.api.v1.personas.PersonaResource;
-import com.dotcms.rest.api.v1.portlet.ToolGroupResource;
 import com.dotcms.rest.api.v1.portlet.PortletResource;
+import com.dotcms.rest.api.v1.portlet.ToolGroupResource;
 import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResource;
 import com.dotcms.rest.api.v1.relationships.RelationshipsResource;
 import com.dotcms.rest.api.v1.site.SiteResource;
@@ -62,10 +62,11 @@ import com.dotcms.rest.api.v1.vtl.VTLResource;
 import com.dotcms.rest.personas.PersonasResourcePortlet;
 import com.dotcms.rest.servlet.ReloadableServletContainer;
 import com.google.common.collect.ImmutableSet;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
+
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import org.glassfish.jersey.media.multipart.MultiPartFeature;
 
 /**
  * This class provides the list of all the REST end-points in dotCMS. Every new
@@ -106,7 +107,6 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 			.add(com.dotcms.rest.elasticsearch.ESContentResourcePortlet.class)
 			.add(PersonaResource.class)
 			.add(UserResource.class)
-			.add(com.dotcms.rest.api.v2.user.UserResource.class)
 			.add(TagResource.class)
 			.add(RulesEnginePortlet.class)
 			.add(RuleResource.class)
@@ -161,7 +161,6 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 			.add(BrowserResource.class)
 			.add(ResourceLinkResource.class)
 			.add(PushPublishFilterResource.class)
-			.add(DotSamlResource.class)
 			.add(LoggerResource.class)
 			.add(TemplateResource.class)
 			.add(MaintenanceResource.class)
@@ -169,6 +168,7 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 			.add(ToolGroupResource.class)
 			.add(VersionableResource.class)
 			.add(PermissionResource.class)
+			.add(ContentResource.class)
 			.build();
 
 

@@ -178,7 +178,8 @@ create table User_ (
     agreedToTermsOfUse bit,
     active_ bit,
     delete_in_progress TINYINT DEFAULT 0,
-    delete_date DATETIME NULL
+    delete_date DATETIME NULL,
+    additional_info NVARCHAR(MAX) NULL
 );
 
 create table UserTracker (
@@ -970,6 +971,8 @@ create table structure (
    expire_date_var NVARCHAR(255) null,
    publish_date_var NVARCHAR(255) null,
    mod_date datetime null,
+   sort_order int null,
+   icon NVARCHAR(255) null,
    primary key (inode)
 );
 create table cms_role (
@@ -1011,9 +1014,6 @@ create table permission (
     sort_order int null,
     friendly_name NVARCHAR(255) null,
     structure_inode NVARCHAR(36) null,
-    last_review datetime null,
-    next_review datetime null,
-    review_interval NVARCHAR(255) null,
     disabled_wysiwyg NVARCHAR(255) null,
     identifier NVARCHAR(36) null,
     language_id numeric(19,0) null,
@@ -1528,54 +1528,6 @@ create table links (
    identifier NVARCHAR(36) null,
    primary key (inode)
 );
-create table user_proxy (
-   inode NVARCHAR(36) not null,
-   user_id NVARCHAR(255) null,
-   prefix NVARCHAR(255) null,
-   suffix NVARCHAR(255) null,
-   title NVARCHAR(255) null,
-   school NVARCHAR(255) null,
-   how_heard NVARCHAR(255) null,
-   company NVARCHAR(255) null,
-   long_lived_cookie NVARCHAR(255) null,
-   website NVARCHAR(255) null,
-   graduation_year int null,
-   organization NVARCHAR(255) null,
-   mail_subscription tinyint null,
-   var1 NVARCHAR(255) null,
-   var2 NVARCHAR(255) null,
-   var3 NVARCHAR(255) null,
-   var4 NVARCHAR(255) null,
-   var5 NVARCHAR(255) null,
-   var6 NVARCHAR(255) null,
-   var7 NVARCHAR(255) null,
-   var8 NVARCHAR(255) null,
-   var9 NVARCHAR(255) null,
-   var10 NVARCHAR(255) null,
-   var11 NVARCHAR(255) null,
-   var12 NVARCHAR(255) null,
-   var13 NVARCHAR(255) null,
-   var14 NVARCHAR(255) null,
-   var15 NVARCHAR(255) null,
-   var16 NVARCHAR(255) null,
-   var17 NVARCHAR(255) null,
-   var18 NVARCHAR(255) null,
-   var19 NVARCHAR(255) null,
-   var20 NVARCHAR(255) null,
-   var21 NVARCHAR(255) null,
-   var22 NVARCHAR(255) null,
-   var23 NVARCHAR(255) null,
-   var24 NVARCHAR(255) null,
-   var25 NVARCHAR(255) null,
-   last_result int null,
-   last_message NVARCHAR(255) null,
-   no_click_tracking tinyint null,
-   cquestionid NVARCHAR(255) null,
-   cqanswer NVARCHAR(255) null,
-   chapter_officer NVARCHAR(255) null,
-   primary key (inode),
-   unique (user_id)
-);
 create table chain_state_parameter (
    id numeric(19,0) identity not null,
    chain_state_id numeric(19,0) not null,
@@ -1837,7 +1789,6 @@ alter table analytic_summary_referer add constraint fk5bc0f3e2ed30e054 foreign k
 alter table dot_containers add constraint fk8a844125fb51eb foreign key (inode) references inode;
 alter table communication add constraint fkc24acfd65fb51eb foreign key (inode) references inode;
 alter table links add constraint fk6234fb95fb51eb foreign key (inode) references inode;
-alter table user_proxy add constraint fk7327d4fa5fb51eb foreign key (inode) references inode;
 create index idx_field_1 on field (structure_inode);
 alter table field add constraint fk5cea0fa5fb51eb foreign key (inode) references inode;
 create index idx_relationship_1 on relationship (parent_structure_inode);
@@ -2707,8 +2658,8 @@ create table storage (
     path       varchar(255) not null,
     group_name varchar(255) not null,
     hash       varchar(64) not null,
-    metadata   text not null,
     mod_date   datetime  NOT NULL DEFAULT GETDATE(),
+    hash_ref   varchar(64),
     PRIMARY KEY (path, group_name),
     FOREIGN KEY (group_name) REFERENCES storage_group (group_name)
 );

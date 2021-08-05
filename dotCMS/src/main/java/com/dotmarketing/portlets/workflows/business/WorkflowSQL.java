@@ -18,8 +18,6 @@ abstract class WorkflowSQL {
 			return new MSSQLWorkflowSQL();
 		} else if (DbConnectionFactory.isOracle()) {
 			return new OracleWorkflowSQL();
-		} else if (DbConnectionFactory.isH2()) {
-		    return new H2WorkflowSQL();
 		}
 		return null;
 	}

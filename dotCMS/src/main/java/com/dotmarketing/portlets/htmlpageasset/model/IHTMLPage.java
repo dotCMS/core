@@ -1,5 +1,9 @@
 package com.dotmarketing.portlets.htmlpageasset.model;
 
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.publishing.manifest.ManifestItem;
+import com.dotcms.storage.FileStorageAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import java.io.Serializable;
 import java.util.Map;
 
@@ -17,7 +21,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
  * @since 08-28-2014
  *
  */
-public interface IHTMLPage extends Serializable, Versionable, Permissionable,
+public interface IHTMLPage extends Serializable, Versionable, Permissionable, ManifestItem,
 		Treeable, Ruleable {
 
     String getHost();
@@ -41,8 +45,25 @@ public interface IHTMLPage extends Serializable, Versionable, Permissionable,
     
     String getInode();
     void setInode(String inode);
-    
+
+    /**
+     * We no longer need to set or get Metadata as String
+     * @deprecated
+     *   Please use instead {@link com.dotcms.storage.FileMetadataAPI#getMetadata(Contentlet, Field)}
+     *   or {@link Contentlet#getBinaryMetadata(Field)}
+     * @return
+     */
+    @Deprecated
     String getMetadata();
+
+    /**
+     * We no longer need to set or get Metadata as String
+     * @deprecated
+     *   Please use instead {@link com.dotcms.storage.FileMetadataAPI#getMetadata(Contentlet, Field)}
+     *   or {@link Contentlet#getBinaryMetadata(Field)}
+     * @return
+     */
+    @Deprecated
     void setMetadata(String metadata);
     
     String getPageUrl();

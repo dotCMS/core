@@ -9,11 +9,12 @@ import com.dotmarketing.beans.transform.IdentifierTransformer;
 import com.dotmarketing.beans.transform.MultiTreeTransformer;
 import com.dotmarketing.beans.transform.TreeTransformer;
 import com.dotmarketing.business.ContentletVersionInfoTransformer;
+import com.dotmarketing.business.transform.UserTransformer;
+import com.dotmarketing.portlets.categories.business.CategoryTransformer;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.transform.ContainerTransformer;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.ContentletTransformer;
-import com.dotmarketing.portlets.contentlet.transform.FatContentletTransformer;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.transform.TemplateTransformer;
 import com.dotmarketing.portlets.hostvariable.transform.HostVariableTransformer;
@@ -25,6 +26,7 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.folders.transform.FolderTransformer;
 import com.dotmarketing.portlets.workflows.model.transform.WorkflowCommentTransformer;
+import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -60,6 +62,7 @@ public class TransformerLocator {
         transformerMapping.put (Contentlet.class, TransformerLocator::createContentletTransformer);
         transformerMapping.put (Language.class, TransformerLocator::createLanguageTransformer);
         transformerMapping.put (Relationship.class, TransformerLocator::createRelationshipTransformer);
+        transformerMapping.put (User.class, TransformerLocator::createUserTransformer);
     }
 
     public static DBTransformer createDBTransformer(List<Map<String, Object>> list, Class clazz) {
@@ -130,17 +133,6 @@ public class TransformerLocator {
             List<Map<String, Object>> initList) {
 
         return new ContentletTransformer(initList);
-    }
-
-    /**
-     * Creates a DBTransformer for Fat Contentlet {@link com.dotmarketing.portlets.contentlet.business.Contentlet} objects
-     * @param initList List of DB results to be transformed
-     * @return
-     */
-    public static FatContentletTransformer createFatContentletTransformer(
-            List<Map<String, Object>> initList) {
-
-        return new FatContentletTransformer(initList);
     }
 
     /**
@@ -234,5 +226,25 @@ public class TransformerLocator {
     public static ContentletVersionInfoTransformer createContentletVersionInfoTransformer(
             List<Map<String, Object>> initList) {
         return new ContentletVersionInfoTransformer(initList);
+    }
+
+    /**
+     * Creates a DBTransformer for User objects
+     *
+     * @param initList List of DB results to be transformed
+     */
+    public static UserTransformer createUserTransformer(
+            List<Map<String, Object>> initList) {
+
+        return new UserTransformer(initList);
+    }
+
+    /**
+     * Creates a Map to object Transformer for Categories
+     * @param initList
+     * @return
+     */
+    public static CategoryTransformer createCategoryTransformer(List<Map<String, Object>> initList){
+        return new CategoryTransformer(initList);
     }
 }

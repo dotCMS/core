@@ -7,6 +7,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
@@ -40,12 +41,15 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
 
   private final Map<ShortyInputType, DBLikeStrategy> dbLikeStrategyMap =
           map(
-                  ShortyInputType.CONTENT,         (final DotConnect db, final String uuidIfy) -> db.setSQL(ShortyIdSql.SELECT_SHORTY_SQL_LIKE).addParam(uuidIfy + "%").addParam(uuidIfy + "%"),
+                  ShortyInputType.CONTENT,         (final DotConnect db, final String uuidIfy) -> {
+                    final String sqlUnion = (ShortyIdSql.SELECT_SHORTY_SQL_LIKE + " UNION " + ShortyIdSql.SELECT_SHORTY_SQL_LIKE);
+                    final String deterministicId = uuidIfy.replaceAll("-","");
+                    db.setSQL(sqlUnion).addParam(uuidIfy + "%").addParam(uuidIfy + "%").addParam(deterministicId + "%").addParam(deterministicId + "%");
+                  },
                   ShortyInputType.WORKFLOW_SCHEME, (final DotConnect db, final String uuidIfy) -> db.setSQL(ShortyIdSql.SELECT_WF_SCHEME_SHORTY_SQL_LIKE).addParam(uuidIfy + "%"),
                   ShortyInputType.WORKFLOW_STEP,   (final DotConnect db, final String uuidIfy) -> db.setSQL(ShortyIdSql.SELECT_WF_STEP_SHORTY_SQL_LIKE).addParam(uuidIfy + "%"),
                   ShortyInputType.WORKFLOW_ACTION, (final DotConnect db, final String uuidIfy) -> db.setSQL(ShortyIdSql.SELECT_WF_ACTION_SHORTY_SQL_LIKE).addParam(uuidIfy + "%")
           );
-
 
   long dbHits = 0;
   public static int MINIMUM_SHORTY_ID_LENGTH =
@@ -100,22 +104,9 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
   
   @Override
   public String shortify(final String shortStr) {
-    try {
-
-      if (UtilMethods.isSet(shortStr)) {
-
-        final String trimmedShortStr = shortStr.trim().replaceAll("-", "");
-        final int    min             = Math.min(trimmedShortStr.length(), MINIMUM_SHORTY_ID_LENGTH);
-
-        return (trimmedShortStr.startsWith(TempFileAPI.TEMP_RESOURCE_PREFIX)) ? trimmedShortStr : 
-                trimmedShortStr.substring(0, min);
-      }
-
-      return shortStr;
-    } catch (Exception se) {
-        throw new ShortyException("shorty " + shortStr + " is not a short id.  Short Ids should be "
-                + MINIMUM_SHORTY_ID_LENGTH + " alphanumeric chars in length", se);
-    }
+      
+      return StringUtils.shortify(shortStr, MINIMUM_SHORTY_ID_LENGTH);
+      
   }
 
   public String uuidIfy(String shorty) {

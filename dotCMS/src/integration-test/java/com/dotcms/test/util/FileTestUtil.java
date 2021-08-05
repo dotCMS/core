@@ -24,10 +24,11 @@ import org.jetbrains.annotations.NotNull;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.*;
-import static org.jgroups.util.Util.assertEquals;
-import static org.jgroups.util.Util.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Provide util test for testing
@@ -231,7 +232,13 @@ public class FileTestUtil {
         final Collection<File> files = assertionChecker.getFile(asset, bundleRoot);
 
         for (final File file : files) {
-            assertTrue(String.format("File %s, not exists", file.getAbsolutePath()), file.exists());
+
+            if (!file.exists()) {
+                final String paths = FileUtil.listFilesRecursively(bundleRoot).stream()
+                        .map(fileInStream -> fileInStream.getAbsolutePath())
+                        .collect(Collectors.joining(", "));
+                assertTrue(String.format("File %s, not exists, files: %s", file.getAbsolutePath(), paths), file.exists());
+            }
 
             if (!assertionChecker.checkFileContent(asset)) {
                 continue;
@@ -274,11 +281,20 @@ public class FileTestUtil {
         return index != -1 ? fileName.substring(index) : fileName;
     }
 
-    private static String removeContent(String content, Collection<String> toRemove) {
+    private static String removeContent(
+            final String content,
+            final Collection<String> toRemoveParams) {
+
+        final Collection<String> toRemove = new ArrayList<>();
+        toRemove.addAll(toRemoveParams);
+        toRemove.add("<.*></.*>");
+
+        String result = content;
+
         for (String regex : toRemove) {
-            content = content.replaceAll(regex, "");
+            result = result.replaceAll(regex, "");
         }
-        return content;
+        return result;
     }
 
 }

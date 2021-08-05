@@ -1,13 +1,14 @@
 package com.dotcms.rendering.velocity.viewtools;
 
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.Theme;
+import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtil;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
 import com.dotcms.contenttype.transform.JsonTransformer;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -22,7 +23,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
-import io.vavr.control.Try;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -134,13 +134,19 @@ public class DotTemplateTool implements ViewTool {
         layoutCache.invalidate(templateInode + true);
     }
 
-    private static DrawedBody getDrawedBody(String themeInodeOrId, User user) throws DotDataException, DotSecurityException {
-        final Template template = FactoryLocator.getTemplateFactory().find(themeInodeOrId);//If null themeInodeOrId is a Id
-        final String identifier = template!=null ? template.getIdentifier() : themeInodeOrId;
+    private static DrawedBody getDrawedBody(String templateInodeOrId, User user) throws DotDataException, DotSecurityException {
+        final boolean isIdentifier = APILocator.getIdentifierAPI().isIdentifier(templateInodeOrId);
+        String identifier = templateInodeOrId;
+        if(!isIdentifier && !FileAssetTemplateUtil.getInstance().isFolderAssetTemplateId(templateInodeOrId)){
+            final Template template = FactoryLocator.getTemplateFactory().find(templateInodeOrId);
+            identifier = template!=null ? template.getIdentifier() :
+                    APILocator.getIdentifierAPI().findFromInode(templateInodeOrId).getId();//this is for find the id of fileAssetTemplates by inode
+        }
         final Template workingTemplate = APILocator.getTemplateAPI().findWorkingTemplate(identifier, user, false);
 
+
         if (!workingTemplate.isDrawed()){
-            throw new RuntimeException("Template with inode: " + themeInodeOrId + " is not drawed");
+            throw new RuntimeException("Template with inode: " + templateInodeOrId + " is not drawed");
         }
 
         return new DrawedBody(workingTemplate.getTitle(), workingTemplate.getDrawedBody());
@@ -242,7 +248,7 @@ public class DotTemplateTool implements ViewTool {
             throws DotDataException, DotSecurityException {
 
         //Get the theme folder
-        Folder themeFolder = APILocator.getFolderAPI().find( themeFolderInode, APILocator.getUserAPI().getSystemUser(), false );
+        final Folder themeFolder = APILocator.getThemeAPI().findThemeById(themeFolderInode, APILocator.systemUser(),false);
         return setThemeData( themeFolder, hostId );
     }
 
@@ -340,6 +346,8 @@ public class DotTemplateTool implements ViewTool {
         String themeTemplatePath;
         if ( UtilMethods.isSet( themeTemplate ) && InodeUtils.isSet( themeTemplate.getInode() ) ) {
             themeTemplatePath = themeTemplate.getFileAsset().getPath();
+        } else if(themeFolder.getIdentifier().equals(Theme.SYSTEM_THEME)){
+            themeTemplatePath = "static/system_theme/" + Template.THEME_TEMPLATE;
         } else {//If the theme doesn't provide a template.vtl file lest use ours
             themeTemplatePath = "static/template/" + Template.THEME_TEMPLATE;
         }

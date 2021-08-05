@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.containers.model;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Source;
 import com.dotmarketing.business.APILocator;
@@ -43,13 +45,26 @@ public class FileAssetContainer extends Container {
     private transient FileAsset postLoopAsset = null;
 
     @JsonIgnore
+    private transient FileAsset defaultContainerLayoutAsset = null;
+
+    @JsonIgnore
     public FileAsset getPostLoopAsset() {
         return postLoopAsset;
+    }
+
+    @JsonIgnore
+    public FileAsset getDefaultContainerLayoutAsset() {
+        return defaultContainerLayoutAsset;
     }
 
     public void setPostLoopAsset(final FileAsset postLoopAsset) {
         this.postLoopAsset = postLoopAsset;
     }
+
+    public void setDefaultContainerLayoutAsset(final FileAsset defaultContainerLayoutAsset) {
+        this.defaultContainerLayoutAsset = defaultContainerLayoutAsset;
+    }
+
 
     @JsonIgnore
     private transient FileAsset preLoopAsset = null;
@@ -141,5 +156,14 @@ public class FileAssetContainer extends Container {
 
     public Host getHost() {
         return host;
+    }
+
+    @Override
+    public ManifestInfo getManifestInfo(){
+        return ManifestInfoBuilder.merge(super.getManifestInfo(),
+                new ManifestInfoBuilder()
+                    .site(this.getHost())
+                    .path(this.getPath())
+                    .build());
     }
 }

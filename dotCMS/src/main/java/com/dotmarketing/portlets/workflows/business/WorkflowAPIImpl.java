@@ -16,6 +16,7 @@ import com.dotcms.rekognition.actionlet.RekognitionActionlet;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.api.v1.workflow.ActionFail;
+import com.dotcms.rest.api.v1.workflow.ActionInputView;
 import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.model.Subscriber;
@@ -112,11 +113,19 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.Nullable;
+
+import io.vavr.control.Try;
 import org.apache.commons.lang.time.StopWatch;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.elasticsearch.search.query.QueryPhaseExecutionException;
 import org.osgi.framework.BundleContext;
 
+/**
+ * Implementation class for {@link WorkflowAPI}.
+ *
+ * @author root
+ * @since Mar 22, 2012
+ */
 public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private final List<Class<? extends WorkFlowActionlet>> actionletClasses;
@@ -215,7 +224,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				LargeMessageActionlet.class,
 				SendFormEmailActionlet.class,
 				ResetApproversActionlet.class,
-				RekognitionActionlet.class
+				RekognitionActionlet.class,
+				MoveContentActionlet.class
 		));
 
 		refreshWorkFlowActionletMap();
@@ -240,11 +250,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					+ contentTypeDeletedEvent.getContentTypeVar() );
 
 			this.workFlowFactory.deleteSystemActionsByContentType(contentTypeDeletedEvent.getContentTypeVar());
-		} catch (DotDataException e) {
-
-			Logger.error(this, "Can not delete the system mapping actions associated to the content type: "
-					+ contentTypeDeletedEvent.getContentTypeVar() + ", msg: " + e.getMessage(), e);
-		}
+		} catch (final DotDataException e) {
+            Logger.error(this, String.format("Cannot delete system mapping actions associated to Content Type '%s': " +
+                    "%s", contentTypeDeletedEvent.getContentTypeVar(), e.getMessage()), e);
+        }
 	}
 
 	@Subscriber
@@ -257,11 +266,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					+ languageDeletedEvent.getLanguage() );
 
 			this.workFlowFactory.deleteWorkflowTaskByLanguage(languageDeletedEvent.getLanguage());
-		} catch (DotDataException e) {
-
-			Logger.error(this, "Can not delete the workflow tasks associated to the language: "
-					+ languageDeletedEvent.getLanguage() + ", msg: " + e.getMessage(), e);
-		}
+		} catch (final DotDataException e) {
+            Logger.error(this, String.format("Cannot delete workflow tasks associated to language '%s': %s",
+                    languageDeletedEvent.getLanguage(), e.getMessage()), e);
+        }
 	}
 
 	/**
@@ -348,10 +356,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
             try {
                 hasAccessToPortlet = (APILocator.getLayoutAPI()
                         .doesUserHaveAccessToPortlet("workflow-schemes", user));
-            } catch (DotDataException e) {
-                Logger.error(this,
-                        "Unable to verify access to portlet : workflow-schemes for user with id: "
-                                + user.getUserId(), e);
+            } catch (final DotDataException e) {
+                Logger.error(this, String.format("Unable to verify access to portlet 'Workflow Schemes' for user ID " +
+                        "'%s': %s", user.getUserId(), e.getMessage()), e);
             }
 
             if (!hasAccessToPortlet) {
@@ -415,8 +422,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
             for(final WorkflowActionClass clazz:actionClasses) {
 				deleteActionClass(clazz, user);
 			}
-		} catch (Exception e) {
-		    Logger.error(WorkflowAPIImpl.class,String.format("Error removing Actionlet with className `%s`", workFlowActionletName), e);
+		} catch (final Exception e) {
+		    Logger.error(WorkflowAPIImpl.class,String.format("Error removing Actionlet with className '%s'", workFlowActionletName), e);
 			throw new DotRuntimeException(e);
 		}
 	}
@@ -561,13 +568,15 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			Logger.debug(this, ()-> "Saving schemes: " + schemes +
 									", to the content type: " + contentType);
-			SecurityLogger.logInfo(this.getClass(), ()-> "Saving schemes: " + schemes +
-					", to the content type: " + contentType);
+            SecurityLogger.logInfo(this.getClass(), () -> String.format("Saving schemes [ %s ] for Content Type [ " +
+                    "%s ]", schemes, contentType));
 
 			this.workFlowFactory.saveSchemesForStruct(contentType.getInode(), schemes,
 					this::consumeWorkflowTask);
-		} catch(DotDataException e){
-			throw e;
+        } catch (final DotDataException e) {
+            Logger.error(WorkflowAPIImpl.class, String.format("Error saving Schemas for Content type '%s': %s",
+                    contentType.getInode(), e.getMessage()));
+            throw e;
 		}
 	}
 
@@ -578,9 +587,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		try {
 
-			Logger.info(WorkflowAPIImpl.class, String.format("Saving Schemas: %s for Content type %s",
+			Logger.info(WorkflowAPIImpl.class, String.format("Saving Schemas [ %s ] for Content type '%s'",
 					String.join(",", schemesIds), contentType.inode()));
-			SecurityLogger.logInfo(this.getClass(), ()-> String.format("Saving Schemas: %s for Content type %s",
+			SecurityLogger.logInfo(this.getClass(), ()-> String.format("Saving Schemas [ %s ] for Content type '%s'",
 					String.join(",", schemesIds), contentType.inode()));
 
 			workFlowFactory.saveSchemeIdsForContentType(contentType.inode(),
@@ -591,10 +600,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			}
 
 			this.cleanInvalidDefaultActionForContentType(contentType, schemesIds);
-		} catch(DotDataException | DotSecurityException e) {
+        } catch (final DotDataException | DotSecurityException e) {
 
-			Logger.error(WorkflowAPIImpl.class, String.format("Error saving Schemas: %s for Content type %s",
-					String.join(",", schemesIds), contentType.inode()));
+			Logger.error(WorkflowAPIImpl.class, String.format("Error saving Schemas [ %s ] for Content Type '%s': %s",
+					String.join(",", schemesIds), contentType.inode(), e.getMessage()));
 		}
 	}
 
@@ -615,10 +624,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 						if (!schemesIds.contains(mapping.getWorkflowAction().getSchemeId())) {
 
-							Logger.info(this, "Removing invalid system default action: " + mapping.getWorkflowAction() +
-									" on content type: " + contentType.variable() + ", the scheme: " + mapping.getWorkflowAction().getSchemeId() +
-									" is not longer valid on the content type schemes: " + schemesIds);
-							this.workFlowFactory.deleteSystemAction(mapping);
+                            Logger.info(this, String.format("Removing invalid system default action [ %s ] on content" +
+                                            " type '%s'. The Scheme ID '%s' is no longer valid on the content type schemes [ %s ]",
+                                    mapping.getWorkflowAction(), contentType.variable(), mapping.getWorkflowAction()
+                                            .getSchemeId(), schemesIds));
+                            this.workFlowFactory.deleteSystemAction(mapping);
 						}
 					}
 				}
@@ -728,9 +738,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		workFlowFactory.saveScheme(scheme);
 
-		SecurityLogger.logInfo(this.getClass(), ()-> "The Scheme" + scheme.getName()
-				+ " has been saved by the user: " + user.getUserId());
-	}
+        SecurityLogger.logInfo(this.getClass(), () -> String.format("Workflow Scheme '%s' [%s] has been saved by User" +
+                " ID '%s'", scheme.getName(), scheme.getId(), user.getUserId()));
+    }
 
 	@CloseDBIfOpened
 	public List<WorkflowScheme> findArchivedSchemes() throws DotDataException{
@@ -762,15 +772,15 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		this.isUserAllowToModifiedWorkflow(user);
 
 		if (null == scheme){
-			Logger.warn(this, "Can not delete a null workflow");
+			Logger.warn(this, "Workflow Scheme cannot be null");
 			throw new DotWorkflowException("Workflow-delete-null-workflow");
 		}
 
 		if( SYSTEM_WORKFLOW_ID.equals(scheme.getId())) {
 
-			Logger.warn(this,
-					"Can not delete workflow Id:" + scheme.getId() + ", name:" + scheme.getName());
-			throw new DotSecurityException("Workflow-delete-system-workflow");
+            Logger.warn(this, String.format("Workflow Scheme '%s' [%s] could not be deleted", scheme.getName(),
+                    scheme.getId()));
+            throw new DotSecurityException("Workflow-delete-system-workflow");
 		}
 
 		if(!scheme.isArchived()){
@@ -794,8 +804,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			final StopWatch stopWatch = new StopWatch();
 			stopWatch.start();
-			Logger.info(this, "Begin the Delete Workflow Scheme task. workflow Id:" + scheme.getId()
-					+ ", name:" + scheme.getName());
+            Logger.info(this, String.format("Deleting Workflow Scheme '%s' [%s]", scheme.getName(), scheme.getId()));
 
 			final List<WorkflowStep> steps = this.findSteps(scheme);
 			for (final WorkflowStep step : steps) {
@@ -812,12 +821,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			//delete scheme
 			this.workFlowFactory.deleteScheme(scheme);
-			SecurityLogger.logInfo(this.getClass(),
-					"The Workflow Scheme with id:" + scheme.getId() + ", name:" + scheme.getName()
-							+ " was deleted");
+            SecurityLogger.logInfo(this.getClass(), String.format("Workflow Scheme '%s' [%s] has been deleted",
+                    scheme.getName(), scheme.getId()));
 
 			stopWatch.stop();
-			Logger.info(this, "Delete Workflow Scheme task DONE, duration:" +
+			Logger.info(this, "Delete Workflow Scheme task has finished. Duration: " +
 					DateUtil.millisToSeconds(stopWatch.getTime()) + " seconds");
 
 			//Update index
@@ -826,15 +834,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			this.systemMessageEventUtil.pushSimpleTextEvent
 					(LanguageUtil.get(user.getLocale(), "Workflow-deleted", scheme.getName()), user.getUserId());
 
-			SecurityLogger.logInfo(this.getClass(), ()-> "The Scheme" + scheme.getName()
-					+ " has been deleted by the user: " + user.getUserId());
-		} catch (Exception e) {
-			Logger.error(this.getClass(),
-					"Error deleting Scheme: " + scheme.getId() + ", name:" + scheme.getName() + ". "
-							+ e.getMessage(), e);
-			throw new DotRuntimeException(e);
-		}
-		return scheme;
+            SecurityLogger.logInfo(this.getClass(), () -> String.format("Worklow Scheme '%s' [%s] has been deleted by" +
+                    " User ID '%s'", scheme.getName(), scheme.getId(), user.getUserId()));
+        } catch (final Exception e) {
+            Logger.error(this.getClass(), String.format("Error deleting Workflow Scheme '%s' [%s]: %s", scheme
+                    .getName(), scheme.getId(), e.getMessage()), e);
+            throw new DotRuntimeException(e);
+        }
+        return scheme;
 	}
 
 	/**
@@ -965,9 +972,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		workFlowFactory.saveStep(step);
 
-		SecurityLogger.logInfo(this.getClass(), ()-> "The Step" + step.getName()
-				+ " has been saved by the user: " + user.getUserId());
-	}
+        SecurityLogger.logInfo(this.getClass(), () -> String.format("Workflow Step '%s' [%s] has been saved by User ID" +
+                " '%s'", step.getName(), step.getId(), user.getUserId()));
+    }
 
 	@CloseDBIfOpened
 	public Future<WorkflowStep> deleteStepHardMode(final WorkflowStep step, final User user)
@@ -1048,11 +1055,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			return (async) ?
 					submitter.submit(() -> deleteStepTask(step, user, true)) :
 					ConcurrentUtils.constantFuture(deleteStepTask(step, user, false));
-		} catch (Exception e) {
-
-			throw new DotDataException(e.getMessage(), e);
-		}
-	}
+        } catch (final Exception e) {
+            Logger.error(this.getClass(), String.format("An error occurred when deleting Workflow Step '%s' [%s]: " +
+                    "%s", step.getName(), step.getId(), e.getMessage()), e);
+            throw new DotDataException(e.getMessage(), e);
+        }
+    }
 
 	private void consumeWorkflowTask (final WorkflowTask workflowTask) {
 
@@ -1064,10 +1072,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
 				}
 			});
-		} catch (DotHibernateException e) {
-			Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
-		}
-	}
+        } catch (final DotHibernateException e) {
+            Logger.error(WorkflowAPIImpl.class, String.format("An error occurred on Commit Listener when adding " +
+                    "content ID '%s' to ES index: %s", workflowTask.getWebasset(), e.getMessage()), e);
+        }
+    }
 
 	@WrapInTransaction
 	private WorkflowStep deleteStepTask(final WorkflowStep step, final User user, final boolean sendSystemEvent) {
@@ -1077,17 +1086,15 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			final StopWatch stopWatch = new StopWatch();
 			stopWatch.start();
 
-			Logger.info(this, "Begin the Delete Workflow Step task. step Id:" + step.getId()
-					+ ", name:" + step.getName());
+			Logger.info(this, String.format("Deleting Workflow Step '%s' [%s]", step.getName(), step.getId()));
 
 			this.workFlowFactory.deleteActions(step); // workflow_action_step
 			this.workFlowFactory.deleteStep(step, this::consumeWorkflowTask); // workflow_step
-			SecurityLogger.logInfo(this.getClass(),
-					"The Workflow Step with id:" + step.getId() + ", name:" + step.getName()
-							+ " was deleted");
+            SecurityLogger.logInfo(this.getClass(), String.format("Workflow Step '%s' [%s] has been deleted",
+                    step.getName(), step.getId()));
 
 			stopWatch.stop();
-			Logger.info(this, "Delete Workflow Step task DONE, duration:" +
+			Logger.info(this, "Delete Workflow Step task has finished. Duration: " +
 					DateUtil.millisToSeconds(stopWatch.getTime()) + " seconds");
 
 			if (sendSystemEvent) {
@@ -1101,11 +1108,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				});
 			}
 
-			SecurityLogger.logInfo(this.getClass(), ()-> "The Step" + step.getName()
-					+ " has been deleted by the user: " + user.getUserId());
-		} catch (Exception e) {
-
-
+            SecurityLogger.logInfo(this.getClass(), String.format("Workflow Step '%s' [%s] has been deleted by User " +
+                    "ID '%s'", step.getName(), step.getId(), user.getUserId()));
+        } catch (final Exception e) {
 			HibernateUtil.addRollbackListener(() -> {
 				try {
 					this.systemMessageEventUtil.pushSimpleErrorEvent(new ErrorEntity("Workflow-delete-step-error",
@@ -1114,11 +1119,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					Logger.error(this.getClass(), e1.getMessage(), e1);
 				}
 			});
-
-
-			Logger.error(this.getClass(),
-					"Error deleting the step: " + step.getId() + ", name:" + step.getName() + ". "
-							 + e.getMessage(), e);
+            Logger.error(this.getClass(), String.format("An error occurred when deleting Workflow Step '%s' [%s]: " +
+                    "%s", step.getName(), step.getId(), e.getMessage()), e);
 
 			throw new DotRuntimeException(e);
 		}
@@ -1173,9 +1175,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			});
 		}
 
-		SecurityLogger.logInfo(this.getClass(), ()-> "The Step" + step.getName()
-				+ " has been reordered by the user: " + user.getUserId());
-	}
+        SecurityLogger.logInfo(this.getClass(), () -> String.format("Workflow Step '%s' [%s] has been reordered by " +
+                "User ID '%s'", step.getName(), step.getId(), user.getUserId()));
+    }
 
 	/**
 	 * Once we have determined that a reorder event has affected the first position, we need to update the index.
@@ -1193,9 +1195,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public void deleteComment(final WorkflowComment comment) throws DotDataException {
 
 		this.workFlowFactory.deleteComment(comment);
-		SecurityLogger.logInfo(this.getClass(),
-				"The Workflow Comment with id:" + comment.getId() + " was deleted.");
-	}
+        SecurityLogger.logInfo(this.getClass(), String.format("Workflow Comment '%s' has been deleted.", comment.getId()));
+    }
 
 	@Override
 	@CloseDBIfOpened
@@ -1210,8 +1211,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		if(UtilMethods.isSet(comment.getComment())) {
 
 			this.workFlowFactory.saveComment(comment);
-			SecurityLogger.logInfo(this.getClass(),
-					()-> "The comment" + comment.getId() + " has been saved");
+            SecurityLogger.logInfo(this.getClass(), String.format("Workflow Comment '%s' has been saved.", comment.getId()));
 		}
 	}
 
@@ -1226,9 +1226,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public void deleteWorkflowHistory(final WorkflowHistory history) throws DotDataException {
 
 		this.workFlowFactory.deleteWorkflowHistory(history);
-		SecurityLogger.logInfo(this.getClass(),
-				"The Workflow History with id:" + history.getId() + " was deleted.");
-	}
+        SecurityLogger.logInfo(this.getClass(), String.format("Workflow History '%s' has been deleted.", history.getId()));
+    }
 
 	@Override
 	@WrapInTransaction
@@ -1242,8 +1241,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public void saveWorkflowHistory(final WorkflowHistory history) throws DotDataException {
 
 		this.workFlowFactory.saveWorkflowHistory(history);
-		SecurityLogger.logInfo(this.getClass(),
-				"The Workflow History with id:" + history.getId() + " was saved.");
+        SecurityLogger.logInfo(this.getClass(), String.format("Workflow History '%s' has been saved.", history.getId()));
 	}
 
 	@Override
@@ -1252,32 +1250,35 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			throws DotDataException {
 
 		this.workFlowFactory.deleteWorkflowTask(task);
-		SecurityLogger.logInfo(this.getClass(),
-				"The Workflow Task with id:" + task.getId() + " was deleted.");
+		SecurityLogger.logInfo(this.getClass(), String.format("Workflow Task '%s' has been deleted.", task.getId()));
 		try {
 			if (UtilMethods.isSet(task.getWebasset())) {
 				HibernateUtil.addCommitListener(() -> {
 					try {
 						this.reindexQueueAPI.addIdentifierReindex(task.getWebasset());
-					} catch (DotDataException e) {
-						Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
-					}
+					} catch (final DotDataException e) {
+                        Logger.error(WorkflowAPIImpl.class, String.format("An error occurred when reindexing webasset" +
+                                " '%s' on Commit Listener for  Workflow Task '%s': %s", task.getWebasset(), task.getId(), e
+                                .getMessage()), e);
+
+                    }
 				});
 			}
-		} catch (Exception e) {
-			Logger.error(this, e.getMessage(), e);
-		}
+		} catch (final Exception e) {
+            Logger.error(this, String.format("An error occurred when deleting Workflow Task '%s': %s", task.getId(),
+                    e.getMessage()), e);
+        }
 
-		SecurityLogger.logInfo(this.getClass(), ()-> "The Task" + task.getId()
-				+ " has been deleted by the user: " + user.getUserId());
-	}
+        SecurityLogger.logInfo(this.getClass(), () -> String.format("Workflow Task '%s' has been deleted by User ID " +
+                "'%s'", task.getId(), user.getUserId()));
+    }
 
 	@Override
 	@WrapInTransaction
 	public void deleteWorkflowTaskByContentletIdAnyLanguage(final Contentlet contentlet, final User user) throws DotDataException {
 
-		SecurityLogger.logInfo(this.getClass(),
-				"The Removing Workflow Tasks with the contentlet:" + contentlet);
+        SecurityLogger.logInfo(this.getClass(), String.format("Removing Workflow Tasks by contentlet '%s' in any " +
+                "language", contentlet.getIdentifier()));
 
 		if(contentlet==null || !UtilMethods.isSet(contentlet.getIdentifier())) {
 			return;
@@ -1289,24 +1290,28 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			HibernateUtil.addCommitListener(() -> {
 				try {
 					this.contentletIndexAPI.addContentToIndex(contentlet);
-				} catch (DotDataException e) {
-					Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
-				}
+				} catch (final DotDataException e) {
+                    Logger.error(WorkflowAPIImpl.class, String.format("An error occurred when reindexing Contentlet " +
+                                    "with ID '%s' / Inode '%s' on Commit Listener in any language: %s", contentlet.getIdentifier(),
+                            contentlet.getInode(), e.getMessage()), e);
+                }
 			});
-		} catch (Exception e) {
-			Logger.error(this, e.getMessage(), e);
-		}
+		} catch (final Exception e) {
+            Logger.error(this, String.format("An error occurred when deleting Workflow Tasks by Contentlet with ID " +
+                    "'%s' / Inode '%s' in any language: %s", contentlet.getIdentifier(), contentlet.getInode(), e.getMessage
+                    ()), e);
+        }
 
-		SecurityLogger.logInfo(this.getClass(), ()-> "The Removed the tasks with the contentlet"
-				+ contentlet + " has been deleted by the user: " + user.getUserId());
-	}
+        SecurityLogger.logInfo(this.getClass(), () -> String.format("Workflow Tasks by contentlet '%s' in any " +
+                "language have been deleted by User ID '%s'", contentlet.getIdentifier(), user.getUserId()));
+    }
 
 	@Override
 	@WrapInTransaction
 	public void deleteWorkflowTaskByContentlet(final Contentlet contentlet, final long languageId, final User user) throws DotDataException {
 
-		SecurityLogger.logInfo(this.getClass(),
-				"The Removing Workflow Tasks with the contentlet:" + contentlet.getIdentifier());
+        SecurityLogger.logInfo(this.getClass(), String.format("Removing Workflow Tasks by contentlet '%s' in lang " +
+                "'%s'", contentlet.getIdentifier(), languageId));
 
 		if(contentlet==null || !UtilMethods.isSet(contentlet.getIdentifier())) {
 			return;
@@ -1318,17 +1323,22 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			HibernateUtil.addCommitListener(() -> {
 				try {
 					this.contentletIndexAPI.addContentToIndex(contentlet);
-				} catch (DotDataException e) {
+				} catch (final DotDataException e) {
 					Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+                    Logger.error(WorkflowAPIImpl.class, String.format("An error occurred when reindexing Contentlet " +
+                                    "with ID '%s' / Inode '%s' on Commit Listener in lang '%s': %s", contentlet.getIdentifier(),
+                            contentlet.getInode(), languageId, e.getMessage()), e);
 				}
 			});
-		} catch (Exception e) {
-			Logger.error(this, e.getMessage(), e);
-		}
+		} catch (final Exception e) {
+            Logger.error(this, String.format("An error occurred when deleting Workflow Tasks by Contentlet with ID " +
+                    "'%s' / Inode '%s' in lang '%s': %s", contentlet.getIdentifier(), contentlet.getInode(), languageId, e
+                    .getMessage()), e);
+        }
 
-		SecurityLogger.logInfo(this.getClass(), ()-> "The Removed the tasks with the contentlet" + contentlet
-				+ " has been deleted by the user: " + user.getUserId());
-	}
+        SecurityLogger.logInfo(this.getClass(), () -> String.format("Workflow Tasks by contentlet '%s' in lang '%s' " +
+                "have been deleted by User ID '%s'", contentlet.getIdentifier(), languageId, user.getUserId()));
+    }
 
 	@CloseDBIfOpened
 	public WorkflowTask findWorkFlowTaskById(final String id) throws DotDataException {
@@ -1349,8 +1359,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		if (task.getLanguageId() <= 0) {
 
-			Logger.error(this, "The task: " + task.getId() +
-								", does not have language id, setting to the default one");
+			Logger.warn(this, "Workflow Task: '" + task.getId() +
+								"' doesn't have any language ID. Setting the default one");
 			task.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
 		}
 
@@ -1370,7 +1380,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 
 		SecurityLogger.logInfo(this.getClass(),
-				"The Workflow task with id:" + task.getId() + " has been saved.");
+				"Workflow task with id: '" + task.getId() + "' has been saved.");
 	}
 
 	@Override
@@ -1429,7 +1439,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public void attachFileToTask(final WorkflowTask task, final String fileInode) throws DotDataException {
 		workFlowFactory.attachFileToTask(task, fileInode);
 		SecurityLogger.logInfo(this.getClass(),
-				"The file id:" + fileInode + " has been attach to the task:" + task.getId());
+				"File id: '" + fileInode + "' has been attached to task: " + task.getId());
 	}
 
 	@Override
@@ -1437,7 +1447,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public void removeAttachedFile(final WorkflowTask task, final String fileInode) throws DotDataException {
 		workFlowFactory.removeAttachedFile(task, fileInode);
 		SecurityLogger.logInfo(this.getClass(),
-				"The file id:" + fileInode + " has been removed to the task:" + task.getId());
+				"File id: '" + fileInode + "' has been removed from task: " + task.getId());
 	}
 
 	@Override
@@ -1553,6 +1563,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		boolean isDelete      = false;
 		boolean isDestroy     = false;
         boolean isPushPublish = false;
+		boolean isMove        = false;
+		boolean isMoveHasPath = false;
 
         for (final WorkflowActionClass actionClass : actionClasses) {
 
@@ -1567,7 +1579,21 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			    isDelete      |= (null != actionlet) && actionlet.delete();
 			    isDestroy     |= (null != actionlet) && actionlet.destroy();
                 isPushPublish |= (null != actionlet) && actionlet.pushPublish();
-        }
+
+			/*
+			 * In order to determine if an action is moveable, it needs to have a MoveContentActionlet assigned AND
+			 * their parameter MoveContentActionlet#PATH_KEY should be not set (b/c if it is, the path is already hardcored and does not need to ask for it)
+			 */
+			if (actionClass.getClazz().equals(MoveContentActionlet.class.getName())) {
+
+				final Map<String, WorkflowActionClassParameter> workflowActionClassParameterMap =
+						Try.of(() -> this.findParamsForActionClass(actionClass)).getOrNull();
+
+				isMove         = true;
+				isMoveHasPath |= UtilMethods.isSet(workflowActionClassParameterMap) &&
+						UtilMethods.isSet(workflowActionClassParameterMap.get(MoveContentActionlet.PATH_KEY).getValue());
+			}
+		}
 
 	    action.setSaveActionlet(isSave);
         action.setPublishActionlet(isPublish);
@@ -1577,6 +1603,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		action.setDeleteActionlet(isDelete);
 		action.setDestroyActionlet(isDestroy);
         action.setPushPublishActionlet(isPushPublish);
+        action.setMoveActionlet(isMove);
+        action.setMoveActionletHashPath(isMoveHasPath);
     }
 
 
@@ -1622,10 +1650,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		try {
 
-			if(contentlet == null || contentlet.getStructure() ==null) {
+			if (contentlet == null || contentlet.getContentType() == null) {
 
-				Logger.debug(this, () -> "the Contentlet: " + contentlet + " or their structure could be null");
-				throw new DotStateException("content is null");
+				Logger.debug(this, () -> "Contentlet: " + contentlet + " or its Content Type is null");
+				throw new DotStateException("Content or Content Type is null");
 			}
 
 			final boolean isNew  			= !UtilMethods.isSet(contentlet.getInode());
@@ -1640,10 +1668,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					this.findActions(steps, user, contentlet.getContentType()):
 					this.findActions(steps, user, contentlet));
 
-		} catch (DotDataException | DotSecurityException e) {
-
-			Logger.error(this, e.getMessage(), e);
-		}
+		} catch (final DotDataException | DotSecurityException e) {
+            Logger.error(this, String.format("An error occurred when checking Action ID '%s' for Contentlet '%s': " +
+                    "%s", actionId, contentlet.getIdentifier(), e.getMessage()), e);
+        }
 
 		return UtilMethods.isSet(workflowActions) &&
 				workflowActions.stream().anyMatch(workflowAction -> actionId.equals(workflowAction.getId()));
@@ -1733,7 +1761,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 
 		SecurityLogger.logInfo(this.getClass(),
-				"The action id:" + action.getId() + " has been reordered by the user:" + user.getUserId());
+				"Action id: '" + action.getId() + "' has been reordered by user: " + user.getUserId());
 	}
 
 	@Override
@@ -1789,7 +1817,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		DotPreconditions.isTrue(UtilMethods.isSet(action.getSchemeId()) && this.existsScheme(action.getSchemeId()),
 				()-> {
-					Logger.error(this, "The Workflow Scheme does not exist, id: " + action.getSchemeId());
+					Logger.error(this, String.format("Workflow Scheme '%s' doesn't exist.", action.getSchemeId()));
 					return "Workflow-does-not-exists-scheme";
 				},
 				DoesNotExistException.class);
@@ -1815,10 +1843,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 							(permission, action, APILocator.getUserAPI().getSystemUser(), false);
 				}
 			}
-		} catch (Exception e) {
-			Logger.error(WorkflowAPIImpl.class, e.getMessage());
-			Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
+		} catch (final Exception e) {
+            final String errorMsg = String.format("An error occurred when saving Workflow Action '%s' [%s]: %s", action
+                    .getName(), action.getId(), e.getMessage());
+            Logger.error(WorkflowAPIImpl.class, errorMsg);
+			Logger.debug(WorkflowAPIImpl.class, errorMsg, e);
+			throw new DotDataException(errorMsg, e);
 		}
 	}
 
@@ -1873,7 +1903,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			this.workFlowFactory.saveAction(workflowAction, workflowStep, order);
 
 			SecurityLogger.logInfo(this.getClass(),
-					"The action id:" + actionId + " has been saved by the user:" + user.getUserId());
+					"The action id: '" + actionId + "' has been saved by the user: " + user.getUserId());
 		} catch (DoesNotExistException e) {
 
 			throw e;
@@ -1929,7 +1959,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		workFlowFactory.saveAction(action);
 
 		SecurityLogger.logInfo(this.getClass(),
-				"The action id:" + action.getId() + " has been reordered by the user:" + user.getUserId());
+				"Action id: '" + action.getId() + "' has been reordered by user: " + user.getUserId());
 	}
 
 	@Override
@@ -1951,8 +1981,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
     @CloseDBIfOpened
     public boolean isSystemStep (final String stepId) {
 
-	    boolean isSystemStep = false;
-	    WorkflowStep step = null;
+	    boolean isSystemStep;
+	    WorkflowStep step;
 
         try {
             step = this.workFlowFactory.findStep(this.getLongId(stepId, ShortyIdAPI.ShortyInputType.WORKFLOW_STEP));
@@ -1970,14 +2000,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		this.isUserAllowToModifiedWorkflow(user);
 		Logger.debug(this,
-				() -> "Removing the WorkflowAction: " + action.getId() + ", name:" + action
+				() -> "Removing the WorkflowAction: " + action.getId() + ", name: " + action
 						.getName());
 
 		final List<WorkflowActionClass> workflowActionClasses =
 				findActionClasses(action);
 
 		Logger.debug(this,
-				() -> "Removing the WorkflowActionClass, for action: " + action.getId() + ", name:"
+				() -> "Removing the WorkflowActionClass, for action: " + action.getId() + ", name: "
 						+ action.getName());
 
 		if(workflowActionClasses != null && workflowActionClasses.size() > 0) {
@@ -1987,17 +2017,17 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 
 		Logger.debug(this,
-				() -> "Removing the System Action Mappings, for action: " + action.getId() + ", name:"
+				() -> "Removing the System Action Mappings, for action: " + action.getId() + ", name: "
 						+ action.getName());
 		this.workFlowFactory.deleteSystemActionsByWorkflowAction(action);
 
 		Logger.debug(this,
 				() -> "Removing the WorkflowAction and Step Dependencies, for action: " + action
-						.getId() + ", name:" + action.getName());
+						.getId() + ", name: " + action.getName());
 		this.workFlowFactory.deleteAction(action);
 		SecurityLogger.logInfo(this.getClass(),
-				"The Workflow Action with id:" + action.getId() + ", name:" + action.getName()
-						+ " was deleted");
+				"Workflow Action with id: " + action.getId() + ", name: " + action.getName()
+						+ " has been deleted");
 
 	}
 
@@ -2013,7 +2043,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		this.workFlowFactory.deleteAction(action, step);
 
 		SecurityLogger.logInfo(this.getClass(),
-				"The action id:" + action.getName() + " has been deleted by the user:" + user.getUserId());
+				"Action id: '" + action.getName() + "' has been deleted by user: " + user.getUserId());
 	} // deleteAction.
 
 	@Override
@@ -2155,7 +2185,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				}
 			}
 			SecurityLogger.logInfo(this.getClass(),
-					"The Workflow Action Class with id:" + actionClass.getId() + " was deleted");
+					"Workflow Action Class with id: '" + actionClass.getId() + "' has been deleted");
 
 		} catch (Exception e) {
 			throw new DotWorkflowException(e.getMessage(),e);
@@ -2211,7 +2241,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			}
 
 			SecurityLogger.logInfo(this.getClass(),
-					"The actionlet:" + actionClass.getName() + " has been reordered by the user:" + user.getUserId());
+					"Actionlet '" + actionClass.getName() + "' has been reordered by user: " + user.getUserId());
 		} catch (Exception e) {
 			throw new DotWorkflowException(e.getMessage(),e);
 		}
@@ -2252,7 +2282,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			}
 
 			SecurityLogger.logInfo(this.getClass(),
-					"Saving class parameters by the user:" + user.getUserId());
+					"Saving class parameters by the user: " + user.getUserId());
 		} catch (Exception e) {
 			Logger.error(WorkflowAPIImpl.class,e.getMessage());
 			Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
@@ -2292,7 +2322,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 						break;
 					}
 				}else {
-					throw new DotWorkflowException("Actionlet: " + actionClass.getName() + " is null. Check if the Plugin is installed and running.");
+					throw new DotWorkflowException("Actionlet '" + actionClass.getName() + "' is null. Check if the Plugin is installed and running.");
 				}
 
 			}
@@ -2429,15 +2459,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		if (task.getLanguageId() <= 0) {
 
-			Logger.error(this, "The task: " + task.getId() +
-					", does not have language id, setting to the default one");
+			Logger.error(this, "Workflow task: " + task.getId() +
+					", doesn't have any language ID. Setting to default one");
 			task.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
 		}
 
 		this.workFlowFactory.saveWorkflowTask(task);
 
-		SecurityLogger.logInfo(this.getClass(),
-				"The Workflow task with id:" + task.getId() + " has been saved.");
+		SecurityLogger.logInfo(this.getClass(), "Workflow task '" + task.getId() + "' has been saved.");
 	}
 
 
@@ -2637,9 +2666,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			//final long skipsCount = (inodes.size() - contentlets.size());
 			return distributeWorkAndProcess(action, user, sanitizedQuery, workflowAssociatedStepIds,
                     additionalParamsBean);
-		} catch (Exception e) {
-			Logger.error(getClass(), "Error firing actions in bulk.", e);
-			throw new DotDataException(e);
+		} catch (final Exception e) {
+            final String errorMsg = String.format("An error occurred when firing actions in bulk for Action '%s' " +
+                    "[%s]: %s", action.getName(), action.getId(), e.getMessage());
+            Logger.error(getClass(), errorMsg, e);
+            throw new DotDataException(errorMsg, e);
 		}
 	}
 
@@ -2661,9 +2692,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			Logger.debug(getClass(), ()->"luceneQuery: " + sanitizedQuery);
 
 			return distributeWorkAndProcess(action, user, sanitizedQuery, workflowAssociatedStepsIds, additionalParamsBean);
-		} catch (Exception e) {
-			Logger.error(getClass(), "Error firing actions in bulk.", e);
-			throw new DotDataException(e);
+		} catch (final Exception e) {
+            final String errorMsg = String.format("An error occurred when firing actions in bulk for Action '%s' " +
+                    "[%s]: %s", action.getName(), action.getId(), e.getMessage());
+            Logger.error(getClass(), errorMsg, e);
+            throw new DotDataException(errorMsg, e);
 		}
 
 	}
@@ -2819,14 +2852,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				final List <?> objects = batchAction.getObjectsForBatch(actionsContext, actionClass);
 				try {
 					this.executeBatchAction(user, actionsContext, actionClass, params, batchAction);
-				} catch (Exception e) {
+				} catch (final Exception e) {
 					failsConsumer.accept(objects, e);
-					Logger.error(getClass(),
-							String.format("Exception while Trying to execute action %s, in batch",
-									actionClass.getName()
-							), e
-					);
-					// We assume the entire batch is has failed. So break;
+                    Logger.error(getClass(), String.format("Exception while trying to execute action '%s' [%s] in " +
+                            "batch: %s", actionClass.getName(), actionClass.getActionId(), e.getMessage()), e);
+                    // We assume the entire batch is has failed. So break;
 					break;
 				}
 			}
@@ -2853,7 +2883,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		Logger.info(getClass(),
 				String.format(
-						"Number of threads is limited to %d. Number of Contentlets to process is %d. Load will be distributed in bunches of %d ",
+						"Number of threads is limited to %d. Number of Contentlets to process is %d. Load will be distributed in groups of %d ",
 						maxThreads, contentlets.size(),
 						partitionSize)
 		);
@@ -2898,6 +2928,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			contentlet.setStringProperty(Contentlet.FILTER_KEY, pushPublishBean.getFilterKey());
 			contentlet.setStringProperty(Contentlet.I_WANT_TO, pushPublishBean.getIWantTo());
 		}
+
 		return contentlet;
 	}
 
@@ -2944,6 +2975,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 						// additional params applied directly to the contentlet.
 						contentlet = applyAdditionalParams(additionalParamsBean, contentlet);
 					}
+
+					if (UtilMethods.isSet(additionalParamsBean) && UtilMethods.isSet(additionalParamsBean.getAdditionalParamsMap())) {
+
+						for (Map.Entry<String, Object> entry : additionalParamsBean.getAdditionalParamsMap().entrySet()) {
+							contentlet.setProperty(entry.getKey(), entry.getValue());
+						}
+					}
+
 					fireBulkActionTask(action, contentlet, dependencies, successConsumer,
 							failConsumer, context);
 				} catch (Exception e) {
@@ -3025,10 +3064,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		if (null != processor.getContentlet()) {
 			processor.getContentlet().setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.FALSE);
 		} else {
-
-			Logger.info(this, "The Contentlet: " + (null != contentlet? contentlet.getIdentifier():"Unknown") +
-					"the action: " + (null != contentlet? contentlet.getActionId():"Unknown") + " was not executed");
-		}
+            Logger.info(this, String.format("Workflow Action '%s' was not executed on Contentlet with ID '%s'", (null
+                    != contentlet ? contentlet.getActionId() : "Unknown"), (null != contentlet ? contentlet.getIdentifier()
+                    : "Unknown")));
+        }
 
 		return processor.getContentlet();
 	} // fireContentWorkflow
@@ -3078,6 +3117,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		if(UtilMethods.isSet(dependencies.getWorkflowIWantTo())){
 			contentlet.setStringProperty(Contentlet.I_WANT_TO, dependencies.getWorkflowIWantTo());
+		}
+
+		if(UtilMethods.isSet(dependencies.getWorkflowPathToMove())){
+			contentlet.setStringProperty(Contentlet.PATH_TO_MOVE, dependencies.getWorkflowPathToMove());
 		}
 	}
 
@@ -3246,7 +3289,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			Logger.debug(this, () -> "Copying the WorkflowActionClassParameter: " + from.getId());
 
-			param.setActionClassId(to.getActionId());
+			param.setActionClassId(to.getId());
 			param.setKey		  (from.getKey());
 			param.setValue		  (from.getValue());
 
@@ -3256,7 +3299,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		this.saveWorkflowActionClassParameters(params, user);
 
 		SecurityLogger.logInfo(this.getClass(),
-				"Copying class parameters by the user:" + user.getUserId());
+				"Copying class parameters by the user: " + user.getUserId());
 
 		return params;
 	}
@@ -3279,22 +3322,31 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		this.saveActionClass(actionClass, user);
 
-		SecurityLogger.logInfo(this.getClass(),
-				"Copying the action class by the user:" + user.getUserId());
+        SecurityLogger.logInfo(this.getClass(), String.format("Copying Workflow Action Class '%s' [%s] by User ID '%s'",
+                from.getName(), from.getId(), user.getUserId()));
 
 		return actionClass;
+	}
+
+	@Override
+	public WorkflowAction copyWorkflowAction(final WorkflowAction from,
+											 final WorkflowScheme to,
+											 final User user) throws DotDataException, AlreadyExistException, DotSecurityException {
+		return this.copyWorkflowAction(from, to, user, Collections.emptyMap());
 	}
 
 	@WrapInTransaction
 	@Override
 	public WorkflowAction copyWorkflowAction(final WorkflowAction from,
 											 final WorkflowScheme to,
-											 final User user) throws DotDataException, AlreadyExistException, DotSecurityException {
+											 final User user,
+											 final Map<String, WorkflowStep> stepsFromToMapping) throws DotDataException, AlreadyExistException, DotSecurityException {
 
 		Logger.debug(this, ()-> "Copying the WorkflowAction: " + from.getId() +
 				", name: " + from.getName());
 
 		final WorkflowAction action = new WorkflowAction();
+		final WorkflowStep workflowStep = stepsFromToMapping.getOrDefault(from.getNextStep(), null);
 
 		action.setSchemeId   (to.getId());
 		action.setAssignable (from.isAssignable());
@@ -3303,7 +3355,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		action.setName		 (from.getName());
 		action.setShowOn	 (from.getShowOn());
 		action.setNextAssign (from.getNextAssign());
-		action.setNextStep	 (from.getNextStep());
+		action.setNextStep	 (null != workflowStep? workflowStep.getId(): null);
 		action.setOrder		 (from.getOrder());
 		action.setOwner		 (from.getOwner());
 		action.setRoleHierarchyForAssign(from.isRoleHierarchyForAssign());
@@ -3320,8 +3372,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					action, user, false);
 		}
 
-		SecurityLogger.logInfo(this.getClass(),
-				"Copying the action by the user:" + user.getUserId());
+        SecurityLogger.logInfo(this.getClass(), String.format("Copying Workflow Action '%s' [%s] by User ID '%s'",
+                from.getName(), from.getId(), user.getUserId()));
 
 		return action;
 	}
@@ -3348,8 +3400,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		this.saveStep(step, user);
 
-		SecurityLogger.logInfo(this.getClass(),
-				"Copying the step by the user:" + user.getUserId());
+        SecurityLogger.logInfo(this.getClass(), String.format("Copying Workflow Step '%s' [%s] by User ID '%s'", from
+                .getName(), from.getId(), user.getUserId()));
 
 		return step;
 	}
@@ -3397,7 +3449,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			Logger.debug(this, ()-> "Copying a new action from: "
 					+ action.getId() + ", name= " + action.getName());
 
-			actions.put(action.getId(), this.copyWorkflowAction(action, scheme, user));
+			actions.put(action.getId(), this.copyWorkflowAction(action, scheme, user, steps));
 		}
 
 		for (final WorkflowStep step : stepsFrom) {
@@ -3431,8 +3483,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			}
 		}
 
-		SecurityLogger.logInfo(this.getClass(),
-				"Doing deep copy from the scheme: " + from.getName() + " by the user:" + user.getUserId());
+        SecurityLogger.logInfo(this.getClass(), String.format("Executing deep copy for Scheme '%s' [%s] by User ID " +
+                "'%s'", from.getName(), from.getId(), user.getUserId()));
 
 		return scheme;
 	}
@@ -3504,9 +3556,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public void deleteWorkflowActionClassParameter(final WorkflowActionClassParameter param) throws DotDataException, AlreadyExistException {
 		workFlowFactory.deleteWorkflowActionClassParameter(param);
 
-		SecurityLogger.logInfo(this.getClass(),
-				"Deleting the workflow action class: " + param.getId());
-	}
+        SecurityLogger.logInfo(this.getClass(), String.format("Workflow action class parameter '%s' has been " +
+                "deleted", param.getId()));
+    }
 
 	/**
 	 * Method will replace user references of the given userId in workflow, workflow_ action task and workflow comments
@@ -3555,7 +3607,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
                         this.permissionAPI
                                 .doesUserHavePermission(action, PermissionAPI.PERMISSION_USE, user,
                                         RESPECT_FRONTEND_ROLES),
-                () -> "User " + user + " cannot read action " + action.getName(),
+                () -> "User '" + user + "' cannot read action: " + action.getName(),
                 DotSecurityException.class);
 
         return action;
@@ -3576,7 +3628,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
                     workflowActionUtils.hasSpecialWorkflowPermission(user, RESPECT_FRONTEND_ROLES, permissionable, action) ||
                             this.permissionAPI
                                     .doesUserHavePermission(action, PermissionAPI.PERMISSION_USE, user, true),
-                    () -> "User " + user + " cannot read action " + action.getName(),
+                    () -> "User '" + user + "' cannot read action: " + action.getName(),
                     DotSecurityException.class);
         }
 
@@ -3598,7 +3650,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		DotPreconditions.isTrue(this.permissionAPI.
 						doesUserHavePermission(contentType, PermissionAPI.PERMISSION_READ, user, true),
-				() -> "User " + user + " cannot read content type " + contentType.name(),
+				() -> "User '" + user + "' cannot read content type: " + contentType.name(),
 				DotSecurityException.class);
 
 		List<WorkflowScheme> schemes = findSchemesForContentType(contentType);
@@ -3692,15 +3744,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		if (UtilMethods.isSet(contentTypeSchemes)) {
 
 			if (contentTypeSchemes.stream().noneMatch(scheme -> scheme.getId().equals(workflowAction.getSchemeId()))) {
-				throw new IllegalArgumentException(
-						"The workflow action: " + workflowAction.getId() +
-								" does not belong to any of the content type schemes");
-			}
+                throw new IllegalArgumentException(String.format("Workflow Action '%s' [%s] doesn't belong to Content" +
+                                " Type '%s' [%s] or any other Content Type", workflowAction.getName(), workflowAction.getId(),
+                        contentType.name(), contentType.id()));
+            }
 		} else {
-
-			throw new IllegalArgumentException("The content type action: " + contentType.variable() +
-					" does not have any scheme associated");
-		}
+            throw new IllegalArgumentException(String.format("Content Type '%s' [%s] doesn't have any associated " +
+                    "Workflow Schemes", contentType.name(), contentType.id()));
+        }
 
 		Logger.info(this, "Mapping the systemAction: " + systemAction +
 				", workflowAction: " + workflowAction.getName() + " and contentType: " + contentType.variable());
@@ -3861,8 +3912,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				return workflowAction;
 			} else {
 
-				Logger.warn(this, "The Workflow Action Id: " + workflowActionId +
-						", used as default for: " + contentType.variable() + " does not exists, or is not available");
+				Logger.warn(this, "Workflow Action Id: " + workflowActionId +
+						", used as default for: " + contentType.variable() + " doesn't exist or is not available");
 			}
         }
 

@@ -3,31 +3,35 @@ package com.dotcms.rest.api.v1.template;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.ContainerView;
+import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtil;
 import com.dotmarketing.portlets.templates.design.bean.Body;
 import com.dotmarketing.portlets.templates.design.bean.Sidebar;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutColumn;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
+import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import io.swagger.models.auth.In;
 import io.vavr.control.Try;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import org.apache.commons.collections.map.HashedMap;
 
 /**
  * Helper for templates
@@ -83,7 +87,7 @@ public class TemplateHelper {
                 .deleted(Try.of(()->template.isDeleted()).getOrElse(false))
                 .live(Try.of(()->template.isLive()).getOrElse(false))
                 .locked(Try.of(()->template.isLocked()).getOrElse(false))
-                .lockedBy(Try.of(()->APILocator.getVersionableAPI().getLockedBy(template).orElse(null)).get())
+                .lockedBy(Try.of(()->APILocator.getVersionableAPI().getLockedBy(template).orElse(null)).getOrNull())
                 .working(Try.of(()->template.isWorking()).getOrElse(false))
 
                 .canRead(Try.of(()-> APILocator.getPermissionAPI().doesUserHavePermission(template, PermissionAPI.PERMISSION_READ, user)).getOrElse(false))
@@ -108,6 +112,8 @@ public class TemplateHelper {
         TemplateLayout layout = null;
 
         if (null != templateLayoutView) {
+            //update UUID for the containers
+            templateLayoutView.updateUUIDOfContainers();
 
             layout = new TemplateLayout();
             layout.setBody(this.toBody(templateLayoutView.getBody()));

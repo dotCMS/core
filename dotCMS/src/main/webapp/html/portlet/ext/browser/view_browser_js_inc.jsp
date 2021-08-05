@@ -2457,7 +2457,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     }
 
     function angularWorkflowEventCallback () {
-        reloadContent();
+        BrowserAjax.getTree(null, initializeTree);
         showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Workflow-executed")%>");
     }
 

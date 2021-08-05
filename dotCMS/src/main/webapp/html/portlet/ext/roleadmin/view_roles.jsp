@@ -176,6 +176,17 @@ margin:0px auto;
                 
                 </td>
         </tr>
+        <tr>
+            <td style="white-space: nowrap;">
+                <label><%=LanguageUtil.get(pageContext, "custom.content.portlet.dataViewMode")%>:</label></td>
+            <td>
+                <input type="radio" dojoType="dijit.form.RadioButton" name="dataViewMode" id="radioOne" value="list" checked /></span>
+                <label for="radioOne"><%= LanguageUtil.get(pageContext, "custom.content.portlet.dataViewMode.list") %></label>&nbsp;
+
+                <input type="radio" dojoType="dijit.form.RadioButton" name="dataViewMode" id="radioTwo" value="card" />
+                <label for="radioTwo"><%= LanguageUtil.get(pageContext, "custom.content.portlet.dataViewMode.card") %></label>
+            </td>
+        </tr>
 
     </table>
 

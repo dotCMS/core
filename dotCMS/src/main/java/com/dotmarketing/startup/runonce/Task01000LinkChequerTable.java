@@ -88,9 +88,4 @@ public class Task01000LinkChequerTable extends AbstractJDBCStartupTask {
         return null;
     }
 
-    @Override
-    public String getH2Script() {
-        return null;
-    }
-    
 }

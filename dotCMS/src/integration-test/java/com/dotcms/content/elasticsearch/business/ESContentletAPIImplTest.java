@@ -22,6 +22,7 @@ import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.*;
@@ -30,6 +31,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -38,6 +40,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
@@ -49,11 +52,16 @@ import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
+import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsRequest;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -141,7 +149,6 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             //Spanish version
             newsContentletInSpanish = contentletAPI.checkout(newsContentlet.getInode(), user, false);
             newsContentletInSpanish.setIndexPolicy(IndexPolicy.FORCE);
-            newsContentletInSpanish.setInode("");
             newsContentletInSpanish.setLanguageId(spanishLanguage.getId());
 
             newsContentletInSpanish = contentletAPI.checkin(newsContentletInSpanish,  user, false);
@@ -196,7 +203,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             throws DotDataException, DotSecurityException {
         final long time = System.currentTimeMillis();
         ContentType contentType = null;
-        final ESReadOnlyMonitor esReadOnlyMonitor = mock(ESReadOnlyMonitor.class);
+        final ElasticReadOnlyCommand esReadOnlyMonitor = mock(ElasticReadOnlyCommand.class);
         final ESContentletAPIImpl contentletAPIImpl = new ESContentletAPIImpl(esReadOnlyMonitor);
 
         try {
@@ -221,11 +228,12 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
             setClusterAsReadOnly(true);
 
+            contentlet.setProperty(Contentlet.IS_TEST_MODE, true);
             contentletAPIImpl.checkin(contentlet, contentletRelationship, null, null, user, false);
 
             throw new  AssertionError("DotContentletStateException Expected");
         } catch(DotContentletStateException e) {
-            verify(esReadOnlyMonitor).start();
+            verify(esReadOnlyMonitor).executeCheck();
         }finally{
             if (contentType != null && contentType.id() != null){
                 contentTypeAPI.delete(contentType);
@@ -700,6 +708,110 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Method to test: {@link ESContentletAPIImpl#move(Contentlet, User, Host, Folder, boolean)}
+     * Given Scenario: sends a null host and folder path
+     * ExpectedResult: The method should not throw a {@link IllegalArgumentException}
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void test_move_invalid_null_host() throws DotDataException, DotSecurityException {
+
+        APILocator.getContentletAPI()
+                .move(new Contentlet(), APILocator.systemUser(), null,false);
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#move(Contentlet, User, Host, Folder, boolean)}
+     * Given Scenario: sends a not null host and folder path, but invalid b/c does not starts with //
+     * ExpectedResult: The method should not throw a {@link IllegalArgumentException}
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void test_move_invalid_start_host() throws DotDataException, DotSecurityException {
+
+        APILocator.getContentletAPI()
+                .move(new Contentlet(), APILocator.systemUser(), "demo.dotcms.com/application",false);
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#move(Contentlet, User, Host, Folder, boolean)}
+     * Given Scenario: sends a not null host and folder path, but invalid b/c does not starts with //
+     * ExpectedResult: The method should not throw a {@link IllegalArgumentException}
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void test_move_invalid_path() throws DotDataException, DotSecurityException {
+
+        final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+
+        APILocator.getContentletAPI() // no path
+                .move(new Contentlet(), APILocator.systemUser(), host.getHostname(),false);
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#move(Contentlet, User, Host, Folder, boolean)}
+     * Given Scenario: sends a not null host and folder path, but invalid b/c does not starts with //
+     * ExpectedResult: The method should not throw a {@link IllegalArgumentException}
+     */
+    @Test(expected = DoesNotExistException.class)
+    public void test_move_not_exists_path() throws DotDataException, DotSecurityException {
+
+        final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+
+        final String unknownFolderPath = "//" + host.getHostname() + "/unknownFolder";
+        APILocator.getContentletAPI()
+                .move(new Contentlet(), APILocator.systemUser(), unknownFolderPath,false);
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#move(Contentlet, User, Host, Folder, boolean)}
+     * Given Scenario: sends a not null host and folder path, but invalid b/c does not starts with //
+     * ExpectedResult: The method should not throw a {@link IllegalArgumentException}
+     */
+    @Test(expected = DotSecurityException.class)
+    public void test_move_to_exists_path_invalid_user() throws DotDataException, DotSecurityException {
+
+        final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+        Contentlet contentlet = null;
+        final ContentType news = getNewsLikeContentType("News");
+
+        final ContentletDataGen dataGen = new ContentletDataGen(news.id());
+
+        contentlet = dataGen.languageId(languageAPI.getDefaultLanguage().getId())
+                .setProperty("title", "News Test")
+                .setProperty("urlTitle", "news-test").setProperty("byline", "news-test")
+                .setProperty("sysPublishDate", new Date()).setProperty("story", "news-test")
+                .next();
+
+        contentlet.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet = contentletAPI.checkin(contentlet, user, false);
+
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+        APILocator.getContentletAPI()
+                .move(contentlet, null, host, folder,false);
+    }
+
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#copyProperties(Contentlet, Map)}<br>
+     * Given Scenario: {@link Long} properties set as {@link BigDecimal} are copied to the {@link Contentlet} object <br>
+     * ExpectedResult: should success
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void testCopyProperties() throws DotSecurityException {
+        final Contentlet contentlet = TestDataUtils
+                .getPageContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        final Map<String, Object> propertiesToCopy = new HashMap<>();
+        propertiesToCopy.put(Contentlet.LANGUAGEID_KEY, new BigDecimal(1));
+        propertiesToCopy.put(Contentlet.SORT_ORDER_KEY, new BigDecimal(2));
+        contentletAPI.copyProperties(contentlet, propertiesToCopy);
+
+        assertEquals(1, contentlet.getLanguageId());
+        assertEquals(2, contentlet.getSortOrder());
+    }
+
     private void addPermission(
             final Role role,
             final Permissionable contentType,
@@ -744,5 +856,78 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                         .cluster()
                         .putSettings(request, RequestOptions.DEFAULT)
         );
+    }
+
+    /**
+     * Method to Test: {@link ESContentletAPIImpl#checkin(Contentlet, User, boolean)}
+     * When:
+     * - Create a Content Type with a MANY_TO_MANY relationship to itself
+     * - Create tree contents: A, B, C
+     * - Related content A with B and C
+     * - Related content B with A and C
+     * - Related content C with A and B
+     * Should: All the related content should be saved right
+     */
+    @Test
+    public void selfRelatedContents() throws DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final ContentType contentType =  new ContentTypeDataGen()
+                .host(host)
+                .nextPersisted();
+
+        final Relationship relationship = new FieldRelationshipDataGen()
+                .child(contentType)
+                .parent(contentType)
+                .nextPersisted();
+
+        Contentlet contentletA = new ContentletDataGen(contentType)
+                .host(host)
+                .nextPersisted();
+
+        Contentlet contentletB = new ContentletDataGen(contentType)
+                .host(host)
+                .nextPersisted();
+
+        Contentlet contentletC = new ContentletDataGen(contentType)
+                .host(host)
+                .nextPersisted();
+
+        contentletA = relateContent(relationship, contentletA, contentletB, contentletC);
+        contentletB = relateContent(relationship, contentletB, contentletA, contentletC);
+        contentletC = relateContent(relationship, contentletC, contentletA, contentletB);
+
+        contentletA.setProperty(relationship.getChildRelationName(), Arrays.asList(contentletB, contentletC));
+
+        contentletA = ContentletDataGen.checkout(contentletA);
+        ContentletDataGen.checkin(contentletA);
+
+        assertRelatedContents(relationship, contentletA, contentletB, contentletC);
+        assertRelatedContents(relationship, contentletB, contentletA, contentletC);
+        assertRelatedContents(relationship, contentletC, contentletA, contentletB);
+
+    }
+
+    private void assertRelatedContents(Relationship relationship, Contentlet contentletParent,
+            Contentlet... contentsRelated) throws DotDataException {
+        final List<String> contentlets = relationshipAPI
+                .dbRelatedContent(relationship, contentletParent, true)
+                .stream()
+                .map(contentlet -> contentlet.getIdentifier())
+                .collect(Collectors.toList());
+
+        assertEquals(contentsRelated.length, contentlets.size());
+
+        for (Contentlet contentletRelated : contentsRelated) {
+            assertTrue(contentlets.contains(contentletRelated.getIdentifier()));
+        }
+    }
+
+    private Contentlet relateContent(
+            Relationship relationship,
+            Contentlet parentContent,
+            Contentlet... contentletChilds) {
+        final Contentlet parentCheckout = ContentletDataGen.checkout(parentContent);
+        parentCheckout.setProperty(relationship.getChildRelationName(), Arrays.asList(contentletChilds));
+        return  ContentletDataGen.checkin(parentCheckout);
     }
 }

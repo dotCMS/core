@@ -1,7 +1,13 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.INCLUDE_DOTRAW_METADATA_FIELDS;
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.INDEX_DOTRAW_METADATA_FIELDS;
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.NO_METADATA;
 import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.TEXT;
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.WRITE_METADATA_ON_REINDEX;
 import static com.dotcms.datagen.TestDataUtils.getCommentsLikeContentType;
+import static com.dotcms.datagen.TestDataUtils.getFileAssetContent;
+import static com.dotcms.datagen.TestDataUtils.getMultipleImageBinariesContent;
 import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
 import static com.dotcms.datagen.TestDataUtils.relateContentTypes;
 import static com.dotcms.util.CollectionsUtils.list;
@@ -20,6 +26,7 @@ import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
+import com.dotcms.contenttype.model.field.ImmutableHiddenField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.RelationshipField;
@@ -35,6 +42,7 @@ import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -58,8 +66,12 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
@@ -70,7 +82,13 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.elasticsearch.action.search.SearchResponse;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -137,7 +155,8 @@ public class ESMappingAPITest {
         fileAsset.setIndexPolicy(IndexPolicy.FORCE);
 
         // Create a piece of content for the default host
-        final Map<String,Object>  contentletMap = esMappingAPI.toMap(APILocator.getContentletAPI().checkin(fileAsset, user, false));
+        final Contentlet newContent = APILocator.getContentletAPI().checkin(fileAsset, user, false);
+        final Map<String,Object>  contentletMap = esMappingAPI.toMap(newContent);
 
         assertNotNull(contentletMap);
         assertEquals(fileNameField1.toLowerCase(), contentletMap.get(contentTypeVariable + ".filename"));
@@ -146,6 +165,43 @@ public class ESMappingAPITest {
         assertEquals(4, contentletMap.get("metadata.filesize"));
         assertTrue( contentletMap.get("metadata.content").toString().contains("lol!"));
 
+    }
+
+    /**
+     * Method to test: {@link ESMappingAPIImpl#toMap(Contentlet)}
+     * Given Scenario: When a hidden field is a date, it should be mapped as
+     * a string with a datetime format
+     * ExpectedResult: The result map should contain the hidden date field with the right format
+     */
+    @Test
+    public void test_toMap_hidden_date_fields_shouldSuccess() throws Exception {
+
+        final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        Field hiddenField = ImmutableHiddenField.builder()
+                .name("MyHiddenField")
+                .variable("MyHiddenField")
+                .contentTypeId(contentType.id())
+                .dataType(DataTypes.DATE)
+                .indexed(true)
+                .build();
+
+        hiddenField = fieldAPI.save(hiddenField, user);
+        final Date hiddenDate = new Date();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .setProperty(hiddenField.variable(), hiddenDate).nextPersisted();
+
+        final Map<String, Object> contentletMap = esMappingAPI.toMap(contentlet);
+
+        assertNotNull(contentletMap);
+
+        final String fullFieldKey =
+                contentType.variable().toLowerCase() + "." + hiddenField.variable().toLowerCase();
+        assertTrue(contentletMap.get(fullFieldKey) instanceof String);
+        assertEquals(ESMappingAPIImpl.elasticSearchDateTimeFormat.format(hiddenDate).toLowerCase(),
+                contentletMap.get(fullFieldKey));
     }
 
     /**
@@ -401,13 +457,91 @@ public class ESMappingAPITest {
         assertNotNull(contentletMap);
         assertEquals(varname, contentletMap.get("structurename"));
         assertEquals("image/jpeg", contentletMap.get("metadata.contenttype"));
-        assertEquals("320", contentletMap.get("metadata.width"));
-        assertEquals("235", contentletMap.get("metadata.height"));
-        assertTrue( contentletMap.get("metadata.content").toString().trim().isEmpty());
+        assertEquals(320, contentletMap.get("metadata.width"));
+        assertEquals(235, contentletMap.get("metadata.height"));
+        assertEquals(true, contentletMap.get("metadata.isimage"));
+        assertTrue( contentletMap.get("metadata.content").toString().trim().equals(NO_METADATA));
 
     }
 
+    /**
+     * Method to Test: {@link ESMappingAPIImpl#toMap(Contentlet)}
+     * Given scenario: When we call {@link ESMappingAPIImpl#toMap(Contentlet)} setting on or off properties we can control the inclusion/exclusion of metadata.something_dotraw fields
+     * Expected:
+     *      When we specify via `EXCLUDE_DOTRAW_METADATA_FIELDS` a group of fields that need to be excluded from the resulting map we should not see those in the resulting dotraw metadata fields
+     *      if we set the prop `EXCLUDE_DOTRAW_METADATA_FIELDS` to en empty string nothing gets excluded not even the defaults
+     *      if we turn off the prop `INDEX_DOTRAW_METADATA_FIELDS` we should not see any metadata-dotraw field
+     */
     @Test
+    public void Test_toMap_Metadata_dotRaw() {
+
+        final boolean writeMetadataOnReindex = Config.getBooleanProperty(WRITE_METADATA_ON_REINDEX, true);
+        final boolean indexDotRowMetaDataFields = Config
+                .getBooleanProperty(INDEX_DOTRAW_METADATA_FIELDS,true);
+        final String[] includeDotRawFields = Config
+                .getStringArrayProperty(INCLUDE_DOTRAW_METADATA_FIELDS);
+
+        try {
+            Config.setProperty(WRITE_METADATA_ON_REINDEX, true);
+            Config.setProperty(INDEX_DOTRAW_METADATA_FIELDS, true);
+
+            final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl();
+            final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+            final Contentlet multipleBinariesContent = getMultipleImageBinariesContent(true, langId,
+                    null);
+
+            final Set<String> includedDotRawFields = Stream
+                    .of(ESMappingAPIImpl.defaultIncludedDotRawMetadataFields)
+                    .map(s -> "metadata." + s + "_dotraw").map(String::toLowerCase)
+                    .collect(Collectors.toSet());
+
+            final Map<String, Object> contentletMap = esMappingAPI.toMap(multipleBinariesContent);
+            Assert.assertNotNull(contentletMap);
+            //We get the list of metadata dot-raw keys
+            final List<String> dotRawMetaList = contentletMap.keySet().stream()
+                    .filter(s -> s.startsWith("metadata") && s.endsWith("dotraw"))
+                    .collect(Collectors.toList());
+
+            //Test that with the dotRaw fields generated are part of the list of inclusions
+            Assert.assertTrue(includedDotRawFields.containsAll(dotRawMetaList));
+
+            final Contentlet fileAssetContent = getFileAssetContent(true, 1L, TestFile.PDF);
+            final Map<String, Object> contentletMapCustomInclude = esMappingAPI
+                    .toMap(fileAssetContent);
+
+            assertTrue(contentletMapCustomInclude.containsKey("metadata.name"));
+            assertTrue(contentletMapCustomInclude.containsKey("metadata.name_dotraw"));
+
+            assertTrue(contentletMapCustomInclude.containsKey("metadata.path"));
+            assertTrue(contentletMapCustomInclude.containsKey("metadata.path_dotraw"));
+
+            assertTrue(contentletMapCustomInclude.containsKey("metadata.title"));
+            assertTrue(contentletMapCustomInclude.containsKey("metadata.title_dotraw"));
+
+            assertTrue(contentletMapCustomInclude.containsKey("metadata.moddate"));
+            assertTrue(contentletMapCustomInclude.containsKey("metadata.moddate_dotraw"));
+
+            assertTrue(contentletMapCustomInclude.containsKey("metadata.filesize"));
+            assertTrue(contentletMapCustomInclude.containsKey("metadata.filesize_dotraw"));
+
+            //Test disconnecting the dot raw fields generation
+            Config.setProperty(INDEX_DOTRAW_METADATA_FIELDS, false);
+            final Map<String, Object> noneDotRaw = esMappingAPI
+                    .toMap(multipleBinariesContent);
+            //Verify no dotRaw metadata fields has been returned
+            assertFalse(
+                    noneDotRaw.keySet().stream()
+                            .anyMatch(s -> s.startsWith("metadata") && s.endsWith("dotraw")));
+        } finally {
+            Config.setProperty(WRITE_METADATA_ON_REINDEX, writeMetadataOnReindex);
+            Config.setProperty(INDEX_DOTRAW_METADATA_FIELDS, indexDotRowMetaDataFields);
+            Config.setProperty(INCLUDE_DOTRAW_METADATA_FIELDS, includeDotRawFields);
+        }
+
+    }
+
+
+        @Test
     public void testLoadRelationshipFields_whenUsingLegacyRelationships_shouldSuccess()
             throws DotDataException, DotSecurityException {
 
@@ -764,13 +898,13 @@ public class ESMappingAPITest {
     /**
      * General purpose is testing that KeyValue fields are indexed correctly.
      * Given scenario: We create a Content type that holds a Key value field.
-     * Expected Results: Then we feed data into such field and use an ES query over the KeyValue to verify the results are coming back.
+     * Expected Results: We feed data into such field and use an ES query over the KeyValue to verify the results are coming through a regular query and also flatten fields of the form key_value
      * @throws DotDataException
      * @throws DotSecurityException
      */
     @Test
     public void Test_Create_ContentType_With_KeyValue_Field_Test_Query_Expect_Success()
-            throws DotDataException, DotSecurityException {
+            throws DotDataException, DotSecurityException, JSONException {
 
         final List<Field> fields = new ArrayList<>();
         final String myKeyValueField = "myKeyValueField";
@@ -789,8 +923,10 @@ public class ESMappingAPITest {
                 .nextPersisted();
 
         new ContentletDataGen(contentType.id()).setProperty(myKeyValueField,
-                "{\"key\":\"key1\", value:\"val\" }").nextPersisted();
-        final String queryString =  String.format("+%s.%s.key:%s*",contentTypeName, myKeyValueField, "val");
+                "{\"key1\":\"val1\", key2:\"val2\" }").nextPersisted();
+
+        //First We're gonna test we can retrieve key values using a regular query
+        final String queryString =  String.format("+%s.%s.key:%s",contentTypeName, myKeyValueField, "key*");
         Logger.info(ESMappingAPITest.class, () -> String.format(" Query: %s ",queryString));
         final String wrappedQuery = String.format("{"
                 + "query: {"
@@ -803,11 +939,43 @@ public class ESMappingAPITest {
         final ESSearchResults searchResults = contentletAPI.esSearch(wrappedQuery, false,  user, false);
         Assert.assertFalse(searchResults.isEmpty());
         for (final Object searchResult : searchResults) {
-           final Contentlet contentlet = (Contentlet) searchResult;
+            final Contentlet contentlet = (Contentlet) searchResult;
             final String json = (String)contentlet.getMap().get("myKeyValueField");
             assertNotNull(json);
             final Map<String, Object> map = KeyValueFieldUtil.JSONValueToHashMap(json);
-            assertTrue(map.containsKey("key"));
+            assertEquals(map.get("key1"),"val1");
+            assertEquals(map.get("key2"),"val2");
+        }
+
+        //Now we're gonna validate that we can retrieve key values through the aggregates
+        final String flattenQueryString =  String.format("+%s.%s.key_value:%s",contentTypeName, myKeyValueField, "*");
+        final String aggregationString =  String.format("%s.%s.key_value",contentTypeName, myKeyValueField);
+        final String wrappedQueryWithAggregations = String.format("{"
+                + "query: {"
+                + "   query_string: {"
+                + "        query: \"%s\""
+                + "     }"
+                + "  },"
+                + " aggs : {"
+                + "        tag : {"
+                + "            terms : {"
+                + "                field : \"%s\""
+                + "            }"
+                + "        }"
+                + "    } "
+                + "}", flattenQueryString, aggregationString);
+
+        final SearchResponse raw = contentletAPI.esSearchRaw(
+                StringUtils.lowercaseStringExceptMatchingTokens(wrappedQueryWithAggregations,
+                        ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX), false, user, false);
+
+        final JSONArray jsonArray = new JSONObject(raw.toString()).getJSONObject("aggregations")
+                .getJSONObject("sterms#tag").getJSONArray("buckets");
+
+        for(int i=0; i < jsonArray.length(); i++){
+            final JSONObject object = (JSONObject)jsonArray.get(i);
+            final int keyVal = i + 1;
+            assertEquals(String.format("key%d_val%d",keyVal, keyVal ),object.get("key"));
         }
     }
 
@@ -840,4 +1008,37 @@ public class ESMappingAPITest {
         final ESSearchResults searchResults = contentletAPI.esSearch(wrappedQuery, false,  user, false);
         assertFalse(searchResults.isEmpty());
     }
+
+    /**
+     * Here we're testing that the metadata keyValue gets populated on the fileAsset
+     * Also testing that we can get to it via key value "flatten" query
+     * Given scenario: Create a File asset with an image knowing that it has a KeyValue field whose sole purpose is holding the image info then we use a query to bring it back
+     * Expected Results: The Query starts with the content-type "+fileasset.metadata" brings back results
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Test_Create_FileAsset_With_Metadata_KeyValue_Then_Query()
+            throws DotDataException, DotSecurityException {
+
+        final Contentlet imageLikeContent = TestDataUtils.getFileAssetContent(true, 1L, TestFile.JPG);
+        final ContentType contentType = imageLikeContent.getContentType();
+        String contentTypeName = contentType.variable();
+        final Optional<Field> optionalField = contentType.fields(KeyValueField.class).stream().findFirst();
+        assertTrue(optionalField.isPresent());
+        final Field field = optionalField.get();
+        final String keyValueField = field.variable();
+        final String flattenQueryString =  String.format("+%s.%s.key_value:%s",contentTypeName, keyValueField , "contenttype_image\\\\/jpeg");
+        final String wrappedQuery = String.format("{"
+                + "query: {"
+                + "   query_string: {"
+                + "        query: \"%s\""
+                + "     }"
+                + "  } "
+                + "}", flattenQueryString.toLowerCase());
+        final ESSearchResults searchResults = contentletAPI.esSearch(wrappedQuery, false,  user, false);
+        assertFalse(searchResults.isEmpty());
+    }
+
+
 }

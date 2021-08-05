@@ -1,8 +1,14 @@
 package com.dotmarketing.util;
 
 import com.dotcms.UnitTestBase;
+import com.dotcms.company.CompanyAPI;
+import com.dotcms.company.CompanyAPIFactory;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.unittest.TestUtil;
+import com.dotmarketing.business.APILocator;
+import com.liferay.portal.ejb.CompanyPersistence;
+import com.liferay.portal.model.Company;
+import com.liferay.util.InstancePool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -21,6 +27,7 @@ import java.util.*;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -390,5 +397,89 @@ public class DateUtilTest extends UnitTestBase {
         assertEquals("Year should be 2015", 115,date1.getYear());
         assertEquals("Month should be Feb", Calendar.FEBRUARY, date1.getMonth());
         assertEquals("Day should be 4", 4, date1.getDate());
+    }
+
+    /**
+     * Method to test: convert Date
+     * Given Scenario: Passing a Date with a specific time zone.
+     * ExpectedResult: The date is converted using the desired time zone.
+     *
+     */
+    @Test()
+    public void test_time_zone() throws ParseException {
+
+        final String   easternUSTimeZone = "US/Eastern";
+        final String   westernUSTimeZone = "US/Western";
+        final TimeZone timeZone      = TimeZone.getTimeZone(easternUSTimeZone);
+        final TimeZone defaultTimeZone =  TimeZone.getDefault();
+
+        final Date date1 = DateUtil.convertDate("2015-02-04 11", timeZone, "yyyy-MM-dd HH");
+
+        assertNotNull(date1);
+        assertEquals("Year should be 2015", 115,date1.getYear());
+        assertEquals("Month should be Feb", Calendar.FEBRUARY, date1.getMonth());
+        assertEquals("Day should be 4", 4, date1.getDate());
+
+        if (timeZone.getRawOffset() != date1.getTimezoneOffset()) {
+            assertNotEquals("If the date is not in the same time zone, hour should be diff",
+                    11, date1.getHours());
+            assertEquals("If the date is in the same time zone, hour should be the same",
+                    11, date1.toInstant().atZone(timeZone.toZoneId()).getHour());
+
+            final GregorianCalendar calendar = new GregorianCalendar();
+            calendar.setTime(date1);
+            assertEquals("Default time zone and date time zome should be the same",
+                    defaultTimeZone.getRawOffset(), calendar.getTimeZone().getRawOffset());
+        }
+    }
+
+    /**
+     * Method to test: convert Date
+     * Given Scenario: Passing a Date with a specific time zone into the pattern
+     * ExpectedResult: The date is converted using the desired time zone.
+     *
+     */
+    @Test()
+    public void test_time_zone_string() throws ParseException {
+
+        final String   gmt12TimeZone   = "GMT+1400";
+        final TimeZone timeZone        = TimeZone.getTimeZone(gmt12TimeZone);
+        final TimeZone defaultTimeZone =  TimeZone.getDefault();
+
+        final Date date1 = DateUtil.convertDate("2015-02-04 11 GMT +1400", defaultTimeZone, "yyyy-MM-dd HH z Z");
+
+        assertNotNull(date1);
+        assertEquals("Year should be 2015", 115,date1.getYear());
+        assertEquals("Month should be Feb", Calendar.FEBRUARY, date1.getMonth());
+
+        if (timeZone.getRawOffset() != date1.getTimezoneOffset()) {
+            assertNotEquals("If the date is not in the same time zone, hour should be diff",
+                    11, date1.getHours());
+            assertEquals("If the date is in the same time zone, hour should be same",
+                    11, date1.toInstant().atZone(timeZone.toZoneId()).getHour());
+
+            final GregorianCalendar calendar = new GregorianCalendar();
+            calendar.setTime(date1);
+            assertEquals("Default time zone and date time zome should be the same",
+                    defaultTimeZone.getRawOffset(), calendar.getTimeZone().getRawOffset());
+        }
+    }
+
+    private static final String PERSISTENCE = "value.object.persistence.com.liferay.portal.model.Company";
+
+    /**
+     * Method to test: convert Date
+     * Given Scenario: Passing a Date without any formats
+     * ExpectedResult: The date is converted using one of the time zone on the formats.
+     *
+     */
+    @Test()
+    public void test_time_zone_string_no_formats() throws ParseException {
+
+        final Date date1 = DateUtil.convertDate("2015-02-04 GMT +1400");
+
+        assertNotNull(date1);
+        assertEquals("Year should be 2015", 115,date1.getYear());
+        assertEquals("Month should be Feb", Calendar.FEBRUARY, date1.getMonth());
     }
 }

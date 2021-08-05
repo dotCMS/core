@@ -32,6 +32,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
@@ -68,6 +69,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.bulk.BackoffPolicy;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -338,9 +340,13 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
 
         if(reindexTimeElapsedInLong()<Config.getLongProperty("REINDEX_THREAD_MINIMUM_RUNTIME_IN_SEC", 30)*1000) {
-          Logger.info(this.getClass(), "Reindex has been running only " +reindexTimeElapsed().get() + ". Letting the reindex settle.");
-          ThreadUtils.sleep(3000);
-          return false;
+            if(reindexTimeElapsed().isPresent()){
+                Logger.info(this.getClass(), "Reindex has been running only " +reindexTimeElapsed().get() + ". Letting the reindex settle.");
+            }else{
+                Logger.info(this.getClass(), "Reindex Time Elapsed not set.");
+            }
+            ThreadUtils.sleep(3000);
+            return false;
         }
         try {
             final IndiciesInfo oldInfo = APILocator.getIndiciesAPI().loadIndicies();
@@ -491,8 +497,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 .build()
                 : ImmutableList.of(parentContenlet);
 
-        if (ESReadOnlyMonitor.getInstance().isIndexOrClusterReadOnly()) {
-            ESReadOnlyMonitor.getInstance().sendReadOnlyMessage();
+
+        if (ElasticReadOnlyCommand.getInstance().isIndexOrClusterReadOnly()) {
+            ElasticReadOnlyCommand.getInstance().sendReadOnlyMessage();
         }
 
         if(parentContenlet.getIndexPolicy()==IndexPolicy.DEFER) {
@@ -567,23 +574,32 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     @Override
     public void putToIndex(final BulkRequest bulkRequest,
             final ActionListener<BulkResponse> listener) {
-        if (bulkRequest != null && bulkRequest.numberOfActions() > 0) {
-            bulkRequest.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 
-            if (listener != null) {
-                RestHighLevelClientProvider.getInstance()
-                        .getClient().bulkAsync(bulkRequest, RequestOptions.DEFAULT, listener);
-            } else {
-                BulkResponse response = Sneaky.sneak(() -> RestHighLevelClientProvider.getInstance().getClient()
-                        .bulk(bulkRequest, RequestOptions.DEFAULT));
+        try {
+            if (bulkRequest != null && bulkRequest.numberOfActions() > 0) {
+                bulkRequest.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 
-                if (response != null && response.hasFailures()) {
-                    Logger.error(this,
-                            "Error reindexing (" + response.getItems().length + ") content(s) "
-                                    + response.buildFailureMessage());
+                if (listener != null) {
+                    RestHighLevelClientProvider.getInstance()
+                            .getClient().bulkAsync(bulkRequest, RequestOptions.DEFAULT, listener);
+                } else {
+                    BulkResponse response = Sneaky.sneak(() -> RestHighLevelClientProvider.getInstance().getClient()
+                            .bulk(bulkRequest, RequestOptions.DEFAULT));
+
+                    if (response != null && response.hasFailures()) {
+                        Logger.error(this,
+                                "Erro" +
+                                        "r reindexing (" + response.getItems().length + ") content(s) "
+                                        + response.buildFailureMessage());
+                    }
                 }
             }
-
+        } catch (final Exception e) {
+            if(ExceptionUtil.causedBy(e, IllegalStateException.class)) {
+                ContentletFactory.rebuildRestHighLevelClientIfNeeded(e);
+            }
+            Logger.warnAndDebug(ContentletIndexAPIImpl.class, e);
+            throw new DotRuntimeException(e.getMessage(), e);
         }
     }
 
@@ -604,6 +620,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         final BulkRequest bulkRequest = new BulkRequest();
         bulkRequest.setRefreshPolicy(RefreshPolicy.NONE);
         return bulkRequest;
+        
     }
 
     public BulkProcessor createBulkProcessor(final BulkProcessorListener bulkProcessorListener) {
@@ -613,10 +630,16 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                                 .bulkAsync(request, RequestOptions.DEFAULT, bulkListener),
                 bulkProcessorListener);
 
-        builder.setBulkActions(ReindexThread.ELASTICSEARCH_BULK_ACTIONS)
-                .setBulkSize(new ByteSizeValue(ReindexThread.ELASTICSEARCH_BULK_SIZE,
-                        ByteSizeUnit.MB))
-                .setConcurrentRequests(ELASTICSEARCH_CONCURRENT_REQUESTS);
+        // if running in a cluster reduce the number of concurrent requests in order to not overtax ES
+        final int numberToReindexInRequest = Try.of(()-> ReindexThread.ELASTICSEARCH_BULK_ACTIONS / APILocator.getServerAPI().getReindexingServers().size()).getOrElse(10);
+        
+        
+        
+        builder.setBulkActions(numberToReindexInRequest)
+                        .setBulkSize(new ByteSizeValue(ReindexThread.ELASTICSEARCH_BULK_SIZE, ByteSizeUnit.MB))
+                        .setConcurrentRequests(ELASTICSEARCH_CONCURRENT_REQUESTS)
+                        .setFlushInterval(new TimeValue(ReindexThread.ELASTICSEARCH_BULK_FLUSH_INTERVAL))
+                        .setBackoffPolicy(BackoffPolicy.exponentialBackoff(TimeValue.timeValueMillis(1000), 5));
 
         return builder.build();
     }
@@ -993,7 +1016,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
         for (final Relationship relationship : relationships) {
 
-            final boolean isSameStructRelationship = FactoryLocator.getRelationshipFactory().sameParentAndChild(relationship);
+            final boolean isSameStructRelationship = APILocator.getRelationshipAPI().sameParentAndChild(relationship);
 
             final String query = (isSameStructRelationship)
                     ? builder("+type:content +(", relationship.getRelationTypeValue(), "-parent:", contentlet.getIdentifier(),
@@ -1023,7 +1046,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         if (content == null || !UtilMethods.isSet(content.getIdentifier()))
             return;
 
-        List<Relationship> relationships = FactoryLocator.getRelationshipFactory().byContentType(content.getStructure());
+        List<Relationship> relationships = APILocator.getRelationshipAPI().byContentType(content.getStructure());
 
         // add a commit listener to index the contentlet if the entire
         // transaction finish clean

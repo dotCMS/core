@@ -10,6 +10,7 @@ import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -106,6 +107,8 @@ public class CategoryBundlerHandlerTest extends IntegrationTestBase {
             Mockito.when(config.getOperation()).thenReturn(PublisherConfig.Operation.PUBLISH);
             categoryBundler.setConfig(config);
 
+            final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config, tempDir);
+
             //Creating temp bundle dir
             if (!tempDir.exists()) {
                 tempDir.mkdirs();
@@ -113,7 +116,7 @@ public class CategoryBundlerHandlerTest extends IntegrationTestBase {
 
             //Generating bundle
             BundlerStatus status = new BundlerStatus(CategoryBundler.class.getName());
-            categoryBundler.generate(tempDir, status);
+            categoryBundler.generate(directoryBundleOutput, status);
             assertEquals("We should have 3 categories.xml", 3, status.getCount());
 
             // Now let's delete the categories to make sure they are installed by the Handler.
@@ -152,8 +155,16 @@ public class CategoryBundlerHandlerTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * This Test used to be called `testBundlerAndHandler_success_differentInodeSameKey`
+     * That was before the introduction of deterministic identifiers.
+     * From now on when restoring a category on a receiver node it is expected to have the exact same inode
+     * @throws DotBundleException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Test
-    public void testBundlerAndHandler_success_differentInodeSameKey()
+    public void testBundlerAndHandler_success_SameKey_SameInodeOnReceiver()
             throws DotBundleException, DotDataException, DotSecurityException {
 
         final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
@@ -199,6 +210,8 @@ public class CategoryBundlerHandlerTest extends IntegrationTestBase {
             Mockito.when(config.getOperation()).thenReturn(PublisherConfig.Operation.PUBLISH);
             categoryBundler.setConfig(config);
 
+            final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config, tempDir);
+
             //Creating temp bundle dir
             if (!tempDir.exists()) {
                 tempDir.mkdirs();
@@ -206,13 +219,14 @@ public class CategoryBundlerHandlerTest extends IntegrationTestBase {
 
             //Generating bundle
             BundlerStatus status = new BundlerStatus(CategoryBundler.class.getName());
-            categoryBundler.generate(tempDir, status);
+            categoryBundler.generate(directoryBundleOutput, status);
             assertEquals("We should have 2 categories.xml", 2, status.getCount());
 
             // Now let's delete the categories to make sure they are installed by the Handler.
             cleanCategories(categoriesToDelete);
             categoriesToDelete.clear();
             categoryCache.clearCache();
+            //Categories no longer exist for the given inode we're using
             assertNull(categoryAPI.find(parentCategory.getInode(), user, false));
             assertNull(categoryAPI.find(childCategory.getInode(), user, false));
 
@@ -243,8 +257,11 @@ public class CategoryBundlerHandlerTest extends IntegrationTestBase {
             CategoryHandler categoryHandler = new CategoryHandler(config);
             categoryHandler.handle(tempDir);
 
-            assertNull(categoryAPI.find(parentCategory.getInode(), user, false));
-            assertNull(categoryAPI.find(childCategory.getInode(), user, false));
+            //These are the categories originally created on the sender.
+            // But the inode are the same again since now they were created  using deterministic identifiers
+            assertNotNull(categoryAPI.find(parentCategory.getInode(), user, false));
+            assertNotNull(categoryAPI.find(childCategory.getInode(), user, false));
+
             assertNotNull(categoryAPI.find(parentCategoryReceiver.getInode(), user, false));
             assertNotNull(categoryAPI.find(childCategoryReceiver.getInode(), user, false));
 
@@ -259,9 +276,12 @@ public class CategoryBundlerHandlerTest extends IntegrationTestBase {
                     categoryAPI.findChildren(user, childCategoryReceiver.getInode(), false, "")
                             .size());
 
-            // The inodes should be different but the key should be the same.
-            assertNotEquals(parentCategory.getInode(), parentCategoryReceiver.getInode());
-            assertNotEquals(childCategory.getInode(), childCategoryReceiver.getInode());
+            // inodes being different is no longer the case since the introduction of deterministic ids
+            //Whenever the inode gets restored the id should be the same as it was.
+            //Also the key reminds the same as well.
+            assertEquals(parentCategory.getInode(), parentCategoryReceiver.getInode());
+            assertEquals(childCategory.getInode(), childCategoryReceiver.getInode());
+
             assertEquals(parentCategory.getKey(), parentCategoryReceiver.getKey());
             assertEquals(childCategory.getKey(), childCategoryReceiver.getKey());
 
@@ -320,6 +340,8 @@ public class CategoryBundlerHandlerTest extends IntegrationTestBase {
             Mockito.when(config.getOperation()).thenReturn(PublisherConfig.Operation.PUBLISH);
             categoryBundler.setConfig(config);
 
+            final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config, tempDir);
+
             //Creating temp bundle dir
             if (!tempDir.exists()) {
                 tempDir.mkdirs();
@@ -327,7 +349,7 @@ public class CategoryBundlerHandlerTest extends IntegrationTestBase {
 
             //Generating bundle
             BundlerStatus status = new BundlerStatus(CategoryBundler.class.getName());
-            categoryBundler.generate(tempDir, status);
+            categoryBundler.generate(directoryBundleOutput, status);
             assertEquals("We should have 2 categories.xml", 2, status.getCount());
 
             // We don't want to delete the categories, just clear cache.
@@ -404,6 +426,8 @@ public class CategoryBundlerHandlerTest extends IntegrationTestBase {
             Mockito.when(config.getOperation()).thenReturn(PublisherConfig.Operation.PUBLISH);
             categoryBundler.setConfig(config);
 
+            final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config, tempDir);
+
             //Creating temp bundle dir
             if (!tempDir.exists()) {
                 tempDir.mkdirs();
@@ -411,7 +435,7 @@ public class CategoryBundlerHandlerTest extends IntegrationTestBase {
 
             //Generating bundle
             BundlerStatus status = new BundlerStatus(CategoryBundler.class.getName());
-            categoryBundler.generate(tempDir, status);
+            categoryBundler.generate(directoryBundleOutput, status);
             assertEquals("We should have 2 categories.xml", 2, status.getCount());
 
             // We don't want to delete the categories.
@@ -496,6 +520,8 @@ public class CategoryBundlerHandlerTest extends IntegrationTestBase {
             Mockito.when(config.getOperation()).thenReturn(PublisherConfig.Operation.PUBLISH);
             categoryBundler.setConfig(config);
 
+            final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config, tempDir);
+
             //Creating temp bundle dir
             if (!tempDir.exists()) {
                 tempDir.mkdirs();
@@ -503,7 +529,7 @@ public class CategoryBundlerHandlerTest extends IntegrationTestBase {
 
             //Generating bundle
             BundlerStatus status = new BundlerStatus(CategoryBundler.class.getName());
-            categoryBundler.generate(tempDir, status);
+            categoryBundler.generate(directoryBundleOutput, status);
             assertEquals("We should have 2 categories.xml", 2, status.getCount());
 
             // We don't want to delete the categories.

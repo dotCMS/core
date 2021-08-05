@@ -25,8 +25,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.security.NoSuchAlgorithmException;
 import java.util.Random;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.RandomStringUtils;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -61,15 +63,15 @@ public class StoragePersistenceAPITest {
             Config.setProperty(DEFAULT_STORAGE_TYPE, null);
             final StoragePersistenceProvider persistenceProvider = INSTANCE.get();
             assertTrue(persistenceProvider
-                    .getStorage() instanceof FileSystemStoragePersistenceAPIImpl);
+                    .getStorage() instanceof DataBaseStoragePersistenceAPIImpl);
         }finally {
             Config.setProperty(DEFAULT_STORAGE_TYPE, stringProperty);
         }
     }
 
     /**
-     * Given Scenario:
-     * Expected Result:
+     * Given Scenario: Given a configured property value we must be able to predict what implementation will be returned by the persistence provider
+     * Expected Result: We must be able to predict what implementation will be returned by the persistence provider
      */
     @Test
     public void Test_Get_Provider_By_StorageType() {
@@ -81,6 +83,39 @@ public class StoragePersistenceAPITest {
     }
 
     /**
+     * Given Scenario: We want to Test we can replace the contents of a file
+     * Expected Result: We push a file, then we push a different one. We verify it has been replaced.
+     * @param testCase
+     * @throws Exception
+     */
+    @Test
+    @UseDataProvider("getRandomTestCases")
+    public void Test_Replace_Entry(final TestCase testCase) throws Exception {
+        final StoragePersistenceAPI storage = persistenceProvider.getStorage(testCase.storageType);
+        final String groupName = testCase.groupName;
+        final String path = testCase.path;
+        final File pushFile = testCase.file;
+        assertFalse(storage.existsGroup(groupName));
+        assertTrue(storage.createGroup(groupName));
+        final Object resultObject1 = storage.pushFile(groupName, path, pushFile, ImmutableMap.of());
+        assertNotNull(resultObject1);
+        assertTrue(storage.existsGroup(groupName));
+        final File pullFile = storage.pullFile(groupName, path);
+        assertTrue(pullFile.exists());
+        assertNotSame(pushFile, pullFile);
+
+        final int newFileSize = 1024 * 2;
+        final File newFile = generateTestFile(newFileSize);
+        final Object resultObject2 = storage.pushFile(groupName, path, newFile, ImmutableMap.of());
+        assertNotNull(resultObject2);
+        final File replacedFile = storage.pullFile(groupName, path);
+        assertTrue(replacedFile.exists());
+        assertNotSame(replacedFile, newFile);
+        assertEquals(replacedFile.length(), newFileSize);
+    }
+
+
+    /**
      * Given scenario: For the same group we send two files of different type.
      * Expected Result: The Group should be created then the file should be stored and then removed together with all of its elements.
      * Same group is always send to test delete is effective.
@@ -89,10 +124,11 @@ public class StoragePersistenceAPITest {
     @UseDataProvider("getMixedStorageTestCases")
     public void Test_Storage_Push_File_Then_Recover_Then_Remove_Group(final TestCase testCase)
             throws DotDataException {
+
+        int count;
         final StoragePersistenceAPI storage = persistenceProvider.getStorage(testCase.storageType);
         final String groupName = testCase.groupName;
         final String path = testCase.path;
-
         try {
             assertFalse(storage.existsGroup(groupName));
             assertTrue(storage.createGroup(groupName));
@@ -110,11 +146,12 @@ public class StoragePersistenceAPITest {
             assertNotSame(pushFile, pullFile);
             assertEquals(pullFile.length(), pushFile.length());
         } finally {
-            final int count = storage.deleteGroup(groupName);
-            assertEquals(1, count);
-            assertFalse(storage.existsGroup(groupName));
-            assertFalse(storage.existsObject(groupName, path));
+            count = storage.deleteGroup(groupName);
         }
+
+        assertEquals(1, count);
+        assertFalse(storage.existsGroup(groupName));
+        assertFalse(storage.existsObject(groupName, path));
 
     }
 
@@ -128,7 +165,7 @@ public class StoragePersistenceAPITest {
                 ConfigTestHelper.getUrlToTestResource(TEST_IMAGE_JPG).toURI());
 
         return new Object[]{
-
+              
                 new TestCase(StorageType.FILE_SYSTEM,
                         groupName, textFilePath, tempFile
                 ),
@@ -181,8 +218,9 @@ public class StoragePersistenceAPITest {
     public void Test_Attempt_Push_Same_Binary_Twice(final TestCase testCase)
             throws DotDataException {
         final StoragePersistenceAPI storage = persistenceProvider.getStorage(testCase.storageType);
-        storage.deleteObject(testCase.groupName, testCase.path);
+        storage.deleteObjectAndReferences(testCase.groupName, testCase.path);
         assertTrue(storage.createGroup(testCase.groupName));
+
         final Object object = storage
                 .pushFile(testCase.groupName, testCase.path, testCase.file, ImmutableMap.of());
         assertNotNull(object);
@@ -192,6 +230,17 @@ public class StoragePersistenceAPITest {
         final Object object2 = storage
                 .pushFile(testCase.groupName, testCase.path, testCase.file, ImmutableMap.of());
         assertNotNull(object2);
+
+        //Same binary to a different group
+
+        final String groupVariant = testCase.groupName + "_2" ;
+
+        assertTrue(storage.createGroup(groupVariant));
+
+        final Object object3 = storage
+                .pushFile(groupVariant, testCase.path, testCase.file, ImmutableMap.of());
+        assertNotNull(object3);
+
     }
 
     @DataProvider
@@ -212,6 +261,46 @@ public class StoragePersistenceAPITest {
                 )
 
         };
+    }
+
+    /**
+     * Since we support various version of an object we should support removing one single version too
+     * Given Scenario: Same binary pushed twice under a different name should be saved just once and two references should have been created
+     * Expected Result: Expect the specific reference to be remove
+     * @param testCase
+     * @throws IOException
+     * @throws DotDataException
+     */
+    @Test
+    @UseDataProvider("getLargeFileTestCases")
+    public void Test_Delete_Object_Version(final TestCase testCase)
+            throws IOException, DotDataException {
+
+        final StoragePersistenceAPI storage = persistenceProvider.getStorage(testCase.storageType);
+        if (!storage.existsGroup(testCase.groupName)) {
+            assertTrue(storage.createGroup(testCase.groupName));
+        }
+
+        //Same binary pushed twice under a different name should be saved just once and two references should have been created
+        storage.pushFile(testCase.groupName, testCase.path, testCase.file, ImmutableMap.of());
+
+        final String v2 =  testCase.path + "-" + random.nextLong();
+
+        storage.pushFile(testCase.groupName, v2, testCase.file, ImmutableMap.of());
+
+        final File pullFile1 = storage.pullFile(testCase.groupName, testCase.path);
+        assertNotNull(pullFile1);
+
+        final File pullFile2 = storage.pullFile(testCase.groupName, v2);
+        assertNotNull(pullFile2);
+
+        assertTrue(FileUtils.contentEquals(pullFile1,pullFile2));
+
+        storage.deleteObjectReference(testCase.groupName, testCase.path);
+
+        final File pullFile3 = storage.pullFile(testCase.groupName, v2);
+        assertNotNull(pullFile3);
+
     }
 
     /**
@@ -242,7 +331,7 @@ public class StoragePersistenceAPITest {
     public static Object[] getRandomTestCases() throws Exception{
         final String path = "any-path";
         final String groupName = RandomStringUtils.randomAlphanumeric(10);
-        final File temp = File.createTempFile("tempfile", ".txt");
+        final File temp = generateTestFile(1024);
         return new Object[]{
                 new TestCase(StorageType.FILE_SYSTEM, groupName, path, temp),
                 new TestCase(StorageType.DB, groupName, path, temp)
@@ -250,8 +339,8 @@ public class StoragePersistenceAPITest {
     }
 
     /**
-     * Given scenario:
-     * Expected Results:
+     * Given scenario: We create a pretty large file to test it does fit
+     * Expected Results: The large object should fit
      * @param testCase
      * @throws IOException
      * @throws NoSuchAlgorithmException
@@ -277,6 +366,7 @@ public class StoragePersistenceAPITest {
 
     }
 
+
     private static final Random random = new Random();
 
     @DataProvider
@@ -284,13 +374,7 @@ public class StoragePersistenceAPITest {
         final String path = "fixed-large-file-path";
         final String groupName = RandomStringUtils.randomAlphanumeric(10);
 
-        final File temp = File.createTempFile("largeFile", ".bin");
-
-        try (FileOutputStream output = new FileOutputStream(temp, true)) {
-            final byte[] data = new byte[LARGE_FILE_SIZE];
-            random.nextBytes(data);
-            output.write(data);
-        }
+        final File temp = generateTestFile(LARGE_FILE_SIZE);
 
         return new Object[]{
                 new TestCase(StorageType.FILE_SYSTEM, groupName, path, temp),
@@ -298,6 +382,15 @@ public class StoragePersistenceAPITest {
         };
     }
 
+    private static File generateTestFile(final int size) throws Exception{
+        final File temp = File.createTempFile("testFile", ".bin");
+        try (FileOutputStream output = new FileOutputStream(temp, true)) {
+            final byte[] data = new byte[size];
+            random.nextBytes(data);
+            output.write(data);
+        }
+        return temp;
+    }
 
     /**
      * Test Data DTO

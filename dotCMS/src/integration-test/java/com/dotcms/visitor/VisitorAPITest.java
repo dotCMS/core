@@ -20,7 +20,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.dotcms.UnitTestBase;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.business.VisitorAPIImpl;
 import com.dotcms.visitor.domain.Visitor;
@@ -96,7 +96,7 @@ public class VisitorAPITest extends UnitTestBase {
      */
     @Test
     public void test_get_visitor_personas() {
-        HttpServletRequest mockRequest = new MockHttpRequest("testing", "/").request();
+        HttpServletRequest mockRequest = new MockHttpRequestIntegrationTest("testing", "/").request();
 
         final Persona persona1 = mock(Persona.class);
         when(persona1.getKeyTag()).thenReturn("persona1");
@@ -209,7 +209,7 @@ public class VisitorAPITest extends UnitTestBase {
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
         when(mockRequest.getSession()).thenReturn(mockSession);
 
-        doReturn(persona.getIdentifier()).when(mockRequest).getAttribute("com.dotmarketing.persona.id");
+        doReturn(persona.getKeyTag()).when(mockRequest).getAttribute("com.dotmarketing.persona.id");
 
         doReturn(APILocator.systemUser()).when(mockRequest).getAttribute(
                 com.liferay.portal.util.WebKeys.USER);
@@ -225,6 +225,69 @@ public class VisitorAPITest extends UnitTestBase {
                 visitor.getPersona().getKeyTag());
 
     }
-    
+
+    /**
+     * Given Scenario: Given request parameter "com.dotmarketing.persona.id" with a persona identifier
+     * ExpectedResult: The resulting persona should be the one passed in the request attribute
+     *
+     */
+    @Test
+    public void test_getVisitor_givenPersonaParameterWithPersonaIdentifier_shouldReturnExpectedPersona() {
+
+        final Persona persona = new PersonaDataGen().nextPersisted();
+
+        HttpSession mockSession = mock(HttpSession.class);
+
+        HttpServletRequest mockRequest = mock(HttpServletRequest.class);
+        when(mockRequest.getSession()).thenReturn(mockSession);
+
+        doReturn(persona.getIdentifier()).when(mockRequest).getParameter("com.dotmarketing.persona.id");
+
+        doReturn(APILocator.systemUser()).when(mockRequest).getAttribute(
+                com.liferay.portal.util.WebKeys.USER);
+
+        Optional<Visitor> visitorOpt = APILocator.getVisitorAPI()
+                .getVisitor(mockRequest, true);
+
+        assertTrue("Visitor is present", visitorOpt.isPresent());
+
+        Visitor visitor=visitorOpt.get();
+
+        assertEquals("we should have the expected persona",persona.getIdentifier(),
+                visitor.getPersona().getIdentifier());
+
+    }
+
+    /**
+     * Given Scenario: Given request parameter "com.dotmarketing.persona.id" with a persona identifier
+     * ExpectedResult: The resulting persona should be the one passed in the request attribute
+     *
+     */
+    @Test
+    public void test_getVisitor_givenPersonaParameterWithPersonaTags_shouldReturnExpectedPersona() {
+
+        final Persona persona = new PersonaDataGen().nextPersisted();
+
+        HttpSession mockSession = mock(HttpSession.class);
+
+        HttpServletRequest mockRequest = mock(HttpServletRequest.class);
+        when(mockRequest.getSession()).thenReturn(mockSession);
+
+        doReturn(persona.getKeyTag()).when(mockRequest).getParameter("com.dotmarketing.persona.id");
+
+        doReturn(APILocator.systemUser()).when(mockRequest).getAttribute(
+                com.liferay.portal.util.WebKeys.USER);
+
+        Optional<Visitor> visitorOpt = APILocator.getVisitorAPI()
+                .getVisitor(mockRequest, true);
+
+        assertTrue("Visitor is present", visitorOpt.isPresent());
+
+        Visitor visitor=visitorOpt.get();
+
+        assertEquals("we should have the expected persona",persona.getKeyTag(),
+                visitor.getPersona().getKeyTag());
+
+    }
     
 }

@@ -1,6 +1,8 @@
 package com.dotcms.contenttype.test;
 
 import static com.dotcms.contenttype.business.ContentTypeAPIImpl.TYPES_AND_FIELDS_VALID_VARIABLE_REGEX;
+import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_1;
+import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_2;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.TestCase.assertEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -21,6 +23,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.ImmutableConstantField;
 import com.dotcms.contenttype.model.field.ImmutableDateField;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
@@ -57,6 +60,7 @@ import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.contenttype.model.type.WidgetContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
@@ -93,6 +97,7 @@ import java.io.ObjectOutputStream;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -2190,7 +2195,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 	}
 
 	/**
-	 * Method to rest: {@link ContentTypeAPI#findAllRespectingLicense()}
+	 * Method to test: {@link ContentTypeAPI#findAllRespectingLicense()}
 	 * Given scenario: No EE license
 	 * Expected result: {@link EnterpriseType}s not included in returned List
 	 */
@@ -2204,7 +2209,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 	}
 
 	/**
-	 * Method to rest: {@link ContentTypeAPI#findAllRespectingLicense()}
+	 * Method to test: {@link ContentTypeAPI#findAllRespectingLicense()}
 	 * Given scenario: Valid EE license
 	 * Expected result: {@link EnterpriseType}s included in returned List
 	 */
@@ -2214,4 +2219,185 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 				.stream().noneMatch((type) -> type instanceof EnterpriseType));
 
 	}
+
+    /**
+     * Method to test: {@link ContentTypeAPI#isContentTypeAllowed(ContentType)}
+     * Given scenario: The method is tested for each {@link BaseContentType} using an enterprise license
+     * Expected result: The method should return true
+     */
+	@Test
+	public void testIsContentTypeAllowedReturnsTrue(){
+        assertTrue(Arrays.asList(BaseContentType.values()).stream()
+                .filter(type -> type != BaseContentType.ANY).allMatch(
+                        type -> {
+                            try {
+                                return APILocator.getContentTypeAPI(APILocator.systemUser())
+                                        .isContentTypeAllowed(
+                                                new ContentTypeDataGen().baseContentType(type)
+                                                        .next());
+                            } catch (Exception e) {
+                                return false;
+                            }
+                        }));
+    }
+
+    /**
+     * Method to test: {@link ContentTypeAPI#isContentTypeAllowed(ContentType)}
+     * Given scenario: The method is invoked without license using {@link BaseContentType#FORM} and {@link BaseContentType#PERSONA}
+     * Expected result: The method should return false
+     * @throws Exception
+     */
+    @Test
+    public void testIsContentTypeAllowedReturnsFalse() throws Exception {
+        runNoLicense(() -> {
+            assertFalse(APILocator.getContentTypeAPI(APILocator.systemUser())
+                    .isContentTypeAllowed(new ContentTypeDataGen()
+                            .baseContentType(BaseContentType.PERSONA).nextPersisted()));
+
+            assertFalse(APILocator.getContentTypeAPI(APILocator.systemUser())
+                    .isContentTypeAllowed(new ContentTypeDataGen()
+                            .baseContentType(BaseContentType.FORM).nextPersisted()));
+        });
+    }
+
+	/***
+	 * Method to test: {@link ContentTypeAPI#save(ContentType)}
+	 * Given Scenario: We had a bug where when no site id was passed to the endpoint the CT would still get created but the list of fields would get lost.
+	 * Expected Result: If no site is set the CT should be placed under System Host's Umbrella.
+ 	 * @param testCase
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */ 
+	@Test
+	@UseDataProvider("getSites")
+	public void Fields_Should_Not_Get_Removed_When_Host_Is_Empty_Null(final SiteTestCase testCase)
+			throws DotSecurityException, DotDataException {
+
+		ContentType contentType = null;
+		ContentType savedContentType = null;
+		try {
+
+			final List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
+
+			fields.add(
+						new FieldDataGen()
+								.name("Site or Folder")
+								.velocityVarName("hostfolder")
+								.sortOrder(1)
+								.required(Boolean.TRUE)
+								.type(HostFolderField.class)
+								.next()
+			);
+
+			fields.add(
+					new FieldDataGen()
+							.name("Title")
+							.velocityVarName("title")
+							.sortOrder(2)
+							.type(TextField.class)
+							.next()
+			);
+
+			fields.add(
+					new FieldDataGen()
+							.name(FILE_ASSET_1)
+							.velocityVarName(FILE_ASSET_1)
+							.sortOrder(3)
+							//The only way we can guarantee a field won't be indexed is by setting all these to false
+							.indexed(false).searchable(false).listed(false).unique(false)
+							.type(BinaryField.class)
+							.next()
+			);
+
+			fields.add(
+					new FieldDataGen()
+							.name(FILE_ASSET_2)
+							.velocityVarName(FILE_ASSET_2)
+							.sortOrder(4)
+							.indexed(true)
+							.type(BinaryField.class)
+							.next()
+			);
+
+            final Host site = testCase.site;
+
+            final String contentTypeName = "ContentTypeXYZ" + System.currentTimeMillis();
+			final ContentTypeDataGen contentTypeDataGen = new ContentTypeDataGen()
+					.name(contentTypeName)
+					.velocityVarName(contentTypeName)
+					.workflowId((String)null)
+					.fields(fields)
+					.host(site);
+
+			if(UtilMethods.isSet(site.getHostname()) && UtilMethods.isNotSet(site.getIdentifier())){
+				contentTypeDataGen.hostName(site.getHostname());
+			}
+
+			contentType = contentTypeDataGen.next();
+            contentType.constructWithFields(fields);
+
+			savedContentType = APILocator.getContentTypeAPI(APILocator.systemUser()).save(contentType);
+			//Here we test that the fields are still present even when the site is null
+			Assert.assertFalse(savedContentType.fields().isEmpty());
+
+			assertNotNull(savedContentType.host());
+
+			final String expected = "default".equals(testCase.expected) ? APILocator.getHostAPI()
+					.findDefaultHost(APILocator.systemUser(), false).getIdentifier()
+					: testCase.expected;
+
+			assertEquals(savedContentType.host(), expected);
+
+		} finally {
+			if(null != savedContentType) {
+				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(savedContentType);
+			}
+		}
+	}
+
+	@DataProvider
+	public static Object[] getSites() {
+
+		final Host emptyIdentifierHost = Mockito.mock(Host.class);
+		Mockito.when(emptyIdentifierHost.getIdentifier()).thenReturn("");
+
+		final Host nullIdentifierHost = Mockito.mock(Host.class);
+		Mockito.when(nullIdentifierHost.getIdentifier()).thenReturn("");
+
+		final Host systemHost = Mockito.mock(Host.class);
+		Mockito.when(systemHost.getIdentifier()).thenReturn(Host.SYSTEM_HOST);
+		Mockito.when(systemHost.getHostname()).thenReturn(Host.SYSTEM_HOST);
+
+		final Host namedHost = Mockito.mock(Host.class);
+		Mockito.when(namedHost.getIdentifier()).thenReturn("");
+		Mockito.when(namedHost.getHostname()).thenReturn("default");
+
+		return new Object[]{
+				new SiteTestCase(emptyIdentifierHost, Host.SYSTEM_HOST),
+				new SiteTestCase(nullIdentifierHost, Host.SYSTEM_HOST),
+				new SiteTestCase(systemHost, Host.SYSTEM_HOST),
+				new SiteTestCase(namedHost, "default")
+		};
+	}
+
+	static class SiteTestCase{
+
+    	final Host site;
+
+    	final String expected;
+
+		public SiteTestCase(final Host site, final String expected) {
+			this.site = site;
+			this.expected = expected;
+		}
+
+		@Override
+		public String toString() {
+			return "SiteTestCase{" +
+					"site=" + site +
+					", expected='" + expected + '\'' +
+					'}';
+		}
+	}
+
 }

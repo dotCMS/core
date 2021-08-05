@@ -492,7 +492,7 @@ public class ContentUtils {
     public static List<Contentlet> pullRelated(String relationshipName, String contentletIdentifier,
             String condition, boolean pullParents, int limit, String sort, User user,
             String tmDate) {
-        final Relationship relationship = FactoryLocator.getRelationshipFactory()
+        final Relationship relationship = APILocator.getRelationshipAPI()
                 .byTypeValue(relationshipName);
 
         return getPullResults(relationship, contentletIdentifier, condition, limit, -1, sort,
@@ -526,7 +526,7 @@ public class ContentUtils {
     public static List<Contentlet> pullRelated(String relationshipName, String contentletIdentifier,
             String condition, boolean pullParents, int limit, String sort, User user, String tmDate,
             final long language, final Boolean live) {
-        final Relationship relationship = FactoryLocator.getRelationshipFactory()
+        final Relationship relationship = APILocator.getRelationshipAPI()
                 .byTypeValue(relationshipName);
 
         return getPullResults(relationship, contentletIdentifier, condition, limit, -1, sort,
@@ -554,7 +554,7 @@ public class ContentUtils {
 
                 final StringBuilder pullQuery = new StringBuilder();
 
-                if (language != -1){
+                if (language != -1 && !condition.contains("languageId")){
                     pullQuery.append(" ").append("+languageId:").append(language).append(" ");
                 }
                 if (!user.isBackendUser()){

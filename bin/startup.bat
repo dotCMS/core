@@ -54,7 +54,7 @@ rem Java VM configuration options
 
 if not "%JAVA_OPTS%" == "" goto noDefaultJavaOpts
 
-rem set JAVA_OPTS=-Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -Xmx1G -Djava.endorsed.dirs=%DOTCMS_HOME%/WEB-INF/endorsed_libs -XX:+UseG1GC -javaagent:%DOTCMS_HOME%/WEB-INF/lib/byte-buddy-agent-1.6.12.jar
+rem set JAVA_OPTS=-Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -Xmx1G -Djava.endorsed.dirs=%DOTCMS_HOME%/WEB-INF/endorsed_libs -XX:+UseG1GC -javaagent:%DOTCMS_HOME%/WEB-INF/lib/byte-buddy-agent-1.9.0.jar
 set JAVA_OPTS=%JAVA_OPTS% -Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -server -XX:+DisableExplicitGC -Dsun.jnu.encoding=UTF-8
 
 rem Set Memory sizing
@@ -65,8 +65,24 @@ set JAVA_OPTS=%JAVA_OPTS% -XX:+UseG1GC
 
 set JAVA_OPTS=%JAVA_OPTS% -Djava.endorsed.dirs=%DOTCMS_HOME%/WEB-INF/endorsed_libs
 
+for /f tokens^=2-5^ delims^=.-_^" %%j in ('java -fullversion 2^>^&1') do set "JAVA_VERSION=%%j%%k"
+echo JAVA_VERSION = %JAVA_VERSION%
+set BYTE_BUDDY_VERSION=1.9.0
+
+if %JAVA_VERSION% LSS 110 (
+	set BYTE_BUDDY_VERSION=1.6.12
+)
+
+echo Using Byte-Buddy Version: %BYTE_BUDDY_VERSION%
+
+echo BYTE_BUDDY folder: %CATALINA_HOME%\webapps\ROOT\WEB-INF\lib\byte-buddy-*
+
+del %CATALINA_HOME%\webapps\ROOT\WEB-INF\lib\byte-buddy-*
+copy %CATALINA_HOME%\bin\byte-buddy\%BYTE_BUDDY_VERSION%\* %CATALINA_BASE%\webapps\ROOT\WEB-INF\lib\
+
+
 rem Set agent opts
-set JAVA_OPTS=%JAVA_OPTS% -javaagent:%DOTCMS_HOME%/WEB-INF/lib/byte-buddy-agent-1.6.12.jar
+set JAVA_OPTS=%JAVA_OPTS% -javaagent:%DOTCMS_HOME%/WEB-INF/lib/byte-buddy-agent-%BYTE_BUDDY_VERSION%.jar
 
 rem Uncomment the next line if you want to enable JMX
 rem set JAVA_OPTS=%JAVA_OPTS% -Dcom.sun.management.jmxremote.port=7788 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false -Djava.endorsed.dirs=$DOTCMS_HOME/WEB-INF/endorsed_libs

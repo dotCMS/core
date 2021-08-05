@@ -1,12 +1,14 @@
 package com.dotcms.rest.api.v2.languages;
 
 import static com.dotcms.rest.ResponseEntityView.OK;
+import static com.dotmarketing.util.UtilMethods.isNotSet;
 
 import com.dotcms.keyvalue.model.KeyValue;
 import com.dotcms.rendering.velocity.viewtools.util.ConversionUtils;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.MessageEntity;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.InitRequestRequired;
@@ -16,6 +18,7 @@ import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.I18NUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -26,17 +29,21 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
@@ -50,6 +57,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import org.apache.commons.beanutils.BeanUtils;
 import org.glassfish.jersey.server.JSONP;
 
@@ -107,6 +115,12 @@ public class LanguagesResource {
         return LanguageView::new;
     }
 
+    private Language validateLanguageExists(final LanguageForm languageForm) {
+        DotPreconditions.checkArgument(UtilMethods.isSet(languageForm.getLanguageCode()),
+                "Language Code can't be null or empty");
+        return getLanguage(languageForm);
+    }
+
     /**
      * Persists a new {@link Language}
      *
@@ -127,12 +141,80 @@ public class LanguagesResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response saveLanguage(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            final LanguageForm languageForm) {
+            final LanguageForm languageForm) throws AlreadyExistException {
         this.webResource.init(null, request, response,
                 true, PortletID.LANGUAGES.toString());
         DotPreconditions.notNull(languageForm,"Expected Request body was empty.");
-        final Language language = saveOrUpdateLanguage(null, languageForm);
+        final Language language = validateLanguageExists(languageForm);
+        if(null != language){
+            return Response.ok(new ResponseEntityView(language, ImmutableList.of(new MessageEntity("Language already exists.")))).build(); // 200
+        }
+        return Response.ok(new ResponseEntityView(saveOrUpdateLanguage(null, languageForm))).build(); // 200
+    }
+
+    @POST
+    @JSONP
+    @NoCache
+    @Path("/{languageTag}")
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response saveFromLanguageTag(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("languageTag") final String languageTag
+    ) throws AlreadyExistException {
+        DotPreconditions.notNull(languageTag, "Expected languageTag Param path was empty.");
+        this.webResource.init(null, request, response,
+                true, PortletID.LANGUAGES.toString());
+
+        final Locale locale = validateLanguageTag(languageTag);
+
+        final LanguageForm languageForm = new LanguageForm.Builder()
+                .language(locale.getDisplayLanguage()).languageCode(locale.getLanguage())
+                .country(locale.getDisplayCountry()).countryCode(locale.getCountry()).build();
+
+        final Language language = validateLanguageExists(languageForm);
+        if(null != language){
+           return Response.ok(new ResponseEntityView(language, ImmutableList.of(new MessageEntity("Language already exists.")))).build(); // 200
+        }
+        return Response.ok(new ResponseEntityView(saveOrUpdateLanguage(null, languageForm))).build(); // 200
+    }
+
+
+    @GET
+    @Path("/{languageTag}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response getFromLanguageTag (
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("languageTag") final String languageTag) {
+
+        this.webResource.init(null, request, response,
+                true, PortletID.LANGUAGES.toString());
+
+        final Locale locale = validateLanguageTag(languageTag);
+        final LanguageForm languageForm = new LanguageForm.Builder()
+                .language(locale.getDisplayLanguage()).languageCode(locale.getLanguage())
+                .country(locale.getDisplayCountry()).countryCode(locale.getCountry()).build();
+
+        DotPreconditions.notNull(languageTag, "Expected languageTag Param path was empty.");
+        final Language language = getLanguage(languageForm);
+        if(null == language){
+           return Response.status(Status.NOT_FOUND).build();
+        }
         return Response.ok(new ResponseEntityView(language)).build(); // 200
+
+    }
+
+    private Locale validateLanguageTag(final String languageTag)throws DoesNotExistException {
+        final Locale locale = Locale.forLanguageTag(languageTag);
+        final boolean validCountry = (isNotSet(locale.getCountry()) || Stream.of(Locale.getISOCountries()).collect(Collectors.toSet()).contains(locale.getCountry()));
+        final boolean validLang = Stream.of(Locale.getISOLanguages()).collect(Collectors.toSet()).contains(locale.getLanguage());
+        if(validLang && validCountry) {
+            return locale;
+        } else {
+           throw new DoesNotExistException(String.format(" `%s` is an invalid language tag ", languageTag));
+        }
     }
 
     /**
@@ -158,7 +240,7 @@ public class LanguagesResource {
     public final Response updateLanguage(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("languageId") final String languageId,
-            final LanguageForm languageForm) {
+            final LanguageForm languageForm) throws AlreadyExistException {
         this.webResource.init(null, request, response,
                 true, PortletID.LANGUAGES.toString());
         DotPreconditions.checkArgument(UtilMethods.isSet(languageId),"Language Id is required.");
@@ -277,7 +359,8 @@ public class LanguagesResource {
         return Response.ok(new ResponseEntityView(result)).build();
     }
 
-    private Language saveOrUpdateLanguage(final String languageId, final LanguageForm form) {
+    private Language saveOrUpdateLanguage(final String languageId, final LanguageForm form)
+            throws AlreadyExistException {
         final Language newLanguage = new Language();
 
         if (StringUtils.isSet(languageId)) {
@@ -291,6 +374,14 @@ public class LanguagesResource {
         newLanguage.setCountryCode(form.getCountryCode());
         newLanguage.setCountry(form.getCountry());
 
+        DotPreconditions.checkArgument(UtilMethods.isSet(newLanguage.getLanguageCode()),
+                "Language Code can't be null or empty");
+
+        final Language existingLang = languageAPI.getLanguage(newLanguage.getLanguageCode(), newLanguage.getCountryCode());
+        if(null != existingLang && Long.parseLong(languageId) != existingLang.getId()){
+           throw new AlreadyExistException(String.format("Update Attempt clashes with an existing language with id `%s`.",existingLang.getId()));
+        }
+
         this.languageAPI.saveLanguage(newLanguage);
         return newLanguage;
     }
@@ -298,5 +389,9 @@ public class LanguagesResource {
     private boolean doesLanguageExist(final String languageId) {
         return languageAPI.getLanguage(languageId)!=null &&
                 languageAPI.getLanguage(languageId).getId()>0;
+    }
+
+    private Language getLanguage(final LanguageForm form) {
+        return this.languageAPI.getLanguage(form.getLanguageCode(), form.getCountryCode());
     }
 }

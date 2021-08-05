@@ -1,4 +1,6 @@
-
+<%@page import="com.dotmarketing.image.focalpoint.FocalPoint"%>
+<%@page import="java.util.Optional"%>
+<%@page import="com.dotmarketing.image.focalpoint.FocalPointAPIImpl"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
@@ -486,6 +488,13 @@
        </div>
 
     <%}else{ %>
+
+        <%
+         final Optional<FocalPoint> focalPoint =new FocalPointAPIImpl().readFocalPoint(binInode, field.getVelocityVarName());
+         final String fpStr = focalPoint.isPresent() ? focalPoint.get().x + "," + focalPoint.get().y :"0.0,0.0";
+        %>
+
+
        <div id="thumbnailParent<%=field.getVelocityVarName()%>">
            <div dojoType="dotcms.dijit.image.ImageEditor"
                 editImageText="<%= LanguageUtil.get(pageContext, "Edit-Image") %>"
@@ -493,6 +502,7 @@
                 fieldName="<%=field.getVelocityVarName()%>"
                 binaryFieldId="<%=field.getFieldContentlet()%>"
                 fieldContentletId="<%=field.getFieldContentlet()%>"
+                focalPoint="<%=fpStr %>"
                 saveAsFileName="<%=fileName %>"
                 class="thumbnailDiv<%=field.getVelocityVarName()%>"
            >
@@ -540,6 +550,7 @@
     <%-- File uploader --%>
 
     <div
+            assetName="<%= contentlet.isFileAsset() ? resourceLink.getAssetName() : "" %>"
             resourceLink="<%= contentlet.isFileAsset() ? resourceLink.getResourceLinkAsString() : "" %>"
             resourceLinkUri="<%= contentlet.isFileAsset() ? resourceLink.getResourceLinkUriAsString() : "" %>"
             resourceLinkLabel="<%= contentlet.isFileAsset() ? LanguageUtil.get(pageContext, "Resource-Link") : "" %>"
