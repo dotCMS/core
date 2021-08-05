@@ -2,6 +2,7 @@ package com.dotcms.publishing.manifest;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.CategoryDataGen;
@@ -244,25 +245,8 @@ public class CSVManifestBuilderTest {
         File manifestFile = null;
 
         try(final CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
-            manifestBuilder.create();
             manifestFile = manifestBuilder.getManifestFile();
-        }
-
-        final List<String> expected = list(headers);
-        assertManifestLines(manifestFile, expected);
-    }
-
-    /**
-     * Method to test: {@link CSVManifestBuilder#getManifestFile()}
-     * when: Call the method {@link CSVManifestBuilder#getManifestFile()} without call
-     * {@link CSVManifestBuilder#create()}
-     * should: Throw a {@link IllegalStateException}
-     */
-    @Test(expected = IllegalStateException.class)
-    public void getFileBeforeCreate() throws IOException {
-
-        try(final CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
-            manifestBuilder.getManifestFile();
+            assertNull(manifestFile);
         }
     }
 
@@ -279,8 +263,6 @@ public class CSVManifestBuilderTest {
         File manifestFile = null;
 
         try(final CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
-            manifestBuilder.create();
-
             manifestBuilder.include(testCase.asset, includeReason);
             manifestFile = manifestBuilder.getManifestFile();
         }
@@ -304,8 +286,6 @@ public class CSVManifestBuilderTest {
         File manifestFile = null;
 
         try(final CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
-            manifestBuilder.create();
-
             manifestBuilder.exclude(testCase.asset, exludeReason);
             manifestFile = manifestBuilder.getManifestFile();
         }

@@ -43,7 +43,7 @@ public class CSVManifestBuilder implements ManifestBuilder {
 
     private File manifestFile;
 
-    public void create() {
+    private synchronized void create() {
         try {
             manifestFile = File.createTempFile("ManifestBuilder_", ".csv");
 
@@ -55,6 +55,10 @@ public class CSVManifestBuilder implements ManifestBuilder {
     }
 
     private void writeLine(String headersLine) throws IOException {
+        if (manifestFile == null) {
+            create();
+        }
+
         csvWriter.append(headersLine);
         csvWriter.append("\n");
     }
@@ -113,7 +117,7 @@ public class CSVManifestBuilder implements ManifestBuilder {
     public File getManifestFile(){
 
         if (manifestFile == null) {
-            throw new IllegalStateException("Must call create method before");
+            throw new IllegalStateException("Should include any asset first");
         }
 
         return manifestFile;

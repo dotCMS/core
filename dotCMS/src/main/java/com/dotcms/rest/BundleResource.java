@@ -20,6 +20,10 @@ import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.manifest.ManifestBuilder;
+import com.dotcms.publishing.manifest.ManifestUtil;
+import com.dotcms.publishing.output.TarGzipBundleOutput;
+import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.rest.param.ISODateParam;
@@ -44,6 +48,17 @@ import com.liferay.util.LocaleUtil;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.Reader;
+import java.util.Optional;
+import javax.ws.rs.core.StreamingOutput;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
@@ -92,7 +107,6 @@ public class BundleResource {
     private final WebResource            webResource            = new WebResource();
     private final BundleAPI              bundleAPI              = APILocator.getBundleAPI();
     private final SystemMessageEventUtil systemMessageEventUtil = SystemMessageEventUtil.getInstance();
-
 
     /**
      * Returns a list of un-send bundles (haven't been sent to any Environment) filtered by owner and name
@@ -902,6 +916,53 @@ public class BundleResource {
                 Response.ok(Response.ok().build()).build()
         );
     } // uploadBundleAsync.
+
+    @Path("/{bundleId}/manifest")
+    @GET
+    public Response downloadManifest(@PathParam("bundleId") final String bundleId,
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response)
+            throws DotDataException, IOException {
+
+        new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        final Bundle bundle = APILocator.getBundleAPI().getBundleById(bundleId);
+        if (!UtilMethods.isSet(bundle)) {
+            throw new DoesNotExistException("Bundle with ID: " + bundleId + " not found");
+        }
+
+        final File bundleTarGzipFile = TarGzipBundleOutput.getBundleTarGzipFile(bundleId);
+
+        if (!bundleTarGzipFile.exists()) {
+            throw new DoesNotExistException("Th+e bundle not exists: " + bundleId);
+        }
+
+        final Optional<Reader> manifestInputStreamOptional = ManifestUtil.getManifestInputStream(bundleTarGzipFile);
+
+        if (!manifestInputStreamOptional.isPresent()) {
+                throw new DoesNotExistException("Manifest not exists in bundle: " + bundleId);
+        }
+
+        final String manifestFileName = String.format("manifest_%s.csv",
+                APILocator.getShortyAPI().getShorty(bundleId).get());
+
+        final ContentDisposition contentDisposition = ContentDisposition.type("attachment")
+                .fileName(manifestFileName)
+                .build();
+
+        return javax.ws.rs.core.Response
+                .ok( (StreamingOutput) output -> {
+                    IOUtils.copy(manifestInputStreamOptional.get(), output);
+                    output.flush();
+                })
+                .type(MediaType.APPLICATION_OCTET_STREAM_TYPE)
+                .header( "Content-Disposition", contentDisposition ).build();
+    }
 
     private String validateInputsAndGetFileName(final BodyPart part, final InputStream inputStream) {
 
