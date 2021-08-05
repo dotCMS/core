@@ -240,13 +240,10 @@ public class CSVManifestBuilderTest {
      * when: Create a ManifestBuilder but don't include or exclude anything
      * should: Create the manifest file with just the headers
      */
-    @Test
+    @Test(expected = IllegalStateException.class)
     public void emptyManifestFile() throws IOException {
-        File manifestFile = null;
-
         try(final CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
-            manifestFile = manifestBuilder.getManifestFile();
-            assertNull(manifestFile);
+           manifestBuilder.getManifestFile();
         }
     }
 
