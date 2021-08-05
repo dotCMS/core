@@ -13,7 +13,7 @@ import java.sql.SQLException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class Task210224DropUserProxyTableTest {
+public class Task210805DropUserProxyTableTest {
 
     private static final String USER_PROXY_CREATE_SCRIPT_MSSQL = "if not exists (select * from sysobjects where name='USER_PROXY' and xtype='U')"
             + " CREATE TABLE USER_PROXY (\n"
@@ -240,7 +240,7 @@ public class Task210224DropUserProxyTableTest {
     }
 
     /**
-     * Method to Test: {@link Task210224DropUserProxyTable#executeUpgrade()}
+     * Method to Test: {@link Task210805DropUserProxyTable#executeUpgrade()}
      * When: Run the Upgrade Task
      * Should: Drop user_proxy table
      * @throws DotDataException
@@ -249,7 +249,7 @@ public class Task210224DropUserProxyTableTest {
     @Test
     public void testUpgradeTask() throws DotDataException {
 
-        final Task210224DropUserProxyTable task = new Task210224DropUserProxyTable();
+        final Task210805DropUserProxyTable task = new Task210805DropUserProxyTable();
 
         assertTrue(task.forceRun());
         task.executeUpgrade();

@@ -12,7 +12,7 @@ import java.sql.SQLException;
 /**
  * Task used to remove user_proxy table from database
  */
-public class Task210224DropUserProxyTable implements StartupTask {
+public class Task210805DropUserProxyTable implements StartupTask {
 
     @Override
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
