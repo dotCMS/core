@@ -1,5 +1,5 @@
 import { filter, takeUntil } from 'rxjs/operators';
-import { Component, HostBinding, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, HostBinding, OnDestroy, OnInit } from '@angular/core';
 import { DotGlobalMessage } from '@models/dot-global-message/dot-global-message.model';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DotEvent } from '@models/dot-event/dot-event';
@@ -33,7 +33,7 @@ export class DotGlobalMessageComponent implements OnInit, OnDestroy {
     };
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(private dotEventsService: DotEventsService) {}
+    constructor(private dotEventsService: DotEventsService, private cd: ChangeDetectorRef) {}
 
     ngOnDestroy(): void {
         this.destroy$.next(true);
@@ -51,9 +51,11 @@ export class DotGlobalMessageComponent implements OnInit, OnDestroy {
                 this.message = event.data;
                 this.visibility = true;
                 this.message.type = this.icons[this.message.type] || '';
+
                 if (this.message.life) {
                     setTimeout(() => {
                         this.visibility = false;
+                        this.cd.markForCheck();
                     }, this.message.life);
                 }
             });

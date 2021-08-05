@@ -19,7 +19,7 @@ import * as _ from 'lodash';
 
 import { Observable } from 'rxjs';
 import { Subject } from 'rxjs';
-import { tap, take, takeUntil } from 'rxjs/operators';
+import { tap, take, takeUntil, debounceTime } from 'rxjs/operators';
 
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
@@ -66,14 +66,10 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
     url: string;
 
     @Output()
-    cancel: EventEmitter<MouseEvent> = new EventEmitter();
-
-    @Output()
     save: EventEmitter<Event> = new EventEmitter();
 
     form: FormGroup;
     initialFormValue: any;
-    isModelUpdated = false;
     themeDialogVisibility = false;
     currentTheme: DotTheme;
 
@@ -114,15 +110,6 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
      */
     addGridBox() {
         this.dotEditLayoutService.addBox();
-    }
-
-    /**
-     * Emit cancel event
-     *
-     * @memberof DotEditLayoutDesignerComponent
-     */
-    onCancel(): void {
-        this.cancel.emit();
     }
 
     /**
@@ -214,11 +201,12 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
                 sidebar: this.createSidebarForm()
             })
         });
-        this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            this.isModelUpdated = !_.isEqual(this.form.value, this.initialFormValue);
+        this.form.valueChanges.pipe(takeUntil(this.destroy$), debounceTime(300)).subscribe(() => {
+            if(!_.isEqual(this.form.value, this.initialFormValue)){
+                this.onSave();
+            }
             this.cd.detectChanges();
         });
-
         this.updateModel();
     }
 
@@ -235,7 +223,6 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
             );
 
         this.initialFormValue = _.cloneDeep(this.form.value);
-        this.isModelUpdated = false;
     }
 
     private createSidebarForm(): DotLayoutSideBar {

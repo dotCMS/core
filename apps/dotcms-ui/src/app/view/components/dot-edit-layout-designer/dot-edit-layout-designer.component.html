@@ -53,20 +53,6 @@
                 *ngIf="saveAsTemplate"
                 formControlName="title"
             />
-            <button
-                pButton
-                type="button"
-                (click)="onCancel()"
-                label="{{ 'dot.common.cancel' | dm }}"
-                class="dot-edit-layout__toolbar-action-cancel p-button-secondary p-button-sm"
-            ></button>
-            <button
-                pButton
-                type="submit"
-                [disabled]="!isModelUpdated || !form.valid"
-                label="{{ 'editpage.layout.toolbar.action.save' | dm }}"
-                class="dot-edit-layout__toolbar-save p-button-sm"
-            ></button>
         </div>
     </dot-secondary-toolbar>
     <dot-layout-designer formGroupName="layout"></dot-layout-designer>

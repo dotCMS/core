@@ -166,10 +166,8 @@ describe('DotTemplateBuilderComponent', () => {
             const builder = de.query(By.css('dot-edit-layout-designer'));
 
             builder.triggerEventHandler('save', EMPTY_TEMPLATE_DESIGN);
-            builder.triggerEventHandler('cancel', {});
 
             expect(component.save.emit).toHaveBeenCalledWith(EMPTY_TEMPLATE_DESIGN);
-            expect(component.cancel.emit).toHaveBeenCalledTimes(1);
         });
     });
 
