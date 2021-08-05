@@ -4,7 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+import java.util.concurrent.TimeUnit;
+import com.dotcms.concurrent.Debouncer;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -69,6 +70,9 @@ public class BlockPageCacheImpl extends BlockPageCache {
 		cache.flushGroup(primaryCacheGroup);
 	}
 
+	Debouncer debounceAdd = new Debouncer();
+	
+	
 	@Override
 	public void add(IHTMLPage page, String value,
 			PageCacheParameters pageChacheParams) {
@@ -80,41 +84,55 @@ public class BlockPageCacheImpl extends BlockPageCache {
 		key.append(page.getInode());
 		key.append("_" + page.getModDate().getTime());
 		String subkey = pageChacheParams.getKey();
-		BlockDirectiveCacheObject cto = new BlockDirectiveCacheObject(value,
-				(int) page.getCacheTTL());
-		synchronized (cache) {
-			try {
-				// Lookup the cached versions of a page
-				List<Map<String, Object>> cachedPages = (List<Map<String, Object>>) this.cache
-						.get(key.toString(), primaryCacheGroup);
-				if (cachedPages != null) {
-					boolean updatedEntry = false;
-					// Update version of page based on userid, language and
-					// urlmap
-					for (Map<String, Object> pageInfo : cachedPages) {
-						if (pageInfo.containsKey(subkey)) {
-							pageInfo.put(subkey, cto);
-							updatedEntry = true;
-							break;
-						}
-					}
-					// Or add a new one
-					if (!updatedEntry) {
-						Map<String, Object> pageInfo = new HashMap<String, Object>();
-						pageInfo.put(subkey, cto);
-						cachedPages.add(pageInfo);
-					}
-				}
-			} catch (DotCacheException e) {
-				// Key does not exist in cache, then add it
-			}
-			List<Map<String, Object>> versions = new ArrayList<Map<String, Object>>();
-			Map<String, Object> pageInfo = new HashMap<String, Object>();
-			pageInfo.put(subkey, cto);
-			versions.add(pageInfo);
-			this.cache.put(key.toString(), versions, primaryCacheGroup);
-		}
+		BlockDirectiveCacheObject cto = new BlockDirectiveCacheObject(value,(int) page.getCacheTTL());
+
+
+		
+		
+		debounceAdd.debounce(key.toString(), ()->{
+		      try {
+		            // Lookup the cached versions of a page
+		            List<Map<String, Object>> cachedPages = (List<Map<String, Object>>) this.cache
+		                    .get(key.toString(), primaryCacheGroup);
+		            if (cachedPages != null) {
+		                boolean updatedEntry = false;
+		                // Update version of page based on userid, language and
+		                // urlmap
+		                for (Map<String, Object> pageInfo : cachedPages) {
+		                    if (pageInfo.containsKey(subkey)) {
+		                        pageInfo.put(subkey, cto);
+		                        updatedEntry = true;
+		                        break;
+		                    }
+		                }
+		                // Or add a new one
+		                if (!updatedEntry) {
+		                    Map<String, Object> pageInfo = new HashMap<String, Object>();
+		                    pageInfo.put(subkey, cto);
+		                    cachedPages.add(pageInfo);
+		                }
+		            }
+		        } catch (DotCacheException e) {
+		            // Key does not exist in cache, then add it
+		        }
+		        List<Map<String, Object>> versions = new ArrayList<Map<String, Object>>();
+		        Map<String, Object> pageInfo = new HashMap<String, Object>();
+		        pageInfo.put(subkey, cto);
+		        versions.add(pageInfo);
+		        this.cache.put(key.toString(), versions, primaryCacheGroup);
+		    
+		    
+		}, 1, TimeUnit.SECONDS);
+		
+		
 	}
+	
+	
+	public void addInternal(String key, String subkey, BlockDirectiveCacheObject  cto) {
+		
+
+	}
+	
 
 	@Override
 	public String get(IHTMLPage page, PageCacheParameters pageChacheParams) {
@@ -126,36 +144,36 @@ public class BlockPageCacheImpl extends BlockPageCache {
 		key.append(page.getInode());
 		key.append("_" + page.getModDate().getTime());
 		String subkey = pageChacheParams.getKey();
-		synchronized (cache) {
-			// Lookup the cached versions of the page based on inode and moddate
-			try {
-				List<Map<String, Object>> cachedPages = (List<Map<String, Object>>) this.cache
-						.get(key.toString(), primaryCacheGroup);
-				BlockDirectiveCacheObject cto = null;
-				if (cachedPages != null) {
-					for (Map<String, Object> pageInfo : cachedPages) {
-						// Lookup specific page with userid, language and urlmap
-						if (pageInfo.containsKey(subkey)) {
-							cto = (BlockDirectiveCacheObject) pageInfo
-									.get(subkey);
-							break;
-						}
-					}
-					if (cto != null
-							&& cto.getCreated()
-									+ ((int) page.getCacheTTL() * 1000) > System
-										.currentTimeMillis()) {
-						return cto.getValue();
-					} else {
-						// Remove page from cache if expired and get new version
-						remove(page);
+
+		// Lookup the cached versions of the page based on inode and moddate
+		try {
+			List<Map<String, Object>> cachedPages = (List<Map<String, Object>>) this.cache
+					.get(key.toString(), primaryCacheGroup);
+			BlockDirectiveCacheObject cto = null;
+			if (cachedPages != null) {
+				for (Map<String, Object> pageInfo : cachedPages) {
+					// Lookup specific page with userid, language and urlmap
+					if (pageInfo.containsKey(subkey)) {
+						cto = (BlockDirectiveCacheObject) pageInfo
+								.get(subkey);
+						break;
 					}
 				}
-			} catch (DotCacheException e) {
-				Logger.error(this.getClass(), "cache entry :" + key.toString()
-						+ " not found");
+				if (cto != null
+						&& cto.getCreated()
+								+ ((int) page.getCacheTTL() * 1000) > System
+									.currentTimeMillis()) {
+					return cto.getValue();
+				} else {
+					// Remove page from cache if expired and get new version
+					remove(page);
+				}
 			}
+		} catch (DotCacheException e) {
+			Logger.error(this.getClass(), "cache entry :" + key.toString()
+					+ " not found");
 		}
+		
 		return null;
 	}
 
