@@ -2,6 +2,7 @@ package com.dotmarketing.startup.runonce;
 
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
@@ -25,6 +26,7 @@ public class Task210527DropReviewFieldsFromContentletTable implements StartupTas
     @Override
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
         try {
+            DbConnectionFactory.getConnection().setAutoCommit(true);
             final DotConnect dotConnect = new DotConnect();
             dotConnect.executeStatement("ALTER TABLE contentlet DROP COLUMN last_review");
             dotConnect.executeStatement("ALTER TABLE contentlet DROP COLUMN next_review");

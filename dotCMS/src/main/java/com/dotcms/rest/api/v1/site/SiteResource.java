@@ -132,7 +132,6 @@ public class SiteResource implements Serializable {
               .requestAndResponse(httpServletRequest, httpServletResponse)
               .requiredBackendUser(true)
               .requiredFrontendUser(true)
-              .requiredPortlet("sites")
               .init().getUser();
           
             Host currentSite = siteHelper.getCurrentSite(httpServletRequest, user);
@@ -179,7 +178,6 @@ public class SiteResource implements Serializable {
             .requestAndResponse(httpServletRequest, httpServletResponse)
             .requiredBackendUser(true)
             .rejectWhenNoUser(true)
-            .requiredPortlet("sites")
             .init().getUser();
 
         String filter = (null != filterParam && filterParam.endsWith(NO_FILTER))?

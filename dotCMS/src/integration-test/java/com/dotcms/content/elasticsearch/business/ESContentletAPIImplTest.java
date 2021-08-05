@@ -52,11 +52,14 @@ import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsRequest;
@@ -787,6 +790,27 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 .move(contentlet, null, host, folder,false);
     }
 
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#copyProperties(Contentlet, Map)}<br>
+     * Given Scenario: {@link Long} properties set as {@link BigDecimal} are copied to the {@link Contentlet} object <br>
+     * ExpectedResult: should success
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void testCopyProperties() throws DotSecurityException {
+        final Contentlet contentlet = TestDataUtils
+                .getPageContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        final Map<String, Object> propertiesToCopy = new HashMap<>();
+        propertiesToCopy.put(Contentlet.LANGUAGEID_KEY, new BigDecimal(1));
+        propertiesToCopy.put(Contentlet.SORT_ORDER_KEY, new BigDecimal(2));
+        contentletAPI.copyProperties(contentlet, propertiesToCopy);
+
+        assertEquals(1, contentlet.getLanguageId());
+        assertEquals(2, contentlet.getSortOrder());
+    }
 
     private void addPermission(
             final Role role,

@@ -1,16 +1,20 @@
 package com.dotcms.business;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.test.ExternalTransactionalTester;
 import com.dotcms.test.ReadOnlyTester;
 import com.dotcms.test.TransactionalTester;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.util.ReturnableDelegate;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.util.Logger;
 
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -19,6 +23,7 @@ import org.junit.Test;
 public class LocalTransactionAndCloseDBIfOpenedFactoryTest extends IntegrationTestBase {
 
     final String SQL_COUNT = "select count(*) as test from inode";
+    final String SQL_COUNT_COUNTER = "select count(*) as test from counter";
     final String SQL_INSERT = "insert into counter(name, currentid) values (?, ?)";
 
     final DotConnect dc = new DotConnect();
@@ -253,6 +258,11 @@ public class LocalTransactionAndCloseDBIfOpenedFactoryTest extends IntegrationTe
         return dc.getInt("test");
     }
 
+    private int getCountCounter() {
+        dc.setSQL(SQL_COUNT_COUNTER);
+        return dc.getInt("test");
+    }
+
     private void update() throws DotDataException {
         try {
             Thread.sleep(500);
@@ -264,4 +274,70 @@ public class LocalTransactionAndCloseDBIfOpenedFactoryTest extends IntegrationTe
     }
 
 
+    /**
+     * Method to test: {@link com.dotmarketing.db.LocalTransaction#externalizeTransaction(ReturnableDelegate)}
+     * Given Scenario: 1) Run an normal read operation, 2) inside #1 run a wrap in trans [this trans will fail at the end, so rollback] 3) inside #2 run an external trans
+     * ExpectedResult: the first transaction makes 2 updates to count (the wrap) both will be rollback since the transaction will fail at the end.
+     * the second transaction is mark as an external, so his 2 update to count should be ok, even if the parent caller fails and become to rollback
+     *
+     * So the count should be at the end + 2 than initial count.
+     *
+     */
+
+    @Test
+    public void testUpdateExternalTransactionSuccess_Even_If_Current_Transaction_Fails() throws Exception {
+
+        final ReadOnlyTester readOnlyTester1 = new ReadOnlyTester();
+        final ExternalTransactionalTester externalTransactionalTester = new ExternalTransactionalTester();
+        final TransactionalTester tx1        = new TransactionalTester();
+        final StringBuilder builder          = new StringBuilder();
+        final MutableInt   countInitial      = new MutableInt(0);
+        final MutableInt   countExternal     = new MutableInt(0);
+
+        DbConnectionFactory.closeSilently(); // make sure any previous conn is already closed before start
+
+        readOnlyTester1.test(() -> {
+
+            Assert.assertFalse(DbConnectionFactory.connectionExists());
+            builder.append(DbConnectionFactory.getConnection().toString());
+            countInitial.setValue(getCountCounter());
+            Assert.assertFalse(DbConnectionFactory.inTransaction());
+            Assert.assertTrue(DbConnectionFactory.connectionExists());
+            Assert.assertEquals(DbConnectionFactory.getConnection().toString(), builder.toString());
+            try {
+                tx1.test(() -> {
+                    // the con will be already created by the aspect.
+                    // this transaction will fail
+                    Assert.assertTrue(DbConnectionFactory.connectionExists());
+                    Assert.assertTrue(DbConnectionFactory.inTransaction());
+                    Assert.assertEquals(DbConnectionFactory.getConnection().toString(), builder.toString());
+                    Assert.assertTrue(DbConnectionFactory.inTransaction());
+                    Assert.assertEquals(DbConnectionFactory.getConnection().toString(), builder.toString());
+                    externalTransactionalTester.test(() -> {
+
+                        update(); // even that the wrap trans will fail, this one is an isolated transaction so should work.
+                        update();  // we call twice
+                    });
+
+                    countExternal.setValue(getCountCounter());
+                    update();  // this will be rollback
+                    update();  // this will be rollback
+                    update();  // this will be rollback
+                    update();  // this will be rollback
+                    throw new DotRuntimeException("Fail");
+                });
+            } catch (Exception e) {
+
+                // Ok
+            }
+        });
+
+        int currentCount = getCountCounter();
+        DbConnectionFactory.closeSilently();
+
+        Assert.assertTrue(countExternal.intValue() > countInitial.intValue());
+        // just 2 additional counts instead of 1, b/c 2 of the four counts made will be rollback
+        Assert.assertEquals(countInitial.intValue() + 2,  countExternal.intValue());
+        Assert.assertEquals(currentCount,  countExternal.intValue());
+    }
 }
