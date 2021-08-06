@@ -1,11 +1,24 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.PERSONA_KEY_TAG;
+import static com.dotcms.contenttype.model.field.LegacyFieldTypes.CUSTOM_FIELD;
+import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_KEY_TAG_FIELD_VAR;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+import static com.dotmarketing.util.UtilMethods.isNotSet;
+import static com.liferay.util.StringPool.BLANK;
+import static com.liferay.util.StringPool.COMMA;
+import static com.liferay.util.StringPool.PERIOD;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -20,19 +33,25 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -44,6 +63,7 @@ import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
@@ -51,22 +71,10 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.ThreadSafeSimpleDateFormat;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.time.FastDateFormat;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.indices.GetFieldMappingsRequest;
-import org.elasticsearch.client.indices.GetFieldMappingsResponse;
-import org.elasticsearch.client.indices.GetMappingsRequest;
-import org.elasticsearch.client.indices.GetMappingsResponse;
-import org.elasticsearch.client.indices.PutMappingRequest;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.xcontent.XContentType;
-
 import java.io.IOException;
 import java.io.StringWriter;
 import java.text.DecimalFormat;
@@ -83,18 +91,18 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.PERSONA_KEY_TAG;
-import static com.dotcms.contenttype.model.field.LegacyFieldTypes.CUSTOM_FIELD;
-import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_KEY_TAG_FIELD_VAR;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-import static com.dotmarketing.util.UtilMethods.isNotSet;
-import static com.liferay.util.StringPool.BLANK;
-import static com.liferay.util.StringPool.COMMA;
-import static com.liferay.util.StringPool.PERIOD;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.time.FastDateFormat;
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.support.master.AcknowledgedResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.indices.GetFieldMappingsRequest;
+import org.elasticsearch.client.indices.GetFieldMappingsResponse;
+import org.elasticsearch.client.indices.GetMappingsRequest;
+import org.elasticsearch.client.indices.GetMappingsResponse;
+import org.elasticsearch.client.indices.PutMappingRequest;
+import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.common.xcontent.XContentType;
 
 /**
  * Implementation class for the {@link ContentMappingAPI}.
@@ -137,9 +145,59 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	public static final String NO_METADATA = "NO_METADATA";
 
 	static ObjectMapper mapper = null;
-    private FileMetadataAPI fileMetadataAPI;
 
-	public ESMappingAPIImpl() {
+	private UserAPI userAPI;
+	private FolderAPI folderAPI;
+    private IdentifierAPI identifierAPI;
+	private VersionableAPI versionableAPI;
+	private ContentTypeAPI contentTypeAPI;
+	private PermissionAPI permissionAPI;
+	private ContentletAPI contentletAPI;
+	private FileMetadataAPI fileMetadataAPI;
+	private HostAPI hostAPI;
+	private FieldAPI fieldAPI;
+	private ESIndexAPI esIndexAPI;
+	private RelationshipAPI relationshipAPI;
+	private TagAPI tagAPI;
+	private CategoryAPI categoryAPI;
+	private RoleAPI roleAPI;
+	private WorkflowAPI workflowAPI;
+
+	@VisibleForTesting
+	public ESMappingAPIImpl(
+			final UserAPI userAPI,
+			final FolderAPI folderAPI,
+			final IdentifierAPI identifierAPI,
+			final VersionableAPI versionableAPI,
+			final ContentTypeAPI contentTypeAPI,
+			final PermissionAPI permissionAPI,
+			final ContentletAPI contentletAPI,
+			final FileMetadataAPI fileMetadataAPI,
+			final HostAPI hostAPI,
+			final FieldAPI fieldAPI,
+			final ESIndexAPI esIndexAPI,
+			final RelationshipAPI relationshipAPI,
+			final TagAPI tagAPI,
+			final CategoryAPI categoryAPI,
+			final RoleAPI roleAPI,
+			final WorkflowAPI workflowAPI) {
+		this.userAPI = userAPI;
+		this.folderAPI = folderAPI;
+		this.identifierAPI = identifierAPI;
+		this.versionableAPI = versionableAPI;
+		this.contentTypeAPI = contentTypeAPI;
+		this.permissionAPI = permissionAPI;
+		this.contentletAPI = contentletAPI;
+		this.fileMetadataAPI = fileMetadataAPI;
+		this.hostAPI = hostAPI;
+		this.fieldAPI = fieldAPI;
+		this.esIndexAPI = esIndexAPI;
+		this.relationshipAPI = relationshipAPI;
+        this.tagAPI = tagAPI;
+        this.categoryAPI = categoryAPI;
+        this.roleAPI = roleAPI;
+        this.workflowAPI = workflowAPI;
+
 		if (mapper == null) {
 			synchronized (this.getClass().getName()) {
 				if (mapper == null) {
@@ -149,7 +207,18 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				}
 			}
 		}
-		fileMetadataAPI = APILocator.getFileMetadataAPI();
+	}
+
+	public ESMappingAPIImpl() {
+		this(APILocator.getUserAPI(), APILocator.getFolderAPI(),
+			 APILocator.getIdentifierAPI(), APILocator.getVersionableAPI(),
+			 APILocator.getContentTypeAPI(APILocator.systemUser()),
+			 APILocator.getPermissionAPI(), APILocator.getContentletAPI(),
+			 APILocator.getFileMetadataAPI(), APILocator.getHostAPI(),
+			 APILocator.getFieldAPI(), APILocator.getESIndexAPI(),
+			 APILocator.getRelationshipAPI(), APILocator.getTagAPI(),
+			 APILocator.getCategoryAPI(), APILocator.getRoleAPI(),
+			 APILocator.getWorkflowAPI());
 	}
 
     /**
@@ -165,7 +234,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             throws ElasticsearchException, IOException {
 
         final PutMappingRequest request = new PutMappingRequest(
-                indexes.stream().map(indexName -> APILocator.getESIndexAPI()
+                indexes.stream().map(indexName -> esIndexAPI
                         .getNameWithClusterIDPrefix(indexName)).toArray(String[]::new));
         request.setTimeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
         request.source(mapping, XContentType.JSON);
@@ -246,7 +315,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	public Map<String,Object> toMap(final Contentlet contentlet) throws DotMappingException {
 		try {
 			final StringWriter sw = new StringWriter();
-			final User systemUser = APILocator.getUserAPI().getSystemUser();
+			final User systemUser = userAPI.getSystemUser();
 			final Map<String,Object> contentletMap = new HashMap<>();
 			final Map<String,Object> mapLowered	   = new HashMap<>();
 			loadCategories(contentlet, contentletMap);
@@ -254,32 +323,32 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			loadPermissions(contentlet, contentletMap);
             loadRelationshipFields(contentlet, contentletMap, sw);
 
-			final Identifier contentIdentifier = APILocator.getIdentifierAPI().find(contentlet);
+			final Identifier contentIdentifier = identifierAPI.find(contentlet);
             if (null == contentIdentifier || !UtilMethods.isSet(contentIdentifier.getId())) {
                 final String errorMsg = String.format("Identifier '%s' was not found via API.", contentlet
                         .getIdentifier());
                 throw new DotDataException(errorMsg);
             }
-			final Optional<ContentletVersionInfo> versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(contentIdentifier.getId(), contentlet.getLanguageId());
+			final Optional<ContentletVersionInfo> versionInfo = versionableAPI.getContentletVersionInfo(contentIdentifier.getId(), contentlet.getLanguageId());
             if (!versionInfo.isPresent()) {
                 final String errorMsg = String.format("Version Info for Identifier '%s' and Language '%s' was not" +
                         " found via API.", contentIdentifier.getId(), contentlet.getLanguageId());
                 throw new DotDataException(errorMsg);
             }
-			final ContentType contentType = CacheLocator.getContentTypeCache2().byVarOrInode(contentlet.getContentTypeId());
+			final ContentType contentType = contentTypeAPI.find(contentlet.getContentTypeId());
             if (null == contentType || !UtilMethods.isSet(contentType.id())) {
                 final String errorMsg = String.format("Content Type with ID '%s' was not found via API.",
                         contentlet.getContentTypeId());
                 throw new DotDataException(errorMsg);
             }
-            final Host contentSite = APILocator.getHostAPI().find(contentIdentifier.getHostId(), systemUser, DONT_RESPECT_FRONTEND_ROLES);
+            final Host contentSite = hostAPI.find(contentIdentifier.getHostId(), systemUser, DONT_RESPECT_FRONTEND_ROLES);
             if (null == contentSite || !UtilMethods.isSet(contentSite.getIdentifier())) {
                 final String errorMsg = String.format("Identifier '%s' is pointing to a Site that is not valid: '%s'." +
                                 " Please manually change this record to point to a valid Site, or delete it altogether.",
                         contentIdentifier.getId(), contentIdentifier.getHostId());
                 throw new DotDataException(errorMsg);
             }
-			final Folder contentFolder = APILocator.getFolderAPI().findFolderByPath(contentIdentifier.getParentPath(), contentIdentifier.getHostId(), systemUser, DONT_RESPECT_FRONTEND_ROLES);
+			final Folder contentFolder = folderAPI.findFolderByPath(contentIdentifier.getParentPath(), contentIdentifier.getHostId(), systemUser, DONT_RESPECT_FRONTEND_ROLES);
             if (null == contentFolder || !UtilMethods.isSet(contentFolder.getIdentifier())) {
                 final String errorMsg = String.format("Parent folder '%s' in Site '%s' was not found via API. Please " +
                         "check that the specified value points to a valid folder.", contentIdentifier.getParentPath()
@@ -346,7 +415,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			contentletMap.put(ESMappingConstants.VERSION_TS + TEXT, datetimeFormat.format(versionInfo.get().getVersionTs()));
 
 			try{
-				final String urlMap = APILocator.getContentletAPI().getUrlMapForContentlet(contentlet, systemUser, RESPECT_FRONTEND_ROLES);
+				final String urlMap = contentletAPI.getUrlMapForContentlet(contentlet, systemUser, RESPECT_FRONTEND_ROLES);
 				if(urlMap != null){
 					contentletMap.put(ESMappingConstants.URL_MAP,urlMap );
 				}
@@ -410,7 +479,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			return mapLowered;
 		} catch (final Exception e) {
             final String errorMsg = String.format("An error occurred when mapping properties of Contentlet with ID " +
-                    "'%s': %s", contentlet.getIdentifier(), e.getMessage());
+					//Do not remove the double ':' its expected by a test
+                    "'%s':: %s", contentlet.getIdentifier(), e.getMessage());
             Logger.error(this, errorMsg, e);
             throw new DotMappingException(errorMsg, e);
 		}
@@ -498,7 +568,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 			Set<String> allowedFields = new HashSet<>();
 			// http://jira.dotmarketing.net/browse/DOTCMS-7243
-			final List<FieldVariable> fieldVariables = APILocator.getFieldAPI().getFieldVariablesForField(
+			final List<FieldVariable> fieldVariables = fieldAPI.getFieldVariablesForField(
 					field.inode(), APILocator.systemUser(), false);
 			for(final FieldVariable fieldVariable : fieldVariables) {
 				if(fieldVariable.getKey().equals(ESMappingConstants.DOT_INDEX_PATTERN)) {
@@ -554,11 +624,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
     protected Map<String, Object> getWorkflowInfoForContentlet(final Contentlet contentlet) {
 
         final Map<String, Object> workflowMap = new HashMap<>();
-        final WorkflowAPI workflowAPI 		  = APILocator.getWorkflowAPI();
 
         try {
 
-            final WorkflowTask task 		  = workflowAPI.findTaskByContentlet(contentlet);
+            final WorkflowTask task = workflowAPI.findTaskByContentlet(contentlet);
 
             if(task != null && task.getId() != null && null != task.getStatus()) {
 
@@ -611,7 +680,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			throws DotDataException, DotSecurityException {
 	    // first we check if there is a category field in the structure. We don't hit db if not needed
 
-	    final ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser()).find(con.getContentTypeId());
+	    final ContentType type = contentTypeAPI.find(con.getContentTypeId());
 	    List<com.dotcms.contenttype.model.field.Field> catFields = type.fields().stream()
 				.filter(field -> field instanceof CategoryField).collect(CollectionsUtils.toImmutableList());
 
@@ -619,7 +688,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
         	return;
 		}
 
-	    List<Category> cats = APILocator.getCategoryAPI().getParents(con, APILocator.systemUser(), false);
+	    final List<Category> cats = categoryAPI.getParents(con, APILocator.systemUser(), false);
 
         List<String> catsVarNames = cats.stream().map(Category::getCategoryVelocityVarName).map(
                 String::toLowerCase).collect(Collectors.toList());
@@ -636,7 +705,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 	@SuppressWarnings("unchecked")
 	protected void loadPermissions(final Contentlet con, final Map<String,Object> m) throws DotDataException {
-		PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 		List<Permission> permissions = permissionAPI.getPermissions(con, false, false, false);
 		StringBuilder permissionsSt = new StringBuilder();
 		boolean ownerCanRead = false;
@@ -647,7 +715,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			if (permissionsSt.toString().indexOf(str) < 0) {
 				permissionsSt.append(str);
 			}
-			if(APILocator.getRoleAPI().loadCMSOwnerRole().getId().equals(String.valueOf(permission.getRoleId()))){
+			if(roleAPI.loadCMSOwnerRole().getId().equals(String.valueOf(permission.getRoleId()))){
 				if(permission.getPermission() == PERMISSION_READ){
 					ownerCanRead = true;
 				}else if(permission.getPermission() == PERMISSION_WRITE){
@@ -684,7 +752,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		otherSymbols.setDecimalSeparator('.');
 
 		final DecimalFormat numFormatter = new DecimalFormat("0000000000000000000.000000000000000000", otherSymbols);
-		final FieldAPI fieldAPI   = APILocator.getFieldAPI();
 		final List<Field> fields  = new ArrayList<>(
 				FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode()));
 		final Structure structure = contentlet.getStructure();
@@ -843,7 +910,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 								  final Structure structure,
 								  final String keyName) throws DotDataException {
 
-		final List<Tag> tagList = APILocator.getTagAPI().getTagsByInode(contentlet.getInode());
+		final List<Tag> tagList = tagAPI.getTagsByInode(contentlet.getInode());
 		if(tagList ==null || tagList.size()==0) {
 			return true;
 		}
@@ -910,7 +977,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	public List<String> dependenciesLeftToReindex(final Contentlet contentlet) throws DotStateException, DotDataException, DotSecurityException {
 		final List<String> dependenciesToReindex = new ArrayList<>();
 
-		final ContentletAPI conAPI=APILocator.getContentletAPI();
 
 		final String relatedSQL = "select tree.* from tree where child = ? order by tree_order";
 		final DotConnect db = new DotConnect();
@@ -921,7 +987,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 		if(relatedContentlets.size()>0) {
 
-			final List<Relationship> relationships =APILocator.getRelationshipAPI()
+			final List<Relationship> relationships = relationshipAPI
 					.byContentType(contentlet.getContentType());
 
 			for(final Relationship relationship : relationships) {
@@ -930,8 +996,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				final List<String> oldRelatedIds = new ArrayList<>();
 				final List<String> newRelatedIds = new ArrayList<>();
 
-                oldDocs = conAPI.getRelatedContent(contentlet, relationship,
-                        APILocator.getUserAPI().getSystemUser(), false);
+                oldDocs = contentletAPI.getRelatedContent(contentlet, relationship,
+                        userAPI.getSystemUser(), false);
 
                 if(oldDocs.size() > 0) {
 					for(Contentlet oldDoc : oldDocs) {
@@ -1000,7 +1066,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             final Map<String, Object> esMap, final StringWriter catchallWriter)
             throws DotStateException, DotDataException {
 
-        final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 
         final DotConnect db = new DotConnect();
         db.setSQL(
