@@ -51,10 +51,8 @@ public class ManifestItemsMapTest {
         for (Entry<ManifestItem, Collection<ManifestItem>> dependencyEntry : dependencies.entrySet()) {
             final ManifestItem key = dependencyEntry.getKey();
             final String id = key.getManifestInfo().id();
-            final String dependencyReeason = Contentlet.class.isInstance(key) ?
-                    String.format("ID: %s Title: %s", key.getManifestInfo().id(),
-                            Contentlet.class.cast(key).getTitle()):
-                    "Dependency from: " + id;
+            final String dependencyReeason = String.format("ID: %s Title: %s", key.getManifestInfo().id(),
+                            Contentlet.class.cast(key).getTitle());
 
             final Collection<ManifestItem> entryDependencies = dependencyEntry.getValue();
 
