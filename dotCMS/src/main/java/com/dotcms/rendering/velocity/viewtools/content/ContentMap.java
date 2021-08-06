@@ -307,6 +307,8 @@ public class ContentMap {
 				return retMap;
 			} else if(f != null && f.getFieldType().equals(FieldType.RELATIONSHIP.toString())){
 				return getRelationshipInfo(f);
+			} else if(f != null && f.getFieldType().equals(FieldType.STORY_BLOCK_FIELD.toString())){
+				return new StoryBlockMap(f,content);
 			}
 
 			//ret could have been set by title
