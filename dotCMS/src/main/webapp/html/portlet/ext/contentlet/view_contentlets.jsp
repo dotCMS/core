@@ -756,7 +756,7 @@
                         </div>
                         <div id="matchingResultsDiv" style="display: none" class="portlet-toolbar__info"></div>
                         <div class="portlet-toolbar__actions-primary">
-                            <div data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"'>
+                            <div data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"fa-plus", class:"dijitDropDownActionButton"'>
                                 <span></span>
                                 <script type="text/javascript">
                                     function importContent() {
