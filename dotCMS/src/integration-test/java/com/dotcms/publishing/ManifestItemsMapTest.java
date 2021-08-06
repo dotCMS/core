@@ -50,7 +50,7 @@ public class ManifestItemsMapTest {
     public void addDependencies(final Map<ManifestItem, Collection<ManifestItem>> dependencies){
         for (Entry<ManifestItem, Collection<ManifestItem>> dependencyEntry : dependencies.entrySet()) {
             final ManifestItem key = dependencyEntry.getKey();
-            final String dependencyReeason = String.format("ID: %s Title: %s", key.getManifestInfo().id(),
+            final String dependencyReeason = String.format("Dependency from: ID: %s Title: %s", key.getManifestInfo().id(),
                     key.getManifestInfo().title());
 
             final Collection<ManifestItem> entryDependencies = dependencyEntry.getValue();
