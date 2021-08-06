@@ -154,6 +154,12 @@
 		dijit.byId('variablesDialog').hide();
 	}
 
+	function addStoryBlockFieldRender(velocityVarName){
+	var insert = "$!{" + velocityVarName + ".render}\n";
+	insertAtCursor(insert, "codeMaskMulti");
+	dijit.byId('variablesDialog').hide();
+	}
+
 	function addImage(velocityVarName){
 		var insert = "#if ($UtilMethods.isSet($" + "{" + velocityVarName+"ImageURI})) \n   <img src=\"$!{"+velocityVarName+"ImageURI}\" alt=\"$!{"+velocityVarName+"ImageTitle}\"  /> \n#end \n";
 		insertAtCursor(insert, "codeMaskMulti");

@@ -5,6 +5,7 @@
 <%@ page import="java.util.*" %>
 <%@ page import="com.dotmarketing.util.*" %>
 <%@ page import="com.liferay.portal.language.LanguageUtil" %>
+<%@ page import="com.dotmarketing.portlets.structure.model.Field.FieldType" %>
 
 <%
 	String structureInode = request.getParameter("structureInode");
@@ -68,6 +69,28 @@
 					
 					<% } %>
 				<% } %>
+
+		<%
+			it = fields.iterator();
+			while (it.hasNext()) {
+				Field field = (Field)it.next();
+				if (field.getFieldType().equals(FieldType.STORY_BLOCK_FIELD.toString())) {
+		%>
+
+
+
+		<tr>
+			<td align="center">
+				<button dojoType="dijit.form.Button" onClick="addStoryBlockFieldRender('<%= field.getVelocityVarName() %>')">
+					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add")) %>
+				</button>
+			</td>
+			<td>ADD RENDER</td><!-- TODO: VER CUAL ES EL NOMBRE A MOSTRAR -->
+		</tr>
+
+
+		<% } %>
+		<% } %>
 
                          <!-- // http://jira.dotmarketing.net/browse/DOTCMS-2869 -->
                 <%
