@@ -939,7 +939,7 @@ public class BundleResource {
         final File bundleTarGzipFile = TarGzipBundleOutput.getBundleTarGzipFile(bundleId);
 
         if (!bundleTarGzipFile.exists()) {
-            throw new DoesNotExistException("Th+e bundle not exists: " + bundleId);
+            throw new DoesNotExistException("The bundle not exists: " + bundleId);
         }
 
         final Optional<Reader> manifestInputStreamOptional = ManifestUtil.getManifestInputStream(bundleTarGzipFile);
