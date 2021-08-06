@@ -4024,8 +4024,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
         final WorkflowTask task = new WorkflowTask();
         final Date now = new Date();
 
-        final WorkflowStep newWorkflowStep = workflowAPI.findStep(SystemWorkflowConstants.WORKFLOW_NEW_STEP_ID);
-
         final WorkflowTask taskByContentlet = FactoryLocator.getWorkFlowFactory()
                 .findTaskByContentlet(contentlet);
 
@@ -4033,6 +4031,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
         assertNotNull(taskByContentlet.getId());
         assertEquals(taskByContentlet.getTitle(), title);
         assertEquals(taskByContentlet.getDescription(), description);
+
+        final WorkflowStep newWorkflowStep = workflowAPI.findStep(SystemWorkflowConstants.WORKFLOW_NEW_STEP_ID);
         assertEquals(taskByContentlet.getStatus(), newWorkflowStep.getId());
 
         final WorkflowStep publishWorkflowStep = workflowAPI.findStep(SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID);
