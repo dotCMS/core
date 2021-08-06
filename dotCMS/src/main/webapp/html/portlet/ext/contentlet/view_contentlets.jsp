@@ -242,9 +242,10 @@
                     String labelAndIcon = "<i class='material-icons'>" + contentType.getIcon() +"</i>";
 
                     String contentTypeName = UtilMethods.javaScriptify(contentType.getName());
-                    labelAndIcon+=contentTypeName;
+                    labelAndIcon+= contentTypeName;
+                    labelAndIcon = "<div class='label'>" + labelAndIcon + "<div>";
                     if(contentType.getStructureType() != baseType){
-                      labelAndIcon = labelAndIcon;
+                        labelAndIcon = "<div class='separator'></div>" + labelAndIcon;
                       baseType = contentType.getStructureType();
                     }
             %>

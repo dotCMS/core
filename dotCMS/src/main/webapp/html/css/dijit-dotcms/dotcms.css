@@ -32,10 +32,16 @@
     -webkit-font-smoothing: antialiased;
 }
 
-#structure_inode_popup .dijitMenuItem {
+#structure_inode_popup .dijitMenuItem .label {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+}
+
+#structure_inode_popup .dijitMenuItem .separator {
+    height: 1px;
+    margin: -1px -10px 0px -10px;
+    background: #DDD;
 }
 
 /* FONT PATH
@@ -5070,12 +5076,12 @@ html, body {
 }
 
 .dijitMenu .dijitMenuItemHover {
-  background-color: #FAFAFA;
+  background-color: #eeeeee;
   color: #5B5B5B;
 }
 
 .dijitMenu .dijitMenuItemSelected {
-  background-color: #FAFAFA;
+  background-color: #eeeeee;
   color: #5B5B5B;
 }
 
