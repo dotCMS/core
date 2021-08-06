@@ -115,7 +115,7 @@ public class BundleDataGen extends AbstractDataGen<Bundle> {
         );
 
         howAddInBundle.put(Language.class, new MetaData(
-                        (PushPublisherConfig config) -> config.getLanguages(),
+                        (PushPublisherConfig config) -> config.getIncludedLanguages(),
                         (Object asset) -> Long.toString(((Language) asset).getId()),
                         PusheableAsset.LANGUAGE
                 )

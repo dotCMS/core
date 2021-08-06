@@ -474,6 +474,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DoesNotExistException("The identifier does not exists: " + contentlet.getIdentifier());
         }
 
+        //Check if another content with the same name already exists in the new folder
+        if(APILocator.getFileAssetAPI().fileNameExists(host, folder, identifier.getAssetName(), contentlet.getIdentifier())){
+            throw new IllegalArgumentException("Content with the same name: '" + identifier.getAssetName() + "' already exists at the new path: " + host.getHostname() + folder.getPath());
+        }
+
         // update with the new host and path
         identifier.setHostId(host.getIdentifier());
         identifier.setParentPath(folder.getPath());
@@ -5949,7 +5954,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if(conVariable.equals(Contentlet.INODE_KEY)){
                     contentlet.setInode((String)value);
                 }else if(conVariable.equals(Contentlet.LANGUAGEID_KEY)){
-                    contentlet.setLanguageId((Long)value);
+                    contentlet.setLanguageId(ConversionUtils.toLong(value, 0L));
                 }else if(conVariable.equals(Contentlet.STRUCTURE_INODE_KEY)){
                     contentlet.setStructureInode((String)value);
                 }else if(conVariable.equals(Contentlet.DISABLED_WYSIWYG_KEY)){
@@ -5963,7 +5968,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }else if(conVariable.equals(Contentlet.IDENTIFIER_KEY)){
                     contentlet.setIdentifier((String)value);
                 }else if(conVariable.equals(Contentlet.SORT_ORDER_KEY)){
-                    contentlet.setSortOrder((Long)value);
+                    contentlet.setSortOrder(ConversionUtils.toLong(value, 0L));
                 }else if(conVariable.equals(Contentlet.HOST_KEY)){
                     contentlet.setHost((String)value);
                 }else if(conVariable.equals(Contentlet.FOLDER_KEY)){

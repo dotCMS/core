@@ -1,6 +1,7 @@
-# OpenJDK distributed under GPLv2+Oracle Classpath Exception license (http://openjdk.java.net/legal/gplv2+ce.html)
-# Alpine Linux packages distributed under various licenses including GPL-3.0+ (https://pkgs.alpinelinux.org/packages)
-FROM dotcms/dotcms-seed:jdk11 as build-cms
+# ----------------------------------------------
+# Stage 1:  Build dotCMS from our builder image
+# ----------------------------------------------
+FROM dotcms/dotcms-seed:21.06 as build-cms
 
 LABEL com.dotcms.contact "support@dotcms.com"
 LABEL com.dotcms.vendor "dotCMS LLC"
@@ -14,6 +15,11 @@ ARG BUILD_ID=HEAD
 
 WORKDIR /srv
 
+# Set gradle options
+ENV GRADLE_USER_HOME=/build/src/core/dotCMS/.gradle
+ENV GRADLE_OPTS="-Dfile.encoding=utf-8 -Xmx2g"
+
+
 # dotCMS core distributed under GPLv3 license (https://github.com/dotCMS/core/blob/master/license.txt)
 COPY build-src/ /build/
 RUN chmod 500 /build/build_dotcms.sh && /build/build_dotcms.sh ${BUILD_FROM} ${BUILD_ID}
@@ -21,64 +27,78 @@ RUN chmod 500 /build/build_dotcms.sh && /build/build_dotcms.sh ${BUILD_FROM} ${B
 RUN mkdir -p /srv/utils /srv/templates /srv/config /srv/home
 RUN chmod -R 666 /srv && find /srv/ -type d -exec chmod a+x {} \;
 
-##
-## Begin target image build
-##
-
-# OpenJDK distributed under GPLv2+Oracle Classpath Exception license (http://openjdk.java.net/legal/gplv2+ce.html)
-# Alpine Linux packages distributed under various licenses including GPL-3.0+ (https://pkgs.alpinelinux.org/packages)
-#ARG ARCH=arm64v8
-
-FROM alpine:3.13
+# ----------------------------------------------
+# Stage 2:  Construct our container using the minimal-java image
+#           and copying the prebuilt dotcms
+# ----------------------------------------------
+FROM dotcms/java-base:latest as container-base
 
 WORKDIR /srv
 
-RUN apk --no-cache update && apk upgrade \
-    && apk add --no-cache bash openjdk11 openssl ca-certificates gnupg tzdata grep libc6-compat sed tini nss s6-dns go libpq git gcc musl-dev tomcat-native curl \
-    && update-ca-certificates
+ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apk add libsass --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/community/
+# Installing basic packages 
+RUN apt update && \
+    apt upgrade -y 
 
-# This is a nasty hack for libjsass, Alpine 3.9 no longer has a deprecated symlink in /lib
-RUN [ ! -e /lib/ld-linux-x86-64.so.2 ] &&  ln -s $(readlink /lib64/ld-linux-x86-64.so.2) /lib/ld-linux-x86-64.so.2 || :
+# Install prebuilt dockerize
+RUN curl -Ls https://repo.dotcms.com/artifactory/ext-release-local/com/dotcms/dockerize/dockerize-linux-`uname -m` | install /dev/stdin /usr/local/bin/dockerize 
 
-# Download and build dockerize distributed under MIT license (https://github.com/jwilder/dockerize)
-RUN wget --quiet https://github.com/jwilder/dockerize/archive/v0.6.1.tar.gz \
-    && tar -C / -xzf v0.6.1.tar.gz  \
-    && cd /dockerize-0.6.1 \
-    && go get github.com/hpcloud/tail \
-    && go get github.com/jwilder/gojq \
-    && go get golang.org/x/net/context \
-    && go build \
-    && cp dockerize-0.6.1 /usr/local/bin/dockerize \
-    && chmod a+x /usr/local/bin/dockerize
+# Cleanup
+RUN apt purge --allow-remove-essential -y  && \
+    apt autoremove -y && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN cd / && rm -rf  /dockerize-0.6.1
+# Defining default non-root user UID, GID, and name 
+ARG USER_UID="1000000000"
+ARG USER_GID="1000000000"
+ARG USER_NAME="dotcms"
 
-RUN apk del -r --purge git gcc musl-dev go
+# Creating default non-user 
+# the useradd 
+RUN groupadd -g $USER_GID $USER_NAME && \
+	useradd -l -d /srv -g $USER_GID -u $USER_UID $USER_NAME
 
-ENV JAVA_HOME /usr/lib/jvm/default-jvm
-
-COPY --from=build-cms /srv/ /srv/
-COPY ROOT/ /
+# Copy our build
+COPY --from=build-cms --chown=dotcms:dotcms /srv/ /srv/
+COPY --chown=dotcms:dotcms ROOT/ /
 
 # Make scripts runable
-RUN find /srv/ -type f -name "*.sh" -exec chmod a+x {} \;
+ RUN find /srv/ -type f -name "*.sh" -exec chmod a+x {} \; && \
+    # Make plugin merging directories writable
+    find /srv/templates -type d -exec chmod 770 {} \;  && \
+    # Make dotcms user owner
+    mkdir -p /data/shared/assets && \
+    mkdir -p /data/local/dotsecure/license && \
+    chown -R dotcms /data 
 
-# Make plugin merging directories writable
-RUN find /srv/templates -type d -exec chmod 770 {} \;
-
-RUN mkdir -p /data/shared/assets && mkdir -p /data/local/dotsecure/license && chmod -R 660 /data && find /data/ -type d -exec chmod 770 {} \;
+# ----------------------------------------------
+# Stage 3:  Flatten everything to 1 layer
+# ----------------------------------------------
+FROM scratch
 
 ENV SERVICE_DELAY_DEFAULT_MIN 1
 ENV SERVICE_DELAY_DEFAULT_STEP 3
 ENV SERVICE_DELAY_DEFAULT_MAX 30
 
-#VOLUME /data/local
+LABEL com.dotcms.contact "support@dotcms.com"
+LABEL com.dotcms.vendor "dotCMS LLC"
+LABEL com.dotcms.description "dotCMS Content Management System"
 
-## JDK upgrade does not take first run, needs to runs
-RUN  apk upgrade
+ARG USER_UID="1000000000"
+ARG USER_GID="1000000000"
 
+COPY --from=container-base / /
+
+# Switching to non-root user to install SDKMAN! 
+USER $USER_UID:$USER_GID
+ENV JAVA_HOME="/java"
+ENV PATH=$PATH:/java/bin
+
+ENTRYPOINT ["/usr/bin/tini", "--", "/srv/entrypoint.sh"]
+CMD ["dotcms"]
+    
 ## Ports
 # Direct connect
 EXPOSE 8080
@@ -92,8 +112,3 @@ EXPOSE 8082
 EXPOSE 8000
 # Glowroot profiler - must be configured via CMS_JAVA_OPTS
 EXPOSE 4000
-
-USER 1000000000
-
-ENTRYPOINT ["/sbin/tini", "--", "/srv/entrypoint.sh"]
-CMD ["dotcms"]
