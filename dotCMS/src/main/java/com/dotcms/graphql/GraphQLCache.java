@@ -20,14 +20,14 @@ public class GraphQLCache implements Cachable {
         if(!canCache()) return Optional.empty();
 
         Optional<String> result = Optional.empty();
-        final String cacheKey = hashQuery(key);
+        final String cacheKey = hashKey(key);
         final Tuple2<String, LocalDateTime> resultExpireTimeTuple
                 = (Tuple2<String, LocalDateTime>) cache.getNoThrow(cacheKey, getPrimaryGroup());
 
         if(UtilMethods.isSet(resultExpireTimeTuple)) {
             final LocalDateTime expireTime = resultExpireTimeTuple._2();
 
-            if (expireTime.isAfter(LocalDateTime.now())) {
+            if (expireTime==null || expireTime.isAfter(LocalDateTime.now())) {
                 result = Optional.of(resultExpireTimeTuple._1());
             } else { // expired, let's remove from cache
                 remove(cacheKey);
@@ -38,7 +38,7 @@ public class GraphQLCache implements Cachable {
     }
 
 
-    public void put(String query, String result, int cacheTTL) {
+    public void put(String key, String result, int cacheTTL) {
         if(UtilMethods.isNotSet(result)) return;
 
         final LocalDateTime cachedSincePlusTTL = LocalDateTime.now().plus(cacheTTL,
@@ -46,11 +46,18 @@ public class GraphQLCache implements Cachable {
 
         Tuple2<String, LocalDateTime> resultExpireTimeTuple =
                 new Tuple2<>(result, cachedSincePlusTTL);
-        final String cacheKey = hashQuery(query);
+        final String cacheKey = hashKey(key);
         cache.put(cacheKey, resultExpireTimeTuple, getPrimaryGroup());
     }
 
-    private String hashQuery(final String query) {
+    public void put(String query, String result) {
+        final String cacheKey = hashKey(query);
+        if (UtilMethods.isSet(result)) {
+            cache.put(cacheKey, new Tuple2<>(result, null), getPrimaryGroup());
+        }
+    }
+
+    private String hashKey(final String query) {
         long hashCode = 1125899906842597L;
         for (int i = 0; i < query.length(); i++) {
             hashCode = 31 * hashCode + query.charAt(i);
@@ -58,17 +65,6 @@ public class GraphQLCache implements Cachable {
 
         return String.valueOf(hashCode);
     }
-
-
-    public enum INSTANCE {
-        INSTANCE;
-        final GraphQLCache cache = new GraphQLCache();
-
-        public static GraphQLCache get() {
-            return INSTANCE.cache;
-        }
-    }
-
 
     @Override
     public void clearCache() {
@@ -96,7 +92,7 @@ public class GraphQLCache implements Cachable {
     }
 
     public void remove(final String key) {
-        final String cacheKey = hashQuery(key);
+        final String cacheKey = hashKey(key);
         this.cache.remove(cacheKey, getPrimaryGroup());
     }
 

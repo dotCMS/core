@@ -6526,48 +6526,6 @@
 									"response": []
 								},
 								{
-									"name": "Get Content - No Cache Param - Return v2",
-									"event": [
-										{
-											"listen": "test",
-											"script": {
-												"exec": [
-													"pm.test(\"Get content v1\", function () {",
-													"    var jsonData = pm.response.json();",
-													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
-													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v2\");",
-													"});"
-												],
-												"type": "text/javascript"
-											}
-										}
-									],
-									"request": {
-										"method": "POST",
-										"header": [],
-										"body": {
-											"mode": "graphql",
-											"graphql": {
-												"query": "{\n  {{contentTypeVariable}}Collection(query: \"+identifier: {{contentIdentifier}}\") {\n    name\n  }\n}",
-												"variables": ""
-											}
-										},
-										"url": {
-											"raw": "{{serverURL}}/api/v1/graphql",
-											"host": [
-												"{{serverURL}}"
-											],
-											"path": [
-												"api",
-												"v1",
-												"graphql"
-											]
-										},
-										"description": "* Given scenario: get the content with no cache param\n* Expected result: should return v2 since cache entry was removed in the previous request"
-									},
-									"response": []
-								},
-								{
 									"name": "Get Content - Cache: 30s - Return v2",
 									"event": [
 										{
@@ -6577,7 +6535,7 @@
 													"pm.test(\"Get content v1\", function () {",
 													"    var jsonData = pm.response.json();",
 													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
-													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v1\");",
+													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v2\");",
 													"});"
 												],
 												"type": "text/javascript"
@@ -6675,48 +6633,6 @@
 											]
 										},
 										"description": "Updates content v2 to v3"
-									},
-									"response": []
-								},
-								{
-									"name": "Get Content - No Cache Param - Return v2",
-									"event": [
-										{
-											"listen": "test",
-											"script": {
-												"exec": [
-													"pm.test(\"Get content v1\", function () {",
-													"    var jsonData = pm.response.json();",
-													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
-													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v2\");",
-													"});"
-												],
-												"type": "text/javascript"
-											}
-										}
-									],
-									"request": {
-										"method": "POST",
-										"header": [],
-										"body": {
-											"mode": "graphql",
-											"graphql": {
-												"query": "{\n  {{contentTypeVariable}}Collection(query: \"+identifier: {{contentIdentifier}}\") {\n    name\n  }\n}",
-												"variables": ""
-											}
-										},
-										"url": {
-											"raw": "{{serverURL}}/api/v1/graphql",
-											"host": [
-												"{{serverURL}}"
-											],
-											"path": [
-												"api",
-												"v1",
-												"graphql"
-											]
-										},
-										"description": "* Given scenario: Getting content with no cache param\n* Expected result: Should hit cache and return v2"
 									},
 									"response": []
 								},
@@ -7146,48 +7062,6 @@
 									"response": []
 								},
 								{
-									"name": "Get Content - No Cache Param - Return v2",
-									"event": [
-										{
-											"listen": "test",
-											"script": {
-												"exec": [
-													"pm.test(\"Get content v1\", function () {",
-													"    var jsonData = pm.response.json();",
-													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
-													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v2\");",
-													"});"
-												],
-												"type": "text/javascript"
-											}
-										}
-									],
-									"request": {
-										"method": "POST",
-										"header": [],
-										"body": {
-											"mode": "graphql",
-											"graphql": {
-												"query": "{\n  {{contentTypeVariable}}Collection(query: \"+identifier: {{contentIdentifier}}\") {\n    name\n  }\n}",
-												"variables": ""
-											}
-										},
-										"url": {
-											"raw": "{{serverURL}}/api/v1/graphql",
-											"host": [
-												"{{serverURL}}"
-											],
-											"path": [
-												"api",
-												"v1",
-												"graphql"
-											]
-										},
-										"description": "* Given scenario: get the content with no cache param\n* Expected result: should return v2 since cache entry was removed in the previous request"
-									},
-									"response": []
-								},
-								{
 									"name": "Get Content - Cache: 30s - Return v2",
 									"event": [
 										{
@@ -7295,48 +7169,6 @@
 											]
 										},
 										"description": "Updates content v2 to v3"
-									},
-									"response": []
-								},
-								{
-									"name": "Get Content - No Cache Param - Return v2",
-									"event": [
-										{
-											"listen": "test",
-											"script": {
-												"exec": [
-													"pm.test(\"Get content v1\", function () {",
-													"    var jsonData = pm.response.json();",
-													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
-													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v2\");",
-													"});"
-												],
-												"type": "text/javascript"
-											}
-										}
-									],
-									"request": {
-										"method": "POST",
-										"header": [],
-										"body": {
-											"mode": "graphql",
-											"graphql": {
-												"query": "{\n  {{contentTypeVariable}}Collection(query: \"+identifier: {{contentIdentifier}}\") {\n    name\n  }\n}",
-												"variables": ""
-											}
-										},
-										"url": {
-											"raw": "{{serverURL}}/api/v1/graphql",
-											"host": [
-												"{{serverURL}}"
-											],
-											"path": [
-												"api",
-												"v1",
-												"graphql"
-											]
-										},
-										"description": "* Given scenario: Getting content with no cache param\n* Expected result: Should hit cache and return v2"
 									},
 									"response": []
 								},
