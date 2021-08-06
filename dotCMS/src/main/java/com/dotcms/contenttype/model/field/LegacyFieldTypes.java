@@ -47,7 +47,8 @@ public enum LegacyFieldTypes {
 	HOST_OR_FOLDER("host or folder",com.dotcms.contenttype.model.field.HostFolderField.class),
 	KEY_VALUE("key_value",com.dotcms.contenttype.model.field.KeyValueField.class),
 	ROW_FIELD("row",com.dotcms.contenttype.model.field.RowField.class),
-	COLUMN_FIELD("column",com.dotcms.contenttype.model.field.ColumnField.class);
+	COLUMN_FIELD("column",com.dotcms.contenttype.model.field.ColumnField.class),
+	STORY_BLOCK_FIELD("story_block_field",com.dotcms.contenttype.model.field.StoryBlockField.class);
 
     final static private Map<String, String> oldFieldMap;
     static {

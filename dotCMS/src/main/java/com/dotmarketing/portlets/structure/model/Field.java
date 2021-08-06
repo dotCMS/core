@@ -55,7 +55,8 @@ public class Field extends Inode implements  FieldIf
 		HOST_OR_FOLDER("host or folder"),// http://jira.dotmarketing.net/browse/DOTCMS-3232
 		KEY_VALUE("key_value"),
 	  	ROW("row"),
-	  	COLUMN("column");
+	  	COLUMN("column"),
+	  	STORY_BLOCK_FIELD("story_block_field");
 
 		private String value;
 

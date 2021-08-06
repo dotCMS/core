@@ -13,6 +13,7 @@ import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.CheckboxField;
 import com.dotcms.contenttype.model.field.ConstantField;
@@ -89,8 +90,8 @@ import org.apache.commons.lang.StringUtils;
 
 public class FieldAPIImpl implements FieldAPI {
 
-  private final List<Class> baseFieldTypes = ImmutableList.of(BinaryField.class, CategoryField.class,
-      ConstantField.class, CheckboxField.class, CustomField.class, DateField.class,
+  private final List<Class> baseFieldTypes = ImmutableList.of(BinaryField.class, StoryBlockField.class,
+          CategoryField.class, ConstantField.class, CheckboxField.class, CustomField.class, DateField.class,
       DateTimeField.class, FileField.class, HiddenField.class, HostFolderField.class,
       ImageField.class, KeyValueField.class, LineDividerField.class, MultiSelectField.class,
       PermissionTabField.class, RadioField.class, RelationshipField.class, RelationshipsTabField.class, SelectField.class,
