@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "f8e6f36f-0e13-4a74-8439-9cc82852be81",
+		"_postman_id": "8275f508-dd48-4804-afee-43bb0e1e3318",
 		"name": "GraphQL",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -89,7 +89,7 @@
 								}
 							]
 						},
-						"description": "Imports a Bundle that includes:\n* HTMLPage /sports\nThe page includes the Blog contentlet \"10 New Snow Sports to Try This Winter\""
+						"description": "Imports a Bundle that includes:\n* A piece of content with a tag field without any tags selected"
 					},
 					"response": []
 				},
@@ -5887,6 +5887,278 @@
 						"description": "* Given scenario: given a request to a page by URI, and requesting the special \"_map\" field of the contentlet of the page, without passing any arguments to the \"_map\" field\n\n* Expected result: it should return all map fields, with the proper transformations/expansions for certain field types like file, image, binaries. No field should be rendered and only the identifiers of the related content should be returned (depth: 0)"
 					},
 					"response": []
+				}
+			]
+		},
+		{
+			"name": "Tags",
+			"item": [
+				{
+					"name": "No value for tag field should return empty list",
+					"item": [
+						{
+							"name": "pre_ImportBundleWithContext",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Bundle uploaded sucessfully\", function () {",
+											"    pm.response.to.have.status(200);",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    console.log(jsonData);",
+											"",
+											"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"contentWithTags2807.tar.gz\");",
+											"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/octet-stream"
+									},
+									{
+										"key": "Content-Disposition",
+										"type": "text",
+										"value": "attachment"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": "resources/GraphQL/contentWithTags2807.tar.gz"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/bundle?sync=true",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundle"
+									],
+									"query": [
+										{
+											"key": "sync",
+											"value": "true"
+										},
+										{
+											"key": "AUTH_TOKEN",
+											"value": "",
+											"disabled": true
+										}
+									]
+								},
+								"description": "Imports a Bundle that includes:\n* HTMLPage /sports\nThe page includes the Blog contentlet \"10 New Snow Sports to Try This Winter\""
+							},
+							"response": []
+						},
+						{
+							"name": "Get Content without tags Should return empty list",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Content tag field should be empty list\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.data[\"ContentWithTags2807Collection\"][0].mytags).to.eql([]);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "graphql",
+									"graphql": {
+										"query": "{\n  ContentWithTags2807Collection(query: \"+identifier: a9ce0b50-4ae8-4bbd-baa6-99f34ba28731\") {\n    title\n    mytags\n  }\n}",
+										"variables": ""
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/graphql",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"graphql"
+									]
+								},
+								"description": "Given scenario: a piece of content with a tag field but no value for the field\nExpected result: requesting the content should return an empty tag field without errors"
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Cats",
+			"item": [
+				{
+					"name": "No value for cats field should return empty list Copy",
+					"item": [
+						{
+							"name": "pre_ImportBundleWithContext",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Bundle uploaded sucessfully\", function () {",
+											"    pm.response.to.have.status(200);",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    console.log(jsonData);",
+											"",
+											"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"contentWithCats2807.tar.gz\");",
+											"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/octet-stream"
+									},
+									{
+										"key": "Content-Disposition",
+										"type": "text",
+										"value": "attachment"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": "resources/GraphQL/contentWithCats2807.tar.gz"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/bundle?sync=true",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundle"
+									],
+									"query": [
+										{
+											"key": "sync",
+											"value": "true"
+										},
+										{
+											"key": "AUTH_TOKEN",
+											"value": "",
+											"disabled": true
+										}
+									]
+								},
+								"description": "Imports a Bundle that includes:\n* HTMLPage /sports\nThe page includes the Blog contentlet \"10 New Snow Sports to Try This Winter\""
+							},
+							"response": []
+						},
+						{
+							"name": "Get Content without cats Should return empty list",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Content tag field should be empty list\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.data[\"ContentWithCats2807Collection\"][0].mycats).to.eql([]);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "graphql",
+									"graphql": {
+										"query": "{\n  ContentWithCats2807Collection(query: \"+identifier: ca55a070-e1b2-4f18-872f-87794fdfbf51\") {\n    title\n    mycats {\n        name\n    }\n  }\n}",
+										"variables": ""
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/graphql",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"graphql"
+									]
+								},
+								"description": "Given scenario: a piece of content with a tag field but no value for the field\nExpected result: requesting the content should return an empty tag field without errors"
+							},
+							"response": []
+						}
+					]
 				}
 			]
 		}

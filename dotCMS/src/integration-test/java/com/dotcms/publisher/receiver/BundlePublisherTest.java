@@ -18,9 +18,9 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TestBundlePublisher extends IntegrationTestBase {
+public class BundlePublisherTest extends IntegrationTestBase {
 
-    public TestBundlePublisher() {
+    public BundlePublisherTest() {
     }
 
     @BeforeClass
