@@ -512,11 +512,11 @@ public class PublisherAPIImplTest {
 
             dependenciesFrom.stream().forEach(
                     dependency -> manifestLines.add((ManifestItem) dependency,
-                            "Dependency from: " + languageVariable.getIdentifier())
+                            String.format("ID: %s Title: %s", languageVariable.getIdentifier(), languageVariable.getTitle())
             );
 
             manifestLines.add(languageVariablesContentType,
-                    "Dependency from: " + languageVariable.getIdentifier());
+                    String.format("ID: %s Title: %s", languageVariable.getIdentifier(), languageVariable.getTitle()));
         }
 
         if (!languageVariablesAddInBundle.isEmpty()) {
@@ -524,7 +524,7 @@ public class PublisherAPIImplTest {
             final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI()
                     .findSystemWorkflowScheme();
             manifestLines.add(systemWorkflowScheme,
-                    "Dependency from: " + languageVariablesContentType.id());
+                    String.format("ID: %s Title: %s", languageVariablesContentType.id(), languageVariablesContentType.name()));
 
             final Host systemHost = APILocator.getHostAPI().findSystemHost();
             manifestLines.addExclude(systemHost, "Excluded System Folder/Host");
