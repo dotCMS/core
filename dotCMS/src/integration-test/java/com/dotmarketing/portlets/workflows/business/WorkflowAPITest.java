@@ -4026,19 +4026,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
         final WorkflowStep newWorkflowStep = workflowAPI.findStep(SystemWorkflowConstants.WORKFLOW_NEW_STEP_ID);
 
-        task.setTitle(title);
-        task.setDescription(description);
-        task.setAssignedTo(APILocator.getRoleAPI().getUserRole(user).getId());
-        task.setModDate(now);
-        task.setCreationDate(now);
-        task.setCreatedBy(user.getUserId());
-        task.setStatus(newWorkflowStep.getId());
-        task.setDueDate(null);
-        task.setWebasset(contentlet.getIdentifier());
-        task.setLanguageId(contentlet.getLanguageId());
-
-        workflowAPI.saveWorkflowTask(task);
-
         final WorkflowTask taskByContentlet = FactoryLocator.getWorkFlowFactory()
                 .findTaskByContentlet(contentlet);
 
