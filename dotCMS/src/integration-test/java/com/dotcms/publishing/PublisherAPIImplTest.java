@@ -513,7 +513,7 @@ public class PublisherAPIImplTest {
             dependenciesFrom.stream().forEach(
                     dependency -> manifestLines.add((ManifestItem) dependency,
                             String.format("ID: %s Title: %s", languageVariable.getIdentifier(), languageVariable.getTitle())
-            );
+            ));
 
             manifestLines.add(languageVariablesContentType,
                     String.format("ID: %s Title: %s", languageVariable.getIdentifier(), languageVariable.getTitle()));
