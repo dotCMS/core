@@ -351,7 +351,6 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     return new ManifestInfoBuilder()
         .objectType(PusheableAsset.CONTENT_TYPE.getType())
         .id(this.id())
-        .inode(this.inode())
         .title(this.name())
         .siteId(this.host())
         .folderId(this.folder())
