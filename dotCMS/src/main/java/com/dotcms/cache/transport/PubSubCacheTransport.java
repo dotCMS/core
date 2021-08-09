@@ -106,6 +106,9 @@ public class PubSubCacheTransport implements CacheTransport {
     public void shutdown() throws CacheTransportException {
         Logger.debug(this.getClass(), "shutdown()");
         this.pubsub.stop();
+        if (initialized.get()) {
+            initialized.set(false);
+        }
     }
 
     @Override

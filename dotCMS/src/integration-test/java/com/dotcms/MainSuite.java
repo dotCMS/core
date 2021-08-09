@@ -31,7 +31,7 @@ import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleAPITest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
-import com.dotcms.publisher.receiver.TestBundlePublisher;
+import com.dotcms.publisher.receiver.BundlePublisherTest;
 import com.dotcms.publisher.util.DependencyManagerTest;
 import com.dotcms.publisher.util.DependencyModDateUtilTest;
 import com.dotcms.publishing.PublisherAPIImplTest;
@@ -42,6 +42,7 @@ import com.dotcms.publishing.manifest.CSVManifestBuilderTest;
 import com.dotcms.rendering.velocity.directive.DotParseTest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateToolTest;
+import com.dotcms.rendering.velocity.viewtools.FileToolTest;
 import com.dotcms.rendering.velocity.viewtools.JSONToolTest;
 import com.dotcms.rest.BundlePublisherResourceIntegrationTest;
 import com.dotcms.rest.BundleResourceTest;
@@ -109,7 +110,8 @@ import com.dotmarketing.startup.runonce.Task210506UpdateStorageTableTest;
 import com.dotmarketing.startup.runonce.Task210527DropReviewFieldsFromContentletTableTest;
 import com.dotmarketing.startup.runonce.Task210520UpdateAnonymousEmailTest;
 import com.dotmarketing.startup.runonce.Task210510UpdateStorageTableDropMetadataColumnTest;
-import com.dotmarketing.startup.runonce.Task210702UpdateStructureTableTest;
+import com.dotmarketing.startup.runonce.Task210719CleanUpTitleFieldTest;
+import com.dotmarketing.startup.runonce.Task210802UpdateStructureTableTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -442,9 +444,11 @@ import org.junit.runners.Suite.SuiteClasses;
         Task210527DropReviewFieldsFromContentletTableTest.class,
         ContentletCacheImplTest.class,
         HostTest.class,
-        Task210702UpdateStructureTableTest.class,
+        FileToolTest.class,
+        Task210719CleanUpTitleFieldTest.class,
+        Task210802UpdateStructureTableTest.class,
         MaintenanceUtilTest.class,
-        TestBundlePublisher.class,
+        BundlePublisherTest.class,
         CategoryFactoryTest.class
 })
 public class MainSuite {

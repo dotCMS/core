@@ -1,6 +1,6 @@
 <%@ include file="/html/portlet/ext/contentlet/init.jsp"%>
-<%@page import="com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords"%>
 <%@page import="com.dotmarketing.portlets.structure.model.ContentletRelationships"%>
+<%@page import="com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Relationship"%>
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
@@ -13,7 +13,6 @@
 <%@page import="com.dotmarketing.portlets.languagesmanager.business.*"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
-<%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 <%@page import="com.dotmarketing.util.Config" %>
 <%@page import="com.dotmarketing.util.StringUtils" %>
 <%@page import="com.dotmarketing.business.IdentifierCache"%>
@@ -21,9 +20,14 @@
 <%@page import="java.util.HashMap"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.util.UtilHTML"%>
+<%@page import="java.util.Optional" %>
+<%@page import="java.util.stream.Collectors" %>
+<%@page import="java.util.function.Function" %>
+<%@page import="java.util.Objects" %>
+<%@page import="com.google.common.collect.ImmutableMap" %>
+<%@page import="io.vavr.Tuple2" %>
 <%
 	LanguageAPI langAPI = APILocator.getLanguageAPI();
-	ContentletAPI contentletAPI = APILocator.getContentletAPI();
 	PermissionAPI conPerAPI = APILocator.getPermissionAPI();
 	List<Language> langs = langAPI.getLanguages();
 
@@ -64,7 +68,7 @@
 	if (request.getParameter("referer") != null) {
 		referer = request.getParameter("referer");
 	} else {
-		params = new HashMap();
+		params = new HashMap<>();
 		params.put("struts_action",new String[] {"/ext/contentlet/edit_contentlet"});
 		params.put("inode",new String[] { contentletInode + "" });
 		params.put("cmd",new String[] { Constants.EDIT });
@@ -169,7 +173,6 @@
                return String.format("%s: \"%s\"", key, fieldValue);
            })
            .collect(Collectors.joining(","));
-
 %>
     <style type="text/css" media="all">
         @import url(/html/portlet/ext/contentlet/field/relationship_field.css);
@@ -178,10 +181,6 @@
 	<table border="0" class="listingTable" style="margin-bottom: 30px;">
 		<thead>
 			<tr>
-				<th style="min-width: 100px"></th>
-				<th width="100%"><%=LanguageUtil.get(pageContext, "Title")%></th>
-				<th style="min-width: 100px"></th>
-				<th style="min-width: 60px"></th>
 				<th>
 					<div class="portlet-toolbar__actions-secondary">
 						<div id="<%=relationJsName%>relateMenu" style="background: white"></div>
@@ -223,24 +222,27 @@
         dojo.require("dotcms.dijit.form.ContentSelector");
 	
 		//Initializing the relationship table data array
-		var <%= relationJsName %>_Contents = new Array ();
+		var <%= relationJsName %>_Contents = new Array();
+		var <%= relationJsName %>_jsOverrideRelated = <%= overrideRelated %>;
+		var <%= relationJsName %>_specialFields = { <%= jsSpecialFields %> };
+		var <%= relationJsName %>_showFields = [ <%= jsFieldNames %> ];
 
-         function getCurrentLanguageIndex(o) {
-              var index = 0;
+        function getCurrentLanguageIndex(o) {
+            var index = 0;
 
-              for (var sibIndex = 0; sibIndex < o['siblings'].length ; sibIndex++) {
-                  if (o['langCode'].toLowerCase() === o['siblings'][sibIndex]['langCode'].toLowerCase()) {
-                      index = sibIndex;
-                      break;
-                  }
-              }
+            for (var sibIndex = 0; sibIndex < o['siblings'].length ; sibIndex++) {
+                if (o['langCode'].toLowerCase() === o['siblings'][sibIndex]['langCode'].toLowerCase()) {
+                    index = sibIndex;
+                    break;
+                }
+            }
              
-              return index;
-         }
+            return index;
+        }
 
 		//Function used to render language id
 		function <%= relationJsName %>_lang(o) {
-			if (o != null  && dijit.byId("langcombo")) {
+			if (o !== null && dijit.byId("langcombo")) {
 			    var contentletLangCode = '<%= langAPI.getLanguageCodeAndCountry(contentlet.getLanguageId(),null)%>';
                 var currentLanguageIndex = getCurrentLanguageIndex(o);
                 var lang = '';
@@ -365,7 +367,7 @@
 			
 			var data = new Array();
 			var dataToRelate = new Array();
-                  var entries        = numberOfRows<%= relationJsName%>();
+            var entries = numberOfRows<%= relationJsName%>();
 			// Eliminating existing relations
 			for (var indexJ = 0; indexJ < selectedData.length; indexJ++) {
 				var relationExists = (<%=thereCanBeOnlyOne%> && (entries > 0 || dataToRelate.length>0)) ? true : false;
@@ -378,7 +380,7 @@
 					dataToRelate[dataToRelate.length] = selectedData[indexJ];
 				}
 			}
-			
+
 			// Eliminating mulitple contentlets for same identifier
 			for (var indexK = 0; indexK < dataToRelate.length; indexK++) {
 				var doesIdentifierExists = false;
@@ -389,8 +391,7 @@
 				if(!doesIdentifierExists)
 					data[data.length] = dataToRelate[indexK];
 			}				
-			
-			
+
 			if( data == null || (data != null && data.length == 0) ) {
 			  return;
 			}
@@ -530,30 +531,12 @@
 
 		}
 
-		
-		
-		function CreateRow<%= relationJsName %>(item,hint) {
-			var row = document.createElement("tr");
-			row.className="dataRow<%= relationJsName %>";
-			
-			var imgCell = row.insertCell (row.cells.length);
-			imgCell.style.whiteSpace="nowrap";
-			imgCell.style.textAlign = 'center';
-
-            imgCell.innerHTML = (item.hasTitleImage ==='true')
-                ? '<img class="listingTitleImg" src="/dA/' + item.inode + '/titleImage/64w"  >' 
-                : '<span class="'+item.iconClass+'" style="font-size:24px;width:auto;"></span>';
-               
-            var titleCell = row.insertCell (row.cells.length);
-            
-            
-            titleCell.innerHTML = <%= relationJsName%>WriteLinkTitle (item);
-
+        function createLangTd(row, item) {
             var langTD = document.createElement("td");
             row.appendChild(langTD);
             // displays the publish/unpublish/archive status of the content and language flag, if multiple languages exists.
-			<%if(langs.size() > 1) {%>
-			    if(dijit.byId("langcombo")){
+            <%if(langs.size() > 1) {%>
+                if(dijit.byId("langcombo")){
                     langTD.style.whiteSpace="nowrap";
                     langTD.style.textAlign = 'right';
                     langTD.innerHTML = <%= relationJsName %>_lang(item);
@@ -616,8 +599,6 @@
 			statusTD.innerHTML = item.statusIcons;
 			row.appendChild(statusTD);
 
-
-                  
 			// to hold contentInode to reorder
 			var span = document.createElement("span");
 			dojo.addClass(span,"<%= relationJsName %>hiddenInodeField");
@@ -641,7 +622,7 @@
                   // Initializing related contents table.
 			<%= relationJsName %>buildListing('<%= relationJsName %>Table',<%= relationJsName %>_Contents);
 
-			// connectin drag and drop to reorder functionality
+			// connecting drag and drop to reorder functionality
 			dojo.subscribe("/dnd/drop", function(source){
 			  	renumberAndReorder<%= relationJsName %>(source);
 			});

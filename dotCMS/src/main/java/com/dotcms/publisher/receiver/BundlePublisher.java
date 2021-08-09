@@ -199,11 +199,10 @@ public class BundlePublisher extends Publisher {
             //Read the bundle to see what kind of configuration we need to apply
             String finalBundlePath = ConfigUtils.getBundlePath() + File.separator + bundleID;
             File xml = new File(finalBundlePath + File.separator + "bundle.xml");
-            PushPublisherConfig readConfig = (PushPublisherConfig) BundlerUtil.xmlToObject(xml);
 
             //Get the identifiers on this bundle
             assetsDetails = new HashMap<>();
-            bundlerAssets = readConfig.getAssets();
+            bundlerAssets = (List<PublishQueueElement>)((HashMap)BundlerUtil.xmlToObject(xml)).get("ASSETS");
 
             if (bundlerAssets != null && !bundlerAssets.isEmpty()) {
                 for (PublishQueueElement asset : bundlerAssets) {

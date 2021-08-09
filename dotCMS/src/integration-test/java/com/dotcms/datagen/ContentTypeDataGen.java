@@ -44,7 +44,7 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
     private Set<String> workflowIds = new HashSet<>();
     private User owner = user;
     private List<Category> categories = new ArrayList<>();
-
+    private String hostName;
 
     public  ContentTypeDataGen addCategory(final Category category){
         categories.add(category);
@@ -128,6 +128,12 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
     }
 
     @SuppressWarnings("unused")
+    public ContentTypeDataGen hostName(final String hostName) {
+        this.hostName = hostName;
+        return this;
+    }
+
+    @SuppressWarnings("unused")
     public ContentTypeDataGen user(final User user) {
         this.user = user;
         return this;
@@ -180,7 +186,7 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
                 .system(systemField)
                 .variable(velocityVarName)
                 .folder(folder.getInode())
-                .host(host.getIdentifier())
+                .host(hostName != null ? hostName : host.getIdentifier())
                 .iDate(iDateField)
                 .build();
     }
