@@ -4,12 +4,21 @@ import com.dotcms.enterprise.license.LicenseManager;
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import io.vavr.Tuple2;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoField;
 import java.util.Optional;
 
+/**
+ * A Expiring cache implementation to store the results of GraphQL requests.
+ *
+ * The amount of time the results will be cached can be specified either by providing a TTL (int)
+ * by calling {@link #put(String, String, Integer)} method or by the config property <code>cache.graphqlquerycache.seconds</code>
+ * which applies when calling {@link #put(String, String)}, which does not take a TTL
+ *
+ */
 public class GraphQLCache implements Cachable {
 
 
@@ -38,11 +47,13 @@ public class GraphQLCache implements Cachable {
     }
 
 
-    public void put(String key, String result, int cacheTTL) {
+    public void put(String key, String result, Integer cacheTTL) {
+        if(!canCache()) return;
+
         if(UtilMethods.isNotSet(result)) return;
 
-        final LocalDateTime cachedSincePlusTTL = LocalDateTime.now().plus(cacheTTL,
-                ChronoField.SECOND_OF_DAY.getBaseUnit());
+        final LocalDateTime cachedSincePlusTTL = cacheTTL!=null ? LocalDateTime.now().plus(cacheTTL,
+                ChronoField.SECOND_OF_DAY.getBaseUnit()) : null;
 
         Tuple2<String, LocalDateTime> resultExpireTimeTuple =
                 new Tuple2<>(result, cachedSincePlusTTL);
@@ -50,11 +61,8 @@ public class GraphQLCache implements Cachable {
         cache.put(cacheKey, resultExpireTimeTuple, getPrimaryGroup());
     }
 
-    public void put(String query, String result) {
-        final String cacheKey = hashKey(query);
-        if (UtilMethods.isSet(result)) {
-            cache.put(cacheKey, new Tuple2<>(result, null), getPrimaryGroup());
-        }
+    public void put(String key, String result) {
+        this.put(key, result, null);
     }
 
     private String hashKey(final String query) {
@@ -86,7 +94,8 @@ public class GraphQLCache implements Cachable {
 
     private boolean canCache() {
         if(!canCache) {
-            canCache = LicenseManager.getInstance().isEnterprise();
+            canCache = LicenseManager.getInstance().isEnterprise() && Config
+                    .getBooleanProperty("GRAPHQL_CACHE_RESULTS", true);;
         }
         return canCache;
     }

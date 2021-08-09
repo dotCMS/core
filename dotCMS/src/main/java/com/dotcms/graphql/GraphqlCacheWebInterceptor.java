@@ -23,12 +23,12 @@ import javax.servlet.http.HttpServletResponse;
  * This interceptor caches the GraphQL responses based on the following:
  * <p>
  * If no parameters provided it will cache the response based on the config params of the underlying cache implementation {@link GraphQLCache}
- *   and using the GraphQL query has the key
+ *   and using the GraphQL query as the key
  * <p>
  * If <code>dotcachettl</code> (in seconds) is provided it will cache the response for the provided time. This parameter supports two special values:
  * <ul>
  *     <li>0: bypasses the cache
- *     <li>-1:bypasses the cache and clears this entry
+ *     <li>-1:bypasses the cache and clears this entry for the given key/query
  * </ul>
  * <p>
  * If `dotcachekey` is provided it will cache the response using this as the cache key instead of the GraphQL query
