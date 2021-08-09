@@ -823,7 +823,7 @@
 	<div class="portlet-main view-categories">
 
 		<!-- START Actions -->
-		<div id="oneandtwo" data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"'>
+		<div id="oneandtwo" data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"fa-plus", class:"dijitDropDownActionButton"'>
 			<span></span>
 
 			<div data-dojo-type="dijit/Menu" class="contentlet-menu-actions" id="oneandtwothree">
