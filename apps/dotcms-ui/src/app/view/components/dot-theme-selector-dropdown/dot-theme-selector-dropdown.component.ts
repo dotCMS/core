@@ -117,6 +117,7 @@ export class DotThemeSelectorDropdownComponent
     siteChange(event: Site): void {
         this.currentSiteIdentifier = event.identifier;
         this.setHostThemes(event.identifier);
+
     }
     /**
      * Sets the themes when the drop down is opened
@@ -130,7 +131,6 @@ export class DotThemeSelectorDropdownComponent
         if (this.value) {
             this.currentSiteIdentifier = this.value.hostId;
         }
-
         this.setHostThemes(this.currentSiteIdentifier);
     }
 
@@ -206,6 +206,11 @@ export class DotThemeSelectorDropdownComponent
     }
 
     private setTotalRecords() {
-        this.totalRecords = this.paginatorService.totalRecords;
+        this.totalRecords = 0;
+
+        // Timeout to activate change of pagination to the first page
+        setTimeout(() => {
+            this.totalRecords = this.paginatorService.totalRecords;
+        }, 0);
     }
 }

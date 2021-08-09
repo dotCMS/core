@@ -243,11 +243,11 @@ describe('SearchableDropdownComponent', () => {
         expect(dataviewDataEl.nativeElement.textContent).toEqual('site-0 - demo.dotcms.com');
     });
 
-    it('should the pageChange call the paginate method', fakeAsync(() => {
-        const first = 2;
+    it('should the pageChange call the paginate method', async () => {
+        const first = 0;
         const page = 3;
         const pageCount = 4;
-        rows = 5;
+        rows = 2;
         const filter = 'filter';
         let event;
 
@@ -261,7 +261,6 @@ describe('SearchableDropdownComponent', () => {
 
         const dataview = hostFixture.debugElement.query(By.css('p-dataview'));
         const dataviewComponentInstance = dataview.componentInstance;
-
         dataviewComponentInstance.onLazyLoad.emit({
             first: first,
             page: page,
@@ -269,14 +268,12 @@ describe('SearchableDropdownComponent', () => {
             rows: rows
         });
 
-        tick();
-
-        expect(first).toEqual(event.first);
-        expect(page).toEqual(event.page);
-        expect(pageCount).toEqual(event.pageCount);
-        expect(rows).toEqual(event.rows);
-        expect(filter).toEqual(event.filter);
-    }));
+        await hostFixture.whenStable().then(() => {
+            expect(first).toEqual(event.first);
+            expect(rows).toEqual(event.rows);
+            expect(filter).toEqual(event.filter);
+        });
+    });
 
     describe('emit the change event', () => {
         let items;

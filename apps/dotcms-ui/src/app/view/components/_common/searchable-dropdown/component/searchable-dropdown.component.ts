@@ -22,6 +22,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { fromEvent } from 'rxjs';
 import * as _ from 'lodash';
 import { OverlayPanel } from 'primeng/overlaypanel';
+import { DataView } from 'primeng/dataview';
 import { PrimeTemplate } from 'primeng/api';
 
 /**
@@ -124,6 +125,9 @@ export class SearchableDropdownComponent
     @ViewChild('searchPanel', { static: true })
     searchPanelRef: OverlayPanel;
 
+    @ViewChild('dataView', { static: true })
+    dataViewRef: DataView;
+
     @ViewChild('button')
     button: ElementRef;
 
@@ -156,6 +160,7 @@ export class SearchableDropdownComponent
             this.setLabel();
         }
         this.setOptions(changes);
+        this.totalRecords = this.totalRecords || this.data?.length;
     }
 
     ngOnInit(): void {}
@@ -220,6 +225,10 @@ export class SearchableDropdownComponent
             }
         }, 0);
         this.show.emit();
+        this.dataViewRef.paginate({
+            first: 0,
+            rows: this.rows
+        });
     }
 
     /**

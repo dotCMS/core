@@ -61,6 +61,7 @@ export class DotPersonaSelectorComponent implements OnInit {
     @Input('pageState')
     set pageState(value: DotPageRenderState) {
         this._pageState = value;
+        this.paginationService.paginationPerPage = this.paginationPerPage;
         this.paginationService.url = `v1/page/${this.pageState.page.identifier}/personas`;
         this.isEditMode = this.pageState.state.mode === DotPageMode.EDIT;
         this.paginationService.setExtraParams('respectFrontEndRoles', !this.isEditMode);

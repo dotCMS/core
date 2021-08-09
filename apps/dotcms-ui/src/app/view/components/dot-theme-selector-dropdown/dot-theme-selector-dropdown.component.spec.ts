@@ -1,6 +1,6 @@
 import { DebugElement, Input } from '@angular/core';
 import { Component } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { of } from 'rxjs';
 
@@ -173,11 +173,12 @@ describe('DotThemeSelectorDropdownComponent', () => {
         });
 
         describe('html', () => {
-            it('should set themes if theme selector is open', () => {
+            it('should set themes if theme selector is open', fakeAsync(() => {
                 component.searchableDropdown.show.emit();
+                tick();
                 expect(component.totalRecords).toEqual(3);
                 expect(component.themes).toEqual(mockDotThemes);
-            });
+            }));
 
             it('should not call pagination service if the url is not set', () => {
                 component.currentSiteIdentifier = '123';
@@ -208,14 +209,14 @@ describe('DotThemeSelectorDropdownComponent', () => {
                 expect(instance.rows).toBe(5);
             });
 
-            it('should reset values onHide', () => {
+            it('should reset values onHide', fakeAsync(() => {
                 spyOn(paginationService, 'getWithOffset').and.returnValue(of(mockDotThemes));
                 component.onHide();
-
+                tick();
                 expect(paginationService.getWithOffset).toHaveBeenCalledWith(0);
                 expect(component.totalRecords).toBe(3);
                 expect(paginationService.searchParam).toBe('');
-            });
+            }));
         });
 
         describe('events', () => {
@@ -260,16 +261,16 @@ describe('DotThemeSelectorDropdownComponent', () => {
                 expect(siteSelector.componentInstance.system).toEqual(true);
             });
 
-            it('should update themes, totalRecords and call setExtraParams when site selector change', () => {
+            it('should update themes, totalRecords and call setExtraParams when site selector change', fakeAsync(() => {
                 const siteSelector = de.query(By.css('[data-testId="siteSelector"]'));
                 siteSelector.triggerEventHandler('change', {
                     identifier: '123'
                 });
-
+                tick();
                 expect(paginationService.setExtraParams).toHaveBeenCalledWith('hostId', '123');
                 expect(component.themes).toEqual([mockDotThemes[2]]);
                 expect(component.totalRecords).toBe(1);
-            });
+            }));
 
             it('should update themes, totalRecords and call setExtraParams when search input change', async () => {
                 const input = de.query(By.css('[data-testId="searchInput"]')).nativeElement;

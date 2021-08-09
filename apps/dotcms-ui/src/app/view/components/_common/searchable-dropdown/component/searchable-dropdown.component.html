@@ -62,6 +62,7 @@
         </div>
     </header>
     <p-dataView
+        #dataView
         (click)="$event.stopPropagation()"
         (onLazyLoad)="paginate($event)"
         [lazy]="true"
