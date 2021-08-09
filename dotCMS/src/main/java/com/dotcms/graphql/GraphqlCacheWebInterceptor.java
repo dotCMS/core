@@ -20,20 +20,27 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * This interceptor caches the GraphQL responses based on the following:
+ * This interceptor returns the response for a GraphQL request from cache, if available.
+ * Otherwise it lets the request to be processed as normal and caches the GraphQL response,
+ * on a expiring cache {@link GraphQLCache}, after the request is processed.
+ *
+ * By default it uses the GraphQL query as the key if no custom key is specified.
  * <p>
- * If no parameters provided it will cache the response based on the config params of the underlying cache implementation {@link GraphQLCache}
- *   and using the GraphQL query as the key
+ * It takes the following parameters from the request, which can be sent as query params or headers:
  * <p>
- * If <code>dotcachettl</code> (in seconds) is provided it will cache the response for the provided time. This parameter supports two special values:
+ * <code>dotcachettl</code>: amount of time in seconds to cache the response for if not already in cache, otherwise it will be ignored.
+ * Special values:
  * <ul>
  *     <li>0: bypasses the cache
  *     <li>-1:bypasses the cache and clears this entry for the given key/query
  * </ul>
  * <p>
- * If `dotcachekey` is provided it will cache the response using this as the cache key instead of the GraphQL query
+ * <code>dotcachekey</code>: uses this as the cache key instead of the GraphQL query
  * <p>
- * If `dotcacherefresh` is provided it will background refresh the cache entry for this key/query
+ * <code>dotcacherefresh</code>: background refreshes the cache entry for this key/query
+ *
+ * If no parameters are provided it will cache the response based on the default config of the underlying cache implementation {@link GraphQLCache}
+ *   and using the GraphQL query as the key.
  */
 public class GraphqlCacheWebInterceptor implements WebInterceptor {
 

@@ -18,6 +18,8 @@ import java.util.Optional;
  * by calling {@link #put(String, String, Integer)} method or by the config property <code>cache.graphqlquerycache.seconds</code>
  * which applies when calling {@link #put(String, String)}, which does not take a TTL
  *
+ * This entire cache can be turned off by setting GRAPHQL_CACHE_RESULTS=false in your dotmarketing-config.properties
+ *
  */
 public class GraphQLCache implements Cachable {
 
