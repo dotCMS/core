@@ -37,6 +37,7 @@ export class DotCopyButtonComponent implements OnInit {
 
     ngOnInit() {
         this.tooltipText = this.tooltipText || this.dotMessageService.get('Copy');
+        this.label = this.label || this.dotMessageService.get('Copy');
     }
 
     /**

@@ -10,14 +10,22 @@
 }
 
 .label {
-    cursor: pointer;
-    display: block;
     @include truncate-text;
-}
-
-.label:hover,
-dot-icon-button:hover {
-    & + .tooltip {
-        opacity: 1;
+    align-items: center;
+    background-color: transparent;
+    border-radius: $border-radius;
+    border: solid 1px $brand-secondary;
+    color: $brand-secondary;
+    cursor: pointer;
+    display: inline-flex;
+    font-size: 0.75rem;
+    line-height: 1em;
+    padding: 0.25rem 6px 0.25rem $spacing-1;
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: background-color $basic-speed ease, color $basic-speed ease;
+    &:hover {
+        background-color: $brand-secondary;
+        color: $white;
     }
 }

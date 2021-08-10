@@ -19,7 +19,6 @@ describe('DotCopyButtonComponent', () => {
     let fixture: ComponentFixture<DotCopyButtonComponent>;
     let de: DebugElement;
     let dotClipboardUtil: DotClipboardUtil;
-    let button: DebugElement;
     let label: DebugElement;
 
     beforeEach(
@@ -54,50 +53,6 @@ describe('DotCopyButtonComponent', () => {
         component.copy = 'Text to copy';
     });
 
-    describe('with button', () => {
-        beforeEach(() => {
-            fixture.detectChanges();
-            button = de.query(By.css('dot-icon-button'));
-        });
-
-        it('should have dot-icon-button', () => {
-            expect(button.componentInstance.icon).toBe('file_copy');
-        });
-
-        it('should not have label', () => {
-            label = de.query(By.css('.label'));
-            expect(label).toBeNull();
-        });
-
-        it('should copy text to clipboard', () => {
-            const stopPropagation = jasmine.createSpy('stopPropagation');
-
-            button.triggerEventHandler('click', {
-                stopPropagation: stopPropagation
-            });
-
-            expect(dotClipboardUtil.copy).toHaveBeenCalledWith('Text to copy');
-            expect(stopPropagation).toHaveBeenCalledTimes(1);
-        });
-
-        xit('should update tooltip text when copy', async () => {
-            const spyTooltipText = spyOnProperty(component, 'tooltipText', 'set');
-
-            button.triggerEventHandler('click', {
-                stopPropagation: () => {}
-            });
-
-            await fixture.whenStable();
-
-            setTimeout(() => {
-                expect([].concat.apply([], spyTooltipText.calls.allArgs())).toEqual([
-                    'Copied',
-                    'Copy'
-                ]);
-            }, 1000);
-        });
-    });
-
     describe('with label', () => {
         beforeEach(() => {
             component.label = 'Label';
@@ -113,11 +68,6 @@ describe('DotCopyButtonComponent', () => {
             expect(label.attributes.appendTo).toEqual('body');
             expect(label.attributes.tooltipPosition).toEqual('bottom');
             expect(label.attributes.hideDelay).toEqual('800');
-        });
-
-        it('should not show button', () => {
-            button = de.query(By.css('dot-icon-button'));
-            expect(button).toBeNull();
         });
 
         it('should copy text to clipboard', () => {
