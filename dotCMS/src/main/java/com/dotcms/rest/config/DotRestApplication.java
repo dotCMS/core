@@ -46,10 +46,12 @@ import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionValueRe
 import com.dotcms.rest.api.v1.system.AppContextInitResource;
 import com.dotcms.rest.api.v1.system.ConfigurationResource;
 import com.dotcms.rest.api.v1.system.UpgradeTaskResource;
+import com.dotcms.rest.api.v1.system.cache.CacheResource;
 import com.dotcms.rest.api.v1.system.i18n.I18NResource;
 import com.dotcms.rest.api.v1.system.logger.LoggerResource;
 import com.dotcms.rest.api.v1.system.monitor.MonitorResource;
 import com.dotcms.rest.api.v1.system.permission.PermissionResource;
+import com.dotcms.rest.api.v1.system.redis.RedisResource;
 import com.dotcms.rest.api.v1.system.role.RoleResource;
 import com.dotcms.rest.api.v1.system.ruleengine.actionlets.ActionletsResource;
 import com.dotcms.rest.api.v1.system.ruleengine.conditionlets.ConditionletsResource;
@@ -169,6 +171,8 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 			.add(VersionableResource.class)
 			.add(PermissionResource.class)
 			.add(ContentResource.class)
+			.add(CacheResource.class)
+			.add(RedisResource.class)
 			.build();
 
 

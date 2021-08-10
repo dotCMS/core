@@ -1,5 +1,6 @@
 package com.dotcms.cache.lettuce;
 
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -27,7 +28,9 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -366,6 +369,207 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
 
         return "Error";
     }
+
+    /// HASHES
+
+    @Override
+    public
+    boolean existsHash (final K key, final K field) {
+
+        try (StatefulRedisConnection<K,V> conn = this.getConn()) {
+
+            if (this.isOpen(conn)) {
+
+                try {
+                    return conn.sync().hexists(key, field);
+                } catch (RedisCommandTimeoutException e) {
+                    throw new CacheTimeoutException(e);
+                }
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public V getHash(final K key, final K field) {
+
+        try (StatefulRedisConnection<K,V> conn = this.getConn()) {
+
+            if (this.isOpen(conn)) {
+
+                try {
+                    return conn.sync().hget(key, field);
+                } catch (RedisCommandTimeoutException e) {
+                    throw new CacheTimeoutException(e);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    @Override
+    public Map<K, V> getHash(final K key) {
+
+        try (StatefulRedisConnection<K,V> conn = this.getConn()) {
+
+            if (this.isOpen(conn)) {
+
+                try {
+                    return conn.sync().hgetall(key);
+                } catch (RedisCommandTimeoutException e) {
+                    throw new CacheTimeoutException(e);
+                }
+            }
+        }
+
+        return Collections.emptyMap();
+    }
+
+    @Override
+    public Set<K> fieldsHash (final K key) {
+
+        try (StatefulRedisConnection<K,V> conn = this.getConn()) {
+
+            if (this.isOpen(conn)) {
+
+                try {
+                    return new LinkedHashSet<>(conn.sync().hkeys(key));
+                } catch (RedisCommandTimeoutException e) {
+                    throw new CacheTimeoutException(e);
+                }
+            }
+        }
+
+        return Collections.emptySet();
+    }
+
+    @Override
+    public List<Map.Entry<K, V>> getHash(final K key, final K... fields) {
+
+        try (StatefulRedisConnection<K,V> conn = this.getConn()) {
+
+            if (this.isOpen(conn)) {
+
+                try {
+                    return conn.sync().hmget(key, fields).stream()
+                            .map(kvKeyValue ->
+                                    CollectionsUtils.entry(
+                                            kvKeyValue.getKey(), kvKeyValue.getValue()))
+                            .collect(CollectionsUtils.toImmutableList());
+                } catch (RedisCommandTimeoutException e) {
+                    throw new CacheTimeoutException(e);
+                }
+            }
+        }
+
+        return Collections.emptyList();
+    }
+
+    @Override
+    public SetResult setHash(final K key, final Map<K, V> map) {
+
+        try (StatefulRedisConnection<K,V> conn = this.getConn()) {
+
+            if (this.isOpen(conn)) {
+
+                return conn.sync().hset(key, map) == map.size()?
+                        SetResult.SUCCESS: SetResult.FAIL;
+            } else {
+                return SetResult.NO_CONN;
+            }
+        }
+    }
+
+    @Override
+    public SetResult setHash(final K key, final K field, final V value) {
+
+        try (StatefulRedisConnection<K,V> conn = this.getConn()) {
+
+            if (this.isOpen(conn)) {
+
+                return conn.sync().hset(key, field, value)?
+                        SetResult.SUCCESS: SetResult.FAIL;
+            } else {
+                return SetResult.NO_CONN;
+            }
+        }
+    }
+
+    @Override
+    public long delete(final K key, K... fields) {
+
+        try (StatefulRedisConnection<K,V> conn = this.getConn()) {
+
+            if (this.isOpen(conn)) {
+
+                return conn.sync().hdel(key, fields);
+            } else {
+                return -1;
+            }
+        }
+    }
+
+    /// Incr
+
+    @Override
+    public long incrementOne(K key) {
+
+        try (StatefulRedisConnection<K,V> conn = this.getConn()) {
+
+            if (this.isOpen(conn)) {
+
+                return conn.sync().incr(key);
+            } else {
+                return -1;
+            }
+        }
+    }
+
+    @Override
+    public long increment(K key, long amount) {
+
+        try (StatefulRedisConnection<K,V> conn = this.getConn()) {
+
+            if (this.isOpen(conn)) {
+
+                return conn.sync().incrby(key, amount);
+            } else {
+                return -1;
+            }
+        }
+    }
+
+    @Override
+    public Future<Long> incrementOneAsync (final K key) {
+
+        try (StatefulRedisConnection<K,V> conn = this.getConn()) {
+
+            if (this.isOpen(conn)) {
+
+                return conn.async().incr(key);
+            } else {
+                return ConcurrentUtils.constantFuture(-1L);
+            }
+        }
+
+    }
+
+    @Override
+    public Future<Long> incrementAsync (final K key, final long amount) {
+
+        try (StatefulRedisConnection<K,V> conn = this.getConn()) {
+
+            if (this.isOpen(conn)) {
+
+                return conn.async().incrby(key, amount);
+            } else {
+                return ConcurrentUtils.constantFuture(-1L);
+            }
+        }
+    }
+    //////////
 
     private GenericObjectPool<StatefulRedisConnection<K, V>> buildPool() {
 

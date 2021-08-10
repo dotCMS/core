@@ -3,9 +3,8 @@ package com.dotcms.cache.lettuce;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.repackage.EDU.oswego.cs.dl.util.concurrent.ConcurrentHashMap;
+import com.dotcms.util.DotCloneable;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.RoleCache;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.provider.CacheStats;
@@ -16,7 +15,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
 import com.liferay.util.StringPool;
-import io.lettuce.core.RedisCommandTimeoutException;
 import io.lettuce.core.ScriptOutputType;
 import io.lettuce.core.api.StatefulRedisConnection;
 import io.vavr.control.Try;
@@ -66,7 +64,7 @@ public class RedisCache extends CacheProvider {
     }
 
     public RedisCache() {
-        this(new MasterReplicaLettuceClient<>(),
+        this(RedisClientProvider.getInstance(),
                 APILocator.getShortyAPI().shortify(ClusterFactory.getClusterId()));
     }
 
@@ -215,26 +213,34 @@ public class RedisCache extends CacheProvider {
         if (DbConnectionFactory.inTransaction()) {
 
             Logger.debug(this, ()-> "In Transaction, Skipping the put to Redis cache for group: "
-                    + group + "key" + key);
-        } else if (key != null && group != null /*&& content instanceof Serializable*/) {  // todo: we should admit only
+                    + group + "key: " + key);
+        } else if (key != null && group != null) {
 
-            Logger.debug(this, ()-> "Redis, putting group: " + group + "key" + key);
-            final long   ttl      = this.getTTL(group);
-            final String cacheKey = this.cacheKey(group, key);
-            final Future<String> future = this.client.setAsync(cacheKey, content, ttl);
-            this.client.addAsyncMembers(REDIS_GROUP_KEY, group);
-            if (Logger.isDebugEnabled(this.getClass())) {
+            if (content instanceof Serializable) {
 
-                String msg = "Error";
-                try {
-                    msg = future.get();
-                } catch (InterruptedException | ExecutionException e) {
-                    msg = e.getMessage();
+                Logger.debug(this, () -> "Redis, putting group: " + group + "key" + key);
+                final long ttl = this.getTTL(group);
+                final String cacheKey = this.cacheKey(group, key);
+                final Future<String> future = this.client.setAsync(cacheKey, content, ttl);
+                this.client.addAsyncMembers(REDIS_GROUP_KEY, group);
+                if (Logger.isDebugEnabled(this.getClass())) {
+
+                    String msg = "Error";
+                    try {
+                        msg = future.get();
+                    } catch (InterruptedException | ExecutionException e) {
+                        msg = e.getMessage();
+                    }
+                    if (!"OK".equalsIgnoreCase(msg)) {
+                        Logger.debug(this, "Redis, putting group: " + group +
+                                "key" + key + "result: " + msg);
+                    }
                 }
-                if (!"OK".equalsIgnoreCase(msg)) {
-                    Logger.debug(this, "Redis, putting group: " + group +
-                            "key" + key + "result: " + msg);
-                }
+            } else {
+
+                Logger.debug(this, ()-> "The content: " + (null != content?content.getClass():"unknown") +
+                        " is not serialize, Skipping the put to Redis cache for group: "
+                        + group + "key: " + key );
             }
         }
     }
@@ -260,9 +266,8 @@ public class RedisCache extends CacheProvider {
 
             final String cacheKey = this.cacheKey(group, key);
             try {
-                // todo: by configuration (if feature is turn on) we will see if the object implements DotCloneable and
-                // return a clone of the object instead of the actual object, this will help us a bit with the mutability of the code
-                return this.client.get(cacheKey);
+
+                return this.extractObject(this.client.get(cacheKey));
             } catch (CacheTimeoutException e) {
 
                 Logger.debug(this, "Timeout error on getting Redis cache for group: "
@@ -272,6 +277,12 @@ public class RedisCache extends CacheProvider {
         }
 
         return null;
+    }
+
+    private Object extractObject (final Object o) {
+
+        return o != null && o instanceof DotCloneable?
+                Try.of(()-> DotCloneable.class.cast(o).clone()).getOrElse(o): o;
     }
 
     /**

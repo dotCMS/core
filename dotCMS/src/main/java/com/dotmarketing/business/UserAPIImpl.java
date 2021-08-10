@@ -249,6 +249,8 @@ public class UserAPIImpl implements UserAPI {
         user.setCreateDate(new java.util.Date());
         user.setCompanyId(APILocator.getCompanyAPI().getDefaultCompany().getCompanyId());
         userFactory.save(user);
+
+        return user;
     }
 
 
@@ -361,7 +363,6 @@ public class UserAPIImpl implements UserAPI {
 
     @Override
     public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous, boolean includeDefault) throws DotDataException {
-        // TODO Auto-generated method stub
         return getCountUsersByNameOrEmailOrUserID(filter, includeAnonymous, includeDefault, null);
     }
 

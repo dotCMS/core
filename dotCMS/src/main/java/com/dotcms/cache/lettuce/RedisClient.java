@@ -7,6 +7,7 @@ import io.vavr.control.Try;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
@@ -181,5 +182,102 @@ public interface RedisClient<K, V> {
      */
     void scanKeys(final String matchesPattern, int keyBatchingSize, final Consumer<Collection<K>> keyConsumer);
 
+    /// TYPES
+    ///// HASHES
+
+    /**
+     * Returns true if exists the hash and field
+     * @param key    K
+     * @param field  K
+     * @return boolean
+     */
+    boolean existsHash (K key, K field);
+
+    /**
+     * Get the value of the key, field
+     * @param key   K
+     * @param field K
+     * @return V
+     */
+    V getHash(K key, K field);
+
+    /**
+     * Get all fields
+     * @param key K
+     * @return Map, field -> value
+     */
+    Map<K, V> getHash(K key);
+
+    /**
+     * Get the fields associated to the key
+     * @param key K
+     * @return Set of K
+     */
+    Set<K> fieldsHash (K key);
+
+    /**
+     * Get a list of the field value associated to the key
+     * @param key     K
+     * @param fields  Array of K
+     * @return List, K -> V
+     */
+    List<Map.Entry<K, V>> getHash(K key, K... fields);
+
+    /**
+     * Set a hash, field -> value
+     * @param key K
+     * @param map Map, field -> value
+     * @return SetResult
+     */
+    SetResult setHash(K key, Map<K, V> map);
+
+    /**
+     * Set hash entry
+     * @param key K
+     * @param field K
+     * @param value V
+     * @return SetResult
+     */
+    SetResult setHash(K key, K field, V value);
+
+    /**
+     * Delete the key and returns the value associated (null if does not exists)
+     * @param key K
+     * @param fields Array of K
+     * @return long number of fields deleted (-1 if can not delete)
+     */
+    long delete(final K key, K... fields);
+
+    ///// INCR
+
+    /**
+     * Increment a key by one
+     * @param key K
+     * @return long current counter (if fail -1)
+     */
+    long incrementOne(K key);
+
+    /**
+     * Increment a key by "amount" parameter
+     * @param key    L
+     * @param amount long
+     * @return long current counter (if fail -1)
+     */
+    long increment(K key, long amount);
+
+    /**
+     * Async Increment a key by one
+     * @param key K
+     * @return Future long current counter (if fail -1)
+     */
+    Future<Long> incrementOneAsync (final K key);
+
+    /**
+     * Async Increment a key by "amount" parameter
+     * @param key    L
+     * @param amount long
+     * @return Future long current counter (if fail -1)
+     */
+    Future<Long> incrementAsync (final K key, final long amount);
 }
 

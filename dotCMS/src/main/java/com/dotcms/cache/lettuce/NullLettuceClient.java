@@ -3,6 +3,8 @@ package com.dotcms.cache.lettuce;
 import io.lettuce.core.api.StatefulConnection;
 import io.lettuce.core.api.StatefulRedisConnection;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
@@ -107,6 +109,66 @@ public class NullLettuceClient<K, V> implements RedisClient {
     @Override
     public void scanEachKey(String matchesPattern, int keyBatchingSize, Consumer keyConsumer) {
 
+    }
+
+    @Override
+    public boolean existsHash(Object key, Object field) {
+        return false;
+    }
+
+    @Override
+    public Object getHash(Object key, Object field) {
+        return null;
+    }
+
+    @Override
+    public Map getHash(Object key) {
+        return null;
+    }
+
+    @Override
+    public Set fieldsHash(Object key) {
+        return null;
+    }
+
+    @Override
+    public List<Map.Entry> getHash(Object key, Object[] fields) {
+        return null;
+    }
+
+    @Override
+    public SetResult setHash(Object key, Map map) {
+        return null;
+    }
+
+    @Override
+    public SetResult setHash(Object key, Object field, Object value) {
+        return null;
+    }
+
+    @Override
+    public long delete(Object key, Object[] fields) {
+        return 0;
+    }
+
+    @Override
+    public long incrementOne(Object key) {
+        return 0;
+    }
+
+    @Override
+    public long increment(Object key, long amount) {
+        return 0;
+    }
+
+    @Override
+    public Future<Long> incrementOneAsync(Object key) {
+        return null;
+    }
+
+    @Override
+    public Future<Long> incrementAsync(Object key, long amount) {
+        return null;
     }
 
     @Override
