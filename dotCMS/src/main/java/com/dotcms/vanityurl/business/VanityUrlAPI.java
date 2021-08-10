@@ -1,15 +1,15 @@
 package com.dotcms.vanityurl.business;
 
-import com.dotcms.keyvalue.model.KeyValue;
-import java.util.List;
-import java.util.Optional;
-
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+
+import java.util.List;
+import java.util.Optional;
 
 /**
  * This API provides access to the information related to Vanity URLs in dotCMS. Vanity URLs are
@@ -22,8 +22,18 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
  * @since June 12, 2017
  */
 public interface VanityUrlAPI {
-    public static final String DEFAULT_VANITY_URL_STRUCTURE_VARNAME = "Vanityurl";
 
+    String DEFAULT_VANITY_URL_STRUCTURE_VARNAME = "Vanityurl";
+
+    /**
+     * Verifies that the Vanity URL as Contentlet has all the required fields. the list of mandatory fields can be
+     * verified in the Content Type's definition.
+     *
+     * @param contentlet The Vanity URL as {@link Contentlet}.
+     *
+     * @throws DotContentletValidationException At least one required Vanity URL parameter was either not found, or was
+     *                                          null/empty.
+     */
     void validateVanityUrl(Contentlet contentlet);
 
     /**
@@ -73,7 +83,5 @@ public interface VanityUrlAPI {
      * @return The list of Vanity URLs.
      */
     List<CachedVanityUrl> findInDb(Host host, Language language);
-
-
 
 }
