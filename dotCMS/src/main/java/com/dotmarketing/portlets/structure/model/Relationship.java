@@ -281,8 +281,7 @@ public class Relationship extends Inode implements ManifestItem {
 	public ManifestInfo getManifestInfo(){
 		return new ManifestInfoBuilder()
 			.objectType(PusheableAsset.RELATIONSHIP.getType())
-			.id(this.identifier)
-			.inode(this.inode)
+			.id(this.inode)
 			.title(this.getTitle())
 			.build();
 	}
