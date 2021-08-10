@@ -279,7 +279,6 @@ describe('DotEditPageToolbarComponent', () => {
 
     describe('events', () => {
         let whatsChangedElem: DebugElement;
-
         beforeEach(() => {
             spyOn(component.whatschange, 'emit');
             spyOn(dotMessageDisplayService, 'push');
@@ -291,13 +290,13 @@ describe('DotEditPageToolbarComponent', () => {
         });
 
         it("should emit what's change in true", () => {
-            whatsChangedElem.triggerEventHandler('onChange', true);
+            whatsChangedElem.triggerEventHandler('onChange', { checked: true });
             expect(component.whatschange.emit).toHaveBeenCalledTimes(1);
             expect(component.whatschange.emit).toHaveBeenCalledWith(true);
         });
 
         it("should emit what's change in false", () => {
-            whatsChangedElem.triggerEventHandler('onChange', false);
+            whatsChangedElem.triggerEventHandler('onChange', { checked: false });
             expect(component.whatschange.emit).toHaveBeenCalledTimes(1);
             expect(component.whatschange.emit).toHaveBeenCalledWith(false);
         });

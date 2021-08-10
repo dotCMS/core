@@ -24,7 +24,7 @@
             class="dot-edit__what-changed-button"
             [label]="'dot.common.whats.changed' | dm"
             *ngIf="showWhatsChanged && isEnterpriseLicense$ | async"
-            (onChange)="whatschange.emit($event)"
+            (onChange)="whatschange.emit($event.checked)"
         ></p-checkbox>
     </div>
 
