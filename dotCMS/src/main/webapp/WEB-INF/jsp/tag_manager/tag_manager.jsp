@@ -492,7 +492,7 @@ td {font-size: 100%;}
         <div class="portlet-toolbar__actions-secondary">
         	<!-- START Actions -->
         		<form name="export_form" id="export_form" method="get">		
-					<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"'>
+					<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"fa-plus", class:"dijitDropDownActionButton"'>
 	            		<span></span>
 	
 	            		<div data-dojo-type="dijit/Menu" class="contentlet-menu-actions">
