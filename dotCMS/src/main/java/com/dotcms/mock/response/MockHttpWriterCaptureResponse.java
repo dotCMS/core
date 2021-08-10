@@ -1,4 +1,4 @@
-package com.dotcms.graphql;
+package com.dotcms.mock.response;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -12,15 +12,15 @@ import com.dotcms.mock.response.MockResponse;
  * Proxy for HTTPServletResponse
  *
  */
-public class MockHttpCaptureResponse extends HttpServletResponseWrapper implements MockResponse {
+public class MockHttpWriterCaptureResponse extends HttpServletResponseWrapper implements MockResponse {
 
 
     public StringWriter writer = new StringWriter();
 
 
     
-    final HttpServletResponse originalResponse;
-    public MockHttpCaptureResponse(HttpServletResponse response) {
+    public final HttpServletResponse originalResponse;
+    public MockHttpWriterCaptureResponse(HttpServletResponse response) {
         super(response);
         originalResponse=response;
 

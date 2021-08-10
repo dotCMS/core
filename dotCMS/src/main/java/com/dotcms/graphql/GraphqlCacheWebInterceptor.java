@@ -7,7 +7,10 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
+import com.dotcms.mock.request.HttpRequestReaderWrapper;
+import com.dotcms.mock.response.MockHttpWriterCaptureResponse;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
@@ -55,6 +58,9 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
 
     private final GraphQLCache graphCache = CacheLocator.getGraphQLCache();
 
+    private final Lazy<Boolean> ENABLED_FROM_CONFIG = Lazy.of(()->Config
+                    .getBooleanProperty("GRAPHQL_CACHE_RESULT>", true));
+
     @Override
     public String[] getFilters() {
         return new String[] {API_CALL + "*"};
@@ -66,9 +72,9 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
         if (!"POST".equals(requestIn.getMethod()) || !LicenseManager.getInstance().isEnterprise()) {
             return Result.NEXT;
         }
-        final  HttpRequestReaderWrapper wrapper = new HttpRequestReaderWrapper(requestIn);
+        final HttpRequestReaderWrapper wrapper = new HttpRequestReaderWrapper(requestIn);
 
-        final Optional<String> query = wrapper.getGraphQLQuery();
+        final Optional<String> query = wrapper.getRawRequest();
         if (!query.isPresent() ) {
             return Result.NEXT;
         }
@@ -100,7 +106,7 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
 
             wrapper.setAttribute(GRAPHQL_CACHE_KEY, syncKey);
             wrapper.setAttribute(GRAPHQL_BYPASS_CACHE, bypassCache);
-            return new Result.Builder().wrap(new MockHttpCaptureResponse(response))
+            return new Result.Builder().wrap(new MockHttpWriterCaptureResponse(response))
                     .wrap(wrapper).next().build();
         }
     }
@@ -135,10 +141,9 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
             final HttpServletResponse response) {
         final String cacheKey = (String) request.getAttribute(GRAPHQL_CACHE_KEY);
 
-        if(response.getStatus() ==200 && response instanceof MockHttpCaptureResponse
+        if(response.getStatus() ==200 && response instanceof MockHttpWriterCaptureResponse
                 && UtilMethods.isSet(cacheKey)) {
-
-            final MockHttpCaptureResponse mockResponse = (MockHttpCaptureResponse) response;
+            final MockHttpWriterCaptureResponse mockResponse = (MockHttpWriterCaptureResponse) response;
             response.setHeader("x-graphql-cache", "miss, writing to cache");
             final String graphqlResponse = mockResponse.writer.toString();
 
@@ -159,7 +164,10 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
             if(cacheTTL.get().isPresent() && cacheTTL.get().get()==INVALIDATE_CACHE) {
                 graphCache.remove(cacheKey);
             }
-
+        } else if(response instanceof MockHttpWriterCaptureResponse) {
+            final MockHttpWriterCaptureResponse mockResponse = (MockHttpWriterCaptureResponse) response;
+            final String graphqlResponse = mockResponse.writer.toString();
+            Try.run(() -> mockResponse.originalResponse.getWriter().write(graphqlResponse));
         }
         return true;
     }
@@ -188,6 +196,11 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
             final String paramOrHeaderName) {
         final Optional<String> param = getParamCaseInsensitive(request, paramOrHeaderName);
         return param.isPresent() ? param : getHeaderCaseInsensitive(request, paramOrHeaderName);
+    }
+
+    @Override
+    public boolean isActive() {
+        return LicenseManager.getInstance().isEnterprise() && ENABLED_FROM_CONFIG.get();
     }
 
 }

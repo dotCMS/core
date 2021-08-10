@@ -1,4 +1,4 @@
-package com.dotcms.graphql;
+package com.dotcms.mock.request;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -12,7 +12,7 @@ import com.google.common.io.CharStreams;
 
 
 /**
- * Proxy for HTTPServletResponse
+ * Proxy for HTTPServletRequest
  *
  */
 public class HttpRequestReaderWrapper extends HttpServletRequestWrapper {
@@ -40,12 +40,12 @@ public class HttpRequestReaderWrapper extends HttpServletRequestWrapper {
     }
 
 
-    public Optional<String> getGraphQLQuery() {
+    public Optional<String> getRawRequest() {
 
 
-        final String cacheKey = UtilMethods.isSet(rawRequest) ? rawRequest.trim() : null;
+        final String rawRequest = UtilMethods.isSet(this.rawRequest) ? this.rawRequest.trim() : null;
 
-        return Optional.ofNullable(cacheKey);
+        return Optional.ofNullable(rawRequest);
 
 
     }

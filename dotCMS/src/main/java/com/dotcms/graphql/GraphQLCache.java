@@ -6,6 +6,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
+import io.vavr.Lazy;
 import io.vavr.Tuple2;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoField;
@@ -25,7 +26,9 @@ public class GraphQLCache implements Cachable {
 
 
     private final DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-    private boolean canCache;
+
+    private final Lazy<Boolean> ENABLED_FROM_CONFIG = Lazy.of(()->Config
+            .getBooleanProperty("GRAPHQL_CACHE_RESULT>", true));
 
     public Optional<String> get(final String key) {
         if(!canCache()) return Optional.empty();
@@ -95,11 +98,7 @@ public class GraphQLCache implements Cachable {
     }
 
     private boolean canCache() {
-        if(!canCache) {
-            canCache = LicenseManager.getInstance().isEnterprise() && Config
-                    .getBooleanProperty("GRAPHQL_CACHE_RESULTS", true);;
-        }
-        return canCache;
+        return LicenseManager.getInstance().isEnterprise() && ENABLED_FROM_CONFIG.get();
     }
 
     public void remove(final String key) {
