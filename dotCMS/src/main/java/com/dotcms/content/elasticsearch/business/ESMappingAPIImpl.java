@@ -74,6 +74,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -90,6 +91,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.time.FastDateFormat;
@@ -150,7 +152,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	private FolderAPI folderAPI;
     private IdentifierAPI identifierAPI;
 	private VersionableAPI versionableAPI;
-	private ContentTypeAPI contentTypeAPI;
 	private PermissionAPI permissionAPI;
 	private ContentletAPI contentletAPI;
 	private FileMetadataAPI fileMetadataAPI;
@@ -161,7 +162,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	private TagAPI tagAPI;
 	private CategoryAPI categoryAPI;
 	private RoleAPI roleAPI;
-	private WorkflowAPI workflowAPI;
+	//These two are set as suppliers cuz their instantiation during initialization require of a company to exist.
+    //By doing this they will get instantiated once the company users roles haven been settled. After the starter is loaded.
+	private Supplier<ContentTypeAPI> contentTypeAPI;
+	private Supplier<WorkflowAPI> workflowAPI;
 
 	@VisibleForTesting
 	public ESMappingAPIImpl(
@@ -169,7 +173,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			final FolderAPI folderAPI,
 			final IdentifierAPI identifierAPI,
 			final VersionableAPI versionableAPI,
-			final ContentTypeAPI contentTypeAPI,
 			final PermissionAPI permissionAPI,
 			final ContentletAPI contentletAPI,
 			final FileMetadataAPI fileMetadataAPI,
@@ -180,12 +183,12 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			final TagAPI tagAPI,
 			final CategoryAPI categoryAPI,
 			final RoleAPI roleAPI,
-			final WorkflowAPI workflowAPI) {
+			final Supplier<ContentTypeAPI> contentTypeAPI,
+			final Supplier<WorkflowAPI> workflowAPI) {
 		this.userAPI = userAPI;
 		this.folderAPI = folderAPI;
 		this.identifierAPI = identifierAPI;
 		this.versionableAPI = versionableAPI;
-		this.contentTypeAPI = contentTypeAPI;
 		this.permissionAPI = permissionAPI;
 		this.contentletAPI = contentletAPI;
 		this.fileMetadataAPI = fileMetadataAPI;
@@ -193,10 +196,11 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		this.fieldAPI = fieldAPI;
 		this.esIndexAPI = esIndexAPI;
 		this.relationshipAPI = relationshipAPI;
-        this.tagAPI = tagAPI;
-        this.categoryAPI = categoryAPI;
-        this.roleAPI = roleAPI;
-        this.workflowAPI = workflowAPI;
+		this.tagAPI = tagAPI;
+		this.categoryAPI = categoryAPI;
+		this.roleAPI = roleAPI;
+		this.contentTypeAPI = contentTypeAPI;
+		this.workflowAPI = workflowAPI;
 
 		if (mapper == null) {
 			synchronized (this.getClass().getName()) {
@@ -211,14 +215,15 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 	public ESMappingAPIImpl() {
 		this(APILocator.getUserAPI(), APILocator.getFolderAPI(),
-			 APILocator.getIdentifierAPI(), APILocator.getVersionableAPI(),
-			 APILocator.getContentTypeAPI(APILocator.systemUser()),
-			 APILocator.getPermissionAPI(), APILocator.getContentletAPI(),
-			 APILocator.getFileMetadataAPI(), APILocator.getHostAPI(),
-			 APILocator.getFieldAPI(), APILocator.getESIndexAPI(),
-			 APILocator.getRelationshipAPI(), APILocator.getTagAPI(),
-			 APILocator.getCategoryAPI(), APILocator.getRoleAPI(),
-			 APILocator.getWorkflowAPI());
+			APILocator.getIdentifierAPI(), APILocator.getVersionableAPI(),
+			APILocator.getPermissionAPI(), APILocator.getContentletAPI(),
+			APILocator.getFileMetadataAPI(), APILocator.getHostAPI(),
+			APILocator.getFieldAPI(), APILocator.getESIndexAPI(),
+			APILocator.getRelationshipAPI(), APILocator.getTagAPI(),
+			APILocator.getCategoryAPI(), APILocator.getRoleAPI(),
+			//Use memoized Suppliers to avoid re-instantiating the API on every call
+			Lazy.of(() -> APILocator.getContentTypeAPI(APILocator.systemUser())),
+			Lazy.of(APILocator::getWorkflowAPI));
 	}
 
     /**
@@ -335,7 +340,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                         " found via API.", contentIdentifier.getId(), contentlet.getLanguageId());
                 throw new DotDataException(errorMsg);
             }
-			final ContentType contentType = contentTypeAPI.find(contentlet.getContentTypeId());
+			final ContentType contentType = contentTypeAPI.get().find(contentlet.getContentTypeId());
             if (null == contentType || !UtilMethods.isSet(contentType.id())) {
                 final String errorMsg = String.format("Content Type with ID '%s' was not found via API.",
                         contentlet.getContentTypeId());
@@ -624,14 +629,14 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
     protected Map<String, Object> getWorkflowInfoForContentlet(final Contentlet contentlet) {
 
         final Map<String, Object> workflowMap = new HashMap<>();
-
+        final WorkflowAPI api = workflowAPI.get();
         try {
 
-            final WorkflowTask task = workflowAPI.findTaskByContentlet(contentlet);
+            final WorkflowTask task = api.findTaskByContentlet(contentlet);
 
             if(task != null && task.getId() != null && null != task.getStatus()) {
 
-                final WorkflowStep step = workflowAPI.findStep(task.getStatus());
+                final WorkflowStep step = api.findStep(task.getStatus());
                 workflowMap.put(ESMappingConstants.WORKFLOW_SCHEME, step.getSchemeId());
                 workflowMap.put(ESMappingConstants.WORKFLOW_STEP, task.getStatus());
 				workflowMap.put(ESMappingConstants.WORKFLOW_CURRENT_STEP, step.getName());
@@ -651,7 +656,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
                 final List<String> stepIds = new ArrayList<>();
                 final Set<String> schemeWriter = new HashSet<>();
-                final List<WorkflowScheme> schemes = workflowAPI.findSchemesForContentType(contentlet.getContentType());
+                final List<WorkflowScheme> schemes = api.findSchemesForContentType(contentlet.getContentType());
                 for (final WorkflowScheme scheme : schemes) {
                     final String entryStep = scheme.entryStep();
                     if (entryStep != null) {
@@ -680,7 +685,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			throws DotDataException, DotSecurityException {
 	    // first we check if there is a category field in the structure. We don't hit db if not needed
 
-	    final ContentType type = contentTypeAPI.find(con.getContentTypeId());
+	    final ContentType type = contentTypeAPI.get().find(con.getContentTypeId());
 	    List<com.dotcms.contenttype.model.field.Field> catFields = type.fields().stream()
 				.filter(field -> field instanceof CategoryField).collect(CollectionsUtils.toImmutableList());
 

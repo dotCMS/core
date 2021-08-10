@@ -333,13 +333,13 @@ public class ESMappingAPITest {
         final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl(
                 APILocator.getUserAPI(), APILocator.getFolderAPI(),
                 identifierAPI, versionableAPI,
-                APILocator.getContentTypeAPI(APILocator.systemUser()),
                 APILocator.getPermissionAPI(), APILocator.getContentletAPI(),
                 APILocator.getFileMetadataAPI(), APILocator.getHostAPI(),
                 APILocator.getFieldAPI(), APILocator.getESIndexAPI(),
                 APILocator.getRelationshipAPI(), APILocator.getTagAPI(),
                 APILocator.getCategoryAPI(), APILocator.getRoleAPI(),
-                APILocator.getWorkflowAPI());
+                ()->APILocator.getContentTypeAPI(APILocator.systemUser()),
+                APILocator::getWorkflowAPI);
 
         try {
             esMappingAPI.toMap(contentlet);
@@ -386,13 +386,13 @@ public class ESMappingAPITest {
         final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl(
                 APILocator.getUserAPI(), APILocator.getFolderAPI(),
                 identifierAPI, versionableAPI,
-                APILocator.getContentTypeAPI(APILocator.systemUser()),
                 APILocator.getPermissionAPI(), APILocator.getContentletAPI(),
                 APILocator.getFileMetadataAPI(), APILocator.getHostAPI(),
                 APILocator.getFieldAPI(), APILocator.getESIndexAPI(),
                 APILocator.getRelationshipAPI(), APILocator.getTagAPI(),
                 APILocator.getCategoryAPI(), APILocator.getRoleAPI(),
-                APILocator.getWorkflowAPI());
+                ()->APILocator.getContentTypeAPI(APILocator.systemUser()),
+                APILocator::getWorkflowAPI);
 
         try {
             esMappingAPI.toMap(contentlet);
