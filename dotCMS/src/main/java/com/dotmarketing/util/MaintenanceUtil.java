@@ -3,7 +3,6 @@ package com.dotmarketing.util;
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.cache.FieldsCache;
@@ -11,7 +10,6 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -35,8 +33,6 @@ import com.dotcms.repackage.net.sf.hibernate.HibernateException;
  *
  */
 public class MaintenanceUtil {
-
-	private static final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
 
 	/**
 	 * Use to delete the velocity static store
