@@ -44,6 +44,7 @@ import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.dependencies.DependencyManager;
+import com.dotcms.publishing.manifest.ManifestBuilder;
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
@@ -487,7 +488,8 @@ public class PublisherAPIImplTest {
                     languageVariablesAddInBundle
             );
 
-            final String manifestFilePath = extractHere.getAbsolutePath() + File.separator + "manifest.csv";
+            final String manifestFilePath = extractHere.getAbsolutePath() + File.separator +
+                    ManifestBuilder.MANIFEST_NAME;
             final File manifestFile = new File(manifestFilePath);
 
             assertManifestFile(manifestFile, manifestLines);

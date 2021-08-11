@@ -8,11 +8,6 @@ import java.io.IOException;
 public class TestManifestBuilder implements ManifestBuilder {
 
     @Override
-    public void create() {
-
-    }
-
-    @Override
     public <T> void include(ManifestItem manifestItem, String reason) {
 
     }

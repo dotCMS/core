@@ -12,6 +12,7 @@
 <%@ page import="com.dotcms.publisher.bundle.bean.Bundle"%>
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.business.DotStateException"%>
+<%@ page import="com.dotcms.publishing.BundlerUtil" %>
 
 <%
     String bundleId = request.getParameter("bundle");
@@ -74,6 +75,10 @@
 
 
     <button dojoType="dijit.form.Button" onClick="window.location='/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadBundle/bid/<%=bundleId%>';" iconClass="downloadIcon"><%= LanguageUtil.get(pageContext, "download") %></button>
+
+    <%if (BundlerUtil.tarGzipExists(bundleId)){%>
+        <button dojoType="dijit.form.Button" onClick="window.location='/api/bundle/<%=bundleId%>/manifest'" iconClass="downloadIcon"><%= LanguageUtil.get(pageContext, "manifest") %></button>
+    <%}%>
 
     <% if ( (statusCode != 0 && status != null) && (status.equals( PublishAuditStatus.Status.FAILED_TO_PUBLISH ) || status.equals( PublishAuditStatus.Status.SUCCESS )) ) { %>
 
