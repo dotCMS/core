@@ -630,7 +630,11 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 	}
 
 	public Optional<File> getManifestFile() {
-		return Optional.of(manifestBuilder.getManifestFile());
+		try {
+			return Optional.of(manifestBuilder.getManifestFile());
+		} catch (IllegalStateException e) {
+			return Optional.empty();
+		}
 	}
 
 	public Map<String, Object> getMap() {
