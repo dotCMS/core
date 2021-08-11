@@ -1402,17 +1402,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     return contentlet.getFolder();
                 }
             } else if (theField instanceof CategoryField) {
-                final Category category = categoryAPI.find(theField.values(), currentUser, respectFrontEndRoles);
+                final Category category = this.categoryAPI.find(theField.values(), currentUser, respectFrontEndRoles);
                 // Get all the Contentlets Categories
-                final List<Category> selectedCategories = categoryAPI
+                final List<Category> selectedCategories = this.categoryAPI
                         .getParents(contentlet, currentUser, respectFrontEndRoles);
-                final Set<Category> categoryList = new HashSet<Category>();
-                final List<Category> categoryTree = categoryAPI
+                final Set<Category> categoryList = new HashSet<>();
+                final List<Category> categoryTree = this.categoryAPI
                         .getAllChildren(category, currentUser, respectFrontEndRoles);
                 if (selectedCategories.size() > 0 && categoryTree != null) {
                     for (int k = 0; k < categoryTree.size(); k++) {
                         final Category cat = categoryTree.get(k);
-                        for (Category categ : selectedCategories) {
+                        for (final Category categ : selectedCategories) {
                             if (categ.getInode().equalsIgnoreCase(cat.getInode())) {
                                 categoryList.add(cat);
                             }
@@ -1424,21 +1424,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
             } else if (theField instanceof RelationshipField) {
                 final ContentletRelationships contentletRelationships = new ContentletRelationships(
                         contentlet);
-                final Relationship relationship = relationshipAPI
+                final Relationship relationship = this.relationshipAPI
                         .getRelationshipFromField(theField, currentUser);
                 final boolean isChildField =
                         relationshipAPI.isChildField(relationship, theField);
                 final ContentletRelationshipRecords records = contentletRelationships.new ContentletRelationshipRecords(
                         relationship, isChildField);
                 records.setRecords(contentlet
-                        .getRelated(theField.variable(), user, respectFrontEndRoles, isChildField,
+                        .getRelated(theField.variable(), currentUser, respectFrontEndRoles, isChildField,
                                 contentlet.getLanguageId(), null));
                 contentletRelationships.setRelationshipsRecords(CollectionsUtils.list(records));
                 return contentletRelationships;
             } else {
                 return contentlet.get(theField.variable());
             }
-        } catch (DotDataException | DotSecurityException e) {
+        } catch (final DotDataException | DotSecurityException e) {
             throw new DotStateException(e);
         }
     }
