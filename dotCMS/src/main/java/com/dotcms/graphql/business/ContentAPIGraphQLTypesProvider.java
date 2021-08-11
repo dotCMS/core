@@ -20,6 +20,7 @@ import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.MultiSelectField;
 import com.dotcms.contenttype.model.field.RelationshipsTabField;
 import com.dotcms.contenttype.model.field.RowField;
+import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -33,6 +34,7 @@ import com.dotcms.graphql.datafetcher.FileFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.KeyValueFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.MultiValueFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.SiteOrFolderFieldDataFetcher;
+import com.dotcms.graphql.datafetcher.StoryBlockFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.TagsFieldDataFetcher;
 import com.dotcms.graphql.exception.FieldGenerationException;
 import com.dotcms.graphql.exception.TypeGenerationException;
@@ -86,6 +88,7 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         this.fieldClassGraphqlTypeMap.put(TagField.class, list(GraphQLString));
         this.fieldClassGraphqlTypeMap
                 .put(HostFolderField.class, CustomFieldType.SITE_OR_FOLDER.getType());
+        this.fieldClassGraphqlTypeMap.put(StoryBlockField.class,CustomFieldType.STORY_BLOCK.getType());
 
         // custom data fetchers
         this.fieldClassGraphqlDataFetcher.put(BinaryField.class, new BinaryFieldDataFetcher());
@@ -100,6 +103,7 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         this.fieldClassGraphqlDataFetcher.put(TagField.class, new TagsFieldDataFetcher());
         this.fieldClassGraphqlDataFetcher
                 .put(HostFolderField.class, new SiteOrFolderFieldDataFetcher());
+        this.fieldClassGraphqlDataFetcher.put(StoryBlockField.class,new StoryBlockFieldDataFetcher());
     }
 
     @Override
