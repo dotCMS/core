@@ -12,12 +12,9 @@ import java.io.IOException;
  */
 public interface ManifestBuilder extends Closeable {
 
-    /**
-     * Create the Manifest File
-     * @throws {@link DotRuntimeException} if any {@link IOException} is thrown
-     */
-     void create();
-     
+
+    public static String MANIFEST_NAME = "manifest.csv";
+
     /**
      * Add a INCLUDE register into the Manifest
      * @param manifestItem Asset information
