@@ -55,7 +55,7 @@ import org.junit.runner.RunWith;
 @RunWith(DataProviderRunner.class)
 public class CSVManifestBuilderTest {
 
-    private static String headers = "INCLUDED/EXCLUDED,object type, Id, title, site, folder, excluded by, included by";
+    private static String headers = "INCLUDED/EXCLUDED,object type, Id, inode, title, site, folder, excluded by, included by";
 
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
@@ -92,8 +92,8 @@ public class CSVManifestBuilderTest {
                 .parent(parentContentType)
                 .nextPersisted();
 
-        final String line = list(PusheableAsset.RELATIONSHIP.getType(), relationship.getInode(),
-                relationship.getTitle(), "", "")
+        final String line = list(PusheableAsset.RELATIONSHIP.getType(), relationship.getIdentifier(),
+                relationship.getInode(), relationship.getTitle(), "", "")
                 .stream().collect(Collectors.joining(","));
         return new TestCase(relationship, line);
     }
@@ -107,7 +107,7 @@ public class CSVManifestBuilderTest {
         final Folder folder = APILocator.getFolderAPI()
                 .find(contentlet.getFolder(), systemUser, false);
 
-        final String line = list(PusheableAsset.CONTENTLET.getType(), contentlet.getIdentifier(),
+        final String line = list(PusheableAsset.CONTENTLET.getType(), contentlet.getIdentifier(), contentlet.getInode(),
                 contentlet.getName(), host.getName(), folder.getPath())
                 .stream().collect(Collectors.joining(","));
         return new TestCase(contentlet, line);
@@ -117,7 +117,7 @@ public class CSVManifestBuilderTest {
         final User user = new UserDataGen().nextPersisted();
 
         final String line = list(PusheableAsset.USER.getType(),
-                String.valueOf(user.getUserId()), user.getFullName(), "", "")
+                String.valueOf(user.getUserId()), "", user.getFullName(), "", "")
                 .stream().collect(Collectors.joining(","));
         return new TestCase(user, line);
     }
@@ -127,7 +127,7 @@ public class CSVManifestBuilderTest {
         final Folder folder = APILocator.getFolderAPI()
                 .find(rule.getFolder(), APILocator.systemUser(), false);
         final String line = list(PusheableAsset.RULE.getType(),
-                String.valueOf(rule.getId()), rule.getName(), "", folder.getPath())
+                String.valueOf(rule.getId()), "", rule.getName(), "", folder.getPath())
                 .stream().collect(Collectors.joining(","));
         return new TestCase(rule, line);
     }
@@ -136,7 +136,7 @@ public class CSVManifestBuilderTest {
         final Language language = new LanguageDataGen().nextPersisted();
 
         final String line = list(PusheableAsset.LANGUAGE.getType(),
-                String.valueOf(language.getId()), language.getLanguage(), "", "")
+                String.valueOf(language.getId()), "", language.getLanguage(), "", "")
                 .stream().collect(Collectors.joining(","));
         return new TestCase(language, line);
     }
@@ -145,7 +145,7 @@ public class CSVManifestBuilderTest {
         final Template template = new TemplateDataGen().nextPersisted();
 
         final String line = list(PusheableAsset.TEMPLATE.getType(), template.getIdentifier(),
-                template.getTitle(), "", "")
+                template.getInode(), template.getTitle(), "", "")
                 .stream().collect(Collectors.joining(","));
         return new TestCase(template, line);
     }
@@ -153,7 +153,7 @@ public class CSVManifestBuilderTest {
     private static TestCase getContainerTestCase() {
         final Container container = new ContainerDataGen().nextPersisted();
         final String line = list(PusheableAsset.CONTAINER.getType(), container.getIdentifier(),
-                container.getTitle(), "", "")
+                container.getInode(), container.getTitle(), "", "")
                 .stream().collect(Collectors.joining(","));
         return new TestCase(container, line);
     }
@@ -163,7 +163,7 @@ public class CSVManifestBuilderTest {
         final FileAssetContainer fileAssetContainer = new ContainerAsFileDataGen().nextPersisted();
 
         final String line = list(PusheableAsset.CONTAINER.getType(), fileAssetContainer.getIdentifier(),
-                fileAssetContainer.getTitle(), "", "")
+                fileAssetContainer.getInode(), fileAssetContainer.getTitle(), "", "")
                 .stream().collect(Collectors.joining(","));
         return new TestCase(fileAssetContainer, line);
     }
@@ -171,7 +171,7 @@ public class CSVManifestBuilderTest {
     private static TestCase getFolderTestCase() {
         final Folder parent = new FolderDataGen().nextPersisted();
         final Folder folder = new FolderDataGen().parent(parent).nextPersisted();
-        final String line = list(PusheableAsset.FOLDER.getType(), folder.getIdentifier(),
+        final String line = list(PusheableAsset.FOLDER.getType(), folder.getIdentifier(), folder.getInode(),
                 folder.getTitle(), folder.getHost().getName(), parent.getPath())
                 .stream().collect(Collectors.joining(","));
         return new TestCase(folder, line);
@@ -179,8 +179,8 @@ public class CSVManifestBuilderTest {
 
     private static TestCase getCategoryTestCase() {
         final Category category = new CategoryDataGen().nextPersisted();
-        final String line = list(PusheableAsset.CATEGORY.getType(), category.getInode(),
-                category.getTitle(), "", "")
+        final String line = list(PusheableAsset.CATEGORY.getType(), category.getIdentifier(),
+                category.getInode(), category.getTitle(), "", "")
                 .stream().collect(Collectors.joining(","));
         return new TestCase(category, line);
     }
@@ -188,7 +188,7 @@ public class CSVManifestBuilderTest {
     private static TestCase getHostTestCase() {
         final Host host = new SiteDataGen().nextPersisted();
         final String line = list(PusheableAsset.SITE.getType(), host.getIdentifier(),
-                host.getTitle(), "System Host", "/")
+                host.getInode(), host.getTitle(), "System Host", "/")
                 .stream().collect(Collectors.joining(","));
         return new TestCase(host, line);
     }
@@ -196,7 +196,7 @@ public class CSVManifestBuilderTest {
     private static TestCase getWorkflowTestCase() throws DotDataException, DotSecurityException {
         final WorkflowScheme workflowScheme = new WorkflowDataGen().nextPersisted();
         final String line = list(PusheableAsset.WORKFLOW.getType(), workflowScheme.getId(),
-                workflowScheme.getName(), "", "")
+                "", workflowScheme.getName(), "", "")
                 .stream().collect(Collectors.joining(","));
         return new TestCase(workflowScheme, line);
     }
@@ -206,7 +206,7 @@ public class CSVManifestBuilderTest {
         final Host host = APILocator.getHostAPI()
                 .find(link.getHostId(), APILocator.systemUser(), false);
         final String line = list(PusheableAsset.LINK.getType(), link.getIdentifier(),
-                link.getTitle(), "", "")
+                link.getInode(), link.getTitle(), "", "")
                 .stream().collect(Collectors.joining(","));
         return new TestCase(link, line);
     }
@@ -218,7 +218,7 @@ public class CSVManifestBuilderTest {
                 .host(host).nextPersisted();
 
         final String line = list(PusheableAsset.TEMPLATE.getType(), template.getIdentifier(),
-                template.getTitle(), "", template.getPath())
+                template.getInode(), template.getTitle(), "", template.getPath())
                 .stream().collect(Collectors.joining(","));
         return new TestCase(template, line);
     }
@@ -230,7 +230,7 @@ public class CSVManifestBuilderTest {
         final Folder folder = APILocator.getFolderAPI()
                 .find(contentType.folder(), systemUser, false);
         final String line = list(PusheableAsset.CONTENT_TYPE.getType(), contentType.id(),
-                contentType.name(), host.getName(), folder.getPath())
+                contentType.inode(), contentType.name(), host.getName(), folder.getPath())
                 .stream().collect(Collectors.joining(","));
         return new TestCase(contentType, line);
     }

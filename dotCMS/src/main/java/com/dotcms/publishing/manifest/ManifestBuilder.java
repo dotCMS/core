@@ -12,6 +12,7 @@ import java.io.IOException;
  */
 public interface ManifestBuilder extends Closeable {
 
+
     public static String MANIFEST_NAME = "manifest.csv";
 
     /**
@@ -30,6 +31,7 @@ public interface ManifestBuilder extends Closeable {
      */
      <T> void exclude(final ManifestItem manifestItem, final String reason);
 
+     
     /**
      * Return th Manifest File
      * @return
