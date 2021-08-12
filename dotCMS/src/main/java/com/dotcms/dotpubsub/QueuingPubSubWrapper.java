@@ -128,7 +128,7 @@ public class QueuingPubSubWrapper implements DotPubSubProvider {
      */
     private boolean publishQueue() {
 
-        Logger.info(this.getClass(), () -> "Running QueuingPubSubWrapper.publishQueue " + pool.getNumActive() + " " + pool.getNumIdle() + " " + submitter.getTaskCount() + " " + submitter.getActiveCount());
+        Logger.debug(this.getClass(), () -> "Running QueuingPubSubWrapper.publishQueue " + pool.getNumActive() + " " + pool.getNumIdle() + " " + submitter.getTaskCount() + " " + submitter.getActiveCount());
 
         try {
             for (Map.Entry<String, Tuple2<DotPubSubTopic, LinkedBlockingQueue<DotPubSubEvent>>> topicTuple : topicQueues
@@ -149,13 +149,13 @@ public class QueuingPubSubWrapper implements DotPubSubProvider {
                                             + " total / " + dedupedMessages + " unique sent");
                         }
                     }
-                    Logger.info(this.getClass(), () -> "Running QueuingPubSubWrapper.publishQueue after drainTo " + topicQueue.size());
+                    Logger.debug(this.getClass(), () -> "Running QueuingPubSubWrapper.publishQueue after drainTo " + topicQueue.size());
 
                     submitter.submit(new DotPubSubEventPublisher(outgoingMessages));
                 }
             }
         } catch (Exception e) {
-            Logger.info(this.getClass(), () -> "Running QueuingPubSubWrapper.publishQueue ERROR: " + e.getMessage());
+            Logger.warn(this.getClass(), () -> "Running QueuingPubSubWrapper.publishQueue ERROR: " + e.getMessage());
         }
 
         return true;
@@ -201,7 +201,7 @@ public class QueuingPubSubWrapper implements DotPubSubProvider {
         @Override
         public void run() {
             try {
-                Logger.info(this.getClass(), () -> "Running QueuingPubSubWrapper.publishQueue Thread" + Thread.currentThread().getName() + " " + outgoingMessages.size());
+                Logger.debug(this.getClass(), () -> "Running QueuingPubSubWrapper.publishQueue Thread" + Thread.currentThread().getName() + " " + outgoingMessages.size());
 
                 for (Iterator<DotPubSubEvent> iterator = outgoingMessages.iterator();
                         iterator.hasNext(); ) {
@@ -226,7 +226,7 @@ public class QueuingPubSubWrapper implements DotPubSubProvider {
                 }
             }
 
-            Logger.info(this.getClass(), () -> "Running QueuingPubSubWrapper.publishQueue Finish Thread" + Thread.currentThread().getName());
+            Logger.debug(this.getClass(), () -> "Running QueuingPubSubWrapper.publishQueue Finish Thread" + Thread.currentThread().getName());
 
         }
     }
