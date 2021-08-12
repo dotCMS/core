@@ -16,9 +16,13 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.liferay.util.StringPool;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Objects;
 
 /**
  * <p>Defines a Content Relationship in dotCMS.</p>
@@ -30,7 +34,7 @@ import com.liferay.util.StringPool;
  * @author root
  * @since Mar 22, 2012
  */
-public class Relationship extends Inode implements ManifestItem {
+public class Relationship implements ManifestItem {
 	
 	private static final long serialVersionUID = 1L;
 	
@@ -43,12 +47,13 @@ public class Relationship extends Inode implements ManifestItem {
 	private boolean parentRequired;
     private boolean childRequired;
     private boolean fixed=false;
+    private String inode;
 	
     /**
      * Default class constructor.
      */
     public Relationship(){
-    	super.setType("relationship");	
+//    	super.setType("relationship");
     }
 
 	/**
@@ -68,7 +73,7 @@ public class Relationship extends Inode implements ManifestItem {
 			final String parentRelationName, final String childRelationName, final int cardinality,
 			final boolean parentRequired, final boolean childRequired) {
 		super();
-		this.setType("relationship");
+//		this.setType("relationship");
 		this.parentStructureInode = parentStructure.getInode();
 		this.childStructureInode = childStructure.getInode();
 		this.parentRelationName = parentRelationName;
@@ -95,7 +100,7 @@ public class Relationship extends Inode implements ManifestItem {
 	public Relationship(final ContentType parentContentType, final ContentType childContentType,
 			final Field field) {
 		super();
-		this.setType("relationship");
+//		this.setType("relationship");
 		final int cardinality = Integer.parseInt(field.values());
 
 		this.parentStructureInode = parentContentType.id();
@@ -274,6 +279,50 @@ public class Relationship extends Inode implements ManifestItem {
 
 	public void setFixed(boolean fixed) {
 	    
+	}
+
+	public String getInode() {
+		return inode;
+	}
+
+	public String getIdentifier() { return getInode(); }
+
+	public void setInode(String inode) {
+		this.inode = inode;
+	}
+
+	public String getTitle() {
+		return getRelationTypeValue();
+	}
+
+	public boolean hasParents() {
+		return TreeFactory.getTreesByChild(this.inode).size()>0;
+	}
+
+	public boolean isLive() {
+		return false;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+		Relationship that = (Relationship) o;
+		return Objects.equals(inode, that.inode);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(inode);
+	}
+
+	// TODO implement properly
+	public Date getModDate() {
+		return Calendar.getInstance().getTime();
 	}
 
 	@JsonIgnore

@@ -44,14 +44,14 @@ public abstract class RelationshipSQL {
 
 	public static final String INSERT_RELATIONSHIP = "insert into relationship (inode, parent_structure_inode, child_structure_inode, "
 			+ "parent_relation_name, child_relation_name, relation_type_value, cardinality, "
-			+ "parent_required, child_required, fixed) values(?,?,?,?,?,?,?,?,?,?)";
+			+ "parent_required, child_required, fixed, mod_date) values(?,?,?,?,?,?,?,?,?,?,?)";
 
 	public static final String UPDATE_INODE = "update inode set inode = ?, idate = ?, owner = ? where inode = ? and type='relationship'";
 
 	public static final String UPDATE_RELATIONSHIP = "update relationship set parent_structure_inode = ?,"
 			+ " child_structure_inode = ?, parent_relation_name = ?, child_relation_name = ?,"
 			+ " relation_type_value = ?, cardinality = ?, parent_required = ?, child_required = ?, "
-			+ " fixed = ? where inode = ?";
+			+ " fixed = ?, mod_date = ? where inode = ?";
 
 	public static final String DELETE_RELATIONSHIP_BY_INODE = "delete from relationship where inode = ?";
 
