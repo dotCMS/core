@@ -13,6 +13,7 @@ import com.google.common.annotations.VisibleForTesting;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -23,6 +24,9 @@ import javax.ws.rs.core.Response;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * Cache Resource
@@ -169,6 +173,32 @@ public class CacheResource {
 
     @NoCache
     @GET
+    @Path("/provider/{provider: .*}/objects/{group: .*}")
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response showObjects(@Context final HttpServletRequest request,
+                               @Context final HttpServletResponse response,
+                               @PathParam("provider") final String provider,
+                               @PathParam("group") final String group) {
+
+        new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
+                .rejectWhenNoUser(true).init();
+
+        final Set<String> keys = this.getProvider(provider, group).getKeys(group);
+        final Map<String, Object> objectMap = new TreeMap<>();
+        for (final String key : keys) {
+
+            final Object obj = this.getProvider(provider, group).get(group, key);
+            objectMap.put(key, obj == null? "NOPE" : obj);
+        }
+        return Response.ok(new ResponseEntityView(objectMap)).build();
+    }
+
+    @NoCache
+    @DELETE
     @Path("/provider/{provider: .*}/flush/{group: .*}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response flushGroup(@Context final HttpServletRequest request,
@@ -188,7 +218,7 @@ public class CacheResource {
     }
 
     @NoCache
-    @GET
+    @DELETE
     @Path("/provider/{provider: .*}/flush/{group: .*}/{id: .*}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response flushObject(@Context final HttpServletRequest request,
@@ -209,7 +239,7 @@ public class CacheResource {
     }
 
     @NoCache
-    @GET
+    @DELETE
     @Path("/provider/{provider: .*}/flush")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response flushAll(@Context final HttpServletRequest request,

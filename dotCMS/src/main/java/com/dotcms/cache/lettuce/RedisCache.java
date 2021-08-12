@@ -335,7 +335,7 @@ public class RedisCache extends CacheProvider {
         final String matchesPattern = prefix  + StringPool.STAR;
         final Set<String> keys = new LinkedHashSet<>();
         this.client.scanKeys(matchesPattern, this.keyBatchingSize, //keys::addAll);
-                redisKeys -> redisKeys.stream().map(redisKey ->
+                redisKeys -> redisKeys.stream().map(redisKey ->  // we remove the prefix in order to have the real key
                         redisKey.replace(prefix, StringPool.BLANK)).forEach(keys::add));
 
         return keys;
