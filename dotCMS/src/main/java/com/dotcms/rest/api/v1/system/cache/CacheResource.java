@@ -54,10 +54,16 @@ public class CacheResource {
 
             try {
 
-                method = providerAPI.getClass().getMethod("getProvidersForRegion", new Class[] {String.class});
+                method = providerAPI.getClass().getDeclaredMethod("getProvidersForRegion", new Class[] {String.class});
                 method.setAccessible(true);
             } catch (NoSuchMethodException | SecurityException e) {
-                throw new DotStateException(e);
+                try {
+
+                    method = providerAPI.getClass().getDeclaredMethod("b", new Class[] {String.class});
+                    method.setAccessible(true);
+                } catch (NoSuchMethodException | SecurityException ex) {
+                    throw new DotStateException(ex);
+                }
             }
         }
 

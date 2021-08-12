@@ -493,7 +493,8 @@ public class RoleAPIImpl implements RoleAPI {
 		}
 
 		if(!this.doesUserHaveRole(user, role)) {
-			this.addRoleToUser(role, user);
+
+			this.addRoleToUserWithoutEditUserValidation(role, user);
 		}
 
 		// since we have update methods that may change the role, we have to update the reference on cache.
@@ -502,6 +503,15 @@ public class RoleAPIImpl implements RoleAPI {
 
 		return role;
 	}
+
+	@WrapInTransaction
+	private void addRoleToUserWithoutEditUserValidation(final Role role, final User user) throws DotDataException, DotStateException {
+
+		SecurityLogger.logInfo(this.getClass(), "Adding role:'" + role.getName() + "' to user:" +
+				user.getUserId() + " email:" + user.getEmailAddress());
+		roleFactory.addRoleToUser(role, user);
+	}
+
 
 	// we split the functionality to use transaction only when need
 	// and avoid skipping the cache

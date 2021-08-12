@@ -1,6 +1,7 @@
 package com.dotcms.cache.lettuce;
 
 import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -14,8 +15,15 @@ import io.lettuce.core.api.StatefulConnection;
 import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.sync.RedisCommands;
 import io.lettuce.core.codec.CompressionCodec;
+import io.lettuce.core.codec.RedisCodec;
+import io.lettuce.core.codec.StringCodec;
 import io.lettuce.core.masterreplica.MasterReplica;
 import io.lettuce.core.masterreplica.StatefulRedisMasterReplicaConnection;
+import io.lettuce.core.output.ValueOutput;
+import io.lettuce.core.protocol.Command;
+import io.lettuce.core.protocol.CommandArgs;
+import io.lettuce.core.protocol.CommandType;
+import io.lettuce.core.protocol.RedisCommand;
 import io.lettuce.core.resource.DefaultClientResources;
 import io.lettuce.core.resource.DirContextDnsResolver;
 import io.lettuce.core.support.ConnectionPoolSupport;
@@ -52,6 +60,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
     private final int minIdleConnections = Config.getIntProperty("REDIS_LETTUCECLIENT_MIN_IDLE_CONNECTIONS", 2);
     private final int maxConnections = Config.getIntProperty("REDIS_LETTUCECLIENT_MAX_CONNECTIONS", 5);
     private final GenericObjectPool<StatefulRedisConnection<K, V>> pool;
+    private final RedisCodec<K, V> codec  = CompressionCodec.valueCompressor(new DotObjectCodec(), CompressionCodec.CompressionType.GZIP);
     public MasterReplicaLettuceClient() {
 
         this.pool = buildPool();
@@ -498,7 +507,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
     }
 
     @Override
-    public long delete(final K key, K... fields) {
+    public long deleteHash(final K key, K... fields) {
 
         try (StatefulRedisConnection<K,V> conn = this.getConn()) {
 
@@ -569,6 +578,27 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
             }
         }
     }
+
+    @Override
+    public long getIncrement (final K key) {
+
+        try (StatefulRedisConnection<K,V> conn = this.getConn()) {
+
+            if (this.isOpen(conn)) {
+
+                final Command<K, V, V> get =
+                        new Command<K, V, V>(CommandType.GET,
+                                new ValueOutput<K, V>(this.codec),
+                                new CommandArgs<>(this.codec).addKey(key));
+
+                conn.dispatch(get);
+
+                return ConversionUtils.toLong(get.get(), -1l);
+            } else {
+                return -1L;
+            }
+        }
+    }
     //////////
 
     private GenericObjectPool<StatefulRedisConnection<K, V>> buildPool() {
@@ -594,9 +624,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
                 try {
 
                     final StatefulRedisConnection<K, V> connection =
-                            (StatefulRedisConnection<K, V>) lettuceClient.connect(
-                                    CompressionCodec.valueCompressor(new DotObjectCodec(), CompressionCodec.CompressionType.GZIP),
-                                    redisUris.get(0));
+                            lettuceClient.connect(codec, redisUris.get(0));
 
                     if (timeout > 0) {
                         connection.setTimeout(Duration.ofMillis(timeout));
@@ -616,11 +644,11 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
                 try {
 
                     final StatefulRedisConnection<K, V> connection =
-                            (StatefulRedisConnection<K, V>) MasterReplica
+                            MasterReplica
                                     .connect(lettuceClient,
                                             // todo: remove this in favor of Snappy compressor
                                             // make this configurable in order to use to use gzip or snappy
-                                            CompressionCodec.valueCompressor(new DotObjectCodec(), CompressionCodec.CompressionType.GZIP),
+                                            codec,
                                             redisUris);
 
                     ((StatefulRedisMasterReplicaConnection) connection).setReadFrom(ReadFrom.REPLICA_PREFERRED);

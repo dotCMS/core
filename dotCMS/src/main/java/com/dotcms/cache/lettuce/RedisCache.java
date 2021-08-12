@@ -23,6 +23,7 @@ import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
+import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -330,9 +331,12 @@ public class RedisCache extends CacheProvider {
     @Override
     public Set<String> getKeys(final String group) {
 
-        final String prefix    = this.cacheKey(group) + StringPool.STAR;
+        final String prefix    = this.cacheKey(group);
+        final String matchesPattern = prefix  + StringPool.STAR;
         final Set<String> keys = new LinkedHashSet<>();
-        this.client.scanKeys(prefix, this.keyBatchingSize, keys::addAll);
+        this.client.scanKeys(matchesPattern, this.keyBatchingSize, //keys::addAll);
+                redisKeys -> redisKeys.stream().map(redisKey ->
+                        redisKey.replace(prefix, StringPool.BLANK)).forEach(keys::add));
 
         return keys;
     }

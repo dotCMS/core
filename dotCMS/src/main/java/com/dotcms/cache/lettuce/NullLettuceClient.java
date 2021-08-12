@@ -147,7 +147,7 @@ public class NullLettuceClient<K, V> implements RedisClient {
     }
 
     @Override
-    public long delete(Object key, Object[] fields) {
+    public long deleteHash(Object key, Object[] fields) {
         return 0;
     }
 
@@ -169,6 +169,11 @@ public class NullLettuceClient<K, V> implements RedisClient {
     @Override
     public Future<Long> incrementAsync(Object key, long amount) {
         return null;
+    }
+
+    @Override
+    public long getIncrement (final Object key) {
+        return -1;
     }
 
     @Override

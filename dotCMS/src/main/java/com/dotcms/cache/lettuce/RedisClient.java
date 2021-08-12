@@ -246,7 +246,7 @@ public interface RedisClient<K, V> {
      * @param fields Array of K
      * @return long number of fields deleted (-1 if can not delete)
      */
-    long delete(final K key, K... fields);
+    long deleteHash(final K key, K... fields);
 
     ///// INCR
 
@@ -279,5 +279,15 @@ public interface RedisClient<K, V> {
      * @return Future long current counter (if fail -1)
      */
     Future<Long> incrementAsync (final K key, final long amount);
+
+    /**
+     * get the current value of increment
+     * @param key K
+     * @return Long -1 if does not exists.
+     */
+    long getIncrement (final K key);
+
+    ////// Streams
+
 }
 
