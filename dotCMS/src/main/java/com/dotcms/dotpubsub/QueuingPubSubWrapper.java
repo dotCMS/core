@@ -72,8 +72,12 @@ public class QueuingPubSubWrapper implements DotPubSubProvider {
             }
         };
 
-        pool = new GenericObjectPool<>(factory);
-        ((GenericObjectPool) pool).setMaxTotal(-1);
+        GenericObjectPool genericObjectPool = new GenericObjectPool<>(factory);
+        genericObjectPool.setMaxTotal(-1);
+        genericObjectPool.setMinIdle(1);
+        genericObjectPool.setMaxIdle(1);
+
+        pool = genericObjectPool;
 
         submitter = DotConcurrentFactory.getInstance().getSubmitter("QueuingPubSubWrapperSubmitter",
         new DotConcurrentFactory.SubmitterConfigBuilder()
@@ -124,31 +128,30 @@ public class QueuingPubSubWrapper implements DotPubSubProvider {
      */
     private boolean publishQueue() {
 
-        Logger.info(this.getClass(), () -> "Running QueuingPubSubWrapper.publishQueue " + pool.getNumActive() + " " + pool.getNumIdle());
+        Logger.info(this.getClass(), () -> "Running QueuingPubSubWrapper.publishQueue " + pool.getNumActive() + " " + pool.getNumIdle() + " " + submitter.getTaskCount() + " " + submitter.getActiveCount());
 
         try {
             for (Map.Entry<String, Tuple2<DotPubSubTopic, LinkedBlockingQueue<DotPubSubEvent>>> topicTuple : topicQueues
                     .entrySet()) {
 
-                final Collection<DotPubSubEvent> outgoingMessages = pool.borrowObject();
                 final DotPubSubTopic topic = topicTuple.getValue()._1;
                 final LinkedBlockingQueue<DotPubSubEvent> topicQueue = topicTuple.getValue()._2;
 
-                final int drainedMessages = topicQueue.drainTo(outgoingMessages);
+                if (!topicQueue.isEmpty()) {
+                    final Collection<DotPubSubEvent> outgoingMessages = pool.borrowObject();
+                    final int drainedMessages = topicQueue.drainTo(outgoingMessages);
 
-                if (this.logDedupes && drainedMessages > 0) {
-                    final int dedupedMessages = outgoingMessages.size();
-                    if (drainedMessages > dedupedMessages) {
-                        Logger.info(this.getClass(),
-                                () -> "Topic: " + topic.getKey() + " = " + drainedMessages
-                                        + " total / " + dedupedMessages + " unique sent");
+                    if (this.logDedupes && drainedMessages > 0) {
+                        final int dedupedMessages = outgoingMessages.size();
+                        if (drainedMessages > dedupedMessages) {
+                            Logger.info(this.getClass(),
+                                    () -> "Topic: " + topic.getKey() + " = " + drainedMessages
+                                            + " total / " + dedupedMessages + " unique sent");
+                        }
                     }
-                }
+                    Logger.info(this.getClass(), () -> "Running QueuingPubSubWrapper.publishQueue after drainTo " + topicQueue.size());
 
-                if (outgoingMessages.size() > 0) {
                     submitter.submit(new DotPubSubEventPublisher(outgoingMessages));
-                } else {
-                    pool.returnObject(outgoingMessages);
                 }
             }
         } catch (Exception e) {
