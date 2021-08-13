@@ -7,6 +7,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.WebKeys;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,7 +26,8 @@ public class ContentletRelationships
 {
 	
 	private static final long serialVersionUID = 1L;
-	
+
+	@JsonIgnore
 	private Contentlet contentlet;
 	private List<ContentletRelationshipRecords> relationshipsRecords;
 	
@@ -39,7 +41,7 @@ public class ContentletRelationships
 		this.contentlet = contentlet;
 		this.relationshipsRecords = relationshipsRecords;
 	}
-	
+
 	
 	/**
 	 * @param contentlet
