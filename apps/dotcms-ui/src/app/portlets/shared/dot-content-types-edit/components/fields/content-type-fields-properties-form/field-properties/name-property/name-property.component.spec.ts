@@ -5,7 +5,7 @@ import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { FormGroup, FormControl, NgControl, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
-import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
+import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -33,7 +33,7 @@ describe('NamePropertyComponent', () => {
         waitForAsync(() => {
             TestBed.configureTestingModule({
                 declarations: [NamePropertyComponent, TestFieldValidationMessageComponent],
-                imports: [DotCopyLinkModule, ReactiveFormsModule, DotPipesModule],
+                imports: [DotCopyButtonModule, ReactiveFormsModule, DotPipesModule],
                 providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
             }).compileComponents();
 
@@ -108,7 +108,7 @@ describe('NamePropertyComponent', () => {
 
         fixture.detectChanges();
 
-        const copy: DebugElement = de.query(By.css('dot-copy-link'));
+        const copy: DebugElement = de.query(By.css('dot-copy-button'));
 
         expect(copy.componentInstance.copy).toBe('thisIsAVar');
         expect(copy.componentInstance.label).toBe('thisIsAVar');

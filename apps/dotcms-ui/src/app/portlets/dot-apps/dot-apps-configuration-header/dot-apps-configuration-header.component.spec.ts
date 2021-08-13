@@ -5,7 +5,7 @@ import { CommonModule } from '@angular/common';
 import { By } from '@angular/platform-browser';
 import { DotAppsConfigurationHeaderComponent } from './dot-apps-configuration-header.component';
 import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
-import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
+import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DebugElement } from '@angular/core';
@@ -47,7 +47,7 @@ describe('DotAppsConfigurationHeaderComponent', () => {
                 imports: [
                     CommonModule,
                     DotAvatarModule,
-                    DotCopyLinkModule,
+                    DotCopyButtonModule,
                     MarkdownModule,
                     DotPipesModule
                 ],
@@ -108,7 +108,7 @@ describe('DotAppsConfigurationHeaderComponent', () => {
 
     it('should DotCopy & DotAvatar with right properties', () => {
         const dotAvatar = de.query(By.css('dot-avatar')).componentInstance;
-        const dotCopy = de.query(By.css('dot-copy-link')).componentInstance;
+        const dotCopy = de.query(By.css('dot-copy-button')).componentInstance;
         expect(dotAvatar.label).toBe(component.app.name);
         expect(dotAvatar.size).toBe(112);
         expect(dotAvatar.url).toBe(component.app.iconUrl);

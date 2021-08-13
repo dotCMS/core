@@ -28,7 +28,7 @@ import { DotContentTypesEditComponent } from './dot-content-types-edit.component
 import { ContentTypesLayoutComponent } from './components/layout/content-types-layout.component';
 import { ContentTypesFormComponent } from './components/form/content-types-form.component';
 import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
-import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
+import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotMenuModule } from '@components/_common/dot-menu/dot-menu.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { IFrameModule } from '@components/_common/iframe';
@@ -119,7 +119,7 @@ import { DotMdIconSelectorModule } from '@dotcms/app/view/components/_common/dot
         DotBaseTypeSelectorModule,
         DotContentTypeFieldsVariablesModule,
         DotContentTypesEditRoutingModule,
-        DotCopyLinkModule,
+        DotCopyButtonModule,
         DotDialogModule,
         DotDirectivesModule,
         DotPipesModule,

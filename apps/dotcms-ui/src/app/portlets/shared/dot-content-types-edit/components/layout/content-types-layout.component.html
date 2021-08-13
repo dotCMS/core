@@ -9,10 +9,10 @@
 
         <div class="content-type__info">
             {{ 'contenttypes.content.variable' | dm }}:
-            <dot-copy-link
+            <dot-copy-button
                 [copy]="contentType.variable"
                 [label]="contentType.variable"
-            ></dot-copy-link>
+            ></dot-copy-button>
             <span class="content-type__dot-separator">•</span>
             {{ 'contenttypes.form.identifier' | dm }}: {{ contentType.id }}
         </div>

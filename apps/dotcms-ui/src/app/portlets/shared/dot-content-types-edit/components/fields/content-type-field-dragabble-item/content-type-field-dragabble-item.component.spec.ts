@@ -9,7 +9,7 @@ import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { FieldService } from '../service';
 import { DotIconModule } from '@dotcms/ui';
-import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
+import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
 
 describe('ContentTypesFieldDragabbleItemComponent', () => {
@@ -29,7 +29,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         waitForAsync(() => {
             DOTTestBed.configureTestingModule({
                 declarations: [ContentTypesFieldDragabbleItemComponent],
-                imports: [UiDotIconButtonTooltipModule, DotIconModule, DotCopyLinkModule],
+                imports: [UiDotIconButtonTooltipModule, DotIconModule, DotCopyButtonModule],
                 providers: [
                     { provide: DotMessageService, useValue: messageServiceMock },
                     FieldService
@@ -80,7 +80,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
 
         fixture.detectChanges();
 
-        const copyButton: DebugElement = de.query(By.css('dot-copy-link'));
+        const copyButton: DebugElement = de.query(By.css('dot-copy-button'));
         expect(copyButton.componentInstance.copy).toBe('test');
         expect(copyButton.componentInstance.label).toBe('(test)');
     });

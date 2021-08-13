@@ -12,7 +12,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { dotcmsContentTypeBasicMock } from '@tests/dot-content-types.mock';
 import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
-import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
+import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotCurrentUserService } from '@services/dot-current-user/dot-current-user.service';
@@ -115,7 +115,7 @@ describe('ContentTypesLayoutComponent', () => {
                 DotSecondaryToolbarModule,
                 RouterTestingModule,
                 DotApiLinkModule,
-                DotCopyLinkModule,
+                DotCopyButtonModule,
                 DotPipesModule,
                 SplitButtonModule,
                 HttpClientTestingModule,
@@ -222,8 +222,8 @@ describe('ContentTypesLayoutComponent', () => {
             );
         });
 
-        it('should have copy variable link', () => {
-            expect(de.query(By.css('dot-copy-link')).componentInstance.copy).toBe(
+        it('should have copy variable button', () => {
+            expect(de.query(By.css('dot-copy-button')).componentInstance.copy).toBe(
                 'helloVariable'
             );
         });

@@ -4,17 +4,16 @@
 
 <div class="dot-apps-configuration-list__host-key">
     {{ 'apps.key' | dm }}
-    <dot-copy-link
+    <dot-copy-button
         (click)="$event.stopPropagation()"
         [copy]="site.id"
         [label]="site.id"
-    ></dot-copy-link>
+    ></dot-copy-button>
 </div>
 
 <ng-container *ngIf="site.configured; else noConfigurations">
     <div class="dot-apps-configuration-list__host-configured">
         <dot-icon
-            data-testId="warning"
             *ngIf="site.secretsWithWarnings"
             name="warning"
             pTooltip="{{ site.secretsWithWarnings + ' ' + ('apps.invalid.secrets' | dm) }}"

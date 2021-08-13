@@ -15,9 +15,9 @@
     </dot-field-validation-message>
     <div class="form__field-variable" *ngIf="property.field.variable">
         <b>{{ 'contenttypes.field.properties.name.variable' | dm }}: </b>
-        <dot-copy-link
+        <dot-copy-button
             [label]="property.field.variable"
             [copy]="property.field.variable"
-        ></dot-copy-link>
+        ></dot-copy-button>
     </div>
 </div>

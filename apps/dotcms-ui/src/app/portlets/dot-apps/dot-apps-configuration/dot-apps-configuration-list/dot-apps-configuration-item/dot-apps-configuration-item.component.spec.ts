@@ -11,7 +11,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ConfirmationService } from 'primeng/api';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotCopyLinkModule } from '@dotcms/app/view/components/dot-copy-link/dot-copy-link.module';
+import { DotCopyButtonModule } from '@dotcms/app/view/components/dot-copy-button/dot-copy-button.module';
 
 const messages = {
     'apps.key': 'Key',
@@ -53,7 +53,7 @@ describe('DotAppsConfigurationItemComponent', () => {
             TestBed.configureTestingModule({
                 imports: [
                     CommonModule,
-                    DotCopyLinkModule,
+                    DotCopyButtonModule,
                     UiDotIconButtonModule,
                     DotIconModule,
                     TooltipModule,
@@ -101,13 +101,13 @@ describe('DotAppsConfigurationItemComponent', () => {
         });
 
         it('should DotCopy with right properties', () => {
-            const dotCopy = fixture.debugElement.query(By.css('dot-copy-link')).componentInstance;
+            const dotCopy = fixture.debugElement.query(By.css('dot-copy-button')).componentInstance;
             expect(dotCopy.label).toBe(component.site.id);
             expect(dotCopy.copy).toBe(component.site.id);
         });
 
         it('should have warning icon', () => {
-            const warningIcon = fixture.debugElement.query(By.css('[data-testId="warning"]'));
+            const warningIcon = fixture.debugElement.query(By.css('dot-icon'));
             expect(warningIcon).toBeTruthy();
             expect(warningIcon.attributes['name']).toBe('warning');
             expect(warningIcon.attributes['size']).toBe('18');
@@ -175,7 +175,7 @@ describe('DotAppsConfigurationItemComponent', () => {
 
         it('should not emit edit action when host label clicked', () => {
             spyOn(component.edit, 'emit');
-            fixture.debugElement.query(By.css('dot-copy-link')).nativeElement.click();
+            fixture.debugElement.query(By.css('dot-copy-button')).nativeElement.click();
             expect(component.edit.emit).toHaveBeenCalledTimes(0);
         });
     });

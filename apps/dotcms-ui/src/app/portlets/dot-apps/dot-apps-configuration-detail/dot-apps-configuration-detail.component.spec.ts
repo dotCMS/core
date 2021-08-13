@@ -257,8 +257,8 @@ describe('DotAppsConfigurationDetailComponent', () => {
             expect(routerService.goToAppsConfiguration).toHaveBeenCalledWith(component.apps.key);
         });
 
-        it('should have dot-copy-link with appKey value', () => {
-            const copyBtn = fixture.debugElement.query(By.css('dot-copy-link')).componentInstance;
+        it('should have Dot-Copy-Button with appKey value', () => {
+            const copyBtn = fixture.debugElement.query(By.css('dot-copy-button')).componentInstance;
             expect(copyBtn.copy).toBe(component.apps.key);
             expect(copyBtn.label).toBe(component.apps.key);
         });
