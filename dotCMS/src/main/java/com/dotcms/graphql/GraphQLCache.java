@@ -28,10 +28,12 @@ public class GraphQLCache implements Cachable {
     private final DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
 
     private final Lazy<Boolean> ENABLED_FROM_CONFIG = Lazy.of(()->Config
-            .getBooleanProperty("GRAPHQL_CACHE_RESULT>", true));
+            .getBooleanProperty("GRAPHQL_CACHE_RESULT", true));
 
     public Optional<String> get(final String key) {
-        if(!canCache()) return Optional.empty();
+        if(!canCache()) {
+            return Optional.empty();
+        }
 
         Optional<String> result = Optional.empty();
         final String cacheKey = hashKey(key);
