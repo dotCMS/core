@@ -20,6 +20,7 @@ import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.liferay.util.StringPool;
+import java.io.Serializable;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Objects;
@@ -34,7 +35,7 @@ import java.util.Objects;
  * @author root
  * @since Mar 22, 2012
  */
-public class Relationship implements ManifestItem {
+public class Relationship implements Serializable, ManifestItem {
 	
 	private static final long serialVersionUID = 1L;
 	
@@ -53,7 +54,6 @@ public class Relationship implements ManifestItem {
      * Default class constructor.
      */
     public Relationship(){
-//    	super.setType("relationship");
     }
 
 	/**
@@ -73,7 +73,6 @@ public class Relationship implements ManifestItem {
 			final String parentRelationName, final String childRelationName, final int cardinality,
 			final boolean parentRequired, final boolean childRequired) {
 		super();
-//		this.setType("relationship");
 		this.parentStructureInode = parentStructure.getInode();
 		this.childStructureInode = childStructure.getInode();
 		this.parentRelationName = parentRelationName;
@@ -100,7 +99,6 @@ public class Relationship implements ManifestItem {
 	public Relationship(final ContentType parentContentType, final ContentType childContentType,
 			final Field field) {
 		super();
-//		this.setType("relationship");
 		final int cardinality = Integer.parseInt(field.values());
 
 		this.parentStructureInode = parentContentType.id();
