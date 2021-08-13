@@ -7,15 +7,15 @@ import { DotMessageService } from '@services/dot-message/dot-messages.service';
  * it use tooltip to indicate the user the action and the result.
  *
  * @export
- * @class DotCopyButtonComponent
+ * @class DotCopyLinkComponent
  * @implements {OnInit}
  */
 @Component({
-    selector: 'dot-copy-button',
-    templateUrl: './dot-copy-button.component.html',
-    styleUrls: ['./dot-copy-button.component.scss']
+    selector: 'dot-copy-link',
+    templateUrl: './dot-copy-link.component.html',
+    styleUrls: ['./dot-copy-link.component.scss']
 })
-export class DotCopyButtonComponent implements OnInit {
+export class DotCopyLinkComponent implements OnInit {
     @Input() copy = '';
     @Input() label: string;
     @Input() tooltipText: string;
@@ -34,7 +34,8 @@ export class DotCopyButtonComponent implements OnInit {
     /**
      * Copy url to clipboard and update the tooltip text with the result
      *
-     * @memberof DotCopyButtonComponent
+     * @param {MouseEvent} $event
+     * @memberof DotCopyLinkComponent
      */
     copyUrlToClipboard($event: MouseEvent): void {
         $event.stopPropagation();
