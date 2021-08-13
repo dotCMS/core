@@ -1,14 +1,13 @@
 package com.dotcms.rest.api.v1.system.redis;
 
-import com.dotcms.cache.lettuce.MasterReplicaLettuceClient;
 import com.dotcms.cache.lettuce.RedisClient;
 import com.dotcms.cache.lettuce.RedisClientProvider;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
-import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
 import com.dotcms.util.CollectionsUtils;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
@@ -247,6 +246,51 @@ public class RedisResource {
                 .rejectWhenNoUser(true).init();
 
         return Response.ok(new ResponseEntityView(this.client.getIncrement(key))).build();
+    }
+
+    @VisibleForTesting
+    @NoCache
+    @GET
+    @Path("/test-subscribe/{channel}")
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response testSubscribe(@Context final HttpServletRequest request,
+                                 @Context final HttpServletResponse response,
+                                 @PathParam("channel") final String channel) {
+
+        new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
+                .rejectWhenNoUser(true).init();
+
+        this.client.subscribe(msg -> Logger.info(this,
+                "Receiving from redis on channel: " + channel +
+                            ", msg = " + msg), channel);
+
+        return Response.ok(new ResponseEntityView("Subscribed")).build();
+    }
+
+    @VisibleForTesting
+    @NoCache
+    @PUT
+    @Path("/test-publish/{channel}/{message}")
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response testSubscribe(@Context final HttpServletRequest request,
+                                  @Context final HttpServletResponse response,
+                                  @PathParam("channel") final String channel,
+                                  @PathParam("message") final String message) {
+
+        new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
+                .rejectWhenNoUser(true).init();
+
+        this.client.publishMessage(message, channel);
+
+        return Response.ok(new ResponseEntityView("Sent")).build();
     }
 
 }

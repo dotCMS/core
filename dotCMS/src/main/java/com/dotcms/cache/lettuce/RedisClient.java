@@ -4,6 +4,7 @@ import com.dotmarketing.util.Config;
 import io.lettuce.core.api.StatefulConnection;
 import io.lettuce.core.api.StatefulRedisConnection;
 import io.vavr.control.Try;
+import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 
 import java.util.Collection;
 import java.util.List;
@@ -38,7 +39,7 @@ public interface RedisClient<K, V> {
      * @param connection {@link StatefulConnection}
      * @return boolean
      */
-    boolean isOpen (final StatefulConnection<K, V> connection);
+    boolean isOpen (final StatefulConnection connection);
 
     /**
      * Ping to the server
@@ -287,7 +288,21 @@ public interface RedisClient<K, V> {
      */
     long getIncrement (final K key);
 
-    ////// Streams
+    ////// Streams Pub/Sub
+
+    /**
+     * Subscribe a msg consumer to a channels
+     * @param messageConsumer  {@link Consumer}
+     * @param channels          {@link String}
+     */
+    default void subscribe (final Consumer<V> messageConsumer, final K... channels) {}
+
+    /**
+     * Publish a message to the channel
+     * @param message {@link String}
+     * @param channel {@link String}
+     */
+    default Future<Long> publishMessage (final V message, final K channel) { return ConcurrentUtils.constantFuture(-1L); }
 
 }
 

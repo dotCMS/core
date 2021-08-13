@@ -24,6 +24,9 @@ import io.lettuce.core.protocol.Command;
 import io.lettuce.core.protocol.CommandArgs;
 import io.lettuce.core.protocol.CommandType;
 import io.lettuce.core.protocol.RedisCommand;
+import io.lettuce.core.pubsub.StatefulRedisPubSubConnection;
+import io.lettuce.core.pubsub.api.async.RedisPubSubAsyncCommands;
+import io.lettuce.core.pubsub.api.sync.RedisPubSubCommands;
 import io.lettuce.core.resource.DefaultClientResources;
 import io.lettuce.core.resource.DirContextDnsResolver;
 import io.lettuce.core.support.ConnectionPoolSupport;
@@ -61,11 +64,19 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
     private final int maxConnections = Config.getIntProperty("REDIS_LETTUCECLIENT_MAX_CONNECTIONS", 5);
     private final GenericObjectPool<StatefulRedisConnection<K, V>> pool;
     private final RedisCodec<K, V> codec  = CompressionCodec.valueCompressor(new DotObjectCodec(), CompressionCodec.CompressionType.GZIP);
+    private final io.lettuce.core.RedisClient lettuceClient;
     public MasterReplicaLettuceClient() {
 
+        DefaultClientResources clientResources = // Does not cache DNS lookups
+                DefaultClientResources.builder().dnsResolver(new DirContextDnsResolver()).build();
+        this.lettuceClient = io.lettuce.core.RedisClient.create(clientResources);
         this.pool = buildPool();
     }
 
+    /**
+     * Returns a StatefulRedisConnection
+     * @return StatefulRedisConnection
+     */
     public StatefulRedisConnection<K, V> getConn() {
         return Try.of(() -> pool.borrowObject()).onFailure(
                         e -> Logger.warnAndDebug(MasterReplicaLettuceClient.class, "redis unable to connect: " + e, e))
@@ -73,8 +84,17 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
 
     }
 
+    /**
+     * Returns a StatefulRedisPubSubConnection
+     * @return StatefulRedisPubSubConnection
+     */
+    protected StatefulRedisPubSubConnection<K, V> getPubSubConn() {
+
+        return this.lettuceClient.connectPubSub(codec, redisUris.get(0));
+    }
+
     @Override
-    public boolean isOpen (final StatefulConnection<K, V> connection) {
+    public boolean isOpen (final StatefulConnection connection) {
 
         return null != connection && connection.isOpen();
     }
@@ -599,6 +619,39 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
             }
         }
     }
+
+    ////// Streams Pub/Sub
+
+    @Override
+    public void subscribe (final Consumer<V> messageConsumer, final K... channels) {
+
+        try (StatefulRedisPubSubConnection<K, V> conn = this.getPubSubConn()) {
+
+            if (this.isOpen(conn)) {
+
+                final RedisPubSubCommands<K, V> commands = conn.sync();
+                commands.getStatefulConnection().addListener(new DotPubSubListener (messageConsumer, channels));
+                commands.subscribe(channels);
+            }
+        }
+    }
+
+    @Override
+    public Future<Long> publishMessage (final V message, final K channel) {
+
+        try (StatefulRedisPubSubConnection<K, V> conn = this.getPubSubConn()) {
+
+            if (this.isOpen(conn)) {
+
+                final RedisPubSubAsyncCommands<K, V> commands = conn.async();
+                return commands.publish(channel, message);
+            } else {
+
+                return ConcurrentUtils.constantFuture(-1L);
+            }
+        }
+    }
+
     //////////
 
     private GenericObjectPool<StatefulRedisConnection<K, V>> buildPool() {
@@ -611,11 +664,6 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
 
         config.setMinIdle(this.minIdleConnections);
         config.setMaxTotal(this.maxConnections);
-
-        final DefaultClientResources clientResources = // Does not cache DNS lookups
-                        DefaultClientResources.builder().dnsResolver(new DirContextDnsResolver()).build();
-
-        final io.lettuce.core.RedisClient lettuceClient = io.lettuce.core.RedisClient.create(clientResources);
 
         if (redisUris.size() == 1) { // only one node
 
