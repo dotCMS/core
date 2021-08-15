@@ -167,3 +167,5 @@ This maintenance release includes the following code fixes:
 81. https://github.com/dotCMS/core/issues/19500 : SQL Injection Vulnerability in api /api/v1/containers
 
 82. https://github.com/dotCMS/core/issues/20636 : Improving error messages for WorkflowAPIImpl
+
+83. https://github.com/dotCMS/core/issues/20629 : EMA should always expect UTF8
