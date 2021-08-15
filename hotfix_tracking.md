@@ -169,3 +169,5 @@ This maintenance release includes the following code fixes:
 82. https://github.com/dotCMS/core/issues/20636 : Improving error messages for WorkflowAPIImpl
 
 83. https://github.com/dotCMS/core/issues/20629 : EMA should always expect UTF8
+
+84. https://github.com/dotCMS/core/issues/20578 : MonitorResource should cache good responses / fix IPUtils

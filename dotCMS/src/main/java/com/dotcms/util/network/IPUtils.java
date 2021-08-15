@@ -1,7 +1,7 @@
 package com.dotcms.util.network;
 
+import java.util.Objects;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import io.vavr.control.Try;
 
@@ -17,17 +17,25 @@ public class IPUtils {
      *         . Otherwise, returns {@code false}.
      */
     public static boolean isIpInCIDR(final String ip, final String CIDR) {
-        boolean isMatching = false;
-        if (UtilMethods.isSet(ip) && UtilMethods.isSet(CIDR)) {
-            final String[] netmaskParts = CIDR.split("/");
-            if (netmaskParts != null && netmaskParts.length == 2) {
-                return Try.of(()->new SubnetUtils(CIDR).getInfo().isInRange(ip)).getOrElse(false);
+
+        if (UtilMethods.isEmpty(ip) ||  UtilMethods.isEmpty(CIDR)) {
+            return false;
             }
-            else {
-                isMatching = CIDR.equals(ip);
+
+        if (Objects.equals(ip, CIDR)) {
+            return true;
             }
+
+        if ("0.0.0.0/0".equals(CIDR)) {
+            return true;
         }
-        Logger.debug(IPUtils.class, "ip=" + ip + "; CIDR=" + CIDR + "; isMatching=" + isMatching);
-        return isMatching;
+
+        final SubnetUtils utils = new SubnetUtils(CIDR);
+        utils.setInclusiveHostCount(true);
+
+
+        return Try.of(() -> utils.getInfo().isInRange(ip)).getOrElse(false);
+
+
     }
 }
