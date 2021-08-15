@@ -165,3 +165,5 @@ This maintenance release includes the following code fixes:
 80. https://github.com/dotCMS/core/issues/20364 : XStream throws exception when posting bad XML
 
 81. https://github.com/dotCMS/core/issues/19500 : SQL Injection Vulnerability in api /api/v1/containers
+
+82. https://github.com/dotCMS/core/issues/20636 : Improving error messages for WorkflowAPIImpl
