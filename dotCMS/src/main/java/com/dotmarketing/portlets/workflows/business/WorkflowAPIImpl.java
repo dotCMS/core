@@ -3246,7 +3246,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			Logger.debug(this, () -> "Copying the WorkflowActionClassParameter: " + from.getId());
 
-			param.setActionClassId(to.getActionId());
+			param.setActionClassId(to.getId());
 			param.setKey		  (from.getKey());
 			param.setValue		  (from.getValue());
 

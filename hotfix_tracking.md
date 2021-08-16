@@ -173,3 +173,5 @@ This maintenance release includes the following code fixes:
 84. https://github.com/dotCMS/core/issues/20578 : MonitorResource should cache good responses / fix IPUtils
 
 85. https://github.com/dotCMS/core/issues/20568 : configuration: limit bulk request size
+
+86. https://github.com/dotCMS/core/issues/20501 : Workflows: Can not copy a workflow with Notify Assigned Actionlet is used
