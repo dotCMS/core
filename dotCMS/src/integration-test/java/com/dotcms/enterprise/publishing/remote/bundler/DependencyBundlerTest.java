@@ -1212,8 +1212,6 @@ public class DependencyBundlerTest {
         final Set<Object> dependencies = new HashSet<>();
 
         try (CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
-
-            manifestBuilder.create();
             config.setManifestBuilder(manifestBuilder);
 
             new BundleDataGen()
@@ -1359,8 +1357,6 @@ public class DependencyBundlerTest {
         final Collection<Object> dependencies = new HashSet<>();
 
         try (CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
-
-            manifestBuilder.create();
             config.setManifestBuilder(manifestBuilder);
 
             bundler.setConfig(config);
