@@ -625,14 +625,13 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
     @Override
     public void subscribe (final Consumer<V> messageConsumer, final K... channels) {
 
-        try (StatefulRedisPubSubConnection<K, V> conn = this.getPubSubConn()) {
+        final StatefulRedisPubSubConnection<K, V> conn = this.getPubSubConn();
 
-            if (this.isOpen(conn)) {
+        if (this.isOpen(conn)) {
 
-                final RedisPubSubCommands<K, V> commands = conn.sync();
-                commands.getStatefulConnection().addListener(new DotPubSubListener (messageConsumer, channels));
-                commands.subscribe(channels);
-            }
+            final RedisPubSubAsyncCommands<K, V> commands = conn.async();
+            commands.getStatefulConnection().addListener(new DotPubSubListener (messageConsumer, channels));
+            commands.subscribe(channels);
         }
     }
 

@@ -1,5 +1,6 @@
 package com.dotcms.cache.lettuce;
 
+import com.dotmarketing.util.Logger;
 import io.lettuce.core.pubsub.RedisPubSubListener;
 
 import java.util.Arrays;
@@ -44,21 +45,25 @@ public class DotPubSubListener<K,V> implements RedisPubSubListener<K, V> {
     @Override
     public void subscribed(K channel, long count) {
 
+        Logger.info(this, "subscribed " + channel);
     }
 
     @Override
     public void psubscribed(K pattern, long count) {
 
+        Logger.info(this, "psubscribed " + pattern);
     }
 
     @Override
     public void unsubscribed(K channel, long count) {
 
+        Logger.info(this, "unsubscribed " + channel);
     }
 
     @Override
     public void punsubscribed(K pattern, long count) {
 
+        Logger.info(this, "punsubscribed " + pattern);
     }
 
 }
