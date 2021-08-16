@@ -61,9 +61,7 @@ jobs:
                   fi
 
                   cd core-web
-
                   git checkout $branchName
-                  git status
 
                   npm install
             - name: Version Bump - dotcms-ui - if it's Master/Release Branch
@@ -86,10 +84,6 @@ jobs:
                   # Get version from package.json
                   cd core-web
 
-                  git checkout $branchName
-                  git status
-
-                  git pull origin $branchName
                   pkgVersion=`awk -F'"' '/"version": ".+"/{ print $4; exit; }' package.json`
                   arrIN=(${pkgVersion//./ })
 
