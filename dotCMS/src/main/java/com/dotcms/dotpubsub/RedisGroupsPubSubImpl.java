@@ -24,7 +24,12 @@ import io.lettuce.core.XReadArgs;
 import io.lettuce.core.XReadArgs.StreamOffset;
 import io.lettuce.core.api.async.RedisAsyncCommands;
 import io.vavr.control.Try;
-public class LettucePubSubImpl implements DotPubSubProvider {
+
+/**
+ * Redis groups Pub and sub
+ * @author jsanca
+ */
+public class RedisGroupsPubSubImpl implements DotPubSubProvider {
 
     private final boolean testing;
     private final String clusterId;
@@ -33,7 +38,7 @@ public class LettucePubSubImpl implements DotPubSubProvider {
     private final Map<Comparable<String>, DotPubSubTopic> topicMap = new ConcurrentHashMap<>();
 
     private final long PUBSUB_THREAD_PAUSE_MS=Config.getLongProperty("PUBSUB_THREAD_PAUSE_MS", 200);
-    public LettucePubSubImpl(String serverId, String clusterId, boolean testing) {
+    public RedisGroupsPubSubImpl(String serverId, String clusterId, boolean testing) {
         super();
         this.testing = testing;
         this.serverId = serverId;
@@ -42,7 +47,7 @@ public class LettucePubSubImpl implements DotPubSubProvider {
     }
 
 
-    public LettucePubSubImpl() {
+    public RedisGroupsPubSubImpl() {
         this(APILocator.getServerAPI().readServerId(), ClusterFactory.getClusterId(), false);
 
     }
@@ -53,13 +58,13 @@ public class LettucePubSubImpl implements DotPubSubProvider {
 
     private boolean startListening() {
         if (this.listener != null) {
-            Logger.info(LettucePubSubImpl.class, "Restarting our listener");
+            Logger.info(RedisGroupsPubSubImpl.class, "Restarting our listener");
             this.listener.stop();
         }
 
         this.listener = new StreamListener(topicMap, serverId);
 
-        DotConcurrentFactory.getInstance().getSingleSubmitter(LettucePubSubImpl.class.getSimpleName())
+        DotConcurrentFactory.getInstance().getSingleSubmitter(RedisGroupsPubSubImpl.class.getSimpleName())
                         .submit(this.listener);
 
         return true;
@@ -91,14 +96,14 @@ public class LettucePubSubImpl implements DotPubSubProvider {
 
                 try {
                     RedisAsyncCommands<String, String> asyncCommands = lettuce.getConn().async();
-                    Logger.info(LettucePubSubImpl.class, "Creating Redis Stream : " + redisTopic);
+                    Logger.info(RedisGroupsPubSubImpl.class, "Creating Redis Stream : " + redisTopic);
                     asyncCommands.xgroupCreate(StreamOffset.lastConsumed(redisTopic), serverId,
                                     XGroupCreateArgs.Builder.mkstream(true));
 
                 } catch (RedisBusyException redisBusyException) {
-                    Logger.info(LettucePubSubImpl.class, "Redis Stream already exists: " + redisTopic);
+                    Logger.info(RedisGroupsPubSubImpl.class, "Redis Stream already exists: " + redisTopic);
                 } catch (Exception e) {
-                    Logger.warnAndDebug(LettucePubSubImpl.class, e);
+                    Logger.warnAndDebug(RedisGroupsPubSubImpl.class, e);
                     throw new DotRuntimeException(e);
                 }
             }
@@ -110,7 +115,7 @@ public class LettucePubSubImpl implements DotPubSubProvider {
         public void run() {
 
             if (topics.isEmpty()) {
-                Logger.info(LettucePubSubImpl.class, "No topics, nothing to listen for");
+                Logger.info(RedisGroupsPubSubImpl.class, "No topics, nothing to listen for");
                 return;
             }
 
@@ -137,7 +142,7 @@ public class LettucePubSubImpl implements DotPubSubProvider {
                 List<DotPubSubEvent> bodyEvents = Try.of(() -> messageIn.getBody().entrySet().stream()
                                 .map(e -> new DotPubSubEvent(e.getValue()))
                                 .filter(e -> !serverId.startsWith(e.getOrigin())).collect(Collectors.toList()))
-                                .onFailure(e -> Logger.warnAndDebug(LettucePubSubImpl.class, e))
+                                .onFailure(e -> Logger.warnAndDebug(RedisGroupsPubSubImpl.class, e))
                                 .getOrElse(ImmutableList.of());
 
                 for (DotPubSubEvent event : bodyEvents) {
@@ -202,7 +207,7 @@ public class LettucePubSubImpl implements DotPubSubProvider {
     @Override
     public void stop() {
         if (this.listener != null) {
-            Logger.info(LettucePubSubImpl.class, "Stopping our listener");
+            Logger.info(RedisGroupsPubSubImpl.class, "Stopping our listener");
             this.listener.stop();
         }
 

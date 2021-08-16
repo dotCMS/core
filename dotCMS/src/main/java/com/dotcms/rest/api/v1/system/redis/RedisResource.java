@@ -2,6 +2,11 @@ package com.dotcms.rest.api.v1.system.redis;
 
 import com.dotcms.cache.lettuce.RedisClient;
 import com.dotcms.cache.lettuce.RedisClientProvider;
+import com.dotcms.dotpubsub.DotPubSubEvent;
+import com.dotcms.dotpubsub.DotPubSubProvider;
+import com.dotcms.dotpubsub.DotPubSubProviderLocator;
+import com.dotcms.dotpubsub.DotPubSubTopic;
+import com.dotcms.dotpubsub.RedisPubSubImpl;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -276,7 +281,7 @@ public class RedisResource {
     @PUT
     @Path("/test-publish/{channel}/{message}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response testSubscribe(@Context final HttpServletRequest request,
+    public Response testPublish(@Context final HttpServletRequest request,
                                   @Context final HttpServletResponse response,
                                   @PathParam("channel") final String channel,
                                   @PathParam("message") final String message) {
@@ -293,4 +298,98 @@ public class RedisResource {
         return Response.ok(new ResponseEntityView("Sent")).build();
     }
 
+    @VisibleForTesting
+    @NoCache
+    @PUT
+    @Path("/test-subscribe/{channel}")
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response testUnSubscribe(@Context final HttpServletRequest request,
+                                  @Context final HttpServletResponse response,
+                                  @PathParam("channel") final String channel) {
+
+        new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
+                .rejectWhenNoUser(true).init();
+
+        this.client.unsubscribe(channel);
+
+        return Response.ok(new ResponseEntityView("Unsubscribe")).build();
+    }
+
+    //////
+
+    @VisibleForTesting
+    final static DotPubSubProvider pubsub = new RedisPubSubImpl();
+
+    @VisibleForTesting
+    @NoCache
+    @PUT
+    @Path("/test-subpub-publish/{channel}/{message}")
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response testSubPubPublish(@Context final HttpServletRequest request,
+                                @Context final HttpServletResponse response,
+                                @PathParam("channel") final String channel,
+                                @PathParam("message") final String message) {
+
+        new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
+                .rejectWhenNoUser(true).init();
+
+        pubsub.publish(new DotPubSubEvent.Builder()
+                .addPayload("message", message)
+                .withTopic(channel)
+                .build());
+
+        return Response.ok(new ResponseEntityView("Sent")).build();
+    }
+
+    @VisibleForTesting
+    @NoCache
+    @PUT
+    @Path("/test-subpub-subscribe/{channel}")
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response testSubPub(@Context final HttpServletRequest request,
+                                    @Context final HttpServletResponse response,
+                               @PathParam("channel") final String channel) {
+
+        new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
+                .rejectWhenNoUser(true).init();
+
+        final DotPubSubTopic topic = new DotPubSubTopicImpl(channel);
+        pubsub.subscribe(topic);
+
+        return Response.ok(new ResponseEntityView("Subscribe")).build();
+    }
+
+    private class DotPubSubTopicImpl implements DotPubSubTopic {
+
+        final String channel;
+
+        public DotPubSubTopicImpl(final String channel) {
+
+            this.channel = channel;
+        }
+
+        @Override
+        public void notify(final DotPubSubEvent event) {
+
+            Logger.info(this, "msg: "     + event.getMessage());
+            Logger.info(this, "payload: " + event.getPayload().toString());
+        }
+
+        @Override
+        public Comparable getKey() {
+            return this.channel;
+        }
+    }
 }

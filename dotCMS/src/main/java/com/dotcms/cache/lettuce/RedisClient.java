@@ -298,6 +298,12 @@ public interface RedisClient<K, V> {
     default void subscribe (final Consumer<V> messageConsumer, final K... channels) {}
 
     /**
+     * Subscribe a msg consumer to a channels
+     * @param channels          {@link String}
+     */
+    default void unsubscribe ( final K... channels) {}
+
+    /**
      * Publish a message to the channel
      * @param message {@link String}
      * @param channel {@link String}

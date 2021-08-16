@@ -1,10 +1,12 @@
 package com.dotcms.cache.lettuce;
 
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
 import io.lettuce.core.KeyScanCursor;
 import io.lettuce.core.ReadFrom;
 import io.lettuce.core.RedisCommandTimeoutException;
@@ -16,20 +18,19 @@ import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.sync.RedisCommands;
 import io.lettuce.core.codec.CompressionCodec;
 import io.lettuce.core.codec.RedisCodec;
-import io.lettuce.core.codec.StringCodec;
 import io.lettuce.core.masterreplica.MasterReplica;
 import io.lettuce.core.masterreplica.StatefulRedisMasterReplicaConnection;
 import io.lettuce.core.output.ValueOutput;
 import io.lettuce.core.protocol.Command;
 import io.lettuce.core.protocol.CommandArgs;
 import io.lettuce.core.protocol.CommandType;
-import io.lettuce.core.protocol.RedisCommand;
 import io.lettuce.core.pubsub.StatefulRedisPubSubConnection;
 import io.lettuce.core.pubsub.api.async.RedisPubSubAsyncCommands;
-import io.lettuce.core.pubsub.api.sync.RedisPubSubCommands;
 import io.lettuce.core.resource.DefaultClientResources;
 import io.lettuce.core.resource.DirContextDnsResolver;
 import io.lettuce.core.support.ConnectionPoolSupport;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.apache.commons.pool2.impl.GenericObjectPool;
@@ -43,8 +44,10 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -621,6 +624,9 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
     }
 
     ////// Streams Pub/Sub
+    private final Map<String, Tuple2<DotPubSubListener, StatefulRedisPubSubConnection<K, V>>> channelStatefulRedisPubSubConnectionMap = new ConcurrentHashMap<>();
+    private final Map<K, String> channelReferenceMap = new ConcurrentHashMap<>();
+    private final Map<String, AtomicInteger> channelReferenceCountMap = new ConcurrentHashMap<>();
 
     @Override
     public void subscribe (final Consumer<V> messageConsumer, final K... channels) {
@@ -629,9 +635,50 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
 
         if (this.isOpen(conn)) {
 
+            final DotPubSubListener dotPubSubListener = new DotPubSubListener (messageConsumer, channels);
             final RedisPubSubAsyncCommands<K, V> commands = conn.async();
-            commands.getStatefulConnection().addListener(new DotPubSubListener (messageConsumer, channels));
+            commands.getStatefulConnection().addListener(dotPubSubListener);
             commands.subscribe(channels);
+
+            final Tuple2<DotPubSubListener, StatefulRedisPubSubConnection<K, V>> channelRedisPubSubAsyncCommandsTuple = Tuple.of(dotPubSubListener, conn);
+            final String channelUUID = UUIDUtil.uuid();
+
+            channelStatefulRedisPubSubConnectionMap.put(channelUUID, channelRedisPubSubAsyncCommandsTuple);
+            channelReferenceCountMap.put(channelUUID, new AtomicInteger(channels.length));
+            for (final K channel : channels) {
+
+                channelReferenceMap.put(channel, channelUUID);
+            }
+        }
+    }
+
+    @Override
+    public  void unsubscribe (final K... channels) {
+
+        for (final K channel : channels) {
+
+            if (this.channelReferenceMap.containsKey(channel)) {
+
+                final String channelUUID = channelReferenceMap.get(channel);
+                final Tuple2<DotPubSubListener, StatefulRedisPubSubConnection<K, V>> channelRedisPubSubAsyncCommandsTuple =
+                        channelStatefulRedisPubSubConnectionMap.get(channelUUID);
+                if (null != channelRedisPubSubAsyncCommandsTuple && this.channelReferenceCountMap.containsKey(channelUUID)) {
+
+                    final RedisPubSubAsyncCommands<K, V> commands = channelRedisPubSubAsyncCommandsTuple._2().async();
+                    commands.unsubscribe(channel);
+                    channelReferenceCountMap.get(channelUUID).getAndDecrement();
+                    if (this.channelReferenceCountMap.get(channelUUID).get()==0) {
+
+                        this.channelReferenceCountMap.remove(channelUUID);
+                        this.channelStatefulRedisPubSubConnectionMap.remove(channelUUID);
+
+                        commands.getStatefulConnection().removeListener(channelRedisPubSubAsyncCommandsTuple._1());
+                        // lets close it later
+                        DotConcurrentFactory.getInstance().getSubmitter().delay(
+                                ()-> channelRedisPubSubAsyncCommandsTuple._2().close(), 5, TimeUnit.SECONDS);
+                    }
+                }
+            }
         }
     }
 

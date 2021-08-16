@@ -51,7 +51,6 @@ public interface DotPubSubTopic extends EventSubscriber<DotPubSubEvent>, KeyFilt
     default void notify(DotPubSubEvent event) {
         incrementReceivedCounters(event);
         Logger.info(this.getClass(), "got event:" + event);
-
     }
 
 }

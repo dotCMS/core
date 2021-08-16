@@ -12,7 +12,7 @@ import com.dotmarketing.util.UUIDGenerator;
 
 public class LettucePubSubImplTest {
     
-    static LettucePubSubImpl pubsubA,pubsubB;
+    static RedisGroupsPubSubImpl pubsubA,pubsubB;
     static DotPubSubTopic topicA;
     static final String clusterId = UUIDGenerator.shorty();
     static final String fakeServerA = UUIDGenerator.shorty();
@@ -26,9 +26,9 @@ public class LettucePubSubImplTest {
         
 
         
-        pubsubA = new LettucePubSubImpl(fakeServerA,clusterId,true);
+        pubsubA = new RedisGroupsPubSubImpl(fakeServerA,clusterId,true);
         
-        pubsubB = new LettucePubSubImpl(fakeServerB,clusterId,true);
+        pubsubB = new RedisGroupsPubSubImpl(fakeServerB,clusterId,true);
         
         topicA = new CacheTransportTopic(fakeServerA,pubsubA);
         
