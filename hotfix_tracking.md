@@ -32,3 +32,5 @@ https://github.com/dotCMS/core/issues/20659 : The Set Response Headers Rule Acti
 https://github.com/dotCMS/core/issues/20623 : Container displays Add button twice under specific situations #20623
 
 https://github.com/dotCMS/core/issues/20719 : NPE on tags via graphql if no tags present #20719
+
+https://github.com/dotCMS/core/issues/20690 : Add PushPublishingListener to dotCDN #20690
