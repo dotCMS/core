@@ -551,7 +551,6 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     private void delete(final Relationship relationship, final Boolean keepTreeRecords) throws DotDataException {
 
 	    deleteRelationshipInDB(relationship.getInode());
-	    deleteInodeInDB(relationship.getInode());
 
         if ( !keepTreeRecords ) {
             TreeFactory.deleteTreesByRelationType(relationship.getRelationTypeValue());
@@ -570,13 +569,6 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     private void deleteRelationshipInDB(final String inode) throws DotDataException{
         DotConnect dc = new DotConnect();
         dc.setSQL(sql.DELETE_RELATIONSHIP_BY_INODE);
-        dc.addParam(inode);
-        dc.loadResult();
-    }
-
-    private void deleteInodeInDB(final String inode) throws DotDataException{
-        DotConnect dc = new DotConnect();
-        dc.setSQL(sql.DELETE_INODE);
         dc.addParam(inode);
         dc.loadResult();
     }

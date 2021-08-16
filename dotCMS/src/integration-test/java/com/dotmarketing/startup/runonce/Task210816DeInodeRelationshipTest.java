@@ -35,6 +35,11 @@ public class Task210816DeInodeRelationshipTest {
         assertTrue(upgradeTask.forceRun());
         upgradeTask.executeUpgrade();
         assertFalse(upgradeTask.forceRun()); // mod_date created and FK dropped
+        assertTrue(new DotConnect().setSQL("SELECT * FROM inode where type = 'relationship'")
+                .loadObjectResults().isEmpty());
+        assertTrue(new DotConnect().setSQL("SELECT * FROM inode WHERE EXISTS(SELECT 1 FROM relationship r WHERE r.inode = inode.inode)")
+                .loadObjectResults().isEmpty());
+
     }
 
 

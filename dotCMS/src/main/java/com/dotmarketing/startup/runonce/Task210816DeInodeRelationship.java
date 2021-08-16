@@ -18,7 +18,9 @@ public class Task210816DeInodeRelationship extends AbstractJDBCStartupTask {
     private final DotDatabaseMetaData dotDatabaseMetaData = new DotDatabaseMetaData();
     private final String COPY_RELATIONSHIP_MOD_DATE_FROM_INODE =
             "UPDATE relationship as r SET mod_date = i.idate FROM inode i WHERE r.inode = i.inode;";
-    private final String REMOVE_FK_TO_INODE = "ALTER TABLE relationship DROP CONSTRAINT fkf06476385fb51eb;";
+    private final String DELETE_RELATIONSHIPS_FROM_INODE_BY_TYPE = "DELETE FROM inode WHERE type = 'relationship';";
+    private final String DELETE_RELATIONSHIPS_FROM_INODE_BY_JOIN = "DELETE FROM inode where exists(select 1 from relationship r where r.inode = inode.inode);";
+
 
     @Override
     public boolean forceRun() {
@@ -42,6 +44,8 @@ public class Task210816DeInodeRelationship extends AbstractJDBCStartupTask {
     public String getPostgresScript() {
         return "ALTER TABLE relationship ADD mod_date timestamp;"
                + COPY_RELATIONSHIP_MOD_DATE_FROM_INODE
+               + DELETE_RELATIONSHIPS_FROM_INODE_BY_TYPE
+               + DELETE_RELATIONSHIPS_FROM_INODE_BY_JOIN
                + getRemoveFKSQL();
     }
 
@@ -54,6 +58,8 @@ public class Task210816DeInodeRelationship extends AbstractJDBCStartupTask {
     public String getMySQLScript() {
         return "ALTER TABLE relationship ADD mod_date datetime;"
                 + COPY_RELATIONSHIP_MOD_DATE_FROM_INODE
+                + DELETE_RELATIONSHIPS_FROM_INODE_BY_TYPE
+                + DELETE_RELATIONSHIPS_FROM_INODE_BY_JOIN
                 + getRemoveFKSQL();
     }
 
@@ -66,6 +72,8 @@ public class Task210816DeInodeRelationship extends AbstractJDBCStartupTask {
     public String getOracleScript() {
         return "ALTER TABLE relationship ADD mod_date date;"
                 + COPY_RELATIONSHIP_MOD_DATE_FROM_INODE
+                + DELETE_RELATIONSHIPS_FROM_INODE_BY_TYPE
+                + DELETE_RELATIONSHIPS_FROM_INODE_BY_JOIN
                 + getRemoveFKSQL();
     }
 
@@ -78,6 +86,8 @@ public class Task210816DeInodeRelationship extends AbstractJDBCStartupTask {
     public String getMSSQLScript() {
         return "ALTER TABLE relationship ADD mod_date datetime null;"
                 + COPY_RELATIONSHIP_MOD_DATE_FROM_INODE
+                + DELETE_RELATIONSHIPS_FROM_INODE_BY_TYPE
+                + DELETE_RELATIONSHIPS_FROM_INODE_BY_JOIN
                 + getRemoveFKSQL();
     }
 
@@ -87,7 +97,7 @@ public class Task210816DeInodeRelationship extends AbstractJDBCStartupTask {
         if(Try.of(()->dotDatabaseMetaData.getConstraints("relationship")).
                 getOrElse(Collections.emptyList())
                 .stream().anyMatch("fkf06476385fb51eb"::equals)) {
-            removeFK = REMOVE_FK_TO_INODE;
+            removeFK = "ALTER TABLE relationship DROP CONSTRAINT fkf06476385fb51eb;";
         }
         return removeFK;
     }
