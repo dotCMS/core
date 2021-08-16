@@ -171,3 +171,5 @@ This maintenance release includes the following code fixes:
 83. https://github.com/dotCMS/core/issues/20629 : EMA should always expect UTF8
 
 84. https://github.com/dotCMS/core/issues/20578 : MonitorResource should cache good responses / fix IPUtils
+
+85. https://github.com/dotCMS/core/issues/20568 : configuration: limit bulk request size
