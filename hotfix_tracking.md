@@ -179,3 +179,5 @@ This maintenance release includes the following code fixes:
 87. https://github.com/dotCMS/core/issues/20499 : Problems trying to login from a PC if you are using mssql as db
 
 88. https://github.com/dotCMS/core/issues/20488 : Workflow: Can not import when next assign role or permissions not exists
+
+89. https://github.com/dotCMS/core/issues/20450 : [REST] : Filtering Endpoint in User Resource is incorrectly parsing some parameters

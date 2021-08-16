@@ -300,8 +300,8 @@ public class ConversionUtils implements Serializable {
 	 */
 	public static boolean toBoolean(final String strBool, final boolean defaultBool) {
 		try {
-			return Boolean.getBoolean(strBool);
-		} catch (Exception e) {
+			return Boolean.parseBoolean(strBool);
+		} catch (final Exception e) {
 			return defaultBool;
 		}
 	}
