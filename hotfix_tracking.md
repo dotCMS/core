@@ -24,3 +24,5 @@ https://github.com/dotCMS/core/issues/20519 : Class in rows are lost when you re
 https://github.com/dotCMS/core/issues/20677 : Users without the 'Login As' Role are still able to select Login As and see all Users #20677
 
 https://github.com/dotCMS/core/issues/20721 : "Login As" Data Constraints #20721
+
+https://github.com/dotCMS/core/issues/20674 : Unable to pick time in earlier zone #20674
