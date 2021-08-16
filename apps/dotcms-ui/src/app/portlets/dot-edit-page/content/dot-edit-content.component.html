@@ -4,6 +4,7 @@
     (close)="editForm = false"
 ></dot-form-selector>
 <dot-add-contentlet (custom)="onCustomEvent($event)"></dot-add-contentlet>
+<dot-create-contentlet (custom)="onCustomEvent($event)" (close)='handleCloseAction()'></dot-create-contentlet>
 <dot-edit-contentlet (custom)="onCustomEvent($event)"></dot-edit-contentlet>
 <dot-reorder-menu [url]="reorderMenuUrl" (close)="onCloseReorderDialog()"></dot-reorder-menu>
 <div class="dot-edit-content__wrapper">
@@ -60,3 +61,9 @@
         </div>
     </ng-container>
 </div>
+<dot-content-palette
+    [@enterAnimation]
+    (filterChange)='loadContentPallet($event)'
+    [items]='contentPalletItems'
+    *ngIf="isEditMode">
+</dot-content-palette>

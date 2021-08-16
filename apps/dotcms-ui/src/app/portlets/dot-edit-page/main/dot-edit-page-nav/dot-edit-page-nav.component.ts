@@ -80,7 +80,7 @@ export class DotEditPageNavComponent implements OnChanges {
             {
                 needsEntepriseLicense: false,
                 disabled: false,
-                icon: 'description',
+                icon: 'insert_drive_file',
                 label: this.dotMessageService.get('editpage.toolbar.nav.content'),
                 link: 'content'
             },
@@ -89,7 +89,7 @@ export class DotEditPageNavComponent implements OnChanges {
             {
                 needsEntepriseLicense: false,
                 disabled: false,
-                icon: 'add',
+                icon: 'more_horiz',
                 label: this.dotMessageService.get('editpage.toolbar.nav.properties'),
                 action: (inode: string) => {
                     this.dotContentletEditorService.edit({
