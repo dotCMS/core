@@ -19,6 +19,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.util.StringPool;
@@ -337,7 +338,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     private Metadata getMetadata(final Contentlet contentlet, final String fieldVariableName, final boolean forceGenerate)
             throws DotDataException {
 
-        if(null != contentlet.get(fieldVariableName)) {
+        if(null != contentlet.get(fieldVariableName) && UtilMethods.isSet(contentlet.getInode())) {
             final StorageType storageType = StoragePersistenceProvider.getStorageType();
             final String metadataBucketName = Config
                     .getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);

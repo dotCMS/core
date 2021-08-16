@@ -14,3 +14,5 @@ This maintenance release includes the following code fixes:
 5. https://github.com/dotCMS/core/issues/20578 : MonitorResource should cache good responses / fix IPUtils
 
 6. https://github.com/dotCMS/core/issues/20557 : Site Resource improvements
+
+7. https://github.com/dotCMS/core/issues/20505 : Unable to create a multilingual blog
