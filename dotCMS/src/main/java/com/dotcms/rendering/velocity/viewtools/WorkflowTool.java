@@ -211,7 +211,7 @@ public class WorkflowTool implements ViewTool {
 					.respectAnonymousPermissions(allowFrontEndSaving)
 					.modUser(user).categories(categories)
 					.relationships((relationships))
-					.indexPolicy(IndexPolicyProvider.getInstance().forSingleContent())
+					.indexPolicy(contentlet.getIndexPolicy()) // if the index policy is set will use it, otherwise will use the app default.
 					.build();
 
 			contentlet = workflowAPI.fireContentWorkflow(contentlet, contentletDependencies);

@@ -14,12 +14,16 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.IncorrectPasswordException;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.pagination.UserPaginator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -55,6 +59,8 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 
 /**
@@ -74,23 +80,27 @@ public class UserResource implements Serializable {
 	private final HostAPI siteAPI;
 	private final UserResourceHelper helper;
 	private final ErrorResponseHelper errorHelper;
+	private final PaginationUtil paginationUtil;
+	private final RoleAPI roleAPI;
 
 	/**
 	 * Default class constructor.
 	 */
 	public UserResource() {
 		this(new WebResource(new ApiProvider()), APILocator.getUserAPI(), APILocator.getHostAPI(), UserResourceHelper.getInstance(),
-				ErrorResponseHelper.INSTANCE);
+				ErrorResponseHelper.INSTANCE, new PaginationUtil(new UserPaginator()), APILocator.getRoleAPI());
 	}
 
 	@VisibleForTesting
 	protected UserResource(final WebResource webResource,  final UserAPI userAPI, final HostAPI siteAPI, final UserResourceHelper userHelper,
-						   final ErrorResponseHelper errorHelper) {
+						   final ErrorResponseHelper errorHelper, PaginationUtil paginationUtil, final RoleAPI roleAPI) {
 		this.webResource = webResource;
 		this.userAPI = userAPI;
 		this.siteAPI = siteAPI;
 		this.helper = userHelper;
 		this.errorHelper = errorHelper;
+		this.paginationUtil = paginationUtil;
+		this.roleAPI = roleAPI;
 	}
 
 	/**
@@ -117,11 +127,18 @@ public class UserResource implements Serializable {
 		if(user != null) {
 			try {
 				final Role role = APILocator.getRoleAPI().getUserRole(user);
+
 				currentUser.userId(user.getUserId())
 						.givenName(user.getFirstName())
 						.email(user.getEmailAddress())
 						.surname(user.getLastName())
 						.roleId(role.getId());
+
+				final Role loginAsRole = APILocator.getRoleAPI().loadRoleByKey(Role.LOGIN_AS);
+				if (null != loginAsRole) {
+
+					currentUser.loginAs(APILocator.getRoleAPI().doesUserHaveRole(user, loginAsRole));
+				}
 			} catch (final DotDataException e) {
 				Logger.error(this, "Could not provide current user: " + e.getMessage(), e);
 				throw new BadRequestException("Could not provide current user.");
@@ -342,6 +359,15 @@ public class UserResource implements Serializable {
 				.rejectWhenNoUser(true)
 				.init();
 
+		final Role    loginAsRole = roleAPI.loadRoleByKey(Role.LOGIN_AS);
+		if (!Try.of(()->roleAPI.doesUserHaveRole(initData.getUser(), loginAsRole)).getOrElse(false)) {
+
+			Logger.debug(this, "The user: " + initData.getUser().getUserId()
+					+ " does not have the LOGIN AS role, can not execute this action");
+			throw new DotSecurityException("The user: " + initData.getUser().getUserId()
+					+ " must have the Login As role to execute this action");
+		}
+
 		final String serverName = request.getServerName();
 		final User currentUser = initData.getUser();
 		final Host currentSite = Host.class.cast(request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST));
@@ -525,50 +551,50 @@ public class UserResource implements Serializable {
 
 	/**
 	 * Returns all the users (without the anonymous and default users) that can
-	 * be impersonated. The format of the JSON result is:<br>
-	 *
-	 * <pre>
-	 * {
-	 *   "name":"Admin User",
-	 *   "emailaddress":"admin@dotcms.com",
-	 *   "id":"dotcms.org.1",
-	 *   "type":"user",
-	 *   "requestPassword": true
-	 * }
-	 * </pre>
-	 *
-	 * This service returns a 500 HTTP code if anything goes wrong. The
-	 * currently logged-in user is automatically removed from the result list.
+	 * be impersonated.
 	 *
 	 * @return The list of users that can be impersonated.
-	 *
-	 * @deprecated use {@link com.dotcms.rest.api.v2.user.UserResource#loginAsData(HttpServletRequest, HttpServletResponse, String, int, int)}
 	 */
 	@GET
 	@Path("/loginAsData")
 	@JSONP
 	@NoCache
-	@Deprecated
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-	public final Response loginAsData(@Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @QueryParam("filter") final String filter,
-									  @QueryParam("includeUsersCount") final boolean includeUsersCount) {
-		Response response;
-		User currentUser = new User();
-		try {
-			final InitDataObject initData = new WebResource.InitBuilder(webResource)
-					.requiredBackendUser(true)
-					.requiredFrontendUser(false)
-					.requestAndResponse(httpServletRequest, httpServletResponse)
-					.rejectWhenNoUser(true)
-					.init();
+	public final Response loginAsData(@Context final HttpServletRequest httpServletRequest,
+									  @Context final HttpServletResponse httpServletResponse,
+									  @QueryParam(PaginationUtil.FILTER)   final String filter,
+									  @QueryParam(PaginationUtil.PAGE) final int page,
+									  @QueryParam(PaginationUtil.PER_PAGE) final int perPage) {
 
-			currentUser = initData.getUser();
-			response = Response.ok(this.helper.getLoginAsUsers(currentUser, filter, includeUsersCount)).build();
-		} catch (final Exception e) {
-			SecurityLogger.logInfo(UserResource.class, "ERROR: An error occurred when retrieving the Login As data: "
-					+ e.getMessage());
-			return ErrorResponseHelper.INSTANCE.getErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, currentUser.getLocale(), e.getMessage());
+		final InitDataObject initData = new WebResource.InitBuilder(webResource)
+				.requiredBackendUser(true)
+				.requiredFrontendUser(false)
+				.requestAndResponse(httpServletRequest, httpServletResponse)
+				.rejectWhenNoUser(true).init();
+
+		Response response = null;
+		final User user = initData.getUser();
+
+		try {
+
+			final Role    loginAsRole = roleAPI.loadRoleByKey(Role.LOGIN_AS);
+			if (!Try.of(()->roleAPI.doesUserHaveRole(initData.getUser(), loginAsRole)).getOrElse(false)) {
+
+				Logger.debug(this, "The user: " + initData.getUser().getUserId()
+						+ " does not have the LOGIN AS role, can not execute this action");
+				throw new DotSecurityException("The user: " + initData.getUser().getUserId()
+						+ " must have the Login As role to execute this action");
+			}
+
+			response = this.paginationUtil.getPage( httpServletRequest, user, filter, page, perPage );
+		} catch (Exception e) {
+			if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
+				throw new ForbiddenException(e);
+			}
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+			Logger.error(this, e.getMessage(), e);
 		}
+
 		return response;
 	}
 
