@@ -175,3 +175,5 @@ This maintenance release includes the following code fixes:
 85. https://github.com/dotCMS/core/issues/20568 : configuration: limit bulk request size
 
 86. https://github.com/dotCMS/core/issues/20501 : Workflows: Can not copy a workflow with Notify Assigned Actionlet is used
+
+87. https://github.com/dotCMS/core/issues/20499 : Problems trying to login from a PC if you are using mssql as db
