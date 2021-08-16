@@ -18,3 +18,5 @@ This maintenance release includes the following code fixes:
 7. https://github.com/dotCMS/core/issues/20505 : Unable to create a multilingual blog
 
 8. https://github.com/dotCMS/core/issues/20501 : Workflows: Can not copy a workflow with Notify Assigned Actionlet is used
+
+9. https://github.com/dotCMS/core/issues/20666 : Move to a glibc based docker image
