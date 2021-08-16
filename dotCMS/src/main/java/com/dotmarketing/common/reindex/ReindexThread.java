@@ -199,6 +199,7 @@ public class ReindexThread {
   private void runReindexLoop() {
     BulkProcessor bulkProcessor = null;
     BulkProcessorListener bulkProcessorListener = null;
+    final int logEveryMillis = Config.getIntProperty("REINDEX_THREAD_PAUSE_IN_MINUTES", 60) * 60000;
     while (STATE != ThreadState.STOPPED) {
       try {
 
@@ -227,11 +228,16 @@ public class ReindexThread {
       } finally {
         DbConnectionFactory.closeSilently();
       }
+
+      int logTimeElapsed = 0;
       while (STATE == ThreadState.PAUSED) {
         ThreadUtils.sleep(SLEEP);
+        logTimeElapsed +=SLEEP;
         //Logs every 60 minutes
-          Logger.infoEvery(ReindexThread.class, "--- ReindexThread Paused",
-                  Config.getIntProperty("REINDEX_THREAD_PAUSE_IN_MINUTES", 60) * 60000);
+          if (logTimeElapsed>= logEveryMillis) {
+              Logger.info(ReindexThread.class, "--- ReindexThread Paused");
+              logTimeElapsed = 0;
+          }
         Long restartTime = (Long) cache.get().get(REINDEX_THREAD_PAUSED);
         if(restartTime ==null || restartTime < System.currentTimeMillis()) {
             STATE = ThreadState.RUNNING;
@@ -330,7 +336,7 @@ public class ReindexThread {
     }
 
     public static void unpause() {
-        Logger.infoEvery(ReindexThread.class, "--- ReindexThread Running", 60000);
+        Logger.info(ReindexThread.class, "--- ReindexThread Running");
         cache.get().remove(REINDEX_THREAD_PAUSED);
         getInstance().state(ThreadState.RUNNING);
     }
