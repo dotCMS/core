@@ -2,7 +2,7 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { DotAppsConfigurationHeaderComponent } from './dot-apps-configuration-header.component';
-import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
+import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
 import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { MarkdownModule } from 'ngx-markdown';
@@ -11,7 +11,7 @@ import { MarkdownModule } from 'ngx-markdown';
     imports: [
         CommonModule,
         DotAvatarModule,
-        DotCopyButtonModule,
+        DotCopyLinkModule,
         DotPipesModule,
         MarkdownModule.forChild()
     ],
