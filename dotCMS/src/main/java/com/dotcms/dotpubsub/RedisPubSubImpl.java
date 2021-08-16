@@ -2,6 +2,7 @@ package com.dotcms.dotpubsub;
 
 import com.dotcms.cache.lettuce.RedisClient;
 import com.dotcms.cache.lettuce.RedisClientProvider;
+import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -21,6 +22,7 @@ public class RedisPubSubImpl implements DotPubSubProvider {
     @Override
     public DotPubSubProvider subscribe(final DotPubSubTopic topic) {
 
+        Logger.debug(this, ()-> "Subscribing topic: " + topic.getTopic());
         this.start();
         this.redisClient.subscribe(message-> {
 
@@ -34,6 +36,7 @@ public class RedisPubSubImpl implements DotPubSubProvider {
     @Override
     public DotPubSubProvider start() {
 
+        Logger.debug(this, ()->"PubSub has been started...");
         this.start.set(true);
         return this;
     }
@@ -41,6 +44,7 @@ public class RedisPubSubImpl implements DotPubSubProvider {
     @Override
     public void stop() {
 
+        Logger.debug(this, ()->"PubSub has been stopped...");
         this.start.set(false);
     }
 
@@ -52,6 +56,9 @@ public class RedisPubSubImpl implements DotPubSubProvider {
             this.redisClient.publishMessage(event, event.getTopic());
             lastEventOut = event;
             return true;
+        } else {
+
+            Logger.debug(this, ()->"(PubSub stopped) Message Filtered: " + event);
         }
 
         return false;
@@ -60,6 +67,7 @@ public class RedisPubSubImpl implements DotPubSubProvider {
     @Override
     public DotPubSubProvider unsubscribe(final DotPubSubTopic topic) {
 
+        Logger.debug(this, ()-> "Unsubscribing topic: " + topic.getTopic());
         this.redisClient.unsubscribe(topic.getTopic());
         return this;
     }
