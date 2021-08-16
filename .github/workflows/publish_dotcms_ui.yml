@@ -53,7 +53,18 @@ jobs:
                   node-version: '10.15.3'
             - name: Installing dependencies
               run: |
+                  # Get Branch Name
+                  if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+                    branchName="${{ github.head_ref }}"
+                  else
+                    branchName=$(basename "${{ github.ref }}")
+                  fi
+
                   cd core-web
+
+                  git checkout $branchName
+                  git status
+
                   npm install
             - name: Version Bump - dotcms-ui - if it's Master/Release Branch
               run: |
@@ -74,8 +85,10 @@ jobs:
 
                   # Get version from package.json
                   cd core-web
+
+                  git checkout $branchName
                   git status
-                  echo $branchName
+
                   git pull origin $branchName
                   pkgVersion=`awk -F'"' '/"version": ".+"/{ print $4; exit; }' package.json`
                   arrIN=(${pkgVersion//./ })
