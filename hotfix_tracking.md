@@ -34,3 +34,5 @@ https://github.com/dotCMS/core/issues/20623 : Container displays Add button twic
 https://github.com/dotCMS/core/issues/20719 : NPE on tags via graphql if no tags present #20719
 
 https://github.com/dotCMS/core/issues/20690 : Add PushPublishingListener to dotCDN #20690
+
+https://github.com/dotCMS/core/issues/20688 : Rest API Update Site do not update siteName #20688
