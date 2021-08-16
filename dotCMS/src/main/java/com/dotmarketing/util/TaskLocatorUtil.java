@@ -302,7 +302,7 @@ public class TaskLocatorUtil {
         .add(Task210527DropReviewFieldsFromContentletTable.class)
         .add(Task210719CleanUpTitleField.class)
 		.add(Task210802UpdateStructureTable.class)
-		.add(Task210812CreateRelationshipModDateColumn.class)
+		.add(Task210816DeInodeRelationship.class)
         .build();
         
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
