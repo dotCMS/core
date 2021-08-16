@@ -36,3 +36,5 @@ https://github.com/dotCMS/core/issues/20719 : NPE on tags via graphql if no tags
 https://github.com/dotCMS/core/issues/20690 : Add PushPublishingListener to dotCDN #20690
 
 https://github.com/dotCMS/core/issues/20688 : Rest API Update Site do not update siteName #20688
+
+https://github.com/dotCMS/core/issues/20685 : [Vanity URL] : Missing parameters in Vanity URL cause problems in API #20685
