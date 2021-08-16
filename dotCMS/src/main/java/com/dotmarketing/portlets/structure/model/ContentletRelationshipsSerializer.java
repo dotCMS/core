@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.structure.model;
 
 import com.dotcms.contenttype.model.field.layout.FieldLayout;
+import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
 import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
@@ -11,17 +12,17 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ContentletRelationshipsSerializer extends JsonSerializer<ContentletRelationships> {
 
     private static final String RELATIONSHIP_KEY = "__##relationships##__";
 
-    final ObjectMapper MAPPER = new ObjectMapper();
 
     @Override
     public void serialize(final ContentletRelationships contentletRelationships,
-            final JsonGenerator gen,
+            final JsonGenerator jsonGenerator,
             final SerializerProvider serializers) throws IOException {
 
         final Contentlet contentlet = contentletRelationships.getContentlet();
@@ -35,8 +36,12 @@ public class ContentletRelationshipsSerializer extends JsonSerializer<Contentlet
         contentletMapWithRelationships.putAll(contentletMap);
         contentletMapWithRelationships.remove(RELATIONSHIP_KEY);
 
-        MAPPER.writer()
-                .withAttribute("relationshipsRecords", contentletRelationships.getRelationshipsRecords())
-                .withAttribute("contentlet", contentletMapWithRelationships);
+        jsonGenerator.writeStartObject();
+
+        jsonGenerator.writeObjectField("relationshipsRecords",
+                contentletRelationships.getRelationshipsRecords());
+        jsonGenerator.writeObjectField("contentlet", contentletMapWithRelationships);
+        jsonGenerator.writeEndObject();
+        jsonGenerator.flush();
     }
 }
