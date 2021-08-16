@@ -26,3 +26,5 @@ https://github.com/dotCMS/core/issues/20677 : Users without the 'Login As' Role 
 https://github.com/dotCMS/core/issues/20721 : "Login As" Data Constraints #20721
 
 https://github.com/dotCMS/core/issues/20674 : Unable to pick time in earlier zone #20674
+
+https://github.com/dotCMS/core/issues/20659 : The Set Response Headers Rule Action does not allow single quotes in the value #20659
