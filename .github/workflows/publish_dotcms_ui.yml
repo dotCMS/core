@@ -46,7 +46,7 @@ jobs:
         steps:
             - name: Checkout core-web
               run: |
-                  git clone --depth 1 https://victoralfaro-dotcms:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/dotcms/core-web
+                  git clone --no-single-branch --depth 1 https://victoralfaro-dotcms:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/dotcms/core-web
             - name: Configuring Node.js
               uses: actions/setup-node@v2-beta
               with:
