@@ -301,6 +301,23 @@ function doShutdownDotcms(){
 
 }
 
+dojo.ready(function () {
+
+
+    var tab = dijit.byId("mainTabContainer");
+    dojo.connect(tab, 'selectChild',
+            function (evt) {
+                selectedTab = tab.selectedChildWidget;
+                if (selectedTab.id == "systemProps") {
+                    showSystemVars();
+                }
+
+            });
+
+});
+
+
+
 
 
 
@@ -1053,6 +1070,64 @@ function assetHostListTable_deleteHost(hostId){
 	}
 }
 
+function showSystemVars(){
+
+    
+    
+    const keys = ["release", "jvm", "host" ,"environment","system"];
+    const currentDiv = document.getElementById("systemInfoDiv");
+    
+
+    fetch('/api/v1/jvm')
+    .then(response => response.json())
+    .then(data => {
+        const headerDiv = document.createElement("h2");
+        headerDiv.innerHTML="Version: " + data.release.version + " (" +data.release.buildDate + ")" ;
+        currentDiv.appendChild(headerDiv);
+
+
+        keys.forEach(key=>{
+            const myDiv = document.createElement("div");
+            myDiv.className="propDiv";
+            const fieldSet = document.createElement("fieldset");
+            fieldSet.className="propFieldSet";
+            const label = document.createElement("label");
+            label.className="propLabel";
+            label.innerHTML=key;
+            const table = document.createElement("table");
+
+            myDiv.appendChild(fieldSet);
+            currentDiv.appendChild(myDiv);
+            fieldSet.appendChild(label);
+            
+            table.className="listingTable propTable";
+            fieldSet.appendChild(table)
+            
+            Object.entries(data[key]).forEach(([key, value]) =>{
+                const tr = document.createElement("tr");
+                
+                const th = document.createElement("th");
+                th.className="propTh";
+                const td = document.createElement("td");
+                td.className="propTd";
+                table.appendChild(tr)
+                tr.appendChild(th);
+                tr.appendChild(td);
+                th.innerHTML=key;
+                td.innerHTML=value;
+
+            })
+            
+        });
+        
+        
+        
+        
+    });
+}
+
+
+
 </script>
 
 <style>
@@ -1090,7 +1165,35 @@ dd.leftdl {
     font-size: 1%;
 }
 
+.propDiv{
 
+    margin:30px;
+}
+.propTh{
+    width:40%;
+    text-align: right;
+    font-size:14px;
+}
+.propTd{
+    font-family: monospace;
+    max-width: 400px;
+    overflow-wrap: break-word;
+    font-size:14px;
+}
+.propLabel{
+    background-color: white;
+    font-size:24px;
+    margin-top: -48px;
+    padding:10px;
+
+    display:inline-block;
+
+    max-width:50%;
+}
+
+.propFieldSet{
+    margin-bottom:40px;
+}
 
 </style>
 
@@ -1563,67 +1666,10 @@ dd.leftdl {
     <!-- START System Info TAB -->
     <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
     <div id="systemProps" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "System-Properties") %>" >
-		<br>&nbsp;<br>
-		<div style="width:80%;margin: 0 auto;">
-		    <h2 id="version-info"><%=LanguageUtil.get(pageContext, "version") %>&#58;&nbsp;<%=ReleaseInfo.getVersion() %>&nbsp;&#40;<%=ReleaseInfo.getBuildDateString() %>&#41;</h2>
-            <br>&nbsp;<br>
-	        <table class="listingTable shadowBox">
-	            <thead>
-	            <th>
-	                <%= LanguageUtil.get(pageContext, "Env-Variable") %>
-	            </th>
-	            <th>
-	                <%= LanguageUtil.get(pageContext, "Value") %>
-	            </th>
-	            </thead>
+      <div style="width:80%;margin: 0 auto;" id="systemInfoDiv">
+      
+      </div>
 
-	            <%Map<String,String> s = System.getenv();%>
-	            <%TreeSet<Object> keys = new TreeSet(s.keySet()); %>
-	            <%for(Object key : keys){ %>
-	            <tr>
-	                <td valign="top"><%=key %></td>
-	                <td style="white-space: normal;word-wrap: break-word;"><%=s.get(key) %></td>
-	            </tr>
-
-	            <%} %>
-	        </table>
-		<br>&nbsp;<br>
-	        <table class="listingTable shadowBox">
-	            <thead>
-	            <th>
-	                <%= LanguageUtil.get(pageContext, "System-Property") %>
-	            </th>
-	            <th>
-	                <%= LanguageUtil.get(pageContext, "Value") %>
-	            </th>
-	            </thead>
-
-	            <%Properties p = System.getProperties();%>
-	            <% RuntimeMXBean b = ManagementFactory.getRuntimeMXBean(); %>
-	            <tr>
-	                <td valign="top" style="vertical-align: top">Startup Args</td>
-	                <td valign="top" style="vertical-align: top">
-	                    <%for(Object key : b.getInputArguments()){ %>
-	                    <%=key %><br>
-	                    <%} %>
-	                </td>
-	            </tr>
-				<%keys = new TreeSet(p.keySet()); %>
-	            <%for(Object key : keys){ %>
-
-	            <tr>
-	                <td valign="top"><%=key %></td>
-	                <td>
-	                <div  style="white-space: normal;word-wrap: break-word !important;max-width: 400px">
-	                	<%=p.get(key) %>
-	                </div>
-	                </td>
-	            </tr>
-
-	            <%} %>
-	        </table>
-	        <br>&nbsp;<br>
-		</div>
     </div>
 
     <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->

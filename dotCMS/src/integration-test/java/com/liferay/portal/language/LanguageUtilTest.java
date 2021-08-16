@@ -3,6 +3,7 @@ package com.liferay.portal.language;
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -100,6 +101,8 @@ public class LanguageUtilTest {
                 new LanguageDataGen().languageCode("fr").countryCode("FR").nextPersisted();
         final long expectedBaseLangId   = baseLanguage.getId();
         final long expectedFrLangId     = frLanguage.getId();
+
+        CacheLocator.getLanguageCache().clearCache();
 
         return new  Object[]{
                 new TestCaseLanguageLocale("fr_CR",expectedBaseLangId),

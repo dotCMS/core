@@ -4,6 +4,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import io.vavr.collection.Stream;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -37,6 +38,7 @@ public class ManifestItemsMapTest {
                 includeExclude,
                 manifestInfo.objectType(),
                 manifestInfo.id(),
+                manifestInfo.inode(),
                 manifestInfo.title(),
                 manifestInfo.site(),
                 manifestInfo.folder(),
@@ -47,8 +49,9 @@ public class ManifestItemsMapTest {
 
     public void addDependencies(final Map<ManifestItem, Collection<ManifestItem>> dependencies){
         for (Entry<ManifestItem, Collection<ManifestItem>> dependencyEntry : dependencies.entrySet()) {
-            final String id = dependencyEntry.getKey().getManifestInfo().id();
-            final String dependencyReeason = "Dependency from: " + id;
+            final ManifestItem key = dependencyEntry.getKey();
+            final String dependencyReeason = String.format("Dependency from: ID: %s Title: %s", key.getManifestInfo().id(),
+                    key.getManifestInfo().title());
 
             final Collection<ManifestItem> entryDependencies = dependencyEntry.getValue();
 

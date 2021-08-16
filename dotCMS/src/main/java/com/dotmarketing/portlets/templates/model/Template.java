@@ -332,6 +332,7 @@ public class Template extends WebAsset implements Serializable, Comparable, Mani
 		return new ManifestInfoBuilder()
 			.objectType(PusheableAsset.TEMPLATE.getType())
 			.id(this.getIdentifier())
+			.inode(this.inode)
 			.title(this.getTitle())
 			.build();
 	}

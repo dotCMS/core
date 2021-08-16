@@ -320,6 +320,7 @@ public class Container extends WebAsset implements Serializable, ManifestItem {
 		return new ManifestInfoBuilder()
 			.objectType(PusheableAsset.CONTAINER.getType())
 			.id(this.getIdentifier())
+			.inode(this.inode)
 			.title(this.getTitle())
 			.build();
 	}
