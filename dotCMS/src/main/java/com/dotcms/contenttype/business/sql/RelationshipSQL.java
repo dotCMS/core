@@ -20,7 +20,7 @@ public abstract class RelationshipSQL {
 
 	public static final String SELECT_ALL_FIELDS = "select inode, parent_structure_inode, child_structure_inode, "
 			+ "parent_relation_name, child_relation_name, relation_type_value, cardinality, "
-			+ "parent_required, child_required, fixed from relationship";
+			+ "parent_required, child_required, fixed, mod_date from relationship";
 
 	public static final String FIND_BY_INODE = SELECT_ALL_FIELDS + " where inode = ?";
 

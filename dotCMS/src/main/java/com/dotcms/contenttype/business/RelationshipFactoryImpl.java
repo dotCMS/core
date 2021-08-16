@@ -30,6 +30,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -467,18 +468,16 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 
     @Override
     public void save(final Relationship relationship) throws DotDataException {
+        relationship.setModDate(new Date());
 
         if(UtilMethods.isSet(relationship.getInode())){
             if(relationshipExists(relationship.getInode())){
-//                insertInodeInDB(relationship);
-                insertRelationshipInDB(relationship);
-            } else {
-//                updateInodeInDB(relationship);
                 updateRelationshipInDB(relationship);
+            } else {
+                insertRelationshipInDB(relationship);
             }
         } else{
             relationship.setInode(UUIDGenerator.generateUuid());
-//            insertInodeInDB(relationship);
             insertRelationshipInDB(relationship);
         }
 
@@ -497,17 +496,8 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
                 .setSQL(sql.FIND_BY_INODE)
                 .addParam(inode)
                 .loadObjectResults();
-        return results.isEmpty();
+        return UtilMethods.isSet(results);
     }
-
-//    private void insertInodeInDB(final Relationship relationship) throws DotDataException{
-//	    DotConnect dc = new DotConnect();
-//	    dc.setSQL(sql.INSERT_INODE);
-//	    dc.addParam(relationship.getInode());
-//	    dc.addParam(relationship.getiDate());
-//	    dc.addParam(relationship.getOwner());
-//	    dc.loadResult();
-//    }
 
     private void insertRelationshipInDB(final Relationship relationship) throws DotDataException{
 	    DotConnect dc = new DotConnect();
@@ -525,16 +515,6 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         dc.addParam(relationship.getModDate());
         dc.loadResult();
     }
-
-//    private void updateInodeInDB(final Relationship relationship) throws DotDataException{
-//	    DotConnect dc = new DotConnect();
-//	    dc.setSQL(sql.UPDATE_INODE);
-//	    dc.addParam(relationship.getInode());
-//	    dc.addParam(relationship.getiDate());
-//        dc.addParam(relationship.getOwner());
-//        dc.addParam(relationship.getInode());
-//        dc.loadResult();
-//    }
 
     private void updateRelationshipInDB(final Relationship relationship) throws DotDataException{
         DotConnect dc = new DotConnect();

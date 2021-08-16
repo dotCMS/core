@@ -49,6 +49,7 @@ public class Relationship implements Serializable, ManifestItem {
     private boolean childRequired;
     private boolean fixed=false;
     private String inode;
+    private Date modDate;
 	
     /**
      * Default class constructor.
@@ -318,9 +319,12 @@ public class Relationship implements Serializable, ManifestItem {
 		return Objects.hash(inode);
 	}
 
-	// TODO implement properly
 	public Date getModDate() {
-		return Calendar.getInstance().getTime();
+		return modDate;
+	}
+
+	public void setModDate(Date modDate) {
+		this.modDate = modDate;
 	}
 
 	@JsonIgnore
