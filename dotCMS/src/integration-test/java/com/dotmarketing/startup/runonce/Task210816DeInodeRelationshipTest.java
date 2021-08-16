@@ -31,14 +31,6 @@ public class Task210816DeInodeRelationshipTest {
                     .dropColumn(DbConnectionFactory.getConnection(), "relationship", "mod_date");
         }
 
-        // Add FK if it doesn't exist
-        if(Try.of(()->dotDatabaseMetaData.getConstraints("relationship")).
-                getOrElse(Collections.emptyList())
-                .stream().noneMatch("fkf06476385fb51eb"::equals)) {
-            new DotConnect().executeStatement("ALTER TABLE relationship "
-                    + "ADD CONSTRAINT fkf06476385fb51eb FOREIGN KEY (inode) REFERENCES inode;");
-        }
-
         final Task210816DeInodeRelationship upgradeTask = new Task210816DeInodeRelationship();
         assertTrue(upgradeTask.forceRun());
         upgradeTask.executeUpgrade();
