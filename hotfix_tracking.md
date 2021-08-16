@@ -12,3 +12,5 @@ This maintenance release includes the following code fixes:
 4. https://github.com/dotCMS/core/issues/20629 : EMA should always expect UTF8
 
 5. https://github.com/dotCMS/core/issues/20578 : MonitorResource should cache good responses / fix IPUtils
+
+6. https://github.com/dotCMS/core/issues/20557 : Site Resource improvements
