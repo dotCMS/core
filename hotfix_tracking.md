@@ -38,3 +38,6 @@ https://github.com/dotCMS/core/issues/20690 : Add PushPublishingListener to dotC
 https://github.com/dotCMS/core/issues/20688 : Rest API Update Site do not update siteName #20688
 
 https://github.com/dotCMS/core/issues/20685 : [Vanity URL] : Missing parameters in Vanity URL cause problems in API #20685
+
+https://github.com/dotCMS/core/issues/20649 : IndexPolicy do not respected on wf toolview #20649
+
