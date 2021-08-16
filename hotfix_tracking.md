@@ -19,6 +19,8 @@ This maintenance release includes the following code fixes:
 
 8. https://github.com/dotCMS/core/issues/20501 : Workflows: Can not copy a workflow with Notify Assigned Actionlet is used
 
+9. https://github.com/dotCMS/core/issues/20666 : Move to a glibc based docker image
+
 https://github.com/dotCMS/core/issues/20519 : Class in rows are lost when you remove a row #20519
 
 https://github.com/dotCMS/core/issues/20677 : Users without the 'Login As' Role are still able to select Login As and see all Users #20677
