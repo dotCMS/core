@@ -16,6 +16,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
@@ -46,9 +49,14 @@ import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.IdentifierAPIImpl;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.VersionableAPI;
+import com.dotmarketing.business.VersionableAPIImpl;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
@@ -67,6 +75,7 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.dotmarketing.util.json.JSONArray;
@@ -92,6 +101,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.Matchers;
 
 /**
  * @author nollymar
@@ -298,16 +308,49 @@ public class ESMappingAPITest {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    @Test(expected = DotMappingException.class)
-    public void whenContentletHasInvalidHostId(){
-        final ESMappingAPIImpl esMappingAPI    = new ESMappingAPIImpl();
+    @Test
+    public void whenContentletHasInvalidHostId() throws DotDataException {
 
         final ContentType contentType = new ContentTypeDataGen().nextPersisted();
-        final Contentlet contentlet = new ContentletDataGen(contentType.id()).next();
+        final Host site = new SiteDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).host(site).next();
 
-        contentlet.setHost("not_exist_host");
+        final String id = UUIDGenerator.generateUuid();
+        final String siteId = "a_site_that_does_not_exist";
+        final Identifier identifier = mock(Identifier.class);
+        when(identifier.getId()).thenReturn(id);
+        when(identifier.getHostId()).thenReturn(siteId);
 
-        esMappingAPI.toMap(contentlet);
+        final IdentifierAPI identifierAPI = mock(IdentifierAPIImpl.class);
+        when(identifierAPI.find(contentlet)).thenReturn(identifier);
+
+        final VersionableAPI versionableAPI = mock(VersionableAPIImpl.class);
+        final ContentletVersionInfo versionInfo = mock(ContentletVersionInfo.class);
+        when(versionableAPI
+                .getContentletVersionInfo(Matchers.any(String.class), Matchers.any(Long.class)))
+                .thenReturn(Optional.of(versionInfo));
+
+        final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl(
+                APILocator.getUserAPI(), APILocator.getFolderAPI(),
+                identifierAPI, versionableAPI,
+                APILocator.getPermissionAPI(), APILocator.getContentletAPI(),
+                APILocator.getFileMetadataAPI(), APILocator.getHostAPI(),
+                APILocator.getFieldAPI(), APILocator.getESIndexAPI(),
+                APILocator.getRelationshipAPI(), APILocator.getTagAPI(),
+                APILocator.getCategoryAPI(), APILocator.getRoleAPI(),
+                ()->APILocator.getContentTypeAPI(APILocator.systemUser()),
+                APILocator::getWorkflowAPI);
+
+        try {
+            esMappingAPI.toMap(contentlet);
+            fail("We were expecting a Mapping failure.");
+        } catch (DotMappingException e) {
+            final String expected = String
+                    .format(" Identifier '%s' is pointing to a Site that is not valid: '%s'. Please manually change this record to point to a valid Site, or delete it altogether.",
+                            id, siteId);
+            assertEquals(expected, e.getMessage().split("::")[1]);
+        }
+
     }
 
     /**
@@ -318,16 +361,48 @@ public class ESMappingAPITest {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    @Test(expected = DotMappingException.class)
-    public void whenContentletHasInvalidFolderId(){
-        final ESMappingAPIImpl esMappingAPI    = new ESMappingAPIImpl();
-
+    @Test
+    public void whenContentletHasInvalidFolderId() throws DotDataException {
         final ContentType contentType = new ContentTypeDataGen().nextPersisted();
-        final Contentlet contentlet = new ContentletDataGen(contentType.id()).next();
+        final Host site = new SiteDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).host(site).next();
 
-        contentlet.setFolder("not_exist_folder");
+        final String id = UUIDGenerator.generateUuid();
+        final String parentPath = "a_folder_that_does_not_exist";
+        final Identifier identifier = mock(Identifier.class);
+        when(identifier.getId()).thenReturn(id);
+        when(identifier.getHostId()).thenReturn(site.getIdentifier());
+        when(identifier.getParentPath()).thenReturn(parentPath);
 
-        esMappingAPI.toMap(contentlet);
+        final IdentifierAPI identifierAPI = mock(IdentifierAPIImpl.class);
+        when(identifierAPI.find(contentlet)).thenReturn(identifier);
+
+        final VersionableAPI versionableAPI = mock(VersionableAPIImpl.class);
+        final ContentletVersionInfo versionInfo = mock(ContentletVersionInfo.class);
+        when(versionableAPI
+                .getContentletVersionInfo(Matchers.any(String.class), Matchers.any(Long.class)))
+                .thenReturn(Optional.of(versionInfo));
+
+        final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl(
+                APILocator.getUserAPI(), APILocator.getFolderAPI(),
+                identifierAPI, versionableAPI,
+                APILocator.getPermissionAPI(), APILocator.getContentletAPI(),
+                APILocator.getFileMetadataAPI(), APILocator.getHostAPI(),
+                APILocator.getFieldAPI(), APILocator.getESIndexAPI(),
+                APILocator.getRelationshipAPI(), APILocator.getTagAPI(),
+                APILocator.getCategoryAPI(), APILocator.getRoleAPI(),
+                ()->APILocator.getContentTypeAPI(APILocator.systemUser()),
+                APILocator::getWorkflowAPI);
+
+        try {
+            esMappingAPI.toMap(contentlet);
+            fail("We were expecting a Mapping failure.");
+        } catch (DotMappingException e) {
+            final String expected = String.format(" Parent folder '%s' in Site '%s' was not found via API. Please " +
+                            "check that the specified value points to a valid folder.", parentPath
+                    , site.getIdentifier());
+            assertEquals(expected, e.getMessage().split("::")[1]);
+        }
     }
 
     /**
@@ -338,16 +413,22 @@ public class ESMappingAPITest {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    @Test(expected = DotMappingException.class)
-    public void whenContentletHasInvalidContentTypeId(){
-        final ESMappingAPIImpl esMappingAPI    = new ESMappingAPIImpl();
+    @Test
+    public void whenContentletHasInvalidContentTypeId() {
+        final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl();
 
         final ContentType contentType = new ContentTypeDataGen().nextPersisted();
-        final Contentlet contentlet = new ContentletDataGen(contentType.id()).next();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).nextPersisted();
 
         contentlet.setContentTypeId("not_exist_content_type");
-
-        esMappingAPI.toMap(contentlet);
+        try {
+            esMappingAPI.toMap(contentlet);
+        } catch (DotMappingException e) {
+            final String expected = String
+                    .format(" Content Type with id:'%s' not found",
+                            contentlet.getContentTypeId());
+            assertEquals(expected, e.getMessage().split("::")[1]);
+        }
     }
 
     /**
@@ -358,14 +439,37 @@ public class ESMappingAPITest {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    @Test(expected = DotMappingException.class)
-    public void whenContentletHasNotIdentifier() {
-        final ESMappingAPIImpl esMappingAPI    = new ESMappingAPIImpl();
+    @Test
+    public void whenContentletHasNotIdentifier() throws DotDataException {
 
         final ContentType contentType = new ContentTypeDataGen().nextPersisted();
-        final Contentlet contentlet = new ContentletDataGen(contentType.id()).next();
+        final Host site = new SiteDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).host(site).nextPersisted();
+        final String identifier = contentlet.getIdentifier();
+        final String inode = contentlet.getInode();
+        assertNotNull(identifier);
+        assertNotNull(inode);
+        //Force a null value
+        contentlet.setIdentifier(null);
 
-        esMappingAPI.toMap(contentlet);
+        final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl();
+        try {
+            esMappingAPI.toMap(contentlet);
+        } catch (DotMappingException e) {
+            final String expected = " identifier is null";
+            assertEquals(expected, e.getMessage().split("::")[1]);
+        }
+
+        contentlet.setIdentifier(identifier);
+        assertNotNull(esMappingAPI.toMap(contentlet));
+        contentlet.setInode(null);
+        try {
+            esMappingAPI.toMap(contentlet);
+        } catch (DotMappingException e) {
+            final String expected = " Versionable is null";
+            assertEquals(expected, e.getMessage().split("::")[1]);
+        }
+
     }
 
     /**
@@ -1039,6 +1143,5 @@ public class ESMappingAPITest {
         final ESSearchResults searchResults = contentletAPI.esSearch(wrappedQuery, false,  user, false);
         assertFalse(searchResults.isEmpty());
     }
-
 
 }

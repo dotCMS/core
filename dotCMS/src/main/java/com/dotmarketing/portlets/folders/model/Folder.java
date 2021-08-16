@@ -368,6 +368,7 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 		return new ManifestInfoBuilder()
 			.objectType(PusheableAsset.FOLDER.getType())
 			.id(this.getIdentifier())
+			.inode(this.getInode())
 			.title(this.getTitle())
 			.site(this.getHost())
 			.folder(parent)
