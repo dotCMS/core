@@ -21,6 +21,8 @@ This maintenance release includes the following code fixes:
 
 9. https://github.com/dotCMS/core/issues/20666 : Move to a glibc based docker image
 
+10. https://github.com/dotCMS/core/issues/20405 : URL field values are not included in Pages exported from Content->Search
+
 https://github.com/dotCMS/core/issues/20519 : Class in rows are lost when you remove a row #20519
 
 https://github.com/dotCMS/core/issues/20677 : Users without the 'Login As' Role are still able to select Login As and see all Users #20677
