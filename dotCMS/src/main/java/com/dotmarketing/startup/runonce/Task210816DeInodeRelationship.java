@@ -1,11 +1,13 @@
 package com.dotmarketing.startup.runonce;
 
+import static java.util.Collections.singletonList;
+
 import com.dotmarketing.common.db.DotDatabaseMetaData;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
-import com.dotmarketing.util.Logger;
+import com.google.common.annotations.VisibleForTesting;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
-import java.sql.SQLException;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -16,23 +18,15 @@ import java.util.List;
 public class Task210816DeInodeRelationship extends AbstractJDBCStartupTask {
 
     private final DotDatabaseMetaData dotDatabaseMetaData = new DotDatabaseMetaData();
-    private final String COPY_RELATIONSHIP_MOD_DATE_FROM_INODE =
-            "UPDATE relationship as r SET mod_date = i.idate FROM inode i WHERE r.inode = i.inode;";
+    private final String COPY_RELATIONSHIP_MOD_DATE_FROM_INODE = "UPDATE relationship as r SET mod_date = i.idate FROM inode i WHERE r.inode = i.inode;";
     private final String DELETE_RELATIONSHIPS_FROM_INODE_BY_TYPE = "DELETE FROM inode WHERE type = 'relationship';";
     private final String DELETE_RELATIONSHIPS_FROM_INODE_BY_JOIN = "DELETE FROM inode where exists(select 1 from relationship r where r.inode = inode.inode);";
-
+    private final Lazy<com.dotmarketing.common.db.ForeignKey> FK = Lazy.of(this::findRelationshipInodeFK);
+    private final Lazy<Boolean> HAS_MOD_DATE = Lazy.of(this::hasModDateColumn);
 
     @Override
     public boolean forceRun() {
-        try {
-            return !dotDatabaseMetaData.hasColumn("relationship", "mod_date")
-                    || Try.of(()->dotDatabaseMetaData.getConstraints("relationship")).
-                    getOrElse(Collections.emptyList())
-                    .stream().anyMatch("fkf06476385fb51eb"::equals);
-        } catch (SQLException e) {
-            Logger.error(this, e.getMessage(),e);
-            return false;
-        }
+        return !HAS_MOD_DATE.get() || FK.get()!=null;
     }
 
     /**
@@ -42,7 +36,7 @@ public class Task210816DeInodeRelationship extends AbstractJDBCStartupTask {
      */
     @Override
     public String getPostgresScript() {
-        return "ALTER TABLE relationship ADD mod_date timestamp;"
+        return  getAddModDateSQL()
                + COPY_RELATIONSHIP_MOD_DATE_FROM_INODE
                + DELETE_RELATIONSHIPS_FROM_INODE_BY_TYPE
                + DELETE_RELATIONSHIPS_FROM_INODE_BY_JOIN
@@ -56,7 +50,7 @@ public class Task210816DeInodeRelationship extends AbstractJDBCStartupTask {
      */
     @Override
     public String getMySQLScript() {
-        return "ALTER TABLE relationship ADD mod_date datetime;"
+        return  getAddModDateSQL()
                 + COPY_RELATIONSHIP_MOD_DATE_FROM_INODE
                 + DELETE_RELATIONSHIPS_FROM_INODE_BY_TYPE
                 + DELETE_RELATIONSHIPS_FROM_INODE_BY_JOIN
@@ -70,7 +64,7 @@ public class Task210816DeInodeRelationship extends AbstractJDBCStartupTask {
      */
     @Override
     public String getOracleScript() {
-        return "ALTER TABLE relationship ADD mod_date date;"
+        return  getAddModDateSQL()
                 + COPY_RELATIONSHIP_MOD_DATE_FROM_INODE
                 + DELETE_RELATIONSHIPS_FROM_INODE_BY_TYPE
                 + DELETE_RELATIONSHIPS_FROM_INODE_BY_JOIN
@@ -84,22 +78,51 @@ public class Task210816DeInodeRelationship extends AbstractJDBCStartupTask {
      */
     @Override
     public String getMSSQLScript() {
-        return "ALTER TABLE relationship ADD mod_date datetime null;"
+        return  getAddModDateSQL()
                 + COPY_RELATIONSHIP_MOD_DATE_FROM_INODE
                 + DELETE_RELATIONSHIPS_FROM_INODE_BY_TYPE
                 + DELETE_RELATIONSHIPS_FROM_INODE_BY_JOIN
                 + getRemoveFKSQL();
     }
 
+    private String getAddModDateSQL() {
+        String addModDateSQL = "";
+
+        if(!HAS_MOD_DATE.get()) {
+            if(DbConnectionFactory.isPostgres()) {
+                addModDateSQL = "ALTER TABLE relationship ADD mod_date timestamp;";
+            } else if(DbConnectionFactory.isMySql()) {
+                addModDateSQL = "ALTER TABLE relationship ADD mod_date datetime;";
+            } else if(DbConnectionFactory.isMsSql()) {
+                addModDateSQL = "ALTER TABLE relationship ADD mod_date datetime null;";
+            } else if(DbConnectionFactory.isOracle()) {
+                addModDateSQL = "ALTER TABLE relationship ADD mod_date date;";
+            }
+        }
+
+        return addModDateSQL;
+    }
+
     private String getRemoveFKSQL() {
         String removeFK = "";
 
-        if(Try.of(()->dotDatabaseMetaData.getConstraints("relationship")).
-                getOrElse(Collections.emptyList())
-                .stream().anyMatch("fkf06476385fb51eb"::equals)) {
-            removeFK = "ALTER TABLE relationship DROP CONSTRAINT fkf06476385fb51eb;";
+        if(FK.get()!=null) {
+            removeFK = "ALTER TABLE relationship DROP CONSTRAINT " + FK.get().fkName() + ";";
         }
         return removeFK;
+    }
+
+    @VisibleForTesting
+    com.dotmarketing.common.db.ForeignKey findRelationshipInodeFK() {
+        return dotDatabaseMetaData
+                .findForeignKeys("relationship", "inode",
+                        singletonList("inode"), singletonList("inode"));
+    }
+
+    @VisibleForTesting
+    boolean hasModDateColumn() {
+        return Try.of(()->dotDatabaseMetaData
+                .hasColumn("relationship", "mod_date")).getOrElse(false);
     }
 
     @Override
