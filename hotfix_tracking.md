@@ -181,3 +181,5 @@ This maintenance release includes the following code fixes:
 88. https://github.com/dotCMS/core/issues/20488 : Workflow: Can not import when next assign role or permissions not exists
 
 89. https://github.com/dotCMS/core/issues/20450 : [REST] : Filtering Endpoint in User Resource is incorrectly parsing some parameters
+
+90. https://github.com/dotCMS/core/issues/20416 : Add a header if there is a matching vanity url

@@ -4,6 +4,7 @@ import static com.dotmarketing.filters.Constants.VANITY_URL_OBJECT;
 
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
@@ -43,7 +44,7 @@ public class VanityURLFilter implements Filter {
   private final HostWebAPI hostWebAPI;
   private final LanguageWebAPI languageWebAPI;
   private final VanityUrlAPI vanityApi;
-
+  private final boolean addVanityHeader;
   public VanityURLFilter() {
 
     this(CMSUrlUtil.getInstance(), WebAPILocator.getHostWebAPI(), WebAPILocator.getLanguageWebAPI(),
@@ -58,6 +59,7 @@ public class VanityURLFilter implements Filter {
     this.urlUtil = urlUtil;
     this.hostWebAPI = hostWebAPI;
     this.languageWebAPI = languageWebAPI;
+    this.addVanityHeader=Config.getBooleanProperty("VANITY_URL_INCLUDE_HEADER", true);
   }
   @Override
   public void init(FilterConfig filterConfig) throws ServletException {}
@@ -85,6 +87,9 @@ public class VanityURLFilter implements Filter {
           
           if (cachedVanity.isPresent()) {
               request.setAttribute(VANITY_URL_OBJECT, cachedVanity.get());
+              if(addVanityHeader) {
+                  response.setHeader("X-DOT-VanityUrl",cachedVanity.get().vanityUrlId );
+              }
               final VanityUrlResult vanityUrlResult = cachedVanity.get().handle( uri, response);
               final VanityUrlRequestWrapper vanityUrlRequestWrapper = new VanityUrlRequestWrapper(request, vanityUrlResult);
               // If the handler already resolved the requested URI we stop the processing here
