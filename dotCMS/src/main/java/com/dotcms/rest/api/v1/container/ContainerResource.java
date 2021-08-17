@@ -6,7 +6,6 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
-import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
 import javax.ws.rs.*;
