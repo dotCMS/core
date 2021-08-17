@@ -185,3 +185,5 @@ This maintenance release includes the following code fixes:
 90. https://github.com/dotCMS/core/issues/20416 : Add a header if there is a matching vanity url
 
 91. https://github.com/dotCMS/core/issues/20412 : Set Cache-control header based on HTMLPage cacheTTL
+
+92. https://github.com/dotCMS/core/issues/20405 : URL field values are not included in Pages exported from Content->Search
