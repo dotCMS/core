@@ -2,7 +2,6 @@ package com.dotcms.dotpubsub;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
-import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -12,7 +11,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -25,7 +23,6 @@ import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.PooledObjectFactory;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
 import org.apache.commons.pool2.impl.GenericObjectPool;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * This class wraps a pub/sub mechanism and de-dupes the messages sent through it. Once a second,
@@ -244,13 +241,11 @@ public class QueuingPubSubWrapper implements DotPubSubProvider {
             return rootCollection.iterator();
         }
 
-        @NotNull
         @Override
         public Object[] toArray() {
             return rootCollection.toArray();
         }
 
-        @NotNull
         @Override
         public <T> T[] toArray(T[] array) {
             return rootCollection.toArray(array);
