@@ -6,6 +6,7 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
+import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
 import javax.ws.rs.*;
@@ -355,6 +356,7 @@ public class ContainerResource implements Serializable {
         context.put("contentletList" + container.getIdentifier() + Container.LEGACY_RELATION_TYPE,
                 Lists.newArrayList(contentlet.getIdentifier()));
         context.put(mode.name(), Boolean.TRUE);
+        context.put("dotPageContent",Boolean.TRUE);
 
         final VelocityResourceKey key = new VelocityResourceKey(container, Container.LEGACY_RELATION_TYPE, mode);
 
