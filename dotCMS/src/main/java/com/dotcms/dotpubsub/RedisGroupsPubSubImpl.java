@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+
+import com.dotcms.cache.lettuce.LettuceAdapter;
 import com.dotcms.cache.lettuce.RedisClient;
 import com.dotcms.cache.lettuce.MasterReplicaLettuceClient;
 import com.dotcms.concurrent.DotConcurrentFactory;
@@ -95,7 +97,7 @@ public class RedisGroupsPubSubImpl implements DotPubSubProvider {
                 final String redisTopic = redisTopic(topic);
 
                 try {
-                    RedisAsyncCommands<String, String> asyncCommands = lettuce.getConn().async();
+                    RedisAsyncCommands<String, String> asyncCommands = LettuceAdapter.getStatefulRedisConnection(lettuce).async();
                     Logger.info(RedisGroupsPubSubImpl.class, "Creating Redis Stream : " + redisTopic);
                     asyncCommands.xgroupCreate(StreamOffset.lastConsumed(redisTopic), serverId,
                                     XGroupCreateArgs.Builder.mkstream(true));
@@ -133,10 +135,10 @@ public class RedisGroupsPubSubImpl implements DotPubSubProvider {
 
         void eventsIn(DotPubSubTopic topic) {
             final String redisTopic = redisTopic(topic);
-            List<StreamMessage<String, String>> messages = lettuce.getConn().sync().xreadgroup(
+            List<StreamMessage<String, String>> messages = LettuceAdapter.getStatefulRedisConnection(lettuce).sync().xreadgroup(
                             Consumer.from(serverId, serverId), XReadArgs.StreamOffset.lastConsumed(redisTopic));
             // ACK Attack
-            messages.forEach(m -> lettuce.getConn().async().xack(redisTopic, serverId, m.getId()));
+            messages.forEach(m -> LettuceAdapter.getStatefulRedisConnection(lettuce).async().xack(redisTopic, serverId, m.getId()));
 
             for (final StreamMessage<String, String> messageIn : messages) {
                 List<DotPubSubEvent> bodyEvents = Try.of(() -> messageIn.getBody().entrySet().stream()
@@ -217,7 +219,7 @@ public class RedisGroupsPubSubImpl implements DotPubSubProvider {
     public boolean publish(final DotPubSubEvent eventIn) {
         final DotPubSubEvent eventOut = new DotPubSubEvent.Builder(eventIn).withOrigin(serverId).build();
 
-        lettuce.getConn().async().xadd(redisTopic(eventOut.getTopic()), XAddArgs.Builder.maxlen(maxStreamSize), "e",
+        LettuceAdapter.getStatefulRedisConnection(lettuce).async().xadd(redisTopic(eventOut.getTopic()), XAddArgs.Builder.maxlen(maxStreamSize), "e",
                         eventOut.toString());
 
         return true;

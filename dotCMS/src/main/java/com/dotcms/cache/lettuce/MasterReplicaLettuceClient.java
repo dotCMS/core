@@ -66,10 +66,16 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
     private final int minIdleConnections = Config.getIntProperty("REDIS_LETTUCECLIENT_MIN_IDLE_CONNECTIONS", 2);
     private final int maxConnections = Config.getIntProperty("REDIS_LETTUCECLIENT_MAX_CONNECTIONS", 5);
     private final GenericObjectPool<StatefulRedisConnection<K, V>> pool;
-    private final RedisCodec<K, V> codec  = CompressionCodec.valueCompressor(new DotObjectCodec(), CompressionCodec.CompressionType.GZIP);
+    private final RedisCodec<K, V> codec;
     private final io.lettuce.core.RedisClient lettuceClient;
     public MasterReplicaLettuceClient() {
 
+        this(CompressionCodec.valueCompressor(new DotObjectCodec(), CompressionCodec.CompressionType.GZIP));
+    }
+
+    public MasterReplicaLettuceClient(final RedisCodec<String, Object> codec) {
+
+        this.codec  = CompressionCodec.valueCompressor(new DotObjectCodec(), CompressionCodec.CompressionType.GZIP);
         DefaultClientResources clientResources = // Does not cache DNS lookups
                 DefaultClientResources.builder().dnsResolver(new DirContextDnsResolver()).build();
         this.lettuceClient = io.lettuce.core.RedisClient.create(clientResources);
@@ -80,11 +86,17 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
      * Returns a StatefulRedisConnection
      * @return StatefulRedisConnection
      */
-    public StatefulRedisConnection<K, V> getConn() {
+    protected StatefulRedisConnection<K, V> getConn() {
         return Try.of(() -> pool.borrowObject()).onFailure(
                         e -> Logger.warnAndDebug(MasterReplicaLettuceClient.class, "redis unable to connect: " + e, e))
                         .getOrNull();
 
+    }
+
+    @Override
+    public Object getConnection () {
+
+        return this.getConn();
     }
 
     /**

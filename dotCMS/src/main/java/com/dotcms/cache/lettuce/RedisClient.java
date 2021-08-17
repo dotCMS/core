@@ -20,19 +20,12 @@ import java.util.function.Consumer;
  */
 public interface RedisClient<K, V> {
 
-    default RedisClient<K, V> getClient() {
-        String clazz = Config.getStringProperty("LETTUCE_CLIENT_CLASS",
-                        MasterReplicaLettuceClient.class.getCanonicalName());
-
-        return Try.of(() -> (RedisClient) RedisClient.class.forName(clazz).newInstance())
-                        .getOrElse(new MasterReplicaLettuceClient<>());
-    }
-
     /**
      * Get a redis connection
-     * @return StatefulRedisConnection
+     * @return Object
      */
-    StatefulRedisConnection<K, V> getConn();
+    //StatefulRedisConnection<K, V> getConn();
+    Object getConnection();
 
     /**
      * True if it is a valid open connection

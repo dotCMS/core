@@ -64,7 +64,7 @@ public class RedisCache extends CacheProvider {
     }
 
     public RedisCache() {
-        this(RedisClientProvider.getInstance(),
+        this(RedisClientFactory.getClient("cache"),
                 APILocator.getShortyAPI().shortify(ClusterFactory.getClusterId()));
     }
 
@@ -282,8 +282,14 @@ public class RedisCache extends CacheProvider {
     private Object extractObject (final Object o) {
 
         return o != null && o instanceof DotCloneable?
-                Try.of(()-> DotCloneable.class.cast(o).clone()).getOrElse(o): o;
+                this.extractObject(DotCloneable.class.cast(o)): o;
     }
+
+    private Object extractObject (final DotCloneable o) {
+
+        return Try.of(()-> o.clone()).getOrElse(o);
+    }
+
 
     /**
      * removes cache keys async and resets the get timer that reenables get functions
@@ -360,7 +366,7 @@ public class RedisCache extends CacheProvider {
         final String script = "return #redis.pcall('keys', '" + prefix + "')";
         Object keyCount     = ZERO;
 
-        try (StatefulRedisConnection<String,Object> conn = this.client.getConn()) {
+        try (StatefulRedisConnection<String,Object> conn = LettuceAdapter.getStatefulRedisConnection(this.client)) {
 
             if (conn.isOpen()) {
 
@@ -387,7 +393,7 @@ public class RedisCache extends CacheProvider {
         final CacheProviderStats cacheProviderStats = new CacheProviderStats(providerStats, getName());
         String memoryStats = null;
 
-        try (StatefulRedisConnection<String,Object> conn = client.getConn()) {
+        try (StatefulRedisConnection<String,Object> conn = LettuceAdapter.getStatefulRedisConnection(client)) {
 
             if (!conn.isOpen()) {
 

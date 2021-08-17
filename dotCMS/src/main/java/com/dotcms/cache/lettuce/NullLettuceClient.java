@@ -12,7 +12,7 @@ import java.util.function.Consumer;
 public class NullLettuceClient<K, V> implements RedisClient {
 
     @Override
-    public StatefulRedisConnection<K, V> getConn() {
+    public Object getConnection() {
         return null;
     }
 

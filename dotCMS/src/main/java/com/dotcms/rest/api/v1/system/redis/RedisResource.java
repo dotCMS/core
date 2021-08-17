@@ -1,10 +1,9 @@
 package com.dotcms.rest.api.v1.system.redis;
 
 import com.dotcms.cache.lettuce.RedisClient;
-import com.dotcms.cache.lettuce.RedisClientProvider;
+import com.dotcms.cache.lettuce.RedisClientFactory;
 import com.dotcms.dotpubsub.DotPubSubEvent;
 import com.dotcms.dotpubsub.DotPubSubProvider;
-import com.dotcms.dotpubsub.DotPubSubProviderLocator;
 import com.dotcms.dotpubsub.DotPubSubTopic;
 import com.dotcms.dotpubsub.RedisPubSubImpl;
 import com.dotcms.rest.ResponseEntityView;
@@ -45,7 +44,7 @@ public class RedisResource {
 
     public RedisResource() {
 
-        this(new WebResource(), RedisClientProvider.getInstance());
+        this(new WebResource(), RedisClientFactory.getClient("resource"));
     }
 
     @VisibleForTesting

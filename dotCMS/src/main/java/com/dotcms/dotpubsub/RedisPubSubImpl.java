@@ -1,7 +1,7 @@
 package com.dotcms.dotpubsub;
 
 import com.dotcms.cache.lettuce.RedisClient;
-import com.dotcms.cache.lettuce.RedisClientProvider;
+import com.dotcms.cache.lettuce.RedisClientFactory;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 
@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class RedisPubSubImpl implements DotPubSubProvider {
 
     private final AtomicBoolean start = new AtomicBoolean(false);
-    private final RedisClient<String, Object> redisClient = RedisClientProvider.getInstance();
+    private final RedisClient<String, Object> redisClient = RedisClientFactory.getClient("pubsub");
 
     @VisibleForTesting
     private static DotPubSubEvent lastEventIn, lastEventOut;
