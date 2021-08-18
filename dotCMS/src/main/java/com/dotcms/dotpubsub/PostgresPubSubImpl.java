@@ -50,7 +50,6 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
 
     @Override
     public DotPubSubProvider start() {
-    
         
         int numberOfServers = Try.of(() -> APILocator.getServerAPI().getAliveServers().size()).getOrElse(1);
         Logger.info(PostgresPubSubImpl.class, () -> "Starting PostgresPubSub. Have servers:" + numberOfServers);
@@ -148,7 +147,7 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
         Logger.info(this.getClass(), () -> "PGNotificationListener connecting to pub/sub...");
         try {
 
-            connection = this.getConnection().unwrap(PGConnection.class);
+            connection = this.getConnection();
             connection.addNotificationListener(listener);
 
         } catch (Exception e) {
@@ -218,7 +217,7 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
 
     }
 
-    private Connection getConnection() throws SQLException {
+    private PGConnection getConnection() throws SQLException {
         return DriverManager.getConnection(attributes.get().getDbUrl()).unwrap(PGConnection.class);
 
     }
