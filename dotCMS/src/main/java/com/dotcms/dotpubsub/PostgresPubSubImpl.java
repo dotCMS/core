@@ -1,7 +1,6 @@
 package com.dotcms.dotpubsub;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -18,12 +17,19 @@ import com.dotmarketing.util.StringUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.impossibl.postgres.api.jdbc.PGConnection;
 import com.impossibl.postgres.api.jdbc.PGNotificationListener;
+import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 
 public class PostgresPubSubImpl implements DotPubSubProvider {
 
+    
+    
+    
+    
+    
+    
     private enum RUNSTATE {
         STOPPED, STARTED, REBUILD
     }
@@ -38,7 +44,8 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
     final private Lazy<PgNgDataSourceUrl> attributes = Lazy.of(() -> getDatasourceAttributes());
     final private AtomicReference<RUNSTATE> state = new AtomicReference<>(RUNSTATE.STOPPED);
     private PGConnection connection;
-
+    final private HikariDataSource datasource;
+    
     /**
      * This is the list of topics that are subscribed to by the postgres pub/sub connection
      */
@@ -49,7 +56,8 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
 
     @Override
     public DotPubSubProvider start() {
-
+    
+        
         int numberOfServers = Try.of(() -> APILocator.getServerAPI().getAliveServers().size()).getOrElse(1);
         Logger.info(PostgresPubSubImpl.class, () -> "Starting PostgresPubSub. Have servers:" + numberOfServers);
 
@@ -75,6 +83,17 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
 
     public PostgresPubSubImpl(String serverId) {
         this.serverId = StringUtils.shortify(serverId, 10);
+        
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl(attributes.get().getDbUrl());
+        config.setMinimumIdle(Config.getIntProperty("pubsub.db.poolsize.min", 2));
+        config.setMaximumPoolSize(Config.getIntProperty("pubsub.db.poolsize.max", 15));
+        config.setConnectionTimeout(Config.getIntProperty("pubsub.db.poolsize.connection.timeout", 3*1000));
+        config.setMaxLifetime(Config.getIntProperty("pubsub.db.poolsize.max.lifetime", 15*60*1000));
+        config.setPoolName("PostgresPubSubPool");
+        
+
+        datasource=new HikariDataSource(config);
 
     }
 
@@ -145,7 +164,7 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
         Logger.info(this.getClass(), () -> "PGNotificationListener connecting to pub/sub...");
         try {
 
-            connection = this.getConnection();;
+            connection = this.getConnection().unwrap(PGConnection.class);
             connection.addNotificationListener(listener);
 
         } catch (Exception e) {
@@ -215,8 +234,8 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
 
     }
 
-    private PGConnection getConnection() throws SQLException {
-        return DriverManager.getConnection(attributes.get().getDbUrl()).unwrap(PGConnection.class);
+    private Connection getConnection() throws SQLException {
+        return this.datasource.getConnection();
     }
 
     @Override
@@ -244,7 +263,7 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
     }
 
     @Override
-    public boolean publish(DotPubSubEvent eventIn) {
+    public boolean publish(final DotPubSubEvent eventIn) {
 
         final DotPubSubEvent eventOut = new DotPubSubEvent.Builder(eventIn).withOrigin(serverId).build();
 
