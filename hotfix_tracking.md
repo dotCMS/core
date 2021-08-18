@@ -57,6 +57,9 @@ https://github.com/dotCMS/core/issues/20591 : Don't try to move or rewrite licen
 
 https://github.com/dotCMS/core/issues/20494 : Error retrieving content references in multilingual setup #20494
 
+https://github.com/dotCMS/core/issues/20504 : Create a "Bulk Move" Action for Content #20504
+
+
 
 
 

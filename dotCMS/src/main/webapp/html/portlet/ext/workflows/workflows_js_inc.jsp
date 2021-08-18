@@ -4,17 +4,17 @@
 
 <script language="Javascript">
 	function publish (objId,assetId) {
-		if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-publish-this-Associated-Type")) %>')){	
+		if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-publish-this-Associated-Type")) %>')){
 			var href = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">'
 			href = href + '<portlet:param name="struts_action" value="/ext/workflows/edit_workflow_task" />'
 			href = href + '<portlet:param name="cmd" value="publish" />';
 			href = href + '<portlet:param name="referer" value="<%= referer %>" />';
 			href = href + '</portlet:actionURL>&inode='+objId+'&asset_inode='+assetId;
-		
+
 			document.location.href = href;
 		}
 	}
-		
+
 	function unpublish(objId,assetId) {
 		if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-un-publish-this-Associated-Type")) %>')){
 			var href = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">'
@@ -22,12 +22,12 @@
 			href = href + '<portlet:param name="cmd" value="unpublish" />';
 			href = href + '<portlet:param name="referer" value="<%= referer %>" />';
 			href = href + '</portlet:actionURL>&inode='+objId+'&asset_inode='+assetId;
-		
+
 			document.location.href = href;
 		}
 	}
 
-	
+
 	function archive (objId, assetId) {
 		if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-archive-this-Associated-Type")) %>')){
 	   		var href = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">'
@@ -35,7 +35,7 @@
 			href = href + '<portlet:param name="cmd" value="delete" />';
 			href = href + '<portlet:param name="referer" value="<%= referer %>" />';
 			href = href + '</portlet:actionURL>&inode='+objId+'&asset_inode='+assetId;
-		
+
 			document.location.href = href;
 		}
 	}
@@ -48,15 +48,15 @@
 			href = href + '<portlet:param name="cmd" value="undelete" />';
 			href = href + '<portlet:param name="referer" value="<%= referer %>" />';
 			href = href + '</portlet:actionURL>&inode='+objId+'&asset_inode='+assetId;
-		
+
 			document.location.href = href;
 		}
 	}
-	
+
 	function previewHTMLPage (objId, referer) {
 		top.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/preview_htmlpage" /><portlet:param name="previewPage" value="1" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer;
 	}
-	
+
 	function deleteWorkFlowTask(inode) {
 	<%
 		java.util.Map viewParams = new java.util.HashMap();
@@ -69,14 +69,14 @@
 			href = href + '<portlet:param name="cmd" value="full_delete" />';
 			href = href + '<portlet:param name="referer" value="<%= viewReferer %>" />';
 			href = href + '</portlet:actionURL>&inode='+inode;
-			
+
 			document.location.href = href;
 		}
 	}
-	
-	
 
-	
+
+
+
 	//Layout Initialization
 	var browserLoaded = false;
 
@@ -102,11 +102,11 @@
 	    		this.languageId=languageId;
 	    	},
 
-	    	executeWfAction: function(wfId, assignable, commentable, inode, showpush){
+	    	executeWfAction: function(wfId, assignable, commentable, inode, showpush, moveable){
 
 	    		this.wfActionId = wfId;
-	    		
-	    		if(assignable || commentable || showpush){
+
+	    		if(assignable || commentable || showpush || moveable){
 
                     var publishDate = '<%=structure != null ? structure.getPublishDateVar() : "" %>';
                     var expireDate =  '<%=structure != null ? structure.getExpireDateVar() : "" %>';
@@ -129,9 +129,8 @@
 	    			this.executeWorkflow(wfId, inode);
 	    		}
 	    	},
-	    	
-	    	executeWorkflow : function (wfId, inode){
 
+	    	executeWorkflow : function (wfId, inode){
 				dijit.byId('savingContentDialog').show();
 
 				var wfActionAssign 		= "";
@@ -145,9 +144,10 @@
 				var expireTime 			= "";
 				var neverExpire 		= "";
 				var whereToSend 		= "";
+				var pathToMove 			= "";
 
 				BrowserAjax.saveFileAction(selectedItem, wfActionAssign, wfActionId, wfActionComments, wfConId, publishDate,
-					publishTime, expireDate, expireTime, neverExpire, whereToSend, fileActionCallback
+					publishTime, expireDate, expireTime, neverExpire, whereToSend, pathToMove, fileActionCallback
 				);
 	    	}
 
@@ -161,6 +161,7 @@
 		var wfConId =  pushPublish.inode;
 		var comments = assignComment.comment;
 		var assignRole = assignComment.assign;
+		var pathToMove = assignComment.pathToMove;
 
 		var whereToSend = pushPublish.whereToSend;
 		var publishDate = pushPublish.publishDate;
@@ -170,9 +171,10 @@
 		var forcePush   = pushPublish.forcePush;
 		var neverExpire = pushPublish.neverExpire;
 
+
 		BrowserAjax.saveFileAction(selectedItem, assignRole, actionId, comments, wfConId, publishDate,
-			publishTime, expireDate, expireTime, neverExpire, whereToSend, forcePush, fileActionCallback
-		);;
+			publishTime, expireDate, expireTime, neverExpire, whereToSend, forcePush, pathToMove, fileActionCallback
+		);
     }
 
 	function fileActionCallback (response) {
@@ -199,7 +201,7 @@
 		});
 		document.dispatchEvent(customEvent);
 	}
-	    
+
 	var contentAdmin = new dotcms.dijit.contentlet.ContentAdmin();
 
 </script>
