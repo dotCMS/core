@@ -3,7 +3,7 @@ package com.dotmarketing.beans;
 import java.util.Date;
 
 /**
- * This class is for maintaining backwards compatibility with old Bundles containing objects of classes
+ * This class is for maintaining backwards compatibility with already serialized objects of classes
  * that used to extend from {@link Inode}. E.g. {@link com.dotmarketing.portlets.structure.model.Relationship}
  */
 
