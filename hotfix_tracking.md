@@ -51,5 +51,8 @@ https://github.com/dotCMS/core/issues/20640 : Tika failing to init, hanging dotC
 
 https://github.com/dotCMS/core/issues/20638 : Update Site do not update aliases #20638
 
+https://github.com/dotCMS/core/issues/20597 : Generating resource link for File Asset with Legacy Identifier is failing #20597
+
+
 
 
