@@ -53,6 +53,9 @@ https://github.com/dotCMS/core/issues/20638 : Update Site do not update aliases 
 
 https://github.com/dotCMS/core/issues/20597 : Generating resource link for File Asset with Legacy Identifier is failing #20597
 
+https://github.com/dotCMS/core/issues/20591 : Don't try to move or rewrite license.zip file on startup. #20591
+
+
 
 
 
