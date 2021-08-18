@@ -4044,4 +4044,5 @@ public class WorkflowAPITest extends IntegrationTestBase {
         assertEquals(taskByContentlet.getStatus(), publishWorkflowStep.getId());
 
     }
+
 }

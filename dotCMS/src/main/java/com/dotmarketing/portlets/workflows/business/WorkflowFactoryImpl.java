@@ -2209,6 +2209,22 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	@Override
 	public void saveWorkflowTask ( WorkflowTask task ) throws DotDataException {
+<<<<<<< HEAD
+=======
+		boolean isNew = true;
+		if (UtilMethods.isSet(task.getId())) {
+			try {
+				final WorkflowTask test = this.findWorkFlowTaskById(task.getId());
+				if (test != null) {
+					isNew = false;
+				}
+			} catch (final Exception e) {
+				Logger.debug(this.getClass(), e.getMessage(), e);
+			}
+		} else {
+			task.setId(UUIDGenerator.generateUuid());
+		}
+>>>>>>> origin/release-21.09
 
 		final DotConnect db = new DotConnect()
 				.setSQL(WorkflowSQL.SELECT_TASK)
