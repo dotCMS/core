@@ -100,6 +100,7 @@ $datatable-bg-hover: rgba($brand-secondary_rgb, 0.05);
 .p-datatable .p-datatable-tbody > tr {
     background: $white;
     color: $black;
+    height: 4rem;
     transition: none;
     outline-color: transparent;
     cursor: pointer;

@@ -4,6 +4,7 @@ import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot
 import { Injectable } from '@angular/core';
 import { Subject, Observable, of } from 'rxjs';
 import { mergeMap, map, filter, catchError, pluck, take } from 'rxjs/operators';
+import { DotCMSContentType } from '@dotcms/dotcms-models';
 
 interface DotAddEditEvents {
     load?: ($event: any) => void;
@@ -27,6 +28,7 @@ export interface DotEditorAction {
 @Injectable()
 export class DotContentletEditorService {
     close$: Subject<boolean> = new Subject<boolean>();
+    draggedContentType$: Subject<DotCMSContentType> = new Subject<DotCMSContentType>();
 
     private data: Subject<DotEditorAction> = new Subject();
     private _header: Subject<string> = new Subject();
@@ -157,6 +159,15 @@ export class DotContentletEditorService {
                     );
                 })
             );
+    }
+
+    /**
+     * Set the content Type being dragged from the Content palette
+     * @param {DotCMSContentType} contentType
+     * @memberof DotContentletEditorService
+     */
+    setDraggedContentType(contentType: DotCMSContentType): void {
+        this.draggedContentType$.next(contentType);
     }
 
     private bindEvents(events: DotAddEditEvents): void {

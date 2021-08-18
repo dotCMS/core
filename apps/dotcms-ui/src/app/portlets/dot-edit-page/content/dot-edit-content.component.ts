@@ -2,7 +2,15 @@ import { Observable, Subject, fromEvent, merge } from 'rxjs';
 
 import { filter, takeUntil, pluck, take, tap, skip } from 'rxjs/operators';
 import { ActivatedRoute } from '@angular/router';
-import { Component, OnInit, ViewChild, ElementRef, NgZone, OnDestroy } from '@angular/core';
+import {
+    Component,
+    OnInit,
+    ViewChild,
+    ElementRef,
+    NgZone,
+    OnDestroy,
+    HostBinding
+} from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { SiteService } from '@dotcms/dotcms-js';
@@ -33,6 +41,8 @@ import {
 } from './services/dot-edit-content-html/models';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotContentTypeService } from '@services/dot-content-type';
+import { animate, style, transition, trigger } from '@angular/animations';
 
 /**
  * Edit content page component, render the html of a page and bind all events to make it ediable.
@@ -45,7 +55,19 @@ import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler
 @Component({
     selector: 'dot-edit-content',
     templateUrl: './dot-edit-content.component.html',
-    styleUrls: ['./dot-edit-content.component.scss']
+    styleUrls: ['./dot-edit-content.component.scss'],
+    animations: [
+        trigger('enterAnimation', [
+            transition(':enter', [
+                style({ transform: 'translateX(100%)', opacity: 0 }),
+                animate('150ms ease-in-out', style({ transform: 'translateX(0)', opacity: 1 }))
+            ]),
+            transition(':leave', [
+                style({ transform: 'translateX(0)', opacity: 1 }),
+                animate('150ms ease-in-out', style({ transform: 'translateX(100%)', opacity: 0 }))
+            ])
+        ])
+    ]
 })
 export class DotEditContentComponent implements OnInit, OnDestroy {
     @ViewChild('iframe') iframe: ElementRef;
@@ -57,6 +79,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     showIframe = true;
     reorderMenuUrl = '';
     showOverlay = false;
+    dotPageMode = DotPageMode;
+    contentPalletItems: DotCMSContentType[] = [];
+    isEditMode: boolean = false;
 
     private readonly customEventsHandler;
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -75,6 +100,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         private route: ActivatedRoute,
         private siteService: SiteService,
         private dotCustomEventHandlerService: DotCustomEventHandlerService,
+        private dotContentTypeService: DotContentTypeService,
         public dotEditContentHtmlService: DotEditContentHtmlService,
         public dotLoadingIndicatorService: DotLoadingIndicatorService,
         public sanitizer: DomSanitizer,
@@ -135,6 +161,8 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         this.subscribeIframeActions();
         this.subscribePageModelChange();
         this.subscribeOverlayService();
+        this.subscribeDraggedContentType();
+        this.loadContentPallet();
     }
 
     ngOnDestroy(): void {
@@ -217,6 +245,30 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         this.dotCustomEventHandlerService.handle($event);
     }
 
+    /**
+     * Load items in the Content Pallet
+     *
+     * @param string filter
+     * @memberof DotEditContentComponent
+     */
+    loadContentPallet(filter = ''): void {
+        this.dotContentTypeService
+            .getContentTypes(filter)
+            .pipe(take(1))
+            .subscribe((items) => {
+                this.contentPalletItems = items;
+            });
+    }
+
+    /**
+     * Execute actions needed when closing the create dialog.
+     *
+     * @memberof DotEditContentComponent
+     */
+    handleCloseAction(): void {
+        this.dotEditContentHtmlService.removeContentletPlaceholder();
+    }
+
     private isInternallyNavigatingToSamePage(url: string): boolean {
         return this.route.snapshot.queryParams.url === url;
     }
@@ -266,7 +318,28 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         return null;
     }
 
-    private addContentlet($event: any): void {
+    private addContentType($event: any): void {
+        const container: DotPageContainer = {
+            identifier: $event.data.container.dotIdentifier,
+            uuid: $event.data.container.dotUuid
+        };
+        this.dotEditContentHtmlService.setContainterToAppendContentlet(container);
+        this.dotContentletEditorService
+            .getActionUrl($event.data.contentType.variable)
+            .pipe(take(1))
+            .subscribe((url) => {
+                this.dotContentletEditorService.create({
+                    data: { url },
+                    events: {
+                        load: (event) => {
+                            event.target.contentWindow.ngEditContentletEvents = this.dotEditContentHtmlService.contentletEvents$;
+                        }
+                    }
+                });
+            });
+    }
+
+    private searchContentlet($event: any): void {
         const container: DotPageContainer = {
             identifier: $event.dataset.dotIdentifier,
             uuid: $event.dataset.dotUuid
@@ -308,8 +381,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         const eventsHandlerMap = {
             edit: this.editContentlet.bind(this),
             code: this.editContentlet.bind(this),
-            add: this.addContentlet.bind(this),
+            add: this.searchContentlet.bind(this),
             remove: this.removeContentlet.bind(this),
+            'add-content': this.addContentType.bind(this),
             select: () => {
                 this.dotContentletEditorService.clear();
             },
@@ -358,8 +432,10 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     private renderPage(pageState: DotPageRenderState): void {
         if (this.shouldEditMode(pageState)) {
             this.dotEditContentHtmlService.initEditMode(pageState, this.iframe);
+            this.isEditMode = true;
         } else {
             this.dotEditContentHtmlService.renderPage(pageState, this.iframe);
+            this.isEditMode = false;
         }
     }
 
@@ -427,5 +503,15 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         this.iframeOverlayService.overlay
             .pipe(takeUntil(this.destroy$))
             .subscribe((val: boolean) => (this.showOverlay = val));
+    }
+
+    private subscribeDraggedContentType(): void {
+        this.dotContentletEditorService.draggedContentType$
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((contentType: DotCMSContentType) => {
+                const iframeWindow: any = (this.iframe.nativeElement as HTMLIFrameElement)
+                    .contentWindow;
+                iframeWindow.draggedContent = contentType;
+            });
     }
 }

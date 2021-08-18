@@ -15,7 +15,7 @@
                 (click)="item.action ? item.action(pageState.page.inode) : ''"
                 [queryParams]="route.queryParams | async"
             >
-                <dot-icon [name]="item.icon"></dot-icon>
+                <dot-icon size='32' [name]="item.icon"></dot-icon>
                 <span class="edit-page-nav__item-text">{{ item.label }}</span>
             </a>
         </ng-template>
@@ -25,9 +25,10 @@
                 tooltipPosition="left"
                 class="edit-page-nav__item edit-page-nav__item--disabled"
             >
-                <dot-icon [name]="item.icon"></dot-icon>
+                <dot-icon size='32' [name]="item.icon"></dot-icon>
                 <span class="edit-page-nav__item-text">{{ item.label }}</span>
             </span>
         </ng-template>
     </li>
 </ul>
+

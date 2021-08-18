@@ -25,13 +25,13 @@ export class DotContentTypeService {
     /**
      *Get the content types from the endpoint
      *
-     * @returns {Observable<StructureTypeView[]>}
+     * @returns {Observable<DotCMSContentType[]>}
      * @memberof DotContentTypeService
      */
-    getContentTypes(): Observable<StructureTypeView[]> {
+    getContentTypes(filter = '', page = 40): Observable<DotCMSContentType[]> {
         return this.coreWebService
             .requestView({
-                url: 'v1/contenttype/basetypes'
+                url: `/api/v1/contenttype?filter=${filter}&orderby=modDate&direction=DESC&per_page=${page}`
             })
             .pipe(pluck('entity'));
     }
@@ -42,7 +42,7 @@ export class DotContentTypeService {
      * @returns Observable<StructureTypeView[]>
      */
     getAllContentTypes(): Observable<StructureTypeView[]> {
-        return this.getContentTypes()
+        return this.getBaseTypes()
             .pipe(
                 flatMap((structures: StructureTypeView[]) => structures),
                 filter((structure: StructureTypeView) => !this.isRecentContentType(structure))
@@ -58,7 +58,7 @@ export class DotContentTypeService {
      * @memberof ContentletService
      */
     getUrlById(id: string): Observable<string> {
-        return this.getContentTypes().pipe(
+        return this.getBaseTypes().pipe(
             flatMap((structures: StructureTypeView[]) => structures),
             pluck('types'),
             flatMap((contentTypeViews: ContentTypeView[]) => contentTypeViews),
@@ -86,5 +86,13 @@ export class DotContentTypeService {
 
     private isRecentContentType(type: StructureTypeView): boolean {
         return type.name.startsWith('RECENT');
+    }
+
+    private getBaseTypes(): Observable<StructureTypeView[]> {
+        return this.coreWebService
+            .requestView({
+                url: 'v1/contenttype/basetypes'
+            })
+            .pipe(pluck('entity'));
     }
 }
