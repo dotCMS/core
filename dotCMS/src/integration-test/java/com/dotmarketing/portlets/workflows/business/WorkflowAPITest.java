@@ -4044,24 +4044,4 @@ public class WorkflowAPITest extends IntegrationTestBase {
         assertEquals(taskByContentlet.getStatus(), publishWorkflowStep.getId());
 
     }
-    
-    public WorkflowTask createWorkflowTask(final Contentlet contentlet, final User user,
-            final WorkflowStep workflowStep, final String title, String description) throws DotDataException {
-
-        final WorkflowTask task = new WorkflowTask();
-        final Date now          = new Date();
-
-        task.setTitle(title);
-        task.setDescription(description);
-        task.setAssignedTo(APILocator.getRoleAPI().getUserRole(user).getId());
-        task.setModDate(now);
-        task.setCreationDate(now);
-        task.setCreatedBy(user.getUserId());
-        task.setStatus(workflowStep.getId());
-        task.setDueDate(null);
-        task.setWebasset(contentlet.getIdentifier());
-        task.setLanguageId(contentlet.getLanguageId());
-
-        return task;
-    }
 }
