@@ -55,6 +55,7 @@ https://github.com/dotCMS/core/issues/20597 : Generating resource link for File 
 
 https://github.com/dotCMS/core/issues/20591 : Don't try to move or rewrite license.zip file on startup. #20591
 
+https://github.com/dotCMS/core/issues/20494 : Error retrieving content references in multilingual setup #20494
 
 
 
