@@ -46,14 +46,23 @@ jobs:
         steps:
             - name: Checkout core-web
               run: |
-                  git clone --depth 1 https://victoralfaro-dotcms:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/dotcms/core-web
+                  git clone --no-single-branch --depth 1 https://victoralfaro-dotcms:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/dotcms/core-web
             - name: Configuring Node.js
               uses: actions/setup-node@v2-beta
               with:
                   node-version: '10.15.3'
             - name: Installing dependencies
               run: |
+                  # Get Branch Name
+                  if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+                    branchName="${{ github.head_ref }}"
+                  else
+                    branchName=$(basename "${{ github.ref }}")
+                  fi
+
                   cd core-web
+                  git checkout $branchName
+
                   npm install
             - name: Version Bump - dotcms-ui - if it's Master/Release Branch
               run: |
@@ -74,7 +83,7 @@ jobs:
 
                   # Get version from package.json
                   cd core-web
-                  git pull origin $branchName
+
                   pkgVersion=`awk -F'"' '/"version": ".+"/{ print $4; exit; }' package.json`
                   arrIN=(${pkgVersion//./ })
 
@@ -94,7 +103,7 @@ jobs:
                   git add package.json
                   git commit -m "CI: bumps version to $pkgVersion [skip ci]"
                   git push https://victoralfaro-dotcms:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/dotcms/core-web
-                  
+
             - name: Build dotcms-ui with deps
               run: |
                   cd core-web

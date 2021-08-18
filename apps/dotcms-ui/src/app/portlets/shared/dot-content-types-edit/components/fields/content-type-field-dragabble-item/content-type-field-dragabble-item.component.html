@@ -5,8 +5,8 @@
             <span class="field__name">{{ field.name }}</span>
             <ng-container *ngIf="field.variable">
                 <span class="field__variable">
-                    <dot-copy-button [copy]="field.variable" [label]="'(' + field.variable + ')'">
-                    </dot-copy-button>
+                    <dot-copy-link [copy]="field.variable" [label]="'(' + field.variable + ')'">
+                    </dot-copy-link>
                 </span>
             </ng-container>
         </div>

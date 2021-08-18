@@ -14,16 +14,15 @@
         box-shadow: $md-shadow-5;
     }
 
-    dot-icon-button,
     dot-icon {
         align-self: center;
         margin-right: $spacing-3;
         text-align: end;
         width: 100%;
+        color: $brand-primary;
     }
 
     dot-icon {
-        color: $brand-primary;
     }
 }
 
@@ -31,8 +30,7 @@
     display: flex;
 }
 
-.dot-apps-configuration-list__name,
-.dot-apps-configuration-list__host-key {
+.dot-apps-configuration-list__name {
     align-self: center;
     margin-left: $spacing-3;
     white-space: nowrap;
@@ -40,5 +38,8 @@
 
 .dot-apps-configuration-list__host-key {
     color: $gray;
+    display: flex;
     flex-grow: 1;
+    align-items: center;
+    margin-left: $spacing-2;
 }
