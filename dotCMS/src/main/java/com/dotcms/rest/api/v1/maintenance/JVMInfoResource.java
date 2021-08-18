@@ -34,7 +34,7 @@ import io.vavr.control.Try;
 @SuppressWarnings("serial")
 public class JVMInfoResource implements Serializable {
 
-    final Pattern obfuscatePattern = Pattern.compile(Config.getStringProperty("OBFUSCATE_SYSTEM_ENVIRONMENTAL_VARIABLES", "/passw|pass|secret|key|pwd/gi"),Pattern.CASE_INSENSITIVE);
+    final Pattern obfuscatePattern = Pattern.compile(Config.getStringProperty("OBFUSCATE_SYSTEM_ENVIRONMENTAL_VARIABLES", "passw|pass|passwd|secret|key"),Pattern.CASE_INSENSITIVE);
 
 
     @Path("/")
