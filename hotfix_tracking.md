@@ -47,5 +47,5 @@ https://github.com/dotCMS/core/issues/20649 : IndexPolicy do not respected on wf
 
 https://github.com/dotCMS/core/issues/20642 : WYSIWYG fields insert image does not respect the setting of WYSIWYG_IMAGE_URL_PATTERN #20642
 
-
+https://github.com/dotCMS/core/issues/20640 : Tika failing to init, hanging dotCMS startup #20640
 
