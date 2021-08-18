@@ -1,8 +1,8 @@
 # BUILD dotCMS Docker image from arguments 
 
-This version of the dockerfile and requisite build files that are provided with the primary purpose of illustrating dotCMS distributed image functionality. We encourage you to use the distribution images provided at  https://hub.docker.com/r/dotcms/dotcms/ rather than building your own image.  
+This version of the dockerfile and requisite build files that are used to build the official release images. We encourage you to use the released images provided at  https://hub.docker.com/r/dotcms/dotcms/ rather than building your own image (or at least using them as the base for your modified image).  
 
-Please note that the dotCMS image can be extended via static and dynamic plugins, as well as numerous extension points to the init and configuration functionality.  If you need customized functionality please check documentation on using plugins with docker images before assuming you need to build a custom docker image. 
+Please note that the dotCMS image can be extended via static(depreciated) and dynamic plugins, as well as numerous extension points to the init and configuration functionality.  If you need customized functionality please check documentation on using plugins with docker images before assuming you need to build a custom docker image. 
 
 dotCMS has architected this image to handle many different use cases, providing the best dotCMS product experience while still enabling use of custom functionality with the genuine dotCMS image.
 
@@ -13,12 +13,20 @@ Please send any thoughts or suggestions to improve our docker image to support@d
 
 # Arguments for building dotCMS docker image: 
 
-|  BUILD_FROM  | BUILD_ID                     |
-| ------------ | ---------------              |
-| TARBALL_URL  | URL to tar file              |
-| RELEASE      | Release number               |
-| COMMIT       | Commit hash or branch name to use for build |
-| TAG          | Tag to use for build         |
+|  BUILD_FROM   | BUILD_ID                     |
+| ------------- | ---------------              |
+| TARBALL_URL   | URL to tar file              |
+| RELEASE       | Release number               |
+| COMMIT        | Commit hash or branch name to use for build |
+| TAG           | Tag to use for build         |
+| JAVA_VERSION  | SDKMAN java version to use | 
+| USER_UID      | User ID to run as | 
+| USER_GID      | Group ID for user | 
+
+
+
+### Changing the JAVA_VERSION :
+Setting the build arg `JAVA_VERSION` allows you to specify any java version >= java 11 that is supplied by sdkman. To see what versions are available, install sdkman (https://sdkman.io) and run `sdk update` and then `sdk ls java` - the value you want to supply as the BUILD_ARG is found in the `Identifier` column.
 
 
 ## Examples 
@@ -56,14 +64,14 @@ docker run -it -p 8080:8080  --rm dotcms-test
 
 ### TAG Example 
 ```
-docker build --pull --no-cache --build-arg BUILD_FROM=TAG --build-arg BUILD_ID=4.2.3-beta -t dotcms-test .
+docker build --pull --no-cache --build-arg BUILD_FROM=TAG --build-arg BUILD_ID=21.06 -t dotcms-test .
 
 docker run -it -p 8080:8080  --rm dotcms-test
 ```
 
 
 # Multi-Architecture Images
-As of v.5.3.9, dotCMS supports building images that target both amd64 and arm64 architecture.  
+This buildfile supports building images that target both amd64 and arm64 architecture.  
 
 ### Setup
 To enable "multiarch" building, you need to use `docker buildx` and have defined a new builder (you might need to enable "experimental" features in order to enable `docker buildx`). If you have `buildx` installed, you can see what buildx builders you have available by doing a `ls`:

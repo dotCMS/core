@@ -5,14 +5,18 @@ on:
       custom_label:
         description: 'Custom label to add as part of the tag'
         required: false
-      updata_stable_tags:
+      update_stable:
         description: 'Update stable tags'
         required: true
-        default: 'true'
-      dry_run:
-        description: 'Runs publish image in dry-run mode'
+        default: 'false'
+      also_latest:
+        description: 'Update also the "latest" tag (depends on update_stable input to be set to true)'
         required: false
-        default: 'true'
+        default: 'false'
+      dry_run:
+        description: 'Dry Run (does not publish to docker hub)'
+        required: false
+        default: 'false'
 jobs:
   publish_image:
     name: Publish DotCMS docker image
