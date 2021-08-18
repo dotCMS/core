@@ -88,7 +88,6 @@ public class PublisherAPIImpl implements PublisherAPI {
                 try (BundleOutput output = publisher.createBundleOutput();
                      ManifestBuilder manifestBuilder = new CSVManifestBuilder()){
 
-                    manifestBuilder.create();
                     config.setManifestBuilder(manifestBuilder);
                     status.addOutput(output);
                     // Run bundlers
@@ -148,7 +147,7 @@ public class PublisherAPIImpl implements PublisherAPI {
                     config.getManifestFile().ifPresent((manifestFile) -> {
                         try {
                             manifestBuilder.close();
-                            output.copyFile(manifestFile, "/manifest.csv");
+                            output.copyFile(manifestFile, "/" + ManifestBuilder.MANIFEST_NAME);
                         } catch (IOException e) {
                             Logger.error(PublisherAPIImpl.class, "Error trying to copy the manifest file: " +
                                     e.getMessage());

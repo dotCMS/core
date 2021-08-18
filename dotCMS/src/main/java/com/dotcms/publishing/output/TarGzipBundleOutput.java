@@ -26,11 +26,7 @@ public class TarGzipBundleOutput extends BundleOutput {
     public TarGzipBundleOutput(final PublisherConfig publisherConfig) throws IOException {
         super(publisherConfig);
 
-        final String fileName = String.format(
-                ConfigUtils.getBundlePath() + File.separator + publisherConfig.getId() + ".tar.gz"
-        );
-
-        tarGzipFile = new File(fileName);
+        tarGzipFile = getBundleTarGzipFile(publisherConfig.getId());
         final OutputStream outputStream = Files.newOutputStream(tarGzipFile.toPath());
 
         tarArchiveOutputStream = new TarArchiveOutputStream(new GZIPOutputStream(outputStream, GZIP_OUTPUT_STREAM_BUFFER_SIZE));
@@ -38,6 +34,14 @@ public class TarGzipBundleOutput extends BundleOutput {
         tarArchiveOutputStream.setBigNumberMode(TarArchiveOutputStream.BIGNUMBER_STAR);
         // TAR originally didn't support long file names, so enable the support for it
         tarArchiveOutputStream.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
+    }
+
+    public static File getBundleTarGzipFile(final String bundleId) {
+        final String fileName = String.format(
+                ConfigUtils.getBundlePath() + File.separator + bundleId + ".tar.gz"
+        );
+
+        return new File(fileName);
     }
 
     @Override
