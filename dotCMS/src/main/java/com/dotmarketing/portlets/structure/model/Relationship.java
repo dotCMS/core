@@ -12,6 +12,7 @@ import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
 import com.dotmarketing.beans.Inode;
+import com.dotmarketing.beans.LegacyInode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -35,7 +36,7 @@ import java.util.Objects;
  * @author root
  * @since Mar 22, 2012
  */
-public class Relationship implements Serializable, ManifestItem {
+public class Relationship extends LegacyInode implements Serializable, ManifestItem {
 	
 	private static final long serialVersionUID = 1L;
 	
@@ -50,7 +51,7 @@ public class Relationship implements Serializable, ManifestItem {
     private boolean fixed=false;
     private String inode;
     private Date modDate;
-	
+
     /**
      * Default class constructor.
      */
