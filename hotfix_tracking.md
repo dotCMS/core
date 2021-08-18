@@ -41,3 +41,7 @@ https://github.com/dotCMS/core/issues/20685 : [Vanity URL] : Missing parameters 
 
 https://github.com/dotCMS/core/issues/20649 : IndexPolicy do not respected on wf toolview #20649
 
+https://github.com/dotCMS/core/issues/20642 : WYSIWYG fields insert image does not respect the setting of WYSIWYG_IMAGE_URL_PATTERN #20642
+
+
+
