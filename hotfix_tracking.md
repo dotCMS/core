@@ -49,3 +49,5 @@ https://github.com/dotCMS/core/issues/20642 : WYSIWYG fields insert image does n
 
 https://github.com/dotCMS/core/issues/20640 : Tika failing to init, hanging dotCMS startup #20640
 
+
+
