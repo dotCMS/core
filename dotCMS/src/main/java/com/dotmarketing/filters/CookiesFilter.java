@@ -45,7 +45,7 @@ public class CookiesFilter implements Filter {
 
     boolean isSecure = req.isSecure();
     HttpServletResponse res = new CookieServletResponse(response, isSecure);
-    CookieUtil.setCookiesSecurityHeaders(req, res);
+
     try {
       filterChain.doFilter(req, res);
     } catch (final Exception nse) {
