@@ -67,5 +67,4 @@ https://github.com/dotCMS/core/issues/20707 : Advance Image Transformations and 
 
 https://github.com/dotCMS/core/issues/20669 : Error deploying a fresh install using mssql #20669
 
-
-
+https://github.com/dotCMS/core/issues/20469 : When generating a site statically, we need to generate the default language last. #20469
