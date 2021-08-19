@@ -191,3 +191,5 @@ This maintenance release includes the following code fixes:
 93. https://github.com/dotCMS/core/issues/20401 : The ThreadPoolExecutor on the DotConcurrentFactory should have a name
 
 94. https://github.com/dotCMS/core/issues/20507	: Ship with better defaults
+
+95. https://github.com/dotCMS/core/issues/20342	: [Content Types] : Deleting field is throwing an error
