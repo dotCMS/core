@@ -189,3 +189,5 @@ This maintenance release includes the following code fixes:
 92. https://github.com/dotCMS/core/issues/20405 : URL field values are not included in Pages exported from Content->Search
 
 93. https://github.com/dotCMS/core/issues/20401 : The ThreadPoolExecutor on the DotConcurrentFactory should have a name
+
+94. https://github.com/dotCMS/core/issues/20507	: Ship with better defaults
