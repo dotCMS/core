@@ -61,6 +61,7 @@ https://github.com/dotCMS/core/issues/20504 : Create a "Bulk Move" Action for Co
 
 https://github.com/dotCMS/core/issues/7342 : System allows to create exact same language more than twice #7342
 
+https://github.com/dotCMS/core/issues/20714 : NPE trying to fix folder conflicts #20714
 
 
 
