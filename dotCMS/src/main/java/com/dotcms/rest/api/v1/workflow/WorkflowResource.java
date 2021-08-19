@@ -1705,10 +1705,6 @@ public class WorkflowResource {
                 final IndexPolicy indexPolicy = MapToContentletPopulator.recoverIndexPolicy(
                         singleFireActionForm.getContentletFormData(),
                         IndexPolicyProvider.getInstance().forSingleContent(), request);
-                final Contentlet contentlet = this.getContentlet
-                        (inode, identifier, languageId,
-                                ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
-                                singleFireActionForm, initDataObject, mode);
 
                 try {
 
@@ -1716,7 +1712,11 @@ public class WorkflowResource {
                             initDataObject, resultMap, inode, identifier, languageId, user, indexPolicy);
                 } catch (Exception e) {
 
-                    final String id = UtilMethods.isSet(identifier)?identifier:inode;
+                    final String id = UtilMethods.isSet(identifier)?identifier:
+                            (UtilMethods.isSet(inode)?inode:
+                                    null != singleFireActionForm && null != singleFireActionForm.getContentletFormData()?
+                                            singleFireActionForm.getContentletFormData().toString(): "unknown contentlet" + System.currentTimeMillis()
+                            );
                     Logger.error(this, "Error in contentlet: " + id + ", msg: " + e.getMessage()
                             + ", running the action: " + systemAction, e);
                     resultMap.put(id, UtilMethods.isSet(identifier)?
