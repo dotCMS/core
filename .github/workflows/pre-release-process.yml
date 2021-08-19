@@ -1,0 +1,74 @@
+name: pre-release-process-automation
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: 'Release version to create'
+        required: true
+      from_branch:
+        description: 'Branch to cut from'
+        required: true
+        default: master
+      node_version:
+        description: 'Node version to use when building core-web'
+        required: true
+        default: '12'
+      dyr_run:
+        description: 'Dry-run flag to undo everything we do'
+        required: false
+        default: 'true'
+jobs:
+  pre-release-process:
+    name: Automation of pre-release process
+    runs-on: ubuntu-latest
+    env:
+      DOT_CICD_BRANCH: 19971-automate-prerelease-process
+      DRY_RUN: ${{ github.event.inputs.dry_run }}
+      DEBUG: true
+    steps:
+      - name: GITHUB CONTEXT
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "${GITHUB_CONTEXT}"
+        if: env.DEBUG == 'true'
+      - name: Checkout core
+        uses: actions/checkout@v2
+      - name: Set Common Vars
+        run: |
+          BUILD_ID=$(basename "${{ github.ref }}")
+          BUILD_HASH=$(git log -1 --pretty=%h)
+
+          echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
+          echo "BUILD_HASH=${BUILD_HASH}" >> $GITHUB_ENV
+      - name: Prepare dot-cicd
+        run: |
+          sh -c "$(curl -fsSL https://raw.githubusercontent.com/dotCMS/dot-cicd/${DOT_CICD_BRANCH}/seed/install-dot-cicd.sh)"
+      - name: Run DotCMS Pre-Release Docker Image
+        run: |
+          ../dotcicd/library/pipeline.sh runPreRelease
+        env:
+          GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
+          REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
+          REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+          RELEASE_VERSION: ${{ github.event.inputs.release_version }}
+          FROM_BRANCH: ${{ github.event.inputs.from_branch }}
+          NODE_VERSION: ${{ github.event.inputs.node_version }}
+      - name: Discover docker tags
+        id: discover-docker-tags
+        uses: dotcms/discover-docker-tags-action@main
+        with:
+          version: ${{ ENV.RELEASE_VERSION }}
+          hash: ${{ env.BUILD_HASH }}
+          label: prerelease
+          update_stable: single
+      - name: Publish docker image
+        id: publish-docker-image
+        uses: dotcms/publish-docker-image-action@main
+        with:
+          dot_cicd_branch: master
+          build_id: release-${{ env.RELEASE_VERSION }}
+          tags: ${{ steps.discover-docker-tags.outputs.discovered_tags }}
+          github_user_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+          docker_hub_username: ${{ secrets.DOCKER_USERNAME }}
+          docker_hub_token: ${{ secrets.DOCKER_TOKEN }}
+          dry_run: ${{ env.DRY_RUN }}
