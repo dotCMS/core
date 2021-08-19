@@ -63,6 +63,7 @@ https://github.com/dotCMS/core/issues/7342 : System allows to create exact same 
 
 https://github.com/dotCMS/core/issues/20714 : NPE trying to fix folder conflicts #20714
 
+https://github.com/dotCMS/core/issues/20707 : Advance Image Transformations and SASS compilation not working on Static Publish and Time Machine #20707
 
 
 
