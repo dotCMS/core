@@ -3328,16 +3328,25 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return actionClass;
 	}
 
-	@WrapInTransaction
 	@Override
 	public WorkflowAction copyWorkflowAction(final WorkflowAction from,
 											 final WorkflowScheme to,
 											 final User user) throws DotDataException, AlreadyExistException, DotSecurityException {
+		return this.copyWorkflowAction(from, to, user, Collections.emptyMap());
+	}
+
+	@WrapInTransaction
+	@Override
+	public WorkflowAction copyWorkflowAction(final WorkflowAction from,
+											 final WorkflowScheme to,
+											 final User user,
+											 final Map<String, WorkflowStep> stepsFromToMapping) throws DotDataException, AlreadyExistException, DotSecurityException {
 
 		Logger.debug(this, ()-> "Copying the WorkflowAction: " + from.getId() +
 				", name: " + from.getName());
 
 		final WorkflowAction action = new WorkflowAction();
+		final WorkflowStep workflowStep = stepsFromToMapping.getOrDefault(from.getNextStep(), null);
 
 		action.setSchemeId   (to.getId());
 		action.setAssignable (from.isAssignable());
@@ -3346,7 +3355,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		action.setName		 (from.getName());
 		action.setShowOn	 (from.getShowOn());
 		action.setNextAssign (from.getNextAssign());
-		action.setNextStep	 (from.getNextStep());
+		action.setNextStep	 (null != workflowStep? workflowStep.getId(): null);
 		action.setOrder		 (from.getOrder());
 		action.setOwner		 (from.getOwner());
 		action.setRoleHierarchyForAssign(from.isRoleHierarchyForAssign());
@@ -3440,7 +3449,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			Logger.debug(this, ()-> "Copying a new action from: "
 					+ action.getId() + ", name= " + action.getName());
 
-			actions.put(action.getId(), this.copyWorkflowAction(action, scheme, user));
+			actions.put(action.getId(), this.copyWorkflowAction(action, scheme, user, steps));
 		}
 
 		for (final WorkflowStep step : stepsFrom) {
