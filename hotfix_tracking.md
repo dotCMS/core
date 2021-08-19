@@ -59,6 +59,8 @@ https://github.com/dotCMS/core/issues/20494 : Error retrieving content reference
 
 https://github.com/dotCMS/core/issues/20504 : Create a "Bulk Move" Action for Content #20504
 
+https://github.com/dotCMS/core/issues/7342 : System allows to create exact same language more than twice #7342
+
 
 
 
