@@ -59,7 +59,8 @@ jobs:
                   else
                     branchName=$(basename "${{ github.ref }}")
                   fi
-
+                  
+                  echo "******brach name: " $branchName
                   cd core-web
                   git checkout $branchName
 
@@ -74,6 +75,7 @@ jobs:
                     branchName=$(basename "${{ github.ref }}")
                   fi
 
+                  echo "******version brach name: " $branchName
                   # Checks if branch is release or master
                   if [[ $branchName == *master* ]]; then
                     preReleaseTag=next
@@ -81,9 +83,11 @@ jobs:
                     preReleaseTag=rc
                   fi
 
+                  echo "******tag brach name: " $preReleaseTag
+
                   # Get version from package.json
                   cd core-web
-
+                  git pull origin $branchName
                   pkgVersion=`awk -F'"' '/"version": ".+"/{ print $4; exit; }' package.json`
                   arrIN=(${pkgVersion//./ })
 
