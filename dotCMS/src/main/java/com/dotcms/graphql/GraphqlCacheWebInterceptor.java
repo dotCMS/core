@@ -1,9 +1,9 @@
 package com.dotcms.graphql;
 
+import static com.dotcms.graphql.GraphQLCache.GRAPHQL_CACHE_RESULTS_CONFIG_PROPERTY;
 import static com.dotcms.util.HttpRequestDataUtil.getHeaderCaseInsensitive;
 import static com.dotcms.util.HttpRequestDataUtil.getParamCaseInsensitive;
 
-import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
@@ -11,6 +11,7 @@ import com.dotcms.mock.request.HttpRequestReaderWrapper;
 import com.dotcms.mock.response.MockHttpWriterCaptureResponse;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
@@ -59,7 +60,9 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
     private final GraphQLCache graphCache = CacheLocator.getGraphQLCache();
 
     private final Lazy<Boolean> ENABLED_FROM_CONFIG = Lazy.of(()->Config
-                    .getBooleanProperty("GRAPHQL_CACHE_RESULT>", true));
+                    .getBooleanProperty(GRAPHQL_CACHE_RESULTS_CONFIG_PROPERTY, true));
+
+    private final DotGraphQLHttpServlet graphQLHttpServlet = new DotGraphQLHttpServlet();
 
     @Override
     public String[] getFilters() {
@@ -85,13 +88,18 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
         final boolean bypassCache = bypassCacheByTTL(requestIn)
                 || query.get().contains(INTROSPECTION_OPERATION_NAME);
 
+        final Integer cacheTTL = getCacheTTL(requestIn).isPresent() ? getCacheTTL(requestIn).get() : null;
+
+
         Optional<String> graphResponseFromCache = bypassCache
                 ? Optional.empty()
-                : graphCache.get(syncKey);
+                : refreshKey(wrapper) ?
+                        graphCache.getAndRefresh(syncKey, () -> processGraphQLRequest(wrapper, response),
+                                cacheTTL)
+                        : graphCache.get(syncKey);
 
         if (graphResponseFromCache.isPresent()) {
             writeResponse(response, graphResponseFromCache.get());
-            refreshCacheEntryInBackgroundIfRequested(requestIn, syncKey);
             return Result.SKIP_NO_CHAIN;
         }
 
@@ -100,7 +108,6 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
 
             if (graphResponseFromCache.isPresent()) {
                 writeResponse(response, graphResponseFromCache.get());
-                refreshCacheEntryInBackgroundIfRequested(requestIn, syncKey);
                 return Result.SKIP_NO_CHAIN;
             }
 
@@ -122,6 +129,14 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
     private boolean bypassCacheByTTL(HttpServletRequest requestIn) {
         final Optional<Integer> cacheTTL = getCacheTTL(requestIn);
         return cacheTTL.isPresent() && cacheTTL.get() <=0;
+    }
+
+    private boolean refreshKey(HttpServletRequest requestIn) {
+        final Optional<String> backgroundRefreshParam = getParamOrHeader(requestIn,
+                GRAPHQL_CACHE_REFRESH_PARAM);
+
+        return backgroundRefreshParam.isPresent()
+                && backgroundRefreshParam.get().equalsIgnoreCase("true");
     }
 
     private Optional<Integer> getCacheTTL(HttpServletRequest requestIn) {
@@ -172,15 +187,12 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
         return true;
     }
 
-    private void refreshCacheEntryInBackgroundIfRequested(final HttpServletRequest request, final String key) {
-        final Optional<String> backgroundRefreshParam = getParamOrHeader(request,
-                GRAPHQL_CACHE_REFRESH_PARAM);
-
-        if(backgroundRefreshParam.isPresent()
-                && backgroundRefreshParam.get().equalsIgnoreCase("true")) {
-            DotConcurrentFactory.getInstance().getSingleSubmitter()
-                    .submit(()-> graphCache.remove(key));
-        }
+    private String processGraphQLRequest(final HttpServletRequest request,
+            final HttpServletResponse response) {
+        graphQLHttpServlet.init();
+        MockHttpWriterCaptureResponse mockHttpResponse = new MockHttpWriterCaptureResponse(response);
+        graphQLHttpServlet.doPost(request, mockHttpResponse);
+        return mockHttpResponse.writer.toString();
     }
 
     private final Map<String,String> corsHeaders = ImmutableMap.<String, String>builder()
