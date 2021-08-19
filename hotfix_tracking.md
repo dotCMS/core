@@ -70,3 +70,5 @@ https://github.com/dotCMS/core/issues/20669 : Error deploying a fresh install us
 https://github.com/dotCMS/core/issues/20469 : When generating a site statically, we need to generate the default language last. #20469
 
 https://github.com/dotCMS/core/issues/19215 : Add the option to show fields in a relationship field's overview #19215
+
+https://github.com/dotCMS/core/issues/18014 : FileTool breaks contentlet rendering if the file/image is not live #18014
