@@ -87,7 +87,7 @@ jobs:
 
                   # Get version from package.json
                   cd core-web
-                  git pull origin $branchName
+
                   pkgVersion=`awk -F'"' '/"version": ".+"/{ print $4; exit; }' package.json`
                   arrIN=(${pkgVersion//./ })
 
