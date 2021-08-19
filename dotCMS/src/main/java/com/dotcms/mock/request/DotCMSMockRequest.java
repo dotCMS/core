@@ -38,7 +38,7 @@ public class DotCMSMockRequest implements HttpServletRequest {
     private Map<String, String[]> paramMap = new HashMap<>();
     private Map<String, String> headers = new HashMap<>();
     private String servletPath;
-    private Map<String, Object> attributes = new HashMap<>();
+    private Map<String, Object> attributes;
 
     @Override
     public String getRequestURI() {
