@@ -78,7 +78,7 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
 
         final UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
         final User user       = userParam != null ? userParam : userWebAPI.getSystemUser();
-        final boolean respectAnonPerms = user == null || !user.isBackendUser();
+        final boolean respectAnonPerms = user == null || user.isFrontendUser() || !user.isBackendUser();
 
         Optional<Host> optionalHost = this.getCurrentHostFromRequest(request, user, respectAnonPerms);
 
@@ -112,7 +112,7 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
             final String userId = (user != null) ? user.getUserId() : null;
 
             final String message = "User " + userId + " does not have permission to host:" + host.getHostname();
-            Logger.error(HostAPIImpl.class, message);
+            Logger.error(HostWebAPIImpl.class, message);
             throw new DotSecurityException(message);
         }
     }
