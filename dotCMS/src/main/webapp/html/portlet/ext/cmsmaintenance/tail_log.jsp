@@ -144,7 +144,7 @@
     function enableDisableLogs () {
         //Find the list of checked logs details
         var selectedLogs = "";
-        dojo.query( ".taskCheckBox input" ).forEach( function ( node ) {
+        dojo.query( ".taskCheckBox" ).forEach( function ( node ) {
             if ( node.checked ) {
                 selectedLogs += node.value + ",";
             }
@@ -193,7 +193,7 @@
             var description = logDetail.description;
 
             //Creating the html code....
-            var tdCheckbox = '<td><input name="logs" class="taskCheckBox" dojoType="dijit.form.CheckBox" type="checkbox" name="logs" value="' + name + '" /></td>';
+            var tdCheckbox = '<td><input name="logs" class="taskCheckBox" dojoType="dijit.form.CheckBox" type="checkbox" name="logs" value="' + name + '" id="' + name + '" /></td>';
             var tdStatus;
             if ( enabled == 1 ) {
                 tdStatus = '<td><span class="liveIcon"></span></td>';
