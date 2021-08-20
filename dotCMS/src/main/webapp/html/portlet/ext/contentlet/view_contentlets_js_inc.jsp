@@ -1680,8 +1680,12 @@
         function checkUncheckAll() {
                 var checkAll = dijit.byId("checkAll");
                 var check;
+	            var viewCard = getViewCardEl();
 
-	            getViewCardEl().value = ''
+                if (viewCard) {
+	                viewCard.value = '';
+                }
+                
                 for (var i = 0; i < cbContentInodeList.length; ++i) {
                         check = dijit.byId("checkbox" + i);
                         if(check) {
