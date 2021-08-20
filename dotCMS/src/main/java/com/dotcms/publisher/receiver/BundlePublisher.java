@@ -202,14 +202,7 @@ public class BundlePublisher extends Publisher {
 
             //Get the identifiers on this bundle
             assetsDetails = new HashMap<>();
-
-            final Object rawObject = BundlerUtil.xmlToObject(xml);
-
-            if (rawObject != null && Map.class.isInstance(rawObject)) {
-                final Map bundleMap = (Map) rawObject;
-                bundlerAssets = bundleMap.get("ASSETS") != null ?
-                        (List<PublishQueueElement>) bundleMap.get("ASSETS") : null;
-            }
+            bundlerAssets = (List<PublishQueueElement>)((HashMap)BundlerUtil.xmlToObject(xml)).get("ASSETS");
 
             if (bundlerAssets != null && !bundlerAssets.isEmpty()) {
                 for (PublishQueueElement asset : bundlerAssets) {
