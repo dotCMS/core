@@ -31,7 +31,7 @@ public class GraphQLCache implements Cachable {
     public static final String GRAPHQL_CACHE_RESULTS_CONFIG_PROPERTY = "GRAPHQL_CACHE_RESULTS";
 
     private final Lazy<Boolean> ENABLED_FROM_CONFIG = Lazy.of(()->Config
-            .getBooleanProperty(GRAPHQL_CACHE_RESULTS_CONFIG_PROPERTY, false));
+            .getBooleanProperty(GRAPHQL_CACHE_RESULTS_CONFIG_PROPERTY, true));
 
     /**
      * Gets the value from cache, if any and non-expired, for the given key.
