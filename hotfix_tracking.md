@@ -197,3 +197,5 @@ This maintenance release includes the following code fixes:
 96. https://github.com/dotCMS/core/issues/20334	: Setting COOKIES_HTTP_ONLY=TRUE or COOKIES_SECURE_FLAG=always/https causes cookie duplication
 
 97. https://github.com/dotCMS/core/issues/20295	: [Static Push] : File names with blank spaces cause problems
+
+98. https://github.com/dotCMS/core/issues/20280	: HTTP 301 redirect loop when using Vanity URLs to remove trailing slashes
