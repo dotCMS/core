@@ -9,7 +9,14 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionLevel;
+import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.filters.CMSUrlUtil;
+import com.dotmarketing.filters.CMSFilter.IAm;
 import com.dotmarketing.util.json.JSONObject;
+import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import javax.servlet.http.HttpServletRequest;
 import org.glassfish.jersey.server.JSONP;
@@ -72,4 +79,34 @@ public class MonitorResource {
 
         return builder.build();
     }
+    
+    /**
+     * This resource tests a very simple case of querying data that should be in cache and returns
+     * either success or failure result code
+     * 
+     * @param request
+     * @return
+     * @throws Throwable
+     */
+    @GET
+    @Path("/alive")
+    @CloseDBIfOpened
+    public Response aliveCheck(final @Context HttpServletRequest request) throws Throwable {
+        // Cannot require authentication as we cannot assume db or other subsystems are functioning
+
+        final MonitorHelper helper = new MonitorHelper(request);
+        if(!helper.accessGranted) {
+            return Response.status(FORBIDDEN).entity(StringPool.BLANK).build();
+        }
+        
+        final Host site = WebAPILocator.getHostWebAPI().findSystemHost();
+        final User user = APILocator.getUserAPI().getAnonymousUser();
+        APILocator.getPermissionAPI().doesUserHavePermission(site, PermissionLevel.READ.getType(), user);
+        
+        return Response.status(200).entity(StringPool.BLANK).build();
+        
+    }
+    
+    
+    
 }
