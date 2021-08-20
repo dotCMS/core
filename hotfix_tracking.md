@@ -195,3 +195,5 @@ This maintenance release includes the following code fixes:
 95. https://github.com/dotCMS/core/issues/20342	: [Content Types] : Deleting field is throwing an error
 
 96. https://github.com/dotCMS/core/issues/20334	: Setting COOKIES_HTTP_ONLY=TRUE or COOKIES_SECURE_FLAG=always/https causes cookie duplication
+
+97. https://github.com/dotCMS/core/issues/20295	: [Static Push] : File names with blank spaces cause problems
