@@ -82,7 +82,8 @@ public class MonitorResource {
     
     /**
      * This resource tests a very simple case of querying data that should be in cache and returns
-     * either success or failure result code
+     * either success or failure result code.  This is a valid liveness check as the request already runs
+     * through the CMSFilter (url resolution, rules firing) before reaching here.
      * 
      * @param request
      * @return
@@ -96,14 +97,11 @@ public class MonitorResource {
 
         final MonitorHelper helper = new MonitorHelper(request);
         if(!helper.accessGranted) {
-            return Response.status(FORBIDDEN).entity(StringPool.BLANK).build();
+            return Response.status(FORBIDDEN).build();
         }
         
-        final Host site = WebAPILocator.getHostWebAPI().findSystemHost();
-        final User user = APILocator.getUserAPI().getAnonymousUser();
-        APILocator.getPermissionAPI().doesUserHavePermission(site, PermissionLevel.READ.getType(), user);
         
-        return Response.status(200).entity(StringPool.BLANK).build();
+        return Response.status(200).build();
         
     }
     
