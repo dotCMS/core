@@ -199,3 +199,5 @@ This maintenance release includes the following code fixes:
 97. https://github.com/dotCMS/core/issues/20295	: [Static Push] : File names with blank spaces cause problems
 
 98. https://github.com/dotCMS/core/issues/20280	: HTTP 301 redirect loop when using Vanity URLs to remove trailing slashes
+
+99. https://github.com/dotCMS/core/issues/20277	: [Containers] : Improving error message when deleting Container in use
