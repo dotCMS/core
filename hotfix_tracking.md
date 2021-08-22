@@ -205,3 +205,5 @@ This maintenance release includes the following code fixes:
 100. https://github.com/dotCMS/core/issues/20104 : Subfolders in Site Browser are not sorted alphabetically if the folder Name is changed
 
 101. https://github.com/dotCMS/core/issues/20058 : Enable Tomcat's HttpHeaderSecurityFilter
+
+102. https://github.com/dotCMS/core/issues/19931 : Automatically delete old ES indices (indexes)
