@@ -209,3 +209,5 @@ This maintenance release includes the following code fixes:
 102. https://github.com/dotCMS/core/issues/19931 : Automatically delete old ES indices (indexes)
 
 103. https://github.com/dotCMS/core/issues/19677 : date range filter in Content Search yields exception/500 when trying to select Workflow Action
+
+104. https://github.com/dotCMS/core/issues/19651 : Allow TinyMCE props to be set system wide
