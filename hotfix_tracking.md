@@ -203,3 +203,5 @@ This maintenance release includes the following code fixes:
 99. https://github.com/dotCMS/core/issues/20277	: [Containers] : Improving error message when deleting Container in use
 
 100. https://github.com/dotCMS/core/issues/20104 : Subfolders in Site Browser are not sorted alphabetically if the folder Name is changed
+
+101. https://github.com/dotCMS/core/issues/20058 : Enable Tomcat's HttpHeaderSecurityFilter
