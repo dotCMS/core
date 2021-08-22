@@ -68,11 +68,13 @@ import io.vavr.control.Try;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -103,6 +105,12 @@ public class BrowserAjax {
 
     String lastSortBy = "name";
     boolean lastSortDirectionDesc = false;
+
+	final static private Comparator<Map> nameComparator = new Comparator<Map>() {
+		public int compare(Map o1, Map o2) {
+			return o1.get("name").toString().compareTo(o2.get("name").toString());
+		}
+	};
 
 
     /**
@@ -735,7 +743,7 @@ public class BrowserAjax {
 
         }
 
-        	return folders;
+        	return folders.stream().sorted(nameComparator).collect(Collectors.toList());
     }
 
     public Map<String, Object> renameFolder (String inode, String newName) throws DotDataException, DotSecurityException {

@@ -38,6 +38,7 @@ import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -328,7 +329,8 @@ public class BrowserAPIImpl implements BrowserAPI {
             List<Folder> folders = Collections.emptyList();
             try {
 
-                folders = folderAPI.findSubFolders(parent, userAPI.getSystemUser(), false);
+                folders = folderAPI.findSubFolders(parent, userAPI.getSystemUser(), false).stream().sorted(
+                        Comparator.comparing(Folder::getName)).collect(Collectors.toList());
             } catch (Exception e1) {
 
                 Logger.error(this, "Could not load folders : ", e1);

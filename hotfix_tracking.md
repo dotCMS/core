@@ -201,3 +201,5 @@ This maintenance release includes the following code fixes:
 98. https://github.com/dotCMS/core/issues/20280	: HTTP 301 redirect loop when using Vanity URLs to remove trailing slashes
 
 99. https://github.com/dotCMS/core/issues/20277	: [Containers] : Improving error message when deleting Container in use
+
+100. https://github.com/dotCMS/core/issues/20104 : Subfolders in Site Browser are not sorted alphabetically if the folder Name is changed
