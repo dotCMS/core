@@ -207,3 +207,5 @@ This maintenance release includes the following code fixes:
 101. https://github.com/dotCMS/core/issues/20058 : Enable Tomcat's HttpHeaderSecurityFilter
 
 102. https://github.com/dotCMS/core/issues/19931 : Automatically delete old ES indices (indexes)
+
+103. https://github.com/dotCMS/core/issues/19677 : date range filter in Content Search yields exception/500 when trying to select Workflow Action
