@@ -1,6 +1,6 @@
 package com.dotcms.rest.api.v1.system.monitor;
 
-import com.dotcms.business.CloseDBIfOpened;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -8,18 +8,11 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
-import com.dotcms.rest.annotation.NoCache;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionLevel;
-import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.filters.CMSUrlUtil;
-import com.dotmarketing.filters.CMSFilter.IAm;
-import com.dotmarketing.util.json.JSONObject;
-import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
-import javax.servlet.http.HttpServletRequest;
 import org.glassfish.jersey.server.JSONP;
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.rest.annotation.NoCache;
+import com.dotmarketing.util.json.JSONObject;
+import com.liferay.util.StringPool;
 
 
 @Path("/v1/system-status")
