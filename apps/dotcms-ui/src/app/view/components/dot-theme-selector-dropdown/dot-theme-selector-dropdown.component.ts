@@ -1,4 +1,12 @@
-import { AfterViewInit, Component, ElementRef, forwardRef, OnInit, ViewChild } from '@angular/core';
+import {
+    AfterViewInit,
+    Component,
+    ElementRef,
+    forwardRef,
+    OnDestroy,
+    OnInit,
+    ViewChild
+} from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { DotSiteSelectorComponent } from '@components/_common/dot-site-selector/dot-site-selector.component';
 import { SearchableDropdownComponent } from '@components/_common/searchable-dropdown/component';
@@ -7,8 +15,8 @@ import { DotThemesService } from '@services/dot-themes/dot-themes.service';
 import { PaginatorService } from '@services/paginator';
 import { Site, SiteService } from '@dotcms/dotcms-js';
 import { LazyLoadEvent } from 'primeng/api';
-import { fromEvent } from 'rxjs';
-import { debounceTime, filter, pluck, take } from 'rxjs/operators';
+import { fromEvent, Subject } from 'rxjs';
+import { debounceTime, filter, take, takeUntil } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-theme-selector-dropdown',
@@ -23,7 +31,7 @@ import { debounceTime, filter, pluck, take } from 'rxjs/operators';
     ]
 })
 export class DotThemeSelectorDropdownComponent
-    implements OnInit, ControlValueAccessor, AfterViewInit {
+    implements OnInit, OnDestroy, ControlValueAccessor, AfterViewInit {
     themes: DotTheme[] = [];
     value: DotTheme = null;
     totalRecords: number = 0;
@@ -40,6 +48,7 @@ export class DotThemeSelectorDropdownComponent
     siteSelector: DotSiteSelectorComponent;
 
     private initialLoad = true;
+    private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         public readonly paginatorService: PaginatorService,
@@ -48,17 +57,27 @@ export class DotThemeSelectorDropdownComponent
     ) {}
 
     ngOnInit(): void {
-        this.currentSiteIdentifier = this.siteService.currentSite.identifier;
+        const interval = setInterval(() => {
+            try {
+                this.currentSiteIdentifier = this.siteService.currentSite.identifier;
+                clearInterval(interval);
+            } catch (e) {}
+        }, 0);
     }
 
     ngAfterViewInit(): void {
         if (this.searchInput) {
             fromEvent(this.searchInput.nativeElement, 'keyup')
-                .pipe(debounceTime(500))
-                .subscribe((keyboardEvent: KeyboardEvent) => {
-                    this.getFilteredThemes(keyboardEvent.target['value']);
+                .pipe(debounceTime(500), takeUntil(this.destroy$))
+                .subscribe(() => {
+                    this.getFilteredThemes();
                 });
         }
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
     }
 
     onHide(): void {
@@ -70,11 +89,6 @@ export class DotThemeSelectorDropdownComponent
                     this.siteSelector.updateCurrentSite(site);
                 });
         }
-
-        // Reset back to its original state
-        this.searchInput.nativeElement.value = '';
-        this.setHostThemes(this.currentSiteIdentifier);
-        this.getFilteredThemes('');
     }
 
     propagateChange = (_: any) => {};
@@ -102,7 +116,7 @@ export class DotThemeSelectorDropdownComponent
                 .pipe(take(1))
                 .subscribe((theme: DotTheme) => {
                     this.value = theme;
-                    this.siteService.getSiteById(this.value.hostId).subscribe((site) => {
+                    this.siteService.getSiteById(this.value.hostId).pipe(take(1)).subscribe((site) => {
                         this.siteSelector?.updateCurrentSite(site);
                     });
                 });
@@ -117,7 +131,6 @@ export class DotThemeSelectorDropdownComponent
     siteChange(event: Site): void {
         this.currentSiteIdentifier = event.identifier;
         this.setHostThemes(event.identifier);
-
     }
     /**
      * Sets the themes when the drop down is opened
@@ -131,6 +144,7 @@ export class DotThemeSelectorDropdownComponent
         if (this.value) {
             this.currentSiteIdentifier = this.value.hostId;
         }
+        this.searchInput.nativeElement.value = '';
         this.setHostThemes(this.currentSiteIdentifier);
     }
 
@@ -144,16 +158,6 @@ export class DotThemeSelectorDropdownComponent
         this.value = theme;
         this.propagateChange(theme.identifier);
         this.searchableDropdown.toggleOverlayPanel();
-    }
-
-    /**
-     *  Fetch theme list via the DotThemeSelectorDropdownComponent input text
-     *
-     * @param {string} filter
-     * @memberof DotThemeSelectorDropdownComponent
-     */
-    handleFilterChange(filter: string): void {
-        this.getFilteredThemes(filter);
     }
 
     /**
@@ -171,7 +175,7 @@ export class DotThemeSelectorDropdownComponent
                 /*
                 We load the first page of themes (onShow) so we dont want to load them when the
                 first paginate event from the dataview inside <dot-searchable-dropdown> triggers
-            */
+                */
                 .pipe(
                     take(1),
                     filter(() => !!(this.currentSiteIdentifier && this.themes.length))
@@ -182,13 +186,17 @@ export class DotThemeSelectorDropdownComponent
         }
     }
 
-    private getFilteredThemes(filter = '', offset = 0): void {
-        this.paginatorService.searchParam = filter;
+    private getFilteredThemes(offset = 0): void {
         this.setHostThemes(this.currentSiteIdentifier, this.currentOffset || offset);
     }
 
     private setHostThemes(hostId: string, offset: number = 0) {
+        this.siteService.getSiteById(hostId).pipe(take(1)).subscribe((site: Site) => {
+            this.siteSelector.updateCurrentSite(site);
+        });
+
         this.paginatorService.setExtraParams('hostId', hostId);
+        this.paginatorService.searchParam = this.searchInput.nativeElement.value;
         this.paginatorService
             .getWithOffset(offset)
             .pipe(take(1))
@@ -196,10 +204,6 @@ export class DotThemeSelectorDropdownComponent
                 if (themes.length || !this.initialLoad) {
                     this.themes = themes;
                     this.setTotalRecords();
-                } else {
-                    this.siteService.getSiteById('SYSTEM_HOST').subscribe((site: Site) => {
-                        this.siteSelector.searchableDropdown.handleClick(site);
-                    });
                 }
                 this.initialLoad = false;
             });
