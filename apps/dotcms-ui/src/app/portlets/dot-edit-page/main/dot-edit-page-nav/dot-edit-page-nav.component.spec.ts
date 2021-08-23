@@ -121,7 +121,7 @@ describe('DotEditPageNavComponent', () => {
             expect(menuListItems.length).toEqual(4);
 
             const labels = ['Content', 'Layout', 'Rules', 'Properties'];
-            const icons = ['description', 'view_quilt', 'tune', 'add'];
+            const icons = ['insert_drive_file', 'view_quilt', 'tune', 'more_horiz'];
             menuListItems.forEach((item, index) => {
                 const iconClass = item.query(By.css('i')).nativeElement.innerHTML.trim();
                 expect(iconClass).toEqual(icons[index]);
@@ -179,7 +179,7 @@ describe('DotEditPageNavComponent', () => {
             const iconClass = menuListItems[0].query(By.css('i')).nativeElement.innerHTML.trim();
 
             expect(menuListItems.length).toEqual(4);
-            expect(iconClass).toEqual('description');
+            expect(iconClass).toEqual('insert_drive_file');
             expect(menuListItems[0].nativeElement.textContent).toContain('Content');
             expect(menuListItems[1].nativeElement.textContent).toContain('Layout');
         });
@@ -244,7 +244,7 @@ describe('DotEditPageNavComponent', () => {
                 );
 
                 const labels = ['Content', 'Layout', 'Rules', 'Properties'];
-                const icons = ['description', 'view_quilt', 'tune', 'add'];
+                const icons = ['insert_drive_file', 'view_quilt', 'tune', 'more_horiz'];
                 menuListItems.forEach((item, index) => {
                     const iconClass = item.query(By.css('i')).nativeElement.innerHTML.trim();
                     expect(iconClass).toEqual(icons[index]);

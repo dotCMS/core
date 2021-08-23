@@ -1,0 +1,79 @@
+@use "libs/dot-primeng-theme-styles/src/scss/variables" as *;
+
+:host {
+    width: $content-palette-width;
+    min-width: $content-palette-width;
+    display: flex;
+    flex-direction: column;
+    padding: $spacing-1;
+    border-left: 1px solid $gray-lighter;
+}
+
+.dot-content-palette__search {
+    color: $gray;
+    position: sticky;
+    align-self: flex-start;
+    top: 0;
+    width: 100%;
+
+    input {
+        width: 100%;
+        border: none;
+        outline: 0px;
+        background: transparent;
+        padding: $spacing-2 $spacing-5 $spacing-2 $spacing-1;
+        color: $gray;
+    }
+
+    dot-icon {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        right: $spacing-1;
+    }
+}
+
+.dot-content-palette__items {
+
+    overflow: hidden auto;
+
+    div {
+        width: 7.2rem;
+        height: 5.71rem;
+        border: 1px solid $gray-lighter;
+        display: inline-flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        cursor: grab;
+        color: $black;
+        margin-bottom: $spacing-1;
+        padding: 0 0.25rem;
+
+        &:nth-child(even) {
+            margin-left: $spacing-1;
+        }
+
+        &:hover {
+            background: $gray-bg;
+        }
+
+        span {
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            width: 100%;
+            text-align: center;
+            margin-top: $spacing-1;
+            font-size: $font-size-small;
+        }
+    }
+}
+
+.dot-content-palette__empty {
+    text-align: center;
+    padding: $spacing-1 0;
+    margin: $spacing-4;
+}
+
+
