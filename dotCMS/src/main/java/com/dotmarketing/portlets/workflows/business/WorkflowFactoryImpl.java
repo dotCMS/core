@@ -2221,8 +2221,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		final boolean isNew = !UtilMethods.isSet(dbTask) || UtilMethods.isEmpty(dbTask.getId()) ;
 
 		if (isNew) {
+			task.setId(UUIDGenerator.generateUuid());
 			db.setSQL(WorkflowSQL.INSERT_WORKFLOW_TASK);
-			db.addParam(UUIDGenerator.generateUuid());
+			db.addParam(task.getId());
 			setTaskDBParams(task, db);
 		} else {
 			db.setSQL(WorkflowSQL.UPDATE_WORKFLOW_TASK);
