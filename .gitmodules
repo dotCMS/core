@@ -1,5 +1,5 @@
 [submodule "dotCMS/src/main/enterprise"]
 	path = dotCMS/src/main/enterprise
 	url = git@github.com:dotCMS/enterprise.git
-	branch = release-21.06.1
+	branch = release-21.06.2
 	ignore = dirty
