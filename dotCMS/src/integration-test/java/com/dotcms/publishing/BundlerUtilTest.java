@@ -30,6 +30,13 @@ public class BundlerUtilTest {
         IntegrationTestInitService.getInstance().init();
     }
 
+    /**
+     * Method to test: {@link BundlerUtil#writeBundleXML(PublisherConfig, BundleOutput)}
+     * When: Write a bundle.xml file
+     * Should: the serialize object should be a {@link PushPublisherConfig}
+     * 
+     * @throws IOException
+     */
     @Test
     public void writeBundleXML() throws IOException {
         final Host host = new SiteDataGen().nextPersisted();
@@ -43,6 +50,8 @@ public class BundlerUtilTest {
         final File bundlerUtilTest = FileUtil.createTemporaryDirectory("BundlerUtilTest");
         final BundleOutput directoryBundleOutput = new DirectoryBundleOutput(config, bundlerUtilTest);
 
+        BundlerUtil.writeBundleXML(config, directoryBundleOutput);
+
         final File bundleXMLFile = new File(bundlerUtilTest, "bundle.xml");
 
         assertTrue(bundleXMLFile.exists());
@@ -52,6 +61,5 @@ public class BundlerUtilTest {
 
         assertEquals(1, bundlerAssets.size());
         assertEquals(contentType.id(), bundlerAssets.get(0).getAsset());
-
     }
 }
