@@ -211,3 +211,5 @@ This maintenance release includes the following code fixes:
 103. https://github.com/dotCMS/core/issues/19677 : date range filter in Content Search yields exception/500 when trying to select Workflow Action
 
 104. https://github.com/dotCMS/core/issues/19651 : Allow TinyMCE props to be set system wide
+
+105. https://github.com/dotCMS/core/issues/19215 : Add the option to show fields in a relationship field's overview

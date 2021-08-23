@@ -390,6 +390,27 @@
 		<servlet-name>DotGraphQLHttpServlet</servlet-name>
 		<servlet-class>com.dotcms.graphql.DotGraphQLHttpServlet</servlet-class>
 	</servlet>
+	<servlet>
+		<servlet-name>jsp</servlet-name>
+		<servlet-class>org.apache.jasper.servlet.JspServlet</servlet-class>
+		<init-param>
+			<param-name>fork</param-name>
+			<param-value>false</param-value>
+		</init-param>
+		<init-param>
+			<param-name>xpoweredBy</param-name>
+			<param-value>false</param-value>
+		</init-param>
+		<init-param>
+			<param-name>compilerSourceVM</param-name>
+			<param-value>1.8</param-value>
+		</init-param>
+		<init-param>
+			<param-name>compilerTargetVM</param-name>
+			<param-value>1.8</param-value>
+		</init-param>
+		<load-on-startup>3</load-on-startup>
+	</servlet>
     
 	<!--END DOTMARKETING SERVLETS-->
 	
@@ -553,6 +574,12 @@
 		<servlet-name>PreviewDesignTemplateServlet</servlet-name>
 		<url-pattern>/servlets/template/design/preview</url-pattern>
 	</servlet-mapping>
+    <!-- The mappings for the JSP servlet -->
+    <servlet-mapping>
+        <servlet-name>jsp</servlet-name>
+        <url-pattern>*.jsp</url-pattern>
+        <url-pattern>*.jspx</url-pattern>
+    </servlet-mapping>
 	<!--END DOTMARKETING SERVLET-MAPPING-->
 	
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
