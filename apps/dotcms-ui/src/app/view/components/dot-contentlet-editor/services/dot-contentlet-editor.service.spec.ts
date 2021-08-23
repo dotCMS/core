@@ -12,6 +12,7 @@ import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { ConfirmationService } from 'primeng/api';
 import { FormatDateService } from '@services/format-date-service';
+import { DotCMSContentType } from '@dotcms/dotcms-models';
 
 describe('DotContentletEditorService', () => {
     const load = () => {};
@@ -222,5 +223,13 @@ describe('DotContentletEditorService', () => {
 
         expect(service.loadHandler).toEqual(null);
         expect(service.keyDownHandler).toEqual(null);
+    });
+
+    it('should set Dragged content', () => {
+        const content = ({ id: '1' } as unknown) as DotCMSContentType;
+        service.draggedContentType$.subscribe((value) => {
+            expect(value).toEqual(content);
+        });
+        service.setDraggedContentType(content);
     });
 });

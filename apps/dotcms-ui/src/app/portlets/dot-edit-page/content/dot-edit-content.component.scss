@@ -4,8 +4,9 @@
 :host {
     background-color: $gray-bg;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     width: 100%;
+    padding-right: 0;
 }
 
 dot-whats-changed,
@@ -40,6 +41,7 @@ dot-whats-changed,
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    flex-grow: 1;
 }
 
 .dot-edit__page-wrapper:after {
@@ -112,4 +114,9 @@ dot-whats-changed,
 */
 ::ng-deep .p-unselectable-text .dot-edit__contentlet-iframe {
     pointer-events: none;
+}
+
+dot-content-palette {
+    background: $white;
+    overflow: hidden auto;
 }

@@ -71,7 +71,9 @@ export class DotEditContentToolbarHtmlService {
      */
     updateContainerToolbar(container: HTMLElement): void {
         if (container.parentNode) {
-            const toolbar = container.parentNode.querySelector(`[data-dot-container-inode="${container.dataset['dotInode']}"]`);
+            const toolbar = container.parentNode.querySelector(
+                `[data-dot-container-inode="${container.dataset['dotInode']}"]`
+            );
             container.parentNode.removeChild(toolbar);
             this.createContainerToolbar(container);
         }
@@ -216,7 +218,6 @@ export class DotEditContentToolbarHtmlService {
                         item,
                         container
                     );
-
                     return {
                         label: this.dotMessageService.get(
                             `editpage.content.container.menu.${item}`

@@ -105,7 +105,6 @@ export const EDIT_PAGE_JS = `
 
     drake.on('drop', function(el, target, source, sibling) {
         const updatedModel = getDotNgModel();
-
         if (JSON.stringify(updatedModel) !== JSON.stringify(currentModel)) {
             window.${MODEL_VAR_NAME}.next({
                 model: getDotNgModel(),
@@ -179,7 +178,7 @@ export const EDIT_PAGE_JS = `
                         status: res.status
                     };
                 }
-    
+
                 if (!!error.message) {
                     throw error;
                 } else {
@@ -250,10 +249,8 @@ export const EDIT_PAGE_JS = `
         document.getElementById(elemId).remove()
     }
 
-    function checkIfContainerAllowsDotAsset(event) {
+    function checkIfContainerAllowsDotAsset(event, container) {
 
-        const container = event.target.closest('[data-dot-object="container"]');
-        
         // Different than 1 file
         if (event.dataTransfer.items.length !== 1 ) {
             return false;
@@ -275,6 +272,16 @@ export const EDIT_PAGE_JS = `
         }
 
         return true;
+    }
+
+    function checkIfContainerAllowContentType(container) {
+        if (container.querySelectorAll('[data-dot-object="contentlet"]').length === parseInt(container.dataset.maxContentlets, 10)) {
+            return false;
+        }
+
+        // draggedContent is set by dotContentletEditorService.draggedContentType$
+        const dotAcceptTypes = container.dataset.dotAcceptTypes.toLocaleLowerCase();
+        return (window.hasOwnProperty('draggedContent') && dotAcceptTypes.includes(draggedContent.variable.toLocaleLowerCase()))
     }
 
     function setPlaceholderContentlet() {
@@ -301,27 +308,24 @@ export const EDIT_PAGE_JS = `
     window.addEventListener("beforeunload", removeEvents, false);
 
     function dragEnterEvent(event) {
-        event.preventDefault(); 
+        event.preventDefault();
         event.stopPropagation();
-
         const container = event.target.closest('[data-dot-object="container"]');
         currentContainer = container;
-
-        if (container && !checkIfContainerAllowsDotAsset(event)) {
+        if (container && !(checkIfContainerAllowsDotAsset(event, container) || checkIfContainerAllowContentType(container))) {
             container.classList.add('no');
         }
     }
 
     function dragOverEvent(event) {
-        event.preventDefault(); 
+        event.preventDefault();
         event.stopPropagation();
-
         const container = event.target.closest('[data-dot-object="container"]');
         const contentlet = event.target.closest('[data-dot-object="contentlet"]');
 
         if (contentlet) {
 
-            if (isContainerAndContentletValid(container, contentlet) && isContentletPlaceholderInDOM()) { 
+            if (isContainerAndContentletValid(container, contentlet) && isContentletPlaceholderInDOM()) {
                 removeElementById('contentletPlaceholder');
             }
 
@@ -330,25 +334,25 @@ export const EDIT_PAGE_JS = `
                 if (isCursorOnUpperSide(event, contentlet.getBoundingClientRect())) {
                     insertBeforeElement(contentletPlaceholder, contentlet);
                 } else {
-                    insertAfterElement(contentletPlaceholder, contentlet);                    
+                    insertAfterElement(contentletPlaceholder, contentlet);
                 }
             }
 
         } else if (
-                container && 
-                !container.querySelectorAll('[data-dot-object="contentlet"]').length && 
+                container &&
+                !container.querySelectorAll('[data-dot-object="contentlet"]').length &&
                 isContainerValid(container)
             ) { // Empty container
 
-            if (isContentletPlaceholderInDOM()) { 
+            if (isContentletPlaceholderInDOM()) {
                 removeElementById('contentletPlaceholder');
             }
-            container.appendChild(setPlaceholderContentlet()); 
+            container.appendChild(setPlaceholderContentlet());
         }
     }
 
     function dragLeaveEvent(event) {
-        event.preventDefault(); 
+        event.preventDefault();
         event.stopPropagation();
 
         const container = event.target.closest('[data-dot-object="container"]');
@@ -356,40 +360,52 @@ export const EDIT_PAGE_JS = `
         if (container && currentContainer !== container) {
             container.classList.remove('no');
         }
+
+        if (isContentletPlaceholderInDOM()){
+            removeElementById('contentletPlaceholder');
+        }
     }
 
     function dropEvent(event) {
-        event.preventDefault(); 
+
+        event.preventDefault();
         event.stopPropagation();
-
         const container = event.target.closest('[data-dot-object="container"]');
-
         if (container && !container.classList.contains('no')) {
-
             setLoadingIndicator();
-            uploadFile(event.dataTransfer.files[0]).then((dotCMSTempFile) => {
-                dotAssetCreate({
-                    file: dotCMSTempFile,
-                    url: '/api/v1/workflow/actions/default/fire/PUBLISH',
-                    folder: ''
-                }).then((response) => {
-                    window.contentletEvents.next({
-                        name: 'add-uploaded-dotAsset',
-                        data: {
-                            contentlet: response,
-                            placeholderId: 'contentletPlaceholder'
-                        }
-                    });
+            if (event.dataTransfer.files[0]) { // trying to upload an image
+                uploadFile(event.dataTransfer.files[0]).then((dotCMSTempFile) => {
+                    dotAssetCreate({
+                        file: dotCMSTempFile,
+                        url: '/api/v1/workflow/actions/default/fire/PUBLISH',
+                        folder: ''
+                    }).then((response) => {
+                        window.contentletEvents.next({
+                            name: 'add-uploaded-dotAsset',
+                            data: {
+                                contentlet: response
+                            }
+                        });
+                    }).catch(e => {
+                        handleHttpErrors(e);
+                    })
                 }).catch(e => {
                     handleHttpErrors(e);
                 })
-            }).catch(e => {
-                handleHttpErrors(e);
-            })
+            } else { // Adding specific Content Type
+                window.contentletEvents.next({
+                    name: 'add-content',
+                    data: {
+                        container: container.dataset,
+                        contentType: draggedContent
+                    }
+                });
+            }
         }
-
         if (container) {
-            container.classList.remove('no');
+            setTimeout(()=>{
+                container.classList.remove('no');
+            }, 0);
         }
 
     }

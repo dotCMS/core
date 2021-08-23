@@ -6,7 +6,10 @@ import { TestBed, waitForAsync } from '@angular/core/testing';
 import { of, Observable, throwError } from 'rxjs';
 import { ConfirmationService } from 'primeng/api';
 
-import { DotEditContentHtmlService } from './dot-edit-content-html.service';
+import {
+    CONTENTLET_PLACEHOLDER_SELECTOR,
+    DotEditContentHtmlService
+} from './dot-edit-content-html.service';
 import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
 import { DotContainerContentletService } from '../dot-container-contentlet.service';
 import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
@@ -68,7 +71,7 @@ describe('DotEditContentHtmlService', () => {
         </head>
         <body>
             <div class="row-1">
-            
+
                 <div data-dot-object="container" data-dot-identifier="123" data-dot-uuid="456" data-dot-can-add="CONTENT">
                     <div
                         data-dot-object="contentlet"
@@ -95,7 +98,7 @@ describe('DotEditContentHtmlService', () => {
                             </div>
                         </div>
                     </div>
-                    <div data-dot-object="contentlet" data-dot-identifier="tmpPlaceholder" id="externalPlaceholder"></div>
+                    <div data-dot-object="contentlet" data-dot-identifier="tmpPlaceholder" id="contentletPlaceholder"></div>
                 </div>
 
 
@@ -185,9 +188,12 @@ describe('DotEditContentHtmlService', () => {
                     ConfirmationService,
                     DotGlobalMessageService,
                     DotEventsService,
-                    { provide: DotHttpErrorManagerService, useValue: {
-                        handle: jasmine.createSpy().and.returnValue(of({}))
-                    }},
+                    {
+                        provide: DotHttpErrorManagerService,
+                        useValue: {
+                            handle: jasmine.createSpy().and.returnValue(of({}))
+                        }
+                    },
                     DotWorkflowActionsFireService,
                     { provide: DotMessageService, useValue: messageServiceMock },
                     { provide: DotLicenseService, useClass: MockDotLicenseService }
@@ -328,12 +334,18 @@ describe('DotEditContentHtmlService', () => {
             data: dataObj
         });
 
-        expect(service.renderAddedContentlet).toHaveBeenCalledWith({
+        expect(service.renderAddedContentlet).toHaveBeenCalledWith(
+            {
                 identifier: '456',
                 inode: '456'
             },
-            'id1'
+            true
         );
+    });
+
+    it('should remove placeholder', () => {
+        service.removeContentletPlaceholder();
+        expect(fakeDocument.querySelector(CONTENTLET_PLACEHOLDER_SELECTOR)).toBeNull();
     });
 
     it('should handle http error', () => {
@@ -565,11 +577,10 @@ describe('DotEditContentHtmlService', () => {
             },
             'currentContainer must be the same after add content'
         );
-
         expect(currentModel).toEqual(
             {
                 model: [
-                    { identifier: '123', uuid: '456', contentletsId: ['456', 'tmpPlaceholder'] },
+                    { identifier: '123', uuid: '456', contentletsId: ['456'] },
                     { identifier: '321', uuid: '654', contentletsId: ['456'] },
                     { identifier: '976', uuid: '156', contentletsId: ['367'] }
                 ],
@@ -588,7 +599,9 @@ describe('DotEditContentHtmlService', () => {
         };
 
         spyOn(dotContainerContentletService, 'getContentletToContainer').and.returnValue(
-            of('<div id="newContent" data-dot-object="contentlet" data-dot-identifier="zxc"><i>replaced contentlet</i></div>')
+            of(
+                '<div id="newContent" data-dot-object="contentlet" data-dot-identifier="zxc"><i>replaced contentlet</i></div>'
+            )
         );
 
         const contentlet: DotPageContent = {
@@ -600,7 +613,7 @@ describe('DotEditContentHtmlService', () => {
 
         service.pageModel$.subscribe((model) => (currentModel = model));
 
-        service.renderAddedContentlet(contentlet, 'externalPlaceholder');
+        service.renderAddedContentlet(contentlet, true);
 
         expect(dotContainerContentletService.getContentletToContainer).toHaveBeenCalledWith(
             currentContainer,
@@ -993,7 +1006,9 @@ describe('DotEditContentHtmlService', () => {
         });
 
         it('should display a toast on error', () => {
-            const error404 = mockResponseView(404, '', null, { errors: [{message: 'An error ocurred'}] });
+            const error404 = mockResponseView(404, '', null, {
+                errors: [{ message: 'An error ocurred' }]
+            });
             spyOn(dotWorkflowActionsFireService, 'saveContentlet').and.returnValue(
                 throwError(error404)
             );
@@ -1197,7 +1212,11 @@ describe('DotEditContentHtmlService', () => {
             service.renderAddedForm({ ...form, id: '4' }).subscribe((model) => {
                 expect(model).toEqual(
                     [
-                        { identifier: '123', uuid: '456', contentletsId: ['456', 'tmpPlaceholder', '2'] },
+                        {
+                            identifier: '123',
+                            uuid: '456',
+                            contentletsId: ['456', 'tmpPlaceholder', '2']
+                        },
                         { identifier: '321', uuid: '654', contentletsId: ['456'] },
                         { identifier: '976', uuid: '156', contentletsId: ['367'] }
                     ],

@@ -4,8 +4,8 @@
 $nav-size: 80px;
 
 :host {
-    background-color: $white;
-    border-left: solid 1px $gray-bg;
+    background-color: $gray-bg;
+    border-left: solid 1px  $gray-lighter;
     display: flex;
     flex-shrink: 0;
     order: 2;
@@ -19,8 +19,7 @@ $nav-size: 80px;
 
 .edit-page-nav__item {
     align-items: center;
-    color: $brand-background;
-    display: block;
+    color: $gray-dark;
     display: flex;
     flex-direction: column;
     font-size: 11px;
@@ -52,11 +51,9 @@ $nav-size: 80px;
 }
 
 .edit-page-nav__item--active {
-    background-color: $brand-background;
-    color: $white;
+    background-color: $white;
+    color: $black;
     pointer-events: none;
-
-    ::ng-deep dot-icon i {
-        @include dot-icon_inverted;
-    }
+    border-bottom: 1px solid $gray-lighter;
+    border-top: 1px solid $gray-lighter;
 }

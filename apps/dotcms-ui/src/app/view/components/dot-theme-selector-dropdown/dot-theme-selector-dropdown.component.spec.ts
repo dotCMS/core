@@ -4,7 +4,7 @@ import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testin
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { of } from 'rxjs';
 
-import { Site, SiteService } from '@dotcms/dotcms-js';
+import { SiteService } from '@dotcms/dotcms-js';
 
 import { DotThemeSelectorDropdownComponent } from './dot-theme-selector-dropdown.component';
 import { DotThemesService } from '@services/dot-themes/dot-themes.service';
@@ -21,7 +21,6 @@ import {
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotIconModule } from '@dotcms/ui';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { mockSites } from '@tests/site-service.mock';
 
 const messageServiceMock = new MockDotMessageService({
     'dot.common.select.themes': 'Select Themes',
@@ -39,6 +38,8 @@ class MockDotSiteSelectorComponent {
     searchableDropdown = {
         handleClick: () => {}
     };
+
+    updateCurrentSite  = jasmine.createSpy('updateCurrentSite');
 }
 
 @Component({
@@ -209,30 +210,9 @@ describe('DotThemeSelectorDropdownComponent', () => {
                 expect(instance.rows).toBe(5);
             });
 
-            it('should reset values onHide', fakeAsync(() => {
-                spyOn(paginationService, 'getWithOffset').and.returnValue(of(mockDotThemes));
-                component.onHide();
-                tick();
-                expect(paginationService.getWithOffset).toHaveBeenCalledWith(0);
-                expect(component.totalRecords).toBe(3);
-                expect(paginationService.searchParam).toBe('');
-            }));
         });
 
         describe('events', () => {
-            it('should call filterChange with right values', () => {
-                paginationService.totalRecords = 5;
-                const searchable = de.query(By.css('dot-searchable-dropdown'));
-                const arr = [mockDotThemes[1], mockDotThemes[4]];
-                spyOn(paginationService, 'getWithOffset').and.returnValue(of([...arr]));
-                searchable.triggerEventHandler('filterChange', 'test');
-
-                expect(paginationService.getWithOffset).toHaveBeenCalledWith(0);
-                expect(paginationService.searchParam).toEqual('test');
-                expect(component.themes).toEqual(arr);
-                expect(paginationService.totalRecords).toEqual(5);
-            });
-
             it('should set value propagate change and toggle the overlay', () => {
                 const searchable = de.query(By.css('dot-searchable-dropdown'));
                 spyOn(searchable.componentInstance, 'toggleOverlayPanel');
@@ -273,13 +253,12 @@ describe('DotThemeSelectorDropdownComponent', () => {
             }));
 
             it('should update themes, totalRecords and call setExtraParams when search input change', async () => {
+                await fixture.whenStable();
                 const input = de.query(By.css('[data-testId="searchInput"]')).nativeElement;
                 input.value = 'hello';
                 const event = new KeyboardEvent('keyup');
                 input.dispatchEvent(event);
-
                 await fixture.whenStable();
-
                 expect(paginationService.searchParam).toBe('hello');
                 expect(component.themes).toEqual([mockDotThemes[2]]);
                 expect(component.totalRecords).toBe(1);
@@ -287,47 +266,22 @@ describe('DotThemeSelectorDropdownComponent', () => {
         });
     });
 
-    describe('no themes', () => {
-        let component: DotThemeSelectorDropdownComponent;
-        let siteService: SiteService;
-        let fixture: ComponentFixture<DotThemeSelectorDropdownComponent>;
-
-        beforeEach(() => {
-            fixture = TestBed.createComponent(DotThemeSelectorDropdownComponent);
-            de = fixture.debugElement;
-            paginationService = TestBed.inject(PaginatorService);
-            siteService = TestBed.inject(SiteService);
-            component = fixture.componentInstance;
-            spyOn(paginationService, 'getWithOffset').and.returnValue(of([]));
-            spyOn(siteService, 'getSiteById').and.returnValue(of(mockSites[0]));
-        });
-
-        it('should set the site host as default', () => {
-            fixture.detectChanges();
-            component.onShow();
-            expect(siteService.getSiteById).toHaveBeenCalledWith('SYSTEM_HOST');
-        });
-
-        it('should get sistem themes just once', () => {
-            fixture.detectChanges();
-            component.onShow();
-            setTimeout(() => component.siteChange({ identifier: '123' } as Site), 0); // simulate user site change.
-            expect(siteService.getSiteById).toHaveBeenCalledOnceWith('SYSTEM_HOST');
-        });
-    });
-
     describe('writeValue', () => {
         let fixture: ComponentFixture<TestHostFilledComponent | TestHostEmtpyComponent>;
         let dotThemesService: DotThemesService;
+        let siteService: SiteService;
         let de: DebugElement;
 
         it('should get theme by id', () => {
             fixture = TestBed.createComponent(TestHostFilledComponent);
             de = fixture.debugElement;
             dotThemesService = TestBed.inject(DotThemesService);
+            siteService = TestBed.inject(SiteService);
+            spyOn(siteService, 'getSiteById').and.callThrough();
             fixture.detectChanges();
 
             expect(dotThemesService.get).toHaveBeenCalledOnceWith('123');
+            expect(siteService.getSiteById).toHaveBeenCalledWith('test');
             const selector = de.query(By.css('dot-theme-selector-dropdown')).componentInstance;
             expect(selector.value).toEqual(mockDotThemes[1]);
         });
