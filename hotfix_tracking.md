@@ -74,3 +74,5 @@ This maintenance release includes the following code fixes:
 35. https://github.com/dotCMS/core/issues/18014 : FileTool breaks contentlet rendering if the file/image is not live #18014
 
 36. https://github.com/dotCMS/core/issues/18111 : Copy Workflow results in incorrect next step #18111
+
+37. https://github.com/dotCMS/core/issues/19931	: Automatically delete old ES indices (indexes)
