@@ -86,6 +86,7 @@ import com.dotmarketing.portlets.templates.business.TemplateFactoryImplTest;
 import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
+import com.dotmarketing.portlets.workflows.util.WorkflowEmailUtilTest;
 import com.dotmarketing.quartz.DotStatefulJobTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
@@ -451,7 +452,8 @@ import org.junit.runners.Suite.SuiteClasses;
         MaintenanceUtilTest.class,
         BundlePublisherTest.class,
         CategoryFactoryTest.class,
-        Task210805DropUserProxyTableTest.class
+        Task210805DropUserProxyTableTest.class,
+        WorkflowEmailUtilTest.class
 })
 public class MainSuite {
 

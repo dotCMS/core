@@ -7,15 +7,20 @@ import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_WEBSOCKET_PROTOCOL;
 import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET;
 import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT;
 
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.Mailer;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
@@ -31,7 +36,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.validator.routines.EmailValidator;
 
 /**
  * A utility class that provides the required dotCMS configuration properties to
@@ -272,5 +282,52 @@ public class ConfigurationHelper implements Serializable {
 	  return null;
     }
 
+	/**
+	 * Asynchronous e-mail validation
+	 * the result is communicated via system wide notification to the user
+	 * @param email
+	 * @return
+	 * @throws DotDataValidationException
+	 */
+	public void validateEmail(final String email, final User user)
+			throws ExecutionException, InterruptedException {
+
+		if (!EmailValidator.getInstance().isValid(email)) {
+			throw new IllegalArgumentException(
+					String.format("[%s] is not a valid email.", email));
+		}
+
+		final DotSubmitter dotSubmitter = DotConcurrentFactory.getInstance()
+				.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+				CompletableFuture.runAsync(() -> {
+					final String mailName = "Company configured address.";
+					final Mailer mail = new Mailer();
+					mail.setToName(mailName);
+					mail.setToEmail(email);
+					mail.setFromEmail(email);
+					mail.setFromName(mailName);
+					mail.setSubject("dotCMS Test email.");
+					mail.setHTMLAndTextBody("This email was successfully sent by dotCMS.");
+					final boolean result = mail.sendMessage();
+					systemNotifyTestEmail(user, email, result);
+				}, dotSubmitter);
+	}
+
+	/**
+	 * given the result on the asynchronous operation this doe take care of assembling a text notification
+	 * @param user
+	 * @param email
+	 * @param sendResult
+	 */
+	private void systemNotifyTestEmail(final User user, final String email,
+			final boolean sendResult) {
+		final String languageKey = sendResult ? "email-address-test-sent" : "email-address-test-sent-fail";
+		final String fallbackText = sendResult ? String.format("e-mail successfully sent to %s", email)
+						: String.format("Unable to send e-mail to %s", email);
+		final String message = Try.of(() -> LanguageUtil.get(user.getLocale(), languageKey, email))
+				.getOrElse(fallbackText);
+		final SystemMessageEventUtil systemMessageEventUtil = SystemMessageEventUtil.getInstance();
+		systemMessageEventUtil.pushSimpleTextEvent(message);
+	}
 
 }

@@ -81,6 +81,34 @@
 		return true;
 	}
 
+    function validateEmail() {
+       let emailAddress = dijit.byId("companyEmailAddress").getValue();
+       const data = {
+          "email": emailAddress
+       };
+
+       dojo.xhrPost({
+          url: "/api/v1/configuration/_validateCompanyEmail",
+          handleAs: "json",
+          postData: dojo.toJson(data),
+          headers: {
+             'Accept': 'application/json',
+             'Content-Type': 'application/json;charset=utf-8',
+          },
+          load: function (code) {
+             showDotCMSSystemMessage(`A test e-mail is being sent to ${emailAddress} in the background. You'll receive a notification.`, true);
+          },
+          error: function(error){
+             if(error.response.data){
+                let data = JSON.parse(error.response.data);
+                showDotCMSSystemMessage(data.message, true);
+             } else {
+                showDotCMSSystemMessage(`Unable to validate or send test email to ${emailAddress}. `, true);
+             }
+          }
+       });
+    }
+
 	(function prepareEventListeners() {
 
       setTimeout(() => {
@@ -333,7 +361,14 @@
             </dl>
             <dl>
                <dt><%= LanguageUtil.get(pageContext, "email-address") %></dt>
-               <dd><input dojoType="dijit.form.TextBox" id="companyEmailAddress" name="companyEmailAddress" size="20" type="text" value="<%= company.getEmailAddress() %>" style="width: 250px"></dd>
+               <dd>
+                  <div class="inline-form">
+                     <input dojoType="dijit.form.TextBox" id="companyEmailAddress" name="companyEmailAddress" size="20" type="text" value="<%= company.getEmailAddress() %>" style="width: 250px">
+                     <button id="companyEmailButton" dojoType="dijit.form.Button" type="button" iconClass="saveIcon" onclick="validateEmail()" >
+                        <%= LanguageUtil.get(pageContext, "email-address-validate") %>
+                     </button>
+                  </div>
+               </dd>
             </dl>
             <dl>
                <dt><%= LanguageUtil.get(pageContext, "cluster-id") %></dt>
