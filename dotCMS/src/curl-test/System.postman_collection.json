@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "cf588f1e-77f4-40dc-a0ac-fdf73748f6b9",
+		"_postman_id": "040258c6-4e99-4f42-a9f4-cdf4b6334562",
 		"name": "System",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -224,10 +224,8 @@
 									"",
 									"pm.test(\"System-Status check\", function () {",
 									"",
-									"    pm.expect(jsonData.backendHealthy).to.be.eql(true);",
-									"    pm.expect(jsonData.clusterID).to.not.eql(\"\");",
-									"    pm.expect(jsonData.backendHealthy).to.be.eql(true);",
-									"    pm.expect(jsonData.serverID).to.not.eql(\"\");",
+									"    pm.expect(jsonData.backendHealthy).to.be.eql(true);    ",
+									"    pm.expect(jsonData.frontendHealthy).to.be.eql(true);",
 									"",
 									"    pm.expect(jsonData.subsystems.assetFSHealthy).to.be.eql(true);",
 									"    pm.expect(jsonData.subsystems.cacheHealthy).to.be.eql(true);",
