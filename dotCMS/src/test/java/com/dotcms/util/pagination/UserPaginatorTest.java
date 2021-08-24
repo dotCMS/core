@@ -60,7 +60,7 @@ public class UserPaginatorTest {
         final String filter = "filter";
         final int limit = 5;
         final int offset = 4;
-        final User user = new User();
+        final User user = mock(User.class);
         final long totalRecords = 10;
 
         List<Map> usersMap = new ArrayList<>();
