@@ -56,10 +56,8 @@ public class BundlerUtilTest {
 
         assertTrue(bundleXMLFile.exists());
 
-        PushPublisherConfig readConfig = (PushPublisherConfig) BundlerUtil.xmlToObject(bundleXMLFile);
-        List<PublishQueueElement> bundlerAssets = readConfig.getAssets();
+        final Object bundleXmlObject = BundlerUtil.xmlToObject(bundleXMLFile);
+        assertTrue(PushPublisherConfig.class.isInstance(bundleXmlObject));
 
-        assertEquals(1, bundlerAssets.size());
-        assertEquals(contentType.id(), bundlerAssets.get(0).getAsset());
     }
 }
