@@ -2226,6 +2226,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(task.getId());
 			setTaskDBParams(task, db);
 		} else {
+			task.setId(dbTask.getId());
 			db.setSQL(WorkflowSQL.UPDATE_WORKFLOW_TASK);
 			setTaskDBParams(task, db);
 			db.addParam(task.getId());
