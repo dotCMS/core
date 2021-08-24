@@ -904,7 +904,12 @@ public class SiteResource implements Serializable {
 
         Logger.debug(this, ()->"Updating the site: " + siteIdentifier +
                 ", with: " + newSiteForm);
+
+        //Property need to update the siteName
+        site.setProperty("forceExecution",newSiteForm.isForceExecution());
+
         site.setHostname(newSiteForm.getSiteName());
+
         if (UtilMethods.isSet(newSiteForm.getSiteThumbnail())) {
 
             final Optional<DotTempFile> dotTempFileOpt = tempFileAPI.getTempFile(httpServletRequest, newSiteForm.getSiteThumbnail());

@@ -14,6 +14,7 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
@@ -412,41 +413,47 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
      */
     @Override
     @WrapInTransaction
-    public Host save(Host host, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
-        if(host != null){
-            hostCache.remove(host);
+    public Host save(final Host hostToBeSaved, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+        if(hostToBeSaved != null){
+            hostCache.remove(hostToBeSaved);
         }
 
         Contentlet contentletHost;
         try {
-            contentletHost = APILocator.getContentletAPI().checkout(host.getInode(), user, respectFrontendRoles);
+            contentletHost = APILocator.getContentletAPI().checkout(hostToBeSaved.getInode(), user, respectFrontendRoles);
         } catch (DotContentletStateException e) {
 
             contentletHost = new Contentlet();
             contentletHost.setStructureInode(hostType().inode() );
         }
 
-        contentletHost.getMap().put(Contentlet.DONT_VALIDATE_ME, host.getMap().get(Contentlet.DONT_VALIDATE_ME));
-        APILocator.getContentletAPI().copyProperties(contentletHost, host.getMap());
+        if(null != contentletHost.get(Host.HOST_NAME_KEY) && null != hostToBeSaved.get(Host.HOST_NAME_KEY) &&
+                !contentletHost.get(Host.HOST_NAME_KEY).equals(hostToBeSaved.get(Host.HOST_NAME_KEY)) &&
+                !hostToBeSaved.getBoolProperty("forceExecution")){
+            throw new BadRequestException("Updating the hostName is a Dangerous Execution, to achieve this 'forceExecution': true property needs to be sent.");
+        }
+
+        contentletHost.getMap().put(Contentlet.DONT_VALIDATE_ME, hostToBeSaved.getMap().get(Contentlet.DONT_VALIDATE_ME));
+        APILocator.getContentletAPI().copyProperties(contentletHost, hostToBeSaved.getMap());
         contentletHost.setInode("");
-        contentletHost.setIndexPolicy(host.getIndexPolicy());
+        contentletHost.setIndexPolicy(hostToBeSaved.getIndexPolicy());
         contentletHost.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
         contentletHost = APILocator.getContentletAPI().checkin(contentletHost, user, respectFrontendRoles);
 
-        if (null != contentletHost.get("hostName") && null != host.get(Host.HOST_NAME_KEY) &&
-                !contentletHost.isNew() && !contentletHost.getTitle().equals(host.get(Host.HOST_NAME_KEY))) {
+        if (null != contentletHost.get(Host.HOST_NAME_KEY) && null != hostToBeSaved.get(Host.HOST_NAME_KEY) &&
+                !contentletHost.isNew() && !contentletHost.getTitle().equals(hostToBeSaved.get(Host.HOST_NAME_KEY))) {
 
             UpdateContainersPathsJob.triggerUpdateContainersPathsJob(
-                    host.get(Host.HOST_NAME_KEY).toString(),
-                    (String) contentletHost.get("hostName")
+                    hostToBeSaved.get(Host.HOST_NAME_KEY).toString(),
+                    (String) contentletHost.get(Host.HOST_NAME_KEY)
             );
             UpdatePageTemplatePathJob.triggerUpdatePageTemplatePathJob(
-                    host.get(Host.HOST_NAME_KEY).toString(),
-                    (String) contentletHost.get("hostName")
+                    hostToBeSaved.get(Host.HOST_NAME_KEY).toString(),
+                    (String) contentletHost.get(Host.HOST_NAME_KEY)
             );
         }
 
-        if(host.isWorking() || host.isLive()){
+        if(hostToBeSaved.isWorking() || hostToBeSaved.isLive()){
             APILocator.getVersionableAPI().setLive(contentletHost);
         }
         Host savedHost =  new Host(contentletHost);
