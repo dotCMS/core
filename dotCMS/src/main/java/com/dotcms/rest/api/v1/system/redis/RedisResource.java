@@ -254,7 +254,7 @@ public class RedisResource {
 
     @VisibleForTesting
     @NoCache
-    @GET
+    @PUT
     @Path("/test-subscribe/{channel}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response testSubscribe(@Context final HttpServletRequest request,
@@ -300,7 +300,7 @@ public class RedisResource {
     @VisibleForTesting
     @NoCache
     @PUT
-    @Path("/test-subscribe/{channel}")
+    @Path("/test-unsubscribe/{channel}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response testUnSubscribe(@Context final HttpServletRequest request,
                                   @Context final HttpServletResponse response,
