@@ -217,3 +217,5 @@ This maintenance release includes the following code fixes:
 106. https://github.com/dotCMS/core/issues/19192 : ARM support in dotCMS
 
 107. https://github.com/dotCMS/core/issues/18111 : Copy Workflow results in incorrect next step
+
+108. https://github.com/dotCMS/core/issues/18014 : FileTool breaks contentlet rendering if the file/image is not live

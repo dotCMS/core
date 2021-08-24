@@ -1,20 +1,21 @@
 package com.dotcms.rendering.velocity.viewtools;
+
+import org.apache.velocity.tools.view.tools.ViewTool;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.UserAPI;
-
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
-
-import org.apache.velocity.tools.view.tools.ViewTool;
+import com.liferay.util.StringPool;
 
 public class FileTool implements ViewTool {
 
@@ -26,16 +27,43 @@ public class FileTool implements ViewTool {
 
 	}
 
-	public IFileAsset getFile(String identifier, boolean live) throws DotStateException, DotDataException, DotSecurityException{
+	public Contentlet getFile(String identifier, boolean live) throws DotStateException, DotDataException, DotSecurityException{
 		return getFile(identifier, live, languageAPI.getDefaultLanguage().getId());
 	}
 
-	public IFileAsset getFile(String identifier, boolean live, long languageId) throws DotDataException, DotStateException, DotSecurityException{
+	public Contentlet getFile(String identifier, boolean live, long languageId) throws DotDataException, DotStateException, DotSecurityException{
+		final String conInode = getContentInode(identifier, live, languageId);
+		Contentlet contentlet = APILocator.getContentletAPI().find(conInode,  userAPI.getSystemUser(), false);
+		if(contentlet==null) {
+		    return null;
+		}
+		if(contentlet.isFileAsset()) {
+		    return  APILocator.getFileAssetAPI().fromContentlet(contentlet);
+		}
+
+	    return contentlet;
+	}
+
+	private String  getContentInode(String identifier, boolean live, long languageId)
+			throws DotDataException {
 		Identifier id = identifierAPI.find(identifier);
-		ContentletVersionInfo  cvi = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(), languageId);
-	    String conInode = (!live) ? cvi.getWorkingInode() : cvi.getLiveInode();
-	    FileAsset file  = APILocator.getFileAssetAPI().fromContentlet(APILocator.getContentletAPI().find(conInode,  userAPI.getSystemUser(), false));
-	    return file;
+		ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(),
+				languageId);
+
+		if (null == cvi || !UtilMethods.isSet(cvi.getIdentifier())) {
+			throw new DotDataException("Can't find Content-version-info. Identifier: " + id.getId() + ". Lang:" + languageId);
+		}
+		String conInode = !live ? cvi.getWorkingInode() : cvi.getLiveInode();
+		return conInode;
+	}
+
+	public Contentlet getFileAsContentlet(String identifier, boolean live, long languageId) throws DotDataException, DotStateException, DotSecurityException{
+		try {
+		    return getFile(identifier, live, languageId);
+		} catch(DotStateException e) {
+			final String conInode = getContentInode(identifier, live, languageId);
+			return APILocator.getContentletAPI().find(conInode, userAPI.getSystemUser(), false);
+		}
 	}
 
 	public String getURI(FileAsset file){
@@ -52,6 +80,19 @@ public class FileTool implements ViewTool {
 		}
 	}
 	
+	public String getURI(final Contentlet contentlet, long languageId){
+		String uri = StringPool.BLANK;
+
+		if (contentlet instanceof FileAsset) {
+			uri = getURI((FileAsset) contentlet, languageId);
+		} else if (contentlet.isDotAsset()){
+			uri = UtilMethods.espaceForVelocity(
+					String.format("dA/%s", contentlet.getIdentifier())
+			);
+		}
+		return uri;
+	}
+
 	public IFileAsset getNewFile(){
 	    return new FileAsset(); 
 	}
