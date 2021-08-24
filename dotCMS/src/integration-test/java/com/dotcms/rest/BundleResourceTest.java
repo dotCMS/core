@@ -8,6 +8,8 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.SystemEventsFactory;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -31,6 +33,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import io.vavr.control.Try;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -246,10 +249,21 @@ public class BundleResourceTest {
             bundleIds.add(bundleId);
         }
 
+        final long currentTime = System.currentTimeMillis();
         final Response responseResource = bundleResource.deleteAll(getHttpRequest(),response);
         assertEquals(200, responseResource.getStatus());
 
-        for (String bundleId : bundleIds) {
+        for(int i=0; i<18; i++) { // max 3 min
+            if(SystemEventsFactory.getInstance().getSystemEventsAPI()
+                    .getEventsSince(currentTime).stream().anyMatch(systemEvent ->
+                            SystemEventType.DELETE_BUNDLE==systemEvent.getEventType()
+                    && systemEvent.getPayload().getData().toString().contains("Bundles successfully deleted"))) {
+                break;
+            }
+            Try.run(()->Thread.sleep(10000));
+        }
+
+        for (final String bundleId : bundleIds) {
             assertNull(APILocator.getBundleAPI().getBundleById(bundleId));
         }
     }
