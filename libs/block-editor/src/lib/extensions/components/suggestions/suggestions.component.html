@@ -1,5 +1,14 @@
+<h3>{{title}}</h3>
+
 <dotcms-suggestion-list #list>
-    <dotcms-suggestions-list-item>Option 1</dotcms-suggestions-list-item>
-    <dotcms-suggestions-list-item>Option 2</dotcms-suggestions-list-item>
-    <dotcms-suggestions-list-item>Option 3</dotcms-suggestions-list-item>
+    <dotcms-suggestions-list-item
+        *ngFor="let item of items; let i = index"
+        (mousedown)="onMouseDown($event, item)"
+        (mouseenter)="onMouseEnter($event)"
+        [command]="item.command"
+        [index]="i"
+        [label]="item.label"
+        [url]="item.icon"
+    >
+    </dotcms-suggestions-list-item>
 </dotcms-suggestion-list>

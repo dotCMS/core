@@ -1,1 +1,9 @@
-<ng-content></ng-content>
+<div class="icon-wrapper">
+    <i class="material-icons" *ngIf="icon; else thumbnail">{{ url }}</i>
+
+    <ng-template #thumbnail>
+        <img [src]="url" alt="" />
+    </ng-template>
+</div>
+
+<span>{{ label }}</span>

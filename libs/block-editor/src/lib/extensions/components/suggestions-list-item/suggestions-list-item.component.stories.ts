@@ -14,10 +14,35 @@ export default {
     component: SuggestionsListItemComponent
 };
 
-
-export const Default: Story<SuggestionsListItemComponent> = (args) => ({
-    props: args,
+export const Icon: Story<SuggestionsListItemComponent> = (args) => ({
+    props: {
+        ...args,
+        item: iconItem
+    },
     template: `
-        <dotcms-suggestions-list-item>Option 1</dotcms-suggestions-list-item>
-    `,
+        <dotcms-suggestions-list-item [item]='item'></dotcms-suggestions-list-item>
+    `
 });
+
+export const Image: Story<SuggestionsListItemComponent> = (args) => ({
+    props: {
+        ...args,
+        item: imageItem
+    },
+    template: `
+        <dotcms-suggestions-list-item [item]='item'></dotcms-suggestions-list-item>
+    `
+});
+
+// Test Data
+const iconItem:any = {
+    title: 'An Icon',
+    type: 'icon',
+    icon: '+'
+}
+
+const imageItem:any = {
+    title: 'Landscape',
+    type: 'image',
+    url: 'https://images.unsplash.com/photo-1508162942367-e4dd4cd67513?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=1100&q=80'
+}

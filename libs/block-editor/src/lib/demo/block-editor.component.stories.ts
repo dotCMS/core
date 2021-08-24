@@ -37,22 +37,28 @@ export const primary = () => ({
                     getContentTypes() {
                         return of([
                             {
-                                name: 'Blog'
+                                name: 'Blog',
+                                icon: 'article'
                             },
                             {
-                                name: 'Persona'
+                                name: 'Persona',
+                                icon: 'face'
                             },
                             {
-                                name: 'News Item'
+                                name: 'News Item',
+                                icon: 'mic'
                             },
                             {
-                                name: 'Banner'
+                                name: 'Banner',
+                                icon: 'view_carousel'
                             },
                             {
-                                name: 'Product in the store'
+                                name: 'Product in the store',
+                                icon: 'inventory_2',
                             },
                             {
-                                name: 'Reatil information'
+                                name: 'Reatil information',
+                                icon: 'storefront'
                             }
                         ]);
                     },

@@ -1,3 +1,15 @@
 :host {
     display: block;
 }
+
+button {
+    all: unset;
+    cursor: pointer;
+    border: solid 1px #eee;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+}

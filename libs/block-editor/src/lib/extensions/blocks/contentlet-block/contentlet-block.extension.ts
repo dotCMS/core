@@ -32,17 +32,14 @@ export const ContentletBlock = (injector: Injector): Node<ContentletBlockOptions
         },
 
         parseHTML(): ParseRule[] {
-            console.log('parseHTML');
             return [{ tag: 'dotcms-contentlet-block' }];
         },
 
         renderHTML({ HTMLAttributes }): DOMOutputSpec {
-            console.log('renderHTML');
             return ['dotcms-contentlet-block', mergeAttributes(HTMLAttributes)];
         },
 
         addNodeView(): NodeViewRenderer {
-            console.log('addNodeView');
             return AngularNodeViewRenderer(ContentletBlockComponent, { injector });
         }
     });

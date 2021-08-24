@@ -1,71 +1,106 @@
 import { Editor, posToDOMRect, Range } from '@tiptap/core';
-import { EditorState, Plugin, PluginKey } from 'prosemirror-state';
+import { EditorState, Plugin, PluginKey, Transaction } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import tippy, { Instance, Props } from 'tippy.js';
+import { SuggestionsCommandProps } from '../extensions/components/suggestions/suggestions.component';
+
+interface PluginState {
+    open: boolean;
+}
+
 export interface FloatingActionsPluginProps {
     editor: Editor;
     element: HTMLElement;
     tippyOptions?: Partial<Props>;
-    on: {
-        command: (props: { rect: DOMRect, range: Range, editor: Editor }) => void;
-        keydown: (view: EditorView, event: KeyboardEvent) => void;
-    }
-
+    render?: () => FloatingRenderActions;
+    command: ({
+        editor,
+        range,
+        props
+    }: {
+        editor: Editor;
+        range: Range;
+        props: SuggestionsCommandProps;
+    }) => void;
 }
 
 export type FloatingActionsViewProps = FloatingActionsPluginProps & {
     view: EditorView;
+    key: PluginKey;
 };
 
+export interface FloatingActionsProps {
+    range: Range;
+    editor: Editor;
+    command: (props: { editor: Editor; range: Range; props: SuggestionsCommandProps }) => void;
+    clientRect: (() => DOMRect) | null;
+}
+
+export interface FloatingActionsKeydownProps {
+    view: EditorView;
+    event: KeyboardEvent;
+    range: Range;
+}
+
+export interface FloatingRenderActions {
+    onStart?: (props: FloatingActionsProps) => void;
+    onExit?: (props: FloatingActionsProps) => void;
+    onKeyDown?: (props: FloatingActionsKeydownProps) => boolean;
+}
+
+export const FLOATING_ACTIONS_MENU_KEYBOARD = 'menuFloating';
+
 export class FloatingActionsView {
-    public editor: Editor;
+    editor: Editor;
+    element: HTMLElement;
+    view: EditorView;
+    tippy!: Instance;
+    render: () => FloatingRenderActions;
+    command: (props: { editor: Editor; range: Range; props: SuggestionsCommandProps }) => void;
+    key: PluginKey;
 
-    public element: HTMLElement;
-
-    public view: EditorView;
-
-    public preventHide = false;
-
-    public tippy!: Instance;
-
-    public command: (props: { rect: DOMRect, range: Range, editor: Editor }) => void;
-
-    constructor({ editor, element, view, tippyOptions, on: { command } }: FloatingActionsViewProps) {
-        console.log('constructor');
+    constructor({
+        editor,
+        element,
+        view,
+        tippyOptions,
+        render,
+        command,
+        key
+    }: FloatingActionsViewProps) {
         this.editor = editor;
         this.element = element;
         this.view = view;
         this.element.addEventListener('mousedown', this.mousedownHandler, { capture: true });
-        this.editor.on('focus', this.focusHandler);
-        this.editor.on('blur', this.blurHandler);
-        this.createTooltip(tippyOptions);
         this.element.style.visibility = 'visible';
+        this.render = render;
         this.command = command;
+        this.key = key;
+        this.createTooltip(tippyOptions);
     }
 
-    mousedownHandler = () => {
-        console.log('mousedownHandler');
-        this.preventHide = true;
+    /**
+     * Element mousedown handler to update the plugin state and open
+     *
+     * @param {MouseEvent} e
+     * @memberof FloatingActionsView
+     */
+    mousedownHandler = (e: MouseEvent): void => {
+        e.preventDefault();
 
-        const { selection } = this.editor.state;
-        const { from, to } = selection;
-        const rect = posToDOMRect(this.view, from, to);
-        this.command({ rect, range: { from, to }, editor: this.editor });
+        const transaction = this.editor.state.tr.setMeta(FLOATING_ACTIONS_MENU_KEYBOARD, {
+            open: true
+        });
+        this.editor.view.dispatch(transaction);
     };
 
-    focusHandler = () => {
-        console.log('focusHandler');
-        // we use `setTimeout` to make sure `selection` is already updated
-        setTimeout(() => this.update(this.editor.view));
-    };
-
-    blurHandler = () => {
-        console.log('blurHandler');
-        this.view.focus()
-    };
-
-
-    createTooltip(options: Partial<Props> = {}) {
+    /**
+     * Create the tooltip for the element
+     *
+     * @param {Partial<Props>} [options={}]
+     * @memberof FloatingActionsView
+     */
+    createTooltip(options: Partial<Props> = {}): void {
         this.tippy = tippy(this.view.dom, {
             duration: 0,
             getReferenceClientRect: null,
@@ -78,15 +113,16 @@ export class FloatingActionsView {
         });
     }
 
-    update(view: EditorView, oldState?: EditorState) {
-        const { state, composing } = view;
-        const { doc, selection } = state;
-        const isSame = oldState && oldState.doc.eq(doc) && oldState.selection.eq(selection);
-
-        if (composing || isSame) {
-            return;
-        }
-
+    /**
+     * Check the EditorState and based on that modify the DOM
+     *
+     * @param {EditorView} view
+     * @param {EditorState} prevState
+     * @return {*}  {void}
+     * @memberof FloatingActionsView
+     */
+    update(view: EditorView, prevState: EditorState): void {
+        const { selection } = view.state;
         const { $anchor, empty, from, to } = selection;
         const isRootDepth = $anchor.depth === 1;
         const isNodeEmpty =
@@ -104,6 +140,23 @@ export class FloatingActionsView {
         });
 
         this.show();
+
+        const next = this.key?.getState(view.state);
+        const prev = this.key?.getState(prevState);
+
+        if (next.open) {
+            const { from, to } = this.editor.state.selection;
+            const rect = posToDOMRect(this.view, from, to);
+
+            this.render().onStart({
+                clientRect: () => rect,
+                range: { from, to },
+                editor: this.editor,
+                command: this.command
+            });
+        } else if (prev.open) {
+            this.render().onExit(null);
+        }
     }
 
     show() {
@@ -117,23 +170,62 @@ export class FloatingActionsView {
     destroy() {
         this.tippy.destroy();
         this.element.removeEventListener('mousedown', this.mousedownHandler);
-        this.editor.off('focus', this.focusHandler);
     }
 }
 
-export const FloatingActionsPluginKey = new PluginKey('menuFloating');
+export const FloatingActionsPluginKey = new PluginKey(FLOATING_ACTIONS_MENU_KEYBOARD);
 
 export const FloatingActionsPlugin = (options: FloatingActionsPluginProps) => {
     return new Plugin({
         key: FloatingActionsPluginKey,
-        view: (view) => new FloatingActionsView({ view, ...options }),
-        props: {
-            handleKeyDown(view: EditorView, event: KeyboardEvent) {
-                console.log('handleKeyDown')
-                options.on.keydown(view, event);
-
-                return false
+        view: (view) =>
+            new FloatingActionsView({ key: FloatingActionsPluginKey, view, ...options }),
+        state: {
+            /**
+             * Init the plugin state
+             *
+             * @return {*}  {PluginState}
+             */
+            init(): PluginState {
+                return {
+                    open: false
+                };
             },
+            /**
+             * Update the plugin state base on meta information
+             *
+             * @param {Transaction} transaction
+             * @return {*}  {PluginState}
+             */
+            apply(transaction: Transaction): PluginState {
+                const transactionMeta = transaction.getMeta(FLOATING_ACTIONS_MENU_KEYBOARD);
+
+                if (transactionMeta?.open) {
+                    return {
+                        open: transactionMeta?.open
+                    };
+                }
+
+                return {
+                    open: false
+                };
+            }
+        },
+        props: {
+            /**
+             * Catch and handle the keydown in the plugin
+             *
+             * @param {EditorView} view
+             * @param {KeyboardEvent} event
+             * @return {*}
+             */
+            handleKeyDown(view: EditorView, event: KeyboardEvent) {
+                const { open, range } = this.getState(view.state);
+                if (!open) {
+                    return false;
+                }
+                return options.render().onKeyDown({ event, range, view });
+            }
         }
     });
 };
