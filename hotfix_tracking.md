@@ -213,3 +213,5 @@ This maintenance release includes the following code fixes:
 104. https://github.com/dotCMS/core/issues/19651 : Allow TinyMCE props to be set system wide
 
 105. https://github.com/dotCMS/core/issues/19215 : Add the option to show fields in a relationship field's overview
+
+106. https://github.com/dotCMS/core/issues/19192 : ARM support in dotCMS
