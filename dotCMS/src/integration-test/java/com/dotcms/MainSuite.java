@@ -34,6 +34,7 @@ import com.dotcms.publisher.business.PublishAuditAPITest;
 import com.dotcms.publisher.receiver.BundlePublisherTest;
 import com.dotcms.publisher.util.DependencyManagerTest;
 import com.dotcms.publisher.util.DependencyModDateUtilTest;
+import com.dotcms.publishing.BundlerUtilTest;
 import com.dotcms.publishing.PublisherAPIImplTest;
 import com.dotcms.publishing.PublisherFilterImplTest;
 import com.dotcms.publishing.PushPublishFiltersInitializerTest;
@@ -451,7 +452,8 @@ import org.junit.runners.Suite.SuiteClasses;
         MaintenanceUtilTest.class,
         BundlePublisherTest.class,
         CategoryFactoryTest.class,
-        Task210805DropUserProxyTableTest.class
+        Task210805DropUserProxyTableTest.class,
+        BundlerUtilTest.class
 })
 public class MainSuite {
 
