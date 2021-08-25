@@ -219,3 +219,5 @@ This maintenance release includes the following code fixes:
 107. https://github.com/dotCMS/core/issues/18111 : Copy Workflow results in incorrect next step
 
 108. https://github.com/dotCMS/core/issues/18014 : FileTool breaks contentlet rendering if the file/image is not live
+
+109. https://github.com/dotCMS/core/issues/20764 : [GraphQL] : Additional logging for GraphQL schema generation
