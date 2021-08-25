@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.structure.model;
 
+import com.dotcms.contenttype.model.field.layout.FieldLayoutSerializer;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.util.CollectionsUtils;
@@ -7,6 +8,8 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.WebKeys;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,11 +24,12 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
  * @author David
  *
  */
+@JsonSerialize(using = ContentletRelationshipsSerializer.class)
 public class ContentletRelationships 
 {
 	
 	private static final long serialVersionUID = 1L;
-	
+
 	private Contentlet contentlet;
 	private List<ContentletRelationshipRecords> relationshipsRecords;
 	
@@ -39,7 +43,7 @@ public class ContentletRelationships
 		this.contentlet = contentlet;
 		this.relationshipsRecords = relationshipsRecords;
 	}
-	
+
 	
 	/**
 	 * @param contentlet

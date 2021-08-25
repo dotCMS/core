@@ -2,7 +2,6 @@ package com.dotcms.rest.api.v1.maintenance;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.text.NumberFormat;
@@ -34,8 +33,9 @@ import io.vavr.control.Try;
 @SuppressWarnings("serial")
 public class JVMInfoResource implements Serializable {
 
-    final Pattern obfuscatePattern = Pattern.compile(Config.getStringProperty("OBFUSCATE_SYSTEM_ENVIRONMENTAL_VARIABLES", "/passw|pass|secret|key|pwd/gi"),Pattern.CASE_INSENSITIVE);
-
+    final Pattern obfuscatePattern = Pattern.compile(
+            Config.getStringProperty("OBFUSCATE_SYSTEM_ENVIRONMENTAL_VARIABLES", "passw|pass|passwd|secret|key|token"),
+            Pattern.CASE_INSENSITIVE);
 
     @Path("/")
     @GET
