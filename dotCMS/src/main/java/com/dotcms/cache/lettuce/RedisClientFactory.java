@@ -1,5 +1,7 @@
 package com.dotcms.cache.lettuce;
 
+import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import io.lettuce.core.codec.RedisCodec;
 import io.vavr.control.Try;
@@ -50,7 +52,8 @@ public class RedisClientFactory {
                             MasterReplicaLettuceClient.class.getCanonicalName());
 
                     redisClient = Try.of(() -> (RedisClient) RedisClient.class.forName(clazz).newInstance())
-                            .getOrElse(new MasterReplicaLettuceClient<>(codec));
+                            .getOrElse(new MasterReplicaLettuceClient<>(codec,
+                                    APILocator.getShortyAPI().shortify(ClusterFactory.getClusterId())));
                     clientMap.put(name, redisClient);
                 }
             }

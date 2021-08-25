@@ -1,9 +1,6 @@
 package com.dotcms.cache.lettuce;
 
-import com.dotmarketing.util.Config;
 import io.lettuce.core.api.StatefulConnection;
-import io.lettuce.core.api.StatefulRedisConnection;
-import io.vavr.control.Try;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 
 import java.util.Collection;
@@ -15,6 +12,17 @@ import java.util.function.Consumer;
 
 /**
  * Redis client
+ * This client does:
+ * - ping
+ * - echo
+ * - set
+ * - get
+ * - delete
+ * - flush
+ * - scan keys
+ * - handle hashes
+ * - atomic integer
+ * - pub and sub.
  * @param <K>
  * @param <V>
  */
