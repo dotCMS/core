@@ -221,3 +221,5 @@ This maintenance release includes the following code fixes:
 108. https://github.com/dotCMS/core/issues/18014 : FileTool breaks contentlet rendering if the file/image is not live
 
 109. https://github.com/dotCMS/core/issues/20764 : [GraphQL] : Additional logging for GraphQL schema generation
+
+110. https://github.com/dotCMS/core/issues/20766 : Incorrect date parsing when creating bundle
