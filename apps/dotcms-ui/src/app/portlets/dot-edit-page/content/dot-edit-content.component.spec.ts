@@ -1,5 +1,5 @@
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { of as observableOf, of } from 'rxjs';
+import { of as observableOf, of, throwError } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
@@ -82,6 +82,7 @@ import { DotPageContainer } from '@models/dot-page-container/dot-page-container.
 import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
 import { DotContentTypeService } from '@services/dot-content-type';
 import { DotContentPaletteModule } from '@portlets/dot-edit-page/components/dot-content-palette/dot-content-palette.module';
+import { HttpErrorResponse } from '@angular/common/http';
 
 const responseData: DotCMSContentType[] = [
     {
@@ -304,10 +305,13 @@ describe('DotEditContentComponent', () => {
         spyOn(dotEditContentHtmlService, 'renderAddedForm').and.returnValue(
             of([{ identifier: '123', uuid: 'uui-1' }])
         );
-        spyOn<any>(dotEditPageService, 'save').and.returnValue(of({}));
     });
 
     describe('elements', () => {
+        beforeEach(() => {
+            spyOn<any>(dotEditPageService, 'save').and.returnValue(of({}));
+        });
+
         describe('dot-form-selector', () => {
             let dotFormSelector: DebugElement;
 
@@ -1136,6 +1140,32 @@ describe('DotEditContentComponent', () => {
                 expect<any>(dotEditPageService.save).toHaveBeenCalledWith('123', [
                     { identifier: '123', uuid: 'uui-1', personaTag: 'SuperPersona' }
                 ]);
+            });
+        });
+    });
+
+    describe('errors', () => {
+        let httpErrorManagerService: DotHttpErrorManagerService;
+        beforeEach(() => {
+            httpErrorManagerService = de.injector.get(DotHttpErrorManagerService);
+        });
+
+        describe('iframe events', () => {
+            it('should handle error message add reload content', () => {
+                const errorResponse = { error: { message: 'error' } } as HttpErrorResponse;
+                spyOn(dotEditPageService, 'save').and.returnValue(throwError(errorResponse));
+                spyOn(dotPageStateService, 'updatePageStateHaveContent');
+                spyOn(httpErrorManagerService, 'handle');
+
+                fixture.detectChanges();
+
+                dotEditContentHtmlService.pageModel$.next({
+                    model: [{ identifier: 'test', uuid: '111' }],
+                    type: 1
+                });
+
+                expect(httpErrorManagerService.handle).toHaveBeenCalledOnceWith(errorResponse);
+                expect(dotPageStateService.reload).toHaveBeenCalledTimes(1);
             });
         });
     });

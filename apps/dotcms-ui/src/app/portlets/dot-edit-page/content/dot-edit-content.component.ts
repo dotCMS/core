@@ -1,6 +1,6 @@
-import { Observable, Subject, fromEvent, merge } from 'rxjs';
+import { Observable, Subject, fromEvent, merge, of } from 'rxjs';
 
-import { filter, takeUntil, pluck, take, tap, skip } from 'rxjs/operators';
+import { filter, takeUntil, pluck, take, tap, skip, catchError } from 'rxjs/operators';
 import { ActivatedRoute } from '@angular/router';
 import {
     Component,
@@ -43,6 +43,8 @@ import { IframeOverlayService } from '@components/_common/iframe/service/iframe-
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotContentTypeService } from '@services/dot-content-type';
 import { animate, style, transition, trigger } from '@angular/animations';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { HttpErrorResponse } from '@angular/common/http';
 
 /**
  * Edit content page component, render the html of a page and bind all events to make it ediable.
@@ -104,7 +106,8 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         public dotEditContentHtmlService: DotEditContentHtmlService,
         public dotLoadingIndicatorService: DotLoadingIndicatorService,
         public sanitizer: DomSanitizer,
-        public iframeOverlayService: IframeOverlayService
+        public iframeOverlayService: IframeOverlayService,
+        private httpErrorManagerService: DotHttpErrorManagerService
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
@@ -275,7 +278,11 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
     private saveContent(event: PageModelChangeEvent): void {
         this.saveToPage(event.model)
-            .pipe(filter(() => this.shouldReload(event.type)))
+            .pipe(
+                filter((message: string) => {
+                    return this.shouldReload(event.type) || message === 'error';
+                })
+            )
             .subscribe(() => {
                 this.reload(null);
             });
@@ -300,6 +307,10 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                     this.dotGlobalMessageService.success(
                         this.dotMessageService.get('dot.common.message.saved')
                     );
+                }),
+                catchError((error: HttpErrorResponse) => {
+                    this.httpErrorManagerService.handle(error);
+                    return of('error');
                 })
             );
     }
