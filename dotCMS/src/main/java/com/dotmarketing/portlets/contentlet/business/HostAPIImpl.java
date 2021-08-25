@@ -430,7 +430,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         if(null != contentletHost.get(Host.HOST_NAME_KEY) && null != hostToBeSaved.get(Host.HOST_NAME_KEY) &&
                 !contentletHost.get(Host.HOST_NAME_KEY).equals(hostToBeSaved.get(Host.HOST_NAME_KEY)) &&
                 !hostToBeSaved.getBoolProperty("forceExecution")){
-            throw new BadRequestException("Updating the hostName is a Dangerous Execution, to achieve this 'forceExecution': true property needs to be sent.");
+            throw new IllegalArgumentException("Updating the hostName is a Dangerous Execution, to achieve this 'forceExecution': true property needs to be sent.");
         }
 
         contentletHost.getMap().put(Contentlet.DONT_VALIDATE_ME, hostToBeSaved.getMap().get(Contentlet.DONT_VALIDATE_ME));
