@@ -72,6 +72,8 @@ public class UserPaginator implements PaginatorOrdered<Map<String, Object>> {
             Collections.singletonList(roleAPI.loadBackEndUserRole());
             final List<String> rolesId = collectAdminRolesIfAny();
             final List<User> users = userAPI.getUsersByName(filter, roles ,offset, limit);
+            //removes user making the request from the list
+            users.remove(user);
             final List<Map<String, Object>> usersMap = users.stream()
                     .map(userItem -> getUserObjectMap(rolesId, userItem))
                     .collect(Collectors.toList());
