@@ -463,12 +463,6 @@ dependencies {
 
     compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.2'
 
-    compile group: 'org.apache.xmlgraphics', name: 'batik-rasterizer', version:'1.10'
-    compile group: 'org.apache.xmlgraphics', name: 'batik-codec', version:'1.10'
-    compile (group: 'org.apache.xmlgraphics', name: 'xmlgraphics-commons', version:'1.5') {
-        exclude(group: 'commons-logging')
-    }
-
     compile group: 'javax.websocket', name: 'javax.websocket-api', version:'1.1'
 
     compileOnly "org.immutables:value:2.3.3:annotations"
