@@ -161,8 +161,7 @@
 									"pm.test(\"Status code should be 200\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});",
-									"",
-									"var jsonData = pm.response.json();"
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -295,9 +294,7 @@
 								"exec": [
 									"pm.test(\"Status code should be 200\", function () {",
 									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"var jsonData = pm.response.json();"
+									"});"
 								],
 								"type": "text/javascript"
 							}
