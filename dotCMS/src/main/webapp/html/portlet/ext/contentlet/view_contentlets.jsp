@@ -31,6 +31,10 @@
 
     List<Structure> structures = new StructureTransformer(contentTypes).asStructureList();
 
+    
+    boolean onlyOneType=structures.size()==1;
+    
+    
     List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketing.util.WebKeys.LANGUAGES);
 
     java.util.Map params = new java.util.HashMap();
@@ -624,18 +628,24 @@
 
                 <!-- START Advanced Search-->
                 <div id="advancedSearch">
+                
+                
+                    
+                
+                
+               
                     <dl class="vertical">
-                        <dt><label><%=LanguageUtil.get(pageContext, "Type") %>:</label></dt>
-                        <dd><span id="structSelectBox"></span></dd>
+                        <dd><input type="text" dojoType="dijit.form.TextBox" tabindex="1" placeholder="<%= LanguageUtil.get(pageContext, "Search") %>" onKeyUp='doSearch()' name="allFieldTB" id="allFieldTB" value="<%=_allValue %>"></dd>
                         <div class="clear"></div>
-
-                        <dt><label><%= LanguageUtil.get(pageContext, "Search") %>:</label></dt>
-                        <dd><input type="text" dojoType="dijit.form.TextBox" tabindex="1" onKeyUp='doSearch()' name="allFieldTB" id="allFieldTB" value="<%=_allValue %>"></dd>
-                        <div class="clear"></div>
-
-
+                       <%if(onlyOneType){ %>
+                           <input type="hidden" name="structure_inode_select" value="<%=structures.get(0).getInode()%>"/>
+                       <%} else {%>
+                           <dt><label><%=LanguageUtil.get(pageContext, "Type") %>:</label></dt>
+                           <dd><span id="structSelectBox"></span></dd>
+                           <div class="clear"></div>
+                       <%} %>
                     </dl>
-
+               
                     <div id="advancedSearchOptions" style="height:0px;overflow: hidden">
 
                         <dl class="vertical">
