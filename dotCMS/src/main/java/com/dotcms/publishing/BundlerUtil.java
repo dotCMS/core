@@ -3,6 +3,7 @@ package com.dotcms.publishing;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publishing.output.BundleOutput;
+import com.dotcms.publishing.output.TarGzipBundleOutput;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
@@ -95,7 +96,7 @@ public class BundlerUtil {
 		final String bundleXmlFilePath = File.separator + "bundle.xml";
 
 		try (final OutputStream outputStream = output.addFile(bundleXmlFilePath)) {
-            objectToXML(config, outputStream);
+            objectToXML(config.getMap(), outputStream);
         } catch ( IOException e ) {
             Logger.error( BundlerUtil.class, e.getMessage(), e );
         }
@@ -369,6 +370,11 @@ public class BundlerUtil {
             bundleName = bundleName.substring(indexOfSeparator + 1);
             return bundleName;
         }
+    }
+
+    public static boolean tarGzipExists(final String bundleId) {
+        final File bundleTarGzip = TarGzipBundleOutput.getBundleTarGzipFile(bundleId);
+        return bundleTarGzip.exists();
     }
 
 }

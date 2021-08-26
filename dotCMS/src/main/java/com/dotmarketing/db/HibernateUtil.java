@@ -654,11 +654,6 @@ public class HibernateUtil {
 				cfg.addResource("com/dotmarketing/beans/DotCMSSeq_NOSQLGEN.hbm.xml");
 				getPluginsHBM("Seq",cfg);
 				cfg.setProperty("hibernate.dialect", "com.dotcms.repackage.net.sf.hibernate.dialect.OracleDialect");
-			} else if (DbConnectionFactory.isH2()) {
-			    cfg.addResource("com/dotmarketing/beans/DotCMSId.hbm.xml");
-                cfg.addResource("com/dotmarketing/beans/DotCMSId_NOSQLGEN.hbm.xml");
-                getPluginsHBM("Id",cfg);
-                cfg.setProperty("hibernate.dialect", "com.dotcms.repackage.net.sf.hibernate.dialect.HSQLDialect");
 			}
 
 			cfg.setInterceptor(new NoDirtyFlushInterceptor());
@@ -723,6 +718,46 @@ public class HibernateUtil {
 			buildSessionFactory();
 		}
 		return Optional.ofNullable(sessionHolder.get());
+	}
+
+	/**
+	 * Creates a new Hibernate Session based on the conn on the parameter
+	 * Also
+	 * @param newTransactionConnection  {@link Connection}
+	 * @return Session
+	 */
+	public static Session createNewSession(final Connection newTransactionConnection) {
+
+		try{
+
+			// just to create the initial if are not set
+			getSessionIfOpened();
+			final Session session = sessionFactory.openSession(newTransactionConnection);
+			if(null != session){
+				session.setFlushMode(FlushMode.NEVER);
+			}
+			return session;
+		}catch (Exception e) {
+			throw new DotStateException("Unable to get Hibernate Session ", e);
+		}
+	}
+
+	/**
+	 * Set a session on the parameter as the new session to use on all next hibernate calls
+	 * @param newSession
+	 */
+	public static void setSession(final Session newSession) {
+
+		try {
+			if (null != newSession && null != newSession.connection()
+					&& !newSession.connection().isClosed()) {
+				sessionHolder.set(newSession);
+			}
+		} catch (Exception e) {
+			Logger.error(HibernateUtil.class, "---------- HibernateUtil: error : " + e);
+			Logger.debug(HibernateUtil.class, "---------- HibernateUtil: error ", e);
+			throw new DotRuntimeException(e.getMessage(), e);
+		}
 	}
 
 	/**

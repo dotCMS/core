@@ -175,7 +175,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
     },
 
 	_fillStructures: function() {
-		this.structures_select.innerHTML = "";
+		this.content_type_select.innerHTML = "";
 		var htmlstr = "<dl class='vertical'>";
 		htmlstr += "<dt><label><b>Content Type:</b></label></dt>";
 		htmlstr += "<dd>";
@@ -199,8 +199,8 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		this.displayStructureFields(this.containerStructures[0].inode);
 		htmlstr += "</dd>";
 		htmlstr += "</dl>";
-		dojo.place(htmlstr,this.structures_select);
-		dojo.parser.parse(this.structures_select);
+		dojo.place(htmlstr,this.content_type_select);
+		dojo.parser.parse(this.content_type_select);
 	},
 
 	_fillLanguages: function(data) {

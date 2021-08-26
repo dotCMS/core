@@ -739,6 +739,8 @@ create table structure (
    expire_date_var varchar2(255),
    publish_date_var varchar2(255),
    mod_date date,
+   sort_order number(10,0),
+   icon varchar2(255),
    primary key (inode)
 );
 create table cms_role (
@@ -780,9 +782,6 @@ create table permission (
 	sort_order number(10,0),
 	friendly_name varchar2(255),
 	structure_inode varchar2(36),
-	last_review date,
-	next_review date,
-	review_interval varchar2(255),
 	disabled_wysiwyg varchar2(255),
 	identifier varchar2(36),
 	language_id number(19,0),

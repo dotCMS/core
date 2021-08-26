@@ -58,17 +58,6 @@ public class Task03555AddFlagToDeleteUsers extends AbstractJDBCStartupTask {
                 "ALTER TABLE user_ ADD delete_date DATETIME NULL;";
     }
 
-    /**
-     * The SQL for H2
-     *
-     * @return
-     */
-    @Override
-    public String getH2Script () {
-        return "ALTER TABLE user_ ADD delete_in_progress BOOLEAN DEFAULT FALSE;\n" +
-                "ALTER TABLE user_ ADD delete_date TIMESTAMP;";
-    }
-
     @Override
     protected List<String> getTablesToDropConstraints () {
         return null;

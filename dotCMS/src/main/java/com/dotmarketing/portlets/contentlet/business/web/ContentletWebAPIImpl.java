@@ -377,6 +377,10 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		currentContentlet.setStringProperty(Contentlet.FILTER_KEY, (String) contentletFormData.get(Contentlet.FILTER_KEY));
 		currentContentlet.setStringProperty(Contentlet.I_WANT_TO, (String) contentletFormData.get(Contentlet.I_WANT_TO));
 
+		if (UtilMethods.isSet(contentletFormData.get("wfPathToMove"))) {
+			currentContentlet.setStringProperty(Contentlet.PATH_TO_MOVE, (String) contentletFormData.get("wfPathToMove"));
+		}
+
 
 		contentletFormData.put(WebKeys.CONTENTLET_FORM_EDIT, currentContentlet);
 		contentletFormData.put(WebKeys.CONTENTLET_EDIT, currentContentlet);
@@ -395,20 +399,6 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 		final String subCommand = UtilMethods.isSet(contentletFormData.get("subcmd"))?
 				(String) contentletFormData.get("subcmd"): StringPool.BLANK;
-
-		//Saving interval review properties
-		if (contentletFormData.get("reviewContent") != null && contentletFormData.get("reviewContent").toString().equalsIgnoreCase("true")) {
-			currentContentlet.setReviewInterval((String)contentletFormData.get("reviewIntervalNum") + (String)contentletFormData.get("reviewIntervalSelect"));
-		} else {
-			currentContentlet.setReviewInterval(null);
-		}
-
-
-		// saving the review dates
-		currentContentlet.setLastReview(new Date ());
-		if (currentContentlet.getReviewInterval() != null) {
-			currentContentlet.setNextReview(conAPI.getNextReview(currentContentlet, user, false));
-		}
 
 		final ArrayList<Category> categories   = new ArrayList<Category>();
 		// Getting categories that come from the entity
@@ -821,10 +811,8 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			if(UtilMethods.isSet(contentletFormData.get("languageId")))
 				contentlet.setLanguageId(Long.parseLong(contentletFormData.get("languageId").toString()));
 
-			if(UtilMethods.isSet(contentletFormData.get("reviewInterval")))
-				contentlet.setReviewInterval(contentletFormData.get("reviewInterval").toString());
 
-			List<String> disabled = new ArrayList<String>();
+			List<String> disabled = new ArrayList<>();
 			if(UtilMethods.isSet(contentletFormData.get("disabledWysiwyg")))
 				CollectionUtils.addAll(disabled, contentletFormData.get("disabledWysiwyg").toString().split(","));
 

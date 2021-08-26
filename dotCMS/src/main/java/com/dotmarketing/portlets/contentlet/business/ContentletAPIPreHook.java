@@ -333,17 +333,6 @@ public interface ContentletAPIPreHook {
 	public default boolean cleanHostField(Structure structure, User user, boolean respectFrontendRoles){
       return true;
     }
-	
-	/**
-	 * Finds the next date that a contentlet must be reviewed
-	 * @param content 
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return
-	 */
-	public default boolean getNextReview(Contentlet content, User user, boolean respectFrontendRoles){
-      return true;
-    }
 
 	/**
 	 * Retrieves all references for a Contentlet. The result is an ArrayList of type Map whose key will 
@@ -1215,24 +1204,6 @@ public interface ContentletAPIPreHook {
       return true;
     }
 
-	/**
-	 * Converts a "fat" (legacy) contentlet into a new contentlet.
-	 * @param fatty contentlet to be converted.
-	 * @return
-	 */
-	public default boolean convertFatContentletToContentlet (com.dotmarketing.portlets.contentlet.business.Contentlet fatty){
-      return true;
-    }
-	
-	/**
-	 * Converts a "light" contentlet into a "fat" (legacy) contentlet.
-	 * @param cont "light" contentlet to be converted.
-     * @param fatty
-	 * @return
-	 */
-	public default boolean convertContentletToFatContentlet (Contentlet cont, com.dotmarketing.portlets.contentlet.business.Contentlet fatty){
-      return true;
-    }
     
 	/**
 	 * Applies permission to the child contentlets of the structure
@@ -1912,4 +1883,11 @@ public interface ContentletAPIPreHook {
     default boolean findContentletByIdentifierAnyLanguage(String identifier, boolean includeDeleted) {
         return true;
     }
+
+    default boolean move(Contentlet contentlet, User user, String hostAndFolderPath, boolean respectFrontendRoles) { return true; }
+
+	default boolean move(Contentlet contentlet, User user, Host host, String folderFolderPath, boolean respectFrontendRoles) { return  true; }
+
+	default boolean move(final Contentlet contentlet, User user, Host host, Folder folder, boolean respectFrontendRoles) { return true; }
+
 }

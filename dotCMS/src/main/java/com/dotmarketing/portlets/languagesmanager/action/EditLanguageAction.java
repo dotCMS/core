@@ -6,6 +6,7 @@ import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotLanguageException;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -14,6 +15,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.Validator;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.util.Constants;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.StringPool;
@@ -143,11 +145,11 @@ public class EditLanguageAction extends DotPortletAction {
 		Language language = (Language) req.getAttribute(WebKeys.LANGUAGE_MANAGER_LANGUAGE) ;
 		BeanUtils.copyProperties(language,form);
         if (UtilMethods.isSet(language.getLanguageCode()) && UtilMethods.isSet(language.getLanguage())) {
-			try{
-				languageAPI.saveLanguage(language);
+			try {
+                this.saveLanguage(language);
 			} catch(Exception e ){
 				SessionMessages.add(req,"message", "message.languagemanager.languagenotsaved");
-				throw new SQLException();
+				throw new SQLException(LanguageUtil.get("message.languagemanager.languagenotsaved"));
 			}
 			SessionMessages.add(req,"message", "message.languagemanager.language_save");
 			_sendToReferral(req, res, StringPool.BLANK);
@@ -156,6 +158,16 @@ public class EditLanguageAction extends DotPortletAction {
 			setForward(req, "portlet.ext.languagesmanager.edit_language");
 		}
 	}
+
+	@VisibleForTesting
+	public void saveLanguage (final Language languageToBeSaved) {
+
+		final Language lang = languageAPI.getLanguage(languageToBeSaved.getLanguageCode(), languageToBeSaved.getCountryCode());
+        if (null != lang && languageToBeSaved.getId() == 0) {
+            throw new DotLanguageException("Language Not Saved. There is already another Language with the same Language code and Country code.");
+        }
+        languageAPI.saveLanguage(languageToBeSaved);
+    }
 
    /**
     * Deletes the specified language.

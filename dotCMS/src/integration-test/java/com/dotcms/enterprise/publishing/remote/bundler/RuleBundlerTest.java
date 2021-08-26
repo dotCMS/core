@@ -7,6 +7,7 @@ import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.manifest.ManifestBuilder;
 import com.dotcms.publishing.output.BundleOutput;
 import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.test.util.FileTestUtil;
@@ -19,6 +20,7 @@ import com.dotmarketing.portlets.rules.RuleDataGen;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.FileUtil;
+import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -79,21 +81,26 @@ public class RuleBundlerTest {
         final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
 
         final PushPublisherConfig config = new PushPublisherConfig();
-        config.add(rule, PusheableAsset.RULE);
-        config.setOperation(PublisherConfig.Operation.PUBLISH);
 
-        final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config);
+        try (ManifestBuilder manifestBuilder = new TestManifestBuilder()) {
+            config.setManifestBuilder(manifestBuilder);
+            config.add(rule, PusheableAsset.RULE, StringPool.BLANK);
+            config.setOperation(PublisherConfig.Operation.PUBLISH);
 
-        new BundleDataGen()
-                .pushPublisherConfig(config)
-                .addAssets(list(rule))
-                .filter(filterDescriptor)
-                .nextPersisted();
+            final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config);
 
-        bundler.setConfig(config);
-        bundler.generate(directoryBundleOutput, status);
+            new BundleDataGen()
+                    .pushPublisherConfig(config)
+                    .addAssets(list(rule))
+                    .filter(filterDescriptor)
+                    .nextPersisted();
 
-        FileTestUtil.assertBundleFile(directoryBundleOutput.getFile(), rule, testCase.expectedFilePath);
+            bundler.setConfig(config);
+            bundler.generate(directoryBundleOutput, status);
+
+            FileTestUtil.assertBundleFile(directoryBundleOutput.getFile(), rule,
+                    testCase.expectedFilePath);
+        }
     }
 
     private static class TestCase{

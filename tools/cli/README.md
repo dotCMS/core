@@ -68,14 +68,15 @@ otherwise they will be ignored by the script.
 ### Config
 
 Before you can use the tool you need to make it aware of the location of the dotCMS instance 
-and also get a valid authorization token associated with an authorized user.
-Once you have such information at hand it must be set in the config file. 
-
+and also get a valid API Access Key associated with an authorized user. 
+[Here's](https://dotcms.com/docs/latest/authentication-using-jwt#APIAccessKeys) how you can get a valid API Access Key.
+Aka (JSON_WEB_TOKEN)
+Once you have such information at hand. it must be set in the config file located in: 
 <pre>
 tools/cli/config    
 </pre>
 
-The following properties are expected
+The following properties are expected by the tool.
   
 <pre>
 DOTCMS_BASE_URL
@@ -88,7 +89,7 @@ PASS (Optional)
 
 **Site**:
 
-We're providing a basic example that takes only one simple parameter Name
+We're providing a basic example that takes only one simple parameter Name,
 But you can pass much more. 
 
 Further info is available in our API-Postman Test
@@ -113,19 +114,21 @@ Therefore the main json body must be extracted before putting it into a _.conten
 
 Another relevant detail is that content-type definition files must be fed with a valid site id. If not the content-type would be rejected.
 
-We support interpolation if the site is also part of the bundle we're pushing
+We support pushing content-type file using site-name. Back in the server side the site-name will be resolved/  
 e.g.
 
   <pre>
    "fixed":false,
    "folder":"SYSTEM_FOLDER",
-   "host":"$my.cool-bike.com",
+   "host":"my.cool-bike.com",
    "iDate":1623251909000,
    "id":"eab1ad11292a6052b90a6247b122858b"
   </pre>    
 
-if your bundle has a site named "my.cool-bike.com" the returning identifier will be replaced automatically.
-But host can be a regular valid identifier.   
+if your bundle has a site named "my.cool-bike.com" that has been previously created such named can be used in you content-type files.
+But host can also be a regular valid site identifier or name. If the host is an empty string the CT will be placed under System-Host
+
+**Important**: When a site-name gets passed to the Rest API. if the API fails to resolve the site-name. The new Content-Type will be placed under System-Host site as a fall-back and no errors will be reported on the logs by the app.
 
 ### Commands
 
@@ -147,6 +150,8 @@ This command imports the file assets piece of the directory structure described 
 <pre>
 ./dot-cli --site ../cli/bundles/bike-shop/sites/my.cool-bike.com.site.json
 </pre>
+
+**Important**: Make sure your content-type file has valid site identifier set when using this command. As interpolation here is of no use.
 
 **_Import Content-Types_**: Takes a file as parameter like this:
 <pre>

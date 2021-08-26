@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import java.util.List;
 
@@ -13,24 +14,28 @@ public class Task201014UpdateColumnsValuesInIdentifierTable extends AbstractJDBC
         return true;
     }
 
-    @Override
-    public String getPostgresScript() {
-
+    /**
+     * Creates a string builder with the script to be executed in Postgres/MSSQL
+     * @return Script compatible with Postgres and MSSQL databases
+     */
+    private String getScript(){
         final StringBuilder query = new StringBuilder();
 
-        query.append("ALTER TABLE identifier DISABLE TRIGGER ALL;\n");
+        //session_replication_role is used in Postgres
+        query.append(DbConnectionFactory.isMsSql() ? "ALTER TABLE identifier DISABLE TRIGGER ALL;"
+                : "SET session_replication_role TO 'replica';\n");
 
         //update templates
-        query.append(getQueryToUpdateNonContentletsPostgres("template"));
+        query.append(getQueryToUpdateNonContentlets("template"));
 
         //update containers
-        query.append(getQueryToUpdateNonContentletsPostgres("dot_containers"));
+        query.append(getQueryToUpdateNonContentlets("dot_containers"));
 
         //update links
-        query.append(getQueryToUpdateNonContentletsPostgres("links"));
+        query.append(getQueryToUpdateNonContentlets("links"));
 
         //update folders
-        query.append(getQueryToUpdateNonContentletsPostgres("folder"));
+        query.append(getQueryToUpdateNonContentlets("folder"));
 
         //update contentlets
         query.append("UPDATE identifier SET owner=mod_user, create_date=idate, asset_subtype=velocity_var_name from\n")
@@ -44,8 +49,15 @@ public class Task201014UpdateColumnsValuesInIdentifierTable extends AbstractJDBC
                 .append(" WHERE  id=myID;\n");
 
 
-        query.append("ALTER TABLE identifier ENABLE TRIGGER ALL;\n");
+        //session_replication_role is used in Postgres
+        query.append(DbConnectionFactory.isMsSql() ? "ALTER TABLE identifier ENABLE TRIGGER ALL;"
+                : "SET session_replication_role TO 'origin';\n");
         return query.toString();
+    }
+
+    @Override
+    public String getPostgresScript() {
+        return getScript();
     }
 
     @Override
@@ -188,12 +200,7 @@ public class Task201014UpdateColumnsValuesInIdentifierTable extends AbstractJDBC
 
     @Override
     public String getMSSQLScript() {
-        return getPostgresScript();
-    }
-
-    @Override
-    public String getH2Script() {
-        return null;
+        return getScript();
     }
 
     @Override
@@ -229,7 +236,12 @@ public class Task201014UpdateColumnsValuesInIdentifierTable extends AbstractJDBC
 
     }
 
-    private String getQueryToUpdateNonContentletsPostgres(final String tableName){
+    /**
+     * Queries valid in Postgres/MSSQL
+     * @param tableName
+     * @return
+     */
+    private String getQueryToUpdateNonContentlets(final String tableName){
         final StringBuilder query = new StringBuilder();
         return query.append("UPDATE identifier SET owner=iowner, create_date=idate FROM\n")
                 .append("(SELECT DISTINCT temp.identifier myID, owner iowner, inode.idate idate from ")

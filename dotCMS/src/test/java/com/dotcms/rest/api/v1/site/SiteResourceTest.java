@@ -92,7 +92,7 @@ public class SiteResourceTest extends UnitTestBase {
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
         SiteResource siteResource =
-                new SiteResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI, paginationUtil);
+                new SiteResource(webResource, new SiteHelper( hostAPI ), paginationUtil);
 
         final Response response = siteResource
                 .sites(request, httpServletResponse, "filter", false, false, false, page, count);
@@ -129,7 +129,7 @@ public class SiteResourceTest extends UnitTestBase {
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
         SiteResource siteResource =
-                new SiteResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI, paginationUtil);
+                new SiteResource(webResource, new SiteHelper( hostAPI ), paginationUtil);
 
         Response response1 = siteResource.switchSite(request, httpServletResponse);
         System.out.println(response1);
@@ -216,7 +216,7 @@ public class SiteResourceTest extends UnitTestBase {
         );
 
         SiteResource siteResource =
-                new SiteResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI, paginationUtil);
+                new SiteResource(webResource, new SiteHelper( hostAPI ), paginationUtil);
 
         Response response1 = siteResource
                 .switchSite(request, httpServletResponse, "48190c8c-42c4-46af-8d1a-0cd5db894798");
@@ -264,7 +264,7 @@ public class SiteResourceTest extends UnitTestBase {
         when(initDataObject.getUser()).thenReturn(user);
 
         final SiteResource siteResource =
-                new SiteResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI, paginationUtil);
+                new SiteResource(webResource, new SiteHelper( hostAPI ), paginationUtil);
         final Response response = siteResource.currentSite(request, httpServletResponse);
 
         RestUtilTest.verifySuccessResponse(response);
@@ -295,7 +295,6 @@ public class SiteResourceTest extends UnitTestBase {
                         "addThis", "ra-4e02119211875e7b",
                         "disabledWYSIWYG", new Object[]{},
                         "host", "SYSTEM_HOST",
-                        "lastReview", 14503,
                         "stInode", "855a2d72-f2f3-4169-8b04-ac5157c4380d",
                         "owner", "dotcms.org.1",
                         "identifier", "48190c8c-42c4-46af-8d1a-0cd5db894798",
@@ -349,7 +348,6 @@ public class SiteResourceTest extends UnitTestBase {
                         "addThis", "ra-4e02119211875e7b",
                         "disabledWYSIWYG", new Object[]{},
                         "host", "SYSTEM_HOST",
-                        "lastReview", 14503,
                         "stInode", "855a2d72-f2f3-4169-8b04-ac5157c4380c",
                         "owner", "dotcms.org.1",
                         "identifier", "48190c8c-42c4-46af-8d1a-0cd5db894797",
@@ -383,7 +381,6 @@ public class SiteResourceTest extends UnitTestBase {
                         "addThis", "ra-4e02119211875e7b",
                         "disabledWYSIWYG", new Object[]{},
                         "host", "SYSTEM_HOST",
-                        "lastReview", 14503,
                         "stInode", "855a2d72-f2f3-4169-8b04-ac5157c4380d",
                         "owner", "dotcms.org.1",
                         "identifier", "48190c8c-42c4-46af-8d1a-0cd5db894798",
@@ -446,7 +443,6 @@ public class SiteResourceTest extends UnitTestBase {
                         "addThis", "ra-4e02119211875e7b",
                         "disabledWYSIWYG", new Object[]{},
                         "host", "SYSTEM_HOST",
-                        "lastReview", 14503,
                         "stInode", "855a2d72-f2f3-4169-8b04-ac5157c4380d",
                         "owner", "dotcms.org.1",
                         "identifier", "48190c8c-42c4-46af-8d1a-0cd5db894798",
@@ -483,7 +479,6 @@ public class SiteResourceTest extends UnitTestBase {
                         "addThis", "ra-4e02119211875e7b",
                         "disabledWYSIWYG", new Object[]{},
                         "host", "SYSTEM_HOST",
-                        "lastReview", 14503,
                         "stInode", "855a2d72-f2f3-4169-8b04-ac5157c4380c",
                         "owner", "dotcms.org.1",
                         "identifier", "48190c8c-42c4-46af-8d1a-0cd5db894796",

@@ -176,6 +176,17 @@ margin:0px auto;
                 
                 </td>
         </tr>
+        <tr>
+            <td style="white-space: nowrap;">
+                <label><%=LanguageUtil.get(pageContext, "custom.content.portlet.dataViewMode")%>:</label></td>
+            <td>
+                <input type="radio" dojoType="dijit.form.RadioButton" name="dataViewMode" id="radioOne" value="list" checked /></span>
+                <label for="radioOne"><%= LanguageUtil.get(pageContext, "custom.content.portlet.dataViewMode.list") %></label>&nbsp;
+
+                <input type="radio" dojoType="dijit.form.RadioButton" name="dataViewMode" id="radioTwo" value="card" />
+                <label for="radioTwo"><%= LanguageUtil.get(pageContext, "custom.content.portlet.dataViewMode.card") %></label>
+            </td>
+        </tr>
 
     </table>
 
@@ -226,7 +237,7 @@ margin:0px auto;
 	});
 </script>
 
-<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"' style="position:absolute;top:16px;right:16px;z-index:9">
+<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"fa-plus", class:"dijitDropDownActionButton"' style="position:absolute;top:16px;right:16px;z-index:9">
 	<span></span>
 	<div data-dojo-type="dijit/Menu" class="contentlet-menu-actions">
 		<div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: addNewRole">

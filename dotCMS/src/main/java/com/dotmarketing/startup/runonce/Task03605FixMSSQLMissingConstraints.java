@@ -54,10 +54,6 @@ public class Task03605FixMSSQLMissingConstraints extends AbstractJDBCStartupTask
 				+ "ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_step FOREIGN KEY (status) REFERENCES workflow_step (id);";
 	}
 
-	@Override
-	public String getH2Script() {
-		return null;
-	}
 
 	@Override
 	protected List<String> getTablesToDropConstraints() {

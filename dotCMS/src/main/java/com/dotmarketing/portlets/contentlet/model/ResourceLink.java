@@ -5,6 +5,8 @@ import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.util.MimeTypeUtils;
+import com.dotcms.uuid.shorty.ShortyId;
+import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -26,6 +28,7 @@ import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.File;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.text.StrBuilder;
@@ -193,18 +196,42 @@ public class ResourceLink {
 
         private String getConfiguredImageURL(final Contentlet contentlet, final Identifier identifier, final Metadata metadata, final Host host) {
 
-            final  String pattern = Config.getStringProperty("WYSIWYG_IMAGE_URL_PATTERN", "{path}{name}?language_id={languageId}");
+            final  String pattern = Config.getStringProperty("WYSIWYG_IMAGE_URL_PATTERN", "/dA/{shortyInode}/{name}");
             return replaceUrlPattern(pattern, contentlet, identifier, metadata, host);
         }
 
-        String replaceUrlPattern(final String pattern, final Contentlet contentlet, final Identifier identifier, final Metadata metadata, final Host host) {
-
+        /**
+         * Generates the URL for a File Asset, based on a specific URL pattern.
+         *
+         * @param pattern    The pattern for the URL that will be generated.
+         * @param contentlet The File Asset as Content whose URL will be generated.
+         * @param identifier If the {@code contentlet} parameter IS a File Asset,  use this parameter to get the asset's
+         *                   name.
+         * @param metadata   If the {@code contentlet} parameter IS NOT a File Asset, use this parameter to get the
+         *                   asset's name.
+         * @param site       Tha Site that the File Asset belongs to.
+         *
+         * @return The generated URL for the File Asset.
+         */
+        String replaceUrlPattern(final String pattern, final Contentlet contentlet, final Identifier identifier, final Metadata metadata, final Host site) {
             final String fileName  = contentlet.isFileAsset() ? identifier.getAssetName() : metadata.getName();
             final String path      = getPath(contentlet);
             final String extension = UtilMethods.getFileExtension(fileName);
-            final String shortyId  = contentlet.getIdentifier().replace(StringPool.DASH, StringPool.BLANK).substring(0, 10);
+            final ShortyIdAPI shortyAPI = APILocator.getShortyAPI();
+            String shortyId = contentlet.getIdentifier();
+            Optional<ShortyId> shortyValueOpt = shortyAPI.getShorty(contentlet.getIdentifier());
+            if (shortyValueOpt.isPresent()) {
+                final String shortyIdValue = shortyValueOpt.get().shortId;
+                shortyId = Try.of(() -> shortyAPI.shortify(shortyIdValue)).getOrElse(shortyId);
+            }
+            String shortyInode = contentlet.getInode();
+            shortyValueOpt = APILocator.getShortyAPI().getShorty(contentlet.getInode());
+            if (shortyValueOpt.isPresent()) {
+                final String shortyInodeValue = shortyValueOpt.get().shortId;
+                shortyInode = Try.of(() -> shortyAPI.shortify(shortyInodeValue)).getOrElse(shortyInode);
+            }
 
-            final StrBuilder    patternBuilder = new StrBuilder(pattern);
+            final StrBuilder patternBuilder = new StrBuilder(pattern);
 
             return patternBuilder
                     .replaceAll("{name}",        fileName)
@@ -212,15 +239,15 @@ public class ResourceLink {
                     .replaceAll("{path}",        path)
                     .replaceAll("{extension}",   extension)
                     .replaceAll("{languageId}",  String.valueOf(contentlet.getLanguageId()))
-                    .replaceAll("{hostname}",    host.getHostname())
-                    .replaceAll("{hostName}",    host.getHostname())
+                    .replaceAll("{hostname}",    site.getHostname())
+                    .replaceAll("{hostName}",    site.getHostname())
                     .replaceAll("{inode}",       contentlet.getInode())
-                    .replaceAll("{hostId}",      host.getIdentifier())
+                    .replaceAll("{hostId}",      site.getIdentifier())
                     .replaceAll("{identifier}",  contentlet.getIdentifier())
                     .replaceAll("{id}",          contentlet.getIdentifier())
-                    .replaceAll("{shortyInode}", contentlet.getInode().replace(StringPool.DASH, StringPool.BLANK).substring(0, 10))
+                    .replaceAll("{shortyInode}", shortyInode)
                     .replaceAll("{shortyId}",    shortyId)
-                    .replaceAll("{shortyIdentifier}",    shortyId).toString();
+                    .replaceAll("{shortyIdentifier}", shortyId).toString();
         }
 
         Tuple2<String, String> createVersionPathIdPath (final Contentlet contentlet, final String velocityVarName,

@@ -73,12 +73,13 @@ public class CategoriesWebAPI implements ViewTool {
 
 	public List<Category> getChildrenCategoriesByKey(String key) {
 		if (key == null) {
-			return new ArrayList<Category>();
+			return new ArrayList<>();
 		}
 		try {
 			Category cat = categoryAPI.findByKey(key, user, true);
-			if (!InodeUtils.isSet(cat.getInode())) {
-				return new ArrayList<Category>();
+			if (null == cat || !InodeUtils.isSet(cat.getInode())) {
+				Logger.info(this, String.format("The category for key `%s` does not exist.",key));
+				return new ArrayList<>();
 			}
 			return categoryAPI.getChildren(cat, user, true);
 		} catch (DotSecurityException se) {
@@ -153,7 +154,7 @@ public class CategoriesWebAPI implements ViewTool {
 	@SuppressWarnings("unchecked")
 	public List<Category> getChildrenCategories(Inode inode) {
 		try {
-			List<Category> categories = InodeFactory.getChildrenClass(inode, Category.class);
+			final List<Category> categories = categoryAPI.getChildren(inode, user, true);
 			return perAPI.filterCollection(categories, PermissionAPI.PERMISSION_READ, true, user);
 		} catch (Exception e) {
 			Logger.error(this, "An unknown error happening while trying to retrieve categories : ", e);
@@ -166,7 +167,7 @@ public class CategoriesWebAPI implements ViewTool {
 		try {
 			Inode inodeObj = new Inode();
 			inodeObj.setInode(inode);
-			List<Category> categories = InodeFactory.getChildrenClass(inodeObj, Category.class);
+			List<Category> categories = categoryAPI.getChildren(inodeObj, user, true);
 			return perAPI.filterCollection(categories, PermissionAPI.PERMISSION_READ, true, user);
 		} catch (Exception e) {
 			Logger.error(this, "An unknown error happening while trying to retrieve categories : ", e);
@@ -554,9 +555,7 @@ public class CategoriesWebAPI implements ViewTool {
 			} catch (DotDataException e) {
 				Logger.error(this, "Unable to look up contentlet with inode " + contentletInode, e);
 			}
-			List<Category> category = categoryAPI.getParents(contentlet, user, true);
-			// Category category = (Category)
-			// InodeFactory.getParentOfClass(contentlet,Category.class);
+			final List<Category> category = categoryAPI.getParents(contentlet, user, true);
 			String key = category.get(0).getKey();
 			return key;
 		} catch (DotSecurityException se) {

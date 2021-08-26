@@ -183,11 +183,11 @@ public interface StructureAPI {
 
 	/**
 	 * Return the structures order from who that has a the most recent created
-	 * {@link com.dotmarketing.portlets.contentlet.business.Contentlet} to who that has the less recent created
-	 * {@link com.dotmarketing.portlets.contentlet.business.Contentlet}.
+	 * {@link com.dotmarketing.portlets.contentlet.model.Contentlet} to who that has the less recent created
+	 * {@link com.dotmarketing.portlets.contentlet.model.Contentlet}.
 	 *
 	 * @param type Structure.Type
-	 * @param user filter {@link com.dotmarketing.portlets.contentlet.business.Contentlet} by user
+	 * @param user filter {@link com.dotmarketing.portlets.contentlet.model.Contentlet} by user
 	 * @param nRecents number of resents structure to return
 	 *
 	 * @return A List of Map, each Map represents a Structure and has the follows keys: name, inode, type and date

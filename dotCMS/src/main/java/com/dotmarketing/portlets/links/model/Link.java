@@ -1,6 +1,12 @@
 
 package com.dotmarketing.portlets.links.model;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
+import com.dotcms.publisher.util.PusheableAsset;
+import com.dotcms.publishing.manifest.ManifestItem;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.templates.model.Template;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +31,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 /** @author Hibernate CodeGenerator */
-public class Link extends WebAsset implements Serializable, Comparable {
+public class Link extends WebAsset implements Serializable, Comparable, ManifestItem {
 
 	public enum LinkType {
 		INTERNAL,
@@ -321,6 +327,16 @@ public class Link extends WebAsset implements Serializable, Comparable {
 		
 	}
 
+	@Override
+	public ManifestInfo getManifestInfo(){
+
+		return new ManifestInfoBuilder()
+			.objectType(PusheableAsset.LINK.getType())
+			.id(this.getIdentifier())
+			.inode(this.getInode())
+			.title(this.getTitle())
+			.build();
+	}
 	
 }
 

@@ -24,6 +24,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.liferay.portal.model.User;
+import java.util.Collections;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -151,8 +152,9 @@ public class WorkflowResourceResponseCodeIntegrationTest {
     }
 
     @Test
-    public void Save_Workflow_Scheme_Invalid_Ids() throws Exception{
-        final Role publisher = roleAPI.findRoleByName("Publisher / Legal", null);
+    public void Save_Workflow_Scheme_Invalid_Ids() {
+        final Role adminRole = this.roleAdmin();
+        final String adminRoleId = adminRole.getId();
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Set<WorkflowState> states = WorkflowState.toSet(WorkflowState.values());
         final String actionNewName = actionName();
@@ -167,8 +169,8 @@ public class WorkflowResourceResponseCodeIntegrationTest {
                 actionAssignable(false).
                 actionCommentable(false).
                 requiresCheckout(false).
-                actionNextAssign(publisher.getId()).
-                whoCanUse(Arrays.asList(publisher.getId())).
+                actionNextAssign(adminRoleId).
+                whoCanUse(Collections.singletonList(adminRoleId)).
                 actionCondition("").
                 build();
 

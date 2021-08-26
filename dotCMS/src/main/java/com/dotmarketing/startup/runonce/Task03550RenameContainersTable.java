@@ -45,11 +45,6 @@ public class Task03550RenameContainersTable extends AbstractJDBCStartupTask {
     }
 
     @Override
-    public String getH2Script() {
-        return "ALTER TABLE containers RENAME TO dot_containers";
-    }
-
-    @Override
     protected List<String> getTablesToDropConstraints() {
         return null;
     }

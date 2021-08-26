@@ -45,15 +45,17 @@ public class GifImageFilter extends ImageFilter {
 			Graphics2D graphics = dst.createGraphics();  
 
 			graphics.setPaint ( new Color ( 255, 255, 255 ) );
+            final File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() +".tmp");
 
 			graphics.fillRect(0, 0, src.getWidth(), src.getHeight());
 			graphics.drawImage(src, 0, 0, src.getWidth(), src.getHeight(),null);
-			ImageOutputStream ios = ImageIO.createImageOutputStream(resultFile);
+			ImageOutputStream ios = ImageIO.createImageOutputStream(tempResultFile);
 			writer.setOutput(ios);
 			writer.write(null,new IIOImage(dst,null,null),iwp);
 			ios.flush();
 			writer.dispose();
 			ios.close();
+			tempResultFile.renameTo(resultFile);
 			//writer.setOutput(output);
 
 		//	IIOImage image = new IIOImage(src, null, null);

@@ -24,9 +24,11 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.util.HostNameComparator;
+import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.SimpleScheduledTask;
 import com.dotmarketing.quartz.job.HostCopyOptions;
@@ -46,6 +48,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -81,29 +84,22 @@ public class SiteResource implements Serializable {
 
     private static final String NO_FILTER = "*";
 
-    private final UserAPI userAPI;
     private final WebResource webResource;
     private final SiteHelper siteHelper;
-    private final I18NUtil i18NUtil;
     private final PaginationUtil paginationUtil;
 
     public SiteResource() {
         this(new WebResource(),
                 SiteHelper.getInstance(),
-                I18NUtil.INSTANCE, APILocator.getUserAPI(),
                 new PaginationUtil(new SitePaginator()));
     }
 
     @VisibleForTesting
     public SiteResource(final WebResource webResource,
                         final SiteHelper siteHelper,
-                        final I18NUtil i18NUtil,
-                        final UserAPI userAPI,
                         final PaginationUtil paginationUtil) {
         this.webResource = webResource;
         this.siteHelper  = siteHelper;
-        this.i18NUtil    = i18NUtil;
-        this.userAPI = userAPI;
         this.paginationUtil = paginationUtil;
     }
 
@@ -226,6 +222,7 @@ public class SiteResource implements Serializable {
             .requestAndResponse(httpServletRequest, httpServletResponse)
             .requiredBackendUser(true)
             .rejectWhenNoUser(true)
+            .requiredPortlet("sites")
             .init().getUser();
         boolean switchDone = false;
         Host hostFound = null;
@@ -279,6 +276,7 @@ public class SiteResource implements Serializable {
           .requestAndResponse(request, response)
           .requiredBackendUser(true)
           .rejectWhenNoUser(true)
+          .requiredPortlet("sites")
           .init().getUser();
 
         Logger.debug(this, "Switching to default host for user: " + user.getUserId());
@@ -373,7 +371,6 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requireLicense(true)
                 .requiredPortlet("sites")
                 .init().getUser();
 
@@ -413,7 +410,6 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requireLicense(true)
                 .requiredPortlet("sites")
                 .init().getUser();
 
@@ -455,7 +451,6 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requireLicense(true)
                 .requiredPortlet("sites")
                 .init().getUser();
 
@@ -515,7 +510,6 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requireLicense(true)
                 .requiredPortlet("sites")
                 .init().getUser();
 
@@ -559,7 +553,6 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requireLicense(true)
                 .requiredPortlet("sites")
                 .init().getUser();
 
@@ -618,7 +611,6 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requireLicense(true)
                 .requiredPortlet("sites")
                 .init().getUser();
 
@@ -657,6 +649,13 @@ public class SiteResource implements Serializable {
                                 @Context final HttpServletResponse httpServletResponse,
                                 @PathParam("siteId")  final String siteId){
 
+        new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .requiredPortlet("sites")
+                .init().getUser();
+
         Logger.debug(this, ()-> "Getting the site : " + siteId + " as a default");
 
         return Response.ok(new ResponseEntityView(
@@ -687,7 +686,6 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requireLicense(true)
                 .requiredPortlet("sites")
                 .init().getUser();
 
@@ -729,7 +727,6 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requireLicense(true)
                 .requiredPortlet("sites")
                 .init().getUser();
 
@@ -773,13 +770,12 @@ public class SiteResource implements Serializable {
     public Response createNewSite(@Context final HttpServletRequest httpServletRequest,
                                   @Context final HttpServletResponse httpServletResponse,
                                   final SiteForm newSiteForm)
-            throws DotDataException, DotSecurityException{
+            throws DotDataException, DotSecurityException, AlreadyExistException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requireLicense(true)
                 .requiredPortlet("sites")
                 .init().getUser();
         final PageMode      pageMode      = PageMode.get(httpServletRequest);
@@ -880,7 +876,6 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requireLicense(true)
                 .requiredPortlet("sites")
                 .init().getUser();
 
@@ -895,6 +890,9 @@ public class SiteResource implements Serializable {
 
             throw new NotFoundException("Site: " + siteIdentifier + " does not exists");
         }
+
+        // we need to clean up mostly the null properties when recovery the by identifier
+        site.cleanup();
 
         final PageMode      pageMode      = PageMode.get(httpServletRequest);
         final TempFileAPI tempFileAPI = APILocator.getTempFileAPI();
@@ -961,7 +959,7 @@ public class SiteResource implements Serializable {
         Logger.debug(this, ()-> "Creating new Host: " + newSiteForm);
 
         return Response.ok(new ResponseEntityView(
-                this.toView(this.siteHelper.save(site, user, pageMode.respectAnonPerms)))).build();
+                this.toView(this.siteHelper.update(site, user, pageMode.respectAnonPerms)))).build();
     }
 
     /**
@@ -988,12 +986,13 @@ public class SiteResource implements Serializable {
     public Response copySite(@Context final HttpServletRequest httpServletRequest,
                                   @Context final HttpServletResponse httpServletResponse,
                                   final CopySiteForm copySiteForm)
-            throws DotDataException, DotSecurityException, PortalException, SystemException, ParseException, SchedulerException, ClassNotFoundException {
+            throws DotDataException, DotSecurityException, PortalException, SystemException, ParseException, SchedulerException, ClassNotFoundException, AlreadyExistException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
+                .requireLicense(true)
                 .requiredPortlet("sites")
                 .init().getUser();
 

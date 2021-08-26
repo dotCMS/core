@@ -8,7 +8,7 @@ import javax.annotation.Nonnull;
 @JsonDeserialize(builder = CustomPortletForm.Builder.class)
 public class CustomPortletForm {
 
-  final public String portletId,portletName, baseTypes, contentTypes;
+  final public String portletId,portletName, baseTypes, contentTypes, dataViewMode;
 
   
   private CustomPortletForm(Builder builder) {
@@ -16,6 +16,7 @@ public class CustomPortletForm {
     this.portletName = builder.portletName;
     this.baseTypes = builder.baseTypes;
     this.contentTypes = builder.contentTypes;
+    this.dataViewMode = builder.dataViewMode;
   }
 
   /**
@@ -50,6 +51,8 @@ public class CustomPortletForm {
     private String baseTypes;
     @JsonProperty
     private String contentTypes;
+    @JsonProperty
+    private String dataViewMode;
 
     private Builder() {}
 
@@ -58,6 +61,7 @@ public class CustomPortletForm {
       this.portletName = customPortletForm.portletName;
       this.baseTypes = customPortletForm.baseTypes;
       this.contentTypes = customPortletForm.contentTypes;
+      this.dataViewMode = customPortletForm.dataViewMode;
     }
 
     public Builder withPortletId(@Nonnull String portletId) {
@@ -79,6 +83,11 @@ public class CustomPortletForm {
       this.contentTypes = contentTypes;
       return this;
     }
+
+      public Builder withDataViewMode(@Nonnull String viewMode) {
+          this.dataViewMode = viewMode;
+          return this;
+      }
 
     public CustomPortletForm build() {
       return new CustomPortletForm(this);

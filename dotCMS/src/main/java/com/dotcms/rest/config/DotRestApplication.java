@@ -17,6 +17,7 @@ import com.dotcms.rest.api.v1.browsertree.BrowserTreeResource;
 import com.dotcms.rest.api.v1.categories.CategoriesResource;
 import com.dotcms.rest.api.v1.container.ContainerResource;
 import com.dotcms.rest.api.v1.content.ContentRelationshipsResource;
+import com.dotcms.rest.api.v1.content.ContentResource;
 import com.dotcms.rest.api.v1.content.ContentVersionResource;
 import com.dotcms.rest.api.v1.content.ResourceLinkResource;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeResource;
@@ -26,6 +27,7 @@ import com.dotcms.rest.api.v1.event.EventsResource;
 import com.dotcms.rest.api.v1.fileasset.FileAssetsResource;
 import com.dotcms.rest.api.v1.folder.FolderResource;
 import com.dotcms.rest.api.v1.languages.LanguagesResource;
+import com.dotcms.rest.api.v1.maintenance.JVMInfoResource;
 import com.dotcms.rest.api.v1.maintenance.MaintenanceResource;
 import com.dotcms.rest.api.v1.menu.MenuResource;
 import com.dotcms.rest.api.v1.page.NavResource;
@@ -106,7 +108,6 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 			.add(com.dotcms.rest.elasticsearch.ESContentResourcePortlet.class)
 			.add(PersonaResource.class)
 			.add(UserResource.class)
-			.add(com.dotcms.rest.api.v2.user.UserResource.class)
 			.add(TagResource.class)
 			.add(RulesEnginePortlet.class)
 			.add(RuleResource.class)
@@ -168,6 +169,8 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 			.add(ToolGroupResource.class)
 			.add(VersionableResource.class)
 			.add(PermissionResource.class)
+			.add(ContentResource.class)
+			.add(JVMInfoResource.class)
 			.build();
 
 

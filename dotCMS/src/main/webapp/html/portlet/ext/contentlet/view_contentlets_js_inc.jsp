@@ -25,7 +25,7 @@
 
         const DOTCMS_DATAVIEW_MODE = 'dotcms.dataview.mode';
         const DOTCMS_DEFAULT_CONTENT_SORT_BY = "score,modDate desc";
-        
+
         var state = {
           data: [],
           view: localStorage.getItem(DOTCMS_DATAVIEW_MODE) || 'list',
@@ -199,20 +199,18 @@
 
         function printData(data, headers) {
             fillResultsTable(headers, data);
-            fillCardView(data)
-            const card = getViewCardEl();
             const list = getListEl();
 
             if (state.view === 'list') {
+                const card = getViewCardEl();
+                card ? card.style.display = 'none' : false;
                 list.style.display = ''
-                card.style.display = 'none'
             } else {
+                fillCardView(data);
                 list.style.display = 'none'
-                card.style.display = ''
+                getViewCardEl().style.display = ''
             }
-
         }
-
 
         function fillResults(data) {
             var counters = data[0];
@@ -760,8 +758,8 @@
                         	 document.getElementById("${relationSearchField}Field").value=this.getValue().split(' ')[0];
                         	 doSearch(null, "<%=orderBy%>");
                          }
-                         
-	
+
+
 		              }, dojo.byId("${relationSearchField}Div"));
 
 		              dojo.aspect.around(relationshipSearch, '_announceOption', function(origFunction) {
@@ -1368,12 +1366,17 @@
         const debouncedSearch = debounce(doSearch1, 250);
 
         var currentPage;
-        function doSearch (page, sortBy) {
+        function doSearch (page, sortBy, viewDisplayMode) {
           if (page) {
               currentPage = page;
           } else {
               page = currentPage;
           }
+
+          if (viewDisplayMode) {
+              changeView(viewDisplayMode, true);
+          }
+
           // Wait for the "HostFolderFilteringSelect" widget to end the values updating process before proceeding with the search, if necessary.
           if (
               dijit.byId('FolderHostSelector') &&
@@ -1420,7 +1423,7 @@
 	            if(dijit.byId('structure_inode')) {
 	              structureInode  = dijit.byId('structure_inode').getValue();
 	            }
-                
+
 
 
                 cbContentInodeList = new Array();
@@ -1599,7 +1602,7 @@
                 else {
                         sortBy=document.getElementById('currentSortBy').value;
                 }
-               
+
 
                 var filterSystemHost = false;
                 if (document.getElementById("filterSystemHostCB").checked && document.getElementById("filterSystemHostTable").style.display != "none") {
@@ -1677,8 +1680,12 @@
         function checkUncheckAll() {
                 var checkAll = dijit.byId("checkAll");
                 var check;
+	            var viewCard = getViewCardEl();
 
-	            getViewCardEl().value = ''
+                if (viewCard) {
+	                viewCard.value = '';
+                }
+                
                 for (var i = 0; i < cbContentInodeList.length; ++i) {
                         check = dijit.byId("checkbox" + i);
                         if(check) {
@@ -1756,8 +1763,10 @@
             pushHandler.showDialog(objId, false, isArchived);
         }
 
-        function changeView(view) {
-          localStorage.setItem(DOTCMS_DATAVIEW_MODE, view)
+        function changeView(view, skipLocalStorage = false) {
+          if (!skipLocalStorage) {
+            localStorage.setItem(DOTCMS_DATAVIEW_MODE, view)
+          }
           state.view = view;
 
           let card = getViewCardEl();
@@ -1775,8 +1784,10 @@
                 dijit.byId('checkbox' + i).setValue(selectedInodes.includes(item.value));
             })
 
-            card.style.display = 'none';
-            list.style.display = '';
+            try {
+                card.style.display = 'none';
+                list.style.display = '';
+            } catch (error) {}
 
           } else {
 
@@ -1877,7 +1888,7 @@
 
 			wfActionMapList.map((wfAction) => {
 				actions.push({ label: wfAction.name,
-					action: () => { contentAdmin.executeWfAction(wfAction.id, wfAction.assignable.toString(), wfAction.commentable.toString(), wfAction.hasPushPublishActionlet.toString(), data.inode)}
+					action: () => { contentAdmin.executeWfAction(wfAction.id, wfAction.assignable.toString(), wfAction.commentable.toString(), wfAction.hasPushPublishActionlet.toString(), data.inode, wfAction.moveable.toString())}
 				});
 			});
 
@@ -2108,14 +2119,14 @@
 							var name = wfActionMapList[k].name;
 							var id = wfActionMapList[k].id;
 							var assignable = wfActionMapList[k].assignable;
-
 							var commentable = wfActionMapList[k].commentable;
+                            var moveable = wfActionMapList[k].moveable;
 							var icon = wfActionMapList[k].icon;
 							var requiresCheckout = wfActionMapList[k].requiresCheckout;
 							var wfActionNameStr = wfActionMapList[k].wfActionNameStr;
 							var hasPushPublishActionlet = wfActionMapList[k].hasPushPublishActionlet;
 
-							popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\""+icon+"\" onClick=\"contentAdmin.executeWfAction('" + id + "', '" + assignable + "', '" + commentable + "', '" + hasPushPublishActionlet + "', '" + cellData.inode + "');\">"+wfActionNameStr+"</div>";
+							popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\""+icon+"\" onClick=\"contentAdmin.executeWfAction('" + id + "', '" + assignable + "', '" + commentable + "', '" + hasPushPublishActionlet + "', '" + cellData.inode + "', '" + moveable + "');\">"+wfActionNameStr+"</div>";
 
 						}
 
@@ -2460,7 +2471,7 @@
 	    	    "size": 20,
 	    	    "from": 0
             }`;
-            
+
             var xhrArgs = {
              url: url,
              postData: query,
@@ -2492,13 +2503,13 @@
                            APILocator.getHostAPI().find((String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID), user, false).getHostname()+
                            ((request.getLocalPort()!=80) ? ":"+request.getLocalPort() : "")+
                            "/api/content/render/false";
-                        
+
                         String restBasePostUrl="http://"+
                            APILocator.getHostAPI().find((String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID), user, false).getHostname()+
                            ((request.getLocalPort()!=80) ? ":"+request.getLocalPort() : "")+
                            "/api/content/_search";
                         %>
-                        
+
 
                         queryRaw = counters["luceneQueryRaw"];
                         var encodedQueryRaw = queryRaw.replace(/'/g, "%27").replace(/"/g, "%22");
@@ -2751,9 +2762,9 @@
     	},
 
 
-    	executeWfAction: function(wfId, assignable, commentable, hasPushPublishActionlet, inode ){
+    	executeWfAction: function(wfId, assignable, commentable, hasPushPublishActionlet, inode, moveable ){
             this.wfActionId = wfId;
-    		if(assignable == "true" || commentable == "true" || hasPushPublishActionlet == "true" ){
+    		if(assignable == "true" || commentable == "true" || hasPushPublishActionlet == "true" || moveable === "true" ){
 
                 let workflow = {
                   actionId:wfId,
@@ -2776,8 +2787,9 @@
 		    		var expireTime 			= "";
 		    		var neverExpire 		= "";
 		    		var whereToSend 		= "";
+                    var pathToMove 			= "";
 					BrowserAjax.saveFileAction(selectedItem, wfActionAssign, wfActionId, wfActionComments, wfConId, publishDate,
-		    				publishTime, expireDate, expireTime, neverExpire, whereToSend, fileActionCallback
+		    				publishTime, expireDate, expireTime, neverExpire, whereToSend, pathToMove, fileActionCallback
                     );
     		}
 
@@ -2794,6 +2806,7 @@
         var wfConId =  pushPublish.inode;
         var comments = assignComment.comment;
         var assignRole = assignComment.assign;
+        var pathToMove = assignComment.pathToMove;
 
         var whereToSend = pushPublish.whereToSend;
         var publishDate = pushPublish.publishDate;
@@ -2804,7 +2817,7 @@
         var neverExpire = pushPublish.neverExpire;
 
         BrowserAjax.saveFileAction(selectedItem, assignRole, actionId, comments, wfConId, publishDate,
-           publishTime, expireDate, expireTime, neverExpire, whereToSend, forcePush, fileActionCallback
+           publishTime, expireDate, expireTime, neverExpire, whereToSend, forcePush, pathToMove, fileActionCallback
         );
     }
 
@@ -2911,6 +2924,11 @@
 		setTimeout(function(){ doSearch() }, 1000);
 
 	}
+
+    function angularWorkflowEventCallback () {
+        refreshFakeJax();
+        showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Workflow-executed")%>");
+    }
 
     var contentAdmin ;
 

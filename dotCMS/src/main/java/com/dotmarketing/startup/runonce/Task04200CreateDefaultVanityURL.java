@@ -228,11 +228,6 @@ public class Task04200CreateDefaultVanityURL extends AbstractJDBCStartupTask {
 	}
 
 	@Override
-	public String getH2Script() {
-		return null;
-	}
-
-	@Override
 	protected List<String> getTablesToDropConstraints() {
 		return new ArrayList<>();
 	}

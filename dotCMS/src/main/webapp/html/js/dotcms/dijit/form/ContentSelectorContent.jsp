@@ -34,6 +34,7 @@
                 value="strInode"
             />
             <div class="sideMenuWrapper">
+                <div dojoAttachPoint="content_type_select"></div>
                 <div dojoAttachPoint="search_general">
                     <dl class="vertical">
                         <dt>
@@ -54,7 +55,6 @@
                     </dl>
                 </div>
                 <div dojoAttachPoint="search_languages_table"></div>
-                <div dojoAttachPoint="structures_select"></div>
                 <div dojoAttachPoint="search_fields_table"></div>
                 <div dojoAttachPoint="search_categories_table">
                     <dl

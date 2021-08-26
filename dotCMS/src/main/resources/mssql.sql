@@ -971,6 +971,8 @@ create table structure (
    expire_date_var NVARCHAR(255) null,
    publish_date_var NVARCHAR(255) null,
    mod_date datetime null,
+   sort_order int null,
+   icon NVARCHAR(255) null,
    primary key (inode)
 );
 create table cms_role (
@@ -1012,9 +1014,6 @@ create table permission (
     sort_order int null,
     friendly_name NVARCHAR(255) null,
     structure_inode NVARCHAR(36) null,
-    last_review datetime null,
-    next_review datetime null,
-    review_interval NVARCHAR(255) null,
     disabled_wysiwyg NVARCHAR(255) null,
     identifier NVARCHAR(36) null,
     language_id numeric(19,0) null,

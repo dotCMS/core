@@ -13,7 +13,6 @@ buildscript {
 }
 
 plugins {
-    id "com.moowork.node" version "1.3.1"
     id "com.palantir.docker" version "0.17.2"  // reference:  https://github.com/palantir/gradle-docker
 }
 
@@ -22,23 +21,6 @@ project.ext {
 }
 
 
-node {
-    // Version of node to use.
-    version = nodeVersion
-
-    // Base URL for fetching node distributions (change if you have a mirror).
-    distBaseUrl = 'https://nodejs.org/dist'
-    // If true, it will download node using above parameters.
-    // If false, it will try to use globally installed node.
-
-    if (project.hasProperty('useGradleNode')){
-        download = project.useGradleNode.toBoolean()
-        println "\nUsing Gradle node version as property useGradleNode=$project.useGradleNode"
-    } else{
-        download = true
-    }
-
-}
 
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import groovy.json.JsonSlurper
@@ -103,7 +85,6 @@ repositories {
 testSets {
     individualTest { dirName = 'test' }
     integrationTest { dirName = 'integration-test' }
-    functionalTest { dirName = 'functional-test' }
 }
 
 
@@ -147,7 +128,6 @@ idea {
 
         //Extra test source dirs
         testSourceDirs += file('integration-test/java')
-        testSourceDirs += file('functional-test/java')
     }
 }
 
@@ -181,10 +161,10 @@ dependencies {
     /**** And now the libs we pull in from internal company sources - libs stored in ./plugins, ./bin, ./libs, the starter site, etc. ****/
     compile fileTree("src/main/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
 
-    starter group: 'com.dotcms', name: 'starter', version: 'empty_20210614', ext: 'zip'
+    starter group: 'com.dotcms', name: 'starter', version: 'empty_20210823', ext: 'zip'
     //Uncomment this line if you want to download the starter that comes with data
-    //starter group: 'com.dotcms', name: 'starter', version: '20210615', ext: 'zip'
-    testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20210614', ext: 'zip'
+    //starter group: 'com.dotcms', name: 'starter', version: '20210823', ext: 'zip'
+    testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20210823', ext: 'zip'
 
     profiler group: 'glowroot-custom', name: 'glowroot-agent', version: '0.13.1'
     profilerDependencies group: 'glowroot-custom', name: 'collector-https-linux', version: '0.13.1'
@@ -194,8 +174,6 @@ dependencies {
 
     individualTestCompile sourceSets.test.output
     integrationTestCompile sourceSets.test.output
-    functionalTestCompile sourceSets.test.output
-    functionalTestCompile sourceSets.integrationTest.output
 
     if (project.gradle.startParameter.taskNames.contains('deployWarTomcatDev') || project.gradle.startParameter.taskNames.contains('testDev')) {
         configurations.compile.exclude group: 'com.dotcms.enterprise', module: 'ee'
@@ -291,7 +269,7 @@ jar{
     exclude 'com/dotcms/enterprise/**'
 
     if (gradle.startParameter.taskNames.contains("deployWarTomcatTests")) {
-        from project.sourceSets.main.output + project.sourceSets.test.output + project.sourceSets.integrationTest.output + project.sourceSets.functionalTest.output
+        from project.sourceSets.main.output + project.sourceSets.test.output + project.sourceSets.integrationTest.output
     }
 }
 
@@ -309,7 +287,7 @@ processResources {
 
 // By default the war task compiles everything under src/main/java into WEB-INF/classes/
 // but, instead, we want to compile everything on a .jar file and put it under WEB-INF/lib.
-war.dependsOn 'deployPlugins', 'extractDotCmsArtifacts'
+war.dependsOn 'extractDotCmsArtifacts'
 
 war {
 
@@ -1031,8 +1009,10 @@ class NpmArtifactExtractTask extends DefaultTask {
     def extract() {
         project.mkdir(artifactFolder)
         String artifactUrl = "$url/$artifact"
-        String artifactVersion = version == 'latest'
-                ? new JsonSlurper().parse(new URL(artifactUrl))."dist-tags".latest
+        Set<String> knownTags = new HashSet<>(Arrays.asList("latest", "stable", "next", "rc"));
+
+        String artifactVersion = knownTags.contains(version)
+                ? new JsonSlurper().parse(new URL(artifactUrl))."dist-tags"[version]
                 : version
         String versionUrl = "$artifactUrl/-/$artifact-${artifactVersion}.tgz"
         println "Downloading from $versionUrl"
@@ -1112,7 +1092,6 @@ task downloadDependencies(type: Exec) {
     configurations.ajtools.files
     configurations.compileOnly.files
     configurations.default.files
-    configurations.functionalTestCompile.files
     configurations.individualTestCompile.files
     configurations.integrationTestCompile.files
     configurations.testCompile.files

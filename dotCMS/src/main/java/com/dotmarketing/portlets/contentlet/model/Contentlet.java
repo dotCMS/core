@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.model;
 
+import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.portlets.contentlet.business.MetadataCache.EMPTY_METADATA_MAP;
 import static com.dotmarketing.util.UtilMethods.isSet;
 
@@ -15,6 +16,8 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.publisher.util.PusheableAsset;
+import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.util.ConversionUtils;
@@ -37,14 +40,17 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.Categorizable;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.BinaryFileFilter;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.InodeUtils;
@@ -80,7 +86,8 @@ import org.apache.commons.lang.builder.ToStringBuilder;
  * @author David Tores
  *
  */
-public class Contentlet implements Serializable, Permissionable, Categorizable, Versionable, Treeable, Ruleable  {
+public class Contentlet implements Serializable, Permissionable, Categorizable, Versionable, Treeable, Ruleable,
+		ManifestItem {
 
   private static final long serialVersionUID = 1L;
   public static final String TITTLE_KEY = "title";
@@ -91,9 +98,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   public static final String STRUCTURE_NAME_KEY = "stName";
   public static final String CONTENT_TYPE_KEY = "contentType";
   public static final String BASE_TYPE_KEY = "baseType";
-  public static final String LAST_REVIEW_KEY = "lastReview";
-  public static final String NEXT_REVIEW_KEY = "nextReview";
-  public static final String REVIEW_INTERNAL_KEY = "reviewInternal";
   public static final String DISABLED_WYSIWYG_KEY = "disabledWYSIWYG";
   public static final String LOCKED_KEY = "locked";
   public static final String ARCHIVED_KEY = "archived";
@@ -144,6 +148,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   public static final String FILTER_KEY = "filterKey";
   public static final String WHERE_TO_SEND = "whereToSend";
   public static final String I_WANT_TO = "iWantTo";
+  public static final String PATH_TO_MOVE = "_path_to_move";
   public static final String TEMP_BINARY_IMAGE_INODES_LIST = "tempBinaryImageInodesList";
   public static final String RELATIONSHIP_KEY = "__##relationships##__";
 
@@ -284,8 +289,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public final String getTitle(){
     	try {
 
-    		if (isSet(this.map.get(TITTLE_KEY))) {
-
+    		if (isSet((String) this.map.get(TITTLE_KEY))) {
     			return map.get(TITTLE_KEY).toString();
 			}
 
@@ -298,9 +302,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 			if (!isSet(title)) {
 				title = this.buildName();
-			}
+			}else{
+                map.put(TITTLE_KEY, title);
+            }
 
-			map.put(TITTLE_KEY, title);
     	    return title;
 		} catch (Exception e) {
 			Logger.debug(this,"Unable to get title for contentlet, id: " + getIdentifier(), e);
@@ -347,11 +352,16 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 					// if it is a binary
 					if (binaryValue == null && Field.FieldType.BINARY.toString().equals(field.getFieldType()) && field.isIndexed()) {
-						binaryValue = this.getBinary(field.getVelocityVarName()).getName();
+					    final File binaryFile = this.getBinary(field.getVelocityVarName());
+					    if (null != binaryFile) {
+                            binaryValue = binaryFile.getName();
+                        }
 					}
 				}
 			} catch(Exception e){
-				Logger.warn(this.getClass(), "unable to get field value " + field.getVelocityVarName() + " " + e, e);
+                Logger.warn(this.getClass(),
+                        "unable to get field value " + field.getVelocityVarName()
+                                + " . Content inode: " + this.getInode() + ". Reason: " + e, e);
 			}
 		}
 
@@ -533,64 +543,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
            hasExtension = (getContentType().baseType() == BaseContentType.HTMLPAGE || getContentType().baseType() == BaseContentType.FILEASSET );
 		}
         return hasExtension;
-    }
-
-    /**
-     *
-     * @return
-     */
-    @Deprecated
-    @JsonIgnore
-    public Date getLastReview() {
-    	return (Date)map.get(LAST_REVIEW_KEY);
-    }
-
-    /**
-     *
-     * @param lastReview
-     */
-    @Deprecated
-    public void setLastReview(Date lastReview) {
-    	map.put(LAST_REVIEW_KEY, lastReview);
-    }
-
-    /**
-     *
-     * @return
-     */
-    @Deprecated
-    @JsonIgnore
-    public Date getNextReview() {
-    	return (Date)map.get(NEXT_REVIEW_KEY);
-    }
-
-    /**
-     *
-     * @param nextReview
-     */
-    @Deprecated
-    public void setNextReview(Date nextReview) {
-    	map.put(NEXT_REVIEW_KEY, nextReview);
-    }
-
-    /**
-     *
-     * @return
-     */
-    @Deprecated
-    @JsonIgnore
-    public String getReviewInterval() {
-    	return (String)map.get(REVIEW_INTERNAL_KEY);
-    }
-
-    /**
-     *
-     * @param reviewInterval
-     */
-    @Deprecated
-    @JsonIgnore
-    public void setReviewInterval(String reviewInterval) {
-    	map.put(REVIEW_INTERNAL_KEY, reviewInterval);
     }
 
     /**
@@ -1435,8 +1387,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
     public boolean isHost() {
       
-
-        return getContentType().variable().equals(Host.HOST_VELOCITY_VAR_NAME);
+        ContentType type = getContentType();
+        return type!= null && type.variable().equals(Host.HOST_VELOCITY_VAR_NAME);
     }
 
 	/**
@@ -1632,6 +1584,23 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	    getMap().remove(CONTENTLET_ASSET_NAME_COPY);
 	    getMap().remove(TEMPLATE_MAPPINGS);
 		getWritableNullProperties().clear();
+	}
+
+	@Override
+	public ManifestInfo getManifestInfo() {
+
+		final String type = Host.class.isInstance(this.getClass()) || this.isHost() ?
+				PusheableAsset.SITE.getType():PusheableAsset.CONTENTLET.getType();
+
+		return new ManifestInfoBuilder()
+			.objectType(type)
+			.id(this.getIdentifier())
+			.inode(this.getInode())
+			.title(this.getTitle().replace("\n", ","))
+			.siteId(this.getHost())
+			.folderId(this.getFolder())
+			.build();
+
 	}
 
 

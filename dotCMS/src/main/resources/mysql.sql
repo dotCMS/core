@@ -741,6 +741,8 @@ create table structure (
    expire_date_var varchar(255),
    publish_date_var varchar(255),
    mod_date datetime,
+   sort_order integer,
+   icon varchar(255),
    primary key (inode)
 );
 create table cms_role (
@@ -783,9 +785,6 @@ create table contentlet (
    sort_order integer,
    friendly_name varchar(255),
    structure_inode varchar(36),
-   last_review datetime,
-   next_review datetime,
-   review_interval varchar(255),
    disabled_wysiwyg varchar(255),
    identifier varchar(36),
    language_id bigint,

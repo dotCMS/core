@@ -96,10 +96,5 @@ public class Task01035FixTriggerVarLength extends AbstractJDBCStartupTask {
     protected List<String> getTablesToDropConstraints() {
         return null;
     }
-
-    @Override
-    public String getH2Script() {
-        return null;
-    }
     
 }

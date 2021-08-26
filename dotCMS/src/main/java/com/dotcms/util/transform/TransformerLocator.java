@@ -10,11 +10,11 @@ import com.dotmarketing.beans.transform.MultiTreeTransformer;
 import com.dotmarketing.beans.transform.TreeTransformer;
 import com.dotmarketing.business.ContentletVersionInfoTransformer;
 import com.dotmarketing.business.transform.UserTransformer;
+import com.dotmarketing.portlets.categories.business.CategoryTransformer;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.transform.ContainerTransformer;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.ContentletTransformer;
-import com.dotmarketing.portlets.contentlet.transform.FatContentletTransformer;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.transform.TemplateTransformer;
 import com.dotmarketing.portlets.hostvariable.transform.HostVariableTransformer;
@@ -136,17 +136,6 @@ public class TransformerLocator {
     }
 
     /**
-     * Creates a DBTransformer for Fat Contentlet {@link com.dotmarketing.portlets.contentlet.business.Contentlet} objects
-     * @param initList List of DB results to be transformed
-     * @return
-     */
-    public static FatContentletTransformer createFatContentletTransformer(
-            List<Map<String, Object>> initList) {
-
-        return new FatContentletTransformer(initList);
-    }
-
-    /**
      * Creates a DBTransformer for MultiTree objects
      * @param initList List of DB results to be transformed
      */
@@ -248,5 +237,14 @@ public class TransformerLocator {
             List<Map<String, Object>> initList) {
 
         return new UserTransformer(initList);
+    }
+
+    /**
+     * Creates a Map to object Transformer for Categories
+     * @param initList
+     * @return
+     */
+    public static CategoryTransformer createCategoryTransformer(List<Map<String, Object>> initList){
+        return new CategoryTransformer(initList);
     }
 }
