@@ -2,9 +2,6 @@ package com.dotmarketing.portlets.workflows.actionlet;
 
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.CompanyUtils;
-import com.liferay.portal.model.Company;
-import com.liferay.util.StringPool;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,18 +37,10 @@ public class EmailActionlet extends WorkFlowActionlet {
 
     @Override
     public List<WorkflowActionletParameter> getParameters() {
+        List<WorkflowActionletParameter> params = new ArrayList<WorkflowActionletParameter>();
 
-        String fromEmail = StringPool.BLANK;
-        String fromName = StringPool.BLANK;
-        final Company company = CompanyUtils.getDefaultCompany();
-        if(null != company){
-           fromEmail = company.getEmailAddress();
-           fromName = company.getAdminName();
-        }
-
-        final List<WorkflowActionletParameter> params = new ArrayList<WorkflowActionletParameter>();
-        params.add(new WorkflowActionletParameter("fromEmail", "From Email", fromEmail, true));
-        params.add(new WorkflowActionletParameter("fromName", "From Name", fromName, true));
+        params.add(new WorkflowActionletParameter("fromEmail", "From Email", "", true));
+        params.add(new WorkflowActionletParameter("fromName", "From Name", "", true));
         params.add(new WorkflowActionletParameter("toEmail", "To Email", "", true));
         params.add(new WorkflowActionletParameter("toName", "To Name", "", true));
         params.add(new WorkflowActionletParameter("cc", "Cc Email", "", false));

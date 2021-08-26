@@ -4,8 +4,6 @@ import static com.dotcms.rest.ResponseEntityView.OK;
 
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource.InitBuilder;
-import com.dotmarketing.exception.DotDataValidationException;
-import io.vavr.control.Try;
 import java.io.Serializable;
 import java.util.Locale;
 import java.util.Map;
@@ -119,13 +117,15 @@ public class ConfigurationResource implements Serializable {
 			@Context final HttpServletResponse response,
 			final CompanyEmailForm form) throws ExecutionException, InterruptedException {
 
+		form.checkValid();
+
 		final InitDataObject dataObject = new InitBuilder(request, response)
 				.requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
 				.requiredPortlet("maintenance")
 				.rejectWhenNoUser(true)
 				.init();
 
-		helper.validateEmail(form.getEmail(), dataObject.getUser());
+		helper.sendValidationEmail(form.getSenderAndEmail(), dataObject.getUser());
 		return Response.ok(new ResponseEntityView(OK)).build();
 	}
 

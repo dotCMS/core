@@ -16,7 +16,6 @@ import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
@@ -38,8 +37,8 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletRequest;
-import org.apache.commons.validator.routines.EmailValidator;
 
 /**
  * A utility class that provides the required dotCMS configuration properties to
@@ -281,33 +280,35 @@ public class ConfigurationHelper implements Serializable {
     }
 
 	/**
-	 * Asynchronous e-mail validation
-	 * the result is communicated via system wide notification to the user
-	 * @param email
-	 * @return
-	 * @throws DotDataValidationException
+	 * Asynchronous e-mail send utility
+	 * The result is communicated via system notification to the user.
+	 * @param senderNameAndEmail is expected to have something like "dotCMS Website <website@dotcms.com>"
+	 * where the e-mail piece is the only mandatory component. if preceding worlds are included they will be used as the sendFrom param
+	 * @throws ExecutionException, InterruptedException
 	 */
-	public void validateEmail(final String email, final User user)
+	public void sendValidationEmail(final String senderNameAndEmail, final User user)
 			throws ExecutionException, InterruptedException {
 
-		if (!EmailValidator.getInstance().isValid(email)) {
-			throw new IllegalArgumentException(
-					String.format("[%s] is not a valid email.", email));
-		}
+		final InternetAddress[] parsed = Try.of(() -> InternetAddress.parse(senderNameAndEmail))
+				.getOrElseThrow(() -> new IllegalArgumentException(
+						String.format("input %s does not match a valid e-mail pattern.", senderNameAndEmail)));
+		final InternetAddress address = parsed[0];
 
 		final DotSubmitter dotSubmitter = DotConcurrentFactory.getInstance()
 				.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
 				CompletableFuture.runAsync(() -> {
-					final String mailName = "Company configured address.";
+					final String mailName = UtilMethods.isSet(address.getPersonal()) ? address
+							.getPersonal() : user.getRecipientName();
+
 					final Mailer mail = new Mailer();
 					mail.setToName(mailName);
-					mail.setToEmail(email);
-					mail.setFromEmail(email);
+					mail.setToEmail(user.getEmailAddress());
+					mail.setFromEmail(address.getAddress());
 					mail.setFromName(mailName);
-					mail.setSubject("dotCMS Test email.");
+					mail.setSubject("dotCMS From address test e-mail.");
 					mail.setHTMLAndTextBody("This email was successfully sent by dotCMS.");
 					final boolean result = mail.sendMessage();
-					systemNotifyTestEmail(user, email, result);
+					systemNotifyTestEmail(user, senderNameAndEmail, result);
 				}, dotSubmitter);
 	}
 

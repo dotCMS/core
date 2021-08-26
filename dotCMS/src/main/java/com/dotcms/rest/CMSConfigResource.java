@@ -112,7 +112,7 @@ public class CMSConfigResource {
         StringBuilder responseMessage = new StringBuilder();
 
         //Validate the parameters
-        if ( !responseResource.validate( responseMessage, "portalURL", "mx", "emailAddress", "size","type","street" ) ) {
+        if ( !responseResource.validate( responseMessage, "portalURL", "emailAddress", "size","type","street" ) ) {
             return responseResource.responseError( responseMessage.toString(), HttpStatus.SC_BAD_REQUEST );
         }
 
