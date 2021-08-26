@@ -413,7 +413,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
         try (StatefulRedisConnection<String,V> conn = this.getConn()) {
 
             if (this.isOpen(conn)) {
-                return conn.sync().del(ConversionUtils.INSTANCE.convert(this.keyToStringConverter, keys));
+                return conn.sync().del(ConversionUtils.INSTANCE.convertToArray(this.keyToStringConverter, String.class, keys));
             }
         }
 
@@ -427,7 +427,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
 
             if (this.isOpen(conn)) {
 
-                return conn.async().unlink(ConversionUtils.INSTANCE.convert(this.keyToStringConverter, keys));
+                return conn.async().unlink(ConversionUtils.INSTANCE.convertToArray(this.keyToStringConverter, String.class, keys));
             }
         }
 
@@ -543,7 +543,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
 
                 try {
                     return conn.sync().hmget(this.wrapKey(key),
-                            ConversionUtils.INSTANCE.convert(this.keyToStringConverter,fields)).stream()
+                            ConversionUtils.INSTANCE.convertToArray(this.keyToStringConverter, String.class, fields)).stream()
                             .map(kvKeyValue ->
                                     CollectionsUtils.entry(
                                             this.stringToKeyConverter.convert(kvKeyValue.getKey()), kvKeyValue.getValue()))
@@ -602,7 +602,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
             if (this.isOpen(conn)) {
 
                 return conn.sync().hdel(this.wrapKey(key),
-                        ConversionUtils.INSTANCE.convert(this.keyToStringConverter, fields));
+                        ConversionUtils.INSTANCE.convertToArray(this.keyToStringConverter, String.class, fields));
             } else {
                 return -1;
             }
@@ -701,7 +701,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
 
         if (this.isOpen(conn)) {
 
-            final String [] channels = ConversionUtils.INSTANCE.convert(this::wrapKey, channelsIn);
+            final String [] channels = ConversionUtils.INSTANCE.convertToArray(this::wrapKey, String.class, channelsIn);
             final DotPubSubListener dotPubSubListener = new DotPubSubListener (messageConsumer, channels);
             final RedisPubSubAsyncCommands<String, V> commands = conn.async();
             commands.getStatefulConnection().addListener(dotPubSubListener);
@@ -723,7 +723,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
     @Override
     public  void unsubscribe (final K... channelsIn) {
 
-        final String [] channels = ConversionUtils.INSTANCE.convert(this::wrapKey, channelsIn);
+        final String [] channels = ConversionUtils.INSTANCE.convertToArray(this::wrapKey, String.class, channelsIn);
 
         for (final String channel : channels) {
 

@@ -84,11 +84,16 @@ public class ConversionUtils implements Serializable {
 	 * @param converter -
 	 * @return
 	 */
-	public <O, D> D[] convert (final Converter<O, D> converter, final O... originArray) {
+	public <O, D> D[] convertToArray (final Converter<O, D> converter, final Class<D> clazz, final O... originArray) {
 
-		List<D> listD = this.convert(originArray, converter);
+		final D[] destinyArray =  (D[]) Array.newInstance(clazz, originArray.length);
 
-		return null != listD? (D[])listD.toArray(): null;
+		for (int i = 0; i < originArray.length; ++i) {
+
+			destinyArray[i] = converter.convert(originArray[i]);
+		}
+
+		return destinyArray;
 	} // convert
 
     /**

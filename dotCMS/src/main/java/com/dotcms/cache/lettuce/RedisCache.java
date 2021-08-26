@@ -125,8 +125,7 @@ public class RedisCache extends CacheProvider {
 
     String generateNewKey() {
 
-        return this.clusterId + StringPool.UNDERLINE + // todo: move thi to the client
-             "cache_" + new SimpleDateFormat(KEY_DATE_FORMAT).format(new Date());
+        return  "cache_" + new SimpleDateFormat(KEY_DATE_FORMAT).format(new Date());
     }
 
     /**
