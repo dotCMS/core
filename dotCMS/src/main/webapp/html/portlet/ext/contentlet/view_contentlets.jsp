@@ -30,9 +30,6 @@
     List<ContentType> contentTypes = (List<ContentType>)request.getAttribute ("contentSearchContentTypes");
 
     List<Structure> structures = new StructureTransformer(contentTypes).asStructureList();
-
-    
-    boolean onlyOneType=structures.size()==1;
     
     
     List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketing.util.WebKeys.LANGUAGES);
@@ -628,16 +625,10 @@
 
                 <!-- START Advanced Search-->
                 <div id="advancedSearch">
-                
-                
-                    
-                
-                
-               
                     <dl class="vertical">
-                        <dd><input type="text" dojoType="dijit.form.TextBox" tabindex="1" placeholder="<%= LanguageUtil.get(pageContext, "Search") %>" onKeyUp='doSearch()' name="allFieldTB" id="allFieldTB" value="<%=_allValue %>"></dd>
+                        <dd><input type="text" dojoType="dijit.form.TextBox" tabindex="1" placeholder="<%= LanguageUtil.get(pageContext, "Search").replace("\"", "'") %>" onKeyUp='doSearch()' name="allFieldTB" id="allFieldTB" value="<%=_allValue %>"></dd>
                         <div class="clear"></div>
-                       <%if(onlyOneType){ %>
+                       <%if(contentTypes!=null && contentTypes.size()==1){ %>
                            <input type="hidden" name="structure_inode_select" value="<%=structures.get(0).getInode()%>"/>
                        <%} else {%>
                            <dt><label><%=LanguageUtil.get(pageContext, "Type") %>:</label></dt>
