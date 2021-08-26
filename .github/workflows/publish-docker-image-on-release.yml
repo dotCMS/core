@@ -1,25 +1,11 @@
-name: publish-dotcms-docker-image
+name: publish-dotcms-docker-image-on-release
 on:
-  workflow_dispatch:
-    inputs:
-      custom_label:
-        description: 'Custom label to add as part of the tag'
-        required: false
-      update_stable:
-        description: 'Update stable tags'
-        required: true
-        default: 'false'
-      also_latest:
-        description: 'Update also the "latest" tag (relies on update_stable input to be set to true)'
-        required: false
-        default: 'false'
-      dry_run:
-        description: 'Dry Run (does not publish to docker hub)'
-        required: false
-        default: 'false'
+  push:
+    branches:
+      - release-*
 jobs:
   publish_image:
-    name: Publish DotCMS docker image
+    name: Publish DotCMS docker image on release push
     runs-on: ubuntu-latest
     steps:
       - name: GITHUB CONTEXT
@@ -35,19 +21,27 @@ jobs:
           BUILD_HASH=$(git log -1 --pretty=%h)
           eval $(cat dotCMS/gradle.properties| grep dotcmsReleaseVersion)
           DOTCMS_VERSION="${dotcmsReleaseVersion}"
+          jobRun=true
+          if [[ ${BUILD_ID} =~ ^release-[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$ ]]; then
+            jobRun=true
+          else
+            jobRun=false
+          fi
 
           echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
           echo "BUILD_HASH=${BUILD_HASH}" >> $GITHUB_ENV
           echo "DOTCMS_VERSION=${DOTCMS_VERSION}" >> $GITHUB_ENV
+          echo "jobRun=${jobRun}" >> $GITHUB_ENV
       - name: Discover docker tags
         id: discover-docker-tags
         uses: dotcms/discover-docker-tags-action@main
         with:
           version: ${{ ENV.DOTCMS_VERSION }}
           hash: ${{ env.BUILD_HASH }}
-          label: ${{ github.event.inputs.custom_label }}
-          update_stable: ${{ github.event.inputs.update_stable }}
-          also_latest: ${{ github.event.inputs.also_latest }}
+          label: ''
+          update_stable: false
+          also_latest: alse
+        if: env.jobRun == 'true'
       - name: Publish docker image
         id: publish-docker-image
         uses: dotcms/publish-docker-image-action@main
@@ -58,4 +52,17 @@ jobs:
           github_user_token: ${{ secrets.CICD_GITHUB_TOKEN }}
           docker_hub_username: ${{ secrets.DOCKER_USERNAME }}
           docker_hub_token: ${{ secrets.DOCKER_TOKEN }}
-          dry_run: ${{ github.event.inputs.dry_run }}
+          dry_run: false
+        if: env.jobRun == 'true'
+      - name: Slack Notification
+        if: success()
+        uses: rtCamp/action-slack-notify@master
+        env:
+          SLACK_WEBHOOK: ${{ secrets.DEVELOPERS_SLACK_WEBHOOK }}
+          SLACK_USERNAME: dotcms-bot
+          SLACK_TITLE: "Attention dotters: Docker image built!"
+          SLACK_MSG_AUTHOR: " "
+          MSG_MINIMAL: true
+          SLACK_FOOTER: ""
+          SLACK_ICON: https://avatars.githubusercontent.com/u/1005263?s=200&v=4
+          SLACK_MESSAGE: "<!channel> This automated script is happy to announce that a new docker image has been built for *${{ env.DOTCMS_VERSION }}* with tag: `${{ steps.discover-docker-tags.outputs.discovered_tags }}` :docker:"

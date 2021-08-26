@@ -26,12 +26,6 @@ jobs:
       - name: Set Common Vars
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            IS_PR=true
-          else
-            IS_PR=false
-          fi
-
-          if [[ ${IS_PR} == true ]]; then
             BUILD_ID="${{ github.head_ref }}"
           else
             BUILD_ID=$(basename "${{ github.ref }}")
