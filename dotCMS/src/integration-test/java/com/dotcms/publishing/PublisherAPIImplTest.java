@@ -44,6 +44,7 @@ import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.dependencies.DependencyManager;
+import com.dotcms.publishing.manifest.ManifestBuilder;
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
@@ -110,7 +111,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
 public class PublisherAPIImplTest {
-    private static String MANIFEST_HEADERS = "INCLUDED/EXCLUDED,object type, Id, title, site, folder, excluded by, included by";
+    private static String MANIFEST_HEADERS = "INCLUDED/EXCLUDED,object type, Id, inode, title, site, folder, excluded by, included by";
     private static Contentlet languageVariableCreated;
 
     public static void prepare() throws Exception {
@@ -487,7 +488,8 @@ public class PublisherAPIImplTest {
                     languageVariablesAddInBundle
             );
 
-            final String manifestFilePath = extractHere.getAbsolutePath() + File.separator + "manifest.csv";
+            final String manifestFilePath = extractHere.getAbsolutePath() + File.separator +
+                    ManifestBuilder.MANIFEST_NAME;
             final File manifestFile = new File(manifestFilePath);
 
             assertManifestFile(manifestFile, manifestLines);
@@ -512,11 +514,11 @@ public class PublisherAPIImplTest {
 
             dependenciesFrom.stream().forEach(
                     dependency -> manifestLines.add((ManifestItem) dependency,
-                            "Dependency from: " + languageVariable.getIdentifier())
-            );
+                            String.format("Dependency from: ID: %s Title: %s", languageVariable.getIdentifier(), languageVariable.getTitle())
+            ));
 
             manifestLines.add(languageVariablesContentType,
-                    "Dependency from: " + languageVariable.getIdentifier());
+                    String.format("Dependency from: ID: %s Title: %s", languageVariable.getIdentifier(), languageVariable.getTitle()));
         }
 
         if (!languageVariablesAddInBundle.isEmpty()) {
@@ -524,7 +526,7 @@ public class PublisherAPIImplTest {
             final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI()
                     .findSystemWorkflowScheme();
             manifestLines.add(systemWorkflowScheme,
-                    "Dependency from: " + languageVariablesContentType.id());
+                    String.format("Dependency from: ID: %s Title: %s", languageVariablesContentType.id(), languageVariablesContentType.name()));
 
             final Host systemHost = APILocator.getHostAPI().findSystemHost();
             manifestLines.addExclude(systemHost, "Excluded System Folder/Host");

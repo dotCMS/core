@@ -13,8 +13,12 @@ import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.util.StringPool;
-import com.twelvemonkeys.util.LinkedSet;
-import io.lettuce.core.*;
+import io.lettuce.core.KeyScanCursor;
+import io.lettuce.core.ReadFrom;
+import io.lettuce.core.RedisCommandTimeoutException;
+import io.lettuce.core.RedisURI;
+import io.lettuce.core.ScanArgs;
+import io.lettuce.core.SetArgs;
 import io.lettuce.core.api.StatefulConnection;
 import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.sync.RedisCommands;
@@ -39,15 +43,43 @@ import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * Master replica implementation of redis cache, works as a replicator when there is more than 1 uri as part of the REDIS_LETTUCECLIENT_URLS config.
+ * This implementation wraps keys, members and channels by prefixing with the cluster id, this helps to avoid collisions on ghetto redis cluster implementation
+ * where can live 2 or more clients into the same redis space.
+ *
+ * It handles the connections for get, put, inc and hashes by pool you can config it by using:
+ * - REDIS_LETTUCECLIENT_TIMEOUT_MS, timeout (3000 by default)
+ * - REDIS_LETTUCECLIENT_MIN_IDLE_CONNECTIONS, min connections to redis alive when idle (2 by default)
+ * - REDIS_LETTUCECLIENT_MAX_CONNECTIONS, max connections at all (5 by default)
+ *
+ * You can create as much as clients you need, by default the empty constructor uses the {@link DotObjectCodec} which is a gzip, java serialized byte code.
+ * In addition internal the keys, channels, member names, etc are handled by string, however you can use whatever you want as a key but it should be provided
+ * a converter to transform the key to string and viceversa, in case the key (the most normal case) is a string you do not need to implement anything seems the
+ * default implement has been made thinking on keys as a strings
+ *
+ * In case you need to use the redis connection you can use {@link MasterReplicaLettuceClient#getConnection()} method, you can use the
+ * {@link LettuceAdapter} in order to transform the connection to a lettuce connection. In case the implementation is running by another library
+ * would need another adapter, by default dotCMS uses Lettuce client to connect to Redis.
+ *
+ * @param <K>
+ * @param <V>
+ * @author jsanca
+ */
 public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
 
     private final static String OK_RESPONSE = "OK";
@@ -524,7 +556,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
 
                 try {
                     return conn.sync().hkeys(this.wrapKey(key)).stream().map(this.stringToKeyConverter::convert)
-                            .collect(Collectors.toCollection(LinkedSet::new));
+                            .collect(Collectors.toCollection(LinkedHashSet::new));
                 } catch (RedisCommandTimeoutException e) {
                     throw new CacheTimeoutException(e);
                 }
@@ -705,7 +737,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
             final DotPubSubListener dotPubSubListener = new DotPubSubListener (messageConsumer, channels);
             final RedisPubSubAsyncCommands<String, V> commands = conn.async();
             commands.getStatefulConnection().addListener(dotPubSubListener);
-            commands.subscribe();
+            commands.subscribe(channels);
 
             final Tuple2<DotPubSubListener, StatefulRedisPubSubConnection<String, V>> channelRedisPubSubAsyncCommandsTuple =
                     Tuple.of(dotPubSubListener, conn);

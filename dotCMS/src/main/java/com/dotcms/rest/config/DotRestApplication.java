@@ -27,6 +27,7 @@ import com.dotcms.rest.api.v1.event.EventsResource;
 import com.dotcms.rest.api.v1.fileasset.FileAssetsResource;
 import com.dotcms.rest.api.v1.folder.FolderResource;
 import com.dotcms.rest.api.v1.languages.LanguagesResource;
+import com.dotcms.rest.api.v1.maintenance.JVMInfoResource;
 import com.dotcms.rest.api.v1.maintenance.MaintenanceResource;
 import com.dotcms.rest.api.v1.menu.MenuResource;
 import com.dotcms.rest.api.v1.page.NavResource;
@@ -173,6 +174,7 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 			.add(ContentResource.class)
 			.add(CacheResource.class)
 			.add(RedisResource.class)
+			.add(JVMInfoResource.class)
 			.build();
 
 

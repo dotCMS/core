@@ -23,6 +23,9 @@ import java.util.function.Consumer;
  * - handle hashes
  * - atomic integer
  * - pub and sub.
+ *
+ * Some operation may have ttl and also a sync/async versions.
+ *
  * @param <K>
  * @param <V>
  */

@@ -9,6 +9,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Redis pub and sub
+ * This implementation is based on the redis Streaming Pub/Sub implementation
+ *
+ * The topic is used to subscribe to a channel, and it the Provider is started, can publish
+ * a message to a channel (aka topic)
  * @author jsanca
  */
 public class RedisPubSubImpl implements DotPubSubProvider {

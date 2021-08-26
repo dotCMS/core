@@ -1,10 +1,7 @@
 package com.dotcms.cache.lettuce;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.enterprise.cluster.ClusterFactory;
-import com.dotcms.repackage.EDU.oswego.cs.dl.util.concurrent.ConcurrentHashMap;
 import com.dotcms.util.DotCloneable;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.provider.CacheStats;
@@ -28,6 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
@@ -35,6 +33,20 @@ import java.util.stream.Collectors;
 
 /**
  * Redis Cache implementation
+ * Notes:
+ * 1) This redis implementation does not have the clusted id, b/c redis handles each member, key, hash, incr and channel by using the cluster id
+ * so it is not need to repeat it here.
+ *
+ * The cache handles a ttl, one global by default REDIS_SERVER_DEFAULT_TTL, but can prefix a group to the same key in order to have a specific
+ * ttl for a section.
+ *
+ * 2) When a call is running on transaction to avoid dirty saves or fetches, the cache does not put or retrieve anything.
+ *
+ * 3) Since the information is being stored as a java byte (binary) only can use serializable values, non-serializable objects will be skipped from the cache.
+ *
+ * 4) Objects that implements {@link DotCloneable}, the cache will returns a Clone of the object stored on the cache instead of the actual copy on the cache
+ * this will helps
+ *
  */
 public class RedisCache extends CacheProvider {
 
@@ -46,26 +58,22 @@ public class RedisCache extends CacheProvider {
 
     private final String REDIS_GROUP_KEY;
     private final String REDIS_PREFIX_KEY;
-    private final String clusterId;
     private final RedisClient<String, Object> client;
 
-    // todo: check if we need lazy here or not
     private final int  keyBatchingSize = Config.getIntProperty( "REDIS_SERVER_KEY_BATCH_SIZE", 1000);
     private final long defaultTTL      = Config.getLongProperty("REDIS_SERVER_DEFAULT_TTL", -1);
     final static AtomicReference<String> prefixKey = new AtomicReference(PREFIX_UNSET);
-    private final Map<String, Long> groupTTLMap    = new ConcurrentHashMap();
+    private final Map<String, Long> groupTTLMap    = new ConcurrentHashMap<>();
 
-    public RedisCache(final RedisClient<String,Object> client, final String clusterId) {
+    public RedisCache(final RedisClient<String,Object> client) {
 
         this.client           = client;
-        this.clusterId        = clusterId;
-        this.REDIS_GROUP_KEY  = clusterId + "REDIS_GROUP_KEY";
-        this.REDIS_PREFIX_KEY = clusterId + "REDIS_PREFIX_KEY";
+        this.REDIS_GROUP_KEY  =  "REDIS_GROUP_KEY";
+        this.REDIS_PREFIX_KEY = "REDIS_PREFIX_KEY";
     }
 
     public RedisCache() {
-        this(RedisClientFactory.getClient("cache"),
-                APILocator.getShortyAPI().shortify(ClusterFactory.getClusterId()));
+        this(RedisClientFactory.getClient("cache"));
     }
 
     @Override

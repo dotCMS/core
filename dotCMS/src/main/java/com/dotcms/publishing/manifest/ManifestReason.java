@@ -2,6 +2,9 @@ package com.dotcms.publishing.manifest;
 
 import com.dotcms.publisher.util.dependencies.DependencyManager;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.liferay.util.StringPool;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
@@ -18,8 +21,7 @@ import java.util.stream.Collectors;
 public enum ManifestReason {
 
     INCLUDE_BY_USER ("Added directly by User"),
-    INCLUDE_DEPENDENCY_FROM("Dependency from: %s", argument -> String.class.isInstance(argument) ?
-            argument : ((ManifestItem) argument).getManifestInfo().id()),
+    INCLUDE_DEPENDENCY_FROM("Dependency from: %s", argument -> getDependencyFromArgument(argument)),
     INCLUDE_AUTOMATIC_BY_DOTCMS("Added Automatically by dotCMS"),
     EXCLUDE_SYSTEM_OBJECT("Excluded System Folder/Host"),
     EXCLUDE_BY_FILTER("Excluded by filter"),
@@ -42,5 +44,16 @@ public enum ManifestReason {
         final List<Object> argumentsTransformed = Arrays.stream(arguments).sequential().map(this.transformer)
                 .collect(Collectors.toList());
         return String.format(this.messageTemplate, argumentsTransformed.toArray());
+    }
+
+    private static String getDependencyFromArgument(final Object argument) {
+        if (String.class.isInstance(argument)) {
+            return argument.toString();
+        } else if (ManifestItem.class.isInstance(argument))  {
+            final ManifestInfo manifestInfo = ManifestItem.class.cast(argument).getManifestInfo();
+            return String.format("ID: %s Title: %s", manifestInfo.id(), manifestInfo.title());
+        } else {
+            return StringPool.BLANK;
+        }
     }
 }

@@ -122,7 +122,17 @@ public class PluginFactoryDBImpl extends PluginFactory {
 	 */
 	@Override
 	protected void save(Plugin plugin) throws DotDataException {
-		HibernateUtil.saveOrUpdate(plugin);
+		final HibernateUtil hu = new HibernateUtil(Plugin.class);
+		final Plugin existingPlugin = (Plugin) hu.get(plugin.getId());
+		if (existingPlugin != null) {
+			existingPlugin.setPluginName(plugin.getPluginName());
+			existingPlugin.setPluginVersion(plugin.getPluginVersion());
+			existingPlugin.setAuthor(plugin.getAuthor());
+			existingPlugin.setLastDeployedDate(plugin.getLastDeployedDate());
+			HibernateUtil.update(existingPlugin);
+		} else {
+			HibernateUtil.save(plugin);
+		}
 		if(UtilMethods.isSet(plugin.getId())){
 		    cache().removePlugin(plugin.getId());
 		    cache().add(plugin);

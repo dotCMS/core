@@ -199,20 +199,18 @@
 
         function printData(data, headers) {
             fillResultsTable(headers, data);
-            fillCardView(data)
-            const card = getViewCardEl();
             const list = getListEl();
 
             if (state.view === 'list') {
+                const card = getViewCardEl();
+                card ? card.style.display = 'none' : false;
                 list.style.display = ''
-                card.style.display = 'none'
             } else {
+                fillCardView(data);
                 list.style.display = 'none'
-                card.style.display = ''
+                getViewCardEl().style.display = ''
             }
-
         }
-
 
         function fillResults(data) {
             var counters = data[0];
@@ -1682,8 +1680,12 @@
         function checkUncheckAll() {
                 var checkAll = dijit.byId("checkAll");
                 var check;
+	            var viewCard = getViewCardEl();
 
-	            getViewCardEl().value = ''
+                if (viewCard) {
+	                viewCard.value = '';
+                }
+                
                 for (var i = 0; i < cbContentInodeList.length; ++i) {
                         check = dijit.byId("checkbox" + i);
                         if(check) {

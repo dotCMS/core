@@ -15,6 +15,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.Validator;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.util.Constants;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.StringPool;
@@ -148,7 +149,7 @@ public class EditLanguageAction extends DotPortletAction {
                 this.saveLanguage(language);
 			} catch(Exception e ){
 				SessionMessages.add(req,"message", "message.languagemanager.languagenotsaved");
-				throw new SQLException();
+				throw new SQLException(LanguageUtil.get("message.languagemanager.languagenotsaved"));
 			}
 			SessionMessages.add(req,"message", "message.languagemanager.language_save");
 			_sendToReferral(req, res, StringPool.BLANK);
@@ -159,12 +160,13 @@ public class EditLanguageAction extends DotPortletAction {
 	}
 
 	@VisibleForTesting
-	public void saveLanguage (final Language language) {
+	public void saveLanguage (final Language languageToBeSaved) {
 
-        if (null != languageAPI.getLanguage(language.getLanguageCode(), language.getCountryCode())) {
+		final Language lang = languageAPI.getLanguage(languageToBeSaved.getLanguageCode(), languageToBeSaved.getCountryCode());
+        if (null != lang && languageToBeSaved.getId() == 0) {
             throw new DotLanguageException("Language Not Saved. There is already another Language with the same Language code and Country code.");
         }
-        languageAPI.saveLanguage(language);
+        languageAPI.saveLanguage(languageToBeSaved);
     }
 
    /**

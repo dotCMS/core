@@ -21,6 +21,7 @@ import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
 import com.dotmarketing.util.DateUtil;
+import com.lmax.disruptor.util.Util;
 import java.util.TimeZone;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileItemFactory;
@@ -985,7 +986,12 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 if ( assetId.contains( "user_" ) || assetId.contains( "users_" ) ) {//Trying to publish users
                     //If we are trying to push users a filter date must be available
                     if ( assetId.contains( "users_" ) ) {
-                        Date filteringDate = dateFormat.parse( _contentFilterDate );
+
+                        Date filteringDate = null;
+
+                        if(UtilMethods.isSet(_contentFilterDate)) {
+                            dateFormat.parse(_contentFilterDate);
+                        }
                         //Get users where createdate >= ?
                         List<String> usersIds = APILocator.getUserAPI().getUsersIdsByCreationDate( filteringDate, 0, -1 );
                         if ( usersIds != null ) {
