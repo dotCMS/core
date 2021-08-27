@@ -28,6 +28,11 @@ public class Task210816DeInodeRelationshipTest {
     @Test
     public void testExecuteUpgrade() throws DotDataException, SQLException {
         final Task210816DeInodeRelationship upgradeTask = new Task210816DeInodeRelationship();
+
+        final DotConnect dotConnect = new DotConnect();
+        // re-create the data in inode for already existing rels
+        dotConnect.executeStatement("INSERT INTO inode SELECT inode, null, null, 'relationship' FROM relationship");
+
         // create some rels
         List<String> relInodes = new ArrayList<>();
 
@@ -36,8 +41,6 @@ public class Task210816DeInodeRelationshipTest {
         }
 
         final Date now = new Date();
-        final DotConnect dotConnect = new DotConnect();
-
         // insert reference in inode
         for (String relInode : relInodes) {
             dotConnect.setSQL("INSERT INTO inode VALUES (?, ?, ?, ?)");
