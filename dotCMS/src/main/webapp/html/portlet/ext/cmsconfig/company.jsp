@@ -103,13 +103,7 @@
           error: function(error){
              if(error.response.data){
                 let data = JSON.parse(error.response.data);
-                if(Array.isArray(data)){
-                   //When fired from the form validation an array is returned.
-                   showDotCMSSystemMessage(data[0].message, true);
-                } else {
-                   //When fired directly from an exception getting raised we get a plain object.
-                   showDotCMSSystemMessage(data.message, true);
-                }
+                showDotCMSSystemMessage(data.message, true);
              } else {
                 showDotCMSSystemMessage(`Unable to validate or send test email to ${senderAndEmail}. `, true);
              }
