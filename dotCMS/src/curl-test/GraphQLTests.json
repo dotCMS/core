@@ -7303,7 +7303,7 @@
 													}
 												},
 												"url": {
-													"raw": "{{serverURL}}/api/v1/graphql?dotcachettl=30&dotcachekey=mykey",
+													"raw": "{{serverURL}}/api/v1/graphql?dotcachettl=30&dotcachekey=mykeyQP",
 													"host": [
 														"{{serverURL}}"
 													],
@@ -7319,7 +7319,7 @@
 														},
 														{
 															"key": "dotcachekey",
-															"value": "mykey"
+															"value": "mykeyQP"
 														}
 													]
 												},
@@ -7460,7 +7460,7 @@
 													}
 												},
 												"url": {
-													"raw": "{{serverURL}}/api/v1/graphql?dotcachekey=mykey",
+													"raw": "{{serverURL}}/api/v1/graphql?dotcachekey=mykeyQP",
 													"host": [
 														"{{serverURL}}"
 													],
@@ -7472,7 +7472,7 @@
 													"query": [
 														{
 															"key": "dotcachekey",
-															"value": "mykey"
+															"value": "mykeyQP"
 														}
 													]
 												},
@@ -7508,7 +7508,7 @@
 													}
 												},
 												"url": {
-													"raw": "{{serverURL}}/api/v1/graphql?dotcachettl=-1&dotcachekey=mykey",
+													"raw": "{{serverURL}}/api/v1/graphql?dotcachettl=-1&dotcachekey=mykeyQP",
 													"host": [
 														"{{serverURL}}"
 													],
@@ -7524,7 +7524,7 @@
 														},
 														{
 															"key": "dotcachekey",
-															"value": "mykey"
+															"value": "mykeyQP"
 														}
 													]
 												},
@@ -7560,7 +7560,7 @@
 													}
 												},
 												"url": {
-													"raw": "{{serverURL}}/api/v1/graphql?dotcachekey=mykey",
+													"raw": "{{serverURL}}/api/v1/graphql?dotcachekey=mykeyQP",
 													"host": [
 														"{{serverURL}}"
 													],
@@ -7572,7 +7572,7 @@
 													"query": [
 														{
 															"key": "dotcachekey",
-															"value": "mykey"
+															"value": "mykeyQP"
 														}
 													]
 												},
@@ -7717,6 +7717,7 @@
 													"pm.test(\"Get content v1\", function () {",
 													"    var jsonData = pm.response.json();",
 													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
+													"    console.info(contentTypeVar)",
 													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v1\");",
 													"});"
 												],
@@ -7734,7 +7735,7 @@
 											},
 											{
 												"key": "dotcachekey",
-												"value": "mykey",
+												"value": "mykeyRH",
 												"type": "text"
 											}
 										],
@@ -7887,7 +7888,7 @@
 										"header": [
 											{
 												"key": "dotcachekey",
-												"value": "mykey",
+												"value": "mykeyRH",
 												"type": "text"
 											}
 										],
@@ -7940,7 +7941,7 @@
 											},
 											{
 												"key": "dotcachekey",
-												"value": "mykey",
+												"value": "mykeyRH",
 												"type": "text"
 											}
 										],
@@ -7988,7 +7989,7 @@
 										"header": [
 											{
 												"key": "dotcachekey",
-												"value": "mykey",
+												"value": "mykeyRH",
 												"type": "text"
 											}
 										],
@@ -8308,7 +8309,7 @@
 									"response": []
 								},
 								{
-									"name": "Get Content - Cache: TTL 500s & Return true - v2",
+									"name": "Wait 10s - Get Content - Cache: TTL 500s & Return true - v2",
 									"event": [
 										{
 											"listen": "test",
@@ -8319,6 +8320,15 @@
 													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
 													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v2\");",
 													"});"
+												],
+												"type": "text/javascript"
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"setTimeout(function(){}, [10000]);"
 												],
 												"type": "text/javascript"
 											}
@@ -8438,6 +8448,10 @@
 		{
 			"key": "fileImageContentTypeVariable",
 			"value": "MyFileImageType68267192"
+		},
+		{
+			"key": "contentTypeVariableDCKRH",
+			"value": ""
 		}
 	]
 }
