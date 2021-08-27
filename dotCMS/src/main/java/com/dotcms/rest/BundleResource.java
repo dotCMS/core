@@ -521,8 +521,7 @@ public class BundleResource {
 
                 final PublishAuditStatus.Status [] statuses = Config.getCustomArrayProperty("bundle.delete.all.statuses",
                         PublishAuditStatus.Status::valueOf, PublishAuditStatus.Status.class,
-                        ()-> new PublishAuditStatus.Status[] {FAILED_TO_SEND_TO_ALL_GROUPS, FAILED_TO_SEND_TO_SOME_GROUPS,
-                                FAILED_TO_BUNDLE, FAILED_TO_SENT, FAILED_TO_PUBLISH, SUCCESS, SUCCESS_WITH_WARNINGS});
+                        Status::values);
 
                 final BundleDeleteResult bundleDeleteResult = this.bundleAPI.deleteAllBundles(initData.getUser(), statuses);
                 sendDeleteResultsMessage(initData, locale, bundleDeleteResult);
