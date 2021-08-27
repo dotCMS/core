@@ -892,17 +892,16 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     /**
      * Returns the list of Containers from the drawn layout of a given Template.
      *
-     * @param page The {@link IHTMLPage} object using the {@link Template} which holds the Containers.
+     * @param template The {@link Template} which holds the Containers.
      *
      * @return The list of {@link ContainerUUID} objects.
      *
      * @throws DotSecurityException The internal APIs are not allowed to return data for the specified user.
      * @throws DotDataException     The information for the Template could not be accessed.
      */
-    private List<ContainerUUID> getDrawedLayoutContainerUUIDs (final IHTMLPage page) throws DotSecurityException, DotDataException {
-
+    private List<ContainerUUID> getDrawedLayoutContainerUUIDs (final Template template) throws DotSecurityException, DotDataException {
         final TemplateLayout layout =
-                DotTemplateTool.themeLayout(page.getTemplateId(), APILocator.systemUser(), false);
+                DotTemplateTool.themeLayout(template.getInode(), APILocator.systemUser(), false);
         return APILocator.getTemplateAPI().getContainersUUID(layout);
     }
 
@@ -930,7 +929,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                     APILocator.getTemplateAPI().findWorkingTemplate(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
             try {
                 containersUUID = template.isDrawed()?
-                        this.getDrawedLayoutContainerUUIDs(page):
+                        this.getDrawedLayoutContainerUUIDs(template):
                         APILocator.getTemplateAPI().getContainersUUIDFromDrawTemplateBody(template.getBody());
             } catch (final Exception e) {
                 Logger.error(this, String.format("An error occurred when retrieving empty Containers from page with " +
