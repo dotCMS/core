@@ -1,17 +1,19 @@
 package com.dotmarketing.startup.runonce;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.datagen.RelationshipDataGen;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Inode.Type;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
-import io.vavr.control.Try;
 import java.sql.SQLException;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -25,6 +27,27 @@ public class Task210816DeInodeRelationshipTest {
 
     @Test
     public void testExecuteUpgrade() throws DotDataException, SQLException {
+        final Task210816DeInodeRelationship upgradeTask = new Task210816DeInodeRelationship();
+        // create some rels
+        List<String> relInodes = new ArrayList<>();
+
+        for(int i=0; i<10; i++) {
+            relInodes.add(new RelationshipDataGen(true).nextPersisted().getInode());
+        }
+
+        final Date now = new Date();
+        final DotConnect dotConnect = new DotConnect();
+
+        // insert reference in inode
+        for (String relInode : relInodes) {
+            dotConnect.setSQL("INSERT INTO inode VALUES (?, ?, ?, ?)");
+            dotConnect.addParam(relInode)
+                    .addParam((String)null)
+                    .addParam(now)
+                    .addParam(Type.RELATIONSHIP.getValue());
+            dotConnect.loadResult();
+        }
+
         //Remove column if exists
         final DotDatabaseMetaData dotDatabaseMetaData = new DotDatabaseMetaData();
         if (dotDatabaseMetaData.hasColumn("relationship", "mod_date")) {
@@ -32,7 +55,13 @@ public class Task210816DeInodeRelationshipTest {
                     .dropColumn(DbConnectionFactory.getConnection(), "relationship", "mod_date");
         }
 
-        final Task210816DeInodeRelationship upgradeTask = new Task210816DeInodeRelationship();
+        // Create FK if does not exist
+        if (upgradeTask.findRelationshipInodeFK()==null) {
+            dotConnect.executeStatement("alter table relationship add constraint "
+                    + "fkf06476385fb51eb foreign key (inode) references inode;\n");
+        }
+
+
         assertTrue(upgradeTask.forceRun());
         upgradeTask.executeUpgrade();
         assertTrue(upgradeTask.hasModDateColumn()); // mod_date created
