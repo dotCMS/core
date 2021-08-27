@@ -37,10 +37,11 @@ public class Task210816DeInodeRelationship extends AbstractJDBCStartupTask {
     @Override
     public String getPostgresScript() {
         return  getAddModDateSQL()
-               + COPY_RELATIONSHIP_MOD_DATE_FROM_INODE
-               + DELETE_RELATIONSHIPS_FROM_INODE_BY_TYPE
-               + DELETE_RELATIONSHIPS_FROM_INODE_BY_JOIN
-               + getRemoveFKSQL();
+                + COPY_RELATIONSHIP_MOD_DATE_FROM_INODE
+                + getRemoveFKSQL()
+                + DELETE_RELATIONSHIPS_FROM_INODE_BY_TYPE
+                + DELETE_RELATIONSHIPS_FROM_INODE_BY_JOIN;
+
     }
 
     /**
@@ -52,9 +53,9 @@ public class Task210816DeInodeRelationship extends AbstractJDBCStartupTask {
     public String getMySQLScript() {
         return  getAddModDateSQL()
                 + COPY_RELATIONSHIP_MOD_DATE_FROM_INODE
+                + getRemoveFKSQL()
                 + DELETE_RELATIONSHIPS_FROM_INODE_BY_TYPE
-                + DELETE_RELATIONSHIPS_FROM_INODE_BY_JOIN
-                + getRemoveFKSQL();
+                + DELETE_RELATIONSHIPS_FROM_INODE_BY_JOIN;
     }
 
     /**
@@ -66,9 +67,9 @@ public class Task210816DeInodeRelationship extends AbstractJDBCStartupTask {
     public String getOracleScript() {
         return  getAddModDateSQL()
                 + COPY_RELATIONSHIP_MOD_DATE_FROM_INODE
+                + getRemoveFKSQL()
                 + DELETE_RELATIONSHIPS_FROM_INODE_BY_TYPE
-                + DELETE_RELATIONSHIPS_FROM_INODE_BY_JOIN
-                + getRemoveFKSQL();
+                + DELETE_RELATIONSHIPS_FROM_INODE_BY_JOIN;
     }
 
     /**
@@ -80,9 +81,9 @@ public class Task210816DeInodeRelationship extends AbstractJDBCStartupTask {
     public String getMSSQLScript() {
         return  getAddModDateSQL()
                 + COPY_RELATIONSHIP_MOD_DATE_FROM_INODE
+                + getRemoveFKSQL()
                 + DELETE_RELATIONSHIPS_FROM_INODE_BY_TYPE
-                + DELETE_RELATIONSHIPS_FROM_INODE_BY_JOIN
-                + getRemoveFKSQL();
+                + DELETE_RELATIONSHIPS_FROM_INODE_BY_JOIN;
     }
 
     private String getAddModDateSQL() {
