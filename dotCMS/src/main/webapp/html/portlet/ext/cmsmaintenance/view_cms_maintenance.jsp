@@ -1077,7 +1077,7 @@ function showSystemVars(){
     const keys = ["release", "jvm", "host" ,"environment","system"];
     const currentDiv = document.getElementById("systemInfoDiv");
     
-
+    currentDiv.innerHTML="";
     fetch('/api/v1/jvm')
     .then(response => response.json())
     .then(data => {

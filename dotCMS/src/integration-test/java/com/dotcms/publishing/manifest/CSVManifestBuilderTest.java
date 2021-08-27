@@ -92,8 +92,8 @@ public class CSVManifestBuilderTest {
                 .parent(parentContentType)
                 .nextPersisted();
 
-        final String line = list(PusheableAsset.RELATIONSHIP.getType(), relationship.getIdentifier(),
-                relationship.getInode(), relationship.getTitle(), "", "")
+        final String line = list(PusheableAsset.RELATIONSHIP.getType(), relationship.getInode(),
+                "", relationship.getTitle(), "", "")
                 .stream().collect(Collectors.joining(","));
         return new TestCase(relationship, line);
     }
@@ -230,7 +230,7 @@ public class CSVManifestBuilderTest {
         final Folder folder = APILocator.getFolderAPI()
                 .find(contentType.folder(), systemUser, false);
         final String line = list(PusheableAsset.CONTENT_TYPE.getType(), contentType.id(),
-                contentType.inode(), contentType.name(), host.getName(), folder.getPath())
+                "", contentType.name(), host.getName(), folder.getPath())
                 .stream().collect(Collectors.joining(","));
         return new TestCase(contentType, line);
     }
