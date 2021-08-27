@@ -14,6 +14,7 @@ import com.google.common.base.Objects;
 import com.liferay.util.StringPool;
 import io.lettuce.core.ScriptOutputType;
 import io.lettuce.core.api.StatefulRedisConnection;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 
 import java.io.Serializable;
@@ -58,14 +59,14 @@ public class RedisCache extends CacheProvider {
 
     private final String REDIS_GROUP_KEY;
     private final String REDIS_PREFIX_KEY;
-    private final RedisClient<String, Object> client;
+    private final Lazy<RedisClient<String, Object>> client;
 
     private final int  keyBatchingSize = Config.getIntProperty( "REDIS_SERVER_KEY_BATCH_SIZE", 1000);
     private final long defaultTTL      = Config.getLongProperty("REDIS_SERVER_DEFAULT_TTL", -1);
     final static AtomicReference<String> prefixKey = new AtomicReference(PREFIX_UNSET);
     private final Map<String, Long> groupTTLMap    = new ConcurrentHashMap<>();
 
-    public RedisCache(final RedisClient<String,Object> client) {
+    public RedisCache(final Lazy<RedisClient<String,Object>> client) {
 
         this.client           = client;
         this.REDIS_GROUP_KEY  =  "REDIS_GROUP_KEY";
@@ -73,7 +74,7 @@ public class RedisCache extends CacheProvider {
     }
 
     public RedisCache() {
-        this(RedisClientFactory.getClient("cache"));
+        this(Lazy.of(() -> RedisClientFactory.getClient("cache")));
     }
 
     @Override
@@ -89,6 +90,11 @@ public class RedisCache extends CacheProvider {
     @Override
     public boolean isDistributed() {
         return true;
+    }
+
+    protected RedisClient<String,Object> getClient() {
+
+        return client.get();
     }
 
     /**
@@ -122,7 +128,7 @@ public class RedisCache extends CacheProvider {
 
         try {
 
-            final String value = (String)this.client.get(REDIS_PREFIX_KEY);
+            final String value = (String)this.getClient().get(REDIS_PREFIX_KEY);
             return null == value? PREFIX_UNSET: value;
         } catch (Exception e) {
 
@@ -146,7 +152,7 @@ public class RedisCache extends CacheProvider {
 
         final String newKey = this.generateNewKey();
 
-        if (SetResult.SUCCESS != this.client.set(REDIS_PREFIX_KEY, newKey)) {
+        if (SetResult.SUCCESS != this.getClient().set(REDIS_PREFIX_KEY, newKey)) {
             return PREFIX_UNSET;
         }
 
@@ -164,7 +170,7 @@ public class RedisCache extends CacheProvider {
     String setOrGet() {
 
         final String newKey    = this.generateNewKey();
-        final SetResult result = client.setIfAbsent(REDIS_PREFIX_KEY, newKey);
+        final SetResult result = getClient().setIfAbsent(REDIS_PREFIX_KEY, newKey);
 
         if (SetResult.NO_CONN == result) {
             return PREFIX_UNSET;
@@ -228,8 +234,8 @@ public class RedisCache extends CacheProvider {
                 Logger.debug(this, () -> "Redis, putting group: " + group + "key" + key);
                 final long ttl = this.getTTL(group);
                 final String cacheKey = this.cacheKey(group, key);
-                final Future<String> future = this.client.setAsync(cacheKey, content, ttl);
-                this.client.addAsyncMembers(REDIS_GROUP_KEY, group);
+                final Future<String> future = this.getClient().setAsync(cacheKey, content, ttl);
+                this.getClient().addAsyncMembers(REDIS_GROUP_KEY, group);
                 if (Logger.isDebugEnabled(this.getClass())) {
 
                     String msg = "Error";
@@ -274,7 +280,7 @@ public class RedisCache extends CacheProvider {
             final String cacheKey = this.cacheKey(group, key);
             try {
 
-                return this.extractObject(this.client.get(cacheKey));
+                return this.extractObject(this.getClient().get(cacheKey));
             } catch (CacheTimeoutException e) {
 
                 Logger.debug(this, "Timeout error on getting Redis cache for group: "
@@ -307,7 +313,7 @@ public class RedisCache extends CacheProvider {
 
         if (UtilMethods.isSet(keys)) {
 
-            this.client.deleteNonBlocking(keys);
+            this.getClient().deleteNonBlocking(keys);
         }
     }
 
@@ -346,7 +352,7 @@ public class RedisCache extends CacheProvider {
         final String prefix    = this.cacheKey(group);
         final String matchesPattern = prefix  + StringPool.STAR;
         final Set<String> keys = new LinkedHashSet<>();
-        this.client.scanKeys(matchesPattern, this.keyBatchingSize, //keys::addAll);
+        this.getClient().scanKeys(matchesPattern, this.keyBatchingSize, //keys::addAll);
                 redisKeys -> redisKeys.stream().map(redisKey ->  // we remove the prefix in order to have the real key
                         redisKey.replace(prefix, StringPool.BLANK)).forEach(keys::add));
 
@@ -373,7 +379,7 @@ public class RedisCache extends CacheProvider {
         final String script = "return #redis.pcall('keys', '" + prefix + "')";
         Object keyCount     = ZERO;
 
-        try (StatefulRedisConnection<String,Object> conn = LettuceAdapter.getStatefulRedisConnection(this.client)) {
+        try (StatefulRedisConnection<String,Object> conn = LettuceAdapter.getStatefulRedisConnection(this.getClient())) {
 
             if (conn.isOpen()) {
 
@@ -389,7 +395,7 @@ public class RedisCache extends CacheProvider {
     @Override
     public Set<String> getGroups() {
 
-        return this.client.getMembers(REDIS_GROUP_KEY).stream()
+        return this.getClient().getMembers(REDIS_GROUP_KEY).stream()
                 .map(k -> k.toString()).collect(Collectors.toSet());
     }
 
@@ -400,7 +406,8 @@ public class RedisCache extends CacheProvider {
         final CacheProviderStats cacheProviderStats = new CacheProviderStats(providerStats, getName());
         String memoryStats = null;
 
-        try (StatefulRedisConnection<String,Object> conn = LettuceAdapter.getStatefulRedisConnection(client)) {
+        try (StatefulRedisConnection<String,Object> conn =
+                     LettuceAdapter.getStatefulRedisConnection(this.getClient())) {
 
             if (!conn.isOpen()) {
 
@@ -486,7 +493,7 @@ public class RedisCache extends CacheProvider {
         @Override
         public void run() {
 
-            RedisCache.this.client.scanKeys(this.prefix, keyBatchingSize,
+            RedisCache.this.getClient().scanKeys(this.prefix, keyBatchingSize,
                     keyCollections ->  removeKeys(keyCollections.toArray(new String[0])));
         }
     }
