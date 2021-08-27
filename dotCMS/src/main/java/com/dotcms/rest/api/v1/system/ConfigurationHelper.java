@@ -290,7 +290,7 @@ public class ConfigurationHelper implements Serializable {
 	 * where the e-mail piece is the only mandatory component. if preceding worlds are included they will be used as the sendFrom param
 	 * @throws ExecutionException, InterruptedException
 	 */
-	public void sendValidationEmail(final String senderName, final String senderEmail, final User user)
+	public void sendValidationEmail(final String senderEmail, final String senderName, final User user)
 			throws ExecutionException, InterruptedException {
 
 		final DotSubmitter dotSubmitter = DotConcurrentFactory.getInstance()
