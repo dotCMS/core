@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.workflows.util;
 import com.dotcms.company.CompanyAPI;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.response.BaseResponse;
+import com.dotcms.rest.api.v1.system.ConfigurationHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
@@ -27,10 +28,8 @@ import io.vavr.control.Try;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.commons.validator.routines.EmailValidator;
 
 /**
  * @author David
@@ -179,36 +178,47 @@ public class WorkflowEmailUtil {
     static Tuple2<String, String> resolveSenderInfo(final User workflowUser, final UserAPI userAPI,
             final CompanyAPI companyAPI) throws DotDataException {
 
-        if (null != workflowUser && !userAPI.getAnonymousUser().equals(workflowUser) && !userAPI.getSystemUser().equals(workflowUser)) {
+        if (null != workflowUser && !userAPI.getAnonymousUser().equals(workflowUser) && !userAPI
+                .getSystemUser().equals(workflowUser)) {
             //if workflowUser isn't anonymous nor system-user
             return Tuple.of(workflowUser.getEmailAddress(), workflowUser.getFullName());
         }
-            //If we reach this point. Then User is anonymous or system-user or null
-            final Company defaultCompany = companyAPI.getDefaultCompany();
-            final String fromMail = Try.of(()->{
-                if(UtilMethods.isSet(defaultCompany.getEmailAddress())){
-                   return defaultCompany.getEmailAddress();
-                }
-                Logger.error(WorkflowEmailUtil.class, String.format("Company email address isn't or contains errors. Falling back to [%s] as the from address.", FALLBACK_FROM_ADDRESS));
-                return FALLBACK_FROM_ADDRESS;
-            }).get();
+        //If we reach this point. Then User is anonymous or system-user or null
+        final Company defaultCompany = companyAPI.getDefaultCompany();
+        final String fromMail = Try.of(() -> {
+            if (UtilMethods.isSet(defaultCompany.getEmailAddress())) {
+                return defaultCompany.getEmailAddress();
+            }
+            Logger.error(WorkflowEmailUtil.class, String.format(
+                    "Company email address isn't set or contains errors. Falling back to [%s] as the from address.",
+                    FALLBACK_FROM_ADDRESS));
+            return FALLBACK_FROM_ADDRESS;
+        }).get();
 
-            final Tuple2<String, String> emailAndSender = Try.of(()->{
-                final InternetAddress[] parsed = Try.of(()->InternetAddress.parse(fromMail)).getOrNull();
-                if(parsed != null && parsed.length > 0){
-                    final InternetAddress address = parsed[0];
-                    return Tuple.of(address.getAddress(), UtilMethods.isSet(address.getPersonal()) ? address.getPersonal() : FALLBACK_FROM_NAME);
-                } else {
-                    Logger.warn(WorkflowEmailUtil.class, ()->"Unable to extract a from-name from the provided company Address. Default to `admin`. ");
-                    return Tuple.of(FALLBACK_FROM_ADDRESS, FALLBACK_FROM_NAME);
-                }
-            }).get();
+        final Tuple2<String, String> mailAndSenderWithFallBacks = Try.of(() -> {
 
-            Logger.warn(WorkflowEmailUtil.class, () -> String
-                    .format("Defaulting to Company's configured email address `%s` instead of workflow user's email `%s` as email sender..",
-                            fromMail,  null != workflowUser ? workflowUser.getEmailAddress() : "n/a"));
+            final Tuple2<String, String> mailAndSender = ConfigurationHelper.INSTANCE
+                    .parseMailAndSender(fromMail);
 
-            return emailAndSender;
+            final String emailAddress = mailAndSender._1;
+            final String personal = mailAndSender._2;
+
+            if (UtilMethods.isSet(emailAddress)) {
+                return Tuple.of(emailAddress,
+                        UtilMethods.isSet(personal) ? personal : FALLBACK_FROM_NAME);
+            } else {
+                Logger.warn(WorkflowEmailUtil.class,
+                        () -> "Unable to extract a from-name from the provided company Address. Default to `admin`. ");
+                return Tuple.of(FALLBACK_FROM_ADDRESS, FALLBACK_FROM_NAME);
+            }
+
+        }).get();
+
+        Logger.warn(WorkflowEmailUtil.class, () -> String
+                .format("Defaulting to Company's configured email address `%s` instead of workflow user's email `%s` as email sender..",
+                        fromMail, null != workflowUser ? workflowUser.getEmailAddress() : "n/a"));
+
+        return mailAndSenderWithFallBacks;
 
     }
 

@@ -27,6 +27,8 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.ReleaseInfo;
 import com.liferay.util.LocaleUtil;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -37,6 +39,7 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.regex.Pattern;
 import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletRequest;
 
@@ -282,33 +285,27 @@ public class ConfigurationHelper implements Serializable {
 	/**
 	 * Asynchronous e-mail send utility
 	 * The result is communicated via system notification to the user.
-	 * @param senderNameAndEmail is expected to have something like "dotCMS Website <website@dotcms.com>"
+	 * @param senderName something like "dotCMS Website"
+	 * @param senderEmail something like "website@dotcms.com"
 	 * where the e-mail piece is the only mandatory component. if preceding worlds are included they will be used as the sendFrom param
 	 * @throws ExecutionException, InterruptedException
 	 */
-	public void sendValidationEmail(final String senderNameAndEmail, final User user)
+	public void sendValidationEmail(final String senderName, final String senderEmail, final User user)
 			throws ExecutionException, InterruptedException {
-
-		final InternetAddress[] parsed = Try.of(() -> InternetAddress.parse(senderNameAndEmail))
-				.getOrElseThrow(() -> new IllegalArgumentException(
-						String.format("input %s does not match a valid e-mail pattern.", senderNameAndEmail)));
-		final InternetAddress address = parsed[0];
 
 		final DotSubmitter dotSubmitter = DotConcurrentFactory.getInstance()
 				.getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
 				CompletableFuture.runAsync(() -> {
-					final String mailName = UtilMethods.isSet(address.getPersonal()) ? address
-							.getPersonal() : user.getRecipientName();
-
+					final String mailName = UtilMethods.isSet(senderName) ?senderName : user.getRecipientName();
 					final Mailer mail = new Mailer();
 					mail.setToName(mailName);
 					mail.setToEmail(user.getEmailAddress());
-					mail.setFromEmail(address.getAddress());
+					mail.setFromEmail(senderEmail);
 					mail.setFromName(mailName);
 					mail.setSubject("dotCMS From address test e-mail.");
 					mail.setHTMLAndTextBody("This email was successfully sent by dotCMS.");
 					final boolean result = mail.sendMessage();
-					systemNotifyTestEmail(user, senderNameAndEmail, result);
+					systemNotifyTestEmail(user, senderEmail, result);
 				}, dotSubmitter);
 	}
 
@@ -329,4 +326,28 @@ public class ConfigurationHelper implements Serializable {
 		systemMessageEventUtil.pushSimpleTextEvent(message);
 	}
 
+	//This regex should be able to capture anything like this: dotCMS Website <website@dotcms.com>
+	//Where (dotCMS Website) is optional as well as the use of <..>
+	public static final String SENDER_NAME_EMAIL_REGEX = "((\\s*?)(\\w*?)(\\s*?))*?(\\<*[a-zA-Z0-9._-]+\\@[a-zA-Z0-9._-]+\\>*)$";
+
+	public static final Pattern emailAndSenderPattern = Pattern.compile(SENDER_NAME_EMAIL_REGEX, Pattern.CASE_INSENSITIVE);
+
+	/**
+	 *
+	 * @param senderNameAndEmail
+	 * @return
+	 */
+	public  Tuple2<String, String> parseMailAndSender(final String senderNameAndEmail) {
+
+		if (UtilMethods.isNotSet(senderNameAndEmail) || !emailAndSenderPattern
+				.matcher(senderNameAndEmail).find()) {
+			throw new IllegalArgumentException("input does not match a valid e-mail pattern.");
+		}
+
+		final InternetAddress[] parsed = Try.of(() -> InternetAddress.parse(senderNameAndEmail))
+				.getOrElseThrow(()->new IllegalArgumentException(String.format("input %s does not match a valid e-mail pattern.", senderNameAndEmail)));
+
+		final InternetAddress address = parsed[0];
+		return Tuple.of(address.getAddress(), address.getPersonal());
+	}
 }
