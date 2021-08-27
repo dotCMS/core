@@ -114,6 +114,7 @@ import com.dotmarketing.startup.runonce.Task210510UpdateStorageTableDropMetadata
 import com.dotmarketing.startup.runonce.Task210719CleanUpTitleFieldTest;
 import com.dotmarketing.startup.runonce.Task210802UpdateStructureTableTest;
 import com.dotmarketing.startup.runonce.Task210805DropUserProxyTableTest;
+import com.dotmarketing.startup.runonce.Task210816DeInodeRelationshipTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -453,7 +454,8 @@ import org.junit.runners.Suite.SuiteClasses;
         BundlePublisherTest.class,
         CategoryFactoryTest.class,
         Task210805DropUserProxyTableTest.class,
-        BundlerUtilTest.class
+        BundlerUtilTest.class,
+        Task210816DeInodeRelationshipTest.class
 })
 public class MainSuite {
 
