@@ -52,6 +52,7 @@ import com.dotcms.rest.api.v1.apps.view.AppsInterpolationTest;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtilTest;
 import com.dotcms.rest.api.v1.folder.FolderResourceTest;
 import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
+import com.dotcms.rest.api.v1.system.ConfigurationHelperTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
 import com.dotcms.saml.SamlConfigurationServiceTest;
@@ -455,7 +456,8 @@ import org.junit.runners.Suite.SuiteClasses;
         CategoryFactoryTest.class,
         Task210805DropUserProxyTableTest.class,
         Task210816DeInodeRelationshipTest.class,
-        WorkflowEmailUtilTest.class
+        WorkflowEmailUtilTest.class,
+        ConfigurationHelperTest.class
 })
 public class MainSuite {
 
