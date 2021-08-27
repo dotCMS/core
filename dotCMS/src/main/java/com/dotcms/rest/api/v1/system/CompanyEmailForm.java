@@ -1,13 +1,9 @@
 package com.dotcms.rest.api.v1.system;
 
-import com.dotcms.repackage.javax.validation.constraints.Pattern.Flag;
-import com.dotcms.rest.api.Validated;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotcms.repackage.javax.validation.constraints.Pattern;
 
-public class CompanyEmailForm extends Validated {
+public class CompanyEmailForm {
 
     private final String senderAndEmail;
 
