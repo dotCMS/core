@@ -145,6 +145,16 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
 
         return keyPrefix() + this.keyToStringConverter.convert(key);
     }
+
+    /**
+     * Un Wrap a key
+     * @param key
+     * @return
+     */
+    protected K upwrapKey (final String key) {
+
+        return  this.stringToKeyConverter.convert(key.replace(keyPrefix(), StringPool.BLANK));
+    }
     /**
      * Returns a StatefulRedisConnection
      * @return StatefulRedisConnection
@@ -390,14 +400,14 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
             if (isOpen(conn)) {
 
                 final RedisCommands<String, V> syncCommand = conn.sync();
-                final ScanArgs scanArgs = ScanArgs.Builder.matches(matchesPattern).limit(keyBatchingSize);
+                final ScanArgs scanArgs = ScanArgs.Builder.matches(this.keyPrefix() + matchesPattern).limit(keyBatchingSize);
                 do {
 
                     scanCursor = scanCursor == null?
                             syncCommand.scan(scanArgs):syncCommand.scan(scanCursor, scanArgs);
 
                     scanCursor.getKeys().forEach(key ->
-                            keyConsumer.accept(this.stringToKeyConverter.convert(key)));
+                            keyConsumer.accept(this.upwrapKey(key)));
                 } while (!scanCursor.isFinished());
             }
         }
@@ -420,7 +430,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
                             syncCommand.scan(scanArgs):syncCommand.scan(scanCursor, scanArgs);
 
                     keyConsumer.accept(ConversionUtils.INSTANCE.convert(
-                            scanCursor.getKeys(), this.stringToKeyConverter));
+                            scanCursor.getKeys(), this::upwrapKey));
                 } while (!scanCursor.isFinished());
             }
         }
