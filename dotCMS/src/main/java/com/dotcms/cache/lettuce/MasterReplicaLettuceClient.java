@@ -413,7 +413,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
             if (isOpen(conn)) {
 
                 final RedisCommands<String, V> syncCommand = conn.sync();
-                final ScanArgs scanArgs = ScanArgs.Builder.matches(matchesPattern).limit(keyBatchingSize);
+                final ScanArgs scanArgs = ScanArgs.Builder.matches(this.keyPrefix() + matchesPattern).limit(keyBatchingSize);
                 do {
 
                     scanCursor = scanCursor == null?
