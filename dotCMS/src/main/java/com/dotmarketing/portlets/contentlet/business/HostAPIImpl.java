@@ -1051,22 +1051,22 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     @Override
     @CloseDBIfOpened
     public Host DBSearch(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        if (!UtilMethods.isSet(id))
+
+        if (!UtilMethods.isSet(id)) {
             return null;
+        }
 
         Host host = null;
 
-        final Optional<ContentletVersionInfo> vinfo = APILocator.getVersionableAPI().getContentletVersionInfo(id, APILocator.getLanguageAPI()
-                .getDefaultLanguage().getId());
+        final List<ContentletVersionInfo> verInfos = APILocator.getVersionableAPI().findContentletVersionInfos(id);
 
-        if(vinfo.isPresent()) {
-            User systemUser = APILocator.systemUser();
-
-            String hostInode=vinfo.get().getWorkingInode();
-            final Contentlet cont= APILocator.getContentletAPI().find(hostInode, systemUser, respectFrontendRoles);
-            final ContentType type =APILocator.getContentTypeAPI(systemUser, respectFrontendRoles).find(Host.HOST_VELOCITY_VAR_NAME);
+        if(!verInfos.isEmpty()) {
+            final User systemUser = APILocator.systemUser();
+            final String hostInode = verInfos.get(0).getWorkingInode();
+            final Contentlet cont = APILocator.getContentletAPI().find(hostInode, systemUser, respectFrontendRoles);
+            final ContentType type = APILocator.getContentTypeAPI(systemUser, respectFrontendRoles).find(Host.HOST_VELOCITY_VAR_NAME);
             if(cont.getStructureInode().equals(type.inode())) {
-                host=new Host(cont);
+                host = new Host(cont);
                 hostCache.add(host);
             }
         }
