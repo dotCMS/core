@@ -129,20 +129,20 @@ public class IntegrityResource {
         }
     }
 
+    private Response getWithEndpointState(
+            final PublishingEndPoint endpoint,
+            final String url,
+            final MediaType mediaType) {
+
+        return postWithEndpointState(endpoint, url, mediaType, HTTPMethod.GET, null);
+    }
+
     private Response postWithEndpointState(
             final PublishingEndPoint endpoint,
             final String url,
             final MediaType mediaType) {
 
         return postWithEndpointState(endpoint, url, mediaType, HTTPMethod.POST, null);
-    }
-
-    private Response postWithEndpointState(
-            final PublishingEndPoint endpoint,
-            final String url,
-            final MediaType mediaType,
-            final HTTPMethod method) {
-        return postWithEndpointState(endpoint, url, mediaType, method, null);
     }
 
     private Response postWithEndpointState(
@@ -164,7 +164,7 @@ public class IntegrityResource {
         }
 
         requestBuilder.header("Authorization", requestToken.get());
-        final Response response = method == HTTPMethod.POST ? requestBuilder.post(entity) : requestBuilder.delete();
+        final Response response = method == HTTPMethod.POST ? requestBuilder.post(entity) : requestBuilder.get();
 
         cacheEndpointState(endpoint.getId(), response.getCookies());
 
@@ -256,14 +256,14 @@ public class IntegrityResource {
     /**
      * Checks if the generation of Integrity Data is done.
      * If FINISHED, returns a zip with the data
-     * if PROCESSING, returns HttpStatus.SC_PROCESSING
+     * if PROCESSING, returns HttpStatus.SC_ACCEPTED
      * if ERROR, returns HttpStatus.SC_INTERNAL_SERVER_ERROR, including the error message
      *
-     * Usage: /getdata
+     * Usage: /integrityData
      *
      */
-    @POST
-    @Path("/{requestId}/status")
+    @GET
+    @Path("/{requestId}/integrityData")
     @Produces("application/zip")
     public Response getIntegrityData(@Context HttpServletRequest request, @PathParam("requestId") final String requestId)  {
 
@@ -287,7 +287,7 @@ public class IntegrityResource {
                                 "Receiver at %s:> job is already running for endpoint id: %s, therefore it's not ready and need to wait",
                                 localAddress,
                                 pushPublishAuthenticationToken.getKey()));
-                return Response.status(HttpStatus.SC_PROCESSING).build();
+                return Response.status(HttpStatus.SC_ACCEPTED).build();
             }
 
             final Optional<IntegrityUtil.IntegrityDataExecutionMetadata> integrityMetadata =
@@ -1210,7 +1210,7 @@ public class IntegrityResource {
                         setStatus(session, endpoint.getId(), ProcessStatus.NO_CONFLICTS, noConflictMessage);
                     }
 
-                } else if (response.getStatus() == HttpStatus.SC_PROCESSING) {
+                } else if (response.getStatus() == HttpStatus.SC_ACCEPTED) {
                     Logger.info(this.getClass(), "Integrity check is still provessinf");
                 } else {
                     setStatus(session, endpoint.getId(), ProcessStatus.ERROR, null);
@@ -1221,10 +1221,10 @@ public class IntegrityResource {
         }
 
         private Response statusIntegrityCheckerRequest() {
-            String url = String.format("%s/api/integrity/%s/status", endpoint.toURL(), integrityDataRequestID);
-
-            return postWithEndpointState(
-                    endpoint, url, new MediaType("application", "zip"));
+            return getWithEndpointState(
+                    endpoint,
+                    String.format("%s/api/integrity/%s/integrityData", endpoint.toURL(), integrityDataRequestID),
+                    new MediaType("application", "zip"));
         }
     }
 }
