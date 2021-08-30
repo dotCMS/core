@@ -208,10 +208,10 @@ public class Logger {
     }
 
     /**
-     * a map with a 5 minute max lifespan
+     * a map with a 6 hrs max lifespan
      */
     static Lazy<ExpiringMap<Long, Long>> logMap =
-                    Lazy.of(() -> new ExpiringMapBuilder().ttl(600 * 1000).size(2000).build());
+                    Lazy.of(() -> new ExpiringMapBuilder().ttl(21600 * 1000).size(2000).build());
 
     /**
      * this method will print the message at WARN level every millis set and print the message plus

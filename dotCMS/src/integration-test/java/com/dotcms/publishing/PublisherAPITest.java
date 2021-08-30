@@ -55,6 +55,7 @@ import com.liferay.util.FileUtil;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -128,7 +129,7 @@ public class PublisherAPITest extends IntegrationTestBase {
      * https://github.com/dotCMS/core/issues/12038
      */
     @Test
-    public void test_publish_fail_retry() {
+    public void test_publish_fail_retry() throws IOException {
 
         Environment environment = null;
         Bundle bundle = null;
@@ -224,17 +225,18 @@ public class PublisherAPITest extends IntegrationTestBase {
             final String bundleTarGzPath = bundlePath + ".tar.gz";
             final String bundleXMLPath = bundlePath + File.separator + "bundle.xml";
 
-            final File bundleFolder = new File(bundlePath);
-            assertTrue("Bundle Folder Exists", bundleFolder.exists());
             final File bundleTarGz = new File(bundleTarGzPath);
             assertTrue("Bundle Tar Gz Exists", bundleTarGz.exists());
             final long bundleTarGzFirstDate = bundleTarGz.lastModified();
+
+            final File bundleFolder = new File(bundlePath);
+            PublisherAPIImplTest.extractTarArchive(bundleTarGz, bundleFolder);
+            final Map<String, Long> firstFileDates = getFileDatesByFolder(bundleFolder,
+                    getNoBundleXMLFileFilter());
+
             final File bundleXML = new File(bundleXMLPath);
             assertTrue("bundle.xml exists", bundleXML.exists());
             final long bundleXMLFirstDate = bundleXML.lastModified();
-
-            final Map<String, Long> firstFileDates = getFileDatesByFolder(bundleFolder,
-                    getNoBundleXMLFileFilter());
 
             // Let's wait 2 seconds between runs so we have different millis in files.
             Logger.info(this, "Waiting 2 seconds before 2nd PP run");

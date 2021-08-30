@@ -81,6 +81,36 @@
 		return true;
 	}
 
+    function validateEmail() {
+
+       let senderAndEmail = prompt("An e-mail will be sent to from the input address to the current logged-in user address.", dijit.byId("companyEmailAddress").getValue());
+
+       const data = {
+          "senderAndEmail": senderAndEmail
+       };
+
+       dojo.xhrPost({
+          url: "/api/v1/configuration/_validateCompanyEmail",
+          handleAs: "json",
+          postData: dojo.toJson(data),
+          headers: {
+             'Accept': 'application/json',
+             'Content-Type': 'application/json;charset=utf-8',
+          },
+          load: function (code) {
+             showDotCMSSystemMessage(`A test e-mail is being sent to ${senderAndEmail} in the background. You'll receive a notification.`, true);
+          },
+          error: function(error){
+             if(error.response.data){
+                let data = JSON.parse(error.response.data);
+                showDotCMSSystemMessage(data.message, true);
+             } else {
+                showDotCMSSystemMessage(`Unable to validate or send test email to ${senderAndEmail}. `, true);
+             }
+          }
+       });
+    }
+
 	(function prepareEventListeners() {
 
       setTimeout(() => {
@@ -328,12 +358,15 @@
                <dd><input dojoType="dijit.form.TextBox" id="companyPortalUrl" name="companyPortalUrl" size="25" type="text" value="<%= company.getPortalURL() %>" style="width: 250px"></dd>
             </dl>
             <dl>
-               <dt><%= LanguageUtil.get(pageContext, "mail-domain") %></dt>
-               <dd><input dojoType="dijit.form.TextBox" id="companyMX" name="companyMX" size="25" type="text" value="<%= company.getMx() %>" style="width: 250px"></dd>
-            </dl>
-            <dl>
                <dt><%= LanguageUtil.get(pageContext, "email-address") %></dt>
-               <dd><input dojoType="dijit.form.TextBox" id="companyEmailAddress" name="companyEmailAddress" size="20" type="text" value="<%= company.getEmailAddress() %>" style="width: 250px"></dd>
+               <dd>
+                  <div class="inline-form">
+                     <input dojoType="dijit.form.TextBox" id="companyEmailAddress" name="companyEmailAddress" placeholder="dotCMS Website <website@dotcms.com>" size="20" type="text" value="<%= company.getEmailAddress() %>" style="width: 250px">
+                     <button id="companyEmailButton" dojoType="dijit.form.Button" type="button" iconClass="saveIcon" onclick="validateEmail()" >
+                        <%= LanguageUtil.get(pageContext, "email-address-validate") %>
+                     </button>
+                  </div>
+               </dd>
             </dl>
             <dl>
                <dt><%= LanguageUtil.get(pageContext, "cluster-id") %></dt>

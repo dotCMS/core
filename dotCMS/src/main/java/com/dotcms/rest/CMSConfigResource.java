@@ -9,6 +9,7 @@ import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotcms.rest.api.v1.system.ConfigurationHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.InvalidTimeZoneException;
@@ -29,7 +30,6 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -112,8 +112,14 @@ public class CMSConfigResource {
         StringBuilder responseMessage = new StringBuilder();
 
         //Validate the parameters
-        if ( !responseResource.validate( responseMessage, "portalURL", "mx", "emailAddress", "size","type","street" ) ) {
+        if ( !responseResource.validate( responseMessage, "portalURL", "emailAddress", "size","type","street" ) ) {
             return responseResource.responseError( responseMessage.toString(), HttpStatus.SC_BAD_REQUEST );
+        }
+
+        try {
+            ConfigurationHelper.INSTANCE.parseMailAndSender(emailAddress);
+        } catch (IllegalArgumentException iae){
+            return responseResource.responseError( iae.getMessage(), HttpStatus.SC_BAD_REQUEST );
         }
 
         try {
