@@ -122,7 +122,7 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
     private Optional<String> getAndRefresh(HttpRequestReaderWrapper wrapper, HttpServletResponse response, String syncKey,
             Integer cacheTTL) {
         // copy request
-        DotCMSMockRequest requestCopy = getRequestCopy(wrapper);
+        final DotCMSMockRequest requestCopy = getRequestCopy(wrapper);
 
         return graphCache.getAndRefresh(syncKey, ()
                         -> processGraphQLRequest(requestCopy, response),
