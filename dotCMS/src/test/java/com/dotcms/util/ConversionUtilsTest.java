@@ -6,12 +6,26 @@ import org.junit.Test;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * CollectionsUtils unit test.
  * @author jsanca
  */
 public class ConversionUtilsTest extends UnitTestBase {
+
+    @Test
+    public void convertToArrayTest () {
+
+        final int    [] array  =  IntStream.range(0, 5).toArray();
+        final String [] sarray = ConversionUtils.INSTANCE.convertToArray(number -> "test" + number, String.class, array);
+
+        for (int i = 0; i < sarray.length; ++i) {
+
+            Assert.assertEquals("test" + i, sarray[i]);
+        }
+    }
 
     @Test
     public void toLongFromByteCountHumanDisplaySizeTest () {

@@ -34,14 +34,14 @@ public class DotObjectCodec<K,V> implements RedisCodec<K, V> {
             return  (V)o;
         } catch(Exception e) {
 
-            throw new DotRuntimeException(e);
+            throw new DecodeException(e);
         }
     }
 
     @Override
     public ByteBuffer encodeKey(final K key) {
 
-        return charset.encode(key.toString());
+        return null != key? charset.encode(key.toString()): null;
     }
 
     @Override
@@ -55,7 +55,7 @@ public class DotObjectCodec<K,V> implements RedisCodec<K, V> {
             return ByteBuffer.wrap(baos.toByteArray());
         } catch(Exception e) {
 
-            throw new DotRuntimeException(e);
+            throw new EncodeException(e);
         }
     }
 }

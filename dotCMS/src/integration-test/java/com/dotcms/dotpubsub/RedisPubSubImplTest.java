@@ -41,7 +41,7 @@ public class RedisPubSubImplTest {
 
         pubsubA.unsubscribe(new CacheTransportTopic(fakeServerA,pubsubA));
         pubsubB.unsubscribe(new CacheTransportTopic(fakeServerB,pubsubB));
-        
+
         assert(pubsubA.getTopics().size()==0);
         assert(pubsubB.getTopics().size()==0);
         
