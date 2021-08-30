@@ -469,7 +469,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
 
             if (this.isOpen(conn)) {
 
-                return conn.async().unlink(ConversionUtils.INSTANCE.convertToArray(this.keyToStringConverter, String.class, keys));
+                return conn.async().unlink(ConversionUtils.INSTANCE.convertToArray(this::wrapKey, String.class, keys));
             }
         }
 

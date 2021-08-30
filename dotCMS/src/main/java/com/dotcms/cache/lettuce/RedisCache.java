@@ -339,7 +339,7 @@ public class RedisCache extends CacheProvider {
     @Override
     public void removeAll() {
 
-        final String prefix = cacheKey(StringPool.STAR);
+        final String prefix = loadPrefix() + "." +  StringPool.STAR;
         this.cycleKey();
         // Getting all the keys for the given groups
         DotConcurrentFactory.getInstance().getSingleSubmitter
