@@ -7,6 +7,7 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.cache.provider.CacheProvider;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.PortletID;
 import com.google.common.annotations.VisibleForTesting;
@@ -29,7 +30,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 /**
- * Cache Resource
+ * Cache Resource for diff provides
  * @author jsanca
  */
 @Path("/v1/caches")
@@ -93,6 +94,13 @@ public class CacheResource {
         throw new DotStateException("Unable to find " + provider + " provider for :" + group);
     }
 
+    /**
+     * Returns the providers associated to a group
+     * @param request   {@link HttpServletRequest}
+     * @param response  {@link HttpServletResponse}
+     * @param group {@link String}
+     * @return Response
+     */
     @NoCache
     @GET
     @Path("/providers/{group: .*}")
@@ -108,9 +116,20 @@ public class CacheResource {
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
 
+        Logger.debug(this, ()-> "Showing cache providers, group: " + group);
+
         return Response.ok(new ResponseEntityView(this.getProviders(group))).build();
     }
 
+    /**
+     * Returns the provider associated to a group
+     *  @param request   {@link HttpServletRequest}
+     *  @param response  {@link HttpServletResponse}
+     *  @param provider {@link String}
+     *  @param group {@link String}
+     *
+     * @return Response
+     */
     @NoCache
     @GET
     @Path("/provider/{provider: .*}/{group: .*}")
@@ -127,9 +146,20 @@ public class CacheResource {
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
 
+        Logger.debug(this, ()-> "Showing cache providers, group: " + group + ", provider = " + provider);
+
         return Response.ok(new ResponseEntityView(this.getProvider(provider, group))).build();
     }
 
+    /**
+     * Get keys for a provider and group
+     *
+     *  @param request   {@link HttpServletRequest}
+     *  @param response  {@link HttpServletResponse}
+     *  @param provider {@link String}
+     *  @param group {@link String}
+     *  @return Response
+     */
     @NoCache
     @GET
     @Path("/provider/{provider: .*}/keys/{group: .*}")
@@ -146,10 +176,21 @@ public class CacheResource {
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
 
+        Logger.debug(this, ()-> "Showing cache Key providers, group: " + group + ", provider = " + provider);
+
         return Response.ok(new ResponseEntityView(
                 this.getProvider(provider, group).getKeys(group))).build();
     }
 
+    /**
+     * Shows an specific object by id in cache provider and group
+     *  @param request   {@link HttpServletRequest}
+     *  @param response  {@link HttpServletResponse}
+     *  @param provider {@link String}
+     *  @param group {@link String}
+     *  @param id {@link String}
+     *  @return Response
+     */
     @NoCache
     @GET
     @Path("/provider/{provider: .*}/object/{group: .*}/{id: .*}")
@@ -167,10 +208,21 @@ public class CacheResource {
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
 
+        Logger.debug(this, ()-> "Showing cache Object providers, group: " + group
+                + ", provider = " + provider + ", id = " + id);
+
         final Object obj = this.getProvider(provider, group).get(group, id);
         return Response.ok(new ResponseEntityView(obj == null? "NOPE" : obj)).build();
     }
 
+    /**
+     * Show all object for a provider and group
+     *  @param request   {@link HttpServletRequest}
+     *  @param response  {@link HttpServletResponse}
+     *  @param provider {@link String}
+     *  @param group {@link String}
+     * @return Response
+     */
     @NoCache
     @GET
     @Path("/provider/{provider: .*}/objects/{group: .*}")
@@ -187,6 +239,9 @@ public class CacheResource {
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
 
+        Logger.debug(this, ()-> "Showing cache Objects providers, group: " + group
+                + ", provider = " + provider);
+
         /// todo: do paginator
         final Set<String> keys = this.getProvider(provider, group).getKeys(group);
         final Map<String, Object> objectMap = new TreeMap<>();
@@ -198,6 +253,14 @@ public class CacheResource {
         return Response.ok(new ResponseEntityView(objectMap)).build();
     }
 
+    /**
+     * Show all objects for a provider and group
+     *  @param request   {@link HttpServletRequest}
+     *  @param response  {@link HttpServletResponse}
+     *  @param provider {@link String}
+     *  @param group {@link String}
+     * @return Response
+     */
     @NoCache
     @DELETE
     @Path("/provider/{provider: .*}/flush/{group: .*}")
@@ -214,10 +277,21 @@ public class CacheResource {
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
 
+        Logger.debug(this, ()-> "Deletes objects on cache providers, group: " + group
+                + ", provider = " + provider);
+
         this.getProvider(provider, group).remove(group);
         return Response.ok(new ResponseEntityView("flushed")).build();
     }
 
+    /**
+     * Deletes an object for a provider and group
+     *  @param request   {@link HttpServletRequest}
+     *  @param response  {@link HttpServletResponse}
+     *  @param provider {@link String}
+     *  @param group {@link String}
+     * @return Response
+     */
     @NoCache
     @DELETE
     @Path("/provider/{provider: .*}/flush/{group: .*}/{id: .*}")
@@ -235,10 +309,21 @@ public class CacheResource {
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
 
+        Logger.debug(this, ()-> "Deletes object on  cache providers, group: " + group
+                + ", provider = " + provider);
+
         this.getProvider(provider, group).remove(group, id);
         return Response.ok(new ResponseEntityView("flushed")).build();
     }
 
+    /**
+     * Deletes an objects for a provider (will clean all group and generates a new key)
+     *  @param request   {@link HttpServletRequest}
+     *  @param response  {@link HttpServletResponse}
+     *  @param provider {@link String}
+     *  @param group {@link String}
+     * @return Response
+     */
     @NoCache
     @DELETE
     @Path("/provider/{provider: .*}/flush")
@@ -253,6 +338,8 @@ public class CacheResource {
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
+
+        Logger.debug(this, ()-> "Deletes all objects on  cache provider = " + provider);
 
         MaintenanceUtil.flushCache();
         return Response.ok(new ResponseEntityView("flushed all")).build();
