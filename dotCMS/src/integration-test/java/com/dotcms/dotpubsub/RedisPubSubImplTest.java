@@ -10,7 +10,7 @@ import com.dotcms.cache.transport.CacheTransportTopic;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
 
-public class LettucePubSubImplTest {
+public class RedisPubSubImplTest {
     
     static RedisGroupsPubSubImpl pubsubA,pubsubB;
     static DotPubSubTopic topicA;
@@ -23,17 +23,11 @@ public class LettucePubSubImplTest {
         
         Config.setProperty("DOT_REDIS_CLIENT_URL", "redis://password@oboxturbo");
 
-        
-
-        
         pubsubA = new RedisGroupsPubSubImpl(fakeServerA,clusterId,true);
         
         pubsubB = new RedisGroupsPubSubImpl(fakeServerB,clusterId,true);
         
         topicA = new CacheTransportTopic(fakeServerA,pubsubA);
-        
-        
-        
     }
 
     @Test
@@ -44,12 +38,9 @@ public class LettucePubSubImplTest {
         
         assert(pubsubA.getTopics().size()==1);
         assert(pubsubB.getTopics().size()==1);
-        
-        
-        
+
         pubsubA.unsubscribe(new CacheTransportTopic(fakeServerA,pubsubA));
         pubsubB.unsubscribe(new CacheTransportTopic(fakeServerB,pubsubB));
-        
         
         assert(pubsubA.getTopics().size()==0);
         assert(pubsubB.getTopics().size()==0);

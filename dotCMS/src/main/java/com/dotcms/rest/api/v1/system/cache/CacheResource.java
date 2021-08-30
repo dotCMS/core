@@ -321,7 +321,6 @@ public class CacheResource {
      *  @param request   {@link HttpServletRequest}
      *  @param response  {@link HttpServletResponse}
      *  @param provider {@link String}
-     *  @param group {@link String}
      * @return Response
      */
     @NoCache

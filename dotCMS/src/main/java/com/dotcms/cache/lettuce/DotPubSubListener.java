@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 /**
- * Default listener for redis
+ * Default listener for redis PUB/SUB
  * @author jsanca
  * @param <V>
  */

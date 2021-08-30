@@ -37,15 +37,11 @@ public class LettuceCacheTest {
        // keys don't match after they have been cycled
        assert(!prefix1.equals(prefix2));
        
-       
        // getting the key again and the keys match
        final String prefix3  = cache.loadPrefix();
        assert(prefix2.equals(prefix3));
-       
     }
 
-    
-    
     @Test
     public void test_cache_key_generation() {
         
@@ -58,21 +54,16 @@ public class LettuceCacheTest {
         assert (cacheKey.startsWith(prefix));
         assert (cacheKey.startsWith(prefix+ "." + group + "."));
         assert (cacheKey.equals(prefix+ "." + group+ "." + key));
-        
-        
+
         String cacheKey2 = cache.cacheKey(group, null);
         assert (cacheKey2!=null);
         assert (cacheKey2.startsWith(prefix));
         assert (cacheKey2.equals(prefix + "." + group + "."));
 
-       
         String cacheKey3 = cache.cacheKey(group);
         assert (cacheKey3!=null);
         assert (cacheKey3.startsWith(prefix));
         assert (cacheKey3.equals(cacheKey2));
-        
-        
-        
     }
     
     
@@ -132,9 +123,7 @@ public class LettuceCacheTest {
         keys = cache.getAllKeys();
         assert(keys.isEmpty());
     }
-    
-    
-    
+
     /**
      * Tests that flushall works
      */
@@ -157,11 +146,7 @@ public class LettuceCacheTest {
            
            assert(uuid.equals(con.getIdentifier()));
            assert(uuid.equals(con.getMap().get("testing")));
-           
         }
-        
-        
-        
     }
     
     

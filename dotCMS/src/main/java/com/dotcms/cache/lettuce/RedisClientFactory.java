@@ -9,6 +9,10 @@ import io.vavr.control.Try;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Factory to provide clients for redis.
+ * @author jsanca
+ */
 public class RedisClientFactory {
 
     private final static Map<String, RedisClient<String, Object>> clientMap = new ConcurrentHashMap<>();

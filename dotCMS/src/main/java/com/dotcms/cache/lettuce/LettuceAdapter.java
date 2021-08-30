@@ -2,6 +2,11 @@ package com.dotcms.cache.lettuce;
 
 import io.lettuce.core.api.StatefulRedisConnection;
 
+/**
+ * This adapter just converts an object to a connection, see
+ * {@link RedisClient#getConnection()}
+ * @author jsanca
+ */
 public class LettuceAdapter {
 
     /**

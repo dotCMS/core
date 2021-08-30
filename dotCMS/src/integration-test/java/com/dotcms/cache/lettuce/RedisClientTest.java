@@ -2,7 +2,7 @@ package com.dotcms.cache.lettuce;
 
 import org.junit.Test;
 
-public class LettuceClientTest {
+public class RedisClientTest {
 
     @Test
     public void test_client_is_singleton() throws Exception {

@@ -1,7 +1,6 @@
 package com.dotcms.cache.lettuce;
 
 import io.lettuce.core.api.StatefulConnection;
-import io.lettuce.core.api.StatefulRedisConnection;
 
 import java.util.List;
 import java.util.Map;
