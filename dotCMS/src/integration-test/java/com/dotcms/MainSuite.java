@@ -53,6 +53,7 @@ import com.dotcms.rest.api.v1.apps.view.AppsInterpolationTest;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtilTest;
 import com.dotcms.rest.api.v1.folder.FolderResourceTest;
 import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
+import com.dotcms.rest.api.v1.system.ConfigurationHelperTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
 import com.dotcms.saml.SamlConfigurationServiceTest;
@@ -87,6 +88,7 @@ import com.dotmarketing.portlets.templates.business.TemplateFactoryImplTest;
 import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
+import com.dotmarketing.portlets.workflows.util.WorkflowEmailUtilTest;
 import com.dotmarketing.quartz.DotStatefulJobTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
@@ -454,8 +456,11 @@ import org.junit.runners.Suite.SuiteClasses;
         BundlePublisherTest.class,
         CategoryFactoryTest.class,
         Task210805DropUserProxyTableTest.class,
+        Task210816DeInodeRelationshipTest.class,
         BundlerUtilTest.class,
-        Task210816DeInodeRelationshipTest.class
+        Task210816DeInodeRelationshipTest.class,
+        WorkflowEmailUtilTest.class,
+        ConfigurationHelperTest.class
 })
 public class MainSuite {
 
