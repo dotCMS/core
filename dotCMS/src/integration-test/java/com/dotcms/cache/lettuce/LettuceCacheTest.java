@@ -2,6 +2,7 @@ package com.dotcms.cache.lettuce;
 
 import java.util.Set;
 
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -94,13 +95,12 @@ public class LettuceCacheTest {
 
         String content = "my content";
         for(int i=0;i<5;i++) {
-            cache.put(group, key+i, content);
+            cache.put(group, key+i, content+i);
         }
         Set<String> keys = cache.getKeys(group);
         assert(keys.size()==5);
         for(int i=0;i<5;i++) {
-            String cacheKey = cache.cacheKey(group, key+i);
-            assert(keys.contains(cacheKey));
+            Assert.assertTrue(keys.contains(key+i));
         }
     }
     
@@ -117,7 +117,7 @@ public class LettuceCacheTest {
             cache.put(group+i, key+i, content);
         }
         Set<String> keys = cache.getAllKeys();
-        assert(keys.size()==1000);
+        assert(keys.size()>=1000);
         
         cache.removeAll();
         keys = cache.getAllKeys();
