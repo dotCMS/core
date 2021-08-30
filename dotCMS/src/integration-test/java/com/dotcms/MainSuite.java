@@ -3,6 +3,7 @@ package com.dotcms;
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
 import com.dotcms.cache.lettuce.DotObjectCodecTest;
+import com.dotcms.cache.lettuce.RedisClientTest;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
@@ -453,7 +454,8 @@ import org.junit.runners.Suite.SuiteClasses;
         BundlePublisherTest.class,
         CategoryFactoryTest.class,
         Task210805DropUserProxyTableTest.class,
-        DotObjectCodecTest.class
+        DotObjectCodecTest.class,
+        RedisClientTest.class
 })
 public class MainSuite {
 
