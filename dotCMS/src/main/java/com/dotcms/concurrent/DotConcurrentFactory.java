@@ -1,5 +1,30 @@
 package com.dotcms.concurrent;
 
+import static com.dotcms.util.CollectionsUtils.map;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.DelayQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import com.dotcms.concurrent.lock.DotKeyLockManagerBuilder;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.util.ReflectionUtils;
@@ -9,19 +34,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.github.rjeschke.txtmark.Run;
-import org.jetbrains.annotations.NotNull;
-
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.dotcms.util.CollectionsUtils.map;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 /**
  * Factory for concurrent {@link Executor} & {@link DotSubmitter}
@@ -112,68 +125,58 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     private final RejectedExecutionHandler rejectedExecutionHandler =
             new ThreadPoolExecutor.AbortPolicy();
 
-    private final ThreadFactory defaultThreadFactory =
-            this.getDefaultThreadFactory();
+    public static final String SCHEDULER_COREPOOLSIZE = "SCHEDULER_CORE_POOL_SIZE";
 
 
     private final IdentifierStripedLock identifierStripedLock =
            new IdentifierStripedLock(DotKeyLockManagerBuilder.newLockManager(LOCK_MANAGER));
 
-    private final ThreadFactory getDefaultThreadFactory () {
+    private static ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = null;
 
-        ThreadFactory threadFactory = null;
-        final String className =
-                Config.getStringProperty
-                        (DOTCMS_CONCURRENT_THREADFACTORYCLASS, null);
+    /**
+     * Returns the {@link ScheduledThreadPoolExecutor}
+     * @return ScheduledThreadPoolExecutor
+     */
+    public static ScheduledThreadPoolExecutor getScheduledThreadPoolExecutor() {
 
-        if (UtilMethods.isSet(className)) {
+        if (null == scheduledThreadPoolExecutor) {
 
-            threadFactory =
-                    (ThreadFactory) ReflectionUtils.newInstance
-                            (className);
-        }
+            synchronized (DotInitScheduler.class) {
 
-        if (null == threadFactory) {
-
-            threadFactory = Executors.defaultThreadFactory();
-        }
-
-        return threadFactory;
-    }
-
-
-    private final ThreadFactory getDefaultThreadFactory (final String executorName) {
-
-        ThreadFactory threadFactory = null;
-        final String className =
-                Config.getStringProperty
-                        (executorName + DOTCMS_CONCURRENT_THREADFACTORYCLASS, null);
-
-        if (UtilMethods.isSet(className)) {
-
-            threadFactory =
-                    (ThreadFactory) ReflectionUtils.newInstance
-                            (className);
-
-            if (null != threadFactory && Logger.isDebugEnabled(this.getClass())) {
-
-                Logger.debug(this.getClass(), "Using the thread factory implementation: " + executorName);
+                if (null == scheduledThreadPoolExecutor) {
+                    final int corePoolSize = Config.getIntProperty(SCHEDULER_COREPOOLSIZE, 5);
+                    scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor( corePoolSize,new ThreadFactoryBuilder().setNameFormat("dot-ScheduledPool-%d").build(),new ThreadPoolExecutor.CallerRunsPolicy() );
+                }
             }
         }
 
-        if (null == threadFactory) {
+        return scheduledThreadPoolExecutor;
+    }
 
-            threadFactory = this.defaultThreadFactory;
+
+    final static ThreadFactory buildDefaultThreadFactory(final String executorName) {
+
+        if (UtilMethods.isEmpty(executorName)) {
+            new ThreadFactoryBuilder().setNameFormat("dotCMS-%d").build();
+        }
+
+        final String className = Config.getStringProperty(executorName + DOTCMS_CONCURRENT_THREADFACTORYCLASS, null);
+
+        if (UtilMethods.isSet(className)) {
+            Logger.debug(DotConcurrentFactory.class, "Using the thread factory implementation: " + className);
+
+            return (ThreadFactory) ReflectionUtils.newInstance(className);
         }
 
 
-        return threadFactory;
+        return new ThreadFactoryBuilder().setNameFormat("dot-" + executorName + "-%d").build();
+
     }
 
     private DotConcurrentFactory () {
         // singleton
         this.delayQueueConsumer = new DelayQueueConsumer();
-        DotInitScheduler.getScheduledThreadPoolExecutor().scheduleWithFixedDelay(this.delayQueueConsumer, 0,
+        getScheduledThreadPoolExecutor().scheduleWithFixedDelay(this.delayQueueConsumer, 0,
                 Config.getLongProperty("dotcms.concurrent.delayqueue.waitmillis", 100), TimeUnit.MILLISECONDS);
     }
 
@@ -427,7 +430,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
         final DotConcurrentImpl submitter = this.submitterConfigCreatorMap.containsKey(name)?
                 new DotConcurrentImpl(
-                        this.submitterConfigCreatorMap.get(name).getDefaultThreadFactory(),
+                        this.submitterConfigCreatorMap.get(name).getDefaultThreadFactory(name),
                         this.submitterConfigCreatorMap.get(name).getRejectedExecutionHandler(),
                         this.submitterConfigCreatorMap.get(name).getAllowCoreThreadTimeOut(),
                         this.submitterConfigCreatorMap.get(name).getPoolSize(),
@@ -437,7 +440,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
                         name
                 ):
                 new DotConcurrentImpl(
-                        this.getDefaultThreadFactory(name),
+                        buildDefaultThreadFactory(name),
                         this.rejectedExecutionHandler,
                         Config.getBooleanProperty(name + DOTCMS_CONCURRENT_ALLOWCORETHREADTIMEOUT, this.defaultAllowCoreThreadTimeOut),
                         Config.getIntProperty (name  + DOTCMS_CONCURRENT_POOLSIZE,                 this.defaultPoolSize),
@@ -504,9 +507,9 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         public SubmitterConfig build () {
             return new SubmitterConfig() {
                 @Override
-                public ThreadFactory getDefaultThreadFactory() {
+                public ThreadFactory getDefaultThreadFactory(final String name) {
                     return null != SubmitterConfigBuilder.this.threadFactory?
-                            SubmitterConfigBuilder.this.threadFactory: SubmitterConfig.super.getDefaultThreadFactory();
+                            SubmitterConfigBuilder.this.threadFactory: buildDefaultThreadFactory(name);
                 }
 
                 @Override
@@ -557,8 +560,8 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
          * Returns "Executors.defaultThreadFactory()"
          * @return ThreadFactory
          */
-        default ThreadFactory getDefaultThreadFactory () {
-            return Executors.defaultThreadFactory();
+        default ThreadFactory getDefaultThreadFactory (final String name) {
+            return getDefaultThreadFactory(name);
         }
 
         /**
@@ -566,7 +569,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
          * @return RejectedExecutionHandler
          */
         default RejectedExecutionHandler getRejectedExecutionHandler() {
-            return new ThreadPoolExecutor.AbortPolicy();
+            return new ThreadPoolExecutor.CallerRunsPolicy();
         }
 
         /**
@@ -763,7 +766,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
         public DotThreadPoolExecutor(final int corePoolSize, final int maximumPoolSize, final long keepAliveTime, final TimeUnit unit,
                                      final BlockingQueue<Runnable> workQueue, final String name) {
-            super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue);
+            super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, buildDefaultThreadFactory(name));
             this.name = name;
         }
 
@@ -775,7 +778,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
         public DotThreadPoolExecutor(final int corePoolSize, final int maximumPoolSize, final long keepAliveTime, final TimeUnit unit,
                                      final BlockingQueue<Runnable> workQueue, final RejectedExecutionHandler handler, final String name) {
-            super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, handler);
+            super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue,buildDefaultThreadFactory(name), handler);
             this.name = name;
         }
 
