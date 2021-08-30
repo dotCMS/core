@@ -132,10 +132,10 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
     private DotCMSMockRequest getRequestCopy(HttpRequestReaderWrapper wrapper) {
         final DotCMSMockRequest requestCopy = new DotCMSMockRequest();
         requestCopy.setContent(wrapper.getRawRequest().get());
-
-        final Enumeration<String> attributes = wrapper.getAttributeNames();
         requestCopy.setParameterMap(wrapper.getParameterMap());
 
+        final Enumeration<String> attributes = wrapper.getAttributeNames();
+        
         while(attributes.hasMoreElements()) {
             String name = attributes.nextElement();
             requestCopy.setAttribute(name, wrapper.getAttribute(name));
