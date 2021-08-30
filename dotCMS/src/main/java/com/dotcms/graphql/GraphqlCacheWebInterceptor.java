@@ -7,20 +7,22 @@ import static com.dotcms.util.HttpRequestDataUtil.getParamCaseInsensitive;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
+import com.dotcms.mock.request.DotCMSMockRequest;
 import com.dotcms.mock.request.HttpRequestReaderWrapper;
 import com.dotcms.mock.response.MockHttpWriterCaptureResponse;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.io.IOException;
+import java.util.Enumeration;
 import java.util.Map;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 
 /**
@@ -88,14 +90,13 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
         final boolean bypassCache = bypassCacheByTTL(requestIn)
                 || query.get().contains(INTROSPECTION_OPERATION_NAME);
 
-        final Integer cacheTTL = getCacheTTL(requestIn).isPresent() ? getCacheTTL(requestIn).get() : null;
-
+        final Integer cacheTTL = getCacheTTL(requestIn).isPresent() ? getCacheTTL(requestIn).get()
+                : null;
 
         Optional<String> graphResponseFromCache = bypassCache
                 ? Optional.empty()
                 : refreshKey(wrapper) ?
-                        graphCache.getAndRefresh(syncKey, () -> processGraphQLRequest(wrapper, response),
-                                cacheTTL)
+                        getAndRefresh(wrapper, response, syncKey, cacheTTL)
                         : graphCache.get(syncKey);
 
         if (graphResponseFromCache.isPresent()) {
@@ -116,6 +117,30 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
             return new Result.Builder().wrap(new MockHttpWriterCaptureResponse(response))
                     .wrap(wrapper).next().build();
         }
+    }
+
+    private Optional<String> getAndRefresh(HttpRequestReaderWrapper wrapper, HttpServletResponse response, String syncKey,
+            Integer cacheTTL) {
+        // copy request
+        DotCMSMockRequest requestCopy = getRequestCopy(wrapper);
+
+        return graphCache.getAndRefresh(syncKey, ()
+                        -> processGraphQLRequest(requestCopy, response),
+                cacheTTL);
+    }
+
+    private DotCMSMockRequest getRequestCopy(HttpRequestReaderWrapper wrapper) {
+        final DotCMSMockRequest requestCopy = new DotCMSMockRequest();
+        requestCopy.setContent(wrapper.getRawRequest().get());
+
+        final Enumeration<String> attributes = wrapper.getAttributeNames();
+        requestCopy.setParameterMap(wrapper.getParameterMap());
+
+        while(attributes.hasMoreElements()) {
+            String name = attributes.nextElement();
+            requestCopy.setAttribute(name, wrapper.getAttribute(name));
+        }
+        return requestCopy;
     }
 
     private void writeResponse(final HttpServletResponse response,
