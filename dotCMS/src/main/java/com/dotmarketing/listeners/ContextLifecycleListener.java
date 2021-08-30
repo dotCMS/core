@@ -1,6 +1,7 @@
 package com.dotmarketing.listeners;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.util.AsciiArt;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.reindex.ReindexThread;
@@ -9,7 +10,7 @@ import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
-
+import io.vavr.control.Try;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import java.io.File;
@@ -22,49 +23,38 @@ import java.io.File;
 public class ContextLifecycleListener implements ServletContextListener {
 
 	public ContextLifecycleListener() {
-		//Config.initializeConfig();
-//		System.setProperty("DOTCMS_LOGGING_HOME", ConfigUtils.getDynamicContentPath() + File.separator + "logs");
-
+	    AsciiArt.doArt();
 	}
 
-	public void contextDestroyed(ServletContextEvent arg0) {
-		Logger.info(this, "Shutdown event received, executing a clean shutdown.");
-		try {
-			QuartzUtils.stopSchedulers();
-		} catch (Exception e) {
-			Logger.error(this, "A error ocurred trying to shutdown the Schedulers.");
-		}
-        try {
-        	ReindexThread.stopThread();
+    public void contextDestroyed(ServletContextEvent arg0) {
+        Logger.info(this, "Shutdown : Started, executing a clean shutdown.");
 
-        } catch (Exception e) {
-            Logger.error(this, "A error ocurred trying to shutdown the ReindexThread.");
-        }
+        Try.run(() -> QuartzUtils.stopSchedulers())
+                        .onFailure(e -> Logger.warn(ContextLifecycleListener.class, "Shutdown : " + e.getMessage()));
+        
+        Try.run(() -> LicenseUtil.freeLicenseOnRepo())
+                        .onFailure(e -> Logger.warn(ContextLifecycleListener.class, "Shutdown : " + e.getMessage()));
 
-        try {
-        	CacheLocator.getCacheAdministrator().shutdown();
-        } catch (Exception e) {
-            Logger.error(this, "A error ocurred trying to shutdown the Cache subsystem.");
-        }
+        
+        Try.run(() -> CacheLocator.getCacheAdministrator().shutdown())
+                        .onFailure(e -> Logger.warn(ContextLifecycleListener.class, "Shutdown : " + e.getMessage()));
+        
 
-		try {
-			DotConcurrentFactory.getInstance().shutdownAndDestroy();
-		} catch (Exception e) {
-			Logger.error(this, "A error ocurred trying to shutdown the DotConcurrent subsystem.");
-		}
 
-		Logger.info(this, "Finished shuting down.");
+        Try.run(() -> DotConcurrentFactory.getInstance().shutdownAndDestroy())
+                        .onFailure(e -> Logger.warn(ContextLifecycleListener.class, "Shutdown : " + e.getMessage()));
 
-	}
+        Try.run(() -> ReindexThread.stopThread())
+                        .onFailure(e -> Logger.warn(ContextLifecycleListener.class, "Shutdown : " + e.getMessage()));
+
+        Logger.info(this, "Shutdown : Finished.");
+
+    }
 
 	public void contextInitialized(ServletContextEvent arg0) {
 
 		Config.setMyApp(arg0.getServletContext());
-        if(Config.getStringProperty("DOTCMS_LOGGING_HOME") != null && !Config.getStringProperty("DOTCMS_LOGGING_HOME").trim().equals("")) {
-            System.setProperty("DOTCMS_LOGGING_HOME", Config.getStringProperty("DOTCMS_LOGGING_HOME"));
-        } else {
-    	    System.setProperty("DOTCMS_LOGGING_HOME", ConfigUtils.getDynamicContentPath() + File.separator + "logs");
-        }	    
+
 
         String path = null;
 		try {
@@ -83,8 +73,7 @@ public class ContextLifecycleListener implements ServletContextListener {
 		//Initialises/reconfigures log4j based on a given log4j configuration file
 		Log4jUtil.initializeFromPath(path);
 
-    	Logger.clearLoggers();
-    	AsciiArt.doArt();
+
 	}
 
 }
