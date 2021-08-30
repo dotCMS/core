@@ -1,9 +1,9 @@
 <div class="dot-content-palette__search">
     <input
         data-testId="searchInput"
-        #searchInput
         [placeholder]="'structure'| dm | uppercase"
         pInputText
+        [(ngModel)]="filter"
         type="text"
     />
     <dot-icon
@@ -13,16 +13,15 @@
     ></dot-icon>
 </div>
 <div class="dot-content-palette__items" *ngIf="items.length; else noResults">
-    <div *ngFor="let item of items" draggable="true"
-         data-testId="paletteItems"
-        (dragstart)="dragStart(item)" >
+    <div *ngFor="let item of items | dotFilter:'name': filter" draggable="true"
+         data-testId="paletteItem"
+         (dragstart)="dragStart(item)" >
         <dot-icon size="30" [name]="item.icon"></dot-icon>
-        <span>{{item.name}}</span>
+        <p>{{item.name}}</p>
     </div>
 </div>
 <ng-template #noResults>
     <span class="dot-content-palette__empty" >{{'No-Results' | dm}}</span>
 </ng-template>
-
 
 

@@ -9,6 +9,8 @@ import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { Injectable } from '@angular/core';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotFilterPipeModule } from '@pipes/dot-filter/dot-filter-pipe.module';
+import { FormsModule } from '@angular/forms';
 
 const data = [
     {
@@ -50,7 +52,7 @@ describe('DotContentPaletteComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             declarations: [DotContentPaletteComponent],
-            imports: [DotPipesModule, DotIconModule],
+            imports: [DotPipesModule, DotIconModule, DotFilterPipeModule, FormsModule],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotContentletEditorService, useClass: MockDotContentletEditorService }
@@ -72,7 +74,7 @@ describe('DotContentPaletteComponent', () => {
     it('should list items correctly', () => {
         component.items = (data as unknown) as DotCMSContentType[];
         fixture.detectChanges();
-        const contents = fixture.debugElement.queryAll(By.css('[data-testId="paletteItems"]'));
+        const contents = fixture.debugElement.queryAll(By.css('[data-testId="paletteItem"]'));
         expect(contents.length).toEqual(4);
         expect(contents[0].nativeElement.draggable).toEqual(true);
     });
@@ -93,19 +95,21 @@ describe('DotContentPaletteComponent', () => {
         expect(input.nativeElement.placeholder).toEqual('CONTENT TYPE');
     });
 
-    it('should emit event on search', fakeAsync(() => {
-        spyOn(component.filterChange, 'emit');
-        const input = fixture.debugElement.query(By.css('[data-testId="searchInput"]'));
-        input.nativeElement.value = 'test';
-        input.nativeElement.dispatchEvent(new Event('keyup'));
-        tick(550);
-        expect(component.filterChange.emit).toHaveBeenCalledOnceWith('test');
-    }));
+    it('should filter items on search', () => {
+        component.items = (data as unknown) as DotCMSContentType[];
+        const input = fixture.debugElement.query(By.css('[data-testId="searchInput"]'))
+            .nativeElement;
+        input.value = 'Product';
+        input.dispatchEvent(new Event('input'));
+        fixture.detectChanges();
+        const contents = fixture.debugElement.queryAll(By.css('[data-testId="paletteItem"]'));
+        expect(contents.length).toEqual(1);
+    });
 
     it('should set Dragged ContentType on dragStart', () => {
         component.items = (data as unknown) as DotCMSContentType[];
         fixture.detectChanges();
-        const content = fixture.debugElement.query(By.css('[data-testId="paletteItems"]'));
+        const content = fixture.debugElement.query(By.css('[data-testId="paletteItem"]'));
         content.triggerEventHandler('dragstart', data[0]);
         expect(dotContentletEditorService.setDraggedContentType).toHaveBeenCalledOnceWith(
             data[0] as DotCMSContentType

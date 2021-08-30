@@ -7,7 +7,7 @@ import { of, throwError } from 'rxjs';
 import { HttpCode, ResponseView } from '@dotcms/dotcms-js';
 
 import { DotEditLayoutComponent } from './dot-edit-layout.component';
-import { mockDotRenderedPage } from '@tests/dot-page-render.mock';
+import { mockDotRenderedPage, processedContainers } from '@tests/dot-page-render.mock';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotPageLayoutService } from '@services/dot-page-layout/dot-page-layout.service';
@@ -162,23 +162,8 @@ describe('DotEditLayoutComponent', () => {
                 title: null
             });
             expect(dotTemplateContainersCacheService.set).toHaveBeenCalledWith({
-                '0': {
-                    type: 'containers',
-                    identifier: '5363c6c6-5ba0-4946-b7af-cf875188ac2e',
-                    name: 'Medium Column (md-1)',
-                    categoryId: '9ab97328-e72f-4d7e-8be6-232f53218a93',
-                    source: CONTAINER_SOURCE.DB,
-                    parentPermissionable: { hostname: 'demo.dotcms.com' }
-                },
-                '1': {
-                    type: 'containers',
-                    identifier: '56bd55ea-b04b-480d-9e37-5d6f9217dcc3',
-                    name: 'Large Column (lg-1)',
-                    categoryId: 'dde0b865-6cea-4ff0-8582-85e5974cf94f',
-                    source: CONTAINER_SOURCE.FILE,
-                    path: '/container/path',
-                    parentPermissionable: { hostname: 'demo.dotcms.com' }
-                }
+                '/default/': processedContainers[0].container,
+                '/banner/': processedContainers[1].container
             });
             expect(component.pageState).toEqual(new DotPageRender(mockDotRenderedPage()));
         });

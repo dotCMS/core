@@ -61,9 +61,13 @@
         </div>
     </ng-container>
 </div>
-<dot-content-palette
-    [@enterAnimation]
-    (filterChange)='loadContentPallet($event)'
-    [items]='contentPalletItems'
-    *ngIf="isEditMode">
-</dot-content-palette>
+<div class="dot-edit-content__palette" [class.editMode]='isEditMode'  [class.collapsed]="paletteCollapsed">
+    <dot-content-palette
+        [items]='contentPalletItems'>
+    </dot-content-palette>
+    <div class="dot-edit-content__palette-visibility"
+         data-testId="palette-visibility"
+         (click)='paletteCollapsed = !paletteCollapsed'>
+        <dot-icon size='22' [name]="paletteCollapsed ? 'chevron_left' : 'chevron_right' "></dot-icon>
+    </div>
+</div>

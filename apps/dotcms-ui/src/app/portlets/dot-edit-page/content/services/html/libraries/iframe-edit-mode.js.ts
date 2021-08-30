@@ -4,6 +4,7 @@ export const EDIT_PAGE_JS = `
 (function () {
     var forbiddenTarget;
     let currentModel;
+    var executeScroll = 1;
 
     function getContainers() {
         var containers = [];
@@ -281,7 +282,7 @@ export const EDIT_PAGE_JS = `
 
         // draggedContent is set by dotContentletEditorService.draggedContentType$
         const dotAcceptTypes = container.dataset.dotAcceptTypes.toLocaleLowerCase();
-        return (window.hasOwnProperty('draggedContent') && dotAcceptTypes.includes(draggedContent.variable.toLocaleLowerCase()))
+        return (window.hasOwnProperty('draggedContent') && (dotAcceptTypes.includes(draggedContent.variable.toLocaleLowerCase()) || dotAcceptTypes.includes('widget')))
     }
 
     function setPlaceholderContentlet() {
@@ -306,6 +307,11 @@ export const EDIT_PAGE_JS = `
     window.addEventListener("dragleave", dragLeaveEvent, false);
     window.addEventListener("drop", dropEvent, false);
     window.addEventListener("beforeunload", removeEvents, false);
+    window.addEventListener("mousemove", clearScroll, false );
+
+    function clearScroll() {
+        executeScroll = 0;
+    }
 
     function dragEnterEvent(event) {
         event.preventDefault();
@@ -317,11 +323,38 @@ export const EDIT_PAGE_JS = `
         }
     }
 
+    function dotWindowScroll(step){
+        if (!!executeScroll ) {
+            window.scrollBy({
+                top: step,
+                behaviour: 'smooth'
+            });
+        } else {
+            clearInterval(scrollInterval);
+        }
+    }
+
+    var scrollInterval;
+    function dotCustomScroll (step) {
+        if (executeScroll === 0) {
+            executeScroll = step;
+            scrollInterval = setInterval( ()=> {dotWindowScroll(step)}, 1);
+        }
+    }
+
     function dragOverEvent(event) {
         event.preventDefault();
         event.stopPropagation();
         const container = event.target.closest('[data-dot-object="container"]');
         const contentlet = event.target.closest('[data-dot-object="contentlet"]');
+
+        if (event.clientY < 150) {
+            dotCustomScroll(-5)
+        } else if (event.clientY > (document.body.clientHeight - 150)) {
+            dotCustomScroll(5)
+        } else {
+            clearScroll();
+        }
 
         if (contentlet) {
 
@@ -354,7 +387,6 @@ export const EDIT_PAGE_JS = `
     function dragLeaveEvent(event) {
         event.preventDefault();
         event.stopPropagation();
-
         const container = event.target.closest('[data-dot-object="container"]');
 
         if (container && currentContainer !== container) {
@@ -416,6 +448,7 @@ export const EDIT_PAGE_JS = `
         window.removeEventListener("dragleave", dragLeaveEvent, false);
         window.removeEventListener("drop", dropEvent, false);
         window.removeEventListener("beforeunload", removeEvents, false);
+        window.removeEventListener("mousemove", clearScroll, false );
     }
 
     // D&D Img - End

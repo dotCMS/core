@@ -116,7 +116,35 @@ dot-whats-changed,
     pointer-events: none;
 }
 
-dot-content-palette {
-    background: $white;
-    overflow: hidden auto;
+.dot-edit-content__palette {
+    position: relative;
+    transition: width $basic-speed ease-in-out;
+    width: 0px;
+
+    &.editMode {
+        width: $content-palette-width;
+
+        .dot-edit-content__palette-visibility {
+            display: flex;
+        }
+    }
+
+    &.collapsed {
+        width: 0px;
+    }
+
+    .dot-edit-content__palette-visibility {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        width: 35px;
+        height: 35px;
+        left: -34px;
+        position: absolute;
+        background: $white;
+        top: 50%;
+        border: 1px solid $gray-lighter;
+        border-radius: 6px 0 0 6px;
+        cursor: pointer;
+    }
 }

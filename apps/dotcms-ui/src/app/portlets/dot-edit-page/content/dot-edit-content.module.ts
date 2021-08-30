@@ -31,6 +31,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotContentPaletteModule } from '@portlets/dot-edit-page/components/dot-content-palette/dot-content-palette.module';
+import { DotIconModule } from '@dotcms/ui';
 
 const routes: Routes = [
     {
@@ -59,7 +60,8 @@ const routes: Routes = [
         DotEditPageViewAsControllerModule,
         DotEditPageStateControllerModule,
         DotOverlayMaskModule,
-        DotContentPaletteModule
+        DotContentPaletteModule,
+        DotIconModule
     ],
     exports: [DotEditContentComponent],
     providers: [

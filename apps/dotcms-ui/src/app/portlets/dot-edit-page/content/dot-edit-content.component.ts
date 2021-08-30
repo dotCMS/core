@@ -2,15 +2,7 @@ import { Observable, Subject, fromEvent, merge, of } from 'rxjs';
 
 import { filter, takeUntil, pluck, take, tap, skip, catchError } from 'rxjs/operators';
 import { ActivatedRoute } from '@angular/router';
-import {
-    Component,
-    OnInit,
-    ViewChild,
-    ElementRef,
-    NgZone,
-    OnDestroy,
-    HostBinding
-} from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, NgZone, OnDestroy } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { SiteService } from '@dotcms/dotcms-js';
@@ -42,7 +34,8 @@ import {
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotContentTypeService } from '@services/dot-content-type';
-import { animate, style, transition, trigger } from '@angular/animations';
+import { DotContainerStructure } from '@models/container/dot-container.model';
+import { DotContentPaletteComponent } from '@portlets/dot-edit-page/components/dot-content-palette/dot-content-palette.component';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -57,19 +50,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 @Component({
     selector: 'dot-edit-content',
     templateUrl: './dot-edit-content.component.html',
-    styleUrls: ['./dot-edit-content.component.scss'],
-    animations: [
-        trigger('enterAnimation', [
-            transition(':enter', [
-                style({ transform: 'translateX(100%)', opacity: 0 }),
-                animate('150ms ease-in-out', style({ transform: 'translateX(0)', opacity: 1 }))
-            ]),
-            transition(':leave', [
-                style({ transform: 'translateX(0)', opacity: 1 }),
-                animate('150ms ease-in-out', style({ transform: 'translateX(100%)', opacity: 0 }))
-            ])
-        ])
-    ]
+    styleUrls: ['./dot-edit-content.component.scss']
 })
 export class DotEditContentComponent implements OnInit, OnDestroy {
     @ViewChild('iframe') iframe: ElementRef;
@@ -84,6 +65,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     dotPageMode = DotPageMode;
     contentPalletItems: DotCMSContentType[] = [];
     isEditMode: boolean = false;
+    paletteCollapsed = false;
 
     private readonly customEventsHandler;
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -157,7 +139,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
     ngOnInit() {
         this.dotLoadingIndicatorService.show();
-
         this.setInitalData();
         this.subscribeSwitchSite();
         this.subscribeIframeCustomEvents();
@@ -249,27 +230,21 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Load items in the Content Pallet
-     *
-     * @param string filter
-     * @memberof DotEditContentComponent
-     */
-    loadContentPallet(filter = ''): void {
-        this.dotContentTypeService
-            .getContentTypes(filter)
-            .pipe(take(1))
-            .subscribe((items) => {
-                this.contentPalletItems = items;
-            });
-    }
-
-    /**
      * Execute actions needed when closing the create dialog.
      *
      * @memberof DotEditContentComponent
      */
     handleCloseAction(): void {
         this.dotEditContentHtmlService.removeContentletPlaceholder();
+    }
+
+    private loadContentPallet(filter = ''): void {
+        this.dotContentTypeService
+            .getContentTypes(filter)
+            .pipe(take(1))
+            .subscribe((items) => {
+                this.contentPalletItems = items;
+            });
     }
 
     private isInternallyNavigatingToSamePage(url: string): boolean {
@@ -442,6 +417,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
     private renderPage(pageState: DotPageRenderState): void {
         if (this.shouldEditMode(pageState)) {
+            this.setAllowedContentTypes(pageState);
             this.dotEditContentHtmlService.initEditMode(pageState, this.iframe);
             this.isEditMode = true;
         } else {
@@ -471,7 +447,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
             tap((pageState: DotPageRenderState) => {
                 this.pageStateInternal = pageState;
                 this.showIframe = false;
-
                 // In order to get the iframe clean up we need to remove it and then re-add it to the DOM
                 setTimeout(() => {
                     this.showIframe = true;
@@ -524,5 +499,21 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                     .contentWindow;
                 iframeWindow.draggedContent = contentType;
             });
+    }
+
+    private setAllowedContentTypes(pageState: DotPageRenderState): void {
+        let allowedContent = new Set();
+        Object.values(pageState.containers).forEach((container) => {
+            Object.values(container.containerStructures).forEach(
+                (containerStructure: DotContainerStructure) => {
+                    allowedContent.add(containerStructure.contentTypeVar);
+                }
+            );
+        });
+
+        this.contentPalletItems = this.contentPalletItems.filter(
+            (contentType) =>
+                allowedContent.has(contentType.variable) || contentType.baseType === 'WIDGET'
+        );
     }
 }

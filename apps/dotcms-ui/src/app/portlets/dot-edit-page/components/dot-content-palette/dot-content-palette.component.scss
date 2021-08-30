@@ -7,6 +7,9 @@
     flex-direction: column;
     padding: $spacing-1;
     border-left: 1px solid $gray-lighter;
+    background: $white;
+    transition: all $basic-speed ease-in-out;
+    height: 100%;
 }
 
 .dot-content-palette__search {
@@ -34,38 +37,32 @@
 }
 
 .dot-content-palette__items {
-
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-gap: $spacing-1;
+    grid-auto-rows: 6rem;
     overflow: hidden auto;
 
     div {
-        width: 7.2rem;
-        height: 5.71rem;
         border: 1px solid $gray-lighter;
-        display: inline-flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        cursor: grab;
         color: $black;
-        margin-bottom: $spacing-1;
-        padding: 0 0.25rem;
-
-        &:nth-child(even) {
-            margin-left: $spacing-1;
-        }
+        cursor: grab;
+        overflow: hidden;
+        padding: 1rem $spacing-1;
+        text-align: center;
 
         &:hover {
             background: $gray-bg;
         }
 
-        span {
-            white-space: nowrap;
-            text-overflow: ellipsis;
-            overflow: hidden;
-            width: 100%;
-            text-align: center;
-            margin-top: $spacing-1;
+        p {
             font-size: $font-size-small;
+            margin: $spacing-1 0 0;
+            overflow: hidden;
+            text-align: center;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            width: 100%;
         }
     }
 }

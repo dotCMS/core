@@ -17,6 +17,10 @@ export interface DotContainer {
     };
 }
 
+export interface DotContainerStructure {
+    contentTypeVar: string;
+}
+
 // The template endpoint returns DotContainer but the page endpoint returns {container}
 export interface DotContainerMap {
     [key: string]: DotContainer;

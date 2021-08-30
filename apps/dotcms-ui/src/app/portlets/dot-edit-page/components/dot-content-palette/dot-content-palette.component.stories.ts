@@ -8,6 +8,7 @@ import { Injectable } from '@angular/core';
 import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotFilterPipeModule } from '@pipes/dot-filter/dot-filter-pipe.module';
 
 const data = [
     {
@@ -119,7 +120,7 @@ export default {
     decorators: [
         moduleMetadata({
             declarations: [DotContentPaletteComponent, DotMessagePipe],
-            imports: [CommonModule, DotIconModule],
+            imports: [CommonModule, DotIconModule, DotFilterPipeModule],
             providers: [
                 { provide: DotContentletEditorService, useClass: MockDotContentletEditorService },
                 { provide: DotMessageService, useValue: messageServiceMock }
