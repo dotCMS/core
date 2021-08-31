@@ -36,7 +36,8 @@ function submitfm() {
 	form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/folders/order_menu" /></portlet:actionURL>';
 	submitForm(form);
 }
-function savechanges() {
+function savechanges(btn) {
+    btn.setDisabled(true);
 	form = document.getElementById('fm');
 	form.cmd.value = "generatemenu";
 	form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/folders/order_menu" /></portlet:actionURL>';
@@ -160,7 +161,7 @@ pagePath=<%=pagePath%>
     
                             <div class="buttonRow">
                                 <% if(showSaveButton){%>
-                                    <button dojoType="dijit.form.Button" onClick="savechanges()" iconClass="saveIcon">
+                                    <button dojoType="dijit.form.Button" onClick="savechanges(this)" iconClass="saveIcon">
                                 <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-changes")) %>
                                     </button>       
                                 <%} %>
