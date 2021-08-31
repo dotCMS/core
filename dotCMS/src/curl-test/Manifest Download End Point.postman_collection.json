@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "e38277aa-884a-4582-85d3-457b2d24b879",
+		"_postman_id": "2ad37d88-cf3f-42d6-b0a5-f756a2c9d36b",
 		"name": "Manifest Download End Point",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -324,7 +324,7 @@
 							{
 								"key": "Origin",
 								"type": "text",
-								"value": "{{origin}}"
+								"value": "{{serverURL}}"
 							}
 						],
 						"body": {
@@ -357,13 +357,41 @@
 					"response": []
 				},
 				{
+					"name": "generate bundle",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"bundleId\": \"{{bundleId}}\",\n    \"filterKey\": \"Intelligent.yml\",\n    \"operation\": \"0\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle/_generate",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle",
+								"_generate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Download manifest",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"pm.test(\"Bundle download sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});"
 								],
@@ -390,12 +418,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/{{bundleId}}/manifest",
+							"raw": "{{serverURL}}/api/bundle/{{bundleId}}/manifest",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
+								"bundle",
 								"{{bundleId}}",
 								"manifest"
 							]
@@ -757,6 +786,34 @@
 					"response": []
 				},
 				{
+					"name": "generate bundle",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"bundleId\": \"{{bundleId}}\",\n    \"filterKey\": \"Intelligent.yml\",\n    \"operation\": \"0\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle/_generate",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle",
+								"_generate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Download manifest",
 					"event": [
 						{
@@ -861,7 +918,23 @@
 	"variable": [
 		{
 			"key": "environmentName",
-			"value": "environment-152"
+			"value": "environment-454"
+		},
+		{
+			"key": "environmentId",
+			"value": "59a384c7-94e7-4673-97c7-2bf8986befaf"
+		},
+		{
+			"key": "endpointName",
+			"value": "endpoint-603"
+		},
+		{
+			"key": "bundleName",
+			"value": "bundleName-264"
+		},
+		{
+			"key": "bundleId",
+			"value": "01FEEJ191G3QMFH27M06GPF89C"
 		}
 	]
 }
