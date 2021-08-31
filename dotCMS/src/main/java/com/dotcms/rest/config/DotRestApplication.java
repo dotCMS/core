@@ -173,7 +173,6 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 			.add(PermissionResource.class)
 			.add(ContentResource.class)
 			.add(CacheResource.class)
-			.add(RedisResource.class)
 			.add(JVMInfoResource.class)
 			.build();
 

@@ -2,16 +2,11 @@ package com.dotcms.rest.api.v1.system.redis;
 
 import com.dotcms.cache.lettuce.RedisClient;
 import com.dotcms.cache.lettuce.RedisClientFactory;
-import com.dotcms.dotpubsub.DotPubSubEvent;
-import com.dotcms.dotpubsub.DotPubSubProvider;
-import com.dotcms.dotpubsub.DotPubSubTopic;
-import com.dotcms.dotpubsub.RedisPubSubImpl;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.CollectionsUtils;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
