@@ -42,6 +42,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -2207,33 +2208,30 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	@Override
 	public void saveWorkflowTask ( WorkflowTask task ) throws DotDataException {
-		boolean isNew = true;
-		if (UtilMethods.isSet(task.getId())) {
-			try {
-				final WorkflowTask test = this.findWorkFlowTaskById(task.getId());
-				if (test != null && UtilMethods.isSet(test.getId())) {
-					isNew = false;
-				}
-			} catch (final Exception e) {
-				Logger.debug(this.getClass(), e.getMessage(), e);
-			}
-		} else {
-			task.setId(UUIDGenerator.generateUuid());
-		}
 
-		final DotConnect db = new DotConnect();
+		final DotConnect db = new DotConnect()
+				.setSQL(WorkflowSQL.SELECT_TASK)
+				.addParam(task.getWebasset())
+				.addParam(task.getLanguageId());
+
+		final WorkflowTask dbTask =  Try
+				.of(() -> this.convertListToObjects(db.loadObjectResults(), WorkflowTask.class).get(0))
+				.getOrNull();
+
+		final boolean isNew = !UtilMethods.isSet(dbTask) || UtilMethods.isEmpty(dbTask.getId()) ;
 
 		if (isNew) {
+			task.setId(UUIDGenerator.generateUuid());
 			db.setSQL(WorkflowSQL.INSERT_WORKFLOW_TASK);
 			db.addParam(task.getId());
 			setTaskDBParams(task, db);
-			db.loadResult();
 		} else {
+			task.setId(dbTask.getId());
 			db.setSQL(WorkflowSQL.UPDATE_WORKFLOW_TASK);
 			setTaskDBParams(task, db);
 			db.addParam(task.getId());
-			db.loadResult();
 		}
+		db.loadResult();
 
 		cache.remove(task);
 	}

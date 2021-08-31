@@ -626,6 +626,62 @@ public class MultiTreeAPITest extends IntegrationTestBase {
 
     /**
      * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional)} )}
+     * When: A Page with content in spanish and english, is trying to add the spanish content again into the same container, but
+     * it's editing the english version of the page
+     * Should: Throw an exception saying that the content already exists in that container.
+     */
+    @Test(expected = DotDataException.class)
+    public void test_overridesMultitreesByPersonalization_AddContentTwiceDiffLangEditing_throwException() throws Exception {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final Language espLanguage = new LanguageDataGen().country("ESP").languageCode("esp").nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet enContentlet = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId())
+                .nextPersisted();
+
+        final Contentlet espContentlet = new ContentletDataGen(contentType.id())
+                .languageId(espLanguage.getId())
+                .nextPersisted();
+
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(1).withStructure(structure, "").nextPersisted();
+
+        final String uniqueId = UUIDGenerator.shorty();
+
+        final MultiTree multiTreeContentEN =new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(enContentlet)
+                .setInstanceID(uniqueId)
+                .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1)
+                .nextPersisted();
+
+        final MultiTree multiTreeContentES = new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(espContentlet)
+                .setInstanceID(uniqueId)
+                .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(2)
+                .nextPersisted();
+
+
+        APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                page.getIdentifier(),
+                MultiTree.DOT_PERSONALIZATION_DEFAULT,
+                list(multiTreeContentEN,multiTreeContentES),
+                Optional.of(defaultLanguage.getId())
+        );
+    }
+
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional)} )}
      * When: A Page with content in Spanish and English try to update the MulTree just for English lang
      * Should: Should keep the Spanish content and replace the English content
      */

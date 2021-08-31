@@ -45,7 +45,6 @@ var loadCompanyTab = function () {
 var saveCompanyBasicInfo = function () {
   //Getting the form values
   var companyPortalUrl = dijit.byId("companyPortalUrl").get("value");
-  var companyMX = dijit.byId("companyMX").get("value");
   var companyEmailAddress = dijit.byId("companyEmailAddress").get("value");
   var bgColor = dijit.byId("bgColor").get("value");
   var primaryColor = dijit.byId("pColor").get("value");
@@ -65,9 +64,14 @@ var saveCompanyBasicInfo = function () {
     return;
   }
 
+  if(!companyEmailAddress || !/((\s*?)(\w*?)(\s*?))*?(\<*[a-zA-Z0-9._-]+\@[a-zA-Z0-9._-]+\>*)$/.test(companyEmailAddress)){
+    showDotCMSSystemMessage("Company email address, is mandatory and must contains a valid address. e.g. Sender name &lt;sender@myWebsite.com&gt; ", true);
+    return;
+  }
+
   var content = {
     portalURL: companyPortalUrl,
-    mx: companyMX,
+    mx: '',
     emailAddress: companyEmailAddress,
     size: bgColor,
     type: primaryColor,
