@@ -34,6 +34,8 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
@@ -66,9 +68,16 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     private final SystemEventsAPI systemEventsAPI;
     private static final String CONTENT_TYPE_CONDITION = "+contentType";
     private final DotConcurrentFactory concurrentFactory = DotConcurrentFactory.getInstance();
+    private LanguageAPI languageAPI;
 
     public HostAPIImpl() {
-        this.systemEventsAPI = APILocator.getSystemEventsAPI();
+        this(APILocator.getSystemEventsAPI(),APILocator.getLanguageAPI());
+    }
+
+    @VisibleForTesting
+    HostAPIImpl(final SystemEventsAPI systemEventsAPI, final LanguageAPI languageAPI) {
+        this.systemEventsAPI = systemEventsAPI;
+        this.languageAPI = languageAPI;
     }
 
     private ContentType hostType() throws DotDataException, DotSecurityException{
@@ -986,7 +995,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             systemHost.setHostname("system");
             systemHost.setSystemHost(true);
             systemHost.setHost(null);
-            systemHost.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+            systemHost.setLanguageId(languageAPI.getDefaultLanguage().getId());
             systemHost = new Host(contentletFactory.save(systemHost));
             systemHost.setIdentifier(Host.SYSTEM_HOST);
             systemHost.setModDate(new Date());
@@ -999,7 +1008,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             this.systemHost = systemHost;
         } else {
             final String systemHostId = (String) rs.get(0).get("id");
-            this.systemHost =  APILocator.getHostAPI().DBSearch(systemHostId, systemUser, false);
+            this.systemHost = DBSearch(systemHostId, systemUser, false);
         }
         return systemHost;
     }
@@ -1050,23 +1059,38 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
 
     @Override
     @CloseDBIfOpened
-    public Host DBSearch(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        if (!UtilMethods.isSet(id))
+    public Host DBSearch(String id, User user, boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException {
+
+        if (!UtilMethods.isSet(id)) {
             return null;
+        }
 
         Host host = null;
 
-        final Optional<ContentletVersionInfo> vinfo = APILocator.getVersionableAPI().getContentletVersionInfo(id, APILocator.getLanguageAPI()
-                .getDefaultLanguage().getId());
+        final List<ContentletVersionInfo> verInfos = APILocator.getVersionableAPI()
+                .findContentletVersionInfos(id);
+        if (!verInfos.isEmpty()) {
+            final Language defaultLang = languageAPI.getDefaultLanguage();
 
-        if(vinfo.isPresent()) {
-            User systemUser = APILocator.systemUser();
+            final ContentletVersionInfo versionInfo = verInfos.stream()
+                    .filter(contentletVersionInfo -> contentletVersionInfo.getLang() == defaultLang
+                            .getId()).findFirst().orElseGet(() -> {
+                        Logger.warn(HostAPIImpl.class,
+                                String.format(
+                                        "Unable to find ContentletVersionInfo for site with id [%s] using default language [%s]. fallback to first entry found.",
+                                        id, defaultLang.getId()));
+                        return verInfos.get(0);
+                    });
 
-            String hostInode=vinfo.get().getWorkingInode();
-            final Contentlet cont= APILocator.getContentletAPI().find(hostInode, systemUser, respectFrontendRoles);
-            final ContentType type =APILocator.getContentTypeAPI(systemUser, respectFrontendRoles).find(Host.HOST_VELOCITY_VAR_NAME);
-            if(cont.getStructureInode().equals(type.inode())) {
-                host=new Host(cont);
+            final User systemUser = APILocator.systemUser();
+            final String hostInode = versionInfo.getWorkingInode();
+            final Contentlet cont = APILocator.getContentletAPI()
+                    .find(hostInode, systemUser, respectFrontendRoles);
+            final ContentType type = APILocator.getContentTypeAPI(systemUser, respectFrontendRoles)
+                    .find(Host.HOST_VELOCITY_VAR_NAME);
+            if (cont.getStructureInode().equals(type.inode())) {
+                host = new Host(cont);
                 hostCache.add(host);
             }
         }
