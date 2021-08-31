@@ -121,6 +121,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 },
                 'cancel-save-menu-order': () => {
                     this.reorderMenuUrl = '';
+                    this.reload(null);
                 }
             };
         }
