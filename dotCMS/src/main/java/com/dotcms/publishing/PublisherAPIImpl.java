@@ -102,9 +102,6 @@ public class PublisherAPIImpl implements PublisherAPI {
                             BundlerUtil.writeBundleXML(config, output);
                         }
 
-                        // If the bundle exists and we are retrying to push the bundle
-                        // there is no need to run all the bundlers again.
-                        //if (!bundleExists || !publishAuditAPI.isPublishRetry(config.getId())) {
                         PublishAuditStatus currentStatus = publishAuditAPI
                                 .getPublishAuditStatus(config.getId());
                         PublishAuditHistory currentStatusHistory = null;
