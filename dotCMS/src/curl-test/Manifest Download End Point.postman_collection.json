@@ -483,12 +483,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/{{bundleId}}/manifest",
+							"raw": "{{serverURL}}/api/bundle/{{bundleId}}/manifest",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
+								"bundle",
 								"{{bundleId}}",
 								"manifest"
 							]
