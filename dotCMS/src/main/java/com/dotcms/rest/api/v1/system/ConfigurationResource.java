@@ -85,6 +85,14 @@ public class ConfigurationResource implements Serializable {
 		this.helper = ConfigurationHelper.INSTANCE;
 	}
 
+	/**
+	 * Retrieve the keys from dotcms Configuration (allowed on WHITE_LIST and are not restricted by the BLACK_LIST)
+	 * @param request
+	 * @param response
+	 * @param keysQuery
+	 * @return
+	 * @throws IOException
+	 */
 	@Path("/config")
 	@GET
 	@JSONP
