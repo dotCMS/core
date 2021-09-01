@@ -6,10 +6,12 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotmarketing.util.StringUtils;
 import com.google.common.collect.ImmutableSet;
+import com.liferay.util.StringPool;
 import io.vavr.Tuple2;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -63,14 +65,7 @@ public class ConfigurationResource implements Serializable {
 
 	private static final Set<String> WHITE_LIST = ImmutableSet.copyOf(
 			Config.getStringArrayProperty("CONFIGURATION_WHITE_LIST",
-					new String[] {"EMAIL_SYSTEM_ADDRESS", "CHARSET","DEFAULT_LANGUAGE_COUNTRY","DEFAULT_LANGUAGE",
-					"DEFAULT_LANGUAGE_CODE","DEFAULT_LANGUAGE_STR", "DEFAULT_LANGUAGE_COUNTRY_CODE", "CMS_STRUTS_PATH",
-					"PATH_TO_REDIRECT", "PATH_TO_IMAGES", "REPORT_PATH", "ASSET_PATH", "CONTENT_AUTOSAVE_INTERVAL",
-					"DEFAULT_HEIGHT","DEFAULT_WIDTH", "DEFAULT_BG_R_COLOR", "DEFAULT_BG_G_COLOR", "DEFAULT_BG_B_COLOR",
-					"ACCRUE_TAGS_IN_URLMAPS","ACCRUE_TAGS_IN_PAGES", "ACCRUE_TAGS_IN_CONTENTS_ON_PAGE", "PULLPERSONALIZED_PERSONA_WEIGHT",
-					"ASSETS_SEARCH_AND_REPLACE_ALLOWED_FILE_TYPES","CONTENT_VERSION_HARD_LINK", "CONTENT_ALLOW_ZERO_LENGTH_FILES", "DEFAULT_PAGE_CACHE_SECONDS",
-					"ENABLE_NAV_PERMISSION_CHECK","CONTENT_ESCAPE_HTML_TEXT", "CMS_INDEX_PAGE", "DEFAULT_REST_PAGE_COUNT",	"HEADLESS_USER_CONTENT_DELIVERY",
-					"DEFAULT_VANITY_URL_TO_DEFAULT_LANGUAGE","WHITELISTED_HEADERS", "WHITELISTED_PARAMS", "WHITELISTED_COOKIES"}));
+					new String[] {"EMAIL_SYSTEM_ADDRESS", "CHARSET","CONTENT_PALETTE_HIDDEN_CONTENT_TYPES"}));
 
 
 
@@ -117,14 +112,39 @@ public class ConfigurationResource implements Serializable {
 
 			for (final String key : keys) {
 
-				if (this.WHITE_LIST.contains(key) && !this.isOnBlackList(key)) {
+				final String keyWithoutPrefix = this.removePrefix (key);
+				if (this.WHITE_LIST.contains(keyWithoutPrefix) && !this.isOnBlackList(keyWithoutPrefix)) {
 
-					resultMap.put(key, Config.getStringProperty(key, "NOT_FOUND"));
+					resultMap.put(key, recoveryFromConfig(key));
 				}
 			}
 		}
 
 		return Response.ok(resultMap).build();
+	}
+
+	private String removePrefix (final String key) {
+
+		return key.replace("list:", StringPool.BLANK)
+				.replace("boolean:", StringPool.BLANK)
+				.replace("number:", StringPool.BLANK);
+	}
+
+
+	private Object recoveryFromConfig (final String key) {
+
+		if (key.startsWith("list:")) {
+
+			return Arrays.asList(Config.getStringArrayProperty(key.replace("list:", StringPool.BLANK), new String[]{}));
+		} else if(key.startsWith("boolean:")) {
+
+			return Config.getBooleanProperty(key.replace("boolean:", StringPool.BLANK), false);
+		} else if (key.startsWith("number:")) {
+
+			return Config.getIntProperty(key.replace("boolean:", StringPool.BLANK), 0);
+		}
+
+		return Config.getStringProperty(key, "NOT_FOUND");
 	}
 
 	/**
