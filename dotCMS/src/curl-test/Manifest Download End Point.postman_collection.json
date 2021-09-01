@@ -361,7 +361,7 @@
 							{
 								"key": "Origin",
 								"type": "text",
-								"value": "{{origin}}"
+								"value": "{{serverURL}}"
 							}
 						],
 						"body": {
@@ -566,7 +566,7 @@
 		},
 		{
 			"key": "bundleName",
-			"value": "bundleName-238"
+			"value": "bundleName-76"
 		},
 		{
 			"key": "bundleId",
