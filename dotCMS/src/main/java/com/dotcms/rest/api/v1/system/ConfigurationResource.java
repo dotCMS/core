@@ -65,7 +65,7 @@ public class ConfigurationResource implements Serializable {
 
 	private static final Set<String> WHITE_LIST = ImmutableSet.copyOf(
 			Config.getStringArrayProperty("CONFIGURATION_WHITE_LIST",
-					new String[] {"EMAIL_SYSTEM_ADDRESS", "CHARSET","CONTENT_PALETTE_HIDDEN_CONTENT_TYPES"}));
+					new String[] {"EMAIL_SYSTEM_ADDRESS", "CHARSET","CONTENT_PALETTE_HIDDEN_CONTENT_TYPES" }));
 
 
 
@@ -115,7 +115,7 @@ public class ConfigurationResource implements Serializable {
 				final String keyWithoutPrefix = this.removePrefix (key);
 				if (this.WHITE_LIST.contains(keyWithoutPrefix) && !this.isOnBlackList(keyWithoutPrefix)) {
 
-					resultMap.put(key, recoveryFromConfig(key));
+					resultMap.put(keyWithoutPrefix, recoveryFromConfig(key));
 				}
 			}
 		}
