@@ -76,3 +76,5 @@ This maintenance release includes the following code fixes:
 36. https://github.com/dotCMS/core/issues/18111 : Copy Workflow results in incorrect next step #18111
 
 37. https://github.com/dotCMS/core/issues/19931	: Automatically delete old ES indices (indexes)
+
+38. https://github.com/dotCMS/core/issues/20799 : When try to import a Bundle get a OutOfMemoryError #20799
