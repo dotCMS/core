@@ -25,6 +25,11 @@ public class DirectoryBundleOutput extends BundleOutput {
         directoryRootPath = BundlerUtil.getBundleRoot(publisherConfig);
     }
 
+    @Override
+    public void create() throws IOException {
+        directoryRootPath.mkdirs();
+    }
+
     @VisibleForTesting
     public DirectoryBundleOutput(final PublisherConfig publisherConfig, final File directoryPath) {
         super(publisherConfig);
