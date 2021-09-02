@@ -597,9 +597,18 @@
                <dt><%= LanguageUtil.get(pageContext, "time-zone") %></dt>
                <dd>
                   <span id="userTimezoneWrapper">
-                     <input type="hidden" name="currentCompanyTimeZoneId" id="currentCompanyTimeZoneId" value="<%=company.getTimeZone().getID() %>" />
-                     <select style="width: 250px" dojoType="dijit.form.FilteringSelect" value="<%=company.getTimeZone().getID() %>"
-                        id="companyTimeZoneId" name="companyTimeZoneId" style="width: 250px;">
+                     <input type="hidden" 
+                     name="currentCompanyTimeZoneId" 
+                     id="currentCompanyTimeZoneId" 
+                     value="<%=company.getTimeZone().getID() %>" />
+                     <select style="width: 250px" 
+                        dojoType="dijit.form.FilteringSelect" 
+                        value="<%=company.getTimeZone().getID() %>"
+                        id="companyTimeZoneId" 
+                        queryExpr='*${0}*' 
+                        autoComplete="false" 
+                        name="companyTimeZoneId" 
+                        style="width: 250px;">
                         <% String[] ids = TimeZone.getAvailableIDs();
                            Arrays.sort(ids);
                            for(String id : ids) {
