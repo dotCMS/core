@@ -410,12 +410,12 @@ public class DateUtilTest extends UnitTestBase {
      *
      */
     @Test()
-    public void test_time_zone() throws ParseException, PortalException, SystemException {
+    public void test_time_zone() throws ParseException {
 
         final String   easternUSTimeZone = "US/Eastern";
         final String   westernUSTimeZone = "US/Western";
         final TimeZone timeZone      = TimeZone.getTimeZone(easternUSTimeZone);
-        final TimeZone defaultTimeZone =  APILocator.getCompanyAPI().getCompany().getTimeZone();
+        final TimeZone defaultTimeZone =  APILocator.getCompanyAPI().getDefaultCompany().getTimeZone();
 
         final Date date1 = DateUtil.convertDate("2015-02-04 11", timeZone, "yyyy-MM-dd HH");
 
@@ -444,11 +444,11 @@ public class DateUtilTest extends UnitTestBase {
      *
      */
     @Test()
-    public void test_time_zone_string() throws ParseException, PortalException, SystemException {
+    public void test_time_zone_string() throws ParseException {
 
         final String   gmt12TimeZone   = "GMT+1400";
         final TimeZone timeZone        = TimeZone.getTimeZone(gmt12TimeZone);
-        final TimeZone defaultTimeZone =  APILocator.getCompanyAPI().getCompany().getTimeZone();
+        final TimeZone defaultTimeZone =  APILocator.getCompanyAPI().getDefaultCompany().getTimeZone();
 
         final Date date1 = DateUtil.convertDate("2015-02-04 11 GMT +1400", defaultTimeZone, "yyyy-MM-dd HH z Z");
 

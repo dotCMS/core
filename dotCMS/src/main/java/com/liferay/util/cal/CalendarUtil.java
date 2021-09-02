@@ -343,7 +343,7 @@ public class CalendarUtil {
 
 	public static boolean isFuture(int month, int year) {
 		return isFuture(
-			month, year, Try.of(() -> APILocator.getCompanyAPI().getCompany().getTimeZone()).get(), Locale.getDefault());
+			month, year, APILocator.getCompanyAPI().getDefaultCompany().getTimeZone(), Locale.getDefault());
 	}
 
 	public static boolean isFuture(int month, int year, TimeZone timeZone,
@@ -361,7 +361,7 @@ public class CalendarUtil {
 
 	public static boolean isFuture(int month, int day, int year) {
 		return isFuture(
-			month, day, year, Try.of(() -> APILocator.getCompanyAPI().getCompany().getTimeZone()).get(), Locale.getDefault());
+			month, day, year, APILocator.getCompanyAPI().getDefaultCompany().getTimeZone(), Locale.getDefault());
 	}
 
 	public static boolean isFuture(int month, int day, int year,
@@ -381,7 +381,7 @@ public class CalendarUtil {
 								   int minute, int amPm) {
 
 		return isFuture(
-			month, day, year, hour, minute, amPm, Try.of(() -> APILocator.getCompanyAPI().getCompany().getTimeZone()).get(),
+			month, day, year, hour, minute, amPm, APILocator.getCompanyAPI().getDefaultCompany().getTimeZone(),
 			Locale.getDefault());
 	}
 
