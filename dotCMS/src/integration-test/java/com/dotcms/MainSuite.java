@@ -117,6 +117,7 @@ import com.dotmarketing.startup.runonce.Task210719CleanUpTitleFieldTest;
 import com.dotmarketing.startup.runonce.Task210802UpdateStructureTableTest;
 import com.dotmarketing.startup.runonce.Task210805DropUserProxyTableTest;
 import com.dotmarketing.startup.runonce.Task210816DeInodeRelationshipTest;
+import com.dotmarketing.startup.runonce.Task210901UpdateDateTimezonesTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -460,7 +461,8 @@ import org.junit.runners.Suite.SuiteClasses;
         BundlerUtilTest.class,
         Task210816DeInodeRelationshipTest.class,
         WorkflowEmailUtilTest.class,
-        ConfigurationHelperTest.class
+        ConfigurationHelperTest.class,
+        Task210901UpdateDateTimezonesTest.class
 })
 public class MainSuite {
 
