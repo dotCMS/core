@@ -44,7 +44,6 @@ public class DBTimeZoneCheck {
         Connection connection = null;
         PreparedStatement statement = null;
         ResultSet resultSet = null;
-        final TimeZone defaultTimeZone = TimeZone.getDefault();
         try {
             final HikariDataSource hikari = (HikariDataSource) DbConnectionFactory.getDataSource();
             resolveDriverClass(hikari);
@@ -72,10 +71,6 @@ public class DBTimeZoneCheck {
             Logger.error(DBTimeZoneCheck.class, "Timezone + '" + timezone + "' failed : " + e.getMessage());
 
             return false;
-        } finally {
-            Try.run(() -> TimeZone.setDefault(defaultTimeZone))
-                    .onFailure(e -> Logger.warnAndDebug(DBTimeZoneCheck.class, e));
-            CloseUtils.closeQuietly(resultSet, statement, connection);
         }
     }
 }
