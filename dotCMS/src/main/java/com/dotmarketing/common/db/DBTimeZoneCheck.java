@@ -9,6 +9,7 @@ import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.dotcms.util.CloseUtils;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.InvalidTimeZoneException;
@@ -44,7 +45,7 @@ public class DBTimeZoneCheck {
         Connection connection = null;
         PreparedStatement statement = null;
         ResultSet resultSet = null;
-        final TimeZone defaultTimeZone = TimeZone.getDefault();
+        final TimeZone defaultTimeZone = APILocator.getCompanyAPI().getDefaultCompany().getTimeZone();
         try {
             final HikariDataSource hikari = (HikariDataSource) DbConnectionFactory.getDataSource();
             resolveDriverClass(hikari);
