@@ -321,7 +321,7 @@
                 year = cal.get(GregorianCalendar.YEAR) ;
             }%>
 
-
+         
         <input type="hidden" id="<%=field.getVelocityVarName()%>"
                name="<%=field.getFieldContentlet()%>"
                value="<%= dateValue!=null ? df.format(dateValue) : "" %>" />
@@ -329,8 +329,8 @@
         <%if (field.getFieldType().equals(Field.FieldType.DATE.toString()) || field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {%>
 
         <%if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {%>
-        <div class="inline-form">
-            <% }%>
+            <div class="inline-form" style="align-items: flex-start;">
+         <% }%>
 
             <input type="text"
                    value="<%= dateValue!=null ? df2.format(dateValue) : "" %>"
@@ -338,7 +338,7 @@
                    dojoType="dijit.form.DateTextBox"
                    name="<%=field.getFieldContentlet()%>Date"
                    id="<%=field.getVelocityVarName()%>Date">
-
+            
             <% }
 
                 if (field.getFieldType().equals(Field.FieldType.TIME.toString()) || field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
@@ -351,15 +351,21 @@
                         min = (cal.get(GregorianCalendar.MINUTE) < 10) ? "0"+cal.get(GregorianCalendar.MINUTE) : ""+cal.get(GregorianCalendar.MINUTE);
                     }
             %>
+            <div>
             <input type="text" id="<%=field.getVelocityVarName()%>Time"
                    name="<%=field.getFieldContentlet()%>Time"
                    value='<%=cal!=null ? "T"+hour+":"+min+":00" : ""%>'
                    onChange="updateDate('<%=field.getVelocityVarName()%>');emmitFieldDataChange(true)"
                    dojoType="dijit.form.TimeTextBox"
                     <%=field.isReadOnly()?"disabled=\"disabled\"":""%>/>
+                    <div style="font-size: 85%;padding:5px 0px 0px 5px;">
+                        <%=APILocator.getCompanyAPI().getDefaultCompany().getTimeZone().getDisplayName()%>
+                    </div>  
+            </div>
+                  
 
-            <%if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {%>
-        </div>
+        <%if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {%>
+            </div>
         <% }%>
         <% }
 
