@@ -919,6 +919,7 @@ public class BundleResource {
 
     @Path("/{bundleId}/manifest")
     @GET
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_OCTET_STREAM})
     public Response downloadManifest(@PathParam("bundleId") final String bundleId,
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response)
