@@ -298,7 +298,7 @@
                 || field.getFieldType().equals(
                 Field.FieldType.DATE_TIME.toString())) {
 
-            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm Z");
             SimpleDateFormat df2 = new SimpleDateFormat("yyyy-MM-dd");
             Date dateValue = null;
             if(value != null && value instanceof String) {
@@ -315,6 +315,7 @@
             if(dateValue!=null) {
                 cal = new GregorianCalendar();
                 cal.setTime((Date) dateValue);
+                cal.setTimeZone(APILocator.getCompanyAPI().getDefaultCompany().getTimeZone());
                 dayOfMonth = cal.get(GregorianCalendar.DAY_OF_MONTH);
                 month = cal.get(GregorianCalendar.MONTH) + 1;
                 year = cal.get(GregorianCalendar.YEAR) ;
