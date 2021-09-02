@@ -9,39 +9,39 @@
 }
 
 @font-face {
-    font-family: 'Material Icons';
-    font-style: normal;
-    font-weight: 400;
-    font-display: swap;
-    src: url('/dotAdmin/assets/MaterialIcons-Regular.ttf') format('truetype');
+  font-family: 'Material Icons';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/dotAdmin/assets/MaterialIcons-Regular.ttf") format("truetype");
 }
 
 .material-icons {
-    font-family: 'Material Icons';
-    font-weight: normal;
-    font-style: normal;
-    font-size: 24px;
-    line-height: 1;
-    letter-spacing: normal;
-    text-transform: none;
-    display: inline-block;
-    white-space: nowrap;
-    word-wrap: normal;
-    direction: ltr;
-    -webkit-font-feature-settings: 'liga';
-    -webkit-font-smoothing: antialiased;
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
 }
 
 #structure_inode_popup .dijitMenuItem .label {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 #structure_inode_popup .dijitMenuItem .separator {
-    height: 1px;
-    margin: -1px -10px 0px -10px;
-    background: #DDD;
+  height: 1px;
+  margin: -1px -10px 0px -10px;
+  background: #DDD;
 }
 
 /* FONT PATH
@@ -5076,12 +5076,12 @@ html, body {
 }
 
 .dijitMenu .dijitMenuItemHover {
-  background-color: #eeeeee;
+  background-color: #ECEDEE;
   color: #5B5B5B;
 }
 
 .dijitMenu .dijitMenuItemSelected {
-  background-color: #eeeeee;
+  background-color: #ECEDEE;
   color: #5B5B5B;
 }
 
@@ -11562,7 +11562,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .context-menu__item:hover {
-  background-color: #FAFAFA;
+  background-color: #ECEDEE;
 }
 
 .context-menu__item [class$="Icon"],
@@ -11633,13 +11633,12 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .file-selector-tree .portlet-main {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
+  display: block;
   height: 84vh !important;
   justify-content: space-between;
   padding: 0;
   overflow-y: scroll;
+  width: 100%;
 }
 
 .file-selector-tree__container {
@@ -12037,7 +12036,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .context-menu__item:hover {
-  background-color: #FAFAFA;
+  background-color: #ECEDEE;
 }
 
 .context-menu__item [class$="Icon"],
