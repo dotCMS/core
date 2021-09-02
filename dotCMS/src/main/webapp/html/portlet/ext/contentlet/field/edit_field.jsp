@@ -172,14 +172,13 @@
                 <label for="toggleEditor_<%=field.getVelocityVarName()%>"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
             </div>
             <div class="langVariablesField inline-form">
-                <label for="glossary_term_<%= field.getVelocityVarName() %>">
-                    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Language-Variables")) %>:
-                </label>
+
                 <input type="text"
                        dojoType="dijit.form.TextBox"
                        id="glossary_term_<%= field.getVelocityVarName() %>"
                        name="glossary_term_<%= field.getVelocityVarName() %>"
                        style="margin-right: 0"
+                       placeholder=" <%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Language-Variables")) %>"
                        onkeyup="lookupGlossaryTerm('<%= field.getVelocityVarName() %>','<%= contentLanguage %>');" />
                 <div class="glossaryTermPopup" style="display:none;" id="glossary_term_popup_<%= field.getVelocityVarName() %>">
                     <div id="glossary_term_table_<%= field.getVelocityVarName() %>"></div>
@@ -254,13 +253,12 @@
               </select>
 
               <div class="langVariablesField inline-form">
-                  <label for="glossary_term_<%= field.getVelocityVarName() %>">
-                      <%= LanguageUtil.get(pageContext, "Language-Variables") %>:
-                  </label>
+
                   <input type="text" dojoType="dijit.form.TextBox"
                           id="glossary_term_<%= field.getVelocityVarName() %>"
                           name="glossary_term_<%= field.getVelocityVarName() %>"
                           style="margin: 0"
+                          placeholder=" <%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Language-Variables")) %>"
                           onkeyup="lookupGlossaryTerm('<%= field.getVelocityVarName() %>','<%= contentLanguage %>');" />
 
                   <div style="display:none" class="glossaryTermPopup" id="glossary_term_popup_<%= field.getVelocityVarName() %>">
@@ -358,7 +356,7 @@
                    onChange="updateDate('<%=field.getVelocityVarName()%>');emmitFieldDataChange(true)"
                    dojoType="dijit.form.TimeTextBox"
                     <%=field.isReadOnly()?"disabled=\"disabled\"":""%>/>
-                    <div style="font-size: 85%;padding:5px 0px 0px 5px;">
+                    <div style="font-size: 85%;padding:5px 0px 0px 5px;color:#888">
                         <%=APILocator.getCompanyAPI().getDefaultCompany().getTimeZone().getDisplayName()%>
                     </div>  
             </div>

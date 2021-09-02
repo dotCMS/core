@@ -128,8 +128,8 @@ var cmsfile=null;
 		}
 
 
-        <%String tzOffset = new SimpleDateFormat("Z").format(Calendar.getInstance(APILocator.getCompanyAPI().getDefaultCompany().getTimeZone()).getTime());%>
-		field.value = dateValue + " <%=tzOffset%>";
+        <%String offset = new SimpleDateFormat("Z").format(Calendar.getInstance(APILocator.getCompanyAPI().getDefaultCompany().getTimeZone()).getTime());%>
+		field.value = dateValue + " <%=offset%>";
 
 		if(typeof updateStartRecurrenceDate === 'function' && (varName == 'startDate' || varName == 'endDate')){
 		    updateStartRecurrenceDate(varName);
