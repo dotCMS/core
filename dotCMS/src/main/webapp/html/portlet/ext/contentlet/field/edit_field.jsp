@@ -172,14 +172,13 @@
                 <label for="toggleEditor_<%=field.getVelocityVarName()%>"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
             </div>
             <div class="langVariablesField inline-form">
-                <label for="glossary_term_<%= field.getVelocityVarName() %>">
-                    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Language-Variables")) %>:
-                </label>
+
                 <input type="text"
                        dojoType="dijit.form.TextBox"
                        id="glossary_term_<%= field.getVelocityVarName() %>"
                        name="glossary_term_<%= field.getVelocityVarName() %>"
                        style="margin-right: 0"
+                       placeholder=" <%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Language-Variables")) %>"
                        onkeyup="lookupGlossaryTerm('<%= field.getVelocityVarName() %>','<%= contentLanguage %>');" />
                 <div class="glossaryTermPopup" style="display:none;" id="glossary_term_popup_<%= field.getVelocityVarName() %>">
                     <div id="glossary_term_table_<%= field.getVelocityVarName() %>"></div>
@@ -254,13 +253,12 @@
               </select>
 
               <div class="langVariablesField inline-form">
-                  <label for="glossary_term_<%= field.getVelocityVarName() %>">
-                      <%= LanguageUtil.get(pageContext, "Language-Variables") %>:
-                  </label>
+
                   <input type="text" dojoType="dijit.form.TextBox"
                           id="glossary_term_<%= field.getVelocityVarName() %>"
                           name="glossary_term_<%= field.getVelocityVarName() %>"
                           style="margin: 0"
+                          placeholder=" <%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Language-Variables")) %>"
                           onkeyup="lookupGlossaryTerm('<%= field.getVelocityVarName() %>','<%= contentLanguage %>');" />
 
                   <div style="display:none" class="glossaryTermPopup" id="glossary_term_popup_<%= field.getVelocityVarName() %>">
@@ -298,7 +296,7 @@
                 || field.getFieldType().equals(
                 Field.FieldType.DATE_TIME.toString())) {
 
-            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm Z");
             SimpleDateFormat df2 = new SimpleDateFormat("yyyy-MM-dd");
             Date dateValue = null;
             if(value != null && value instanceof String) {
@@ -315,12 +313,13 @@
             if(dateValue!=null) {
                 cal = new GregorianCalendar();
                 cal.setTime((Date) dateValue);
+                cal.setTimeZone(APILocator.getCompanyAPI().getDefaultCompany().getTimeZone());
                 dayOfMonth = cal.get(GregorianCalendar.DAY_OF_MONTH);
                 month = cal.get(GregorianCalendar.MONTH) + 1;
                 year = cal.get(GregorianCalendar.YEAR) ;
             }%>
 
-
+         
         <input type="hidden" id="<%=field.getVelocityVarName()%>"
                name="<%=field.getFieldContentlet()%>"
                value="<%= dateValue!=null ? df.format(dateValue) : "" %>" />
@@ -328,8 +327,8 @@
         <%if (field.getFieldType().equals(Field.FieldType.DATE.toString()) || field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {%>
 
         <%if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {%>
-        <div class="inline-form">
-            <% }%>
+            <div class="inline-form" style="align-items: flex-start;">
+         <% }%>
 
             <input type="text"
                    value="<%= dateValue!=null ? df2.format(dateValue) : "" %>"
@@ -337,7 +336,7 @@
                    dojoType="dijit.form.DateTextBox"
                    name="<%=field.getFieldContentlet()%>Date"
                    id="<%=field.getVelocityVarName()%>Date">
-
+            
             <% }
 
                 if (field.getFieldType().equals(Field.FieldType.TIME.toString()) || field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
@@ -350,15 +349,21 @@
                         min = (cal.get(GregorianCalendar.MINUTE) < 10) ? "0"+cal.get(GregorianCalendar.MINUTE) : ""+cal.get(GregorianCalendar.MINUTE);
                     }
             %>
+            <div>
             <input type="text" id="<%=field.getVelocityVarName()%>Time"
                    name="<%=field.getFieldContentlet()%>Time"
                    value='<%=cal!=null ? "T"+hour+":"+min+":00" : ""%>'
                    onChange="updateDate('<%=field.getVelocityVarName()%>');emmitFieldDataChange(true)"
                    dojoType="dijit.form.TimeTextBox"
                     <%=field.isReadOnly()?"disabled=\"disabled\"":""%>/>
+                    <div style="font-size: 85%;padding:5px 0px 0px 5px;color:#888">
+                        <%=APILocator.getCompanyAPI().getDefaultCompany().getTimeZone().getDisplayName()%>
+                    </div>  
+            </div>
+                  
 
-            <%if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {%>
-        </div>
+        <%if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {%>
+            </div>
         <% }%>
         <% }
 

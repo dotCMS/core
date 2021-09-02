@@ -7,6 +7,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.util.StringPool;
+import io.vavr.Function0;
 import io.vavr.Lazy;
 import org.apache.commons.lang.StringUtils;
 
@@ -69,8 +70,8 @@ public class DateUtil {
 
 	private static Map<String, DateTimeFormatter> formatterMap = new ConcurrentHashMap<>();
 
-	// note: this is being cache locally by the company should be cache an api level.
-	private static Lazy<TimeZone> companyTimeZone = Lazy.of(()-> APILocator.getCompanyAPI().getDefaultCompany().getTimeZone());
+	
+	private static Function0<TimeZone> companyTimeZone = Function0.of(()-> APILocator.getCompanyAPI().getDefaultCompany().getTimeZone());
 
 	/**
 	 * This method allows you to add to a java.util.Date returning a Date
