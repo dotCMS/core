@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 
-import { Subject, Observable } from 'rxjs';
+import { Subject, Observable, BehaviorSubject } from 'rxjs';
 import * as _ from 'lodash';
 
 import {
@@ -20,11 +20,52 @@ import { DotPageContainer } from '@models/dot-page-container/dot-page-container.
  *
  * @class DotEditLayoutService
  */
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class DotEditLayoutService {
     private _addGridBox: Subject<boolean> = new Subject();
 
+    private _showMessage: Subject<boolean> = new Subject();
+    private _canBeDesactivated = new BehaviorSubject(true);
+
     constructor(private templateContainersCacheService: DotTemplateContainersCacheService) {}
+
+    /**
+     *
+     * @readonly
+     * @memberof DotEditLayoutService
+     */
+     get showMessage$() {
+        return this._showMessage;
+    }
+
+    /**
+     *
+     * @readonly
+     * @memberof DotEditLayoutService
+     */
+    get canBeDesactivated$() {
+        return this._canBeDesactivated;
+    }
+
+    /**
+     *
+     * @param {boolean} next
+     * @memberof DotEditLayoutService
+     */
+    changeDesactivateState(next: boolean) {
+        this._canBeDesactivated.next(next);
+    }
+
+    /**
+     *
+     * @param {boolean} next
+     * @memberof DotEditLayoutService
+     */
+    changeMessageState(next: boolean) {
+        this._showMessage.next(next);
+    }
 
     /**
      * Take an DotPageView and return an array of DotLayoutGridBox

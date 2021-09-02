@@ -231,7 +231,6 @@ describe('DotEditLayoutService', () => {
                 uuid: 'INVALID'
             }
         ];
-
         const containerColumnBox: DotContainerColumnBox[] = dotEditLayoutService.getDotLayoutSidebar(
             rawContainers
         );
@@ -249,4 +248,21 @@ describe('DotEditLayoutService', () => {
 
         dotEditLayoutService.addBox();
     });
+
+    it('Should set _canBeDesactivated to true', (done) => {
+        dotEditLayoutService.changeDesactivateState(true);
+        dotEditLayoutService.canBeDesactivated$.subscribe((resp) =>{
+            expect(resp).toBeTruthy();
+            done();
+        })
+    });
+
+    it('Should set _showMessage to true', (done) => {
+        dotEditLayoutService.showMessage$.subscribe((resp) =>{
+            expect(resp).toBeTruthy();
+            done();
+        })
+        dotEditLayoutService.changeMessageState(true);
+    });
+    
 });
