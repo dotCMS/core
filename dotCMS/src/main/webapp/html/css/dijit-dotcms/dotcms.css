@@ -11562,7 +11562,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .context-menu__item:hover {
-  background-color: #ECEDEE;
+  background-color: #FAFAFA;
 }
 
 .context-menu__item [class$="Icon"],
@@ -12036,7 +12036,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .context-menu__item:hover {
-  background-color: #ECEDEE;
+  background-color: #FAFAFA;
 }
 
 .context-menu__item [class$="Icon"],
