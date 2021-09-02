@@ -98,12 +98,10 @@ public class ConfigurationResource implements Serializable {
 											 @QueryParam("keys") final String keysQuery)
 			throws IOException {
 
-		// todo: not sure about this
-		final InitDataObject initData = new WebResource.InitBuilder(request, response)
+		new WebResource.InitBuilder(request, response)
 				.requiredBackendUser(true)
 				.requestAndResponse(request, response)
 				.rejectWhenNoUser(true)
-				.requiredPortlet("maintenance")
 				.init();
 
 		final String [] keys = StringUtils.splitByCommas(keysQuery);
@@ -120,7 +118,7 @@ public class ConfigurationResource implements Serializable {
 			}
 		}
 
-		return Response.ok(resultMap).build();
+		return Response.ok(new ResponseEntityView(resultMap)).build();
 	}
 
 	private String removePrefix (final String key) {
