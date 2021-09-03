@@ -196,7 +196,6 @@ public class PushPublishBundleGeneratorTest extends IntegrationTestBase {
         final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(pconf, bundleRoot);
 
         // Run bundlers
-        BundlerUtil.writeBundleXML(pconf, directoryBundleOutput);
         for (final Class<IBundler> aClass : bundlers) {
 
             final IBundler bundler = aClass.newInstance();

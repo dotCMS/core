@@ -34,6 +34,10 @@ import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.manifest.CSVManifestReader;
+import com.dotcms.publishing.manifest.ManifestBuilder;
+import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
+import com.dotcms.publishing.manifest.ManifestReason;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.rest.BundlePublisherResource;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
@@ -52,6 +56,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.FileUtil;
+import java.util.Collection;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.lang.StringUtils;
@@ -193,21 +198,19 @@ public class BundlePublisher extends Publisher {
         }
 
         Map<String, String> assetsDetails = null;
-        List<PublishQueueElement> bundlerAssets = null;
+        Collection<ManifestInfo> bundlerAssets = null;
 
         try {
             //Read the bundle to see what kind of configuration we need to apply
             String finalBundlePath = ConfigUtils.getBundlePath() + File.separator + bundleID;
-            File xml = new File(finalBundlePath + File.separator + "bundle.xml");
+            final File manifestFile = new File(finalBundlePath + File.separator + ManifestBuilder.MANIFEST_NAME);
 
-            //Get the identifiers on this bundle
-            assetsDetails = new HashMap<>();
-            PushPublisherConfig readConfig = (PushPublisherConfig) BundlerUtil.xmlToObject(xml);
-            bundlerAssets = readConfig.getAssets();
+            final CSVManifestReader csvManifestReader = new CSVManifestReader(manifestFile);
+            bundlerAssets = csvManifestReader.getAssets(ManifestReason.INCLUDE_BY_USER);
 
             if (bundlerAssets != null && !bundlerAssets.isEmpty()) {
-                for (PublishQueueElement asset : bundlerAssets) {
-                    assetsDetails.put(asset.getAsset(), asset.getType());
+                for (ManifestInfo manifestInfo : bundlerAssets) {
+                    assetsDetails.put(manifestInfo.id(), manifestInfo.objectType().toLowerCase());
                 }
             }
         } catch (Exception e) {

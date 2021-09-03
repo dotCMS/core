@@ -99,12 +99,8 @@ public class PublisherAPIImpl implements PublisherAPI {
                         pcClone.setId(config.getId());
                         pcClone.setStatic(true);
                         pcClone.setOperation(config.getOperation());
-                        Logger.info(this, "Writing bundle.xml file");
-                        BundlerUtil.writeBundleXML(pcClone, output);
-                    } else {
-                        Logger.info(this, "Writing bundle.xml file");
-                        BundlerUtil.writeBundleXML(config, output);
-                    }
+
+                    } 
 
                     // If the bundle exists and we are retrying to push the bundle
                     // there is no need to run all the bundlers again.

@@ -716,8 +716,8 @@ public class PublisherAPIImplTest {
                 .filter(file -> !file.getParentFile().getAbsolutePath().equals(messagesPath))
                 .collect(Collectors.toList());
 
-        //All the dependencies plus, the asset and the bundle xml and manifest
-        int numberFilesExpected = filesExpected.size() + 2;
+        //All the assets plus the manifest file
+        int numberFilesExpected = filesExpected.size() + 1;
         final int numberFiles = files.size();
 
         final List<String> filesExpectedPath = filesExpected.stream()
