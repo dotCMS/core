@@ -4,6 +4,7 @@ import static com.dotcms.rest.ResponseEntityView.OK;
 
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource.InitBuilder;
+import com.dotcms.rest.api.v1.maintenance.JVMInfoResource;
 import com.dotmarketing.util.StringUtils;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
@@ -71,7 +72,7 @@ public class ConfigurationResource implements Serializable {
 
 	private boolean isOnBlackList(final String key) {
 
-		return null != BLACK_LIST? BLACK_LIST.matcher(key).find() : false;
+		return null != JVMInfoResource.obfuscatePattern ? JVMInfoResource.obfuscatePattern.matcher(key).find() : false;
 	}
 	/**
 	 * Default constructor.
