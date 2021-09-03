@@ -139,7 +139,7 @@ public class ConfigurationResource implements Serializable {
 			return Config.getBooleanProperty(key.replace("boolean:", StringPool.BLANK), false);
 		} else if (key.startsWith("number:")) {
 
-			return Config.getIntProperty(key.replace("boolean:", StringPool.BLANK), 0);
+			return Config.getIntProperty(key.replace("number:", StringPool.BLANK), 0);
 		}
 
 		return Config.getStringProperty(key, "NOT_FOUND");
