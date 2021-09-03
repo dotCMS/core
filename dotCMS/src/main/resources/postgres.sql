@@ -1645,7 +1645,7 @@ CREATE TABLE dist_journal
   object_to_index character varying(1024) NOT NULL,
   serverid character varying(64),
   journal_type integer NOT NULL,
-  time_entered timestamptz without time zone NOT NULL,
+  time_entered timestamptz NOT NULL,
   CONSTRAINT dist_journal_pkey PRIMARY KEY (id),
   CONSTRAINT dist_journal_object_to_index_key UNIQUE (object_to_index, serverid, journal_type)
 );
@@ -1659,7 +1659,7 @@ create table plugin_property (
 );
 alter table plugin_property add constraint fk_plugin_plugin_property foreign key (plugin_id) references plugin(id);
 
-CREATE TABLE dist_process ( id bigserial NOT NULL, object_to_index character varying(1024) NOT NULL, serverid character varying(64), journal_type integer NOT NULL, time_entered timestamptz without time zone NOT NULL, CONSTRAINT dist_process_pkey PRIMARY KEY (id));
+CREATE TABLE dist_process ( id bigserial NOT NULL, object_to_index character varying(1024) NOT NULL, serverid character varying(64), journal_type integer NOT NULL, time_entered timestamptz NOT NULL, CONSTRAINT dist_process_pkey PRIMARY KEY (id));
 CREATE INDEX dist_process_index on dist_process (object_to_index, serverid,journal_type);
 
 CREATE TABLE dist_reindex_journal
@@ -1669,7 +1669,7 @@ CREATE TABLE dist_reindex_journal
   ident_to_index character varying(100) NOT NULL,
   serverid character varying(64),
   priority integer NOT NULL,
-  time_entered timestamptz without time zone NOT NULL DEFAULT CURRENT_DATE,
+  time_entered timestamptz NOT NULL DEFAULT CURRENT_DATE,
   index_val varchar(325),
   dist_action integer NOT NULL DEFAULT 1,
   CONSTRAINT dist_reindex_journal_pkey PRIMARY KEY (id)
@@ -1684,7 +1684,7 @@ CREATE INDEX dist_reindex_index5 ON dist_reindex_journal (priority, time_entered
 CREATE INDEX dist_reindex_index6 ON dist_reindex_journal (priority);
 CREATE INDEX idx_identifier ON identifier USING btree (id);
 
-CREATE TABLE quartz_log (id bigserial NOT NULL, JOB_NAME character varying(255) NOT NULL, serverid character varying(64), time_started timestamptz without time zone NOT NULL, CONSTRAINT quartz_log_pkey PRIMARY KEY (id));
+CREATE TABLE quartz_log (id bigserial NOT NULL, JOB_NAME character varying(255) NOT NULL, serverid character varying(64), time_started timestamptz NOT NULL, CONSTRAINT quartz_log_pkey PRIMARY KEY (id));
 
 alter table cms_role add CONSTRAINT cms_role_name_role_key UNIQUE (role_key);
 alter table cms_role add CONSTRAINT cms_role_name_db_fqn UNIQUE (db_fqn);
@@ -2334,7 +2334,7 @@ CREATE INDEX idx_pub_qa_1 ON publishing_queue_audit (status);
 CREATE TABLE dot_cluster(cluster_id varchar(36), cluster_salt VARCHAR(256), PRIMARY KEY (cluster_id) );
 CREATE TABLE cluster_server(server_id varchar(36), cluster_id varchar(36) NOT NULL, name varchar(100), ip_address varchar(39) NOT NULL, host varchar(255), cache_port SMALLINT, es_transport_tcp_port SMALLINT, es_network_port SMALLINT, es_http_port SMALLINT, key_ varchar(100), PRIMARY KEY (server_id));
 ALTER TABLE cluster_server add constraint fk_cluster_id foreign key (cluster_id) REFERENCES dot_cluster(cluster_id);
-CREATE TABLE cluster_server_uptime(id varchar(36), server_id varchar(36) references cluster_server(server_id), startup timestamptz without time zone null, heartbeat timestamptz without time zone null, PRIMARY KEY (id));
+CREATE TABLE cluster_server_uptime(id varchar(36), server_id varchar(36) references cluster_server(server_id), startup timestamptz null, heartbeat timestamptz null, PRIMARY KEY (id));
 ALTER TABLE cluster_server_uptime add constraint fk_cluster_server_id foreign key (server_id) REFERENCES cluster_server(server_id);
 
 -- so the foreign keys needs an explicit index (!!) --
@@ -2449,7 +2449,7 @@ create index idx_api_token_issued_user ON api_token_issued (token_userid);
 
 create table storage_group (
     group_name varchar(255)  not null,
-    mod_date   timestamptz without time zone NOT NULL DEFAULT CURRENT_DATE,
+    mod_date   timestamptz NOT NULL DEFAULT CURRENT_DATE,
     PRIMARY KEY (group_name)
 );
 
@@ -2457,7 +2457,7 @@ create table storage (
     path       varchar(255) not null,
     group_name varchar(255) not null,
     hash       varchar(64) not null,
-    mod_date   timestamptz without time zone NOT NULL DEFAULT CURRENT_DATE,
+    mod_date   timestamptz NOT NULL DEFAULT CURRENT_DATE,
     hash_ref   varchar(64),
     PRIMARY KEY (path, group_name),
     FOREIGN KEY (group_name) REFERENCES storage_group (group_name)
@@ -2468,7 +2468,7 @@ CREATE INDEX idx_storage_hash ON storage (hash);
 create table storage_data (
     hash_id  varchar(64) not null,
     data     bytea not null,
-    mod_date timestamptz without time zone NOT NULL DEFAULT CURRENT_DATE,
+    mod_date timestamptz NOT NULL DEFAULT CURRENT_DATE,
     PRIMARY KEY (hash_id)
 );
 
@@ -2476,7 +2476,7 @@ create table storage_x_data (
     storage_hash varchar(64)                 not null,
     data_hash    varchar(64)                 not null,
     data_order   integer                     not null,
-    mod_date     timestamptz without time zone NOT NULL DEFAULT CURRENT_DATE,
+    mod_date     timestamptz NOT NULL DEFAULT CURRENT_DATE,
     PRIMARY KEY (storage_hash, data_hash),
     FOREIGN KEY (data_hash) REFERENCES storage_data (hash_id)
 );
