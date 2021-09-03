@@ -14,7 +14,6 @@ import { DotLoginPageComponent } from '@components/login/main/dot-login-page.com
 import { DotLoginPageResolver } from '@components/login/dot-login-page-resolver.service';
 import { DotIframePortletLegacyResolver } from '@components/_common/iframe/service/dot-iframe-porlet-legacy-resolver.service';
 import { DotCustomReuseStrategyService } from '@shared/dot-custom-reuse-strategy/dot-custom-reuse-strategy.service';
-import { LayoutEditorCanDeactivateGuardService } from '@services/guards/layout-editor-can-deactivate-guard.service';
 
 const PORTLETS_ANGULAR = [
     {
@@ -85,7 +84,6 @@ const PORTLETS_ANGULAR = [
     },
     {
         path: 'edit-page',
-        canDeactivate: [LayoutEditorCanDeactivateGuardService],
         loadChildren: () =>
             import('@portlets/dot-edit-page/dot-edit-page.module').then((m) => m.DotEditPageModule)
     },
