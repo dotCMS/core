@@ -217,18 +217,18 @@ insert into PollsDisplay (layoutId, userId, portletId, questionId) values ('1.1'
 insert into PollsChoice (choiceId, questionId, description) values ('a', '1', 'Chocolate');
 insert into PollsChoice (choiceId, questionId, description) values ('b', '1', 'Strawberry');
 insert into PollsChoice (choiceId, questionId, description) values ('c', '1', 'Vanilla');
-insert into PollsQuestion (questionId, portletId, groupId, companyId, userId, userName, createDate, modifiedDate, title, description) values ('1', '25', '-1', 'liferay.com', 'liferay.com.1', 'John Wayne', current_timestamptz, current_timestamptz, 'What is your favorite ice cream flavor?', 'What is your favorite ice cream flavor?');
+insert into PollsQuestion (questionId, portletId, groupId, companyId, userId, userName, createDate, modifiedDate, title, description) values ('1', '25', '-1', 'liferay.com', 'liferay.com.1', 'John Wayne', current_timestamp, current_timestamp, 'What is your favorite ice cream flavor?', 'What is your favorite ice cream flavor?');
 
 --
 -- Default User
 --
 
-insert into User_ (userId, companyId, createDate, password_, passwordEncrypted, passwordReset, firstName, middleName, lastName, male, birthday, emailAddress, skinId, dottedSkins, roundedSkins, greeting, layoutIds, loginDate, failedLoginAttempts, agreedToTermsOfUse, active_) values ('liferay.com.default', 'default', current_timestamptz, 'password', 'f', 'f', '', '', '', 't', '01/01/1970', 'default@liferay.com', '01', 'f', 'f', 'Welcome!', '', current_timestamptz, 0, 'f', 't');
+insert into User_ (userId, companyId, createDate, password_, passwordEncrypted, passwordReset, firstName, middleName, lastName, male, birthday, emailAddress, skinId, dottedSkins, roundedSkins, greeting, layoutIds, loginDate, failedLoginAttempts, agreedToTermsOfUse, active_) values ('liferay.com.default', 'default', current_timestamp, 'password', 'f', 'f', '', '', '', 't', '01/01/1970', 'default@liferay.com', '01', 'f', 'f', 'Welcome!', '', current_timestamp, 0, 'f', 't');
 --
 -- Test User
 --
 
-insert into User_ (userId, companyId, createDate, password_, passwordEncrypted, passwordReset, firstName, middleName, lastName, nickName, male, birthday, emailAddress, skinId, dottedSkins, roundedSkins, greeting, layoutIds, loginDate, failedLoginAttempts, agreedToTermsOfUse, active_) values ('liferay.com.1', 'liferay.com', current_timestamptz, 'test', 'f', 'f', 'John', '', 'Wayne', 'Duke', 't', '01/01/1970', 'test@liferay.com', '01', 'f', 't', 'Welcome John Wayne!', '1,', current_timestamptz, 0, 't', 't');
+insert into User_ (userId, companyId, createDate, password_, passwordEncrypted, passwordReset, firstName, middleName, lastName, nickName, male, birthday, emailAddress, skinId, dottedSkins, roundedSkins, greeting, layoutIds, loginDate, failedLoginAttempts, agreedToTermsOfUse, active_) values ('liferay.com.1', 'liferay.com', current_timestamp, 'test', 'f', 'f', 'John', '', 'Wayne', 'Duke', 't', '01/01/1970', 'test@liferay.com', '01', 'f', 't', 'Welcome John Wayne!', '1,', current_timestamp, 0, 't', 't');
 CREATE TABLE qrtz_job_details
   (
     JOB_NAME  VARCHAR(80) NOT NULL,
@@ -1630,7 +1630,7 @@ ALTER TABLE field ALTER read_only SET DEFAULT false;
 
 ALTER TABLE campaign ALTER active SET DEFAULT false;
 
-insert into User_ (userId, companyId, createDate, password_, passwordEncrypted, passwordReset, firstName, middleName, lastName, male, birthday, emailAddress, skinId, dottedSkins, roundedSkins, greeting, layoutIds, loginDate, failedLoginAttempts, agreedToTermsOfUse, active_) values ('dotcms.org.default', 'default', current_timestamptz, 'password', 'f', 'f', '', '', '', 't', '01/01/1970', 'default@dotcms.org', '01', 'f', 'f', 'Welcome!', '', current_timestamptz, 0, 'f', 't');
+insert into User_ (userId, companyId, createDate, password_, passwordEncrypted, passwordReset, firstName, middleName, lastName, male, birthday, emailAddress, skinId, dottedSkins, roundedSkins, greeting, layoutIds, loginDate, failedLoginAttempts, agreedToTermsOfUse, active_) values ('dotcms.org.default', 'default', current_timestamp, 'password', 'f', 'f', '', '', '', 't', '01/01/1970', 'default@dotcms.org', '01', 'f', 'f', 'Welcome!', '', current_timestamp, 0, 'f', 't');
 create index addres_userid_index on address(userid);
 create index tag_user_id_index on tag(user_id);
 create index tag_is_persona_index on tag(persona);
