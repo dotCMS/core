@@ -218,7 +218,7 @@ public class FolderHelper {
 
         final List<Folder> subFoldersOfRootPath = APILocator.getFolderAPI()
                 .findSubFolders(host, user, false);
-        subFoldersOfRootPath.stream().filter(folder -> folder.getPath().startsWith(pathToSearch))
+        subFoldersOfRootPath.stream().filter(folder -> folder.getPath().toLowerCase().startsWith(pathToSearch))
                 .limit(SUB_FOLDER_SIZE_DEFAULT_LIMIT).forEach(
                 folder -> subFolders.add(new FolderSearchResultView(folder.getPath(), host.getHostname(),
                         Try.of(() -> APILocator.getPermissionAPI().doesUserHavePermission(folder,
@@ -243,10 +243,13 @@ public class FolderHelper {
                 .findFolderByPath(lastValidPath, host, user, false);
         if (UtilMethods.isSet(lastValidFolder) && UtilMethods
                 .isSet(lastValidFolder.getInode())) {
+            subFolders.add(new FolderSearchResultView(lastValidFolder.getPath(),host.getHostname(),
+                    Try.of(() -> APILocator.getPermissionAPI().doesUserHavePermission(lastValidFolder,
+                    PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user)).getOrElse(false)));
             final List<Folder> subFoldersOfLastValidPath = APILocator.getFolderAPI()
                     .findSubFolders(lastValidFolder, user, false);
             subFoldersOfLastValidPath.stream()
-                    .filter(folder -> folder.getPath()
+                    .filter(folder -> folder.getPath().toLowerCase()
                             .startsWith(pathToSearch))
                     .limit(SUB_FOLDER_SIZE_DEFAULT_LIMIT).forEach(folder -> subFolders
                     .add(new FolderSearchResultView(folder.getPath(), host.getHostname(),
