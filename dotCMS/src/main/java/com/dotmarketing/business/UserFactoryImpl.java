@@ -75,7 +75,7 @@ public class UserFactoryImpl implements UserFactory {
         defaultUser.setEmailAddress(User.DEFAULT + "@" + company.getMx());
 
         defaultUser.setLanguageId(null);
-        defaultUser.setTimeZoneId(null);
+        defaultUser.setTimeZoneId("UTC");
         defaultUser.setDottedSkins(false);
         defaultUser.setRoundedSkins(false);
         defaultUser.setGreeting("Welcome!");
