@@ -60,14 +60,9 @@ public class ConfigurationResource implements Serializable {
 
 	private final ConfigurationHelper helper;
 
-	private static final Pattern BLACK_LIST = Try.of(()->Pattern.compile(
-			Config.getStringProperty("OBFUSCATE_SYSTEM_ENVIRONMENTAL_VARIABLES", "passw|pass|passwd|secret|key|token"),
-			Pattern.CASE_INSENSITIVE)).getOrNull();
-
 	private static final Set<String> WHITE_LIST = ImmutableSet.copyOf(
 			Config.getStringArrayProperty("CONFIGURATION_WHITE_LIST",
 					new String[] {"EMAIL_SYSTEM_ADDRESS", "CHARSET","CONTENT_PALETTE_HIDDEN_CONTENT_TYPES" }));
-
 
 
 	private boolean isOnBlackList(final String key) {
