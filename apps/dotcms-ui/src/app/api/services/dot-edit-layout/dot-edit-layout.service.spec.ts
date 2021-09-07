@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { DotEditLayoutService } from './dot-edit-layout.service';
 import { DotTemplateContainersCacheService } from '@services/dot-template-containers-cache/dot-template-containers-cache.service';
-import { mockDotContainers } from '@tests/dot-page-render.mock';
+import { mockDotContainers, processedContainers } from '@tests/dot-page-render.mock';
 import { CONTAINER_SOURCE } from '@models/container/dot-container.model';
 import {
     DotLayoutBody,
@@ -217,13 +217,14 @@ describe('DotEditLayoutService', () => {
     });
 
     it('should transform the Sidebar data to ContainerColumnBox (ignore UNKNOWN ids) to export the data', () => {
+        const mockContainers = mockDotContainers();
         const rawContainers = [
             {
-                identifier: mockDotContainers()[0].container.identifier,
+                identifier: mockContainers[Object.keys(mockContainers)[0]].container.identifier,
                 uuid: '1234567890'
             },
             {
-                identifier: mockDotContainers()[1].container.path,
+                identifier: mockContainers[Object.keys(mockContainers)[1]].container.path,
                 uuid: '1234567891'
             },
             {
@@ -237,7 +238,7 @@ describe('DotEditLayoutService', () => {
         delete containerColumnBox[0].uuid;
         delete containerColumnBox[1].uuid;
 
-        expect(containerColumnBox).toEqual(mockDotContainers());
+        expect(containerColumnBox).toEqual(processedContainers);
     });
 
     it('should emit add box event', (done) => {

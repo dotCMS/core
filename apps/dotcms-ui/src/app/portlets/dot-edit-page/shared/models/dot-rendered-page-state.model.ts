@@ -1,7 +1,7 @@
 import { User } from '@dotcms/dotcms-js';
 
 import { DotEditPageViewAs } from '@models/dot-edit-page-view-as/dot-edit-page-view-as.model';
-import { DotContainer } from '@shared/models/container/dot-container.model';
+import { DotContainer, DotContainerStructure } from '@shared/models/container/dot-container.model';
 import { DotLayout, DotTemplate } from '@shared/models/dot-edit-layout-designer';
 import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
 import { DotPage } from '@models/dot-page/dot-page.model';
@@ -35,6 +35,7 @@ export class DotPageRenderState extends DotPageRender {
     get containers(): {
         [key: string]: {
             container: DotContainer;
+            containerStructures?: DotContainerStructure;
         };
     } {
         return this.dotRenderedPage.containers;

@@ -1,0 +1,76 @@
+@use "libs/dot-primeng-theme-styles/src/scss/variables" as *;
+
+:host {
+    width: $content-palette-width;
+    min-width: $content-palette-width;
+    display: flex;
+    flex-direction: column;
+    padding: $spacing-1;
+    border-left: 1px solid $gray-lighter;
+    background: $white;
+    transition: all $basic-speed ease-in-out;
+    height: 100%;
+}
+
+.dot-content-palette__search {
+    color: $gray;
+    position: sticky;
+    align-self: flex-start;
+    top: 0;
+    width: 100%;
+
+    input {
+        width: 100%;
+        border: none;
+        outline: 0px;
+        background: transparent;
+        padding: $spacing-2 $spacing-5 $spacing-2 $spacing-1;
+        color: $gray;
+    }
+
+    dot-icon {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        right: $spacing-1;
+    }
+}
+
+.dot-content-palette__items {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-gap: $spacing-1;
+    grid-auto-rows: 6rem;
+    overflow: hidden auto;
+
+    div {
+        border: 1px solid $gray-lighter;
+        color: $black;
+        cursor: grab;
+        overflow: hidden;
+        padding: 1rem $spacing-1;
+        text-align: center;
+
+        &:hover {
+            background: $gray-bg;
+        }
+
+        p {
+            font-size: $font-size-small;
+            margin: $spacing-1 0 0;
+            overflow: hidden;
+            text-align: center;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            width: 100%;
+        }
+    }
+}
+
+.dot-content-palette__empty {
+    text-align: center;
+    padding: $spacing-1 0;
+    margin: $spacing-4;
+}
+
+

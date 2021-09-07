@@ -66,6 +66,11 @@
                                 "glob": "index.jsp",
                                 "input": "apps/dotcms-ui/src/tomcat",
                                 "output": "./"
+                            },
+                            {
+                                "glob": "**/*",
+                                "input": "./libs/block-editor/src/lib/assets",
+                                "output": "./assets/block-editor"
                             }
                         ],
                         "styles": [

@@ -1,5 +1,19 @@
 :host {
-    display: block;
-    border: solid 1px silver;
-    padding: 1rem;
+    display: flex;
+    gap: 1rem;
+    padding: 0.25rem 0.5rem;
+    background-color: #fff;
+    cursor: pointer;
+    align-items: center;
+}
+
+.icon-wrapper {
+    align-items: center;
+    border: solid 1px lightgrey;
+    display: flex;
+    flex-basis: 32px;
+    flex-shrink: 0;
+    height: 32px;
+    justify-content: center;
+    width: 32px;
 }

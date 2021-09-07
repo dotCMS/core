@@ -32,7 +32,7 @@ export class DotAutocompleteTagsComponent implements OnInit {
     }
 
     checkForTag(event: any) {
-        if (event.keyCode === 13) {
+        if (event.keyCode === 13 && event.currentTarget.value) {
             this.value.push(event.currentTarget.value);
             this.onChange.emit(this.value);
             event.currentTarget.value = null;

@@ -38,6 +38,9 @@ export enum DotContentletAction {
     EDIT,
     ADD
 }
+
+export const CONTENTLET_PLACEHOLDER_SELECTOR = '#contentletPlaceholder';
+
 @Injectable()
 export class DotEditContentHtmlService {
     contentletEvents$: Subject<
@@ -203,17 +206,35 @@ export class DotEditContentHtmlService {
     }
 
     /**
+     * Removes placeholder when closing the dialog.
+     *
+     * @memberof DotEditContentHtmlService
+     */
+    removeContentletPlaceholder(): void {
+        const doc = this.getEditPageDocument();
+        const placeholder = doc.querySelector(CONTENTLET_PLACEHOLDER_SELECTOR);
+        if (placeholder) {
+            placeholder.remove();
+        }
+    }
+
+    /**
      * Render a contentlet in the DOM after add it
      *
      * @param DotPageContent contentlet
-     * @param string placeholderIdToBeReplaced
+     * @param boolean isDroppedAsset
      * @memberof DotEditContentHtmlService
      */
-    renderAddedContentlet(contentlet: DotPageContent, placeholderIdToBeReplaced?: string): void {
+    renderAddedContentlet(contentlet: DotPageContent, isDroppedAsset = false): void {
         const doc = this.getEditPageDocument();
-        if (placeholderIdToBeReplaced) {
-            const container: HTMLElement = doc.querySelector(`#${placeholderIdToBeReplaced}`).closest('[data-dot-object="container"]');
-            this.setContainterToAppendContentlet({ identifier: container.dataset['dotIdentifier'], uuid: container.dataset['dotUuid']});
+        if (isDroppedAsset) {
+            const container: HTMLElement = doc
+                .querySelector(CONTENTLET_PLACEHOLDER_SELECTOR)
+                .closest('[data-dot-object="container"]');
+            this.setContainterToAppendContentlet({
+                identifier: container.dataset['dotIdentifier'],
+                uuid: container.dataset['dotUuid']
+            });
         }
 
         const containerEl: HTMLElement = doc.querySelector(
@@ -223,14 +244,12 @@ export class DotEditContentHtmlService {
         if (this.isContentExistInContainer(contentlet, containerEl)) {
             this.showContentAlreadyAddedError();
         } else {
-            let contentletPlaceholder;
-            if (placeholderIdToBeReplaced) {
-                contentletPlaceholder = doc.querySelector(`#${placeholderIdToBeReplaced}`);
-            } else {
+            let contentletPlaceholder = doc.querySelector(CONTENTLET_PLACEHOLDER_SELECTOR);
+            if (!contentletPlaceholder) {
                 contentletPlaceholder = this.getContentletPlaceholder();
                 containerEl.appendChild(contentletPlaceholder);
             }
-            
+
             this.dotContainerContentletService
                 .getContentletToContainer(this.currentContainer, contentlet)
                 .pipe(take(1))
@@ -519,7 +538,6 @@ export class DotEditContentHtmlService {
         this.updateContentletInode = this.shouldUpdateContentletInode(target);
 
         const container = <HTMLElement>target.closest('[data-dot-object="container"]');
-
         this.iframeActions$.next({
             name: type,
             dataset: target.dataset,
@@ -646,13 +664,19 @@ export class DotEditContentHtmlService {
                 this.removeCurrentContentlet();
             },
             'add-uploaded-dotAsset': (dotAssetData: DotAssetPayload) => {
-                this.renderAddedContentlet(dotAssetData.contentlet, dotAssetData.placeholderId)
+                this.renderAddedContentlet(dotAssetData.contentlet, true);
+            },
+            'add-content': (data: any) => {
+                this.iframeActions$.next({
+                    name: 'add-content',
+                    data: data
+                });
             },
             'handle-http-error': (err: HttpErrorResponse) => {
                 this.dotHttpErrorManagerService
-                        .handle(err)
-                        .pipe(take(1))
-                        .subscribe(() => {});
+                    .handle(err)
+                    .pipe(take(1))
+                    .subscribe(() => {});
             }
         };
 

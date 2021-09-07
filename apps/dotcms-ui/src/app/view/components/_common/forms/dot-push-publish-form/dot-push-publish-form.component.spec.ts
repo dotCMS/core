@@ -199,10 +199,15 @@ describe('DotPushPublishFormComponent', () => {
         ).nativeElement;
         changeTZLink.click();
         fixture.detectChanges();
+        const timezoneDropDown: Dropdown = fixture.debugElement.query(
+            By.css('[data-testid="timeZoneSelect"]')
+        ).componentInstance;
         const timezoneDropDownContainer = fixture.debugElement.query(
             By.css('[data-testid="timeZoneSelectContainer"]')
         );
         expect(timezoneDropDownContainer.attributes['hidden']).not.toBeDefined();
+        expect(timezoneDropDown.filter).toBe(true);
+        expect(timezoneDropDown.filterBy).toBe('label');
     });
 
     it('should change selected TimeZone value', () => {

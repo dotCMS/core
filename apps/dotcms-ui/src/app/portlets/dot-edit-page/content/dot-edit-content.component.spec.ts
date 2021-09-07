@@ -1,10 +1,18 @@
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { of } from 'rxjs';
+import { of as observableOf, of, throwError } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, tick, fakeAsync, TestBed } from '@angular/core/testing';
-import { Component, DebugElement, EventEmitter, Input, Output, ElementRef } from '@angular/core';
+import {
+    Component,
+    DebugElement,
+    EventEmitter,
+    Input,
+    Output,
+    ElementRef,
+    Injectable
+} from '@angular/core';
 import { RouterTestingModule } from '@angular/router/testing';
 import {
     ApiRoot,
@@ -41,7 +49,6 @@ import { DotEditContentComponent } from './dot-edit-content.component';
 import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit-page-info.module';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
-import * as _ from 'lodash';
 import { DotEditPageWorkflowsActionsModule } from './components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
 import { DotContentletLockerService } from '@services/dot-contentlet-locker/dot-contentlet-locker.service';
@@ -73,6 +80,38 @@ import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-di
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotPageContainer } from '@models/dot-page-container/dot-page-container.model';
 import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
+import { DotContentTypeService } from '@services/dot-content-type';
+import { DotContentPaletteModule } from '@portlets/dot-edit-page/components/dot-content-palette/dot-content-palette.module';
+import { DotContentPaletteComponent } from '@portlets/dot-edit-page/components/dot-content-palette/dot-content-palette.component';
+import { HttpErrorResponse } from '@angular/common/http';
+
+const responseData: DotCMSContentType[] = [
+    {
+        icon: 'cloud',
+        id: 'a1661fbc-9e84-4c00-bd62-76d633170da3',
+        name: 'Widget X',
+        variable: 'WidgetX',
+        baseType: 'WIDGET'
+    },
+    {
+        icon: 'alt_route',
+        id: '799f176a-d32e-4844-a07c-1b5fcd107578',
+        name: 'Banner',
+        variable: 'Banner'
+    },
+    {
+        icon: 'cloud',
+        id: '897cf4a9-171a-4204-accb-c1b498c813fe',
+        name: 'Contact',
+        variable: 'Contact'
+    },
+    {
+        icon: 'person',
+        id: '6044a806-f462-4977-a353-57539eac2a2c',
+        name: 'Long name Blog Comment',
+        variable: 'long-name'
+    }
+] as DotCMSContentType[];
 
 @Component({
     selector: 'dot-global-message',
@@ -105,6 +144,12 @@ export class MockDotFormSelectorComponent {
     @Output() close = new EventEmitter<any>();
 }
 
+@Injectable()
+class MockDotContentTypeService {
+    getContentTypes = jasmine
+        .createSpy('getContentTypes')
+        .and.returnValue(observableOf(responseData));
+}
 const mockRenderedPageState = new DotPageRenderState(
     mockUser(),
     new DotPageRender(mockDotRenderedPage())
@@ -166,6 +211,7 @@ describe('DotEditContentComponent', () => {
                 DotEditPageWorkflowsActionsModule,
                 DotOverlayMaskModule,
                 DotWizardModule,
+                DotContentPaletteModule,
                 RouterTestingModule.withRoutes([
                     {
                         component: DotEditContentComponent,
@@ -186,6 +232,7 @@ describe('DotEditContentComponent', () => {
                 DotGlobalMessageService,
                 DotPageStateService,
                 DotCustomEventHandlerService,
+                { provide: DotContentTypeService, useClass: MockDotContentTypeService },
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
@@ -216,7 +263,8 @@ describe('DotEditContentComponent', () => {
                             queryParams: {
                                 url: '/an/url/test'
                             }
-                        }
+                        },
+                        data: of({})
                     }
                 },
                 DotMessageDisplayService,
@@ -263,10 +311,13 @@ describe('DotEditContentComponent', () => {
         spyOn(dotEditContentHtmlService, 'renderAddedForm').and.returnValue(
             of([{ identifier: '123', uuid: 'uui-1' }])
         );
-        spyOn<any>(dotEditPageService, 'save').and.returnValue(of({}));
     });
 
     describe('elements', () => {
+        beforeEach(() => {
+            spyOn<any>(dotEditPageService, 'save').and.returnValue(of({}));
+        });
+
         describe('dot-form-selector', () => {
             let dotFormSelector: DebugElement;
 
@@ -397,6 +448,33 @@ describe('DotEditContentComponent', () => {
                 expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith({
                     data: 'test'
                 });
+            });
+        });
+
+        describe('dot-create-contentlet', () => {
+            let dotCreateContentlet;
+
+            beforeEach(() => {
+                fixture.detectChanges();
+                dotCreateContentlet = de.query(By.css('dot-create-contentlet'));
+            });
+
+            it('should call dotCustomEventHandlerService on customEvent', () => {
+                spyOn(dotCustomEventHandlerService, 'handle');
+                dotCreateContentlet.triggerEventHandler('custom', { data: 'test' });
+
+                expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith({
+                    data: 'test'
+                });
+            });
+
+            it('should remove Contentlet Placeholder on close', () => {
+                spyOn(dotEditContentHtmlService, 'removeContentletPlaceholder');
+                dotCreateContentlet.triggerEventHandler('close', {});
+
+                expect(dotEditContentHtmlService.removeContentletPlaceholder).toHaveBeenCalledTimes(
+                    1
+                );
             });
         });
 
@@ -568,6 +646,41 @@ describe('DotEditContentComponent', () => {
                     );
                     expect(dotEditContentHtmlService.renderPage).not.toHaveBeenCalled();
                 }));
+
+                it('should show/hide content palette in edit mode with correct content', fakeAsync(() => {
+                    const state = new DotPageRenderState(
+                        mockUser(),
+                        new DotPageRender({
+                            ...mockDotRenderedPage(),
+                            page: {
+                                ...mockDotRenderedPage().page,
+                                lockedBy: null
+                            },
+                            viewAs: {
+                                mode: DotPageMode.EDIT
+                            }
+                        })
+                    );
+                    route.parent.parent.data = of({
+                        content: state
+                    });
+                    detectChangesForIframeRender(fixture);
+                    fixture.detectChanges();
+                    const contentPaletteWrapper = de.query(By.css('.dot-edit-content__palette'));
+                    const contentPalette: DotContentPaletteComponent = de.query(
+                        By.css('dot-content-palette')
+                    ).componentInstance;
+                    const paletteController = de.query(
+                        By.css('.dot-edit-content__palette-visibility')
+                    );
+                    const classList = contentPaletteWrapper.nativeElement.classList;
+                    responseData.pop();
+                    expect(contentPalette.items).toEqual(responseData);
+                    expect(classList.contains('editMode')).toEqual(true);
+                    paletteController.triggerEventHandler('click', '');
+                    fixture.detectChanges();
+                    expect(classList.contains('collapsed')).toEqual(true);
+                }));
             });
 
             describe('events', () => {
@@ -644,12 +757,10 @@ describe('DotEditContentComponent', () => {
                         });
 
                         fixture.detectChanges();
-
                         const dotRenderedPageStateExpected = new DotPageRenderState(
                             mockUser(),
                             mockDotRenderedPage()
                         );
-
                         expect(dotPageStateService.setLocalState).toHaveBeenCalledWith(
                             dotRenderedPageStateExpected
                         );
@@ -877,6 +988,60 @@ describe('DotEditContentComponent', () => {
                         ).toHaveBeenCalledWith(container);
                     });
 
+                    it('should handle create new content event', (done) => {
+                        const data = {
+                            container: {
+                                dotIdentifier: 'identifier',
+                                dotUuid: 'uuid'
+                            },
+                            contentType: { variable: 'blog' }
+                        };
+                        spyOn(
+                            dotEditContentHtmlService,
+                            'setContainterToAppendContentlet'
+                        ).and.callFake(() => {});
+
+                        spyOn(dotContentletEditorService, 'getActionUrl').and.returnValue(
+                            of('/url/')
+                        );
+                        spyOn(dotContentletEditorService, 'create').and.callFake((param) => {
+                            expect(param.data).toEqual({
+                                url: '/url/'
+                            });
+
+                            const event: any = {
+                                target: {
+                                    contentWindow: {}
+                                }
+                            };
+                            param.events.load(event);
+                            expect(event.target.contentWindow.ngEditContentletEvents).toBe(
+                                dotEditContentHtmlService.contentletEvents$
+                            );
+                            done();
+                        });
+
+                        fixture.detectChanges();
+
+                        dotEditContentHtmlService.iframeActions$.next({
+                            name: 'add-content',
+                            data: data
+                        });
+
+                        expect(dotContentletEditorService.getActionUrl).toHaveBeenCalledOnceWith(
+                            'blog'
+                        );
+
+                        const container: DotPageContainer = {
+                            identifier: 'identifier',
+                            uuid: 'uuid'
+                        };
+
+                        expect(
+                            dotEditContentHtmlService.setContainterToAppendContentlet
+                        ).toHaveBeenCalledWith(container);
+                    });
+
                     it('should handle remove event', (done) => {
                         spyOn(dotEditContentHtmlService, 'removeContentlet').and.callFake(() => {});
                         spyOn(dotDialogService, 'confirm').and.callFake((param) => {
@@ -1015,6 +1180,32 @@ describe('DotEditContentComponent', () => {
                 expect<any>(dotEditPageService.save).toHaveBeenCalledWith('123', [
                     { identifier: '123', uuid: 'uui-1', personaTag: 'SuperPersona' }
                 ]);
+            });
+        });
+    });
+
+    describe('errors', () => {
+        let httpErrorManagerService: DotHttpErrorManagerService;
+        beforeEach(() => {
+            httpErrorManagerService = de.injector.get(DotHttpErrorManagerService);
+        });
+
+        describe('iframe events', () => {
+            it('should handle error message add reload content', () => {
+                const errorResponse = { error: { message: 'error' } } as HttpErrorResponse;
+                spyOn(dotEditPageService, 'save').and.returnValue(throwError(errorResponse));
+                spyOn(dotPageStateService, 'updatePageStateHaveContent');
+                spyOn(httpErrorManagerService, 'handle');
+
+                fixture.detectChanges();
+
+                dotEditContentHtmlService.pageModel$.next({
+                    model: [{ identifier: 'test', uuid: '111' }],
+                    type: 1
+                });
+
+                expect(httpErrorManagerService.handle).toHaveBeenCalledOnceWith(errorResponse);
+                expect(dotPageStateService.reload).toHaveBeenCalledTimes(1);
             });
         });
     });

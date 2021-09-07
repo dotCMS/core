@@ -11,7 +11,7 @@ import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotTemplateContainersCacheService } from '@services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DotSidebarPropertiesModule } from '../dot-sidebar-properties/dot-sidebar-properties.module';
-import { mockDotContainers } from '@tests/dot-page-render.mock';
+import { mockDotContainers, processedContainers } from '@tests/dot-page-render.mock';
 import { DotEditLayoutService } from '@services/dot-edit-layout/dot-edit-layout.service';
 import { DotLayoutSideBar } from '@models/dot-edit-layout-designer';
 
@@ -76,8 +76,6 @@ describe('DotEditLayoutSidebarComponent', () => {
     });
 
     it('should call the write value and transform the containers data', () => {
-        const mockResponse = mockDotContainers();
-
         hostComponentfixture.componentInstance.form = new FormGroup({
             sidebar: new FormControl({
                 containers: [
@@ -93,25 +91,26 @@ describe('DotEditLayoutSidebarComponent', () => {
             .query(By.css('dot-edit-layout-sidebar'))
             .injector.get(DotEditLayoutService);
 
-        spyOn(dotEditLayoutService, 'getDotLayoutSidebar').and.returnValue(mockResponse);
+        spyOn(dotEditLayoutService, 'getDotLayoutSidebar').and.returnValue(processedContainers);
 
         hostComponentfixture.detectChanges();
         expect(dotEditLayoutService.getDotLayoutSidebar).toHaveBeenCalled();
-        expect(component.containers).toBe(mockResponse);
+        expect(component.containers).toBe(processedContainers);
     });
 
     it('should transform containers raw data from component "dot-container-selector" into proper data to be saved in the BE', () => {
         const containerSelector: DebugElement = hostComponentfixture.debugElement.query(
             By.css('dot-container-selector')
         );
+        const mockContainers = mockDotContainers();
         const transformedValue = {
             containers: [
                 {
-                    identifier: mockDotContainers()[0].container.identifier,
+                    identifier: mockContainers[Object.keys(mockContainers)[0]].container.identifier,
                     uuid: undefined
                 },
                 {
-                    identifier: mockDotContainers()[1].container.path,
+                    identifier: mockContainers[Object.keys(mockContainers)[1]].container.path,
                     uuid: undefined
                 }
             ],
@@ -120,8 +119,8 @@ describe('DotEditLayoutSidebarComponent', () => {
         };
         spyOn(component, 'updateAndPropagate').and.callThrough();
         spyOn(component, 'propagateChange');
-        containerSelector.triggerEventHandler('change', mockDotContainers());
-        component.updateAndPropagate(mockDotContainers());
+        containerSelector.triggerEventHandler('change', processedContainers);
+        component.updateAndPropagate(processedContainers);
         expect(component.updateAndPropagate).toHaveBeenCalled();
         expect(component.propagateChange).toHaveBeenCalledWith(transformedValue);
     });

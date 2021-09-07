@@ -4,6 +4,7 @@
     (close)="editForm = false"
 ></dot-form-selector>
 <dot-add-contentlet (custom)="onCustomEvent($event)"></dot-add-contentlet>
+<dot-create-contentlet (custom)="onCustomEvent($event)" (close)='handleCloseAction()'></dot-create-contentlet>
 <dot-edit-contentlet (custom)="onCustomEvent($event)"></dot-edit-contentlet>
 <dot-reorder-menu [url]="reorderMenuUrl" (close)="onCloseReorderDialog()"></dot-reorder-menu>
 <div class="dot-edit-content__wrapper">
@@ -59,4 +60,14 @@
             </div>
         </div>
     </ng-container>
+</div>
+<div class="dot-edit-content__palette" [class.editMode]='isEditMode'  [class.collapsed]="paletteCollapsed">
+    <dot-content-palette
+        [items]='contentPalletItems'>
+    </dot-content-palette>
+    <div class="dot-edit-content__palette-visibility"
+         data-testId="palette-visibility"
+         (click)='paletteCollapsed = !paletteCollapsed'>
+        <dot-icon size='22' [name]="paletteCollapsed ? 'chevron_left' : 'chevron_right' "></dot-icon>
+    </div>
 </div>

@@ -83,6 +83,8 @@
             data-testid="timeZoneSelect"
             [options]="timeZoneOptions"
             formControlName="timezoneId"
+            [filter]="true"
+            filterBy="label"
             (onChange)="updateTimezoneLabel($event.value)"
             appendTo="body"
         ></p-dropdown>
