@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "9b8a43ec-c851-4136-bf40-fdca59687c60",
+		"_postman_id": "2f1e11a0-1ba4-4eba-82ff-64ccc9656399",
 		"name": "FolderResource",
 		"description": "Test for FolderResource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -110,7 +110,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "[\"/testfindfolder1\",\"/testfindfolder1/subfolder1\",\"/testfindfolder1/subfolder2\",\"/testfindfolder1/testsubfolder1\",\"/testfindfolder2\",\"/testfindfolder2/subfolder1\",\"/testfindtestfolder3/\"]\n",
+							"raw": "[\"/testfindfolder1\",\"/testfindfolder1/subfolder1\",\"/testfindfolder1/subfolder2\",\"/testfindfolder1/testsubfolder1\",\"/testFindFolder2\",\"/testFindFolder2/subfolder1\",\"/TESTFINDTESTFOLDER3/\"]\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -393,11 +393,11 @@
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"Folder Check\", function () {",
-									"    pm.expect(jsonData.entity[0].path).to.eql('/testfindfolder1/subfolder1/');",
+									"    pm.expect(jsonData.entity[1].path).to.eql('/testfindfolder1/subfolder1/');",
 									"});",
 									"",
 									"pm.test(\"Length Check\", function () {",
-									"    pm.expect(jsonData.entity.length).to.eql(3);",
+									"    pm.expect(jsonData.entity.length).to.eql(4);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -445,11 +445,11 @@
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"Folder Check\", function () {",
-									"    pm.expect(jsonData.entity[0].path).to.eql('/testfindfolder1/subfolder1/');",
+									"    pm.expect(jsonData.entity[1].path).to.eql('/testfindfolder1/subfolder1/');",
 									"});",
 									"",
 									"pm.test(\"Length Check\", function () {",
-									"    pm.expect(jsonData.entity.length).to.eql(2);",
+									"    pm.expect(jsonData.entity.length).to.eql(3);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -545,7 +545,7 @@
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"Folder Check\", function () {",
-									"    pm.expect(jsonData.entity[0].path).to.contains('/testfindfolder1/sub');",
+									"    pm.expect(jsonData.entity[1].path).to.contains('/testfindfolder1/sub');",
 									"});"
 								],
 								"type": "text/javascript"
