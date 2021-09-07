@@ -220,7 +220,7 @@ public class ContentTypeResource implements Serializable {
 							new HashSet<>(form.getWorkflowsIds()), form.getSystemActions(), contentTypeAPI, false);
 					final ImmutableMap.Builder<Object, Object> builderMap =
 							ImmutableMap.builder()
-							.putAll(new JsonContentTypeTransformer(tuple2._1).mapObject())
+							.putAll(new JsonContentTypeTransformer(contentTypeAPI.find(tuple2._1.variable())).mapObject())
 							.put("workflows", this.workflowHelper.findSchemesByContentType(contentType.id(), initData.getUser()))
 							.put("systemActionMappings", tuple2._2.stream()
 									.collect(Collectors.toMap(mapping-> mapping.getSystemAction(), mapping->mapping)));
