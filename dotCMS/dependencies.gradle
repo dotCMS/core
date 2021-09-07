@@ -38,7 +38,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.cos', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.counter-ejb', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.daisydiff', version:'ukv_3'
-    compile group: 'com.dotcms.lib', name: 'dot.dnsjava', version:'2.0.8_2'
     compile group: 'com.dotcms.lib', name: 'dot.dwr', version:'3rc2modified_3'
 
     compile group: 'com.lmax', name: 'disruptor', version: '3.3.4'
