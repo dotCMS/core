@@ -1,5 +1,6 @@
 package com.dotcms.graphql.business;
 
+import static com.dotcms.graphql.business.GraphqlAPI.TYPES_AND_FIELDS_VALID_NAME_REGEX;
 import static com.dotcms.graphql.util.TypeUtil.BASE_TYPE_SUFFIX;
 import static graphql.Scalars.GraphQLInt;
 import static graphql.Scalars.GraphQLString;
@@ -20,6 +21,7 @@ import graphql.schema.GraphQLType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.PredicateUtils;
 
@@ -36,9 +38,12 @@ enum ContentAPIGraphQLFieldsProvider implements GraphQLFieldsProvider {
         final List<ContentType> contentTypeList = APILocator.getContentTypeAPI(APILocator.systemUser())
                 .findAllRespectingLicense();
 
+        final List<ContentType> validContentTypeList = contentTypeList.stream().filter((type)->type.variable()
+                .matches(TYPES_AND_FIELDS_VALID_NAME_REGEX)).collect(Collectors.toList());
+
         List<GraphQLFieldDefinition> fieldDefinitions = new ArrayList<>();
 
-        contentTypeList.forEach((type) -> {
+        validContentTypeList.forEach((type) -> {
             fieldDefinitions.add(createCollectionField(type, TypeUtil.collectionizedName(type.variable())));
             fieldDefinitions.add(createCollectionField(type, TypeUtil.oldCollectionizedName(type.variable())));
         });
@@ -63,6 +68,7 @@ enum ContentAPIGraphQLFieldsProvider implements GraphQLFieldsProvider {
 
     private GraphQLFieldDefinition createCollectionField(final ContentType type, final String name) {
         try {
+
             return newFieldDefinition()
                     .name(name)
                     .argument(GraphQLArgument.newArgument()
