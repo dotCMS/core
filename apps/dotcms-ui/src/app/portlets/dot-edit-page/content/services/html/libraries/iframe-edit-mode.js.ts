@@ -276,7 +276,7 @@ export const EDIT_PAGE_JS = `
     }
 
     function checkIfContainerAllowContentType(container) {
-        if (container.querySelectorAll('[data-dot-object="contentlet"]').length === parseInt(container.dataset.maxContentlets, 10)) {
+        if (container.querySelectorAll('div:not(.gu-transit)[data-dot-object="contentlet"]').length === parseInt(container.dataset.maxContentlets, 10)) {
             return false;
         }
 
