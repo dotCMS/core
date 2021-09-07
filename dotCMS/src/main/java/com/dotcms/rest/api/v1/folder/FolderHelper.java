@@ -243,9 +243,14 @@ public class FolderHelper {
                 .findFolderByPath(lastValidPath, host, user, false);
         if (UtilMethods.isSet(lastValidFolder) && UtilMethods
                 .isSet(lastValidFolder.getInode())) {
-            subFolders.add(new FolderSearchResultView(lastValidFolder.getPath(),host.getHostname(),
-                    Try.of(() -> APILocator.getPermissionAPI().doesUserHavePermission(lastValidFolder,
-                    PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user)).getOrElse(false)));
+            if(pathToSearch.equals(lastValidPath) || pathToSearch.equals(lastValidPath+"/")) {
+                subFolders.add(new FolderSearchResultView(lastValidFolder.getPath(),
+                        host.getHostname(),
+                        Try.of(() -> APILocator.getPermissionAPI()
+                                .doesUserHavePermission(lastValidFolder,
+                                        PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user))
+                                .getOrElse(false)));
+            }
             final List<Folder> subFoldersOfLastValidPath = APILocator.getFolderAPI()
                     .findSubFolders(lastValidFolder, user, false);
             subFoldersOfLastValidPath.stream()

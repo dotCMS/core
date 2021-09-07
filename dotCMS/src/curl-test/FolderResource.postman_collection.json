@@ -445,11 +445,11 @@
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"Folder Check\", function () {",
-									"    pm.expect(jsonData.entity[1].path).to.eql('/testfindfolder1/subfolder1/');",
+									"    pm.expect(jsonData.entity[0].path).to.eql('/testfindfolder1/subfolder1/');",
 									"});",
 									"",
 									"pm.test(\"Length Check\", function () {",
-									"    pm.expect(jsonData.entity.length).to.eql(3);",
+									"    pm.expect(jsonData.entity.length).to.eql(2);",
 									"});"
 								],
 								"type": "text/javascript"
