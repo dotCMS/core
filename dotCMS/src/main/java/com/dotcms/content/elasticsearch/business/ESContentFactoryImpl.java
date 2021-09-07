@@ -1919,12 +1919,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         final String inode = getInode(existingInode, contentlet);
         upsertContentlet(contentlet, inode);
-        contentlet.setInode(inode);
+        final Contentlet toReturn = findInDb(inode).orElse(contentlet);
 
         REMOVABLE_KEY_SET.forEach(key -> contentlet.getMap().remove(key));
 
         contentletCache.remove(inode);
-        return contentlet;
+        return toReturn;
     }
 
     private void upsertContentlet(final Contentlet contentlet, final String inode) throws DotDataException {
