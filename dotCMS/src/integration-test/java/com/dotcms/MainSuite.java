@@ -441,7 +441,6 @@ import org.junit.runners.Suite.SuiteClasses;
         StaticPushPublishBundleGeneratorTest.class,
         Task210520UpdateAnonymousEmailTest.class,
         Task210510UpdateStorageTableDropMetadataColumnTest.class,
-        StaticPushPublishBundleGeneratorTest.class,
         CookieToolTest.class,
         CSVManifestBuilderTest.class,
         MoveContentActionletTest.class,
