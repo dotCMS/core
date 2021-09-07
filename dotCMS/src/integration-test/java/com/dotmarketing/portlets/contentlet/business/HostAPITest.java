@@ -22,21 +22,31 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.init.DotInitScheduler;
+import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPIImpl;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.quartz.job.HostCopyOptions;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UUIDGenerator;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -727,4 +737,81 @@ public class HostAPITest extends IntegrationTestBase  {
         final List<Host> allFromCache3 = hostAPI.findAllFromCache(systemUser, false);
         assertEquals(allFromCache3.size() , allFromCache1.size());
     }
+
+    /**
+     * Host must be Language independent.
+     * Even though they can be assigned with a language we should not relay on the lang id to find it.
+     * Method to test: {@link HostAPI#DBSearch(String, User, boolean)}
+     * This Test is meant to verify a changed introduced in DBSearch to find ContentletVersionInfo regardless of the language
+     * Also it verifies there is always only one entry on version-info for every contentlet of type Host.
+     * Regardless of the operation we perform.
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Test_Host_With_Multiple_Lang_Versions_Return_Default_Lang_OtherWise_First_Occurrence()
+            throws DotDataException, DotSecurityException {
+
+        final LanguageAPI languageAPI = APILocator.getLanguageAPI();
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        final HostAPI hostAPI = APILocator.getHostAPI();
+        final User systemUser = APILocator.systemUser();
+        final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
+
+        final SiteDataGen siteDataGen = new SiteDataGen();
+
+        Host host = siteDataGen.name("xyx" + System.currentTimeMillis())
+                .aliases("xyz.dotcms.com").next();
+
+        host.setLanguageId(0);
+        host = siteDataGen.persist(host, false);
+
+        //Host are created by default under the default language.
+        Assert.assertEquals(languageAPI.getDefaultLanguage().getId(), host.getLanguageId());
+
+        List<ContentletVersionInfo> verInfos = versionableAPI
+                .findContentletVersionInfos(host.getIdentifier());
+
+        Assert.assertEquals("There should be only one entry.", 1, verInfos.size());
+
+        Host dbSearch = hostAPI.DBSearch(host.getIdentifier(), systemUser, false);
+        Assert.assertNotNull(dbSearch);
+
+        Assert.assertEquals(verInfos.get(0).getWorkingInode(), dbSearch.getInode());
+
+        Assert.assertNull("There shouldn't be a live version yet.", verInfos.get(0).getLiveInode());
+
+        contentletAPI.publish(host, systemUser, false);
+
+        verInfos = versionableAPI.findContentletVersionInfos(host.getIdentifier());
+
+        Assert.assertNotNull("There should be a live version now.", verInfos.get(0).getLiveInode());
+
+        //This should create another version of the host in a different language.
+        final Language newLanguage = new LanguageDataGen().languageName("ES").nextPersisted();
+
+        host.setLanguageId(newLanguage.getId());
+        hostAPI.save(host, systemUser, false);
+
+        verInfos = versionableAPI
+                .findContentletVersionInfos(host.getIdentifier());
+        Assert.assertEquals("There should be two entries one for each language.", 2, verInfos.size());
+
+        final long newRandomDefaultLangId = -1;
+        final Language mockDefaultLang = mock(Language.class);
+        when(mockDefaultLang.getId()).thenReturn(newRandomDefaultLangId);
+
+        final LanguageAPI mockLanguageAPI = mock(LanguageAPI.class);
+        when(mockLanguageAPI.getDefaultLanguage()).thenReturn(mockDefaultLang);
+
+        final HostAPI hostAPIWithMockedLangAPI = new HostAPIImpl(APILocator.getSystemEventsAPI(), mockLanguageAPI);
+        final Host dbSearchNoDefaultLang = hostAPIWithMockedLangAPI.DBSearch(host.getIdentifier(), systemUser, false);
+
+        //Since Default language is changed now we still get something here.
+        assertNotNull(dbSearchNoDefaultLang);
+        //And System-host should still be system host
+        assertNotNull(hostAPIWithMockedLangAPI.findSystemHost());
+
+    }
+
 }

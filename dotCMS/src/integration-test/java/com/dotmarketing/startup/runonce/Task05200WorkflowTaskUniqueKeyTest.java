@@ -19,6 +19,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowComment;
 import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.sql.SQLException;
@@ -108,7 +109,7 @@ public class Task05200WorkflowTaskUniqueKeyTest {
         final WorkflowTask dupeWorkflowTask = workflowAPI
                 .createWorkflowTask(contentlet, systemUser, workflowStep, "test", "test");
 
-        workflowAPI.saveWorkflowTask(dupeWorkflowTask);
+        saveWorkflowTask(dupeWorkflowTask);
 
         assertTrue(dupeWorkflowTask != null && dupeWorkflowTask.getId() != null);
         assertEquals(workflowTask.getWebasset(), dupeWorkflowTask.getWebasset());
@@ -128,6 +129,29 @@ public class Task05200WorkflowTaskUniqueKeyTest {
 
         //verify the newest workflow task exists
         assertEquals(dupeWorkflowTask.getId(), workflowAPI.findTaskById(dupeWorkflowTask.getId()).getId());
+    }
+
+    static String INSERT_WORKFLOW_TASK = "INSERT INTO workflow_task (id, creation_date, mod_date, due_date, created_by, assigned_to, belongs_to, title, description, status, webasset, language_id) values (?,?,?,?,?,?,?,?,?,?,?,?)";
+
+    private void saveWorkflowTask(final WorkflowTask task) throws DotDataException {
+        task.setId(UUIDGenerator.generateUuid());
+
+        final DotConnect db = new DotConnect()
+            .setSQL(INSERT_WORKFLOW_TASK)
+            .addParam(task.getId())
+            .addParam(task.getCreationDate())
+            .addParam(task.getModDate())
+            .addParam(task.getDueDate())
+            .addParam(task.getCreatedBy())
+            .addParam(task.getAssignedTo())
+            .addParam(task.getBelongsTo())
+            .addParam(task.getTitle())
+            .addParam(task.getDescription())
+            .addParam(task.getStatus())
+            .addParam(task.getWebasset())
+            .addParam(task.getLanguageId());
+
+        db.loadResult();
     }
 
     @Test

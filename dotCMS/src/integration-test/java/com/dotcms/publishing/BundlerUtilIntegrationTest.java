@@ -21,7 +21,7 @@ import java.util.List;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class BundlerUtilTest {
+public class BundlerUtilIntegrationTest {
 
     @BeforeClass
     public static void prepare() throws Exception {
