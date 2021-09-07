@@ -116,7 +116,7 @@
 	<!-- START Right Column User Details -->
 	<div dojoType="dijit.layout.ContentPane" splitter="true" region="center">
 		<div class="portlet-main">
-			<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"' style="position:absolute;top:16px;right:16px;">
+			<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"fa-plus", class:"dijitDropDownActionButton"' style="position:absolute;top:16px;right:16px;">
 				<span></span>
 				<div data-dojo-type="dijit/Menu" class="contentlet-menu-actions">
 					<div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: addUser">
@@ -266,6 +266,10 @@
                                         <span id="canLoginToConsole" style="font-weight:bold"></span>
                                        </span>
                                        </td>
+                                   </tr>
+                                   <tr>
+                                       <th><%= LanguageUtil.get(pageContext, "starter.show.getting.started") %>:</th>
+                                       <td><input type="checkbox" id="showStarter" onclick="setStarterPage(this)" value="true" dojoType="dijit.form.CheckBox"></td>
                                    </tr>
                                </table>
                             </div>

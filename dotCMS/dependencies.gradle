@@ -4,7 +4,6 @@ dependencies {
     def eeType = dotcmsReleaseVersion.equals("master") ? '-SNAPSHOT' : ''
 
     compile group: 'com.dotcms.enterprise', name: 'ee', version: dotcmsReleaseVersion + eeType, changing: true
-
     compile group: 'com.dotcms', name: 'ant-tooling', version: '1.3.2'
     compile ('io.jsonwebtoken:jjwt:0.6.0'){
         transitive = false
@@ -17,8 +16,8 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.axiom-impl', version:'1.2.5_2'
     compile group: 'com.dotcms.lib', name: 'dot.bsf', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.bsh', version:'2.0b4_3'
-    compile 'net.bytebuddy:byte-buddy:1.6.12'
-    compile 'net.bytebuddy:byte-buddy-agent:1.6.12'
+    compile 'net.bytebuddy:byte-buddy:1.9.0'
+    compile 'net.bytebuddy:byte-buddy-agent:1.9.0'
     compile group: 'com.dotcms.lib', name: 'dot.cactus.integration.ant', version:'1.8.0_3'
     compile group: 'com.dotcms.lib', name: 'dot.cargo-ant', version:'0.9_2'
     compile group: 'com.dotcms.lib', name: 'dot.cargo-core-uberjar', version:'0.9_2'
@@ -63,7 +62,7 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.hibernate', version:'2.1.7_3'
     compile group: 'com.dotcms.lib', name: 'dot.httpbridge', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.httpclient', version:'4.2.2_2'
-    compile group: 'com.dotcms.lib', name: 'dot.httpcore', version:'4.2.2_2'
+//    compile group: 'com.dotcms.lib', name: 'dot.httpcore', version:'4.2.2_2'
     compile group: 'com.dotcms.lib', name: 'dot.iText', version:'2.1.0_2'
 
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.11.1'
@@ -193,8 +192,9 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.xpp3-min', version:'1.1.4c_2'
     compile group: 'com.dotcms.lib', name: 'dot.slf4j-api', version:'1.7.12_2'
     compile group: 'com.dotcms.lib', name: 'dot.slf4j-jcl', version:'1.7.12_2'
-    compile (group: 'xerces', name: 'xercesImpl', version: '2.11.0'){
+    compile (group: 'xerces', name: 'xercesImpl', version: '2.12.0'){
         transitive = false
+        exclude(module: 'javax.xml.parsers')
     }
     compile (group: 'org.apache.commons', name: 'commons-compress', version: '1.15'){
         transitive = false
@@ -368,26 +368,33 @@ dependencies {
     compile group: 'eu.bitwalker', name: 'UserAgentUtils', version:'1.19'
 
 
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-core', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-metadata', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-bmp', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-jpeg', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-tiff', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-pnm', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-psd', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-iff', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-pcx', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-pict', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-tiff', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-sgi', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-tga', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-icns', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-pcx', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-thumbsdb', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-batik', version:'3.3.2'
-    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-clippath', version:'3.2.1'
-    compile group: 'com.twelvemonkeys.servlet', name: 'servlet', version:'3.2.1'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-core', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-metadata', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-bmp', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-jpeg', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-tiff', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-pnm', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-psd', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-iff', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-pcx', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-pdf', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-hdr', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-pict', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-tiff', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-sgi', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-tga', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-icns', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-pcx', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-webp', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-thumbsdb', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-batik', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-clippath', version:'3.7.0'
+    compile group: 'com.twelvemonkeys.servlet', name: 'servlet', version:'3.7.0'
+    
+    
     compile 'com.github.ben-manes.caffeine:caffeine:2.4.0'
+    
+    
     compile (group: 'org.apache.pdfbox', name: 'pdfbox', version: '2.0.1'){
         exclude(group: 'commons-logging')
     }
@@ -396,14 +403,12 @@ dependencies {
     compile group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.56'
     compile group: 'org.bouncycastle', name: 'bcpkix-jdk15on', version: '1.56'
 
-    compile group: 'com.beust', name: 'jcommander', version: '1.48'
-
     /**
      * Order matters here: JUNIT must come after hamcrest.
      */
     compile group: 'org.hamcrest', name: 'hamcrest-all', version: '1.3'
     testCompile 'junit:junit:4.12'
-    compile "org.mockito:mockito-core:1.+"
+    testCompile "org.mockito:mockito-core:1.+"
     testCompile "com.tngtech.junit.dataprovider:junit4-dataprovider:2.6"
     testCompile ("org.powermock:powermock-api-mockito:1.6.5" ){
         exclude group: 'org.hamcrest'
@@ -433,6 +438,7 @@ dependencies {
     compile(group: 'org.apache.felix', name: 'org.apache.felix.http.bundle', version: '3.0.0') {
         exclude(group: 'commons-logging')
         exclude(group: 'org.slf4j')
+//        exclude(group: 'javax.servlet')
     }
     compile(group: 'org.apache.felix', name: 'org.apache.felix.http.bridge', version: '3.0.18') {
         exclude(module: 'commons-logging')
@@ -468,7 +474,7 @@ dependencies {
     compileOnly "org.immutables:value:2.3.3:annotations"
     compile 'org.immutables:gson:2.3.3'
 
-    compile group: 'org.aspectj', name: 'aspectjrt', version:'1.8.10'
+    compile group: 'org.aspectj', name: 'aspectjrt', version:'1.9.2'
     compile group: 'io.bit3', name: 'jsass', version: '5.10.3'
 
     //XML Tool dependency
@@ -479,6 +485,8 @@ dependencies {
         exclude(group: 'com.fasterxml.jackson.datatype')
     }
 
+    compile 'com.graphql-java:graphql-java-extended-scalars:1.0.1'
+
     compile 'net.jodah:failsafe:1.1.1'
     compile 'com.rainerhahnekamp:sneakythrow:1.1.0'
 
@@ -488,6 +496,9 @@ dependencies {
     }
 
     compile 'com.jayway.jsonpath:json-path:2.4.0'
+    compile 'com.sun.activation:javax.activation:1.2.0'
+    compile 'jakarta.xml.bind:jakarta.xml.bind-api:2.3.3'
+    compile 'com.sun.xml.ws:jaxws-ri:2.3.2'
 
     //https://www.oracle.com/database/technologies/appdev/jdbc-downloads.html
     providedCompile (group: 'com.oracle.jdbc', name: 'ojdbc8', version: '19.3') {
@@ -497,8 +508,15 @@ dependencies {
     providedCompile (group: 'org.postgresql', name: 'postgresql', version: '42.2.8') {
         transitive = false
     }
+    
+	// allows for async notifications
+    
+	// https://mvnrepository.com/artifact/com.impossibl.pgjdbc-ng/pgjdbc-ng
+	compile group: 'com.impossibl.pgjdbc-ng', name: 'pgjdbc-ng', version: '0.8.7'
+
+    
     //https://mvnrepository.com/artifact/mysql/mysql-connector-java
-    providedCompile (group: 'mysql', name: 'mysql-connector-java', version: '8.0.18') {
+    providedCompile (group: 'mysql', name: 'mysql-connector-java', version: '8.0.19') {
         transitive = false
     }
     //https://mvnrepository.com/artifact/com.microsoft.sqlserver/mssql-jdbc

@@ -258,16 +258,6 @@ public class Task03545FixVarcharSizeInFolderOperations extends AbstractJDBCStart
 		return MSSQL_SCRIPT;
 	}
 
-	/**
-	 * The SQL for H2. The stored procedure to update is simulated by a Java
-	 * class, so there's no SQL for it in H2.
-	 *
-	 * @return
-	 */
-	@Override
-	public String getH2Script() {
-		return "";
-	}
 
 	@Override
 	protected List<String> getTablesToDropConstraints() {

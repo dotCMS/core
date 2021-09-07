@@ -84,10 +84,4 @@ public class Task01070BundleNameDropUnique extends AbstractJDBCStartupTask {
         //tablesList.add("publishing_bundle_environment");
         return tablesList;
     }
-
-    @Override
-    public String getH2Script() {
-        return null;
-    }
-
 }

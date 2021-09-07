@@ -1,5 +1,11 @@
 package com.dotmarketing.portlets.templates.model;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
+import com.dotcms.publisher.util.PusheableAsset;
+import com.dotcms.publishing.manifest.ManifestItem;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.links.model.Link;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +29,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 
 /** @author Hibernate CodeGenerator */
-public class Template extends WebAsset implements Serializable, Comparable {
+public class Template extends WebAsset implements Serializable, Comparable, ManifestItem {
 
 	private static final long serialVersionUID = 1L;
 
@@ -231,7 +237,7 @@ public class Template extends WebAsset implements Serializable, Comparable {
 	}
 
 	public Integer getCountAddContainer() {
-		return countAddContainer;
+		return countAddContainer != null ? countAddContainer : 0;
 	}
 
 	public void setCountAddContainer(Integer countAddContainer) {
@@ -239,7 +245,7 @@ public class Template extends WebAsset implements Serializable, Comparable {
 	}
 
 	public Integer getCountContainers() {
-		return countContainers;
+		return countContainers != null ? countContainers : 0;
 	}
 
 	public void setCountContainers(Integer countContainers) {
@@ -319,5 +325,15 @@ public class Template extends WebAsset implements Serializable, Comparable {
 		final Map<String, Object> map = super.getMap();
 		map.put("anonymous", this.isAnonymous());
 		return map;
+	}
+
+	@Override
+	public ManifestInfo getManifestInfo(){
+		return new ManifestInfoBuilder()
+			.objectType(PusheableAsset.TEMPLATE.getType())
+			.id(this.getIdentifier())
+			.inode(this.inode)
+			.title(this.getTitle())
+			.build();
 	}
 }

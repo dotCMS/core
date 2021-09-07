@@ -10,7 +10,7 @@ import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.LinkDataGen;
 import com.dotcms.datagen.RelationshipDataGen;
 import com.dotcms.datagen.TemplateDataGen;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -29,7 +29,6 @@ import com.liferay.portal.model.User;
 import static org.junit.Assert.assertEquals;
 
 import com.liferay.portal.util.WebKeys;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -80,7 +79,8 @@ public class ShortyIdApiTest {
 	final String GET_ID_LINKS = "SELECT identifier FROM links";
 	final String GET_ID_TEMPLATES = "SELECT identifier FROM template";
 	final String GET_ID_FOLDERS = "SELECT identifier FROM folder";
-    
+	final String GET_ID_RELATIONSHIPS = "SELECT inode FROM relationship";
+
     @Before
     public void setUp() throws Exception {
     	getExpectedIds();
@@ -177,7 +177,7 @@ public class ShortyIdApiTest {
 
         new RelationshipDataGen(true).nextPersisted();
         new RelationshipDataGen(true).nextPersisted();
-		dc.setSQL(GET_INODE, 2);
+		dc.setSQL(GET_ID_RELATIONSHIPS, 2);
 		dc.addParam("relationship");
 		res = dc.loadObjectResults();
 		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "relationship" });
@@ -518,7 +518,9 @@ public class ShortyIdApiTest {
             assert (y.indexOf('-') == 8);
         }
 
-        for (String[] x : expectedIds) {
+        final String[][] uuids = expectedIds.stream().filter(strings -> strings[0].contains("-")).toArray(String[][]::new);
+
+        for (String[] x : uuids) {
             String noDashes = x[0].replaceAll("-", "");
             String y = api.uuidIfy(noDashes);
             assert (x[0].equals(y));
@@ -550,7 +552,7 @@ public class ShortyIdApiTest {
         ShortyIdAPI api = APILocator.getShortyAPI();
         User systemUser = APILocator.systemUser();
         String testingFileName = "TESTING.PNG";
-        final HttpServletRequest request = new MockHttpRequest("localhost", "/api/v1/tempResource").request();
+        final HttpServletRequest request = new MockHttpRequestIntegrationTest("localhost", "/api/v1/tempResource").request();
         request.setAttribute(WebKeys.USER,systemUser);
         DotTempFile temp =  APILocator.getTempFileAPI().createEmptyTempFile(testingFileName,request);
 

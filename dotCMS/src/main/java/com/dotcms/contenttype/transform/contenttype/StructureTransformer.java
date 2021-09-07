@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.transform.contenttype;
 
+import com.dotmarketing.db.DbConnectionFactory;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -75,6 +76,8 @@ public class StructureTransformer implements ContentTypeTransformer  {
 		struct.setSystem(type.system());
 		struct.setUrlMapPattern(type.urlMapPattern());
 		struct.setVelocityVarName(type.variable());
+		struct.setIcon(type.icon());
+		struct.setSortOrder(type.sortOrder());
 		return struct;
 
 	}
@@ -184,6 +187,16 @@ public class StructureTransformer implements ContentTypeTransformer  {
 			@Override
 			public Date iDate() {
 				return struct.getIDate();
+			}
+
+			@Override
+			public String icon() {
+				return UtilMethods.isSet(struct.getIcon()) ? struct.getIcon() : BaseContentType.iconFallbackMap.get(base);
+			}
+
+			@Override
+			public int sortOrder() {
+				return UtilMethods.isSet(struct.getSortOrder())  ? struct.getSortOrder() : 0;
 			}
 
 			@Override

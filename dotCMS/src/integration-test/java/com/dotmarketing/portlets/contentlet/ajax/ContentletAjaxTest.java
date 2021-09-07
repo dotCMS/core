@@ -1,49 +1,88 @@
 package com.dotmarketing.portlets.contentlet.ajax;
 
+import static com.dotcms.integrationtestutil.content.ContentUtils.createTestKeyValueContent;
+import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentlets;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.SimpleContentType;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
+import com.liferay.util.StringPool;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-
-import static com.dotcms.integrationtestutil.content.ContentUtils.createTestKeyValueContent;
-import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentlets;
+import javax.servlet.http.HttpSession;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  *
  * @author oswaldogallango
  *
  */
+@RunWith(DataProviderRunner.class)
 public class ContentletAjaxTest {
 	
 	private Language language;
 	private Contentlet contentlet;
-	private User systemUser = APILocator.systemUser();
-	
-	@BeforeClass
+	private static User systemUser;
+	private static Language defaultLang;
+	private static ContentTypeAPI contentTypeAPI;
+    private static FieldAPI fieldAPI;
+    private static ContentletAPI contentletAPI;
+    private static RelationshipAPI relationshipAPI;
+
+    @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
+        defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
+        systemUser = APILocator.systemUser();
+        contentTypeAPI = APILocator.getContentTypeAPI(systemUser);
+        fieldAPI = APILocator.getContentTypeFieldAPI();
+        contentletAPI = APILocator.getContentletAPI();
+        relationshipAPI = APILocator.getRelationshipAPI();
+    }
+
+    @DataProvider
+    public static Object[] cardinalities() {
+        return RELATIONSHIP_CARDINALITY.values();
     }
 
 	/**
@@ -57,7 +96,6 @@ public class ContentletAjaxTest {
 		/*
 		 * Creating language
 		 */
-		Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
 		language = new LanguageDataGen().nextPersisted();
 
 		/*
@@ -77,29 +115,29 @@ public class ContentletAjaxTest {
 		contentlet.setIndexPolicy(IndexPolicy.FORCE);
         contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
 
-		contentlet = APILocator.getContentletAPI().checkin(contentlet, systemUser,false);
+		contentlet = contentletAPI.checkin(contentlet, systemUser,false);
         contentlet.setIndexPolicy(IndexPolicy.FORCE);
         contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
 		APILocator.getVersionableAPI().setLive(contentlet);
-		APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode(),true);
+		contentletAPI.isInodeIndexed(contentlet.getInode(),true);
 		
 		String ident = contentlet.getIdentifier();
-		contentlet = APILocator.getContentletAPI().findContentletByIdentifier(ident, true, defaultLang.getId(), systemUser, false);
+		contentlet = contentletAPI.findContentletByIdentifier(ident, true, defaultLang.getId(), systemUser, false);
+		contentlet = contentletAPI.checkout(contentlet.getInode(), systemUser, false);
 		contentlet.setLanguageId(language.getId());
 		contentlet.setStringProperty("body", "italianTestIssue5330");
-		contentlet.setInode("");
         contentlet.setIndexPolicy(IndexPolicy.FORCE);
         contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
 
-		contentlet = APILocator.getContentletAPI().checkin(contentlet, systemUser,false);
+		contentlet = contentletAPI.checkin(contentlet, systemUser,false);
         contentlet.setIndexPolicy(IndexPolicy.FORCE);
         contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
 		APILocator.getVersionableAPI().setLive(contentlet);
-		APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode(),true);
+		contentletAPI.isInodeIndexed(contentlet.getInode(),true);
 		/*
 		 * Validate that there are two contentlets associated to the same identifier wit different languages
 		 */
-		List<Contentlet> contList = APILocator.getContentletAPI().getSiblings(ident);
+		List<Contentlet> contList = contentletAPI.getSiblings(ident);
 		Assert.assertEquals(2, contList.size());
 
 		/*
@@ -119,9 +157,9 @@ public class ContentletAjaxTest {
 		Assert.assertEquals((Long)result.get("total"), new Long(1));
 		result = (Map<String,Object>)results.get(3);
 		Assert.assertTrue(Long.parseLong(String.valueOf(result.get("languageId")))==defaultLang.getId());
-		contentlet = APILocator.getContentletAPI().find(String.valueOf(result.get("inode")),systemUser,false);
-		APILocator.getContentletAPI().archive(contentlet,systemUser,false);
-		APILocator.getContentletAPI().delete(contentlet,systemUser,false);
+		contentlet = contentletAPI.find(String.valueOf(result.get("inode")),systemUser,false);
+		contentletAPI.archive(contentlet,systemUser,false);
+		contentletAPI.delete(contentlet,systemUser,false);
 
 		/*
 		 * Get italian version
@@ -139,8 +177,8 @@ public class ContentletAjaxTest {
 		Assert.assertEquals(new Long(1L), (Long)result.get("total"));
 		result = (Map<String,Object>)results.get(3);
 		Assert.assertTrue(Long.parseLong(String.valueOf(result.get("languageId")))==language.getId());
-		contentlet = APILocator.getContentletAPI().find(String.valueOf(result.get("inode")),systemUser,false);
-		APILocator.getContentletAPI().destroy(contentlet, systemUser, false);
+		contentlet = contentletAPI.find(String.valueOf(result.get("inode")),systemUser,false);
+		contentletAPI.destroy(contentlet, systemUser, false);
 	}
 
 	@Test
@@ -154,7 +192,7 @@ public class ContentletAjaxTest {
 
 			long time = System.currentTimeMillis();
 
-			final ContentType languageVariableContentType = APILocator.getContentTypeAPI(systemUser)
+			final ContentType languageVariableContentType = contentTypeAPI
 					.find(LanguageVariableAPI.LANGUAGEVARIABLE);
 			languageVariable1 = createTestKeyValueContent(
 					"brought.you.by.IT"+time, "hello world", language.getId(),
@@ -194,5 +232,88 @@ public class ContentletAjaxTest {
 		}
 
 	}
+
+    /**
+     * <b>Method to Test:</b> {@link ContentletAjax#searchContentletsByUser(List, String, List, List,
+     * boolean, boolean, boolean, boolean, int, String, int, User, HttpSession, String, String)}<p>
+     * <b>When:</b> filtering by related content, results are returned correctly regardless of the
+     * relationship's cardinality <p>
+     * <b>Should:</b> Return results
+     */
+    @Test
+    @UseDataProvider("cardinalities")
+    public void test_searchContentletsByUser_filteringByRelatedContent_returns_validResults(
+            RELATIONSHIP_CARDINALITY cardinality)
+            throws DotSecurityException, DotDataException {
+
+        final ContentletAjax contentletAjax = new ContentletAjax();
+
+        final ContentType parentContentType = contentTypeAPI.save(
+                ContentTypeBuilder.builder(SimpleContentType.class).folder(
+                        FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("parentContentType")
+                        .owner(systemUser.getUserId()).build());
+
+        final ContentType childContentType = contentTypeAPI.save(
+                ContentTypeBuilder.builder(SimpleContentType.class).folder(
+                        FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("childContentType")
+                        .owner(systemUser.getUserId()).build());
+
+        Field fieldInChild = FieldBuilder.builder(RelationshipField.class).name("myNewRel")
+                .contentTypeId(childContentType.id()).values(String.valueOf(cardinality.ordinal()))
+                .relationType(parentContentType.variable()).build();
+
+        //One side of the relationship is set childContentType --> parentContentType
+        fieldInChild = fieldAPI.save(fieldInChild, systemUser);
+
+        final String fullFieldVarInChild =
+                childContentType.variable() + StringPool.PERIOD + fieldInChild.variable();
+
+        Field fieldInParent = FieldBuilder.builder(RelationshipField.class).name("otherSide")
+                .contentTypeId(parentContentType.id())
+                .values(String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_ONE.ordinal()))
+                .relationType(fullFieldVarInChild).build();
+
+        //One side of the relationship is set parentContentType --> childContentType
+        fieldInParent = fieldAPI.save(fieldInParent, systemUser);
+
+        final String fullFieldVarInParent =
+                parentContentType.variable() + StringPool.PERIOD + fieldInParent.variable();
+
+        final Relationship relationship = relationshipAPI
+                .getRelationshipFromField(fieldInChild, systemUser);
+
+        //creates child contentlet
+        final Contentlet childContentlet = new ContentletDataGen(childContentType.id())
+                .nextPersisted();
+
+        //creates parent contentlet
+        final Contentlet parentContentlet = contentletAPI
+                .checkin(new ContentletDataGen(parentContentType.id()).next(),
+                        CollectionsUtils
+                                .map(relationship, CollectionsUtils.list(childContentlet)),
+                        null, systemUser, false);
+
+        //Searching child related content
+        List results = contentletAjax.searchContentletsByUser(ImmutableList.of(BaseContentType.ANY),
+                childContentType.inode(),
+                CollectionsUtils.list(fullFieldVarInChild, parentContentlet.getIdentifier()),
+                Collections.emptyList(), false, false, false,
+                false, 0, "moddate", 0, systemUser, null, null, null);
+
+        assertNotNull(results);
+        assertEquals(1, Integer.parseInt(((Map) results.get(0)).get("total").toString()));
+        assertEquals(childContentlet.getIdentifier(), ((Map) results.get(3)).get("identifier"));
+
+        //Searching parent related content
+        results = contentletAjax.searchContentletsByUser(ImmutableList.of(BaseContentType.ANY),
+                parentContentType.inode(),
+                CollectionsUtils.list(fullFieldVarInParent, childContentlet.getIdentifier()),
+                Collections.emptyList(), false, false, false,
+                false, 0, "moddate", 0, systemUser, null, null, null);
+
+        assertNotNull(results);
+        assertEquals(1, Integer.parseInt(((Map) results.get(0)).get("total").toString()));
+        assertEquals(parentContentlet.getIdentifier(), ((Map) results.get(3)).get("identifier"));
+    }
 
 }

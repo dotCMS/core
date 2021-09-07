@@ -9,6 +9,7 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.liferay.portal.model.User"%>
+<%@ page import="org.apache.commons.lang.StringUtils" %>
 
 <script type='text/javascript' src='/dwr/interface/StructureAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/CategoryAjax.js'></script>
@@ -341,10 +342,10 @@ var cmsfile=null;
 				"image/tiff",
 				"image/png",
 			];
-			const { mimeType, idPath } = results.entity[asset.titleImage];
+			const { mimeType, idPath, configuredImageURL } = results.entity[asset.titleImage];
 			const image = `
 					<img
-					src="/contentAsset/image/${asset.identifier}/${asset.titleImage}"
+					src="${configuredImageURL}"
 					alt="${asset.title}"
 					data-field-name="${asset.titleImage}"
 					data-inode="${asset.inode}"
@@ -399,10 +400,17 @@ var cmsfile=null;
 					     var <%=field.variable()%>tinyPropOverride={};
 					     try{
 					    	   <%ctx.put("field", field);%>
-					    	  <%=field.variable()%>tinyPropOverride =  <%= com.dotcms.rendering.velocity.util.VelocityUtil.getInstance().parseVelocity(field.fieldVariablesMap().get("tinymceprops").value(),ctx) %>;
+					    	   <%
+					    	     String propsOverride = com.dotcms.rendering.velocity.util.VelocityUtil.getInstance().parseVelocity(field.fieldVariablesMap().get("tinymceprops").value(),ctx);
+					    	     if(StringUtils.isEmpty(propsOverride) || StringUtils.isBlank(propsOverride) ){
+					    	        propsOverride = "{}";
+					    	        //This is here to prevent a javascript syntax err
+					    	     }
+					    	   %>
+					    	   <%=field.variable()%>tinyPropOverride =  <%=propsOverride%>;
 					     }
 					     catch(e){
-					    	 showDotCMSErrorMessage("Enable to initialize WYSIWYG " + e.message);
+					    	 showDotCMSErrorMessage("unable to initialize WYSIWYG " + e.message);
 					     }
 
 					 <%}else{%>

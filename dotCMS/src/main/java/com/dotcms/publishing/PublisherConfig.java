@@ -3,6 +3,8 @@ package com.dotcms.publishing;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publishing.manifest.CSVManifestBuilder;
+import com.dotcms.publishing.manifest.ManifestBuilder;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -10,6 +12,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -19,6 +22,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -82,6 +86,8 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 	private boolean isStatic = false;
 
 	private Map<String, String> existingContent = new HashMap<>();
+
+	protected ManifestBuilder manifestBuilder;
 
 	@SuppressWarnings("unchecked")
 	public Set<String> getFolders() {
@@ -619,4 +625,15 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 		}
 	}
 
+	public void setManifestBuilder(final ManifestBuilder manifestBuilder) {
+		this.manifestBuilder = manifestBuilder;
+	}
+
+	public Optional<File> getManifestFile() {
+		try {
+			return Optional.of(manifestBuilder.getManifestFile());
+		} catch (IllegalStateException e) {
+			return Optional.empty();
+		}
+	}
 }

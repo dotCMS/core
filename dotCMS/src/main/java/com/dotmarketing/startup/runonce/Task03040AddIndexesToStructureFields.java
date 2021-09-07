@@ -35,11 +35,6 @@ public class Task03040AddIndexesToStructureFields extends AbstractJDBCStartupTas
 	}
 
 	@Override
-	public String getH2Script() {
-		return null;
-	}
-
-	@Override
 	protected List<String> getTablesToDropConstraints() {
 		return null;
 	}

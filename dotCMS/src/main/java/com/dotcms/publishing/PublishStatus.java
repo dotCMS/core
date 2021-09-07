@@ -1,16 +1,25 @@
 package com.dotcms.publishing;
 
+import com.dotcms.api.system.event.SystemEventsFactory;
+import com.dotcms.publishing.output.BundleOutput;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 
 import com.dotmarketing.quartz.TaskRuntimeValues;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class PublishStatus extends TaskRuntimeValues {
 
-	
+
+	private List<BundleOutput> outputs;
+
 	public PublishStatus() {
 		super();
+		outputs = new ArrayList<>();
 
 	}
 	List<BundlerStatus> bundlerStatuses = new ArrayList<BundlerStatus>();
@@ -62,5 +71,13 @@ public class PublishStatus extends TaskRuntimeValues {
 		}
 
 		return x;
+	}
+
+	public void addOutput(BundleOutput output) {
+		outputs.add(output);
+	}
+
+	public List<File> getOutputFiles() {
+		return outputs.stream().map(output -> output.getFile()).collect(Collectors.toList());
 	}
 }

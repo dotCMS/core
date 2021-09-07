@@ -38,9 +38,15 @@ public class ExposureImageFilter extends ImageFilter {
 		try {
 			BufferedImage src = ImageIO.read(file);
 
+			
+            final File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() +".tmp.jpg");
+
+			
 			BufferedImage dst = ef.filter(src, null);
-			ImageIO.write(dst, "png", resultFile);
+			ImageIO.write(dst, "png", tempResultFile);
 			dst.flush();
+			
+	        tempResultFile.renameTo(resultFile);
 		} catch (IOException e) {
 			Logger.error(this.getClass(), e.getMessage());
 		}

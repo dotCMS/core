@@ -105,7 +105,7 @@ public class DotJobStore extends JobStoreCMT {
 				)
 			);
 
-		} else if (DbConnectionFactory.isOracle() || DbConnectionFactory.isH2()) {
+		} else if (DbConnectionFactory.isOracle()) {
 
 			UpdateLockRowSemaphore updateLockHandler = new UpdateLockRowSemaphore();
 			updateLockHandler.setUpdateLockRowSQL("UPDATE {0}LOCKS SET LOCK_NAME = LOCK_NAME WHERE LOCK_NAME = ?");
@@ -147,12 +147,6 @@ public class DotJobStore extends JobStoreCMT {
 			} catch (Exception e) {
 				Logger.info(this, e.getMessage());
 			}
-		} else if (DbConnectionFactory.isH2()) {
-            try {
-                setDriverDelegateClass("org.quartz.impl.jdbcjobstore.StdJDBCDelegate");
-            } catch (Exception e) {
-                Logger.info(this, e.getMessage());
-            }
 		}
 
 		super.initialize(loadHelper, signaler);

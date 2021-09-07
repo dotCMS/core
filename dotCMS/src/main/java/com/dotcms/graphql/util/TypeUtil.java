@@ -9,7 +9,10 @@ import com.dotmarketing.util.UtilMethods;
 import graphql.GraphQLException;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLFieldDefinition.Builder;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -20,8 +23,10 @@ import graphql.schema.GraphQLOutputType;
 import graphql.schema.PropertyDataFetcher;
 import graphql.schema.TypeResolver;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 
+import static graphql.Scalars.GraphQLBoolean;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 
 public class TypeUtil {
@@ -30,17 +35,13 @@ public class TypeUtil {
 
     public static GraphQLObjectType createObjectType(final String typeName, final Map<String, GraphQLOutputType> typeFields,
                                                      final DataFetcher dataFetcher) {
-        final GraphQLObjectType.Builder builder = GraphQLObjectType.newObject().name(typeName);
 
-        typeFields.keySet().forEach((key)->{
-            builder.field(newFieldDefinition()
-                .name(key)
-                .type(typeFields.get(key))
-                .dataFetcher(dataFetcher!=null?dataFetcher:new PropertyDataFetcher<String>(key))
-            );
-        });
+        Map<String, TypeUtil.TypeFetcher> fieldsTypesAndFetchersMap = typeFields.entrySet()
+                .stream()
+                .collect(Collectors.toMap(Map.Entry::getKey,
+                        entry -> new TypeFetcher(entry.getValue(), dataFetcher)));
 
-        return builder.build();
+        return createObjectType(typeName, fieldsTypesAndFetchersMap);
     }
 
     public static GraphQLObjectType createObjectType(final String typeName,
@@ -61,22 +62,31 @@ public class TypeUtil {
         List<GraphQLFieldDefinition> fieldDefinitionList = new ArrayList<>();
         fieldsTypesAndFetchers.forEach((key, value) -> {
             try {
-                if(value.getArgument()!=null) {
-                    fieldDefinitionList.add(newFieldDefinition()
+                Builder fieldDefinitionBuilder = newFieldDefinition();
+
+                if(UtilMethods.isSet(value.getArguments())) {
+                    fieldDefinitionBuilder
                             .name(key)
-                            .argument(value.getArgument())
+                            .arguments(value.getArguments())
                             .type(value.getType())
                             .dataFetcher(value.getDataFetcher() != null
                                     ? value.getDataFetcher()
-                                    : new PropertyDataFetcher<String>(key)).build());
+                                    : new PropertyDataFetcher<String>(key));
                 } else {
-                    fieldDefinitionList.add(newFieldDefinition()
+                    fieldDefinitionBuilder
                             .name(key)
                             .type(value.getType())
                             .dataFetcher(value.getDataFetcher() != null
                                     ? value.getDataFetcher()
-                                    : new PropertyDataFetcher<String>(key)).build());
+                                    : new PropertyDataFetcher<String>(key));
                 }
+
+                fieldDefinitionBuilder.argument(GraphQLArgument.newArgument()
+                        .name("render")
+                        .type(GraphQLBoolean)
+                        .defaultValue(false));
+
+                fieldDefinitionList.add(fieldDefinitionBuilder.build());
             } catch (GraphQLException e) {
                 Logger.error("Error creating GraphQL Type. Type name: " + key, e);
             }
@@ -90,20 +100,27 @@ public class TypeUtil {
         final GraphQLInterfaceType.Builder builder = GraphQLInterfaceType.newInterface().name(typeName);
 
         fieldsTypesAndFetchers.forEach((key, value) -> {
-            if(value.getArgument()!=null) {
-                builder.field(newFieldDefinition()
+            Builder fieldDefinitionBuilder = newFieldDefinition();
+
+            if(UtilMethods.isSet(value.getArguments())) {
+                fieldDefinitionBuilder
                         .name(key)
-                        .argument(value.getArgument())
+                        .arguments(value.getArguments())
                         .type(value.getType())
-                        .dataFetcher(value.getDataFetcher())
-                );
+                        .dataFetcher(value.getDataFetcher());
             } else {
-                builder.field(newFieldDefinition()
+                fieldDefinitionBuilder
                         .name(key)
                         .type(value.getType())
-                        .dataFetcher(value.getDataFetcher())
-                );
+                        .dataFetcher(value.getDataFetcher());
             }
+
+            fieldDefinitionBuilder.argument(GraphQLArgument.newArgument()
+                    .name("render")
+                    .type(GraphQLBoolean)
+                    .defaultValue(false));
+
+            builder.field(fieldDefinitionBuilder.build());
         });
 
         builder.typeResolver(typeResolver);
@@ -129,7 +146,7 @@ public class TypeUtil {
     public static class TypeFetcher {
         private final GraphQLOutputType type;
         private final DataFetcher dataFetcher;
-        private final GraphQLArgument argument;
+        private final List<GraphQLArgument> arguments;
 
         public TypeFetcher(GraphQLOutputType type) {
             this(type, new FieldDataFetcher(), null);
@@ -140,10 +157,10 @@ public class TypeUtil {
         }
 
         public TypeFetcher(final GraphQLOutputType type, final DataFetcher dataFetcher,
-                final GraphQLArgument argument) {
+                final GraphQLArgument...argument) {
             this.type = type;
             this.dataFetcher = dataFetcher;
-            this.argument = argument;
+            this.arguments = argument!=null ? Arrays.asList(argument) : Collections.emptyList();
         }
 
         public GraphQLOutputType getType() {
@@ -154,8 +171,8 @@ public class TypeUtil {
             return dataFetcher;
         }
 
-        public GraphQLArgument getArgument() {
-            return argument;
+        public List<GraphQLArgument> getArguments() {
+            return arguments;
         }
     }
 }

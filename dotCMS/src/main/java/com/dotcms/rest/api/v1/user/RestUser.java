@@ -16,6 +16,7 @@ public final class RestUser extends Validated  {
     public final String email;
     public final String surname;
     public final String roleId;
+    public final boolean loginAs;
 
 
     private RestUser(RestUser.Builder builder) {
@@ -24,7 +25,7 @@ public final class RestUser extends Validated  {
         surname   = builder.surname;
         roleId    = builder.roleId;
         email     = builder.email;
-
+        loginAs   = builder.loginAs;
         checkValid();
     }
 
@@ -34,8 +35,14 @@ public final class RestUser extends Validated  {
         @JsonProperty private String surname;
         @JsonProperty private String roleId;
         @JsonProperty private String email;
+        @JsonProperty private boolean loginAs;
 
         public Builder() {
+        }
+
+        public RestUser.Builder loginAs(boolean loginAs) {
+            this.loginAs = loginAs;
+            return this;
         }
 
         public RestUser.Builder userId(String userId) {

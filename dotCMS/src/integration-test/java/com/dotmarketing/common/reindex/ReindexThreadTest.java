@@ -9,7 +9,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -23,7 +23,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.ThreadUtils;
 import com.google.common.collect.ImmutableList;
@@ -31,7 +30,6 @@ import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
-import org.apache.felix.framework.OSGIUtil;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -60,7 +58,7 @@ public class ReindexThreadTest {
         folder = APILocator.getFolderAPI().findSystemFolder();
         lang = APILocator.getLanguageAPI().getDefaultLanguage();
         HttpServletRequest pageRequest =
-                new MockSessionRequest(new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request()).request();
+                new MockSessionRequest(new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request()).request();
         HttpServletRequestThreadLocal.INSTANCE.setRequest(pageRequest);
         
         type = new ContentTypeDataGen()

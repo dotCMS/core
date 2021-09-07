@@ -33,7 +33,9 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.common.db.DotConnect;
@@ -54,6 +56,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.ResetTaskActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
@@ -64,6 +67,7 @@ import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowComment;
 import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
@@ -1127,6 +1131,13 @@ public class WorkflowAPITest extends IntegrationTestBase {
                 assertEquals(copiedAction.get().getSchemeId(), schemeCopied.getId());
 
                 assertEquals(copiedAction.get().getName(), action.getName());
+
+                if (WorkflowAction.CURRENT_STEP.equals(action.getNextStep())) {
+                    assertEquals(copiedAction.get().getNextStep(), action.getNextStep());
+                } else {
+                    assertNotEquals(copiedAction.get().getNextStep(), WorkflowAction.CURRENT_STEP);
+                    assertNotEquals(copiedAction.get().getNextStep(), action.getNextStep());
+                }
             } else {
                 fail("The step: " + action.getName()
                         + " does not exists and must exists as part of the copy");
@@ -3925,6 +3936,119 @@ public class WorkflowAPITest extends IntegrationTestBase {
             workflowAPI.saveScheme(workflowScheme, user);
             workflowAPI.deleteScheme(workflowScheme, user).get();
         }
+    }
+
+    /**
+     * Method to test: {@link WorkflowAPI#findActions(List, User, Permissionable)}
+     * Given Scenario: Creates a wokflow with two move action: 1 move without path and 1 move with path
+     * ExpectedResult: Returns the move actions with the right move settings
+     *
+     */
+    @Test
+    public void test_create_workflow_with_two_move_actionlets_test_findActions() throws DotDataException, DotSecurityException {
+
+        final long time = System.currentTimeMillis();
+        final String workflowSchemeName = "WorkflowSchemeTestMove_" + time;
+        final String workflowScheme3Step1Name = "WorkflowSchemeMoveStep1_" + time;
+        final String workflowScheme3Step1ActionMoveToName = "Move_to_" + time;
+        final String workflowScheme3Step2ActionMoveToFolderName = "Move_to_folder" + time;
+        final WorkflowScheme workflowScheme = addWorkflowScheme(workflowSchemeName);
+
+        /* Generate scheme steps */
+        final WorkflowStep workflowSchemeStep = addWorkflowStep(workflowScheme3Step1Name, 1, false, false,
+                workflowScheme.getId());
+
+        /* Generate actions */
+        final WorkflowAction workflowSchemeMoveToAction = addWorkflowAction(workflowScheme3Step1ActionMoveToName, 1,
+                workflowSchemeStep.getId(), true, workflowSchemeStep.getId(), reviewer,
+                workflowScheme.getId());
+
+        final WorkflowAction workflowSchemeMoveToFolderAction = addWorkflowAction(workflowScheme3Step2ActionMoveToFolderName, 2,
+                workflowSchemeStep.getId(), true, workflowSchemeStep.getId(), contributor,
+                workflowScheme.getId());
+
+        final WorkflowActionClass moveToActionClass = addSubActionClass("Move", workflowSchemeMoveToAction.getId(), MoveContentActionlet.class, 0);
+        final WorkflowActionClass moveToFolderActionClass = addSubActionClass("Move", workflowSchemeMoveToFolderAction.getId(), MoveContentActionlet.class, 0);
+
+        final List<WorkflowActionClassParameter> params = new ArrayList<>();
+        final WorkflowActionClassParameter pathParam = new WorkflowActionClassParameter();
+        pathParam.setActionClassId(moveToFolderActionClass.getId());
+        pathParam.setKey(MoveContentActionlet.PATH_KEY);
+        pathParam.setValue("//default/application");
+        params.add(pathParam);
+        workflowAPI.saveWorkflowActionClassParameters(params, user);
+
+        List<WorkflowStep> steps = workflowAPI.findSteps(workflowScheme);
+        assertNotNull(steps);
+        assertEquals(1, steps.size());
+
+        //check available actions for admin user
+        List<WorkflowAction> actions = workflowAPI.findActions(steps, user);
+        assertNotNull(actions);
+        assertEquals(2, actions.size());
+
+        actions = workflowAPI.findActions(steps, user, null);
+        assertNotNull(actions);
+        assertTrue(actions.size() == 2);
+
+        final Optional<WorkflowAction> moveToAction = actions.stream().filter(action -> action.getName().equals(workflowScheme3Step1ActionMoveToName)).findFirst();
+        final Optional<WorkflowAction> moveToFolderAction = actions.stream().filter(action -> action.getName().equals(workflowScheme3Step2ActionMoveToFolderName)).findFirst();
+
+        assertTrue(moveToAction.isPresent());
+        assertTrue(moveToFolderAction.isPresent());
+
+        assertTrue(moveToAction.get().hasMoveActionletActionlet());
+        assertFalse(moveToAction.get().hasMoveActionletHasPathActionlet());
+
+        assertTrue(moveToFolderAction.get().hasMoveActionletActionlet());
+        assertTrue(moveToFolderAction.get().hasMoveActionletHasPathActionlet());
+    }
+
+    /**
+     * Method to test: {@link WorkflowFactoryImpl#saveWorkflowTask(WorkflowTask)}
+     * when: Save a new {@link WorkflowTask} to a new {@link Contentlet}, later Update the {@link WorkflowStep}
+     * should: first create a new {@link WorkflowTask} and later update it with the new {@link WorkflowStep}
+     *
+     * @throws DotDataException
+     */
+    @Test()
+    public void saveWorkflowTask() throws DotDataException {
+        final String title = "title";
+        final String description = "description";
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).nextPersisted();
+        final User user = APILocator.systemUser();
+
+        final WorkflowTask task = new WorkflowTask();
+        final Date now = new Date();
+
+        final WorkflowTask taskByContentlet = FactoryLocator.getWorkFlowFactory()
+                .findTaskByContentlet(contentlet);
+
+        assertNotNull(taskByContentlet);
+        assertNotNull(taskByContentlet.getId());
+        assertEquals("Auto assign to the step: New", taskByContentlet.getTitle());
+        assertEquals(String.format("The content titled \"%s\" has been moved automatically to the step New", contentlet.getTitle()),
+                taskByContentlet.getDescription());
+
+        final WorkflowStep newWorkflowStep = workflowAPI.findStep(SystemWorkflowConstants.WORKFLOW_NEW_STEP_ID);
+        assertEquals(taskByContentlet.getStatus(), newWorkflowStep.getId());
+
+        final List<WorkflowStep> steps = workflowAPI
+                .findSteps(workflowAPI.findSystemWorkflowScheme());
+
+        final Optional<WorkflowStep> notNewWorkflowStep = steps.stream()
+                .filter(step -> step.getId() != taskByContentlet.getStatus())
+                .findAny();
+        task.setStatus(notNewWorkflowStep.get().getId());
+        workflowAPI.saveWorkflowTask(task);
+
+        assertNotNull(taskByContentlet);
+        assertNotNull(taskByContentlet.getId());
+        assertEquals(taskByContentlet.getStatus(), notNewWorkflowStep.get().getId());
+
     }
 
 }

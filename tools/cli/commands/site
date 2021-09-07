@@ -1,0 +1,78 @@
+#!/bin/bash
+set -e
+. "$DOTCLI_WORKDIR/common"
+
+help_push_site() {
+  echo "
+Command: site
+
+This command takes a json file describing the Site that will be pushed/updated
+
+Usage:
+  ./dot-cli --site ~/code/etc/site.json
+  or
+  ./dot-cli --site ~/code/etc/site.json
+   "
+  exit 1
+}
+
+[[ ! -n "$1" ]] && help_push_site
+
+cli_log "Pushing Site"
+
+
+
+file="$1"
+
+if [[ ! -f "$file" ]]; then
+    echo " The file $file does not exist."
+    exit 1
+fi
+
+jsonSite=$(<$file)
+
+siteName=$(jq -r  '.siteName' <<< "$jsonSite")
+
+echo "Verifying '$siteName' against remote host."
+
+code=$(curl -s -X POST "${DOTCMS_BASE_URL}/api/v1/site/_byname" -o /dev/null --header "Authorization: Bearer ${JSON_WEB_TOKEN}" -w "%{http_code}" --header 'Content-Type: application/json' --data-raw "{ \"siteName\":\"$siteName\" }")
+
+#echo " response code was $code"
+
+if [[ ${code} = 401 ]]; then
+  echo "Unauthorized Request - Verify your Credentials."
+  exit 1;
+fi
+
+if [[ ${code} = 404 ]];
+then
+   echo "A site named '$siteName' does not exist on the remote site. An Add will be attempted."
+
+   response=$(curl -s -X POST "${DOTCMS_BASE_URL}/api/v1/site" --header "Authorization: Bearer ${JSON_WEB_TOKEN}" --header 'Content-Type: application/json' --data-raw  "$jsonSite"  --compressed)
+
+   echo "$response" | jq --color-output .
+
+   identifier=$(jq -r 'try .entity.identifier' <<< "$response")
+
+   if [[ -z ${identifier} ]];
+   then
+    echo "Unable to get identifier from response. Please check if there were any error messages."
+    exit 1
+   fi
+
+   echo " Updated content-type identifier :: $identifier"
+
+   printf "${siteName}=${identifier}\n" >> "$identifiersFile"
+
+  else
+       echo "A site named $siteName already exists."
+       response=$(curl -s -X POST "${DOTCMS_BASE_URL}/api/v1/site/_byname"  --header "Authorization: Bearer ${JSON_WEB_TOKEN}" --header 'Content-Type: application/json' --data-raw "{ \"siteName\":\"$siteName\" }")
+
+       echo "$response" | jq --color-output .
+
+       identifier=$(jq -r 'try .entity.identifier' <<< "$response")
+       printf "${siteName}=${identifier}\n" >> "$identifiersFile"
+fi
+
+
+cli_log "done."

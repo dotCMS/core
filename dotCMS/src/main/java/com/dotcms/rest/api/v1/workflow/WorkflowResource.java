@@ -4,12 +4,18 @@ import static com.dotcms.rest.ResponseEntityView.OK;
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.DotLambdas.not;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.business.WrapInTransaction;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.mock.request.DotCMSMockRequest;
+import com.dotcms.mock.request.DotCMSMockRequestWithSession;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
@@ -21,6 +27,7 @@ import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.MapToContentletPopulator;
+import com.dotcms.rest.PATCH;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.IncludePermissions;
@@ -38,6 +45,7 @@ import com.dotcms.workflow.form.BulkActionForm;
 import com.dotcms.workflow.form.FireActionByNameForm;
 import com.dotcms.workflow.form.FireActionForm;
 import com.dotcms.workflow.form.FireBulkActionsForm;
+import com.dotcms.workflow.form.FireMultipleActionForm;
 import com.dotcms.workflow.form.WorkflowActionForm;
 import com.dotcms.workflow.form.WorkflowActionStepBean;
 import com.dotcms.workflow.form.WorkflowActionStepForm;
@@ -57,6 +65,7 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -68,36 +77,49 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
+import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.WebKeys;
+import com.liferay.util.HttpHeaders;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.Tuple2;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.Future;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -112,11 +134,16 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
+
+import io.vavr.control.Try;
+import org.apache.commons.lang.time.StopWatch;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.server.JSONP;
 
@@ -151,6 +178,8 @@ public class WorkflowResource {
     private static final String PREFIX_BINARY = "binary";
     private static final String ACTION_NAME   = "actionName";
     private static final String CONTENTLET    = "contentlet";
+    private static final int CONTENTLETS_LIMIT = 100000;
+    private static final String WORKFLOW_SUBMITTER = "workflow_submitter";
 
 
     private final WorkflowHelper   workflowHelper;
@@ -438,6 +467,12 @@ public class WorkflowResource {
         workflowActionView.setDeleteActionlet(workflowAction.hasDeleteActionlet());
         workflowActionView.setDestroyActionlet(workflowAction.hasDestroyActionlet());
         workflowActionView.setShowOn(workflowAction.getShowOn());
+        workflowActionView.setActionInputs(this.createActionInputViews(workflowAction));
+
+        return workflowActionView;
+    }
+
+    private List<ActionInputView> createActionInputViews (final WorkflowAction workflowAction) {
 
         final List<ActionInputView> actionInputViews = new ArrayList<>();
 
@@ -445,18 +480,24 @@ public class WorkflowResource {
 
             actionInputViews.add(new ActionInputView("assignable", Collections.emptyMap()));
         }
+
         if (workflowAction.isCommentable()) {
 
             actionInputViews.add(new ActionInputView("commentable", Collections.emptyMap()));
         }
+
         if (workflowAction.hasPushPublishActionlet()) {
 
             actionInputViews.add(new ActionInputView("pushPublish", Collections.emptyMap()));
         }
 
-        workflowActionView.setActionInputs(actionInputViews);
+        // Has a move actionlet but the path is empty
+        if (workflowAction.hasMoveActionletActionlet() && !workflowAction.hasMoveActionletHasPathActionlet()) {
 
-        return workflowActionView;
+            actionInputViews.add(new ActionInputView("moveable", Collections.emptyMap()));
+        }
+
+        return actionInputViews;
     }
 
 
@@ -1440,7 +1481,8 @@ public class WorkflowResource {
                     .workflowNeverExpire(fireActionForm.getNeverExpire())
                     .workflowFilterKey(fireActionForm.getFilterKey())
                     .workflowWhereToSend(fireActionForm.getWhereToSend())
-                    .workflowIWantTo(fireActionForm.getIWantTo());
+                    .workflowIWantTo(fireActionForm.getIWantTo())
+                    .workflowPathToMove(fireActionForm.getPathToMove());
         }
 
         if (contentlet.getMap().containsKey(Contentlet.RELATIONSHIP_KEY)) {
@@ -1555,6 +1597,445 @@ public class WorkflowResource {
             return ResponseUtil.mapExceptionResponse(e);
         }
     } // fireAction.
+
+    /**
+     * Fires a workflow with default action to perform over a collection of contentlets (Post)
+     *
+     *
+     * The result of the execution is a streaming of the json, it will return a set of maps
+     *
+     * @param request    {@link HttpServletRequest}
+     * @param response   {@link HttpServletResponse}
+     * @param fireActionForm {@link FireActionForm} Fire Action Form
+     * @param systemAction {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction} system action to determine the default action
+     * @return Response
+     */
+    @POST()
+    @Path("/actions/default/fire/{systemAction}")
+    @JSONP
+    @NoCache
+    //@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces("application/octet-stream")
+    public final Response fireMultipleActionDefault(@Context final HttpServletRequest request,
+                                                    @Context final HttpServletResponse response,
+                                                    @PathParam("systemAction") final WorkflowAPI.SystemAction systemAction,
+                                                    final FireMultipleActionForm fireActionForm) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initDataObject = new WebResource.InitBuilder()
+                .requestAndResponse(request, response).requiredAnonAccess(AnonymousAccess.WRITE).init();
+
+        Logger.debug(this, ()-> "On Fire Multiple Actions: systemAction = " + systemAction);
+
+        final PageMode mode   = PageMode.get(request);
+
+        return Response.ok(new MultipleContentletStreamingOutput(systemAction,
+                fireActionForm, request, mode, initDataObject))
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON).build();
+    } // fireMultipleActionDefault.
+
+    private class MultipleContentletStreamingOutput implements StreamingOutput {
+
+        private final List<Map<String, Object>> contentletsToSaveList;
+        private final WorkflowAPI.SystemAction systemAction;
+        private final FireMultipleActionForm fireActionForm;
+        private final HttpServletRequest request;
+        private final PageMode mode;
+        private final InitDataObject initDataObject;
+
+        private MultipleContentletStreamingOutput(final WorkflowAPI.SystemAction systemAction,
+                                                  final FireMultipleActionForm fireActionForm,
+                                                  final HttpServletRequest request,
+                                                  final PageMode mode,
+                                                  final InitDataObject initDataObject) {
+
+            this.contentletsToSaveList = fireActionForm.getContentletsFormData();
+            this.systemAction           = systemAction;
+            this.fireActionForm = fireActionForm;
+            this.request = request;
+            this.mode = mode;
+            this.initDataObject = initDataObject;
+        }
+
+        @Override
+        public void write(final OutputStream output) throws IOException, WebApplicationException {
+
+            final ObjectMapper objectMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+            WorkflowResource.this.saveMultipleContentletsByDefaultAction(this.contentletsToSaveList, this.systemAction, this.fireActionForm,
+                    this.request, this.mode, this.initDataObject, output, objectMapper);
+        }
+    }
+
+    /**
+     * This method fires the workflow for multiple contentlets
+     * @param contentletsToSaveList
+     * @param systemAction
+     * @param fireActionForm
+     * @param request
+     * @param mode
+     * @param initDataObject
+     * @param outputStream
+     * @param objectMapper
+     */
+    private void saveMultipleContentletsByDefaultAction(final List<Map<String, Object>> contentletsToSaveList,
+                                                 final WorkflowAPI.SystemAction systemAction,
+                                                 final FireMultipleActionForm fireActionForm,
+                                                 final HttpServletRequest request,
+                                                 final PageMode mode,
+                                                 final InitDataObject initDataObject,
+                                                 final OutputStream outputStream,
+                                                 final ObjectMapper objectMapper) {
+
+        final DotSubmitter dotSubmitter = DotConcurrentFactory.getInstance().getSubmitter(WORKFLOW_SUBMITTER,
+                new DotConcurrentFactory.SubmitterConfigBuilder().poolSize(2).maxPoolSize(5).queueCapacity(CONTENTLETS_LIMIT).build());
+        final CompletionService<Map<String, Object>> completionService = new ExecutorCompletionService<>(dotSubmitter);
+        final List<Future<Map<String, Object>>> futures = new ArrayList<>();
+        final HttpServletRequest statelessRequest = this.createStatelessRequest(request);
+
+        for (final Map<String, Object> contentMap : contentletsToSaveList) {
+
+            // this triggers the save
+            final Future<Map<String, Object>> future = completionService.submit(() -> {
+
+                HttpServletRequestThreadLocal.INSTANCE.setRequest(statelessRequest);
+                final Map<String, Object> resultMap = new HashMap<>();
+                final String inode      = (String) contentMap.get("inode");
+                final String identifier = (String) contentMap.get("identifier");
+                final long languageId   = ConversionUtils.toLong(contentMap.get("languageId"), -1l);
+                final User user         = initDataObject.getUser();
+                final FireActionForm singleFireActionForm = new FireActionForm.Builder()
+                    .contentlet(contentMap).assign(fireActionForm.getAssign())
+                    .comments(fireActionForm.getComments()).expireDate(fireActionForm.getExpireDate())
+                    .neverExpire(fireActionForm.getNeverExpire()).filterKey(fireActionForm.getFilterKey())
+                    .iWantTo(fireActionForm.getIWantTo()).publishDate(fireActionForm.getPublishDate())
+                    .publishTime(fireActionForm.getPublishTime()).whereToSend(fireActionForm.getWhereToSend()).build();
+                final IndexPolicy indexPolicy = MapToContentletPopulator.recoverIndexPolicy(
+                        singleFireActionForm.getContentletFormData(),
+                        IndexPolicyProvider.getInstance().forSingleContent(), request);
+
+
+                try {
+
+                    fireTransactionalAction(systemAction, singleFireActionForm, request, mode,
+                            initDataObject, resultMap, inode, identifier, languageId, user, indexPolicy);
+                } catch (Exception e) {
+
+                    final String id = UtilMethods.isSet(identifier) ? identifier :
+                            (UtilMethods.isSet(inode) ? inode:
+                                    null != singleFireActionForm && null != singleFireActionForm.getContentletFormData() ?
+                                            singleFireActionForm.getContentletFormData().toString() :
+                                            "unknown contentlet" + System.currentTimeMillis());
+                    Logger.error(this, "Error in contentlet: " + id + ", msg: " + e.getMessage()
+                            + ", running the action: " + systemAction, e);
+                    resultMap.put(id, UtilMethods.isSet(identifier)?
+                            ActionFail.newInstanceById(user, identifier, e):ActionFail.newInstance(user, inode, e));
+                }
+
+                return resultMap;
+            });
+
+            futures.add(future);
+        }
+
+        printResponseEntityViewResult(outputStream, objectMapper, completionService, futures);
+    }
+
+    private HttpServletRequest createStatelessRequest(final HttpServletRequest request) {
+
+        final DotCMSMockRequest statelessRequest =
+                new DotCMSMockRequestWithSession(request.getSession(false), request.isSecure());
+
+        statelessRequest.setAttribute(WebKeys.USER, request.getAttribute(WebKeys.USER));
+        statelessRequest.setAttribute(WebKeys.USER_ID, request.getAttribute(WebKeys.USER_ID));
+        statelessRequest.addHeader("User-Agent", request.getHeader("User-Agent"));
+        statelessRequest.addHeader("Host", request.getHeader("Host"));
+        statelessRequest.addHeader("Accept-Language", request.getHeader("Accept-Language"));
+        statelessRequest.addHeader("Accept-Encoding", request.getHeader("Accept-Encoding"));
+        statelessRequest.addHeader("X-Forwarded-For", request.getHeader("X-Forwarded-For"));
+        statelessRequest.addHeader("Origin", request.getHeader("Origin"));
+        statelessRequest.addHeader("referer", request.getHeader("referer"));
+        statelessRequest.setRemoteAddr(request.getRemoteAddr());
+        statelessRequest.setRemoteHost(request.getRemoteHost());
+
+        return statelessRequest;
+    }
+
+    ////////////////////////////
+
+    /**
+     * Fires a workflow with default action to perform a merge (Patch) between the fields sent in the body form and
+     * the existing contentlets.
+     *
+     * Users may merge just one contentlet by using:
+     * - identifier + lang (optional)
+     * - inode
+     * - a query
+     *
+     * The result of the execution is a streaming of the json, it will return a set of maps
+     *
+     * @param request    {@link HttpServletRequest}
+     * @param inode      {@link String} (Optional) to fire an action over the existing inode.
+     * @param identifier {@link String} (Optional) to fire an action over the existing identifier (in combination of language).
+     * @param language   {@link String} (Optional) to fire an action over the existing language (in combination of identifier).
+     * @param fireActionForm {@link FireActionForm} Fire Action Form
+     * (if an inode is set, this param is not ignored).
+     * @param systemAction {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction} system action to determine the default action
+     * @return Response
+     */
+    @PATCH()
+    @Path("/actions/default/fire/{systemAction}")
+    @JSONP
+    @NoCache
+    //@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces("application/octet-stream")
+    public final Response fireMergeActionDefault(@Context final HttpServletRequest request,
+                                            @Context final HttpServletResponse response,
+                                            @QueryParam("inode")            final String inode,
+                                            @QueryParam("identifier")       final String identifier,
+                                            @DefaultValue("-1") @QueryParam("language") final String language,
+                                            @QueryParam("offset") final int offset,
+                                            @PathParam("systemAction") final WorkflowAPI.SystemAction systemAction,
+                                            final FireActionForm fireActionForm) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initDataObject = new WebResource.InitBuilder()
+                .requestAndResponse(request, response).requiredAnonAccess(AnonymousAccess.WRITE).init();
+
+        final String query = null != fireActionForm? fireActionForm.getQuery():StringPool.BLANK;
+        Logger.debug(this, ()-> "On Fire Merge Action: systemAction = " + systemAction + ", inode = " + inode +
+                ", identifier = " + identifier + ", language = " + language + ", query: " + query);
+
+        final PageMode mode   = PageMode.get(request);
+        final long languageId = LanguageUtil.getLanguageId(language);
+        final List<SingleContentQuery> contentletsToMergeList = new ArrayList<>();
+        if (UtilMethods.isNotSet(query)) { // it is single update
+
+            contentletsToMergeList.add(new SingleContentQuery(identifier, inode, languageId,
+                    MapToContentletPopulator.recoverIndexPolicy(fireActionForm.getContentletFormData(),
+                            IndexPolicyProvider.getInstance().forSingleContent(), request)));
+        } else {
+
+            final List<ContentletSearch> contentletSearches  = this.contentletAPI.searchIndex(query, Config.getIntProperty("", CONTENTLETS_LIMIT),
+                    offset, null,
+                    initDataObject.getUser(), mode.respectAnonPerms);
+
+            final IndexPolicy indexPolicy = MapToContentletPopulator.recoverIndexPolicy(fireActionForm.getContentletFormData(),
+                    contentletSearches.size()> 10? IndexPolicy.DEFER: IndexPolicy.WAIT_FOR, request);
+
+            for (final ContentletSearch contentletSearch : contentletSearches) {
+
+                contentletsToMergeList.add(new SingleContentQuery(contentletSearch.getIdentifier(),
+                        contentletSearch.getInode(), languageId, indexPolicy));
+            }
+        }
+
+        return Response.ok(new MergeContentletStreamingOutput(contentletsToMergeList, systemAction,
+                fireActionForm, request, mode, initDataObject))
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON).build();
+    } // fireMergeActionDefault.
+
+
+    private class MergeContentletStreamingOutput implements StreamingOutput {
+
+        private final List<SingleContentQuery> contentletsToMergeList;
+        private final WorkflowAPI.SystemAction systemAction;
+        private final FireActionForm fireActionForm;
+        private final HttpServletRequest request;
+        private final PageMode mode;
+        private final InitDataObject initDataObject;
+
+        private MergeContentletStreamingOutput(final List<SingleContentQuery> contentletsToMergeList,
+                                               final WorkflowAPI.SystemAction systemAction,
+                                               final FireActionForm fireActionForm,
+                                               final HttpServletRequest request,
+                                               final PageMode mode,
+                                               final InitDataObject initDataObject) {
+
+            this.contentletsToMergeList = contentletsToMergeList;
+            this.systemAction           = systemAction;
+            this.fireActionForm = fireActionForm;
+            this.request = request;
+            this.mode = mode;
+            this.initDataObject = initDataObject;
+        }
+
+        @Override
+        public void write(final OutputStream output) throws IOException, WebApplicationException {
+
+            final ObjectMapper objectMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+            WorkflowResource.this.mergeContentletsByDefaultAction(this.contentletsToMergeList, this.systemAction, this.fireActionForm,
+                    this.request, this.mode, this.initDataObject, output, objectMapper);
+        }
+    }
+
+    private void mergeContentletsByDefaultAction(final List<SingleContentQuery> contentletsToMergeList,
+                                                     final WorkflowAPI.SystemAction systemAction,
+                                                     final FireActionForm fireActionForm,
+                                                     final HttpServletRequest request,
+                                                     final PageMode mode,
+                                                     final InitDataObject initDataObject,
+                                                     final OutputStream outputStream,
+                                                     final ObjectMapper objectMapper) {
+
+        final DotSubmitter dotSubmitter = DotConcurrentFactory.getInstance().getSubmitter("workflow_submitter",
+                new DotConcurrentFactory.SubmitterConfigBuilder().poolSize(2).maxPoolSize(5).queueCapacity(CONTENTLETS_LIMIT).build());
+        final CompletionService<Map<String, Object>> completionService = new ExecutorCompletionService<>(dotSubmitter);
+        final List<Future<Map<String, Object>>> futures = new ArrayList<>();
+
+        for (final SingleContentQuery singleContentQuery : contentletsToMergeList) {
+
+            // this triggers the merges
+            final Future<Map<String, Object>> future = completionService.submit(() -> {
+
+                final Map<String, Object> resultMap = new HashMap<>();
+                final String inode      = singleContentQuery.getInode();
+                final String identifier = singleContentQuery.getIdentifier();
+                final long languageId   = singleContentQuery.getLanguage();
+                final User user         = initDataObject.getUser();
+                final IndexPolicy indexPolicy = singleContentQuery.getIndexPolicy();
+
+                try {
+
+                    fireTransactionalAction(systemAction, fireActionForm, request, mode,
+                            initDataObject, resultMap, inode, identifier, languageId, user, indexPolicy);
+                } catch (Exception e) {
+
+                    final String id = UtilMethods.isSet(identifier)?identifier:inode;
+                    Logger.error(this, "Error in contentlet: " + id + ", msg: " + e.getMessage(), e);
+                    resultMap.put(id, UtilMethods.isSet(identifier)?
+                            ActionFail.newInstanceById(user, identifier, e):ActionFail.newInstance(user, inode, e));
+                }
+
+                return resultMap;
+            });
+
+            futures.add(future);
+        }
+
+        printResponseEntityViewResult(outputStream, objectMapper, completionService, futures);
+    }
+
+    @WrapInTransaction
+    private void fireTransactionalAction(final SystemAction systemAction,
+                                         final FireActionForm fireActionForm,
+                                         final HttpServletRequest request,
+                                         final PageMode mode, InitDataObject initDataObject,
+                                         final Map<String, Object> resultMap,
+                                         final String inode, String identifier,
+                                         final long languageId,
+                                         final User user,
+                                         final IndexPolicy indexPolicy) throws DotDataException, DotSecurityException {
+
+        final Contentlet contentlet = this.getContentlet // this do the merge
+                (inode, identifier, languageId,
+                        () -> WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
+                        fireActionForm, initDataObject, mode);
+
+        contentlet.setIndexPolicy(indexPolicy);
+        this.checkContentletState(contentlet, systemAction);
+
+        String contentletId = null != identifier? identifier: contentlet.getIdentifier();
+
+        final Optional<WorkflowAction> workflowActionOpt = this.workflowAPI.findActionMappedBySystemActionContentlet
+                (contentlet, systemAction, user);
+
+        final Response restResponse = this.mergeContentlet(systemAction, fireActionForm, request, user, contentlet, workflowActionOpt);
+        final  Map<String, Object> contentletMap = (Map<String, Object>)ResponseEntityView.class.cast(restResponse.getEntity()).getEntity();
+        contentletId = !UtilMethods.isSet(contentletId)? (String)contentletMap.get("identifier"):contentletId;
+        resultMap.put(contentletId, contentletMap);
+    }
+
+    private void printResponseEntityViewResult(final OutputStream outputStream,
+                                               final ObjectMapper objectMapper,
+                                               final CompletionService<Map<String, Object>> completionService,
+                                               final List<Future<Map<String, Object>>> futures) {
+
+        try {
+
+            ResponseUtil.beginWrapResponseEntityView(outputStream, true);
+            ResponseUtil.beginWrapProperty(outputStream, "results", false);
+            outputStream.write(StringPool.OPEN_BRACKET.getBytes(StandardCharsets.UTF_8));
+            final StopWatch stopWatch = new StopWatch();
+            stopWatch.start();
+            int successCount = 0;
+            int failCount    = 0;
+            // now recover the N results
+            for (int i = 0; i < futures.size(); i++) {
+
+                try {
+
+                    Logger.info(this, "Recovering the result " + (i + 1) + " of " + futures.size());
+                    final Map<String, Object> resultMap = completionService.take().get();
+                    objectMapper.writeValue(outputStream, resultMap);
+
+                    if (isFail(resultMap)) {
+                        failCount++;
+                    } else {
+                        successCount++;
+                    }
+
+                    if (i < futures.size()-1) {
+                        outputStream.write(StringPool.COMMA.getBytes(StandardCharsets.UTF_8));
+                    }
+                } catch (InterruptedException | ExecutionException | IOException e) {
+
+                    Logger.error(this, e.getMessage(), e);
+                }
+            }
+            stopWatch.stop();
+
+            outputStream.write(StringPool.CLOSE_BRACKET.getBytes(StandardCharsets.UTF_8));
+            outputStream.write(StringPool.COMMA.getBytes(StandardCharsets.UTF_8));
+
+            ResponseUtil.wrapProperty(outputStream, "summary",
+                    objectMapper.writeValueAsString(CollectionsUtils.map("time", stopWatch.getTime(),
+                            "affected", futures.size(),
+                            "successCount", successCount,
+                            "failCount", failCount)));
+            outputStream.write(StringPool.COMMA.getBytes(StandardCharsets.UTF_8));
+
+            ResponseUtil.endWrapResponseEntityView(outputStream, true);
+        } catch (IOException e) {
+
+            Logger.error(this, e.getMessage(), e);
+        }
+    }
+
+    private boolean isFail(final Map<String, Object> resultMap) {
+
+        final String id = resultMap.keySet().stream().findFirst().get();
+        return resultMap.get(id) instanceof ActionFail;
+    }
+
+    private Response mergeContentlet(SystemAction systemAction, FireActionForm fireActionForm, HttpServletRequest request, User user,
+                                                Contentlet contentlet, Optional<WorkflowAction> workflowActionOpt) throws DotDataException, DotSecurityException {
+        if (workflowActionOpt.isPresent()) {
+
+            final WorkflowAction workflowAction = workflowActionOpt.get();
+            final String actionId = workflowAction.getId();
+
+            Logger.info(this, "Using the default action: " + workflowAction +
+                    ", for the system action: " + systemAction);
+
+            final Optional<SystemActionApiFireCommand> fireCommandOpt =
+                    this.systemActionApiFireCommandProvider.get(workflowAction,
+                            this.needSave(fireActionForm), systemAction);
+
+            return this.fireAction(request, fireActionForm, user, contentlet, actionId, fireCommandOpt);
+        } else {
+
+            final Optional<SystemActionApiFireCommand> fireCommandOpt =
+                    this.systemActionApiFireCommandProvider.get(systemAction);
+
+            if (fireCommandOpt.isPresent()) {
+
+                return this.fireAction(request, fireActionForm, user, contentlet, null, fireCommandOpt);
+            }
+
+            final ContentType contentType = contentlet.getContentType();
+            throw new DoesNotExistException("For the contentType: " + (null != contentType ? contentType.variable() : "unknown") +
+                    " systemAction = " + systemAction);
+        }
+    }
+
 
     /**
      * Check preconditions.
@@ -1946,6 +2427,11 @@ public class WorkflowResource {
             fireActionFormBuilder.filterKey((String)contentMap.get(Contentlet.I_WANT_TO));
             contentMap.remove(Contentlet.I_WANT_TO);
         }
+
+        if (contentMap.containsKey(Contentlet.PATH_TO_MOVE)) {
+            fireActionFormBuilder.pathToMove((String)contentMap.get(Contentlet.PATH_TO_MOVE));
+            contentMap.remove(Contentlet.PATH_TO_MOVE);
+        }
     }
 
     private Contentlet getContentlet(final String inode,
@@ -2079,6 +2565,9 @@ public class WorkflowResource {
         contentlet.setStringProperty(Contentlet.WHERE_TO_SEND,   fireActionForm.getWhereToSend());
         contentlet.setStringProperty(Contentlet.FILTER_KEY, fireActionForm.getFilterKey());
         contentlet.setStringProperty(Contentlet.I_WANT_TO, fireActionForm.getFilterKey());
+        if (UtilMethods.isSet(fireActionForm.getPathToMove())) {
+            contentlet.setStringProperty(Contentlet.PATH_TO_MOVE, fireActionForm.getPathToMove());
+        }
 
         for(Field constant : contentlet.getContentType().fields()) {
           if(constant instanceof ConstantField)

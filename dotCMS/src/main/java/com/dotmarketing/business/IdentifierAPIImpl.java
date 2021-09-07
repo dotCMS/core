@@ -1,8 +1,5 @@
 package com.dotmarketing.business;
 
-import com.dotmarketing.exception.DotSecurityException;
-import java.util.List;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
@@ -10,6 +7,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -17,6 +15,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import java.util.List;
 
 public class IdentifierAPIImpl implements IdentifierAPI {
 
@@ -39,42 +38,41 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 	@CloseDBIfOpened
 	public Identifier findFromInode(final String inodeOrIdentifier) throws DotDataException {
 
-		Identifier ident = identifierFactory.loadFromCache(inodeOrIdentifier);
+		Identifier identifier = identifierFactory.loadFromCache(inodeOrIdentifier);
 
-		if(ident == null || !InodeUtils.isSet(ident.getInode())){
-			ident = identifierFactory.loadFromCacheFromInode(inodeOrIdentifier);
+		if(identifier == null || !InodeUtils.isSet(identifier.getInode())){
+			identifier = identifierFactory.loadFromCacheFromInode(inodeOrIdentifier);
 		}
 		
-		if (ident == null || !InodeUtils.isSet(ident.getInode())) {
+		if (identifier == null || !InodeUtils.isSet(identifier.getInode())) {
 			try {
 				Contentlet con = contentletAPI.find(inodeOrIdentifier, APILocator.getUserAPI().getSystemUser(), false);
 				if (con != null && InodeUtils.isSet(con.getInode())) {
-					ident = identifierFactory.find(con.getIdentifier());
-					return ident;
+					identifier = identifierFactory.find(con.getIdentifier());
+					return identifier;
 				}
 			} catch (Exception e) {
 				Logger.debug(this, "Unable to find inodeOrIdentifier as content : ", e);
 			}
 		} else {
-			return ident;
+			return identifier;
 		}
 
 		try {
-			ident = identifierFactory.find(inodeOrIdentifier);
+			identifier = identifierFactory.find(inodeOrIdentifier);
 		} catch (DotHibernateException e) {
 			Logger.debug(this, "Unable to find inodeOrIdentifier as identifier : ", e);
 		}
 
-		
-		if (ident == null || !InodeUtils.isSet(ident.getInode())) {
-			 ident = identifierFactory.find(InodeFactory.getInode(inodeOrIdentifier, Inode.class));
+		if (identifier == null || !InodeUtils.isSet(identifier.getInode())) {
+			 identifier = identifierFactory.find(InodeFactory.getInode(inodeOrIdentifier, Inode.class));
 		}
 		
-		if (ident != null && InodeUtils.isSet(ident.getId()) ) {
-			CacheLocator.getIdentifierCache().addIdentifierToCache(ident.getId(), inodeOrIdentifier);
+		if (identifier != null && InodeUtils.isSet(identifier.getId()) ) {
+			CacheLocator.getIdentifierCache().addIdentifierToCache(identifier.getId(), inodeOrIdentifier);
 		}
 		
-		return ident;
+		return identifier;
 		
 	}
 
@@ -124,8 +122,7 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 
 	@WrapInTransaction
 	public Identifier save(final Identifier id) throws DotDataException, DotStateException {
-		final Identifier ident = identifierFactory.saveIdentifier(id);
-		return ident;
+		return identifierFactory.saveIdentifier(id);
 	}
 
 	@WrapInTransaction
@@ -141,24 +138,41 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 	    return createNew(asset,parent,null);
 	}
 
+
 	@WrapInTransaction
 	public Identifier createNew(final Versionable asset, final Treeable parent,
-								final String existingId) throws DotDataException {
+			final String existingId) throws DotDataException {
 
-		if(parent instanceof Folder){
-		    if(UtilMethods.isSet(existingId))
-		        return identifierFactory.createNewIdentifier(asset, (Folder) parent, existingId);
-		    else
-		        return identifierFactory.createNewIdentifier(asset, (Folder) parent);
-		}else if(parent instanceof Host){
-		    if(UtilMethods.isSet(existingId))
-		        return identifierFactory.createNewIdentifier(asset, (Host) parent, existingId);
-		    else
-		        return identifierFactory.createNewIdentifier(asset, (Host) parent);
+		Logger.info(IdentifierAPIImpl.class, String.format(
+				"Creating new identifier for versionable asset of type `%s` and title `%s` ",
+				asset.getVersionType(), asset.getTitle()));
+
+		if (UtilMethods.isNotSet(existingId)) {
+
+			final String validId =
+					APILocator.getDeterministicIdentifierAPI().generateDeterministicIdBestEffort(asset, parent);
+
+			if (parent instanceof Folder) {
+				return identifierFactory.createNewIdentifier(asset, (Folder) parent, validId);
+			}
+
+			if (parent instanceof Host) {
+				return identifierFactory.createNewIdentifier(asset, (Host) parent, validId);
+			}
+
+		} else {
+
+			if (parent instanceof Folder) {
+				return identifierFactory.createNewIdentifier(asset, (Folder) parent, existingId);
+			}
+
+			if (parent instanceof Host) {
+				return identifierFactory.createNewIdentifier(asset, (Host) parent, existingId);
+			}
 		}
-		else{
-			throw new DotStateException("You can only create an identifier on a host of folder.  Trying: " + parent);
-		}
+		throw new DotStateException(
+				"You can only create an identifier on a host of folder.  Trying: " + parent);
+
 	}
 
 	@WrapInTransaction

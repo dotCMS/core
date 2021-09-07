@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "cd87df22-9b12-4ee0-b05f-290155476363",
+		"_postman_id": "60795f2c-fa49-4254-b81c-effa0f130a0c",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -2210,7 +2210,7 @@
 									"",
 									"",
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"postmanXXY\");",
+									"    pm.expect(pm.response.text()).to.include(\"postman\");",
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
@@ -2258,7 +2258,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{ \"contentlet\" : {\n  \"stInode\" : \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"languageId\" : 1,\n  \"key\": \"postmanXXY{{$timestamp}}\",\n  \"value\": \"postmanXXY{{$timestamp}}\"\n}\n}"
+							"raw": "{ \"contentlet\" : {\n  \"stInode\" : \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"languageId\" : 1,\n  \"key\": \"postmanXXY\",\n  \"value\": \"postmanXXY\"\n}\n}"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d88-4311-8365-187323c96436/fire",
@@ -5949,6 +5949,152 @@
 							]
 						},
 						"description": "Validate you can import schemes as limited user if you have permissions to the workflow portlet "
+					},
+					"response": []
+				},
+				{
+					"name": "ImportWithNotifyAssignActionlet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Body matches string\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"OK\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"workflowObject\": {\n        \"actionClassParams\": [\n            {\n                \"actionClassId\": \"deb0865a-8367-499a-9c80-f70f6cb4a201\",\n                \"id\": \"2163cb23-8b9a-406a-b2fa-7beecd5c63b0\",\n                \"key\": \"emailSubject\",\n                \"value\": \"subject\"\n            },\n            {\n                \"actionClassId\": \"deb0865a-8367-499a-9c80-f70f6cb4a201\",\n                \"id\": \"f98771e9-ca5c-438a-a23b-85594b92af45\",\n                \"key\": \"emailBody\",\n                \"value\": \"msg\"\n            },\n            {\n                \"actionClassId\": \"deb0865a-8367-499a-9c80-f70f6cb4a201\",\n                \"id\": \"d831815e-f9c4-4338-956f-2e8b9e0e371b\",\n                \"key\": \"isHtml\",\n                \"value\": \"true\"\n            }\n        ],\n        \"actionClasses\": [\n            {\n                \"actionId\": \"9148bd02-9d49-4765-8570-17f9a28d64bc\",\n                \"actionlet\": {\n                    \"actionClass\": \"com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet\",\n                    \"howTo\": \"This actionlet will send an email to the assignee (or assignees if the next assign is a role).  It uses a default email subject and message, but can be overridden.  Both the subject and message are parsed Velocity, and have access to a $workflow object that gives them $workflow.task, $workflow.nextAssign, $workflow.action, $workflow.step, etc.. \",\n                    \"localizedHowto\": \"com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet.howTo\",\n                    \"localizedName\": \"Notify Assignee\",\n                    \"name\": \"Notify Assignee\",\n                    \"nextStep\": null,\n                    \"parameters\": [\n                        {\n                            \"defaultValue\": \"\",\n                            \"displayName\": \"Email Subject\",\n                            \"key\": \"emailSubject\",\n                            \"required\": false\n                        },\n                        {\n                            \"defaultValue\": null,\n                            \"displayName\": \"Email Message\",\n                            \"key\": \"emailBody\",\n                            \"required\": false\n                        },\n                        {\n                            \"defaultValue\": \"true\",\n                            \"displayName\": \"Is Html?\",\n                            \"key\": \"isHtml\",\n                            \"required\": false\n                        }\n                    ]\n                },\n                \"clazz\": \"com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet\",\n                \"id\": \"deb0865a-8367-499a-9c80-f70f6cb4a201\",\n                \"name\": \"Notify Assignee\",\n                \"order\": 0\n            }\n        ],\n        \"actionSteps\": [\n            {\n                \"actionId\": \"9148bd02-9d49-4765-8570-17f9a28d64bc\",\n                \"actionOrder\": \"0\",\n                \"stepId\": \"2ad8291f-eee4-4ce7-ab99-1b2186ef4dec\"\n            }\n        ],\n        \"actions\": [\n            {\n                \"assignable\": false,\n                \"commentable\": false,\n                \"condition\": \"\",\n                \"icon\": \"workflowIcon\",\n                \"id\": \"9148bd02-9d49-4765-8570-17f9a28d64bc\",\n                \"name\": \"test\",\n                \"nextAssign\": \"654b0931-1027-41f7-ad4d-173115ed8ec1\",\n                \"nextStep\": \"currentstep\",\n                \"nextStepCurrentStep\": true,\n                \"order\": 0,\n                \"owner\": null,\n                \"roleHierarchyForAssign\": false,\n                \"schemeId\": \"8760ea91-9912-456c-b719-7c63e81fa981\",\n                \"showOn\": []\n            }\n        ],\n        \"schemeSystemActionWorkflowActionMappings\": [],\n        \"schemes\": [\n            {\n                \"archived\": false,\n                \"creationDate\": 1623256714100,\n                \"defaultScheme\": false,\n                \"description\": \"\",\n                \"entryActionId\": null,\n                \"id\": \"8760ea91-9912-456c-b719-7c63e81fa981\",\n                \"mandatory\": false,\n                \"modDate\": 1623203259556,\n                \"name\": \"Test\",\n                \"system\": false\n            }\n        ],\n        \"steps\": [\n            {\n                \"creationDate\": 1623256717104,\n                \"enableEscalation\": false,\n                \"escalationAction\": null,\n                \"escalationTime\": 0,\n                \"id\": \"2ad8291f-eee4-4ce7-ab99-1b2186ef4dec\",\n                \"myOrder\": 0,\n                \"name\": \"step1\",\n                \"resolved\": false,\n                \"schemeId\": \"8760ea91-9912-456c-b719-7c63e81fa981\"\n            }\n        ],\n        \"version\": \"1.0\"\n    },\n    \"permissions\": []\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/schemes/import",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"schemes",
+								"import"
+							]
+						},
+						"description": "Validate you can import schemes as admin\n"
+					},
+					"response": []
+				},
+				{
+					"name": "CopySchemewithNotifyAssignActionlet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n       \"name\": \"Copy Workflow\"\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/schemes/8760ea91-9912-456c-b719-7c63e81fa981/copy",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"schemes",
+								"8760ea91-9912-456c-b719-7c63e81fa981",
+								"copy"
+							]
+						},
+						"description": "Validate you can import schemes as admin\n"
 					},
 					"response": []
 				}
@@ -12109,321 +12255,83 @@
 			]
 		},
 		{
-			"name": "SaveActionletToAction",
+			"name": "mergeAction",
 			"item": [
 				{
-					"name": "invalidateSession",
+					"name": "AddMergeContentlet",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});"
+									"console.log(\"Running test\")",
+									"",
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.baseType).to.eql(\"CONTENT\");",
+									"    pm.expect(jsonData.entity.contentType).to.eql(\"webPageContent\");",
+									"});",
+									"",
+									"var requestcounter = pm.environment.get(\"requestcounter\");",
+									"console.log(\"requestcounter #: \" + requestcounter)",
+									"",
+									"if(!requestcounter || requestcounter > 10) {",
+									"",
+									"    pm.environment.set(\"requestcounter\", 1);",
+									"} else {",
+									"",
+									"    pm.environment.set(\"requestcounter\", requestcounter+1);",
+									"}",
+									"",
+									"if (requestcounter <= 10) {",
+									"    ",
+									"    console.log(\"Calling AddMergeContentlet again #: \" + requestcounter)",
+									"    postman.setNextRequest(\"AddMergeContentlet\");",
+									"}",
+									"",
+									"",
+									""
 								],
 								"type": "text/javascript"
 							}
 						}
 					],
 					"request": {
-						"method": "GET",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
 						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/logout",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"logout"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "pre_saveSchema",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200 \", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.test(\"Response includes name\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"\\\"name\\\":\\\"REST Schema\\\"\");",
-									"});",
-									"",
-									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"saveActionletSchemeId\", jsonData.entity.id);",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\"schemeName\": \"REST Schema\", \"schemeDescription\": \"rest1\", \"schemeArchived\": \"false\"}"
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/schemes",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"schemes"
-							]
-						},
-						"description": "Creates a new scheme \n\n@Path(\"/schemes\")"
-					},
-					"response": []
-				},
-				{
-					"name": "pre_saveStep",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200 \", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"\\\"name\\\":\\\"My REST step\\\"\");",
-									"});",
-									"",
-									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"saveActionletStepId\", jsonData.entity.id);"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
+							"raw": "{\n\t\"comments\":\"Adding New Generic content\",\n\t\"contentlet\": {\n\t\t\"contentType\":\"webPageContent\",\n        \"title\":\"Test Merge Content\",\n        \"body\":\"Test Merge Body\",\n\t\t\"contentHost\":\"default\"\n\t}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
 								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
 							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": " { \"schemeId\" : \"{{saveActionletSchemeId}}\", \"stepName\":\"My REST step\", \"enableEscalation\":false, \"escalationAction\":\"\", \"escalationTime\":\"0\",\"stepResolved\":false} "
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/steps",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"steps"
-							]
-						},
-						"description": "Add a new workflow step \n\n@Path(\"/steps\")"
-					},
-					"response": []
-				},
-				{
-					"name": "pre_saveAction",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200 \", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"\\\"name\\\":\\\"saveContent FROM REST NEW\\\"\");",
-									"});",
-									"",
-									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"saveActionletActionId\", jsonData.entity.id);"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n   \"stepId\": \"{{saveActionletStepId}}\",\n      \"actionName\": \"saveContent FROM REST NEW\",\n      \"schemeId\": \"{{saveActionletSchemeId}}\",\n      \"actionCondition\": \"\",\n      \"actionNextStep\": \"currentstep\",\n      \"actionNextAssign\": \"654b0931-1027-41f7-ad4d-173115ed8ec1\",\n      \"actionRoleHierarchyForAssign\": false,\n      \"actionAssignable\": false,\n      \"actionCommentable\": true,\n      \"whoCanUse\":[],\n      \"showOn\": [\n        \"UNPUBLISHED\",\n        \"NEW\",\n        \"LOCKED\",\n        \"PUBLISHED\"\n      ]\n}"
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"actions"
-							]
-						},
-						"description": "Saves an action, by default the action is associated to the schema, however if the stepId is set will be automatically associated to the step too.\n\n@Path(\"/actions\")"
-					},
-					"response": []
-				},
-				{
-					"name": "SaveActionletToAction_Success",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200 \", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n   \"actionletClass\": \"com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet\"\n}"
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/{{saveActionletActionId}}/actionlets",
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/NEW",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -12432,13 +12340,1376 @@
 								"v1",
 								"workflow",
 								"actions",
-								"{{saveActionletActionId}}",
-								"actionlets"
+								"default",
+								"fire",
+								"NEW"
 							]
-						},
-						"description": "Saves an action, by default the action is associated to the schema, however if the stepId is set will be automatically associated to the step too.\n\n@Path(\"/actions\")"
+						}
 					},
 					"response": []
+				},
+				{
+					"name": "PublishMerge",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log(\"Running test\")",
+									"",
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.summary.affected).to.above(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"comments\":\"Publish an existing Generic content\",\n    \"query\":\"+contentType:webPageContent AND title:\\\"Test Merge Content\\\"\",\n\t\"contentlet\": {\n        \"title\":\"Test Merge Content Published\"\n\t}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CreateNewGenericContentlet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log(\"Running test\")",
+									"",
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"contentlet\": {\n        \"contentType\":\"webPageContent\",\n        \"title\":\"Test title\",\n        \"body\":\"Test body\",\n        \"contentHost\":\"default\"\n\t}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/NEW",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"NEW"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "PublishMergeIndividual",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log(\"Running test\")",
+									"",
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.summary.affected).to.eql(1);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"comments\":\"Publish an existing Generic content\",\n\t\"contentlet\": {\n        \"title\":\"Test Merge Content Published\"\n\t}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?inode={{genericContentletInode}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "inode",
+									"value": "{{genericContentletInode}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "PublishMergeNotExists",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log(\"Running test\")",
+									"",
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.summary.affected).to.eql(1);",
+									"});",
+									"",
+									"pm.test(\"Content Not Found\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.results[0].xxxx.errorMessage).to.eql(\"Content not found\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"comments\":\"Publish an existing Generic content\",\n\t\"contentlet\": {\n        \"title\":\"Test Merge Content Published\"\n\t}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?inode=xxxx",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "inode",
+									"value": "xxxx"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "basic",
+				"basic": [
+					{
+						"key": "password",
+						"value": "admin",
+						"type": "string"
+					},
+					{
+						"key": "username",
+						"value": "admin@dotcms.com",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "saveMultiple",
+			"item": [
+				{
+					"name": "Save Multiple Generic Contentlets",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log(\"Running test\")",
+									"",
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.summary.affected).to.eql(20);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\n    \"contentlets\":[\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content1\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content1\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content2\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content2\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content3\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content3\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content4\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content4\"\n        },\n         {\n             \"contentType\":\"webPageContent\",\n            \"title\":\"Content5\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content5\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content6\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content6\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content7\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content7\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content8\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content8\"\n        },\n         {\n             \"contentType\":\"webPageContent\",\n            \"title\":\"Content9\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content9\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content10\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content10\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content11\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content11\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content12\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content12\"\n        },\n         {\n             \"contentType\":\"webPageContent\",\n            \"title\":\"Content13\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content13\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content14\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content14\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content15\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content15\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content16\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content16\"\n        },\n         {\n             \"contentType\":\"webPageContent\",\n            \"title\":\"Content17\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content17\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content18\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content18\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content19\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content19\"\n        },\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content20\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content20\"\n        }\n        \n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Save Multiple Generic Contentlets Some Without Content Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Errors\", function () {",
+									"    pm.expect(jsonData.entity.summary.failCount).to.eql(1);",
+									"});",
+									"",
+									"pm.test(\"Success\", function () {",
+									"    pm.expect(jsonData.entity.summary.successCount).to.eql(1);",
+									"});",
+									"",
+									"pm.test(\"Affected\", function () {",
+									"    pm.expect(jsonData.entity.summary.affected).to.eql(2);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\n    \"contentlets\":[\n        {\n            \"contentType\":\"webPageContent\",\n            \"title\":\"Content1 SUCCESS\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content1\"\n        },\n        {\n            \"title\":\"Content2 FAIL\",\n            \"contentHost\":\"default\",\n            \"body\":\"Body Content2\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						},
+						"description": "Creates several contentlets but some of them are sent without ContentType so it should fail"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Temporal File",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"File name check\", function () {",
+									"    pm.expect(jsonData.tempFiles[0].fileName).to.eql('250px-Bocas2.jpg');",
+									"});",
+									"pm.collectionVariables.set(\"temporalFileOneId\", jsonData.tempFiles[0].id);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Origin",
+								"value": "{{serverURL}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"fileName\":\"250px-Bocas2.jpg\",\n\t\"remoteUrl\": \"https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Bocas2.jpg/250px-Bocas2.jpg\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/temp/byUrl",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"temp",
+								"byUrl"
+							]
+						},
+						"description": "Creates a temporal file to be uploaded later"
+					},
+					"response": []
+				},
+				{
+					"name": "Save Multiple With Temp File",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Errors\", function () {",
+									"    pm.expect(jsonData.entity.summary.failCount).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Success\", function () {",
+									"    pm.expect(jsonData.entity.summary.successCount).to.eql(1);",
+									"});",
+									"",
+									"pm.test(\"Affected\", function () {",
+									"    pm.expect(jsonData.entity.summary.affected).to.eql(1);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\n    \"contentlets\":[\n        {\n            \"contentType\":\"DotAsset\",\n            \"asset\":\"{{temporalFileOneId}}\",\n            \"hostFolder\":\"default\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						},
+						"description": "Creates several contentlets with binary fields on them, to achieve this the file must be uploaded first using the temp resource."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Move",
+			"item": [
+				{
+					"name": "Content Already Exist At New Path",
+					"item": [
+						{
+							"name": "CreateMoveSystemWorkflow",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"console.log(\"Running test\")",
+											"",
+											"pm.test(\"No errors\", function () {",
+											"    ",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.errors.length).to.eql(0);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"pm.collectionVariables.set(\"actionId\", jsonData.entity.id);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"stepId\": \"dc3c9cd0-8467-404b-bf95-cb7df3fbc293\",\n    \"actionName\": \"Move Test\",\n    \"schemeId\": \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\",\n    \"actionCondition\": \"\",\n    \"actionNextStep\": \"currentstep\",\n    \"actionNextAssign\": \"654b0931-1027-41f7-ad4d-173115ed8ec1\",\n    \"actionRoleHierarchyForAssign\": false,\n    \"actionAssignable\": false,\n    \"actionCommentable\": true,\n    \"whoCanUse\": [],\n    \"showOn\": [\n        \"UNPUBLISHED\",\n        \"NEW\",\n        \"LOCKED\",\n        \"PUBLISHED\"\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add move actionlet",
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"actionletClass\":\"com.dotmarketing.portlets.workflows.actionlet.MoveContentActionlet\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/{{actionId}}/actionlets",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"{{actionId}}",
+										"actionlets"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create Page One",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test(\"Identifier must contains path\", function () {",
+											"    pm.expect(jsonData.entity.template).contains(\"//default/application/templates/system/\");",
+											"});",
+											"",
+											"pm.collectionVariables.set(\"pageOneToMoveIdentifier\", jsonData.entity.identifier);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"contentlet\":{\n\t\t\"stName\": \"htmlpageasset\",\n\t\t\"title\": \"PageAsset ContentAlreadyExists Move\",\n        \"url\": \"pageassetcontentalreadyexistsmove\",\n        \"friendlyName\":\"pageassetsystemtemplate\",\n        \"template\": \"//default/application/templates/system/\",\n        \"sortOrder\": \"0\",\n        \"cachettl\": \"100\",\n        \"hostFolder\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\"\n\t}\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Fire Move Over Page One",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200 \", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"",
+											"",
+											"",
+											"var jsonData = pm.response.json();",
+											"",
+											"",
+											"pm.collectionVariables.set(\"folderId\", jsonData.entity.folder);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"pathToMove\":\"//default/moveto\",\n    \"contentlet\":{}\n}"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/{{actionId}}/fire?identifier={{pageOneToMoveIdentifier}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"{{actionId}}",
+										"fire"
+									],
+									"query": [
+										{
+											"key": "identifier",
+											"value": "{{pageOneToMoveIdentifier}}"
+										}
+									]
+								},
+								"description": "Fire any action using the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here.\n\n@Path(\"/actions/{actionId}/fire\")"
+							},
+							"response": []
+						},
+						{
+							"name": "Create Page Two",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test(\"Identifier must contains path\", function () {",
+											"    pm.expect(jsonData.entity.template).contains(\"//default/application/templates/system/\");",
+											"});",
+											"",
+											"pm.collectionVariables.set(\"pageTwoToMoveIdentifier\", jsonData.entity.identifier);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"contentlet\":{\n\t\t\"stName\": \"htmlpageasset\",\n\t\t\"title\": \"PageAsset ContentAlreadyExists Move\",\n        \"url\": \"pageassetcontentalreadyexistsmove\",\n        \"friendlyName\":\"pageassetsystemtemplate\",\n        \"template\": \"//default/application/templates/system/\",\n        \"sortOrder\": \"0\",\n        \"cachettl\": \"100\",\n        \"hostFolder\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\"\n\t}\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Fire Move Over Page Two",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 400 \", function () {",
+											"    pm.response.to.have.status(400);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"pathToMove\":\"//default/moveto\",\n    \"contentlet\":{}\n}"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/{{actionId}}/fire?identifier={{pageTwoToMoveIdentifier}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"{{actionId}}",
+										"fire"
+									],
+									"query": [
+										{
+											"key": "identifier",
+											"value": "{{pageTwoToMoveIdentifier}}"
+										}
+									]
+								},
+								"description": "Fire any action using the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here.\n\n@Path(\"/actions/{actionId}/fire\")"
+							},
+							"response": []
+						}
+					],
+					"description": "This is for testing the following case:\nIf you try to move a contentlet to a folder but there already exist content with the same name, should throw a 400."
+				},
+				{
+					"name": "Success",
+					"item": [
+						{
+							"name": "CreateMoveSystemWorkflow",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"console.log(\"Running test\")",
+											"",
+											"pm.test(\"No errors\", function () {",
+											"    ",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.errors.length).to.eql(0);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"pm.collectionVariables.set(\"actionId\", jsonData.entity.id);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"stepId\": \"dc3c9cd0-8467-404b-bf95-cb7df3fbc293\",\n    \"actionName\": \"Move Test\",\n    \"schemeId\": \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\",\n    \"actionCondition\": \"\",\n    \"actionNextStep\": \"currentstep\",\n    \"actionNextAssign\": \"654b0931-1027-41f7-ad4d-173115ed8ec1\",\n    \"actionRoleHierarchyForAssign\": false,\n    \"actionAssignable\": false,\n    \"actionCommentable\": true,\n    \"whoCanUse\": [],\n    \"showOn\": [\n        \"UNPUBLISHED\",\n        \"NEW\",\n        \"LOCKED\",\n        \"PUBLISHED\"\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add move actionlet",
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"actionletClass\":\"com.dotmarketing.portlets.workflows.actionlet.MoveContentActionlet\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/{{actionId}}/actionlets",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"{{actionId}}",
+										"actionlets"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "CreatesTestingContentlet",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200 \", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"",
+											"var jsonData = pm.response.json();",
+											"pm.collectionVariables.set(\"contentletIdentifier\", jsonData.entity.identifier);",
+											"pm.collectionVariables.set(\"contentletInode\", jsonData.entity.inode);",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"webPageContent\",\n        \"title\":\"Test\",\n        \"body\":\"Test\",\n        \"contentHost\":\"SYSTEM_HOST\"\n\n    }\n}"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									]
+								},
+								"description": "Fire any action using the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here.\n\n@Path(\"/actions/{actionId}/fire\")"
+							},
+							"response": []
+						},
+						{
+							"name": "Fire Move",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200 \", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"",
+											"",
+											"",
+											"var jsonData = pm.response.json();",
+											"",
+											"",
+											"pm.collectionVariables.set(\"folderId\", jsonData.entity.folder);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"pathToMove\":\"//default/moveto\",\n    \"contentlet\":{}\n}"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/{{actionId}}/fire?identifier={{contentletIdentifier}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"{{actionId}}",
+										"fire"
+									],
+									"query": [
+										{
+											"key": "identifier",
+											"value": "{{contentletIdentifier}}"
+										}
+									]
+								},
+								"description": "Fire any action using the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here.\n\n@Path(\"/actions/{actionId}/fire\")"
+							},
+							"response": []
+						},
+						{
+							"name": "Check Folder",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200 \", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"",
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test(\"Valid response\", function () {",
+											"    pm.expect(jsonData.entity.path).to.eq(\"/moveto/\");",
+											"});",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/folder/{{folderId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"folder",
+										"{{folderId}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
 				}
 			]
 		}
@@ -12470,55 +13741,71 @@
 		},
 		{
 			"key": "actionId",
-			"value": "c3eb4d6a-e650-40d2-98bc-39443d9ec538"
+			"value": "47c38af4-209b-499a-9628-b2a8409cf03c"
 		},
 		{
 			"key": "schemeId",
-			"value": "1cc6966d-3ad5-45c9-927d-4807cdd68025"
+			"value": "2e96562e-495c-4a29-8cd1-0410608e9a65"
 		},
 		{
 			"key": "schemeIdShorty",
-			"value": "1cc6966d3a"
+			"value": "2e96562e49"
 		},
 		{
 			"key": "stepId",
-			"value": "d6b94ac4-6f86-4fd6-bb74-04db9c04a93d"
+			"value": "1c156cd2-eb58-4b57-986b-dc728cc3ea09"
 		},
 		{
 			"key": "stepIdShorty",
-			"value": "d6b94ac46f"
+			"value": "1c156cd2eb"
 		},
 		{
 			"key": "actionIdShorty",
-			"value": "c3eb4d6ae6"
+			"value": "47c38af420"
 		},
 		{
 			"key": "contentletIdentifier",
-			"value": "31d62578-7e96-4ded-a676-ab600ca2f410"
+			"value": "6f88e2ed-71cb-49ad-90a4-8c74d906c3fe"
 		},
 		{
 			"key": "contentletInode",
-			"value": "49071043-af6b-478a-8b90-06c6bdb35c0a"
+			"value": "94926188-341a-40a3-8422-03af9e3a3634"
 		},
 		{
 			"key": "contentletIdShorty",
-			"value": "e2d4fc75f6"
+			"value": "14c31e4294"
 		},
 		{
 			"key": "fireActionLanguageKey",
-			"value": "SucessRequest1616109977"
+			"value": "SucessRequest1615939422"
 		},
 		{
-			"key": "saveActionletSchemeId",
-			"value": "97226901-e32e-49ff-92c7-42382309329c"
+			"key": "genericContentletInode",
+			"value": "811e3dda-049f-48d9-a96c-10f0dc341047"
 		},
 		{
-			"key": "saveActionletStepId",
-			"value": "039e79cc-70e1-4b4e-9102-b97f5ebc0548"
+			"key": "folderId",
+			"value": ""
 		},
 		{
-			"key": "saveActionletActionId",
-			"value": "2e583acd-32cd-46e3-b25c-51b4327d46a6"
+			"key": "pageOneToMoveIdentifier",
+			"value": ""
+		},
+		{
+			"key": "pageTwoToMoveIdentifier",
+			"value": ""
+		},
+		{
+			"key": "temporalFileId",
+			"value": ""
+		},
+		{
+			"key": "temporalFileTwoId",
+			"value": ""
+		},
+		{
+			"key": "temporalFileOneId",
+			"value": ""
 		}
 	]
 }

@@ -37,12 +37,6 @@ public class Task01095CreateIntegrityCheckerResultTables extends AbstractJDBCSta
 	}
 
     @Override
-    public String getH2Script () {
-        return script;
-    }
-
-
-    @Override
 	protected List<String> getTablesToDropConstraints() {
 		// TODO Auto-generated method stub
 		return null;

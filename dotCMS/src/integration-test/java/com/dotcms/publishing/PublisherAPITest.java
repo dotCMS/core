@@ -28,6 +28,7 @@ import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.PublisherConfig.Operation;
+import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -54,6 +55,7 @@ import com.liferay.util.FileUtil;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -72,7 +74,7 @@ public class PublisherAPITest extends IntegrationTestBase {
 
     private static HostAPI hostAPI;
     private static FolderAPI folderAPI;
-    private static UserAPI userAPI;
+    private static  UserAPI userAPI;
     private static RoleAPI roleAPI;
     private static EnvironmentAPI environmentAPI;
     private static PublishingEndPointAPI publisherEndPointAPI;
@@ -127,7 +129,7 @@ public class PublisherAPITest extends IntegrationTestBase {
      * https://github.com/dotCMS/core/issues/12038
      */
     @Test
-    public void test_publish_fail_retry() {
+    public void test_publish_fail_retry() throws Exception {
 
         Environment environment = null;
         Bundle bundle = null;
@@ -223,17 +225,17 @@ public class PublisherAPITest extends IntegrationTestBase {
             final String bundleTarGzPath = bundlePath + ".tar.gz";
             final String bundleXMLPath = bundlePath + File.separator + "bundle.xml";
 
-            final File bundleFolder = new File(bundlePath);
-            assertTrue("Bundle Folder Exists", bundleFolder.exists());
             final File bundleTarGz = new File(bundleTarGzPath);
             assertTrue("Bundle Tar Gz Exists", bundleTarGz.exists());
             final long bundleTarGzFirstDate = bundleTarGz.lastModified();
-            final File bundleXML = new File(bundleXMLPath);
-            assertTrue("bundle.xml exists", bundleXML.exists());
-            final long bundleXMLFirstDate = bundleXML.lastModified();
 
+            final File bundleFolder = new File(bundlePath);
+            PublisherAPIImplTest.extractTarArchive(bundleTarGz, bundleFolder);
             final Map<String, Long> firstFileDates = getFileDatesByFolder(bundleFolder,
                     getNoBundleXMLFileFilter());
+
+            final File bundleXML = new File(bundleXMLPath);
+            assertTrue("bundle.xml not exists", bundleXML.exists());
 
             // Let's wait 2 seconds between runs so we have different millis in files.
             Logger.info(this, "Waiting 2 seconds before 2nd PP run");
@@ -260,10 +262,6 @@ public class PublisherAPITest extends IntegrationTestBase {
             // Tar Gz File should have the same date.
             assertEquals("Tar Gz File should have the same date",
                     bundleTarGzFirstDate, bundleTarGzSecondDate);
-            final long bundleXMLSecondDate = bundleXML.lastModified();
-            // bundle.xml file should be updated each PP process, so dates shouldn't be the same.
-            assertNotEquals("bundle.xml file should be updated each PP process",
-                    bundleXMLFirstDate, bundleXMLSecondDate);
 
             final Map<String, Long> secondFileDates = getFileDatesByFolder(bundleFolder,
                     getNoBundleXMLFileFilter());

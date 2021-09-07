@@ -1,15 +1,21 @@
 package com.dotmarketing.init;
 
+import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_ELASTIC_READONLY_MONITOR;
 import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_WEBSOCKET_PROTOCOL;
+
+import com.dotmarketing.quartz.job.DeleteInactiveLiveWorkingIndicesJob;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
+import com.dotmarketing.quartz.job.EsReadOnlyMonitorJob;
 import org.quartz.CronTrigger;
 import org.quartz.Job;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.enterprise.linkchecker.LinkCheckerJob;
 import com.dotcms.job.system.event.DeleteOldSystemEventsJob;
 import com.dotcms.job.system.event.SystemEventsJob;
@@ -28,6 +34,7 @@ import com.dotmarketing.quartz.job.WebDavCleanupJob;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.vavr.control.Try;
 
 /**
@@ -41,30 +48,10 @@ import io.vavr.control.Try;
 public class DotInitScheduler {
 
 	private static final String DOTCMS_JOB_GROUP_NAME = "dotcms_jobs";
-	public static final String SCHEDULER_COREPOOLSIZE = "SCHEDULER_CORE_POOL_SIZE";
 
-	private static ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = null;
+	public static final String CRON_EXPRESSION_EVERY_5_MINUTES = "0 */5 * ? * *";
 
-	/**
-	 * Returns the {@link ScheduledThreadPoolExecutor}
-	 * @return ScheduledThreadPoolExecutor
-	 */
-	public static ScheduledThreadPoolExecutor getScheduledThreadPoolExecutor() {
 
-		if (null == scheduledThreadPoolExecutor) {
-
-			synchronized (DotInitScheduler.class) {
-
-				if (null == scheduledThreadPoolExecutor) {
-
-					final int corePoolSize = Config.getIntProperty(SCHEDULER_COREPOOLSIZE, 10);
-					scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(corePoolSize);
-				}
-			}
-		}
-
-		return scheduledThreadPoolExecutor;
-	}
 
 	/**
 	 * Configures and initializes every system Job to run on dotCMS.
@@ -470,15 +457,19 @@ public class DotInitScheduler {
 				// Enabling the System Events Job
 				addSystemEventsJob();
 			}
-			
-			
+
 			// start the server heartbeat job
 			addServerHeartbeatJob();
-			
-			
 
 			// Enabling the Delete Old System Events Job
 			addDeleteOldSystemEvents(sched);
+
+			if ( !Config.getBooleanProperty(DOTCMS_DISABLE_ELASTIC_READONLY_MONITOR, false) ) {
+				// Enabling the Read only monitor
+				addElasticReadyOnlyMonitor(sched);
+			}
+
+			addDeleteOldESIndicesJob(sched);
 
             //Starting the sequential and standard Schedulers
 	        QuartzUtils.startSchedulers();
@@ -519,21 +510,80 @@ public class DotInitScheduler {
 
 				final int initialDelay = Config.getIntProperty("SYSTEM_EVENTS_INITIAL_DELAY", 0);
 				final int delaySeconds = Config.getIntProperty("SYSTEM_EVENTS_DELAY_SECONDS", 5); // runs every 5 seconds.
-				getScheduledThreadPoolExecutor().scheduleWithFixedDelay(new SystemEventsJob(), initialDelay, delaySeconds, TimeUnit.SECONDS);
+				DotConcurrentFactory.getScheduledThreadPoolExecutor().scheduleWithFixedDelay(new SystemEventsJob(), initialDelay, delaySeconds, TimeUnit.SECONDS);
 			} catch (Exception e) {
 
 				Logger.info(DotInitScheduler.class, e.toString());
 			}
 		}
 	} // addSystemEventsJob.
-	
+
+	private static void addElasticReadyOnlyMonitor (final Scheduler scheduler) {
+
+		try {
+
+			final String jobName      = "EsReadOnlyMonitorJob";
+			final String triggerName  = "trigger29";
+			final String triggerGroup = "group98";
+
+			if (Config.getBooleanProperty( "ENABLE_ELASTIC_READ_ONLY_MONITOR", true)) {
+
+					final JobBuilder elasticReadOnlyMonitorJob = new JobBuilder().setJobClass(EsReadOnlyMonitorJob.class)
+							.setJobName(jobName)
+							.setJobGroup(DOTCMS_JOB_GROUP_NAME)
+							.setTriggerName(triggerName)
+							.setTriggerGroup(triggerGroup)
+							.setCronExpressionProp("ELASTIC_READ_ONLY_MONITOR_CRON_EXPRESSION")
+							.setCronExpressionPropDefault(Config.getStringProperty("ELASTIC_READ_ONLY_MONITOR_CRON_EXPRESSION", CRON_EXPRESSION_EVERY_5_MINUTES))
+							.setCronMissfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+					scheduleJob(elasticReadOnlyMonitorJob);
+			} else {
+
+				if ((scheduler.getJobDetail(jobName, DOTCMS_JOB_GROUP_NAME)) != null) {
+					scheduler.deleteJob(jobName, DOTCMS_JOB_GROUP_NAME);
+				}
+			}
+		} catch (Exception e) {
+
+			Logger.info(DotInitScheduler.class, e.toString());
+		}
+	} // addElasticReadyOnlyMonitor.
+
+	private static void addDeleteOldESIndicesJob (final Scheduler scheduler) {
+		try {
+			final String jobName      = "DeleteOldESIndicesJob";
+			final String triggerName  = "trigger30";
+			final String triggerGroup = "group30";
+
+			if (Config.getBooleanProperty( "ENABLE_DELETE_OLD_ES_INDICES_JOB", true)) {
+
+				final JobBuilder deleteOldESIndicesJob = new JobBuilder().setJobClass(
+						DeleteInactiveLiveWorkingIndicesJob.class)
+						.setJobName(jobName)
+						.setJobGroup(DOTCMS_JOB_GROUP_NAME)
+						.setTriggerName(triggerName)
+						.setTriggerGroup(triggerGroup)
+						.setCronExpressionProp("DELETE_OLD_ES_INDICES_JOB_CRON_EXPRESSION")
+						.setCronExpressionPropDefault("0 0 1 ? * *")
+						.setCronMissfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+				scheduleJob(deleteOldESIndicesJob);
+			} else {
+				if ((scheduler.getJobDetail(jobName, DOTCMS_JOB_GROUP_NAME)) != null) {
+					scheduler.deleteJob(jobName, DOTCMS_JOB_GROUP_NAME);
+				}
+			}
+		} catch (Exception e) {
+
+			Logger.info(DotInitScheduler.class, e.toString());
+		}
+	}
 
    private static void addServerHeartbeatJob () {
 
        final int initialDelay = Config.getIntProperty("SERVER_HEARTBEAT_INITIAL_DELAY_SECONDS", 60);
        final int delaySeconds = Config.getIntProperty("SERVER_HEARTBEAT_RUN_EVERY_SECONDS", 60); // runs every 5 seconds.
        
-       DotInitScheduler.getScheduledThreadPoolExecutor().scheduleAtFixedRate(() -> {
+       DotConcurrentFactory.getScheduledThreadPoolExecutor().scheduleAtFixedRate(() -> {
            Try.run(() -> new ServerHeartbeatJob().execute(null)).onFailure(e->Logger.warnAndDebug(DotInitScheduler.class, e));
        }, initialDelay, delaySeconds, TimeUnit.SECONDS);
     } 

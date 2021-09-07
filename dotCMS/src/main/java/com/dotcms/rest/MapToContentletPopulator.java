@@ -14,7 +14,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.RelationshipAPI;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -59,6 +58,7 @@ public class MapToContentletPopulator  {
     private static final String RELATIONSHIP_KEY           = Contentlet.RELATIONSHIP_KEY;
     private static final String LANGUAGE_ID                = "languageId";
     private static final String IDENTIFIER                 = "identifier";
+    private static final String INDEX_POLICY = "indexPolicy";
 
     @CloseDBIfOpened
     public Contentlet populate(final Contentlet contentlet, final Map<String, Object> stringObjectMap) {
@@ -74,11 +74,19 @@ public class MapToContentletPopulator  {
         return contentlet;
     }
 
-    protected String getStInode (final Map<String, Object> map) {
+    protected String getStInode (final Map<String, Object> map, final Contentlet contentlet) {
 
-        return getContentTypeInode(map);
+        String stInode = getContentTypeInode(map);
+
+        if (!UtilMethods.isSet(stInode) && null != contentlet.getContentType()) {
+
+            stInode = contentlet.getContentType().inode();
+        }
+
+        return stInode;
     }
 
+    @CloseDBIfOpened
     public String getContentTypeInode (final Map<String, Object> map) {
 
         String stInode = (String) map.get(Contentlet.STRUCTURE_INODE_KEY);
@@ -104,7 +112,7 @@ public class MapToContentletPopulator  {
     private void processMap(final Contentlet contentlet,
                               final Map<String, Object> map) throws DotDataException, DotSecurityException {
 
-        final String stInode = this.getStInode(map);
+        final String stInode = this.getStInode(map, contentlet);
 
         if (UtilMethods.isSet(stInode)) {
 
@@ -142,17 +150,24 @@ public class MapToContentletPopulator  {
 
     private void setIndexPolicy(final Contentlet contentlet, final Map<String, Object> map) {
 
-        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        contentlet.setIndexPolicy(recoverIndexPolicy(map,
+                IndexPolicyProvider.getInstance().forSingleContent(),
+                HttpServletRequestThreadLocal.INSTANCE.getRequest()));
+    }
+
+    public static IndexPolicy recoverIndexPolicy (final Map<String, Object> map, final IndexPolicy defaultIndexPolicy,
+                                                  final HttpServletRequest request) {
+
         Object indexPolicyValue          = null;
         if (null != request) {
 
-            indexPolicyValue = request.getParameter("indexPolicy");
+            indexPolicyValue = request.getParameter(INDEX_POLICY);
         }
 
         indexPolicyValue  = null != indexPolicyValue? indexPolicyValue:
-                map.getOrDefault("indexPolicy", IndexPolicyProvider.getInstance().forSingleContent());
-        
-        contentlet.setIndexPolicy(IndexPolicy.parseIndexPolicy(indexPolicyValue));
+                map.getOrDefault(INDEX_POLICY, defaultIndexPolicy);
+
+        return IndexPolicy.parseIndexPolicy(indexPolicyValue);
     }
 
 
@@ -341,12 +356,8 @@ public class MapToContentletPopulator  {
                                 categories.add(category);
                             } else {
                                 // try it as variable
-                                // FIXME: https://github.com/dotCMS/dotCMS/issues/2847
-                                final HibernateUtil hu = new HibernateUtil(Category.class);
-                                hu.setQuery("from " + Category.class.getCanonicalName()
-                                        + " WHERE category_velocity_var_name=?");
-                                hu.setParam(categoryValue);
-                                category = (Category) hu.load();
+                                category = APILocator.getCategoryAPI()
+                                        .findByVariable(categoryValue, user, respectFrontendRoles);
                                 if (category != null && InodeUtils.isSet(category.getCategoryId())) {
                                     categories.add(category);
                                 }

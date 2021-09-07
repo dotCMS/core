@@ -36,9 +36,8 @@ import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.WorkflowDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
-import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
@@ -112,6 +111,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -780,7 +780,7 @@ public class ContentResourceTest extends IntegrationTestBase {
 
             // Build request and response
             final HttpServletRequest request = createHttpRequest(null, null);
-            final HttpServletResponse response = new MockHttpResponse(new BaseResponse().response());
+            final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
 
             // Send request
             final ContentResource contentResource = new ContentResource();
@@ -1334,7 +1334,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         MockHeaderRequest request = new MockHeaderRequest(
 
                 (
-                        new MockSessionRequest(new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                        new MockSessionRequest(new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 ).request()
         );
 

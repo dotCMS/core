@@ -2,7 +2,7 @@ package com.dotmarketing.business.cache.provider;
 
 import org.junit.Test;
 import com.dotcms.repackage.com.google.common.base.Optional;
-import com.dotmarketing.portlets.contentlet.business.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
 public class CacheSizingUtilTest {
 
@@ -24,7 +24,7 @@ public class CacheSizingUtilTest {
 
         
         long fourLettersSize = cacheSizer.sizeOf(fourLetters);
-        assert(fourLettersSize==48);
+        assert(fourLettersSize==44);
         
         
     }
@@ -49,7 +49,7 @@ public class CacheSizingUtilTest {
         assert(cacheSize==16);
         
         cacheSize = cacheSizer.sizeOf(Optional.of(fourLetters));
-        assert(cacheSize==64);
+        assert(cacheSize==60);
 
         
     }

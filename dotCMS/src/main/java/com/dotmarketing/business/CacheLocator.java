@@ -11,6 +11,7 @@ import com.dotcms.contenttype.business.ContentTypeCache2;
 import com.dotcms.contenttype.business.ContentTypeCache2Impl;
 import com.dotcms.csspreproc.CSSCache;
 import com.dotcms.csspreproc.CSSCacheImpl;
+import com.dotcms.graphql.GraphQLCache;
 import com.dotcms.graphql.business.GraphQLSchemaCache;
 import com.dotcms.notifications.business.NewNotificationCache;
 import com.dotcms.notifications.business.NewNotificationCacheImpl;
@@ -95,37 +96,35 @@ public class CacheLocator extends Locator<CacheIndex>{
 		super();
 	}
 
-	public synchronized static void init(){
-		long start = System.currentTimeMillis();
-		if(instance != null)
-			return;
+    public synchronized static void init() {
+        if (instance != null) {
+            return;
+        }
+        long start = System.currentTimeMillis();
 
-		String clazz = Config.getStringProperty("cache.locator.class", ChainableCacheAdministratorImpl.class.getCanonicalName());
-		Logger.info(CacheLocator.class, "loading cache administrator: "+clazz);
-		try{
-			adminCache = new CommitListenerCacheWrapper((DotCacheAdministrator) Class.forName(clazz).newInstance());
 
-			String cTransClass = Config.getStringProperty("CACHE_INVALIDATION_TRANSPORT_CLASS","com.dotmarketing.business.jgroups.JGroupsCacheTransport");
-			CacheTransport cTrans = (CacheTransport)Class.forName(cTransClass).newInstance();
-			adminCache.setTransport(cTrans);
 
-		}
-		catch(Exception e){
-			Logger.fatal(CacheLocator.class, "Unable to load Cache Admin:" + clazz, e);
-		}
+        Logger.info(CacheLocator.class, "loading cache administrator: ChainableCacheAdministratorImpl");
+        try {
 
-		instance = new CacheLocator();
+            adminCache = new CommitListenerCacheWrapper(new ChainableCacheAdministratorImpl(new CacheTransportStrategy()));
+            adminCache.initProviders();
+            
+        } catch (Exception e) {
+            Logger.fatal(CacheLocator.class, "Unable to load Cache Admin:" + e.getMessage(), e);
+        }
 
-		/*
-		Initializing the Cache Providers:
+        instance = new CacheLocator();
 
-		 It needs to be initialized in a different call as the providers depend on the
-		 license level, and the license level needs an already created instance of the CacheLocator
-		 to work.
-		 */
-		adminCache.initProviders();
-		System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_CACHE, String.valueOf(System.currentTimeMillis() - start));
-	}
+        /*
+         * Initializing the Cache Providers:
+         * 
+         * It needs to be initialized in a different call as the providers depend on the license level, and
+         * the license level needs an already created instance of the CacheLocator to work.
+         */
+
+        System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_CACHE, String.valueOf(System.currentTimeMillis() - start));
+    }
 
 	public static SystemCache getSystemCache() {
 		return (SystemCache)getInstance(CacheIndex.System);
@@ -287,6 +286,10 @@ public class CacheLocator extends Locator<CacheIndex>{
     public static ESQueryCache getESQueryCache() {
         return (ESQueryCache) getInstance(CacheIndex.ESQueryCache);
     }
+
+	public static GraphQLCache getGraphQLCache() {
+		return (GraphQLCache) getInstance(CacheIndex.GraphQLCache);
+	}
     
     /**
      * 
@@ -334,11 +337,15 @@ public class CacheLocator extends Locator<CacheIndex>{
 
 	private static Object getInstance(CacheIndex index) {
 		if(instance == null){
-			init();
-			if(instance == null){
-				Logger.fatal(CacheLocator.class, "CACHE IS NOT INITIALIZED : THIS SHOULD NEVER HAPPEN");
-				throw new DotRuntimeException("CACHE IS NOT INITIALIZED : THIS SHOULD NEVER HAPPEN");
-			}
+		    synchronized (CacheLocator.class) {
+		        if(instance == null){
+        			init();
+        			if(instance == null){
+        				Logger.fatal(CacheLocator.class, "CACHE IS NOT INITIALIZED : THIS SHOULD NEVER HAPPEN");
+        				throw new DotRuntimeException("CACHE IS NOT INITIALIZED : THIS SHOULD NEVER HAPPEN");
+        			}
+		        }
+            }
 		}
 
 		Object serviceRef = instance.getServiceInstance(index);
@@ -425,7 +432,8 @@ enum CacheIndex
 	KeyValueCache("Key/Value Cache"),
 	AppsCache("Apps"),
 	GraphQLSchemaCache("GraphQLSchemaCache"),
-	Metadata("Metadata");
+	Metadata("Metadata"),
+	GraphQLCache("GraphQLCache");
 
 	Cachable create() {
 		switch(this) {
@@ -476,6 +484,7 @@ enum CacheIndex
 	      	case ESQueryCache : return new com.dotcms.content.elasticsearch.ESQueryCache();
 	      	case GraphQLSchemaCache : return new GraphQLSchemaCache();
 			case Metadata: return new MetadataCacheImpl();
+			case GraphQLCache: return new GraphQLCache();
 
 		}
 		throw new AssertionError("Unknown Cache index: " + this);

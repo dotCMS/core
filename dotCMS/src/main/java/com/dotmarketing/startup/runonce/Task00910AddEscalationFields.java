@@ -48,9 +48,4 @@ public class Task00910AddEscalationFields extends AbstractJDBCStartupTask {
         return null;
     }
 
-    @Override
-    public String getH2Script() {
-        return null;
-    }
-    
 }

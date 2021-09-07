@@ -9,10 +9,9 @@ import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockServletPathRequest;
 import com.dotcms.mock.request.MockSessionRequest;
-import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.mock.response.MockHttpCaptureResponse;
 import com.dotcms.mock.response.MockHttpStatusResponse;
 import com.dotcms.util.CollectionsUtils;
@@ -27,7 +26,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
@@ -36,17 +34,19 @@ import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.Closeable;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
 @RunWith(DataProviderRunner.class)
 public class BinaryExporterServletTest {
@@ -212,13 +212,17 @@ public class BinaryExporterServletTest {
 
     private HttpServletRequest mockServletRequest(final String fileURI) {
         return new MockSessionRequest(new MockServletPathRequest(
-                new MockHttpRequest("localhost", fileURI).request(),
+                new MockHttpRequestIntegrationTest("localhost", fileURI).request(),
                 "/contentAsset"));
     }
 
     private HttpServletResponse mockServletResponse(final TmpBinaryFile tmpTargetFile) {
-        return new MockHttpStatusResponse(new MockHttpCaptureResponse(
-                new BaseResponse().response(), tmpTargetFile.getFile()));
+        try {
+            return new MockHttpStatusResponse(new MockHttpCaptureResponse(
+                    Mockito.mock(HttpServletResponse.class), new FileOutputStream(tmpTargetFile.getFile())));
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void sendRequest(final HttpServletRequest request, final HttpServletResponse response)

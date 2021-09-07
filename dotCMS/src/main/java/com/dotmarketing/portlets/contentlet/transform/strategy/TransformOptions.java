@@ -22,7 +22,12 @@ public enum TransformOptions {
     LANGUAGE_VIEW, //This instructs the transformer to emulate the old IdentifierToMapTransformer.
     BINARIES_VIEW, //This Emulates the old BinaryToMapTransformer.
     KEY_VALUE_VIEW,
-    CATEGORIES_VIEW; //This emulates the Category To MapTransformer.
+    CATEGORIES_VIEW, //This emulates the Category To MapTransformer.
+    FILEASSET_VIEW,
+    SITE_VIEW,
+
+    AVOID_MAP_SUFFIX_FOR_VIEWS,
+    RENDER_FIELDS; // will velocity-render the render-able fields
 
     private boolean defaultProperty;
 

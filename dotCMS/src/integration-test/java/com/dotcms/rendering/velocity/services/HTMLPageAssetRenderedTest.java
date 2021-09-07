@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.services;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -17,10 +18,9 @@ import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.model.type.WidgetContentType;
 import com.dotcms.datagen.*;
 import com.dotcms.mock.request.MockAttributeRequest;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
-import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -52,10 +52,9 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
+import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.FileUtil;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys;
@@ -76,7 +75,6 @@ import io.vavr.Function2;
 import org.jetbrains.annotations.NotNull;
 import org.junit.*;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import com.dotcms.visitor.domain.Visitor;
 
 @RunWith(DataProviderRunner.class)
@@ -254,10 +252,9 @@ public class HTMLPageAssetRenderedTest {
         contentlet2English.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(contentlet2English, systemUser, false);
 
-        Contentlet contentlet2Spanish = contentletAPI.find(contentlet2English.getInode(), systemUser, false);
+        Contentlet contentlet2Spanish = contentletAPI.checkout(contentlet2English.getInode(), systemUser, false);
         contentlet2Spanish.setProperty("title","content2Spa");
         contentlet2Spanish.setProperty("body","content2Spa");
-        contentlet2Spanish.setInode("");
         contentlet2Spanish.setLanguageId(spanishLanguage.getId());
         contentlet2Spanish.setIndexPolicy(IndexPolicy.WAIT_FOR);
         contentlet2Spanish.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
@@ -402,7 +399,7 @@ public class HTMLPageAssetRenderedTest {
 
         //request page ENG version
         HttpServletRequest mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
@@ -461,7 +458,7 @@ public class HTMLPageAssetRenderedTest {
         //request page ESP version
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
         HttpServletRequest mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         final HttpSession httpSession = mockRequest.getSession();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
@@ -538,8 +535,7 @@ public class HTMLPageAssetRenderedTest {
         final String pageName = "test2Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(template, pageName, 1);
 
-        Contentlet pageSpanishVersion = contentletAPI.find(pageEnglishVersion.getInode(),systemUser,false);
-        pageSpanishVersion.setInode("");
+        Contentlet pageSpanishVersion = contentletAPI.checkout(pageEnglishVersion.getInode(),systemUser,false);
         pageSpanishVersion.setLanguageId(spanishLanguage.getId());
         pageSpanishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
         pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
@@ -555,7 +551,7 @@ public class HTMLPageAssetRenderedTest {
         createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
 
         HttpServletRequest mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
@@ -571,7 +567,7 @@ public class HTMLPageAssetRenderedTest {
         assertTrue("ENG = "+html , html.contains("content1") && html.contains("content2"));
 
         mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest
@@ -608,7 +604,7 @@ public class HTMLPageAssetRenderedTest {
         createMultiTree(pageSpanishVersion.getIdentifier(), container.getIdentifier());
 
         HttpServletRequest mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         mockRequest
                 .setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(spanishLanguage.getId()));
@@ -624,7 +620,7 @@ public class HTMLPageAssetRenderedTest {
         assertTrue("ESP = "+html , html.contains("content3Spacontent2Spa"));
 
         mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
@@ -665,7 +661,7 @@ public class HTMLPageAssetRenderedTest {
         createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
 
         HttpServletRequest mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
@@ -681,7 +677,7 @@ public class HTMLPageAssetRenderedTest {
         assertTrue("ENG = "+html , html.contains("content2content1"));
 
         mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         mockRequest
                 .setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(spanishLanguage.getId()));
@@ -769,7 +765,7 @@ public class HTMLPageAssetRenderedTest {
                 .nextPersisted();
 
         HttpServletRequest mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
@@ -867,7 +863,7 @@ public class HTMLPageAssetRenderedTest {
                 .nextPersisted();
 
         HttpServletRequest mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
@@ -906,8 +902,7 @@ public class HTMLPageAssetRenderedTest {
         final String pageName = "test5Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(template, pageName, 1);
 
-        Contentlet pageSpanishVersion = contentletAPI.find(pageEnglishVersion.getInode(),systemUser,false);
-        pageSpanishVersion.setInode("");
+        Contentlet pageSpanishVersion = contentletAPI.checkout(pageEnglishVersion.getInode(),systemUser,false);
         pageSpanishVersion.setLanguageId(spanishLanguage.getId());
         pageSpanishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
         pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
@@ -922,7 +917,7 @@ public class HTMLPageAssetRenderedTest {
         createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
 
         HttpServletRequest mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
@@ -938,7 +933,7 @@ public class HTMLPageAssetRenderedTest {
         assertTrue("ENG = "+html , html.contains("content1") && html.contains("content2"));
 
         mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest
@@ -971,9 +966,8 @@ public class HTMLPageAssetRenderedTest {
 
         final String pageName = "test6Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(template, pageName, 1);
-        Contentlet pageSpanishVersion = contentletAPI.find(pageEnglishVersion.getInode(),systemUser,false);
+        Contentlet pageSpanishVersion = contentletAPI.checkout(pageEnglishVersion.getInode(),systemUser,false);
 
-        pageSpanishVersion.setInode("");
         pageSpanishVersion.setLanguageId(spanishLanguage.getId());
         pageSpanishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
         pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
@@ -989,7 +983,7 @@ public class HTMLPageAssetRenderedTest {
         createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
 
         HttpServletRequest mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
@@ -1005,7 +999,7 @@ public class HTMLPageAssetRenderedTest {
         assertTrue("ENG = "+html , html.contains("content1") && html.contains("content2"));
 
         mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest
@@ -1042,7 +1036,7 @@ public class HTMLPageAssetRenderedTest {
         createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
 
         HttpServletRequest mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
@@ -1058,7 +1052,7 @@ public class HTMLPageAssetRenderedTest {
         assertTrue("ENG = "+html , html.contains("content2content1"));
 
         mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         mockRequest
                 .setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(spanishLanguage.getId()));
@@ -1130,7 +1124,7 @@ public class HTMLPageAssetRenderedTest {
             APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
 
             HttpServletRequest mockRequest = new MockSessionRequest(
-                    new MockAttributeRequest(new MockHttpRequest("localhost", "/").request())
+                    new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
                             .request())
                     .request();
             when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
@@ -1156,7 +1150,7 @@ public class HTMLPageAssetRenderedTest {
             contentType = APILocator.getContentTypeAPI(systemUser).save(contentType);
 
             mockRequest = new MockSessionRequest(
-                    new MockAttributeRequest(new MockHttpRequest("localhost", "/").request())
+                    new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
                             .request())
                     .request();
             when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
@@ -1201,7 +1195,7 @@ public class HTMLPageAssetRenderedTest {
             createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
 
             HttpServletRequest mockRequest = new MockSessionRequest(
-                    new MockAttributeRequest(new MockHttpRequest("localhost", "/").request())
+                    new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
                             .request())
                     .request();
             when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
@@ -1223,7 +1217,7 @@ public class HTMLPageAssetRenderedTest {
             CacheLocator.getVeloctyResourceCache().clearCache();
 
             mockRequest = new MockSessionRequest(
-                    new MockAttributeRequest(new MockHttpRequest("localhost", "/").request())
+                    new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
                             .request())
                     .request();
             when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
@@ -1244,7 +1238,7 @@ public class HTMLPageAssetRenderedTest {
             CacheLocator.getVeloctyResourceCache().clearCache();
 
             mockRequest = new MockSessionRequest(
-                    new MockAttributeRequest(new MockHttpRequest("localhost", "/").request())
+                    new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
                             .request())
                     .request();
             when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
@@ -1737,7 +1731,7 @@ public class HTMLPageAssetRenderedTest {
 
         //request page ENG version
         HttpServletRequest mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
@@ -1790,7 +1784,7 @@ public class HTMLPageAssetRenderedTest {
 
         //request page ENG version
         HttpServletRequest mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
@@ -1830,7 +1824,7 @@ public class HTMLPageAssetRenderedTest {
 
         //request page ENG version
         HttpServletRequest mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
@@ -1851,6 +1845,77 @@ public class HTMLPageAssetRenderedTest {
         final int thirdIndex = html.indexOf(toFind, secondIndex + toFind.length());
 
         assertTrue(firstIndex != -1 && secondIndex != -1 && firstIndex != secondIndex && thirdIndex == -1);
+    }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When: A page has a template that is a file template design
+     * Should: render the page
+     */
+    @Test
+    public void pageWithFileTemplateDesignShouldRender() throws Exception{
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final FileAssetTemplate fileAssetTemplate = new TemplateAsFileDataGen()
+                .host(host)
+                .nextPersisted();
+
+        final String pageName = "test_page_with_filetemplatedesign-"+System.currentTimeMillis();
+        final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(host,fileAssetTemplate, pageName, 1);
+
+        //request page ENG version
+        HttpServletRequest mockRequest = new MockSessionRequest(
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
+                .request();
+        when(mockRequest.getParameter("host_id")).thenReturn(host.getIdentifier());
+        mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(systemUser)
+                        .setPageUri(pageEnglishVersion.getURI())
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+
+        assertNotNull(html);
+    }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When: A page has a template that is a file template advanced
+     * Should: render the page
+     */
+    @Test
+    public void pageWithFileTemplateAdvancedShouldRender() throws Exception{
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final FileAssetTemplate fileAssetTemplate = new TemplateAsFileDataGen()
+                .designTemplate(false)
+                .host(host)
+                .nextPersisted();
+
+        final String pageName = "test_page_with_filetemplateadvanced-"+System.currentTimeMillis();
+        final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(host,fileAssetTemplate, pageName, 1);
+
+        //request page ENG version
+        HttpServletRequest mockRequest = new MockSessionRequest(
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
+                .request();
+        when(mockRequest.getParameter("host_id")).thenReturn(host.getIdentifier());
+        mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(systemUser)
+                        .setPageUri(pageEnglishVersion.getURI())
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+
+        assertNotNull(html);
     }
 
     /**
@@ -1919,7 +1984,7 @@ public class HTMLPageAssetRenderedTest {
         //request page ENG version
         HttpServletRequest mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(
-                        new MockHttpRequest("localhost", "/").request()).request()
+                        new MockHttpRequestIntegrationTest("localhost", "/").request()).request()
             ).request();
 
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());

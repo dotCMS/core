@@ -14,6 +14,7 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
@@ -26,11 +27,15 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.business.web.UpdateContainersPathsJob;
+import com.dotmarketing.portlets.contentlet.business.web.UpdatePageTemplatePathJob;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
@@ -39,12 +44,14 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
@@ -53,7 +60,7 @@ import java.util.stream.Collectors;
  * @author david torres
  *
  */
-public class HostAPIImpl implements HostAPI {
+public class HostAPIImpl implements HostAPI, Flushable<Host> {
 
     private ContentletFactory contentletFactory = FactoryLocator.getContentletFactory();
     private HostCache hostCache = CacheLocator.getHostCache();
@@ -61,9 +68,16 @@ public class HostAPIImpl implements HostAPI {
     private final SystemEventsAPI systemEventsAPI;
     private static final String CONTENT_TYPE_CONDITION = "+contentType";
     private final DotConcurrentFactory concurrentFactory = DotConcurrentFactory.getInstance();
+    private LanguageAPI languageAPI;
 
     public HostAPIImpl() {
-        this.systemEventsAPI = APILocator.getSystemEventsAPI();
+        this(APILocator.getSystemEventsAPI(),APILocator.getLanguageAPI());
+    }
+
+    @VisibleForTesting
+    HostAPIImpl(final SystemEventsAPI systemEventsAPI, final LanguageAPI languageAPI) {
+        this.systemEventsAPI = systemEventsAPI;
+        this.languageAPI = languageAPI;
     }
 
     private ContentType hostType() throws DotDataException, DotSecurityException{
@@ -408,28 +422,47 @@ public class HostAPIImpl implements HostAPI {
      */
     @Override
     @WrapInTransaction
-    public Host save(Host host, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
-        if(host != null){
-            hostCache.remove(host);
+    public Host save(final Host hostToBeSaved, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+        if(hostToBeSaved != null){
+            hostCache.remove(hostToBeSaved);
         }
 
         Contentlet contentletHost;
         try {
-            contentletHost = APILocator.getContentletAPI().checkout(host.getInode(), user, respectFrontendRoles);
+            contentletHost = APILocator.getContentletAPI().checkout(hostToBeSaved.getInode(), user, respectFrontendRoles);
         } catch (DotContentletStateException e) {
 
             contentletHost = new Contentlet();
             contentletHost.setStructureInode(hostType().inode() );
         }
 
-        contentletHost.getMap().put(Contentlet.DONT_VALIDATE_ME, host.getMap().get(Contentlet.DONT_VALIDATE_ME));
-        APILocator.getContentletAPI().copyProperties(contentletHost, host.getMap());
+        if(null != contentletHost.get(Host.HOST_NAME_KEY) && null != hostToBeSaved.get(Host.HOST_NAME_KEY) &&
+                !contentletHost.get(Host.HOST_NAME_KEY).equals(hostToBeSaved.get(Host.HOST_NAME_KEY)) &&
+                !hostToBeSaved.getBoolProperty("forceExecution")){
+            throw new IllegalArgumentException("Updating the hostName is a Dangerous Execution, to achieve this 'forceExecution': true property needs to be sent.");
+        }
+
+        contentletHost.getMap().put(Contentlet.DONT_VALIDATE_ME, hostToBeSaved.getMap().get(Contentlet.DONT_VALIDATE_ME));
+        APILocator.getContentletAPI().copyProperties(contentletHost, hostToBeSaved.getMap());
         contentletHost.setInode("");
-        contentletHost.setIndexPolicy(host.getIndexPolicy());
+        contentletHost.setIndexPolicy(hostToBeSaved.getIndexPolicy());
         contentletHost.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
         contentletHost = APILocator.getContentletAPI().checkin(contentletHost, user, respectFrontendRoles);
 
-        if(host.isWorking() || host.isLive()){
+        if (null != contentletHost.get(Host.HOST_NAME_KEY) && null != hostToBeSaved.get(Host.HOST_NAME_KEY) &&
+                !contentletHost.isNew() && !contentletHost.getTitle().equals(hostToBeSaved.get(Host.HOST_NAME_KEY))) {
+
+            UpdateContainersPathsJob.triggerUpdateContainersPathsJob(
+                    hostToBeSaved.get(Host.HOST_NAME_KEY).toString(),
+                    (String) contentletHost.get(Host.HOST_NAME_KEY)
+            );
+            UpdatePageTemplatePathJob.triggerUpdatePageTemplatePathJob(
+                    hostToBeSaved.get(Host.HOST_NAME_KEY).toString(),
+                    (String) contentletHost.get(Host.HOST_NAME_KEY)
+            );
+        }
+
+        if(hostToBeSaved.isWorking() || hostToBeSaved.isLive()){
             APILocator.getVersionableAPI().setLive(contentletHost);
         }
         Host savedHost =  new Host(contentletHost);
@@ -962,7 +995,7 @@ public class HostAPIImpl implements HostAPI {
             systemHost.setHostname("system");
             systemHost.setSystemHost(true);
             systemHost.setHost(null);
-            systemHost.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+            systemHost.setLanguageId(languageAPI.getDefaultLanguage().getId());
             systemHost = new Host(contentletFactory.save(systemHost));
             systemHost.setIdentifier(Host.SYSTEM_HOST);
             systemHost.setModDate(new Date());
@@ -975,7 +1008,7 @@ public class HostAPIImpl implements HostAPI {
             this.systemHost = systemHost;
         } else {
             final String systemHostId = (String) rs.get(0).get("id");
-            this.systemHost =  APILocator.getHostAPI().DBSearch(systemHostId, systemUser, false);
+            this.systemHost = DBSearch(systemHostId, systemUser, false);
         }
         return systemHost;
     }
@@ -988,6 +1021,7 @@ public class HostAPIImpl implements HostAPI {
         return hosts;
     }
 
+    @WrapInTransaction
     @Override
     public void publish(Host host, User user, boolean respectFrontendRoles) throws DotContentletStateException, DotDataException, DotSecurityException {
 
@@ -1003,6 +1037,7 @@ public class HostAPIImpl implements HostAPI {
 
     }
 
+    @WrapInTransaction
     @Override
     public void unpublish(Host host, User user, boolean respectFrontendRoles) throws DotContentletStateException, DotDataException, DotSecurityException {
         if(host != null){
@@ -1024,23 +1059,38 @@ public class HostAPIImpl implements HostAPI {
 
     @Override
     @CloseDBIfOpened
-    public Host DBSearch(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        if (!UtilMethods.isSet(id))
+    public Host DBSearch(String id, User user, boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException {
+
+        if (!UtilMethods.isSet(id)) {
             return null;
+        }
 
         Host host = null;
 
-        final Optional<ContentletVersionInfo> vinfo = APILocator.getVersionableAPI().getContentletVersionInfo(id, APILocator.getLanguageAPI()
-                .getDefaultLanguage().getId());
+        final List<ContentletVersionInfo> verInfos = APILocator.getVersionableAPI()
+                .findContentletVersionInfos(id);
+        if (!verInfos.isEmpty()) {
+            final Language defaultLang = languageAPI.getDefaultLanguage();
 
-        if(vinfo.isPresent()) {
-            User systemUser = APILocator.systemUser();
+            final ContentletVersionInfo versionInfo = verInfos.stream()
+                    .filter(contentletVersionInfo -> contentletVersionInfo.getLang() == defaultLang
+                            .getId()).findFirst().orElseGet(() -> {
+                        Logger.warn(HostAPIImpl.class,
+                                String.format(
+                                        "Unable to find ContentletVersionInfo for site with id [%s] using default language [%s]. fallback to first entry found.",
+                                        id, defaultLang.getId()));
+                        return verInfos.get(0);
+                    });
 
-            String hostInode=vinfo.get().getWorkingInode();
-            final Contentlet cont= APILocator.getContentletAPI().find(hostInode, systemUser, respectFrontendRoles);
-            final ContentType type =APILocator.getContentTypeAPI(systemUser, respectFrontendRoles).find(Host.HOST_VELOCITY_VAR_NAME);
-            if(cont.getStructureInode().equals(type.inode())) {
-                host=new Host(cont);
+            final User systemUser = APILocator.systemUser();
+            final String hostInode = versionInfo.getWorkingInode();
+            final Contentlet cont = APILocator.getContentletAPI()
+                    .find(hostInode, systemUser, respectFrontendRoles);
+            final ContentType type = APILocator.getContentTypeAPI(systemUser, respectFrontendRoles)
+                    .find(Host.HOST_VELOCITY_VAR_NAME);
+            if (cont.getStructureInode().equals(type.inode())) {
+                host = new Host(cont);
                 hostCache.add(host);
             }
         }
@@ -1205,4 +1255,14 @@ public class HostAPIImpl implements HostAPI {
 		
 		return hosts;
 	}
+
+    @Override
+    public void flushAll() {
+        hostCache.clearCache();
+    }
+
+    @Override
+    public void flush(Host host) {
+        hostCache.remove(host);
+    }
 }

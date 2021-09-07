@@ -164,32 +164,55 @@ public class RegEX {
 	public static List<RegExMatch> find(String text, String regEx) throws DotRuntimeException{
 		return find(text, regEx, false);
 	}
-	
-	public static List<RegExMatch> findForUrlMap(String text, String regEx) throws DotRuntimeException{
+
+    /**
+     * Finds the list of matches for a URL Map and RegEx.
+     *
+     * @param text  The incoming URL Map.
+     * @param regEx The Regular Expression.
+     *
+     * @return The list of {@link RegExMatch} objects.
+     *
+     * @throws DotRuntimeException An error occurred with the specified RegEx.
+     */
+    public static List<RegExMatch> findForUrlMap(final String text, final String regEx) throws DotRuntimeException{
 		return find(text, regEx, true);
 	}
-	
-	private static List<RegExMatch> find(String text, String regEx, boolean isUrlMap) throws DotRuntimeException{
-		RegEX i = getInstance();
-		Perl5Matcher matcher = i.localP5Matcher.get();
+
+    /**
+     * Finds the list of matches for a given String and RegEx.
+     *
+     * @param text     The incoming String.
+     * @param regEx    The Regular Expression.
+     * @param isUrlMap Flag indicating if the operation is specific for a URL Map.
+     *
+     * @return The list of {@link RegExMatch} objects.
+     *
+     * @throws DotRuntimeException An error occurred with the specified RegEx.
+     */
+    private static List<RegExMatch> find(final String text, final String regEx, final boolean isUrlMap) throws DotRuntimeException{
+		final RegEX i = getInstance();
+		final Perl5Matcher matcher = i.localP5Matcher.get();
 		Pattern pattern;
 		try {
 			pattern = i.getPattern(regEx);
-		} catch (MalformedPatternException e) {
-			Logger.error(RegEX.class, "Unable to compile pattern for regex", e);
-			throw new DotRuntimeException("Unable to compile pattern for regex",e);
+		} catch (final MalformedPatternException e) {
+			final String errorMsg = String.format("Unable to compile pattern for regex with Text = [ %s ], regEx = [ " +
+					"%s ]: %s", text, regEx, e.getMessage());
+			Logger.error(RegEX.class, errorMsg, e);
+			throw new DotRuntimeException(errorMsg, e);
 		}
-		List<RegExMatch> res = new ArrayList<RegExMatch>();
+		final List<RegExMatch> res = new ArrayList<>();
 		MatchResult result;
-		PatternMatcherInput input = new PatternMatcherInput(text);
+		final PatternMatcherInput input = new PatternMatcherInput(text);
 		while (matcher.contains(input, pattern)) {
-			RegExMatch rm = new RegExMatch();
+			final RegExMatch rm = new RegExMatch();
 			result = matcher.getMatch();
 			if(!isUrlMap || result.beginOffset(0) == 0){
 				rm.setMatch(result.group(0));
 				rm.setBegin(result.beginOffset(0));
 				rm.setEnd(result.endOffset(0));
-				List<RegExMatch> r = new ArrayList<RegExMatch>();
+				final List<RegExMatch> r = new ArrayList<>();
 				for(int group = 1; group < result.groups(); group++) {
 					RegExMatch rm1 = new RegExMatch();
 					rm1.setMatch(result.group(group));
@@ -200,8 +223,8 @@ public class RegEX {
 				rm.setGroups(r);
 				res.add(rm);
 			}
-
 		}
 		return res;
 	}
+
 }

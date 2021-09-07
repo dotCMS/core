@@ -15,6 +15,7 @@ import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
@@ -226,15 +227,22 @@ public class FileStorageAPIImpl implements FileStorageAPI {
     public Map<String, Serializable> generateMetaData(final File binary,
             final GenerateMetadataConfig configuration) throws DotDataException {
 
-         Map<String, Serializable> metadataMap;
         final StorageKey storageKey = configuration.getStorageKey();
         final StoragePersistenceAPI storage = persistenceProvider.getStorage(storageKey.getStorage());
 
         this.checkBucket(storageKey, storage);  //if the group/bucket doesn't exist create it.
         this.checkOverride(storage, configuration); //if config states we need to remove and force regen
-        //if the entry isn't already there skip and simply store in cache.
-        if (!storage.existsObject(storageKey.getGroup(), storageKey.getPath())) {
-            if (this.validBinary(binary)) {
+        final boolean objectExists = storage.existsObject(storageKey.getGroup(), storageKey.getPath());
+
+        Map<String, Serializable> metadataMap = objectExists ? retrieveMetadata(storageKey, storage) : ImmutableMap.of();
+        final Map<String, Serializable> onlyHasCustomMetadataMap = configuration.getIfOnlyHasCustomMetadata().apply(metadataMap);
+
+        // here we test quite a few things
+        // if the metadata did not exist at all we need to generate it for sure .
+        //But if there was any metadata already and it only contained custom metadata attributes we need to generate it.
+        if (!objectExists || !onlyHasCustomMetadataMap.isEmpty()) {
+            if (validBinary(binary)) {
+
                 Logger.debug(FileStorageAPIImpl.class, ()->String.format(
                         "Object identified by `/%s/%s` didn't exist in storage %s will be generated.",
                         storageKey.getGroup(), storageKey,
@@ -250,11 +258,21 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
                     if(null != configuration.getMergeWithMetadata()){
 
-                        final Map<String, Serializable> patchMap = configuration.getMergeWithMetadata().getCustomMeta();
+                        final Map<String, Serializable> patchMap = configuration.getMergeWithMetadata().getCustomMetaWithPrefix();
+                        //we need to include the prefix since we're saving it directly into persistence
                         if(!patchMap.isEmpty()){
                             //This is necessary since metadataMap is immutable.
                             metadataMap = new HashMap<>(metadataMap);
                             patchMap.forEach(metadataMap::putIfAbsent);
+                        }
+
+                    } else {
+                        //Carry the custom metadata
+                        if(!onlyHasCustomMetadataMap.isEmpty()){
+                            //This metadata is expected to have prefix that's fine.
+                            //This is necessary since metadataMap is immutable.
+                            metadataMap = new HashMap<>(metadataMap);
+                            onlyHasCustomMetadataMap.forEach(metadataMap::putIfAbsent);
                         }
                     }
 
@@ -264,8 +282,6 @@ public class FileStorageAPIImpl implements FileStorageAPI {
             } else {
                throw new IllegalArgumentException(String.format("the binary `%s` isn't accessible ", binary != null ? binary.getName() : "unknown"));
             }
-        } else {
-            metadataMap = retrieveMetadata(storageKey, storage);
         }
 
         if (configuration.isCache()) {
@@ -295,7 +311,11 @@ public class FileStorageAPIImpl implements FileStorageAPI {
      * @param metadataMap
      */
     private void putIntoCache(final String cacheKey, final Map<String, Serializable> metadataMap) {
-        metadataCache.addMetadataMap(cacheKey, metadataMap);
+        if(metadataMap.isEmpty()){
+          metadataCache.removeMetadata(cacheKey);
+        } else {
+            metadataCache.addMetadataMap(cacheKey, metadataMap);
+        }
     }
 
     /**
@@ -470,11 +490,24 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
         this.checkBucket(storageKey, storage);
         if (storage.existsObject(storageKey.getGroup(), storageKey.getPath())) {
-
             final Map<String, Serializable> retrievedMetadata = retrieveMetadata(storageKey, storage);
             if(null != retrievedMetadata){
                 final Map<String,Serializable> newMetadataMap = new HashMap<>(retrievedMetadata);
-                newMetadataMap.putAll(prefixedCustomAttributes);
+
+                if(prefixedCustomAttributes.isEmpty()){
+                   //Delete all custom attributes
+                    newMetadataMap.keySet().removeAll(newMetadataMap.entrySet().stream()
+                            .filter(entry -> entry.getKey().startsWith(Metadata.CUSTOM_PROP_PREFIX))
+                            .map(Entry::getKey).collect(Collectors.toSet()));
+                } else {
+                    //merge maps
+                    prefixedCustomAttributes.forEach((key, serializable) -> {
+                        if (!newMetadataMap.containsKey(key)) {
+                            newMetadataMap.remove(key);
+                        }
+                    });
+                    newMetadataMap.putAll(prefixedCustomAttributes);
+                }
 
                 checkOverride(storage, fetchMetadataParams.getStorageKey(), true);
                 storeMetadata(storageKey, storage, newMetadataMap);
@@ -482,6 +515,8 @@ public class FileStorageAPIImpl implements FileStorageAPI {
                 if(null != fetchMetadataParams.getCacheKeySupplier()){
                     final String cacheKey = fetchMetadataParams.getCacheKeySupplier().get();
                     putIntoCache(cacheKey, newMetadataMap);
+                } else {
+                    Logger.warn(FileStorageAPIImpl.class, "No Cache Key has been provided for stored object "+storageKey);
                 }
             } else {
                 Logger.warn(FileStorageAPIImpl.class, String.format("Unable to locate object: `%s` ",storageKey));

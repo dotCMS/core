@@ -20,6 +20,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.util.HostNameComparator;
@@ -68,12 +69,15 @@ import io.vavr.control.Try;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -100,10 +104,16 @@ public class BrowserAjax {
 	String activeHostId = "";
     volatile String activeFolderInode = "";
     private static String SELECTED_BROWSER_PATH_OBJECT = "SELECTED_BROWSER_PATH_OBJECT";
-    List<String> openFolders = new ArrayList<String> ();
+	Set<String> openFolders = new LinkedHashSet<>();
 
     String lastSortBy = "name";
     boolean lastSortDirectionDesc = false;
+
+	final static private Comparator<Map> nameComparator = new Comparator<Map>() {
+		public int compare(Map o1, Map o2) {
+			return o1.get("name").toString().compareTo(o2.get("name").toString());
+		}
+	};
 
 
     /**
@@ -132,8 +142,15 @@ public class BrowserAjax {
      * @throws DotSecurityException
      */
     public List<Map> getTree(String hostId) throws DotDataException, DotSecurityException {
+
+		final WebContext ctx         = WebContextFactory.get();
+		final HttpSession session    = ctx.getSession();
+
+		if (null != session && null != session.getAttribute("siteBrowserActiveFolderInode")) {
+			activeFolderInode = (String)session.getAttribute("siteBrowserActiveFolderInode");
+		}
+
         hostId = UtilMethods.isSet(hostId) ? hostId : getCurrentHost();
-        WebContext ctx = WebContextFactory.get();
         User usr = getUser(ctx.getHttpServletRequest());
         User systemUser = userAPI.getSystemUser();
         Role[] roles = new Role[]{};
@@ -252,6 +269,35 @@ public class BrowserAjax {
         return getFoldersTree (f, roles);
     }
 
+	/**
+	 * Set the logic to select next time the site browser is open to select a folder
+	 * @param parentInode {@link String}
+	 * @param hostId {@link String}
+	 * @param usr {@link User}
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+    public void setCurrentOpenFolder(final String parentInode, final String hostId, final User usr) throws DotDataException, DotSecurityException {
+
+    	openFolders.clear();
+		final Folder leafFolder = APILocator.getFolderAPI().find(parentInode, usr, false);
+
+		if (null != leafFolder) {
+
+			activeHostId = hostId;
+			openFolders.clear();
+			openFolders.add(parentInode);
+			Permissionable parent = leafFolder.getParentPermissionable();
+			while (parent != null) {
+
+				if (parent instanceof Folder) {
+					openFolders.add(Folder.class.cast(parent).getInode());
+				}
+				parent = parent.getParentPermissionable();
+			}
+		}
+	}
+
     /**
      * Action called everytime a user closes a folder using the - (left hand side)
      * @param parentInode Parent folder to be opened
@@ -265,15 +311,25 @@ public class BrowserAjax {
     @SuppressWarnings("unchecked")
 	public List<Map<String, Object>> openFolderContent (String parentInode, String sortBy, boolean showArchived, long languageId) throws DotHibernateException, DotSecurityException, DotDataException {
 
-        activeFolderInode = parentInode;
-        this.lastSortBy = sortBy;
+		final WebContext ctx         = WebContextFactory.get();
+		final HttpSession session    = ctx.getSession();
+		String siteBrowserActiveFolderInode = null;
 
-    	if (sortBy != null && UtilMethods.isSet(sortBy)) {
-    		if (sortBy.equals(lastSortBy)) {
-    			this.lastSortDirectionDesc = !this.lastSortDirectionDesc;
-    		}
-    		this.lastSortBy = sortBy;
-    	}
+		if (null != session && null != session.getAttribute("siteBrowserActiveFolderInode")) {
+			siteBrowserActiveFolderInode = (String)session.getAttribute("siteBrowserActiveFolderInode");
+			session.removeAttribute("siteBrowserActiveFolderInode");
+		}
+
+        activeFolderInode = null != siteBrowserActiveFolderInode?siteBrowserActiveFolderInode:parentInode;
+
+		this.lastSortBy = sortBy;
+
+		if (sortBy != null && UtilMethods.isSet(sortBy)) {
+			if (sortBy.equals(lastSortBy)) {
+				this.lastSortDirectionDesc = !this.lastSortDirectionDesc;
+			}
+			this.lastSortBy = sortBy;
+		}
 
 		List<Map<String, Object>> listToReturn;
         try {
@@ -574,7 +630,7 @@ public class BrowserAjax {
 	}
 
 	public Map<String, Object> saveFileAction(String selectedItem,String wfActionAssign,String wfActionId,String wfActionComments, String wfConId, String wfPublishDate,
-			String wfPublishTime, String wfExpireDate, String wfExpireTime, String wfNeverExpire, String whereToSend, String forcePush) throws  DotSecurityException, ServletException{
+			String wfPublishTime, String wfExpireDate, String wfExpireTime, String wfNeverExpire, String whereToSend, String forcePush, String pathToMove) throws  DotSecurityException, ServletException{
 		WebContext ctx = WebContextFactory.get();
         User user = getUser(ctx.getHttpServletRequest());
 		Contentlet contentlet = null;
@@ -597,6 +653,9 @@ public class BrowserAjax {
 			contentlet.setStringProperty("wfNeverExpire", wfNeverExpire);
 			contentlet.setStringProperty("whereToSend", whereToSend);
 			contentlet.setStringProperty("forcePush", forcePush);
+			if (UtilMethods.isSet(pathToMove)) {
+				contentlet.setProperty(Contentlet.PATH_TO_MOVE, pathToMove);
+			}
 			contentlet.setTags();
 
 			wapi.fireWorkflowNoCheckin(contentlet, user);
@@ -742,7 +801,7 @@ public class BrowserAjax {
 
         }
 
-        	return folders;
+        	return folders.stream().sorted(nameComparator).collect(Collectors.toList());
     }
 
     public Map<String, Object> renameFolder (String inode, String newName) throws DotDataException, DotSecurityException {

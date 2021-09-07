@@ -20,7 +20,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 /**
  * @author Jonathan Gamba 5/30/18
  */
-@PowerMockIgnore("javax.management.*")
+@PowerMockIgnore({"javax.management.*", "jdk.internal.reflect.*"})
 @PrepareForTest({ClusterFactory.class})
 @RunWith(PowerMockRunner.class)
 public class SecretKeySpecFactoryTest extends UnitTestBase {

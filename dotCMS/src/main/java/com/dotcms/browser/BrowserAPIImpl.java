@@ -38,6 +38,7 @@ import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -329,7 +330,8 @@ public class BrowserAPIImpl implements BrowserAPI {
             List<Folder> folders = Collections.emptyList();
             try {
 
-                folders = folderAPI.findSubFolders(parent, userAPI.getSystemUser(), false);
+                folders = folderAPI.findSubFolders(parent, userAPI.getSystemUser(), false).stream().sorted(
+                        Comparator.comparing(Folder::getName)).collect(Collectors.toList());
             } catch (Exception e1) {
 
                 Logger.error(this, "Could not load folders : ", e1);
@@ -407,6 +409,10 @@ public class BrowserAPIImpl implements BrowserAPI {
                     wfActionMap.put("icon", action.getIcon());
                     wfActionMap.put("assignable",  action.isAssignable());
                     wfActionMap.put("commentable", action.isCommentable() || UtilMethods.isSet(action.getCondition()));
+                    if (action.hasMoveActionletActionlet() && !action.hasMoveActionletHasPathActionlet()) {
+
+                        wfActionMap.put("moveable", "true");
+                    }
 
                     final String actionName = Try.of(() -> LanguageUtil.get(user, action.getName())).getOrElse(action.getName());
                     final String schemeName = Try.of(() ->LanguageUtil.get(user,wfScheme.getName())).getOrElse(wfScheme.getName());

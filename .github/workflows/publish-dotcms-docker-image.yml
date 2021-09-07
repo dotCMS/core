@@ -1,0 +1,61 @@
+name: publish-dotcms-docker-image
+on:
+  workflow_dispatch:
+    inputs:
+      custom_label:
+        description: 'Custom label to add as part of the tag'
+        required: false
+      update_stable:
+        description: 'Update stable tags'
+        required: true
+        default: 'false'
+      also_latest:
+        description: 'Update also the "latest" tag (relies on update_stable input to be set to true)'
+        required: false
+        default: 'false'
+      dry_run:
+        description: 'Dry Run (does not publish to docker hub)'
+        required: false
+        default: 'false'
+jobs:
+  publish_image:
+    name: Publish DotCMS docker image
+    runs-on: ubuntu-latest
+    steps:
+      - name: GITHUB CONTEXT
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+        if: env.DEBUG == 'true'
+      - name: Checkout core
+        uses: actions/checkout@v2
+      - name: Set Common Vars
+        run: |
+          BUILD_ID=$(basename "${{ github.ref }}")
+          BUILD_HASH=$(git log -1 --pretty=%h)
+          eval $(cat dotCMS/gradle.properties| grep dotcmsReleaseVersion)
+          DOTCMS_VERSION="${dotcmsReleaseVersion}"
+
+          echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
+          echo "BUILD_HASH=${BUILD_HASH}" >> $GITHUB_ENV
+          echo "DOTCMS_VERSION=${DOTCMS_VERSION}" >> $GITHUB_ENV
+      - name: Discover docker tags
+        id: discover-docker-tags
+        uses: dotcms/discover-docker-tags-action@main
+        with:
+          version: ${{ ENV.DOTCMS_VERSION }}
+          hash: ${{ env.BUILD_HASH }}
+          label: ${{ github.event.inputs.custom_label }}
+          update_stable: ${{ github.event.inputs.update_stable }}
+          also_latest: ${{ github.event.inputs.also_latest }}
+      - name: Publish docker image
+        id: publish-docker-image
+        uses: dotcms/publish-docker-image-action@main
+        with:
+          dot_cicd_branch: master
+          build_id: ${{ env.BUILD_ID }}
+          tags: ${{ steps.discover-docker-tags.outputs.discovered_tags }}
+          github_user_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+          docker_hub_username: ${{ secrets.DOCKER_USERNAME }}
+          docker_hub_token: ${{ secrets.DOCKER_TOKEN }}
+          dry_run: ${{ github.event.inputs.dry_run }}

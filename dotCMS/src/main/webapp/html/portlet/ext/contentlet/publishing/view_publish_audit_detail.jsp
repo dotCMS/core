@@ -12,6 +12,8 @@
 <%@ page import="com.dotcms.publisher.bundle.bean.Bundle"%>
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.business.DotStateException"%>
+<%@ page import="com.dotcms.publishing.BundlerUtil" %>
+<%@ page import="com.dotcms.publishing.manifest.ManifestUtil" %>
 
 <%
     String bundleId = request.getParameter("bundle");
@@ -26,30 +28,35 @@
     int statusCode = 0;
     if ( null != bundleId ) {
         PublishAuditStatus publishAuditStatus = PublishAuditAPI.getInstance().getPublishAuditStatus( bundleId );
-        String pojo_string = publishAuditStatus.getStatusPojo().getSerialized();
-        currentEndpointHistory = PublishAuditHistory.getObjectFromString( pojo_string );
-        status = publishAuditStatus.getStatus();
-        statusCode = status.getCode();
 
-        if ( currentEndpointHistory != null && currentEndpointHistory.getAssets() != null && currentEndpointHistory.getAssets().size() > 0 ) {
-            for ( String id : currentEndpointHistory.getAssets().keySet() ) {
-                assetType = currentEndpointHistory.getAssets().get( id );
-                assetTitle = PublishAuditUtil.getInstance().getTitle( assetType, id );
-                
-                if(assetType.equals("contentlet")) {
-            		Contentlet con = PublishAuditUtil.getInstance().findContentletByIdentifier(id);
-            		try {
-            			APILocator.getHTMLPageAssetAPI().fromContentlet(con);
-            			assetType = "htmlpage"; // content is an htmlpage
-            		} catch(DotStateException e) {
-            			// not an htmlpage 
-            		}
-            	}
-                
-                break;
+        if (UtilMethods.isSet(publishAuditStatus) && UtilMethods.isSet(publishAuditStatus.getStatusPojo())) {
+            String pojo_string = publishAuditStatus.getStatusPojo().getSerialized();
+            currentEndpointHistory = PublishAuditHistory.getObjectFromString(pojo_string);
+            status = publishAuditStatus.getStatus();
+            statusCode = status.getCode();
+
+            if (currentEndpointHistory != null && currentEndpointHistory.getAssets() != null
+                    && currentEndpointHistory.getAssets().size() > 0) {
+                for (String id : currentEndpointHistory.getAssets().keySet()) {
+                    assetType = currentEndpointHistory.getAssets().get(id);
+                    assetTitle = PublishAuditUtil.getInstance().getTitle(assetType, id);
+
+                    if (assetType.equals("contentlet")) {
+                        Contentlet con = PublishAuditUtil.getInstance()
+                                .findContentletByIdentifier(id);
+                        try {
+                            APILocator.getHTMLPageAssetAPI().fromContentlet(con);
+                            assetType = "htmlpage"; // content is an htmlpage
+                        } catch (DotStateException e) {
+                            // not an htmlpage
+                        }
+                    }
+
+                    break;
+
+                }
 
             }
-
         }
     }
 %>
@@ -69,6 +76,10 @@
 
 
     <button dojoType="dijit.form.Button" onClick="window.location='/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadBundle/bid/<%=bundleId%>';" iconClass="downloadIcon"><%= LanguageUtil.get(pageContext, "download") %></button>
+
+    <%if (ManifestUtil.manifestExists(bundleId)){%>
+        <button dojoType="dijit.form.Button" onClick="window.location='/api/bundle/<%=bundleId%>/manifest'" iconClass="downloadIcon"><%= LanguageUtil.get(pageContext, "manifest") %></button>
+    <%}%>
 
     <% if ( (statusCode != 0 && status != null) && (status.equals( PublishAuditStatus.Status.FAILED_TO_PUBLISH ) || status.equals( PublishAuditStatus.Status.SUCCESS )) ) { %>
 

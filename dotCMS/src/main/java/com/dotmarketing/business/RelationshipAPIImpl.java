@@ -1,6 +1,11 @@
 package com.dotmarketing.business;
 
 
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -21,7 +26,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
-
 import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -30,11 +34,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import org.apache.commons.beanutils.BeanUtils;
-import java.util.Map;
 
 // THIS IS A FAKE API SO PEOPLE CAN FIND AND USE THE RELATIONSHIPFACTORY
 public class RelationshipAPIImpl implements RelationshipAPI {
@@ -95,7 +94,7 @@ public class RelationshipAPIImpl implements RelationshipAPI {
 
     @CloseDBIfOpened
     @Override
-    public List<Relationship> byContentType(ContentTypeIf type) throws DotDataException {
+    public List<Relationship> byContentType(ContentTypeIf type)  {
         return this.relationshipFactory.byContentType(type);
     }
 
@@ -122,11 +121,24 @@ public class RelationshipAPIImpl implements RelationshipAPI {
         return this.relationshipFactory.dbRelatedContent(relationship, contentlet);
     }
 
+    @CloseDBIfOpened
     @Override
     public List<Contentlet> dbRelatedContent(Relationship relationship, Contentlet contentlet, boolean hasParent)
             throws DotDataException {
         return this.relationshipFactory.dbRelatedContent(relationship, contentlet, hasParent);
     }
+
+    
+    
+    @Override
+    @CloseDBIfOpened
+    public List<Contentlet> dbRelatedContent(Relationship rel, Contentlet contentlet, boolean hAS_PARENT,
+                    boolean wORKING_VERSION, String string, int limit, int offset) throws DotDataException {
+
+        return this.relationshipFactory.dbRelatedContent( rel,  contentlet,  hAS_PARENT,
+                         wORKING_VERSION,  string,  limit,  offset);
+    }
+
 
     @CloseDBIfOpened
     @Override
@@ -146,12 +158,13 @@ public class RelationshipAPIImpl implements RelationshipAPI {
      * @param st
      * @return
      */
+    @CloseDBIfOpened
     @Deprecated
     @Override
     public boolean isParent(Relationship rel, ContentTypeIf st) {
         return this.relationshipFactory.isParent(rel, st);
     }
-
+    @CloseDBIfOpened
     @Override
     public boolean isChildField(Relationship rel, com.dotcms.contenttype.model.field.Field field) {
         return this.relationshipFactory.isChildField(rel, field);
@@ -163,17 +176,18 @@ public class RelationshipAPIImpl implements RelationshipAPI {
      * @param st
      * @return
      */
+    @CloseDBIfOpened
     @Deprecated
     @Override
     public boolean isChild(Relationship rel, ContentTypeIf st) {
         return this.relationshipFactory.isChild(rel, st);
     }
-
+    @CloseDBIfOpened
     @Override
     public boolean isParentField(Relationship rel, com.dotcms.contenttype.model.field.Field field) {
         return this.relationshipFactory.isParentField(rel, field);
     }
-
+    @CloseDBIfOpened
     @Override
     public boolean sameParentAndChild(Relationship rel) {
         return this.relationshipFactory.sameParentAndChild(rel);
@@ -190,6 +204,7 @@ public class RelationshipAPIImpl implements RelationshipAPI {
      * Guarantees a unique relationship for a field
      * @param relationship
      */
+    @CloseDBIfOpened
     private void checkRelationshipConstraints(final Relationship relationship)
             throws DotDataException {
 
@@ -205,6 +220,7 @@ public class RelationshipAPIImpl implements RelationshipAPI {
      * @return
      * @throws DotDataException
      */
+    @CloseDBIfOpened
     private boolean doesRelationshipFieldAlreadyExist(final Relationship relationship)
             throws DotDataException {
 
@@ -280,7 +296,7 @@ public class RelationshipAPIImpl implements RelationshipAPI {
         checkReadOnlyFields(relationship, inode);
         this.relationshipFactory.save(relationship);
     }
-
+    @CloseDBIfOpened
     private void checkReadOnlyFields(final Relationship relationship, final String inode) {
         if (UtilMethods.isSet(inode) && UtilMethods.isSet(relationship)) {
 
@@ -363,11 +379,12 @@ public class RelationshipAPIImpl implements RelationshipAPI {
         return this.relationshipFactory.getOneSidedRelationshipsCount(contentType);
     }
 
+    @CloseDBIfOpened
     @Override
     public ContentletRelationships getContentletRelationshipsFromMap(Contentlet contentlet, final Map<Relationship, List<Contentlet>> contentRelationships) {
         return new ContentletRelationshipsTransformer(contentlet, contentRelationships).findFirst();
     }
-
+    @CloseDBIfOpened
     @Override
     public Relationship getRelationshipFromField(final Field field, final User user)
             throws DotDataException, DotSecurityException {
@@ -384,7 +401,7 @@ public class RelationshipAPIImpl implements RelationshipAPI {
 
 
     }
-
+    @CloseDBIfOpened
     @Override
     public Relationship getRelationshipFromField(final com.dotcms.contenttype.model.field.Field field, final User user)
             throws DotDataException, DotSecurityException {
@@ -401,7 +418,7 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     }
 
     
-    
+    @CloseDBIfOpened
     @VisibleForTesting
     protected String suggestNewFieldName(final ContentType con, final Relationship relationship, final boolean isChild) {
         final String name = UtilMethods.capitalize(con.variable());
@@ -478,7 +495,7 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     public List<Relationship> dbAll() {
         return relationshipFactory.dbAll();
     }
-
+    @WrapInTransaction
     private void migrateOldRelationshipReferences(Relationship oldRelationship,
             Relationship newRelationship) throws DotDataException {
 
@@ -522,6 +539,7 @@ public class RelationshipAPIImpl implements RelationshipAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @WrapInTransaction
     private com.dotcms.contenttype.model.field.Field createRelationshipField(final String fieldName, final String parentContentTypeID, final int cardinality, final boolean isRequired, final String childContentTypeVariable)
             throws DotDataException, DotSecurityException {
         final com.dotcms.contenttype.model.field.RelationshipField field = ImmutableRelationshipField.builder()

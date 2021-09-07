@@ -1,13 +1,25 @@
 package com.dotcms.rest;
 
+import static com.dotcms.util.CollectionsUtils.list;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.SystemEventsFactory;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
-import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockAsyncResponse;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publisher.business.PublishAuditHistory;
+import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherAPIImpl;
@@ -21,9 +33,17 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import io.vavr.control.Try;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -34,17 +54,6 @@ import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-
-import static com.dotcms.util.CollectionsUtils.list;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class BundleResourceTest {
 
@@ -132,7 +141,7 @@ public class BundleResourceTest {
         bundle.setPublishDate(publishDate);
         APILocator.getBundleAPI().saveBundle(bundle);
 
-        return uuid;
+        return bundle.getId();
     }
 
     /**
@@ -141,7 +150,7 @@ public class BundleResourceTest {
     private HttpServletRequest getHttpRequest() {
         final MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(
-                        new MockAttributeRequest(new MockHttpRequest("localhost", "/").request())
+                        new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
                                 .request())
                         .request());
 
@@ -222,5 +231,47 @@ public class BundleResourceTest {
         final Response responseResource = bundleResource.downloadBundle(getHttpRequest(),response,bundleId);
 
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+    }
+
+    /**
+     * Method to Test: {@link BundleResource#deleteAll(HttpServletRequest, HttpServletResponse)}
+     * When: Bundles in every status
+     * Should: Delete all bundles
+     */
+    @Test
+    public void test_deleteAll() throws DotDataException, DotPublisherException {
+        final List<String> bundleIds = new ArrayList<>();
+
+        for(PublishAuditStatus.Status status :PublishAuditStatus.Status.values()) {
+            final String bundleId = insertPublishingBundle(adminUser.getUserId(),new Date());
+            insertPublishAuditStatus(status,bundleId);
+            assertNotNull(APILocator.getBundleAPI().getBundleById(bundleId));
+            bundleIds.add(bundleId);
+        }
+
+        final long currentTime = System.currentTimeMillis();
+        final Response responseResource = bundleResource.deleteAll(getHttpRequest(),response);
+        assertEquals(200, responseResource.getStatus());
+
+        for(int i=0; i<18; i++) { // max 3 min
+            if(SystemEventsFactory.getInstance().getSystemEventsAPI()
+                    .getEventsSince(currentTime).stream().anyMatch(systemEvent ->
+                            SystemEventType.DELETE_BUNDLE==systemEvent.getEventType()
+                    && systemEvent.getPayload().getData().toString().contains("Bundles successfully deleted"))) {
+                break;
+            }
+            Try.run(()->Thread.sleep(10000));
+        }
+
+        for (final String bundleId : bundleIds) {
+            assertNull(APILocator.getBundleAPI().getBundleById(bundleId));
+        }
+    }
+
+    private void insertPublishAuditStatus(final PublishAuditStatus.Status status, final String bundleID) throws DotPublisherException {
+        final PublishAuditStatus publishAuditStatus = new PublishAuditStatus(bundleID);
+        publishAuditStatus.setStatusPojo(new PublishAuditHistory());
+        publishAuditStatus.setStatus(status);
+        APILocator.getPublishAuditAPI().insertPublishAuditStatus(publishAuditStatus);
     }
 }

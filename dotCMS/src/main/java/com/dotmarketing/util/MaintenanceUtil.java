@@ -3,7 +3,6 @@ package com.dotmarketing.util;
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.cache.FieldsCache;
@@ -11,7 +10,6 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -35,8 +33,6 @@ import com.dotcms.repackage.net.sf.hibernate.HibernateException;
  *
  */
 public class MaintenanceUtil {
-
-	private static final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
 
 	/**
 	 * Use to delete the velocity static store
@@ -467,7 +463,7 @@ public class MaintenanceUtil {
 				SQL.append(",");
 			}
 			if(DbConnectionFactory.isMsSql()){
-				SQL.append("text" + count + " = replace(cast(text" + count + " as varchar(max)),?,?)");
+				SQL.append("text" + count + " = replace(cast(text" + count + " as nvarchar(max)),?,?)");
 			}else{
 				SQL.append("text" + count + " = replace(text" + count + ",?,?)");
 			}
@@ -496,7 +492,7 @@ public class MaintenanceUtil {
 				SQL.append(",");
 			}
 			if(DbConnectionFactory.isMsSql()){
-				SQL.append("text_area" + count + " = replace(cast(text_area" + count + " as varchar(max)),?,?)");
+				SQL.append("text_area" + count + " = replace(cast(text_area" + count + " as nvarchar(max)),?,?)");
 			}else{
 				SQL.append("text_area" + count + " = replace(text_area" + count + ",?,?)");
 			}
@@ -518,7 +514,7 @@ public class MaintenanceUtil {
 		}
 		Logger.info(MaintenanceUtil.class, "ABOUT TO UPDATE COLUMNS code, pre_loop, and post_loop ON THE " + Inode.Type.CONTAINERS.getTableName() + " TABLE");
 		if(DbConnectionFactory.isMsSql()){
-			dc.setSQL("UPDATE " + Inode.Type.CONTAINERS.getTableName() + " SET code=replace(cast(code as varchar(max)),?,?),pre_loop=replace(cast(pre_loop as varchar(max)),?,?),post_loop=replace(cast(post_loop as varchar(max)),?,?) WHERE " + Inode.Type.CONTAINERS.getTableName() + ".inode = (SELECT working_inode FROM container_version_info cvi WHERE (cvi.working_inode = " + Inode.Type.CONTAINERS.getTableName() + ".inode OR cvi.live_inode =" + Inode.Type.CONTAINERS.getTableName() + ".inode)) ");
+			dc.setSQL("UPDATE " + Inode.Type.CONTAINERS.getTableName() + " SET code=replace(cast(code as nvarchar(max)),?,?),pre_loop=replace(cast(pre_loop as nvarchar(max)),?,?),post_loop=replace(cast(post_loop as nvarchar(max)),?,?) WHERE " + Inode.Type.CONTAINERS.getTableName() + ".inode = (SELECT working_inode FROM container_version_info cvi WHERE (cvi.working_inode = " + Inode.Type.CONTAINERS.getTableName() + ".inode OR cvi.live_inode =" + Inode.Type.CONTAINERS.getTableName() + ".inode)) ");
 		}else{
 			dc.setSQL("UPDATE " + Inode.Type.CONTAINERS.getTableName() + " SET code=replace(code,?,?),pre_loop=replace(pre_loop,?,?),post_loop=replace(post_loop,?,?) WHERE " + Inode.Type.CONTAINERS.getTableName() + ".inode = (SELECT working_inode FROM container_version_info cvi WHERE (cvi.working_inode = " + Inode.Type.CONTAINERS.getTableName() + ".inode OR cvi.live_inode = " + Inode.Type.CONTAINERS.getTableName() + ".inode)) ");
 		}
@@ -536,7 +532,7 @@ public class MaintenanceUtil {
 		}
 		Logger.info(MaintenanceUtil.class, "ABOUT TO UPDATE body COLUMN ON THE template TABLE");
 		if(DbConnectionFactory.isMsSql()){
-			dc.setSQL("UPDATE template SET body=replace(cast(body as varchar(max)),?,?) WHERE template.inode = (SELECT working_inode FROM template_version_info tvi WHERE (tvi.working_inode = template.inode OR tvi.live_inode = template.inode)) ");
+			dc.setSQL("UPDATE template SET body=replace(cast(body as nvarchar(max)),?,?) WHERE template.inode = (SELECT working_inode FROM template_version_info tvi WHERE (tvi.working_inode = template.inode OR tvi.live_inode = template.inode)) ");
 		}else{
 			dc.setSQL("UPDATE template SET body=replace(body,?,?) WHERE template.inode = (SELECT working_inode FROM template_version_info tvi WHERE (tvi.working_inode = template.inode OR tvi.live_inode = template.inode)) ");
 		}
@@ -550,7 +546,7 @@ public class MaintenanceUtil {
 		}
 		Logger.info(MaintenanceUtil.class, "ABOUT TO UPDATE field_values COLUMN ON THE field TABLE");
 		if(DbConnectionFactory.isMsSql()){
-			dc.setSQL("UPDATE field SET field_values=replace(cast(field_values as varchar(max)),?,?)");
+			dc.setSQL("UPDATE field SET field_values=replace(cast(field_values as nvarchar(max)),?,?)");
 		}else{
 			dc.setSQL("UPDATE field SET field_values=replace(field_values,?,?)");
 		}
@@ -564,7 +560,7 @@ public class MaintenanceUtil {
 		}
 		Logger.info(MaintenanceUtil.class, "ABOUT TO UPDATE url COLUMN ON THE links TABLE");
 		if(DbConnectionFactory.isMsSql()){
-			dc.setSQL("UPDATE links SET url=replace(cast(url as varchar(max)),?,?) WHERE links.inode = (SELECT working_inode FROM link_version_info lvi WHERE (lvi.working_inode = links.inode OR lvi.live_inode = links.inode)) ");
+			dc.setSQL("UPDATE links SET url=replace(cast(url as nvarchar(max)),?,?) WHERE links.inode = (SELECT working_inode FROM link_version_info lvi WHERE (lvi.working_inode = links.inode OR lvi.live_inode = links.inode)) ");
 		}else{
 			dc.setSQL("UPDATE links SET url=replace(url,?,?) WHERE links.inode = (SELECT working_inode FROM link_version_info lvi WHERE (lvi.working_inode = links.inode OR lvi.live_inode = links.inode)) ");
 		}

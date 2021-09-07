@@ -1092,7 +1092,7 @@ public class CategoryAPITest extends IntegrationTestBase {
         final Category newCategory = new CategoryDataGen().setCategoryName(categoryName)
                 .setCategoryVelocityVarName(categoryName).setKey(categoryName).nextPersisted();
         //Find created Category
-        final Category getCategory = categoryAPI.findByKey(categoryName,user,false);
+        final Category getCategory = categoryAPI.findByKey(categoryName, user,false);
         //Check that the category obtained is the same as the created
         assertNotNull(getCategory);
         assertEquals(categoryName,getCategory.getCategoryName());

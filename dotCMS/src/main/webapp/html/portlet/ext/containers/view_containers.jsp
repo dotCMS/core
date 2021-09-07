@@ -102,8 +102,8 @@ function submitfmDelete() {
 	{
 		var containerInodesToDelete = dojo.query("input[name='publishInode']")
         									.filter(function(x){return x.checked;})
-        									.map(function(x){return x.value;}).toString();		
-		
+        									.map(function(x){return x.value;}).toString();
+
 		delContainer(containerInodesToDelete, "<%=referer%>", false);
 	}
 }
@@ -144,7 +144,7 @@ function delContainer(inode, referer, isFromMenu) {
 
 	var callMetaData = {
 			  callback:handleDepResponse,
-			  arg: inode + '|' + referer + '|' + isFromMenu, 
+			  arg: inode + '|' + referer + '|' + isFromMenu,
 			   // specify an argument to pass to the callback and exceptionHandler
 			};
 
@@ -156,7 +156,7 @@ function handleDepResponse(data, arg1) {
 	var inode = params[0];
 	var referer = params[1];
 	var isFromMenu = params[2] == 'true';
-	
+
 	if(data!=null) {
 		dojo.byId("depDiv").innerHTML = "<br />" + data;
 		dijit.byId("dependenciesDialog").show();
@@ -166,7 +166,7 @@ function handleDepResponse(data, arg1) {
 		form = document.getElementById('fm_publish');
 		form.cmd.value = 'full_delete_list';
 		form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/containers/edit_container" /><portlet:param name="cmd" value="full_delete_list" /></portlet:actionURL>';
-		submitForm(form);		
+		submitForm(form);
 	}
 }
 
@@ -179,6 +179,20 @@ function processDelete(inode, referer) {
 	}
 }
 
+function setBrowserFolder(path) {
+	fetch('/api/v1/browser/selectedfolder', {
+		method: 'PUT',
+		body: JSON.stringify({ "path":path }),
+		headers: {
+		'Content-type': 'application/json; charset=UTF-8'
+		}
+	})
+	.then(res => res.json())
+	.then(() => {
+		window.top.location ='/dotAdmin/#/c/site-browser';
+	})
+}
+
 </script>
 <%  referer = java.net.URLEncoder.encode(referer,"UTF-8"); %>
 
@@ -189,7 +203,7 @@ function processDelete(inode, referer) {
 <liferay:param name="box_title" value='<%= LanguageUtil.get(pageContext, "view-containers-all") %>' />
 
 <div class="portlet-main">
-	
+
 <form id="fm" method="post">
 <input type="hidden" name="resetQuery" value="">
 <input type="hidden" name="pageNumber" value="<%=pageNumber%>">
@@ -210,29 +224,29 @@ function processDelete(inode, referer) {
 			<%		}
 				} %>
 		</select>
-		
+
 		<input type="text" name="query" dojoType="dijit.form.TextBox" style="width:175px;" value="<%= com.dotmarketing.util.UtilMethods.isSet(query) ? query : "" %>">
-	    
+
 	    <button dojoType="dijit.form.Button" type="submit" onClick="submitfm()" iconClass="searchIcon">
 	        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %>
 	    </button>
-	    
+
 		<button dojoType="dijit.form.Button" onClick="resetSearch()" iconClass="resetIcon">
 	          <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Reset")) %>
 	    </button>
-	    
+
 	    &nbsp; &nbsp;
-	    
+
 	    <input type="checkbox" dojoType="dijit.form.CheckBox"  name="showDeletedCB" id="showDeletedCB"onClick="javascript:submitfm();" <%= (showDeleted!=null) && (showDeleted.equals("true")) ? "checked" : "" %> value="true">
 		<label for="showDeletedCB" style="font-size:85%;"><%= LanguageUtil.get(pageContext, "Show-Archived") %></label>
 	</div>
-	
+
 	<div class="portlet-toolbar__info"></div>
 	<div class="portlet-toolbar__actions-secondary">
-		<!-- START Actions -->			
-			<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"'>
+		<!-- START Actions -->
+			<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"fa-plus", class:"dijitDropDownActionButton"'>
 	            <span></span>
-	
+
 	            <div data-dojo-type="dijit/Menu" class="contentlet-menu-actions">
 					<% if((Boolean) request.getAttribute(com.dotmarketing.util.WebKeys.CONTAINER_CAN_ADD)) { %>
 						<div data-dojo-type="dijit/MenuItem" onClick="javascript:addAsset(); return false;" iconClass="plusIcon">
@@ -243,7 +257,7 @@ function processDelete(inode, referer) {
 					<div data-dojo-type="dijit/MenuItem" onClick="submitfmPublish();"  disabled="true" id="publishButton" iconClass="publishIcon">
 					    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publish")) %>
 					</div>
-					
+
 					<div data-dojo-type="dijit/MenuItem" onClick="submitfmDelete();" id="deleteButton" disabled="true" iconClass="deleteIcon">
 					    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete")) %>
 					</div>
@@ -267,7 +281,7 @@ function processDelete(inode, referer) {
 		}
 		t.start();
 	});
-</script> 
+</script>
 </form>
 
 
@@ -343,7 +357,6 @@ function processDelete(inode, referer) {
 
 		%>
 		<tr <%=str_style%> id="tr<%=k%>">
-
 			<% if (isDBSource) { %>
 			<td nowrap style="text-align:center;">
 
@@ -373,18 +386,16 @@ function processDelete(inode, referer) {
 				</script>
 			</td>
 			<% } else { %>
-			<td nowrap style="text-align:center;">
-
-				&nbsp;&nbsp;&nbsp;
+			<td nowrap style="text-align:center;" <%if(!container.isDeleted()){%>onclick="setBrowserFolder('<%=path%>')" <%}%>>
 			</td>
-			<td nowrap>
+			<td nowrap <%if(!container.isDeleted()){%>onclick="setBrowserFolder('<%=path%>')" <%}%>>
 				<%=container.getTitle()%> | <%=path%>
 			</td>
-			<td nowrap >
+			<td nowrap <%if(!container.isDeleted()){%>onclick="setBrowserFolder('<%=path%>')" <%}%>>
 				<%= com.dotmarketing.util.UtilHTML.getStatusIcons(container) %>
 			</td>
-			<td><%=container.getFriendlyName()%></td>
-			<td nowrap >
+			<td <%if(!container.isDeleted()){%>onclick="setBrowserFolder('<%=path%>')" <%}%>><%=container.getFriendlyName()%></td>
+			<td nowrap <%if(!container.isDeleted()){%>onclick="setBrowserFolder('<%=path%>')" <%}%>>
 				<%=modDateFormat.format(container.getModDate())%>
 			</td>
 			<% } %>

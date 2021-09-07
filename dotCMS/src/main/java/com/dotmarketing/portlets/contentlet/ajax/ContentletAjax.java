@@ -11,6 +11,7 @@ import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.enterprise.FormAJAXProxy;
 import com.dotcms.keyvalue.model.KeyValue;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
+import com.dotcms.rest.api.v1.workflow.ActionInputView;
 import com.dotcms.util.LogTime;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -95,6 +96,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -709,7 +711,7 @@ public class ContentletAjax {
 				}
 				if(fieldName.equalsIgnoreCase("conhost")){
 					fieldValue = fieldValue.equalsIgnoreCase("current") ?
-							(String) sess.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)
+							Host.class.cast(sess.getAttribute(WebKeys.CURRENT_HOST)).getIdentifier()
 							: fieldValue;
 
 					if(!filterSystemHost  && !fieldValue.equals(Host.SYSTEM_HOST)){
@@ -1402,12 +1404,19 @@ public class ContentletAjax {
             final String fieldName) {
 
         if (st != null) {
-            final Field field = st.getFieldVar(
-                    fieldName.split("\\.").length > 1 ? fieldName.split("\\.")[1] : fieldName);
+            final String fieldVar =
+                    fieldName.split("\\.").length > 1 ? fieldName.split("\\.")[1] : fieldName;
+            final Field field = st.getFieldVar(fieldVar);
 
             if (field != null && field.getFieldType().equals(FieldType.RELATIONSHIP.toString())) {
                 Relationship relationship = APILocator.getRelationshipAPI()
                         .byTypeValue(field.getFieldRelationType());
+
+                //Considers Many to One relationships where the fieldName might not contain the relation type value
+                if (null == relationship && !field.getFieldRelationType().contains(".")) {
+                    relationship = APILocator.getRelationshipAPI()
+                            .byTypeValue(st.getVelocityVarName() + StringPool.PERIOD + fieldVar);
+                }
                 return relationship != null?Optional.of(relationship):Optional.empty();
             }
         }
@@ -1461,6 +1470,10 @@ public class ContentletAjax {
                 wfActionMap.put("assignable", action.isAssignable());
                 wfActionMap.put("commentable", action.isCommentable() || UtilMethods.isSet(action.getCondition()));
                 wfActionMap.put("requiresCheckout", action.requiresCheckout());
+				if (action.hasMoveActionletActionlet() && !action.hasMoveActionletHasPathActionlet()) {
+
+					wfActionMap.put("moveable", "true");
+				}
 
                 final List<WorkflowActionClass> actionlets =
 						APILocator.getWorkflowAPI().findActionClasses(action);
@@ -2281,7 +2294,7 @@ public class ContentletAjax {
 		try{
 			HibernateUtil.startTransaction();
 			Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<Relationship, List<Contentlet>>();
-			List<Relationship> rels =  FactoryLocator.getRelationshipFactory().byContentType(structure);
+			List<Relationship> rels =  APILocator.getRelationshipAPI().byContentType(structure);
 			for (Relationship r : rels) {
 				if (!contentRelationships.containsKey(r)) {
 					contentRelationships
@@ -2460,15 +2473,15 @@ public class ContentletAjax {
 			currentContentlet = conAPI.find(contentletIdentifier, currentUser, false);
 			contentletToUnrelate = conAPI.find(identifierToUnrelate, currentUser, false);
 
-			relationship =  FactoryLocator.getRelationshipFactory().byInode(relationshipInode);
+			relationship =  APILocator.getRelationshipAPI().byInode(relationshipInode);
 
 			conList.add(contentletToUnrelate);
-			FactoryLocator.getRelationshipFactory().deleteByContent(currentContentlet, relationship, conList);
+			APILocator.getRelationshipAPI().deleteByContent(currentContentlet, relationship, conList);
 
 			//if contentletToUnrelate is related as new content, there exists the below relation which also needs to be deleted.
 			conList.clear();
 			conList.add(currentContentlet);
-			FactoryLocator.getRelationshipFactory().deleteByContent(contentletToUnrelate, relationship, conList);
+			APILocator.getRelationshipAPI().deleteByContent(contentletToUnrelate, relationship, conList);
 
 			conAPI.refresh(currentContentlet);
 			conAPI.refresh(contentletToUnrelate);

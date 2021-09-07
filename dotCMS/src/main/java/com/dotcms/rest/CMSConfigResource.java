@@ -1,12 +1,15 @@
 package com.dotcms.rest;
 
 import com.dotcms.company.CompanyAPI;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotcms.rest.api.v1.system.ConfigurationHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.InvalidTimeZoneException;
@@ -21,12 +24,12 @@ import com.liferay.portal.ejb.CompanyManagerUtil;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -62,27 +65,37 @@ public class CMSConfigResource {
      * @param primaryColor this one is the Primary Color
      * @param secondaryColor this one is the Secondary Color
      * @param homeURL
+     * @param loginLogo dotAsset Path of the logo showed at the login screen
+     * @paramnavLogo dotAsset Path of the logo showed at the nav bar
      * @return
      * @throws IOException
      * @throws JSONException
      */
     @POST
-    @Path ("/saveCompanyBasicInfo")
-    @Produces (MediaType.APPLICATION_JSON)
-    @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
-    public Response saveCompanyBasicInfo ( @Context HttpServletRequest request,
-                                           @Context final HttpServletResponse response,
-                                           @FormParam ("user") final String user,
-                                           @FormParam ("password") final String password,
-                                           @FormParam ("portalURL") final String portalURL,
-                                           @FormParam ("mx") final String mx,
-                                           @FormParam ("emailAddress") final String emailAddress,
-                                           @FormParam ("size") final String backgroundColor,
-                                           @FormParam("type") final String primaryColor,
-                                           @FormParam("street") final String secondaryColor,
-                                           @FormParam ("homeURL") final String homeURL ) throws IOException, JSONException {
+    @Path("/saveCompanyBasicInfo")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response saveCompanyBasicInfo(@Context HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @FormParam("user") final String user,
+            @FormParam("password") final String password,
+            @FormParam("portalURL") final String portalURL,
+            @FormParam("mx") final String mx,
+            @FormParam("emailAddress") final String emailAddress,
+            @FormParam("size") final String backgroundColor,
+            @FormParam("type") final String primaryColor,
+            @FormParam("street") final String secondaryColor,
+            @FormParam("homeURL") final String homeURL,
+            @FormParam("city") final String loginLogo,
+            @FormParam("state") String navLogo) throws IOException, JSONException {
 
         InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, request, response, true, PortletID.CONFIGURATION.toString() );
+
+        //Nav Logo Feature is not for Community level license
+        if(LicenseUtil.getLevel() == LicenseLevel.COMMUNITY.level && UtilMethods.isSet(navLogo)){
+            Logger.warn(this,"NavLogo Feature is only for Enterprise Edition");
+            navLogo = StringPool.BLANK;
+        }
 
         Map<String, String> paramsMap = initData.getParamsMap();
         paramsMap.put( "portalURL", portalURL );
@@ -92,13 +105,21 @@ public class CMSConfigResource {
         paramsMap.put("type", primaryColor);
         paramsMap.put("street", secondaryColor);
         paramsMap.put( "homeURL", homeURL );
+        paramsMap.put("city",loginLogo);
+        paramsMap.put("state",navLogo);
 
         ResourceResponse responseResource = new ResourceResponse( paramsMap );
         StringBuilder responseMessage = new StringBuilder();
 
         //Validate the parameters
-        if ( !responseResource.validate( responseMessage, "portalURL", "mx", "emailAddress", "size","type","street" ) ) {
+        if ( !responseResource.validate( responseMessage, "portalURL", "emailAddress", "size","type","street" ) ) {
             return responseResource.responseError( responseMessage.toString(), HttpStatus.SC_BAD_REQUEST );
+        }
+
+        try {
+            ConfigurationHelper.INSTANCE.parseMailAndSender(emailAddress);
+        } catch (IllegalArgumentException iae){
+            return responseResource.responseError( iae.getMessage(), HttpStatus.SC_BAD_REQUEST );
         }
 
         try {
@@ -115,6 +136,8 @@ public class CMSConfigResource {
             currentCompany.setType(primaryColor);
             currentCompany.setStreet(secondaryColor);
             currentCompany.setHomeURL( homeURL );
+            currentCompany.setCity(loginLogo);
+            currentCompany.setState(navLogo);
 
             //Update the company
             CompanyManagerUtil.updateCompany( currentCompany );
@@ -277,7 +300,7 @@ public class CMSConfigResource {
     }
 
     /**
-     * Updates the company logo.
+     * Updates the company logo. Now to update the logo use the {@link CMSConfigResource#saveCompanyBasicInfo}
      *
      * @param request
      * @param user
@@ -288,6 +311,7 @@ public class CMSConfigResource {
      * @throws IOException
      * @throws JSONException
      */
+    @Deprecated
     @POST
     @Path ("/saveCompanyLogo")
     @Produces (MediaType.TEXT_HTML)

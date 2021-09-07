@@ -1,0 +1,445 @@
+{
+	"info": {
+		"_postman_id": "d960c039-ae36-4467-ad17-7682b26d49f1",
+		"name": "UserResource",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Get Users Include Anon and Default User",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json().entity.data;",
+							"",
+							"",
+							"pm.test(\"Contains anonymous\", function () {",
+							"    pm.expect(_isContains(jsonData, \"id\" ,\"anonymous\")).to.be.true;",
+							"});",
+							"",
+							"function _isContains(json, keyname, value) {",
+							" return Object.keys(json).some(key => {",
+							"        return typeof json[key] === 'object' ? ",
+							"        _isContains(json[key], keyname, value) : key === keyname && json[key] === value;",
+							"    });",
+							"}",
+							"",
+							"pm.test(\"Contains default\", function () {",
+							"    pm.expect(_isContains(jsonData, \"id\" ,\"dotcms.org.default\")).to.be.true;",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/users/filter/limit/100/includeanonymous/true/includedefault/true",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"users",
+						"filter",
+						"limit",
+						"100",
+						"includeanonymous",
+						"true",
+						"includedefault",
+						"true"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get LoginAsData Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json().entity;",
+							"",
+							"pm.test('Must not contains Admin', () => {",
+							"    _.any(jsonData, (item) => {",
+							"        pm.expect(item.firstName).to.not.be.eql('Admin')",
+							"    })",
+							"})"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/users/loginAsData?per_page=40",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"users",
+						"loginAsData"
+					],
+					"query": [
+						{
+							"key": "per_page",
+							"value": "40"
+						}
+					]
+				},
+				"description": "Get all the users the user can login as, must exclude itself."
+			},
+			"response": []
+		},
+		{
+			"name": "Get Users Include Anon and Exclude Default User",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json().entity.data;",
+							"",
+							"",
+							"pm.test(\"Contains anonymous\", function () {",
+							"    pm.expect(_isContains(jsonData, \"id\" ,\"anonymous\")).to.be.true;",
+							"});",
+							"",
+							"function _isContains(json, keyname, value) {",
+							" return Object.keys(json).some(key => {",
+							"        return typeof json[key] === 'object' ? ",
+							"        _isContains(json[key], keyname, value) : key === keyname && json[key] === value;",
+							"    });",
+							"}",
+							"",
+							"pm.test(\"Not Contains default\", function () {",
+							"    pm.expect(_isContains(jsonData, \"id\" ,\"dotcms.org.default\")).to.be.false;",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/users/filter/limit/100/includeanonymous/true/includedefault/false",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"users",
+						"filter",
+						"limit",
+						"100",
+						"includeanonymous",
+						"true",
+						"includedefault",
+						"false"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Users Exclude Anon and Default User",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json().entity.data;",
+							"",
+							"pm.test(\"Not Contains anonymous\", function () {",
+							"    pm.expect(_isContains(jsonData, \"id\" ,\"anonymous\")).to.be.false;",
+							"});",
+							"",
+							"function _isContains(json, keyname, value) {",
+							" return Object.keys(json).some(key => {",
+							"        return typeof json[key] === 'object' ? ",
+							"        _isContains(json[key], keyname, value) : key === keyname && json[key] === value;",
+							"    });",
+							"}",
+							"",
+							"pm.test(\"Not Contains default\", function () {",
+							"    pm.expect(_isContains(jsonData, \"id\" ,\"dotcms.org.default\")).to.be.false;",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/users/filter/limit/100/includeanonymous/false/includedefault/false",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"users",
+						"filter",
+						"limit",
+						"100",
+						"includeanonymous",
+						"false",
+						"includedefault",
+						"false"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Users Check Total Value",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json().entity;",
+							"",
+							"pm.test(\"Total Check\", function () {",
+							"    pm.expect(jsonData.total).to.be.greaterThan(0);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/users/filter/",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"users",
+						"filter",
+						""
+					]
+				},
+				"description": "* <b>Given scenario:</b> Get All the Users from the system.\n     * <b>Expected result:</b> The Total field should be greaterThan 0, so at least 1 user must be returned."
+			},
+			"response": []
+		},
+		{
+			"name": "Get User Current",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 \", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Valid response\", function () {",
+							"    pm.expect(jsonData.email).to.eq(\"admin@dotcms.com\");",
+							"    pm.expect(jsonData.loginAs).to.eq(true);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/users/current",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"users",
+						"current"
+					]
+				},
+				"description": "Method to test: current <br/>\nGiven Scenario: request the current endpoint and expects to recovery the loginAs <br/>\nExpectedResult: The login as should be true"
+			},
+			"response": []
+		}
+	]
+}

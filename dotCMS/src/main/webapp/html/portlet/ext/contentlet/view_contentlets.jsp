@@ -30,7 +30,8 @@
     List<ContentType> contentTypes = (List<ContentType>)request.getAttribute ("contentSearchContentTypes");
 
     List<Structure> structures = new StructureTransformer(contentTypes).asStructureList();
-
+    
+    
     List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketing.util.WebKeys.LANGUAGES);
 
     java.util.Map params = new java.util.HashMap();
@@ -199,8 +200,11 @@
     final List<PublishingEndPoint> sendingEndpointsList = pepAPI.getReceivingEndPoints();
     final boolean sendingEndpoints = UtilMethods.isSet(sendingEndpointsList) && !sendingEndpointsList.isEmpty();
     final boolean canReindexContentlets = APILocator.getRoleAPI().doesUserHaveRole(user,APILocator.getRoleAPI().loadRoleByKey(Role.CMS_POWER_USER))|| com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());
-%>
 
+    Map<String, String> initParams = (Map<String, String>) request.getAttribute("initParams");
+    final String dataViewMode = initParams.getOrDefault("dataViewMode", "");
+    
+%>
 
 <jsp:include page="/html/portlet/ext/folders/context_menus_js.jsp" />
 <script type='text/javascript' src='/html/js/scriptaculous/prototype.js'></script>
@@ -213,7 +217,6 @@
 <jsp:include page="/html/portlet/ext/folders/menu_actions_js.jsp" />
 
 <script type="text/javascript">
-
     var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
 
     var dataItems = {
@@ -237,30 +240,13 @@
                         continue;
                     }
 
-                    String labelAndIcon = (contentType.getStructureType()==1)
-                          ? "<span class='contentIcon'></span>"
-                              : (contentType.getStructureType()==2)
-                                  ? "<span class='gearIcon'></span>"
-                                      : (contentType.getStructureType()==3)
-                                          ? "<span class='fa-columns'></span>"
-                                              : (contentType.getStructureType()==4)
-                                              ? "<span class='fileIcon'></span>"
-                                                  : (contentType.getStructureType()==5)
-                                                  ? "<span class='pageIcon'></span> "
-                                                      : (contentType.getStructureType()==6)
-                                                      ? "<span class='personaIcon'></span>"
-                                                        : (contentType.getStructureType()==7)
-                                                        ? "<span class='vanityIcon'></span>"
-                                                            : (contentType.getStructureType()==8)
-                                                            ? "<span class='languageVarIcon'></span>"
-                                                              : (contentType.getStructureType()==9)
-                                                              ? "<span class='dotAssetIcon'></span>"
-                                                                :"<span class='blankIcon'></span>";
+                    String labelAndIcon = "<i class='material-icons'>" + contentType.getIcon() +"</i>";
 
-                    String contentTypeName= UtilMethods.javaScriptify(contentType.getName());
-                    labelAndIcon+="&nbsp; &nbsp;" + contentTypeName;
+                    String contentTypeName = UtilMethods.javaScriptify(contentType.getName());
+                    labelAndIcon+= contentTypeName;
+                    labelAndIcon = "<div class='label'>" + labelAndIcon + "<div>";
                     if(contentType.getStructureType() != baseType){
-                      labelAndIcon = "<div style='height:1px;margin:-1px -10px 0px -10px;background:silver;'></div>" + labelAndIcon;
+                        labelAndIcon = "<div class='separator'></div>" + labelAndIcon;
                       baseType = contentType.getStructureType();
                     }
             %>
@@ -534,7 +520,16 @@
     })
 
     function initialLoad() {
-        doSearch(<%= currpage %>, "<%=orderBy%>");
+        var urlParams = new URLSearchParams(window.location.href);
+        var portletId = urlParams.get('angularCurrentPortlet');
+
+        var viewDisplayMode = '<%=dataViewMode%>';
+        if (viewDisplayMode !== '') {
+            doSearch(<%= currpage %>, "<%=orderBy%>", viewDisplayMode);
+        } else {
+            doSearch(<%= currpage %>, "<%=orderBy%>")
+        }
+
         dijit.byId("searchButton").attr("disabled", false);
         dijit.byId("clearButton").setAttribute("disabled", false);
 
@@ -631,17 +626,17 @@
                 <!-- START Advanced Search-->
                 <div id="advancedSearch">
                     <dl class="vertical">
-                        <dt><label><%=LanguageUtil.get(pageContext, "Type") %>:</label></dt>
-                        <dd><span id="structSelectBox"></span></dd>
+                        <dd><input type="text" dojoType="dijit.form.TextBox" tabindex="1" placeholder="<%= LanguageUtil.get(pageContext, "Search").replace("\"", "'") %>" onKeyUp='doSearch()' name="allFieldTB" id="allFieldTB" value="<%=_allValue %>"></dd>
                         <div class="clear"></div>
-
-                        <dt><label><%= LanguageUtil.get(pageContext, "Search") %>:</label></dt>
-                        <dd><input type="text" dojoType="dijit.form.TextBox" tabindex="1" onKeyUp='doSearch()' name="allFieldTB" id="allFieldTB" value="<%=_allValue %>"></dd>
-                        <div class="clear"></div>
-
-
+                       <%if(contentTypes!=null && contentTypes.size()==1){ %>
+                           <input type="hidden" name="structure_inode_select" value="<%=structures.get(0).getInode()%>"/>
+                       <%} else {%>
+                           <dt><label><%=LanguageUtil.get(pageContext, "Type") %>:</label></dt>
+                           <dd><span id="structSelectBox"></span></dd>
+                           <div class="clear"></div>
+                       <%} %>
                     </dl>
-
+               
                     <div id="advancedSearchOptions" style="height:0px;overflow: hidden">
 
                         <dl class="vertical">
@@ -763,7 +758,7 @@
                         </div>
                         <div id="matchingResultsDiv" style="display: none" class="portlet-toolbar__info"></div>
                         <div class="portlet-toolbar__actions-primary">
-                            <div data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"'>
+                            <div data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"fa-plus", class:"dijitDropDownActionButton"'>
                                 <span></span>
                                 <script type="text/javascript">
                                     function importContent() {

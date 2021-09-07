@@ -3,6 +3,7 @@ package com.dotmarketing.filters;
 import com.dotcms.ema.EMAWebInterceptor;
 import com.dotcms.filters.interceptor.AbstractWebInterceptorSupportFilter;
 import com.dotcms.filters.interceptor.WebInterceptorDelegate;
+import com.dotcms.graphql.GraphqlCacheWebInterceptor;
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 
@@ -26,6 +27,7 @@ public class InterceptorFilter extends AbstractWebInterceptorSupportFilter {
                 this.getDelegate(config.getServletContext());
 
         delegate.add(new EMAWebInterceptor());
+        delegate.add(new GraphqlCacheWebInterceptor());
     } // addInterceptors.
 
 } // E:O:F:InterceptorFilter.

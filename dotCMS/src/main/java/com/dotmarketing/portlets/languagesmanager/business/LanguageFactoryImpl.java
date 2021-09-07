@@ -4,7 +4,9 @@ import static com.dotmarketing.portlets.languagesmanager.business.LanguageCacheI
 
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.util.CloseUtils;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DeterministicIdentifierAPIImpl;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
@@ -150,15 +152,21 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	@Override
 	protected Language createDefaultLanguage() {
 
-		final Language language = getLanguage (Config.getStringProperty("DEFAULT_LANGUAGE_CODE", "en"), Config.getStringProperty("DEFAULT_LANGUAGE_COUNTRY_CODE","US"));
-		language.setCountry(Config.getStringProperty("DEFAULT_LANGUAGE_COUNTRY", "United States"));
-		language.setCountryCode(Config.getStringProperty("DEFAULT_LANGUAGE_COUNTRY_CODE", "US"));
-		language.setLanguage(Config.getStringProperty("DEFAULT_LANGUAGE_STR", "English"));
-		language.setLanguageCode(Config.getStringProperty("DEFAULT_LANGUAGE_CODE", "en"));
+		Language language = getLanguage (Config.getStringProperty("DEFAULT_LANGUAGE_CODE", "en"), Config.getStringProperty("DEFAULT_LANGUAGE_COUNTRY_CODE","US"));
+		//If the default language does not exist, create it
+		if(!UtilMethods.isSet(language)) {
+			Logger.info(this,"Creating Default Language");
+			language = new Language();
+			language.setCountry(
+					Config.getStringProperty("DEFAULT_LANGUAGE_COUNTRY", "United States"));
+			language.setCountryCode(
+					Config.getStringProperty("DEFAULT_LANGUAGE_COUNTRY_CODE", "US"));
+			language.setLanguage(Config.getStringProperty("DEFAULT_LANGUAGE_STR", "English"));
+			language.setLanguageCode(Config.getStringProperty("DEFAULT_LANGUAGE_CODE", "en"));
 
-		//saves the new language
-
-		saveLanguage(language);
+			//saves the new language
+			saveLanguage(language);
+		}
 
 
 		return language;
@@ -665,7 +673,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	private void dbUpsert(final Language language) throws DotDataException {
 
 		if (language.getId() == 0) {
-			language.setId(nextId());
+			language.setId(APILocator.getDeterministicIdentifierAPI().generateDeterministicIdBestEffort(language));
 		}
 		Language tester = getLanguage(language.getId());
 		if (tester != null) {
@@ -688,10 +696,6 @@ public class LanguageFactoryImpl extends LanguageFactory {
 		}
 		CacheLocator.getLanguageCache().removeLanguage(language);
 
-	}
-
-	private synchronized long nextId(){
-		return System.currentTimeMillis();
 	}
 
 	private List<Language> fromDbList(final List<Map<String, Object>> resultSet) {

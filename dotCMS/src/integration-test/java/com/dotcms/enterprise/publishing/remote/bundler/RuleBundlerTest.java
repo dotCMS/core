@@ -1,26 +1,26 @@
 package com.dotcms.enterprise.publishing.remote.bundler;
 
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.manifest.ManifestBuilder;
+import com.dotcms.publishing.output.BundleOutput;
+import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.RuleDataGen;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.FileUtil;
+import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -63,7 +63,7 @@ public class RuleBundlerTest {
 
 
     /**
-     * Method to Test: {@link RuleBundler#generate(File, BundlerStatus)}
+     * Method to Test: {@link RuleBundler#generate(BundleOutput, BundlerStatus)}
      * When: Add a {@link Rule} in a bundle
      * Should:
      * - The file should be create in: <bundle_root_path>/live/<container_host_name>/<rule_id>.rule.xml
@@ -77,24 +77,30 @@ public class RuleBundlerTest {
 
         final BundlerStatus status = mock(BundlerStatus.class);
         final RuleBundler bundler = new RuleBundler();
-        final File bundleRoot = FileUtil.createTemporaryDirectory("RuleBundlerTest_addRuleInBundle");
 
-        final FilterDescriptor filterDescriptor = new FileDescriptorDataGen().nextPersisted();
+        final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
 
         final PushPublisherConfig config = new PushPublisherConfig();
-        config.setRules(set(rule.getId()));
-        config.setOperation(PublisherConfig.Operation.PUBLISH);
 
-        new BundleDataGen()
-                .pushPublisherConfig(config)
-                .addAssets(list(rule))
-                .filter(filterDescriptor)
-                .nextPersisted();
+        try (ManifestBuilder manifestBuilder = new TestManifestBuilder()) {
+            config.setManifestBuilder(manifestBuilder);
+            config.add(rule, PusheableAsset.RULE, StringPool.BLANK);
+            config.setOperation(PublisherConfig.Operation.PUBLISH);
 
-        bundler.setConfig(config);
-        bundler.generate(bundleRoot, status);
+            final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config);
 
-        FileTestUtil.assertBundleFile(bundleRoot, rule, testCase.expectedFilePath);
+            new BundleDataGen()
+                    .pushPublisherConfig(config)
+                    .addAssets(list(rule))
+                    .filter(filterDescriptor)
+                    .nextPersisted();
+
+            bundler.setConfig(config);
+            bundler.generate(directoryBundleOutput, status);
+
+            FileTestUtil.assertBundleFile(directoryBundleOutput.getFile(), rule,
+                    testCase.expectedFilePath);
+        }
     }
 
     private static class TestCase{

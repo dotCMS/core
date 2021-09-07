@@ -235,7 +235,8 @@ public class PageResourceHelper implements Serializable {
 
             updateMultiTrees(page, pageForm);
 
-            return this.templateAPI.saveTemplate(template, host, user, false);
+            // permissions have been updated above
+            return this.templateAPI.saveTemplate(template, host, APILocator.systemUser(), false);
         } catch (BadRequestException | DotDataException | DotSecurityException e) {
             throw new DotRuntimeException(e);
         }

@@ -739,6 +739,8 @@ create table structure (
    expire_date_var varchar2(255),
    publish_date_var varchar2(255),
    mod_date date,
+   sort_order number(10,0),
+   icon varchar2(255),
    primary key (inode)
 );
 create table cms_role (
@@ -780,9 +782,6 @@ create table permission (
 	sort_order number(10,0),
 	friendly_name varchar2(255),
 	structure_inode varchar2(36),
-	last_review date,
-	next_review date,
-	review_interval varchar2(255),
 	disabled_wysiwyg varchar2(255),
 	identifier varchar2(36),
 	language_id number(19,0),
@@ -1339,6 +1338,7 @@ create table relationship (
    parent_required number(1,0),
    child_required number(1,0),
    fixed number(1,0),
+   mod_date date,
    primary key (inode),
    unique (relation_type_value)
 );
@@ -1561,7 +1561,6 @@ create index idx_field_1 on field (structure_inode);
 alter table field add constraint fk5cea0fa5fb51eb foreign key (inode) references inode;
 create index idx_relationship_1 on relationship (parent_structure_inode);
 create index idx_relationship_2 on relationship (child_structure_inode);
-alter table relationship add constraint fkf06476385fb51eb foreign key (inode) references inode;
 create index idx_folder_1 on folder (name);
 alter table folder add constraint fkb45d1c6e5fb51eb foreign key (inode) references inode;
 create index idx_user_clickstream_404_2 on clickstream_404 (user_id);

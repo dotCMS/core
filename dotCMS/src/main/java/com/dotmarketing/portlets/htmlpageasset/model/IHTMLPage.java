@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.htmlpageasset.model;
 
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.storage.FileStorageAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import java.io.Serializable;
@@ -20,7 +21,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
  * @since 08-28-2014
  *
  */
-public interface IHTMLPage extends Serializable, Versionable, Permissionable,
+public interface IHTMLPage extends Serializable, Versionable, Permissionable, ManifestItem,
 		Treeable, Ruleable {
 
     String getHost();

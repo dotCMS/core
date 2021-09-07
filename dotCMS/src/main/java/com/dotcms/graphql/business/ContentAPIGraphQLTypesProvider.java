@@ -35,7 +35,6 @@ import com.dotcms.graphql.datafetcher.MultiValueFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.SiteOrFolderFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.TagsFieldDataFetcher;
 import com.dotcms.graphql.exception.FieldGenerationException;
-import com.dotcms.graphql.exception.TypeGenerationException;
 import com.dotcms.graphql.util.TypeUtil;
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.APILocator;
@@ -134,10 +133,19 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         List<ContentType> allTypes = APILocator.getContentTypeAPI(APILocator.systemUser())
                 .search("", null, 100000, 0);
 
+        // let's log if we are including dupe types
+        final Map<String, ContentType> localTypesMap = new HashMap<>();
+        allTypes.forEach((type)-> {
+            if(localTypesMap.containsKey(type.variable())) {
+                Logger.warn(this, "Dupe Content Type detected!: " + type.variable());
+            }
+            localTypesMap.put(type.variable(), type);
+        });
+
         allTypes.forEach((type) -> {
             try {
                 contentAPITypes.add(createType(type));
-            }catch (TypeGenerationException e) {
+            }catch (IllegalArgumentException e) {
                 Logger.error(this, "Unable to generate GraphQL Type for type: " + type.variable());
             }
         });
@@ -146,11 +154,9 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
     }
 
     private GraphQLObjectType createType(ContentType contentType) {
-
         DotPreconditions.checkArgument(contentType.variable()
                 .matches(TYPES_AND_FIELDS_VALID_NAME_REGEX),
-                "Content Type variable does not conform to naming rules",
-                TypeGenerationException.class);
+                "Content Type variable does not conform to naming rules");
 
         final GraphQLObjectType.Builder builder = GraphQLObjectType.newObject()
                 .name(contentType.variable());
@@ -184,7 +190,6 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                     Logger.error(this, "Unable to generate GraphQL Field for field: " + field.variable(), e);
                 }
             }
-
         });
 
         // add CONTENT interface fields

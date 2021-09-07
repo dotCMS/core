@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.structure.model;
 
+import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_ONE;
 import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_MANY;
 
@@ -7,13 +8,23 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.publisher.util.PusheableAsset;
+import com.dotcms.publishing.manifest.ManifestItem;
+import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
 import com.dotmarketing.beans.Inode;
+import com.dotmarketing.beans.LegacyInode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.liferay.util.StringPool;
+import java.io.Serializable;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Objects;
 
 /**
  * <p>Defines a Content Relationship in dotCMS.</p>
@@ -25,7 +36,7 @@ import com.liferay.util.StringPool;
  * @author root
  * @since Mar 22, 2012
  */
-public class Relationship extends Inode {
+public class Relationship extends LegacyInode implements Serializable, ManifestItem {
 	
 	private static final long serialVersionUID = 1L;
 	
@@ -38,12 +49,13 @@ public class Relationship extends Inode {
 	private boolean parentRequired;
     private boolean childRequired;
     private boolean fixed=false;
-	
+    private String inode;
+    private Date modDate;
+
     /**
      * Default class constructor.
      */
     public Relationship(){
-    	super.setType("relationship");	
     }
 
 	/**
@@ -63,7 +75,6 @@ public class Relationship extends Inode {
 			final String parentRelationName, final String childRelationName, final int cardinality,
 			final boolean parentRequired, final boolean childRequired) {
 		super();
-		this.setType("relationship");
 		this.parentStructureInode = parentStructure.getInode();
 		this.childStructureInode = childStructure.getInode();
 		this.parentRelationName = parentRelationName;
@@ -90,7 +101,6 @@ public class Relationship extends Inode {
 	public Relationship(final ContentType parentContentType, final ContentType childContentType,
 			final Field field) {
 		super();
-		this.setType("relationship");
 		final int cardinality = Integer.parseInt(field.values());
 
 		this.parentStructureInode = parentContentType.id();
@@ -271,4 +281,60 @@ public class Relationship extends Inode {
 	    
 	}
 
+	public String getInode() {
+		return inode;
+	}
+
+	public String getIdentifier() { return getInode(); }
+
+	public void setInode(String inode) {
+		this.inode = inode;
+	}
+
+	public String getTitle() {
+		return getRelationTypeValue();
+	}
+
+	public boolean hasParents() {
+		return TreeFactory.getTreesByChild(this.inode).size()>0;
+	}
+
+	public boolean isLive() {
+		return false;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+		Relationship that = (Relationship) o;
+		return Objects.equals(inode, that.inode);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(inode);
+	}
+
+	public Date getModDate() {
+		return modDate;
+	}
+
+	public void setModDate(Date modDate) {
+		this.modDate = modDate;
+	}
+
+	@JsonIgnore
+	@Override
+	public ManifestInfo getManifestInfo(){
+		return new ManifestInfoBuilder()
+			.objectType(PusheableAsset.RELATIONSHIP.getType())
+			.id(this.inode)
+			.title(this.getTitle())
+			.build();
+	}
 }

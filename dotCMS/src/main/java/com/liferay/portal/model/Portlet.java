@@ -19,6 +19,8 @@ public class Portlet extends PortletModel {
   private final Map<String, String> initParams;
   private final String portletClass, portletSource;
 
+    public static final String DATA_VIEW_MODE_KEY = "dataViewMode";
+
   @Deprecated
   public Portlet(PortletPK pk) {
     super(pk);

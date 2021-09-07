@@ -22,7 +22,7 @@ import java.util.function.Supplier;
 
 public class HostUtil {
 
-	private static final String HOST_INDICATOR     = "//";
+	public static final String HOST_INDICATOR     = "//";
 
 	public static String hostNameUtil(ActionRequest req, User user) throws DotDataException, DotSecurityException {
 
@@ -54,7 +54,11 @@ public class HostUtil {
 			Optional.empty();
 	}
 
-	private static Host findCurrentHost () {
+	/**
+	 * Tries to find the current host
+	 * @return  Host
+	 */
+	public static Host findCurrentHost () {
 
 		final Optional<Host> hostOpt = tryToFindCurrentHost(APILocator.systemUser());
 		return hostOpt.isPresent()? hostOpt.get():null;
@@ -95,9 +99,10 @@ public class HostUtil {
 
 		final HostAPI hostAPI        = APILocator.getHostAPI();
 		final int hostIndicatorIndex = inputPath.indexOf(HOST_INDICATOR);
-		final int applicationContainerFolderStartsIndex =
-				inputPath.indexOf(posHostToken);
 		final boolean hasHost        = hostIndicatorIndex != -1;
+		final int     hostIndicatorLength = HOST_INDICATOR.length();
+		final int applicationContainerFolderStartsIndex = hasHost?
+				inputPath.substring(hostIndicatorLength).indexOf(posHostToken)+hostIndicatorLength:inputPath.indexOf(posHostToken);
 		final boolean hasPos         = applicationContainerFolderStartsIndex != -1;
 		final String hostName        = hasHost && hasPos?
 				inputPath.substring(hostIndicatorIndex+2, applicationContainerFolderStartsIndex):null;
@@ -107,6 +112,57 @@ public class HostUtil {
 		return Tuple.of(path, null == host? hostAPI.findDefaultHost(user, false): host);
 	}
 
+	/**
+	 * Based on a path tries to split the host and the relative path. If the path is already relative, gets the host from the resourceHost or gets the default one
+	 * @param inputPath {@link String} relative or absolute path
+	 * @param user {@link User} user
+	 * @param posHostToken {@link String} is the token that become immediate to the host, for instance if getting the host from a container postHostToken could be "/application/containers"
+	 * @return Tuple2 path and host
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	public static Tuple2<String, Host> splitPathHost(final String inputPath, final User user, final String posHostToken) throws DotSecurityException, DotDataException {
 
+		final HostAPI hostAPI        = APILocator.getHostAPI();
+		final int hostIndicatorIndex = inputPath.indexOf(HOST_INDICATOR);
+		final boolean hasHost        = hostIndicatorIndex != -1;
+		final int     hostIndicatorLength = HOST_INDICATOR.length();
+		final int applicationContainerFolderStartsIndex = hasHost?
+				inputPath.substring(hostIndicatorLength).indexOf(posHostToken)+hostIndicatorLength:inputPath.indexOf(posHostToken);
+		final boolean hasPos         = applicationContainerFolderStartsIndex != -1;
+		final String hostName        = hasHost && hasPos?
+				inputPath.substring(hostIndicatorIndex+2, applicationContainerFolderStartsIndex):null;
+		final String path            = hasHost && hasPos?inputPath.substring(applicationContainerFolderStartsIndex):inputPath;
+		final Host host 	         = hasHost?hostAPI.findByName(hostName, user, false):null;
+
+		return Tuple.of(path, host);
+	}
+
+	/**
+	 * Switch a site based on the id on session
+	 * @param req {@link HttpServletRequest}
+	 * @param hostId {@link String}
+	 */
+	public static void switchSite(final HttpServletRequest req, final String hostId) {
+		final HttpSession session = req.getSession();
+
+		session.removeAttribute(WebKeys.CMS_SELECTED_HOST_ID); // we do this in order to get a properly behaviour of the SwichSiteListener
+		session.setAttribute(WebKeys.CMS_SELECTED_HOST_ID, hostId);
+		session.removeAttribute(WebKeys.CONTENTLET_LAST_SEARCH);
+	}
+
+	/**
+	 * Switch a site based on the host on session
+	 * @param req {@link HttpServletRequest}
+	 * @param host {@link HttpServletRequest}
+	 */
+	public static void switchSite(final HttpServletRequest req, final Host host) {
+
+		switchSite(req, host.getIdentifier());
+
+		final HttpSession session = req.getSession();
+		session.removeAttribute(WebKeys.CURRENT_HOST);
+		session.setAttribute(WebKeys.CURRENT_HOST, host);
+	}
 
 }

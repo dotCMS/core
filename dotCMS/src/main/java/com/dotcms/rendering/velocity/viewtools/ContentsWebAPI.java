@@ -569,7 +569,7 @@ public class ContentsWebAPI implements ViewTool {
 	 * relationship name
 	 */
 	public Relationship getRelationshipByName(String relationshipName) {
-		return FactoryLocator.getRelationshipFactory().byTypeValue(relationshipName);
+		return APILocator.getRelationshipAPI().byTypeValue(relationshipName);
 	}
 
 	/**
@@ -592,7 +592,7 @@ public class ContentsWebAPI implements ViewTool {
 
 	public List<Relationship> getRelationshipsOfContentlet(String contentletInode) throws DotDataException, DotSecurityException {
 		Contentlet cont = conAPI.find(contentletInode, user, true);
-		return FactoryLocator.getRelationshipFactory().byContentType(cont.getStructure());
+		return APILocator.getRelationshipAPI().byContentType(cont.getStructure());
 	}
 
 	/**
@@ -618,8 +618,8 @@ public class ContentsWebAPI implements ViewTool {
 
 	public List<Relationship> getRelationshipsOfContentlet(String contentletInode, boolean hasParent) throws DotDataException, DotSecurityException {
 		Contentlet cont = conAPI.find(contentletInode, user, true);
-		return (hasParent)? FactoryLocator.getRelationshipFactory().byParent(cont.getContentType()):
-				FactoryLocator.getRelationshipFactory().byChild(cont.getContentType());
+		return (hasParent)? APILocator.getRelationshipAPI().byParent(cont.getContentType()):
+		    APILocator.getRelationshipAPI().byChild(cont.getContentType());
 
 	}
 
