@@ -17,13 +17,17 @@ public class DBTimeZoneCheckTest {
     }
     
     @Test
-    public void test_timezones_work() throws Exception {
-        if (DbConnectionFactory.isPostgres()) {
-            assertTrue(DBTimeZoneCheck.isTimeZoneValid("CST6CDT"));
-            assertFalse(DBTimeZoneCheck.isTimeZoneValid("CST"));
-        } else {
-            assertTrue(DBTimeZoneCheck.isTimeZoneValid("CST6CDT"));
-            assertTrue(DBTimeZoneCheck.isTimeZoneValid("CST"));
+    public void test_timezones_work() {
+        try {
+            if (DbConnectionFactory.isPostgres()) {
+                assertTrue(DBTimeZoneCheck.isTimeZoneValid("CST6CDT"));
+                assertFalse(DBTimeZoneCheck.isTimeZoneValid("CST"));
+            } else {
+                assertTrue(DBTimeZoneCheck.isTimeZoneValid("CST6CDT"));
+                assertTrue(DBTimeZoneCheck.isTimeZoneValid("CST"));
+            }
+        } finally {
+            DBTimeZoneCheck.isTimeZoneValid("UTC");
         }
     }
 
