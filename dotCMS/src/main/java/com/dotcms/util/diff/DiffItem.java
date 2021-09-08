@@ -4,6 +4,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Objects;
 
+/**
+ * Detail for a diff single result
+ * It encapsulates the variable (which is the id for the diff)
+ * the line (possible line where is found the diff)
+ * the message that explains the diff reason
+ * the detail, general object propose
+ * @author jsanca
+ */
 public class DiffItem {
 
     private final String variable;

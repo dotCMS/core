@@ -6,6 +6,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Encapsulates the diff for a field or child (field variables)
+ * @author jsanca
+ */
 public class FieldDiffItemsKey {
 
     private final String fieldVariable;
