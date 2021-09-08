@@ -334,7 +334,9 @@ public class PublisherAPIImplTest {
                     list(host, parentFolder, contentlet, folderContentType, link, subFolder, contentType),
                     contentlet, list(language, fileAssetContentType),
                     contentlet_2, list(language, fileAssetContentType),
-                    subFolder, list(contentlet_2)
+                    subFolder, list(contentlet_2),
+                    contentType, list(APILocator.getWorkflowAPI().findSystemWorkflowScheme()),
+                    folderContentType, list(APILocator.getWorkflowAPI().findSystemWorkflowScheme())
                 ),
                 "/bundlers-test/folder/folder.folder.xml");
     }
