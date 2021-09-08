@@ -1,36 +1,48 @@
 package com.dotmarketing.portlets.workflows.util;
 
+import com.dotcms.company.CompanyAPI;
 import com.dotcms.mock.request.FakeHttpRequest;
-import com.dotmarketing.util.Logger;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.dotcms.mock.response.BaseResponse;
+import com.dotcms.rest.api.v1.system.ConfigurationHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.Role;
-import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Mailer;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
+import io.vavr.control.Try;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * @author David
  */
 public class WorkflowEmailUtil {
 
-	/**
+    //fall-back "from address" and "from name".
+    // These should be used only on very rare cases if the saved email is not good.
+    //But we have guards in place to make sure the saved data is sound.
+    public static final String FALLBACK_FROM_ADDRESS = "website@dotcms.com";
+    public static final String FALLBACK_FROM_NAME = "admin";
+
+    /**
 	 * This method will take an email address and a {@link WorkflowProcessor}
 	 * and send a generic workflow email to them. If subject is null, it will be
 	 * intelligently inferred, and if the email text is null, the system will
@@ -119,10 +131,16 @@ public class WorkflowEmailUtil {
             } else {
                 emailText = VelocityUtil.eval(emailText, ctx);
             }
-            for (String x : email) {
-                Mailer mail = new Mailer();
-                mail.setFromEmail(processor.getUser().getEmailAddress());
-                mail.setFromName(processor.getUser().getFullName());
+
+            final Tuple2<String,String> senderInfo = resolveSenderInfo(processor.getUser());
+
+            final String emailAddress = senderInfo._1;
+            final String fromName = senderInfo._2;
+
+            for (final String x : email) {
+                final Mailer mail = new Mailer();
+                mail.setFromEmail(emailAddress);
+                mail.setFromName(fromName);
                 mail.setToEmail(x);
                 mail.setSubject(VelocityUtil.eval(subject, ctx));
                 if (isHTML) {
@@ -136,6 +154,71 @@ public class WorkflowEmailUtil {
             Logger.error(WorkflowEmailUtil.class,
                     "Exception occurred trying to deliver emails for workflow " + e.getMessage(), e);
         }
+
+    }
+
+    /**
+     * Workflow mail Sender resolution
+     * @param workflowUser
+     * @return
+     */
+    private static Tuple2<String,String> resolveSenderInfo(final User workflowUser) throws DotDataException{
+        return resolveSenderInfo(workflowUser, APILocator.getUserAPI(), APILocator.getCompanyAPI());
+    }
+
+    /**
+     * Parameterizable method meant to facilitate testing
+     * We support something like "dotCMS Website <website@dotcms.com>" as the company email from there will extract
+     * @param workflowUser
+     * @param userAPI
+     * @param companyAPI
+     * @return
+     */
+    @VisibleForTesting
+    static Tuple2<String, String> resolveSenderInfo(final User workflowUser, final UserAPI userAPI,
+            final CompanyAPI companyAPI) throws DotDataException {
+
+        if (null != workflowUser && !userAPI.getAnonymousUser().equals(workflowUser) && !userAPI
+                .getSystemUser().equals(workflowUser)) {
+            //if workflowUser isn't anonymous nor system-user
+            return Tuple.of(workflowUser.getEmailAddress(), workflowUser.getFullName());
+        }
+        //If we reach this point. Then User is anonymous or system-user or null
+        final Company defaultCompany = companyAPI.getDefaultCompany();
+        final String fromMail = Try.of(() -> {
+            if (UtilMethods.isSet(defaultCompany.getEmailAddress())) {
+                return defaultCompany.getEmailAddress();
+            }
+            Logger.error(WorkflowEmailUtil.class, String.format(
+                    "Company email address isn't set or contains errors. Falling back to [%s] as the from address.",
+                    FALLBACK_FROM_ADDRESS));
+            return FALLBACK_FROM_ADDRESS;
+        }).get();
+
+        final Tuple2<String, String> mailAndSenderWithFallBacks = Try.of(() -> {
+
+            final Tuple2<String, String> mailAndSender = ConfigurationHelper.INSTANCE
+                    .parseMailAndSender(fromMail);
+
+            final String emailAddress = mailAndSender._1;
+            final String personal = mailAndSender._2;
+
+            if (UtilMethods.isSet(emailAddress)) {
+                return Tuple.of(emailAddress,
+                        UtilMethods.isSet(personal) ? personal : FALLBACK_FROM_NAME);
+            } else {
+                Logger.warn(WorkflowEmailUtil.class,
+                        () -> "Unable to extract a from-name from the provided company Address. Default to `admin`. ");
+                return Tuple.of(FALLBACK_FROM_ADDRESS, FALLBACK_FROM_NAME);
+            }
+
+        }).get();
+
+        Logger.warn(WorkflowEmailUtil.class, () -> String
+                .format("Defaulting to Company's configured email address `%s` instead of workflow user's email `%s` as email sender..",
+                        fromMail, null != workflowUser ? workflowUser.getEmailAddress() : "n/a"));
+
+        return mailAndSenderWithFallBacks;
 
     }
 

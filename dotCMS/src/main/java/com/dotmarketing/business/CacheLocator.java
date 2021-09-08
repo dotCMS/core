@@ -11,6 +11,7 @@ import com.dotcms.contenttype.business.ContentTypeCache2;
 import com.dotcms.contenttype.business.ContentTypeCache2Impl;
 import com.dotcms.csspreproc.CSSCache;
 import com.dotcms.csspreproc.CSSCacheImpl;
+import com.dotcms.graphql.GraphQLCache;
 import com.dotcms.graphql.business.GraphQLSchemaCache;
 import com.dotcms.notifications.business.NewNotificationCache;
 import com.dotcms.notifications.business.NewNotificationCacheImpl;
@@ -285,6 +286,10 @@ public class CacheLocator extends Locator<CacheIndex>{
     public static ESQueryCache getESQueryCache() {
         return (ESQueryCache) getInstance(CacheIndex.ESQueryCache);
     }
+
+	public static GraphQLCache getGraphQLCache() {
+		return (GraphQLCache) getInstance(CacheIndex.GraphQLCache);
+	}
     
     /**
      * 
@@ -427,7 +432,8 @@ enum CacheIndex
 	KeyValueCache("Key/Value Cache"),
 	AppsCache("Apps"),
 	GraphQLSchemaCache("GraphQLSchemaCache"),
-	Metadata("Metadata");
+	Metadata("Metadata"),
+	GraphQLCache("GraphQLCache");
 
 	Cachable create() {
 		switch(this) {
@@ -478,6 +484,7 @@ enum CacheIndex
 	      	case ESQueryCache : return new com.dotcms.content.elasticsearch.ESQueryCache();
 	      	case GraphQLSchemaCache : return new GraphQLSchemaCache();
 			case Metadata: return new MetadataCacheImpl();
+			case GraphQLCache: return new GraphQLCache();
 
 		}
 		throw new AssertionError("Unknown Cache index: " + this);

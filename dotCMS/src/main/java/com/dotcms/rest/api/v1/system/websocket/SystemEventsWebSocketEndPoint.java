@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.system.websocket;
 
 import com.dotcms.api.system.event.*;
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import javax.ws.rs.ForbiddenException;
@@ -82,7 +83,7 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 
 			final long millisForWaitPingPong = Config.getLongProperty(DOTCMS_WEBSOCKET_MILLIS_PINGPONG,
 					DateUtil.MINUTE); // by default 1 min
-			DotInitScheduler.getScheduledThreadPoolExecutor().
+			DotConcurrentFactory.getScheduledThreadPoolExecutor().
 					scheduleWithFixedDelay(this::processPingPongQueue, 0, millisForWaitPingPong, TimeUnit.MILLISECONDS);
 		}
 

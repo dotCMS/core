@@ -1404,12 +1404,19 @@ public class ContentletAjax {
             final String fieldName) {
 
         if (st != null) {
-            final Field field = st.getFieldVar(
-                    fieldName.split("\\.").length > 1 ? fieldName.split("\\.")[1] : fieldName);
+            final String fieldVar =
+                    fieldName.split("\\.").length > 1 ? fieldName.split("\\.")[1] : fieldName;
+            final Field field = st.getFieldVar(fieldVar);
 
             if (field != null && field.getFieldType().equals(FieldType.RELATIONSHIP.toString())) {
                 Relationship relationship = APILocator.getRelationshipAPI()
                         .byTypeValue(field.getFieldRelationType());
+
+                //Considers Many to One relationships where the fieldName might not contain the relation type value
+                if (null == relationship && !field.getFieldRelationType().contains(".")) {
+                    relationship = APILocator.getRelationshipAPI()
+                            .byTypeValue(st.getVelocityVarName() + StringPool.PERIOD + fieldVar);
+                }
                 return relationship != null?Optional.of(relationship):Optional.empty();
             }
         }

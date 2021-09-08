@@ -1,9 +1,26 @@
 package com.dotcms.rest.api.v1.system;
 
+import static com.dotcms.rest.ResponseEntityView.OK;
+
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.WebResource.InitBuilder;
+import com.dotcms.rest.api.v1.maintenance.JVMInfoResource;
+import com.dotmarketing.util.StringUtils;
+import com.google.common.collect.ImmutableSet;
+import com.liferay.util.StringPool;
+import io.vavr.Tuple2;
+
+import java.io.IOException;
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletRequest;
 
 import javax.servlet.http.HttpServletResponse;
@@ -15,6 +32,7 @@ import javax.ws.rs.core.Response;
 import com.dotcms.rest.WebResource;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.util.Config;
+import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.NoCache;
@@ -42,11 +60,85 @@ public class ConfigurationResource implements Serializable {
 
 	private final ConfigurationHelper helper;
 
+	private static final Set<String> WHITE_LIST = ImmutableSet.copyOf(
+			Config.getStringArrayProperty("CONFIGURATION_WHITE_LIST",
+					new String[] {"EMAIL_SYSTEM_ADDRESS", "CHARSET","CONTENT_PALETTE_HIDDEN_CONTENT_TYPES" }));
+
+
+	private boolean isOnBlackList(final String key) {
+
+		return null != JVMInfoResource.obfuscatePattern ? JVMInfoResource.obfuscatePattern.matcher(key).find() : false;
+	}
 	/**
 	 * Default constructor.
 	 */
 	public ConfigurationResource() {
 		this.helper = ConfigurationHelper.INSTANCE;
+	}
+
+	/**
+	 * Retrieve the keys from dotcms Configuration (allowed on WHITE_LIST and are not restricted by the BLACK_LIST)
+	 * @param request
+	 * @param response
+	 * @param keysQuery
+	 * @return
+	 * @throws IOException
+	 */
+	@Path("/config")
+	@GET
+	@JSONP
+	@NoCache
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	public final Response getConfigVariables(@Context final HttpServletRequest request,
+											 @Context final HttpServletResponse response,
+											 @QueryParam("keys") final String keysQuery)
+			throws IOException {
+
+		new WebResource.InitBuilder(request, response)
+				.requiredBackendUser(true)
+				.requestAndResponse(request, response)
+				.rejectWhenNoUser(true)
+				.init();
+
+		final String [] keys = StringUtils.splitByCommas(keysQuery);
+		final Map<String,Object> resultMap = new LinkedHashMap<>();
+		if (null != keys) {
+
+			for (final String key : keys) {
+
+				final String keyWithoutPrefix = this.removePrefix (key);
+				if (this.WHITE_LIST.contains(keyWithoutPrefix) && !this.isOnBlackList(keyWithoutPrefix)) {
+
+					resultMap.put(keyWithoutPrefix, recoveryFromConfig(key));
+				}
+			}
+		}
+
+		return Response.ok(new ResponseEntityView(resultMap)).build();
+	}
+
+	private String removePrefix (final String key) {
+
+		return key.replace("list:", StringPool.BLANK)
+				.replace("boolean:", StringPool.BLANK)
+				.replace("number:", StringPool.BLANK);
+	}
+
+
+	private Object recoveryFromConfig (final String key) {
+
+		if (key.startsWith("list:")) {
+
+			return Arrays.asList(Config.getStringArrayProperty(key.replace("list:", StringPool.BLANK), new String[]{}));
+		} else if(key.startsWith("boolean:")) {
+
+			return Config.getBooleanProperty(key.replace("boolean:", StringPool.BLANK), false);
+		} else if (key.startsWith("number:")) {
+
+			return Config.getIntProperty(key.replace("number:", StringPool.BLANK), 0);
+		}
+
+		return Config.getStringProperty(key, "NOT_FOUND");
 	}
 
 	/**
@@ -101,4 +193,26 @@ public class ConfigurationResource implements Serializable {
 
 		return Response.ok().build();
 	}
+
+	@POST
+	@Path("/_validateCompanyEmail")
+	@JSONP
+	@NoCache
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	public Response validateEmail(
+			@Context final HttpServletRequest request,
+			@Context final HttpServletResponse response,
+			final CompanyEmailForm form) throws ExecutionException, InterruptedException {
+
+		final InitDataObject dataObject = new InitBuilder(request, response)
+				.requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
+				.requiredPortlet("maintenance")
+				.rejectWhenNoUser(true)
+				.init();
+
+		final Tuple2<String, String> mailAndSender = helper.parseMailAndSender(form.getSenderAndEmail());
+		helper.sendValidationEmail(mailAndSender._1, mailAndSender._2, dataObject.getUser());
+		return Response.ok(new ResponseEntityView(OK)).build();
+	}
+
 }
