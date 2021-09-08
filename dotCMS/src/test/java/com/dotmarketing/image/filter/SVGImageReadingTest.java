@@ -26,7 +26,7 @@ public class SVGImageReadingTest {
 
         File temp = File.createTempFile("tempfile", ".svg");
 
-        final String[] images = {svgImageGood, svgImageGood2};
+        final String[] images = {svgImageGood, svgImageGood2, svgImageBad};
 
         for (final String image : images) {
             try (PrintStream out = new PrintStream(new FileOutputStream(temp))) {
@@ -37,21 +37,6 @@ public class SVGImageReadingTest {
                 Assert.assertTrue(bufferedImage.getWidth() > 0);
                 Assert.assertTrue(bufferedImage.getHeight() > 0);
         }
-    }
-
-    @Test(expected = Exception.class)
-    public void Test_Embedded_SVG_Readability_Bad_Image() throws IOException {
-
-        final File temp = File.createTempFile("tempfile", ".svg");
-
-        try (PrintStream out = new PrintStream(new FileOutputStream(temp))) {
-            out.print(svgImageBad);
-        }
-        assertTrue(".svg is an image", UtilMethods.isImage(temp.getAbsolutePath()));
-
-        final BufferedImage bufferedImage = ImageIO.read(temp);
-        Assert.assertTrue(bufferedImage.getWidth() > 0);
-        Assert.assertTrue(bufferedImage.getHeight() > 0);
     }
 
 }

@@ -524,6 +524,14 @@ dependencies {
         transitive = false
     }
 
+    compile (group: 'org.apache.xmlgraphics', name: 'xmlgraphics-commons', version:'1.5') {
+        transitive = false
+    }
+
+    compile( group: 'org.apache.xmlgraphics', name: 'batik-codec', version:'1.10') {
+        transitive = false
+    }
+
     compile group: 'xml-apis', name: 'xml-apis', version: '1.3.04'
 
     compile group: 'xml-apis', name: 'xml-apis-ext', version: '1.3.04'
