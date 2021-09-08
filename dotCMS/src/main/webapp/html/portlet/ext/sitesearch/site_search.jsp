@@ -478,7 +478,8 @@ function doCreateSiteSearch(alias,number) {
 		return;
 	}
 
-	if(/[^a-zA-Z0-9-_]/.test(alias.split(/\b\s+/)[0].trim())) {
+	let aliasTestResult = /^(?=.{3,60}$)^(?![-_])[a-zA-Z0-9_-]+$/.test(alias);
+	if(!aliasTestResult) {
 		showDotCMSErrorMessage("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Invalid-Index-Alias")) %>");
 		return;
 	}

@@ -11,6 +11,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.UnknownHostException;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
@@ -245,5 +246,39 @@ public class HttpRequestDataUtil {
 	 */
 	public static Optional<String> getServerPort() {
 		return Optional.ofNullable(SERVER_PORT);
+	}
+
+	public static Optional<String> getParamCaseInsensitive(final HttpServletRequest request,
+			final String paramNameToLookFor) {
+		Enumeration<String> parameterNames = request.getParameterNames();
+
+		Optional<String> valueFromParam = Optional.empty();
+
+		while (parameterNames.hasMoreElements()) {
+			final String paramName = parameterNames.nextElement();
+
+			if(UtilMethods.isSet(paramName) && paramName.toLowerCase().equals(paramNameToLookFor)) {
+				valueFromParam = Optional.ofNullable(request.getParameter(paramName));
+				break;
+			}
+		}
+		return valueFromParam;
+	}
+
+	public static Optional<String> getHeaderCaseInsensitive(final HttpServletRequest request,
+			final String headerNameToLookFor) {
+		Enumeration<String> headerNames = request.getHeaderNames();
+
+		Optional<String> valueFromParam = Optional.empty();
+
+		while (headerNames.hasMoreElements()) {
+			final String headerName = headerNames.nextElement();
+
+			if(UtilMethods.isSet(headerName) && headerName.toLowerCase().equals(headerNameToLookFor)) {
+				valueFromParam = Optional.ofNullable(request.getHeader(headerName));
+				break;
+			}
+		}
+		return valueFromParam;
 	}
 }

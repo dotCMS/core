@@ -15,12 +15,14 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.Validator;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.util.Constants;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
 import java.sql.SQLException;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.jsp.PageContext;
 import org.apache.commons.beanutils.BeanUtils;
 
 /**
@@ -74,7 +76,7 @@ public class EditLanguageAction extends DotPortletAction {
         	try {
         		_retrieveLanguage(req, res, config, form, languageId);
         	} catch (Exception e) {
-        		_handleException(e, req);
+				_handleExceptionNoHibernate(e, req,false);
         	}
     	}
         
@@ -86,7 +88,7 @@ public class EditLanguageAction extends DotPortletAction {
             		_save(req, res, config, form);
             	}
             } catch (Exception ae) {
-                _handleException(ae, req);
+                _handleExceptionNoHibernate(ae, req,false);
                 
             }
             
@@ -97,7 +99,7 @@ public class EditLanguageAction extends DotPortletAction {
                 Logger.debug(this, "I'm deleting");
                 _delete(req, res, config, form,languageId);
             } catch (Exception ae) {
-                _handleException(ae, req);
+				_handleExceptionNoHibernate(ae, req,false);
                 
             }
             _sendToReferral(req, res, "");
@@ -148,7 +150,7 @@ public class EditLanguageAction extends DotPortletAction {
                 this.saveLanguage(language);
 			} catch(Exception e ){
 				SessionMessages.add(req,"message", "message.languagemanager.languagenotsaved");
-				throw new SQLException();
+				throw new DotLanguageException(LanguageUtil.get("message.languagemanager.languagenotsaved"));
 			}
 			SessionMessages.add(req,"message", "message.languagemanager.language_save");
 			_sendToReferral(req, res, StringPool.BLANK);
@@ -159,12 +161,13 @@ public class EditLanguageAction extends DotPortletAction {
 	}
 
 	@VisibleForTesting
-	public void saveLanguage (final Language language) {
+	public void saveLanguage (final Language languageToBeSaved) {
 
-        if (null != languageAPI.getLanguage(language.getLanguageCode(), language.getCountryCode())) {
+		final Language lang = languageAPI.getLanguage(languageToBeSaved.getLanguageCode(), languageToBeSaved.getCountryCode());
+        if (null != lang && languageToBeSaved.getId() == 0) {
             throw new DotLanguageException("Language Not Saved. There is already another Language with the same Language code and Country code.");
         }
-        languageAPI.saveLanguage(language);
+        languageAPI.saveLanguage(languageToBeSaved);
     }
 
    /**

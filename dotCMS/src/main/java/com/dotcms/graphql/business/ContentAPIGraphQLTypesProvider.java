@@ -37,12 +37,10 @@ import com.dotcms.graphql.datafetcher.SiteOrFolderFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.StoryBlockFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.TagsFieldDataFetcher;
 import com.dotcms.graphql.exception.FieldGenerationException;
-import com.dotcms.graphql.exception.TypeGenerationException;
 import com.dotcms.graphql.util.TypeUtil;
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
@@ -151,7 +149,7 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         allTypes.forEach((type) -> {
             try {
                 contentAPITypes.add(createType(type));
-            }catch (TypeGenerationException e) {
+            }catch (IllegalArgumentException e) {
                 Logger.error(this, "Unable to generate GraphQL Type for type: " + type.variable());
             }
         });
@@ -162,8 +160,7 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
     private GraphQLObjectType createType(ContentType contentType) {
         DotPreconditions.checkArgument(contentType.variable()
                 .matches(TYPES_AND_FIELDS_VALID_NAME_REGEX),
-                "Content Type variable does not conform to naming rules",
-                TypeGenerationException.class);
+                "Content Type variable does not conform to naming rules");
 
         final GraphQLObjectType.Builder builder = GraphQLObjectType.newObject()
                 .name(contentType.variable());

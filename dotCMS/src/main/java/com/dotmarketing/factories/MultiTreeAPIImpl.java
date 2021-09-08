@@ -85,6 +85,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private static final String DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE_NOT_SQL =
             "delete from multi_tree where relation_type != ? and personalization = ? and multi_tree.parent1 = ?  and " +
                     "child in (select distinct identifier from contentlet,multi_tree where multi_tree.child = contentlet.identifier and multi_tree.parent1 = ? and language_id = ?)";
+    private static final String SELECT_COUNT_MULTI_TREE_BY_RELATION_PERSONALIZATION_PAGE_CONTAINER_AND_CHILD =
+            "select count(*) cc from multi_tree where relation_type = ? and personalization = ? and " +
+                    "multi_tree.parent1 = ? and multi_tree.parent2 = ? and multi_tree.child = ?";
 
     private static final String DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE_SQL =
             "delete from multi_tree where relation_type != ? and personalization = ? and multi_tree.parent1 = ?  and child in (%s)";
@@ -586,6 +589,20 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             final Set<String> newContainers = new HashSet<>();
 
             for (final MultiTree tree : multiTrees) {
+                //This is for checking if the content we are trying to add is already added into the container
+                db.setSQL(SELECT_COUNT_MULTI_TREE_BY_RELATION_PERSONALIZATION_PAGE_CONTAINER_AND_CHILD)
+                        .addParam(tree.getRelationType())
+                        .addParam(tree.getPersonalization())
+                        .addParam(pageId)
+                        .addParam(tree.getContainerAsID())
+                        .addParam(tree.getContentlet());
+                final int contentExist = Integer.parseInt(db.loadObjectResults().get(0).get("cc").toString());
+                if(contentExist != 0){
+                    final String errorMsg = String.format("This content: %s has already been added into the Container: %s",tree.getContentlet(),tree.getContainerAsID());
+                    Logger.error(this,errorMsg);
+                    throw new DotDataException(errorMsg);
+                }
+
                 insertParams
                         .add(new Params(pageId, tree.getContainerAsID(), tree.getContentlet(),
                                 tree.getRelationType(), tree.getTreeOrder(), tree.getPersonalization()));
@@ -892,17 +909,16 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     /**
      * Returns the list of Containers from the drawn layout of a given Template.
      *
-     * @param page The {@link IHTMLPage} object using the {@link Template} which holds the Containers.
+     * @param template The {@link Template} which holds the Containers.
      *
      * @return The list of {@link ContainerUUID} objects.
      *
      * @throws DotSecurityException The internal APIs are not allowed to return data for the specified user.
      * @throws DotDataException     The information for the Template could not be accessed.
      */
-    private List<ContainerUUID> getDrawedLayoutContainerUUIDs (final IHTMLPage page) throws DotSecurityException, DotDataException {
-
+    private List<ContainerUUID> getDrawedLayoutContainerUUIDs (final Template template) throws DotSecurityException, DotDataException {
         final TemplateLayout layout =
-                DotTemplateTool.themeLayout(page.getTemplateId(), APILocator.systemUser(), false);
+                DotTemplateTool.themeLayout(template.getInode(), APILocator.systemUser(), false);
         return APILocator.getTemplateAPI().getContainersUUID(layout);
     }
 
@@ -930,7 +946,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                     APILocator.getTemplateAPI().findWorkingTemplate(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
             try {
                 containersUUID = template.isDrawed()?
-                        this.getDrawedLayoutContainerUUIDs(page):
+                        this.getDrawedLayoutContainerUUIDs(template):
                         APILocator.getTemplateAPI().getContainersUUIDFromDrawTemplateBody(template.getBody());
             } catch (final Exception e) {
                 Logger.error(this, String.format("An error occurred when retrieving empty Containers from page with " +
