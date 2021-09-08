@@ -205,9 +205,6 @@ public class DotSamlResource implements Serializable {
 
 					// Add session based user ID to be used on the redirect.
 					session.setAttribute(identityProviderConfiguration.getId() + DotSamlConstants.SAML_USER_ID, user.getUserId());
-					/*session.setAttribute(com.liferay.portal.util.WebKeys.USER,    user);
-					session.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
-					session.setAttribute(WebKeys.CMS_USER, user);*/
 
 					String loginPath = (String) session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
 					if (null == loginPath) {
