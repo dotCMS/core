@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "e45ed1ce-0d56-4616-8155-f63f8d7729bc",
+		"_postman_id": "cb7ebef9-9256-4a50-a54a-799ed6e1b9ad",
 		"name": "GraphQL",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -8372,6 +8372,209 @@
 							]
 						}
 					]
+				}
+			]
+		},
+		{
+			"name": "Tests For New StoryBlockField",
+			"item": [
+				{
+					"name": "Create ContentType with StoryBlockField Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"var contentType = jsonData.entity[0];",
+									"pm.collectionVariables.set(\"contentTypeIdWithStoryBlock\", contentType.id);",
+									"pm.collectionVariables.set(\"contentTypeVarNameWithStoryBlock\", contentType.variable);",
+									"pm.test(\"Status code should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Content Type should have 2 fields\", function() {",
+									"    pm.expect(contentType.fields.length).to.eql(2);",
+									"});",
+									"pm.test(\"Content Type has a Story_block_field\", function() {",
+									"    pm.expect(contentType.fields[1].fieldType).to.eql(\"Story_block_field\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"defaultType\":false,\n    \"fixed\":false,\n    \"system\":false,\n    \"clazz\":\"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"description\":\"\",\n    \"host\": \"SYSTEM_HOST\",\n    \"folder\":\"SYSTEM_FOLDER\",\n    \"name\":\"TestContentTypeWithStoryBlockField\",\n    \"systemActionMappings\":{\"NEW\":\"\"},\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"],\n    \"fields\" : [\n        {\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 2,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"title\",\n\t\t\t\"variable\": \"title\",\n\t\t\t\"fixed\": true\n\t\t},\n        {\n            \"clazz\":\"com.dotcms.contenttype.model.field.ImmutableStoryBlockField\",\n            \"required\":false,\n            \"name\":\"block\",\n            \"defaultValue\":\"\",\n            \"hint\":\"\",\n            \"searchable\":true\n            }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						},
+						"description": "Creates a contentType with 2 fields:\n- A text field named Title\n- A story block field named block"
+					},
+					"response": []
+				},
+				{
+					"name": "Create contentlet with StoryBlockField",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.test(\"Status code should be 200\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Contentlet StoryBlock has value\", function() {",
+									"    pm.expect(jsonData.entity.block).contains(\"Wow, this editor instance exports its content as JSON\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"{{contentTypeIdWithStoryBlock}}\",\n        \"name\": \"test with data block field\",\n        \"title\": \"test with data block field\",\n        \"block\": \"{\\\"type\\\": \\\"doc\\\",\\\"render\\\": \\\"<h4>Wow, this editor instance exports its content as JSON.</h4>\\\",\\\"content\\\": [{\\\"type\\\": \\\"paragraph\\\",\\\"content\\\": [{\\\"type\\\": \\\"text\\\",\\\"text\\\": \\\"Wow, this editor instance exports its content as JSON.\\\"}]}]}\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Content With StoryBlock via GraphQL",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"var jsonData = pm.response.json();",
+									"var collectionName = pm.collectionVariables.get(\"contentTypeVarNameWithStoryBlock\")+\"Collection\"",
+									"",
+									"pm.test(\"Content has the correct value at the render property\", function () {",
+									"    pm.expect(jsonData.data[collectionName][0].block.render).to.eql(\"<h4>Wow, this editor instance exports its content as JSON.</h4>\");",
+									"    pm.expect(jsonData.data[collectionName][0].block.json.render).to.eql(undefined);",
+									"});",
+									"",
+									"pm.test(\"Content has the correct value at the json property\", function () {",
+									"    pm.expect(jsonData.data[collectionName][0].block.json.render).to.eql(undefined);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  {{contentTypeVarNameWithStoryBlock}}Collection(limit: 20) {\n    identifier\n    title\n    block{\n        render\n        json\n    }\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "checks if the correct values were pulled via GraphQL.\n- Render should bring html code\n- Json should not bring render code."
+					},
+					"response": []
 				}
 			]
 		}
