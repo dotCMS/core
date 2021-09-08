@@ -4,10 +4,10 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { DotEnvironment } from '@models/dot-environment/dot-environment';
 import { DotAjaxActionResponseView } from '@models/ajax-action-response/dot-ajax-action-response';
-import * as moment from 'moment';
 import { DotCurrentUserService } from '../dot-current-user/dot-current-user.service';
 import { DotCurrentUser } from '@models/dot-current-user/dot-current-user';
 import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
+import { DotFormatDateService } from '@services/dot-format-date-service';
 
 /**
  * Provide method to push publish to content types
@@ -28,7 +28,8 @@ export class PushPublishService {
     constructor(
         public _apiRoot: ApiRoot,
         private coreWebService: CoreWebService,
-        private currentUser: DotCurrentUserService
+        private currentUser: DotCurrentUserService,
+        private dotFormatDateService: DotFormatDateService,
     ) {}
 
     /**
@@ -80,13 +81,13 @@ export class PushPublishService {
         assetIdentifier: string,
         { publishDate, expireDate, pushActionSelected, environment, filterKey, timezoneId }: DotPushPublishData
     ): string {
-        // TODO: find a way to deal with moment(undefined), since will be deprecated eventually
+
         let result = '';
         result += `assetIdentifier=${encodeURIComponent(assetIdentifier)}`;
-        result += `&remotePublishDate=${moment(publishDate).format('YYYY-MM-DD')}`;
-        result += `&remotePublishTime=${moment(publishDate).format('HH-mm')}`;
-        result += `&remotePublishExpireDate=${moment(expireDate).format('YYYY-MM-DD')}`;
-        result += `&remotePublishExpireTime=${moment(expireDate).format('HH-mm')}`;
+        result += `&remotePublishDate=${this.dotFormatDateService.format(new Date(publishDate), 'yyyy-MM-dd')}`;
+        result += `&remotePublishTime=${this.dotFormatDateService.format(new Date(publishDate), 'HH-mm')}`;
+        result += `&remotePublishExpireDate=${this.dotFormatDateService.format(expireDate ? new Date(expireDate) : new Date(), 'yyyy-MM-dd')}`;
+        result += `&remotePublishExpireTime=${this.dotFormatDateService.format(expireDate ? new Date(expireDate) : new Date(), 'HH-mm')}`;
         result += `&timezoneId=${timezoneId}`;
         result += `&iWantTo=${pushActionSelected}`;
         result += `&whoToSend=${environment}`;

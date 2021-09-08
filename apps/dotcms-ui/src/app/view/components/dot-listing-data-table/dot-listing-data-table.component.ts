@@ -16,7 +16,7 @@ import { Table } from 'primeng/table';
 import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table/data-table-column';
 import { LoggerService } from '@dotcms/dotcms-js';
-import { FormatDateService } from '@services/format-date-service';
+import { DotFormatDateService } from '@services/dot-format-date-service';
 import { PaginatorService, OrderDirection } from '@services/paginator';
 import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
 import { take } from 'rxjs/operators';
@@ -81,7 +81,7 @@ export class DotListingDataTableComponent implements OnInit {
     constructor(
         public loggerService: LoggerService,
         public paginatorService: PaginatorService,
-        private formatDateService: FormatDateService
+        private dotFormatDateService: DotFormatDateService
     ) {
         this.paginatorService.url = this.url;
     }
@@ -214,7 +214,7 @@ export class DotListingDataTableComponent implements OnInit {
         return items.map((item) => {
             this.dateColumns.forEach(
                 (col) =>
-                    (item[col.fieldName] = this.formatDateService.getRelative(item[col.fieldName]))
+                    (item[col.fieldName] = this.dotFormatDateService.getRelative(item[col.fieldName]))
             );
             return item;
         });

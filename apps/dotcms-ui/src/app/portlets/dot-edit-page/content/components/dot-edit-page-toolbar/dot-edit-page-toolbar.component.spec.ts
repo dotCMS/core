@@ -52,6 +52,8 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { ToolbarModule } from 'primeng/toolbar';
 import { ConfirmationService } from 'primeng/api';
 import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
+import { DotFormatDateService } from '@services/dot-format-date-service';
+import { DotFormatDateServiceMock } from '@dotcms/app/test/format-date-service.mock';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -131,6 +133,7 @@ describe('DotEditPageToolbarComponent', () => {
                     DotHttpErrorManagerService,
                     DotAlertConfirmService,
                     ConfirmationService,
+                    { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
                     DotGlobalMessageService,
                     ApiRoot,
                     UserModel,

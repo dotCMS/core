@@ -15,7 +15,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { ConfirmationService } from 'primeng/api';
-import { FormatDateService } from '@services/format-date-service';
+import { DotFormatDateService } from '@services/dot-format-date-service';
 import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { mockResponseView } from '@tests/response-view.mock';
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
@@ -48,7 +48,7 @@ describe('DotEditPageResolver', () => {
                 DotContentletLockerService,
                 DotAlertConfirmService,
                 ConfirmationService,
-                FormatDateService,
+                DotFormatDateService,
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 {
                     provide: ActivatedRouteSnapshot,

@@ -18,7 +18,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { ConfirmationService } from 'primeng/api';
-import { FormatDateService } from '@services/format-date-service';
+import { DotFormatDateService } from '@services/dot-format-date-service';
 import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { DotDevice } from '@shared/models/dot-device/dot-device.model';
 import { mockResponseView } from '@tests/response-view.mock';
@@ -50,7 +50,7 @@ describe('DotPageStateService', () => {
                 DotPageStateService,
                 DotAlertConfirmService,
                 ConfirmationService,
-                FormatDateService,
+                DotFormatDateService,
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 {

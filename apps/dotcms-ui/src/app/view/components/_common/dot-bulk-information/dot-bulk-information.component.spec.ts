@@ -12,10 +12,10 @@ import { MockDotMessageService } from '@tests/dot-message-service.mock';
 
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotActionBulkResult } from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
-import { FormatDateService } from '@services/format-date-service';
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { DotFormatDateService } from '@services/dot-format-date-service';
 
 const messageServiceMock = new MockDotMessageService({
     'message.template.archived': 'archived',
@@ -74,7 +74,7 @@ describe('DotBulkInformationComponent', () => {
             providers: [
                 DynamicDialogRef,
                 DynamicDialogConfig,
-                FormatDateService,
+                DotFormatDateService,
                 DialogService,
                 { provide: DotMessageService, useValue: messageServiceMock }
             ]

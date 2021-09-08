@@ -9,7 +9,7 @@ import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { DotContentTypesInfoService } from '@services/dot-content-types-info';
 import { DotContentTypesPortletComponent } from './dot-content-types.component';
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { FormatDateService } from '@services/format-date-service';
+import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -129,7 +129,7 @@ describe('DotContentTypesPortletComponent', () => {
                 DotContentTypesInfoService,
                 DotCrudService,
                 DotAlertConfirmService,
-                FormatDateService,
+                DotFormatDateService,
                 DotPushPublishDialogService,
                 { provide: DotContentTypeService, useClass: MockDotContentTypeService },
                 { provide: DotMessageService, useValue: messageServiceMock },

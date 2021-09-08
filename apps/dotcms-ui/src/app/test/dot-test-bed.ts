@@ -23,7 +23,7 @@ import { CommonModule } from '@angular/common';
 import { DotEventsService } from '../api/services/dot-events/dot-events.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { FormatDateService } from '../api/services/format-date-service';
+import { DotFormatDateService } from '../api/services/dot-format-date-service';
 import { DotAlertConfirmService } from '../api/services/dot-alert-confirm';
 import { DotRouterService } from '../api/services/dot-router/dot-router.service';
 import { DotLicenseService } from '../api/services/dot-license/dot-license.service';
@@ -75,7 +75,7 @@ export class DOTTestBed {
             { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
             DotcmsConfigService,
             DotcmsEventsService,
-            FormatDateService,
+            DotFormatDateService,
             LoggerService,
             StringUtils,
             UserModel,

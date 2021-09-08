@@ -32,7 +32,7 @@ import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-
 import { CoreWebServiceMock } from '../../test/core-web.service.mock';
 import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import { PushPublishService } from '@services/push-publish/push-publish.service';
-import { FormatDateService } from '@services/format-date-service';
+import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotCurrentUserService } from '@services/dot-current-user/dot-current-user.service';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotWizardService } from '@services/dot-wizard/dot-wizard.service';
@@ -63,7 +63,7 @@ describe('DotPortletDetailComponent', () => {
                     { provide: CoreWebService, useClass: CoreWebServiceMock },
                     PushPublishService,
                     ApiRoot,
-                    FormatDateService,
+                    DotFormatDateService,
                     UserModel,
                     StringUtils,
                     DotcmsEventsService,

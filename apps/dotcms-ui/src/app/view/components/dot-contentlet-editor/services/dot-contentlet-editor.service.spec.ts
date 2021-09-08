@@ -11,7 +11,7 @@ import { HttpClientTestingModule, HttpTestingController } from '@angular/common/
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { ConfirmationService } from 'primeng/api';
-import { FormatDateService } from '@services/format-date-service';
+import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 
 describe('DotContentletEditorService', () => {
@@ -32,7 +32,7 @@ describe('DotContentletEditorService', () => {
                 DotHttpErrorManagerService,
                 DotAlertConfirmService,
                 ConfirmationService,
-                FormatDateService,
+                DotFormatDateService,
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 {

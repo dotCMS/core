@@ -56,7 +56,6 @@ import { DotMaxlengthModule } from '@directives/dot-maxlength/dot-maxlength.modu
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotContentTypesInfoService } from '@services/dot-content-types-info';
 import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
-import { FormatDateService } from '@services/format-date-service';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { ButtonModule } from 'primeng/button';
@@ -160,7 +159,6 @@ import { DotMdIconSelectorModule } from '@dotcms/app/view/components/_common/dot
         FieldDragDropService,
         FieldPropertyService,
         FieldService,
-        FormatDateService
     ],
     schemas: []
 })

@@ -39,7 +39,7 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@tests/dot-test-bed';
-import { FormatDateService } from '@services/format-date-service';
+import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { of } from 'rxjs';
 
@@ -84,7 +84,7 @@ describe('DotToolbarUserComponent', () => {
                 DotEventsSocket,
                 { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 DotcmsConfigService,
-                FormatDateService
+                DotFormatDateService
             ],
             imports: [
                 BrowserAnimationsModule,

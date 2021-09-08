@@ -36,7 +36,7 @@ import {
     UserModel
 } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '../../../../test/core-web.service.mock';
-import { FormatDateService } from '@services/format-date-service';
+import { DotFormatDateService } from '@services/dot-format-date-service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@tests/dot-test-bed';
 import { DotCurrentUserService } from '@services/dot-current-user/dot-current-user.service';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
@@ -144,7 +144,7 @@ describe('DotEditPageMainComponent', () => {
                     { provide: DotUiColorsService, useClass: MockDotUiColorsService },
                     PushPublishService,
                     ApiRoot,
-                    FormatDateService,
+                    DotFormatDateService,
                     UserModel,
                     StringUtils,
                     DotcmsEventsService,

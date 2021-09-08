@@ -13,7 +13,7 @@ import { DotWizardService } from '@services/dot-wizard/dot-wizard.service';
 import { DotWizardInput } from '@models/dot-wizard-input/dot-wizard-input.model';
 import { DotWizardStep } from '@models/dot-wizard-step/dot-wizard-step.model';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import * as moment from 'moment';
+import { format } from 'date-fns';
 import { DotCommentAndAssignFormComponent } from '@components/_common/forms/dot-comment-and-assign-form/dot-comment-and-assign-form.component';
 import { DotPushPublishFormComponent } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.component';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
@@ -23,6 +23,7 @@ import { Observable } from 'rxjs';
 import { DotEnvironment } from '@models/dot-environment/dot-environment';
 import { DotActionBulkResult } from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
 import { DotActionBulkRequestOptions } from '@models/dot-action-bulk-request-options/dot-action-bulk-request-options.model';
+import { DotFormatDateService } from '@services/dot-format-date-service';
 
 enum DotActionInputs {
     ASSIGNABLE = 'assignable',
@@ -48,7 +49,8 @@ export class DotWorkflowEventHandlerService {
         private dotIframeService: DotIframeService,
         private httpErrorManagerService: DotHttpErrorManagerService,
         private dotWorkflowActionsFireService: DotWorkflowActionsFireService,
-        private dotGlobalMessageService: DotGlobalMessageService
+        private dotGlobalMessageService: DotGlobalMessageService,
+        private dotFormatDateService: DotFormatDateService
     ) {}
 
     /**
@@ -146,10 +148,22 @@ export class DotWorkflowEventHandlerService {
         if (this.containsPushPublish(inputs)) {
             data['whereToSend'] = data.environment.join();
             data['iWantTo'] = data.pushActionSelected;
-            data['publishTime'] = moment(data.publishDate).format('HH-mm');
-            data['publishDate'] = moment(data.publishDate).format('YYYY-MM-DD');
-            data['expireTime'] = moment(data.expireDate).format('HH-mm');
-            data['expireDate'] = moment(data.expireDate).format('YYYY-MM-DD');
+            data['publishTime'] = this.dotFormatDateService.format(
+                new Date(data.publishDate),
+                'HH-mm'
+            );
+            data['publishDate'] = this.dotFormatDateService.format(
+                new Date(data.publishDate),
+                'yyyy-MM-dd'
+            );
+            data['expireTime'] = this.dotFormatDateService.format(
+                data.expireDate ? new Date(data.expireDate) : new Date(),
+                'HH-mm'
+            );
+            data['expireDate'] = this.dotFormatDateService.format(
+                data.expireDate ? new Date(data.expireDate) : new Date(),
+                'yyyy-MM-dd'
+            );
             delete data.environment;
             delete data.pushActionSelected;
         }

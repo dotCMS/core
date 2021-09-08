@@ -36,7 +36,7 @@ import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-han
 import { PushPublishService } from '@services/push-publish/push-publish.service';
 import { DotCurrentUserService } from '@services/dot-current-user/dot-current-user.service';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { FormatDateService } from '@services/format-date-service';
+import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotWizardService } from '@services/dot-wizard/dot-wizard.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
@@ -119,7 +119,7 @@ xdescribe('IframePortletLegacyComponent', () => {
                     DotEventsSocket,
                     { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                     DotcmsConfigService,
-                    FormatDateService,
+                    DotFormatDateService,
                     DotWizardService,
                     DotHttpErrorManagerService,
                     DotAlertConfirmService,

@@ -7,7 +7,7 @@ import { By } from '@angular/platform-browser';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { TableModule } from 'primeng/table';
 import { Component, DebugElement, Input } from '@angular/core';
-import { FormatDateService } from '@services/format-date-service';
+import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotListingDataTableComponent } from './dot-listing-data-table.component';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
@@ -132,7 +132,7 @@ describe('DotListingDataTableComponent', () => {
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock },
                 LoggerService,
-                FormatDateService,
+                DotFormatDateService,
                 DotAlertConfirmService,
                 ConfirmationService,
                 StringUtils

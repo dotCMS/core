@@ -24,7 +24,7 @@ import { LoginService, DotEventsSocket, CoreWebService } from '@dotcms/dotcms-js
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Observable, Subject } from 'rxjs';
-import { FormatDateService } from '@services/format-date-service';
+import { DotFormatDateService } from '@services/dot-format-date-service';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { FieldDragDropService } from '../service/index';
 import { FieldPropertyService } from '../service/field-properties.service';
@@ -220,7 +220,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                     { provide: CoreWebService, useClass: CoreWebServiceMock },
                     DotEventsSocket,
                     LoginService,
-                    FormatDateService,
+                    DotFormatDateService,
                     FieldService,
                     FieldPropertyService,
                     DragulaService,
@@ -466,7 +466,7 @@ describe('Load fields and drag and drop', () => {
                     DragulaService,
                     FieldPropertyService,
                     FieldService,
-                    FormatDateService,
+                    DotFormatDateService,
                     LoginService,
                     DotEventsSocket,
                     { provide: DotMessageService, useValue: messageServiceMock },

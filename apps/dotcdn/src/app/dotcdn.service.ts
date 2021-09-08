@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { CoreWebService, ResponseView, SiteService } from '@dotcms/dotcms-js';
-import { pluck, mergeMap, map, tap, take } from 'rxjs/operators';
-import * as moment from 'moment';
+import { pluck, mergeMap } from 'rxjs/operators';
+import { format, subDays } from 'date-fns';
 import { DotCDNStats, PurgeReturnData, PurgeUrlOptions } from './app.models';
+
 @Injectable({
     providedIn: 'root'
 })
@@ -21,8 +22,8 @@ export class DotCDNService {
         return this.siteService.getCurrentSite().pipe(
             pluck('identifier'),
             mergeMap((hostId: string) => {
-                const dateTo = moment().format('YYYY-MM-DD');
-                const dateFrom = moment().subtract(period, 'd').format('YYYY-MM-DD');
+                const dateTo = format(new Date(), 'yyyy-MM-dd');
+                const dateFrom = format(subDays(new Date(), parseInt(period, 10)), 'yyyy-MM-dd');
                 return this.coreWebService.requestView<DotCDNStats>({
                     url: `/api/v1/dotcdn/stats?hostId=${hostId}&dateFrom=${dateFrom}&dateTo=${dateTo}`
                 });
@@ -75,6 +76,6 @@ export class DotCDNService {
                 invalidateAll,
                 hostId
             })
-        })
+        });
     }
 }

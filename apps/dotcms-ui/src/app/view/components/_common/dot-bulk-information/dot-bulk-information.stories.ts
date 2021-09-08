@@ -1,6 +1,6 @@
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { FormatDateService } from '@services/format-date-service';
+import { DotFormatDateService } from '@services/dot-format-date-service';
 import { Meta, Story, moduleMetadata } from '@storybook/angular';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -21,7 +21,7 @@ export default {
             imports: [DotMessagePipeModule],
             providers: [
                 DynamicDialogRef,
-                FormatDateService,
+                DotFormatDateService,
                 DialogService,
                 { provide: DotMessageService, useValue: messageServiceMock },
                 {

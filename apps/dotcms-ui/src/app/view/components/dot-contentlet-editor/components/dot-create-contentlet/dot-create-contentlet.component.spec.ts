@@ -11,7 +11,7 @@ import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Observable, of } from 'rxjs';
-import { FormatDateService } from '@services/format-date-service';
+import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { ActivatedRoute } from '@angular/router';
 import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
@@ -55,7 +55,7 @@ describe('DotCreateContentletComponent', () => {
                 ],
                 providers: [
                     DotIframeService,
-                    FormatDateService,
+                    DotFormatDateService,
                     DotAlertConfirmService,
                     ConfirmationService,
                     {

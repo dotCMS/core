@@ -23,7 +23,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { ConfirmationService } from 'primeng/api';
-import { FormatDateService } from '@services/format-date-service';
+import { DotFormatDateService } from '@services/dot-format-date-service';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { MockDotRouterService } from '@tests/dot-router-service.mock';
@@ -55,7 +55,7 @@ describe('DotAddContentletComponent', () => {
                     },
                     DotAlertConfirmService,
                     ConfirmationService,
-                    FormatDateService,
+                    DotFormatDateService,
                     DotHttpErrorManagerService,
                     { provide: CoreWebService, useClass: CoreWebServiceMock },
                     { provide: DotRouterService, useClass: MockDotRouterService },

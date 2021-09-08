@@ -1,10 +1,9 @@
-import * as moment from 'moment';
-
 import { FormControl } from '@angular/forms';
+import { _isValid } from '@services/dot-format-date-service';
 
 const format = {
-    'com.dotcms.contenttype.model.field.ImmutableDateField': 'YYYY-MM-DD',
-    'com.dotcms.contenttype.model.field.ImmutableDateTimeField': 'YYYY-MM-DD HH:mm:ss',
+    'com.dotcms.contenttype.model.field.ImmutableDateField': 'yyyy-MM-dd',
+    'com.dotcms.contenttype.model.field.ImmutableDateTimeField': 'yyyy-MM-dd HH:mm:ss',
     'com.dotcms.contenttype.model.field.ImmutableTimeField': 'HH:mm:ss'
 };
 
@@ -34,6 +33,7 @@ export function validateDateDefaultValue(formControl: FormControl) {
 function isValueValid(formControl: FormControl): boolean {
     const clazz: string = formControl.parent.controls['clazz'].value;
     return format[clazz]
-        ? moment(formControl.value, format[clazz], true).isValid() || formControl.value === 'now'
+        ? _isValid(formControl.value, format[clazz]) ||
+              formControl.value === 'now'
         : true;
 }

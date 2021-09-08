@@ -8,7 +8,7 @@ import { Dropdown, DropdownModule } from 'primeng/dropdown';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { FormatDateService } from '@services/format-date-service';
+import { DotFormatDateService } from '@services/dot-format-date-service';
 import { Component, DebugElement, Input } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { of } from 'rxjs';
@@ -38,7 +38,7 @@ describe('DotAssigneeFormComponent', () => {
             providers: [
                 DotRolesService,
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
-                FormatDateService
+                DotFormatDateService
             ],
             imports: [
                 HttpClientTestingModule,

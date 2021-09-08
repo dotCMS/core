@@ -26,7 +26,6 @@ import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.modul
 import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@tests/dot-test-bed';
-import { FormatDateService } from '@services/format-date-service';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { ConfirmationService } from 'primeng/api';
@@ -37,6 +36,7 @@ import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot
 import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { DotFormatDateService } from '@services/dot-format-date-service';
 
 @Component({
     selector: 'dot-alert-confirm',
@@ -100,7 +100,7 @@ describe('MainLegacyComponent', () => {
                 DotMenuService,
                 DotCustomEventHandlerService,
                 DotIframeService,
-                FormatDateService,
+                DotFormatDateService,
                 DotAlertConfirmService,
                 ConfirmationService,
                 DotcmsEventsService,

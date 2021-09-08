@@ -3,7 +3,7 @@ import { SearchableDropDownModule } from '@components/_common/searchable-dropdow
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotThemesService } from '@services/dot-themes/dot-themes.service';
-import { FormatDateService } from '@services/format-date-service';
+import { DotFormatDateService } from '@services/dot-format-date-service';
 import { PaginatorService } from '@services/paginator';
 import { Meta, moduleMetadata } from '@storybook/angular';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
@@ -27,7 +27,7 @@ export default {
                     useValue: messageServiceMock
                 },
                 {
-                    provide: FormatDateService,
+                    provide: DotFormatDateService,
                     useValue: {}
                 },
                 {
