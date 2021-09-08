@@ -62,7 +62,7 @@ import org.quartz.SchedulerException;
  * Content Page) already exists in the destination server(s) with a different
  * Identifier. This will generate an error and the bundle will fail to publish.
  * <p>
- * Therefore, it is always recommended to run the Integrity Checker feature
+ * Therefore, it is always recommended running the Integrity Checker feature
  * <b>BEFORE</b> pushing a bundle. This will indicate the user that there are
  * conflicting elements in the destination server(s) and will allow them to
  * solve them, either by replacing the local data with the external data, or
@@ -578,7 +578,7 @@ public class IntegrityResource {
                 }
             }
 
-            responseMessage.append( jsonResponse.toString() );
+            responseMessage.append(jsonResponse);
 
         } catch ( Exception e ) {
             Logger.error( this.getClass(), "Error checking the integrity process status for End Point server: [" + endpointId + "]", e );
@@ -648,6 +648,7 @@ public class IntegrityResource {
                 switch( integrityType ) {
                     case HTMLPAGES:
                     case FILEASSETS:
+                    case HOSTS:
                         columns.add("local_working_inode");
                         columns.add("remote_working_inode");
                         columns.add("local_live_inode");
