@@ -2,8 +2,8 @@ import { Injectable } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { ComponentStore } from '@ngrx/component-store';
-import { Observable, zip } from 'rxjs';
-import { pluck, switchMap, take, tap } from 'rxjs/operators';
+import { Observable, zip, of } from 'rxjs';
+import { pluck, switchMap, take, tap, catchError } from 'rxjs/operators';
 import * as _ from 'lodash';
 
 import { DotTemplatesService } from '@services/dot-templates/dot-templates.service';
@@ -13,6 +13,10 @@ import { DotContainerMap } from '@models/container/dot-container.model';
 import { DotLayout, DotTemplate } from '@models/dot-edit-layout-designer';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
+
+import { HttpErrorResponse } from '@angular/common/http';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotEditLayoutService } from '@services/dot-edit-layout/dot-edit-layout.service';
 
 type DotTemplateType = 'design' | 'advanced';
 
@@ -110,11 +114,14 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
     );
 
     readonly saveTemplate = this.effect((origin$: Observable<DotTemplateItem>) => {
-        this.dotGlobalMessageService.loading(
-            this.dotMessageService.get('dot.common.message.saving')
-        );
+
         return origin$.pipe(
-            switchMap((template: DotTemplateItem) => this.persistTemplate(template)),
+            switchMap((template: DotTemplateItem) => {
+                this.dotGlobalMessageService.loading(
+                    this.dotMessageService.get('dot.common.message.saving')
+                );
+              return this.persistTemplate(template)
+            }),
             tap((template: DotTemplate) => {
                 if (template.drawed) {
                     this.templateContainersCacheService.set(template.containers);
@@ -126,6 +133,13 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
                 if (this.activatedRoute?.snapshot?.params['inode']) {
                     this.dotRouterService.goToEditTemplate(template.identifier);
                 }
+            }),
+            catchError((err: HttpErrorResponse) => {
+                this.dotGlobalMessageService.error(err.statusText);
+                this.dotHttpErrorManagerService.handle(err).subscribe(() => {
+                    this.dotEditLayoutService.changeDesactivateState(true);
+                });
+                return of(null);
             })
         );
     });
@@ -162,6 +176,8 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
         private dotTemplateService: DotTemplatesService,
         private dotRouterService: DotRouterService,
         private activatedRoute: ActivatedRoute,
+        private dotHttpErrorManagerService: DotHttpErrorManagerService,
+        private dotEditLayoutService: DotEditLayoutService,
         private templateContainersCacheService: DotTemplateContainersCacheService,
         private dotGlobalMessageService: DotGlobalMessageService,
         private dotMessageService: DotMessageService

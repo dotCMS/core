@@ -31,6 +31,7 @@ import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-han
 import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { ConfirmationService } from 'primeng/api';
+import { LayoutEditorCanDeactivateGuardService } from '@services/guards/layout-editor-can-deactivate-guard.service';
 
 export const LOCATION_TOKEN = new InjectionToken<Location>('Window location object');
 
@@ -67,7 +68,8 @@ const PROVIDERS: any[] = [
     DotPushPublishDialogService,
     DotWorkflowEventHandlerService,
     DotWorkflowActionsFireService,
-    DotGlobalMessageService
+    DotGlobalMessageService,
+    LayoutEditorCanDeactivateGuardService
 ];
 
 export const ENV_PROVIDERS = [...PROVIDERS];

@@ -50,6 +50,14 @@ xdescribe('DotGlobalMessageService', () => {
         });
     });
 
+    it('should set a specific time for the Custom Display scenario', (done) => {
+        dotGlobalMessageService.customDisplay('test', 1000);
+        listenerDotGlobalMessage.subscribe((event: DotEvent) => {
+            expect(event.data).toEqual({ value: 'test', life: 1000 });
+            done();
+        });
+    });
+    
     it('should set the default DotGlobalMessage Object for the Loading scenario', (done) => {
         dotGlobalMessageService.loading();
         listenerDotGlobalMessage.subscribe((event: DotEvent) => {

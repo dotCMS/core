@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { DotTemplateContainersCacheService } from '@services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DotTemplatesService } from '@services/dot-templates/dot-templates.service';
@@ -10,6 +10,11 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
+
+import { DotEditLayoutService } from '@services/dot-edit-layout/dot-edit-layout.service';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { HttpErrorResponse } from '@angular/common/http';
+import { mockResponseView } from '@dotcms/app/test/response-view.mock';
 
 const messageServiceMock = new MockDotMessageService({
     'dot.common.message.saved': 'saved',
@@ -59,6 +64,13 @@ const cacheSetSpy = jasmine.createSpy();
 
 const BASIC_PROVIDERS = [
     DotTemplateStore,
+    DotEditLayoutService,
+    {
+        provide: DotHttpErrorManagerService,
+        useValue: {
+            handle: jasmine.createSpy().and.returnValue(of({}))
+        }
+    },
     {
         provide: DotTemplatesService,
         useValue: {
@@ -103,7 +115,8 @@ const BASIC_PROVIDERS = [
         provide: DotGlobalMessageService,
         useValue: {
             loading: jasmine.createSpy(),
-            success: jasmine.createSpy()
+            success: jasmine.createSpy(),
+            error: jasmine.createSpy()
         }
     }
 ];
@@ -114,6 +127,8 @@ describe('DotTemplateStore', () => {
     let dotRouterService: DotRouterService;
     let dotTemplatesService: DotTemplatesService;
     let dotGlobalMessageService: DotGlobalMessageService;
+    let dotHttpErrorManagerService: DotHttpErrorManagerService;
+    let dotEditLayoutService: DotEditLayoutService;
 
     afterEach(() => {
         cacheSetSpy.calls.reset();
@@ -141,6 +156,8 @@ describe('DotTemplateStore', () => {
             dotTemplateContainersCacheService = TestBed.inject(DotTemplateContainersCacheService);
             dotRouterService = TestBed.inject(DotRouterService);
             dotTemplatesService = TestBed.inject(DotTemplatesService);
+            dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
+            dotEditLayoutService = TestBed.inject(DotEditLayoutService);
         });
 
         it('should have basic state', (done) => {
@@ -227,6 +244,8 @@ describe('DotTemplateStore', () => {
             dotRouterService = TestBed.inject(DotRouterService);
             dotTemplatesService = TestBed.inject(DotTemplatesService);
             dotGlobalMessageService = TestBed.inject(DotGlobalMessageService);
+            dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
+            dotEditLayoutService = TestBed.inject(DotEditLayoutService);
         });
 
         it('should have basic state', (done) => {
@@ -373,6 +392,24 @@ describe('DotTemplateStore', () => {
                     });
                 });
             });
+
+            it('should handler error on update template', (done) => {
+                const error = throwError(new HttpErrorResponse(mockResponseView(400)))
+                spyOn<any>(service, 'persistTemplate').and.returnValue(error);
+                service.saveTemplate({
+                    body: 'string',
+                    friendlyName: 'string',
+                    identifier: 'string',
+                    title: 'string'
+                });
+                expect(dotGlobalMessageService.error).toHaveBeenCalledWith('Unknown Error');
+                expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
+                dotEditLayoutService.canBeDesactivated$.subscribe((resp) => {
+                    expect(resp).toBeTruthy();
+                    done();
+                });
+            });
+            
             it('should update template and update the state when updates props', () => {
                 service.saveProperties({
                     body: 'string',

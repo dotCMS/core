@@ -841,6 +841,7 @@ describe('DotEditContentComponent', () => {
 
                         const menu = de.query(By.css('dot-reorder-menu'));
                         expect(menu.componentInstance.url).toBe('');
+                        expect(dotPageStateService.reload).toHaveBeenCalledTimes(1);
                     }));
                 });
 

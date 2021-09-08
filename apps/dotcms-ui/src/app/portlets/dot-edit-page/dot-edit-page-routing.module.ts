@@ -3,6 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 
 import { DotEditPageMainComponent } from './main/dot-edit-page-main/dot-edit-page-main.component';
 import { DotEditPageResolver } from './shared/services/dot-edit-page-resolver/dot-edit-page-resolver.service';
+import { LayoutEditorCanDeactivateGuardService } from '@services/guards/layout-editor-can-deactivate-guard.service';
 
 const dotEditPage: Routes = [
     {
@@ -29,6 +30,7 @@ const dotEditPage: Routes = [
                     import('@portlets/dot-edit-page/layout/dot-edit-layout.module').then(
                         (m) => m.DotEditLayoutModule
                     ),
+                canDeactivate: [LayoutEditorCanDeactivateGuardService],
                 path: 'layout'
             },
             {
