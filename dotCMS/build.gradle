@@ -138,20 +138,21 @@ eclipse.project {
 
 dependencies {
     /*****  Felix libs need to be placed in the WEB-INF/felix/bundle directory. This was previously handled using a pre-build copy task.  *****/
-    felix group: 'org.apache.felix', name: 'org.apache.felix.fileinstall', version: '3.6.4'
-    felix (group: 'org.apache.felix', name: 'org.apache.felix.configadmin', version: '1.9.2') {
+    felix group: 'org.apache.felix', name: 'org.apache.felix.fileinstall', version: '3.7.0'
+    felix (group: 'org.apache.felix', name: 'org.apache.felix.configadmin', version: '1.9.22') {
         transitive = false
     }
-    felix (group: 'org.osgi', name: 'org.osgi.compendium', version: '4.3.1') {
+    felix(group: 'org.apache.tika', name: 'tika-core', version: '1.27') {
         transitive = false
     }
-    felix(group: 'org.apache.tika', name: 'tika-core', version: '1.19') {
+    felix(group: 'org.apache.tika', name: 'tika-bundle', version: '1.27') {
         transitive = false
     }
-    felix(group: 'org.apache.tika', name: 'tika-bundle', version: '1.19') {
+    
+    felix(group: 'org.apache.felix', name: 'org.apache.felix.http.api', version: '3.0.0') {
         transitive = false
     }
-
+    
     felix group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.25'
     felix group: 'org.slf4j', name: 'jcl-over-slf4j', version: '1.7.25'
     felix group: 'com.dotcms.tika', name: 'com.dotcms.tika', version: '0.2'

@@ -423,43 +423,15 @@ dependencies {
     /**
      * Order matters here: OSGI-Core must come after felix.
      */
-    compile(group: 'org.apache.felix', name: 'org.apache.felix.main', version: '5.6.10') {
+    compile(group: 'org.apache.felix', name: 'org.apache.felix.main', version: '7.0.1') {
         exclude(group: 'commons-logging')
         exclude(group: 'org.slf4j')
     }
-    compile(group: 'org.glassfish.hk2', name: 'osgi-resource-locator', version: '2.4.0') {
+    compile(group: 'org.glassfish.hk2', name: 'osgi-resource-locator', version: '2.5.0-b42') {
         exclude(group: 'commons-logging')
         exclude(group: 'org.slf4j')
     }
-    compile(group: 'org.apache.felix', name: 'org.apache.felix.http.proxy', version: '3.0.2') {
-        exclude(group: 'commons-logging')
-        exclude(group: 'org.slf4j')
-    }
-    compile(group: 'org.apache.felix', name: 'org.apache.felix.http.bundle', version: '3.0.0') {
-        exclude(group: 'commons-logging')
-        exclude(group: 'org.slf4j')
-//        exclude(group: 'javax.servlet')
-    }
-    compile(group: 'org.apache.felix', name: 'org.apache.felix.http.bridge', version: '3.0.18') {
-        exclude(module: 'commons-logging')
-        exclude(module: 'org.slf4j')
-    }
-    compile(group: 'org.apache.felix', name: 'org.apache.felix.http.api', version: '3.0.0') {
-        exclude(group: 'commons-logging')
-        exclude(group: 'org.slf4j')
-    }
-    compile(group: 'org.apache.felix', name: 'org.apache.felix.http.base', version: '3.0.18') {
-        exclude(group: 'commons-logging')
-        exclude(group: 'org.slf4j')
-    }
-    compile(group: 'org.apache.felix', name: 'org.apache.felix.http.whiteboard', version: '3.0.0') {
-        exclude(group: 'commons-logging')
-        exclude(group: 'org.slf4j')
-    }
-    compile(group: 'org.apache.felix', name: 'org.apache.felix.http.servlet-api', version: '1.1.2') {
-        exclude(group: 'commons-logging')
-        exclude(group: 'org.slf4j')
-    }
+
 
     compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.2'
 
