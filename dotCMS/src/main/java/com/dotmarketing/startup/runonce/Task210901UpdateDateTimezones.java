@@ -52,7 +52,7 @@ public class Task210901UpdateDateTimezones extends AbstractJDBCStartupTask {
         try (Connection conn = DbConnectionFactory.getConnection()) {
             final ResultSet results = new DotDatabaseMetaData().getColumnsMetaData(conn, tableName);
             while (results.next()) {
-                if ("timestamp".equals(results.getString("TYPE_NAME"))) {
+                if ("timestamp".equals(results.getString("TYPE_NAME").toLowerCase())) {
                     final String columnName = results.getString("COLUMN_NAME");
                     Logger.info(Task210901UpdateDateTimezones.class,
                                     "updating " + tableName + "." + columnName + " to timestamp with timezone");
@@ -65,8 +65,6 @@ public class Task210901UpdateDateTimezones extends AbstractJDBCStartupTask {
             }
         }
         return true;
-
-
     }
 
 
