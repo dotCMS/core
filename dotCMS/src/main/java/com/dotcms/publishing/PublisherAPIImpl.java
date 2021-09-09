@@ -2,6 +2,7 @@ package com.dotcms.publishing;
 
 import com.dotcms.publishing.manifest.CSVManifestBuilder;
 import com.dotcms.publishing.manifest.ManifestBuilder;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -96,17 +97,6 @@ public class PublisherAPIImpl implements PublisherAPI {
                     config.setManifestBuilder(manifestBuilder);
                     status.addOutput(output);
                     // Run bundlers
-
-                    if (config.isStatic()) {
-                        //If static we just want to save the things that we need,
-                        // at this point only the id, static and operation.
-                        PublisherConfig pcClone = new PublisherConfig();
-                        pcClone.setId(config.getId());
-                        pcClone.setStatic(true);
-                        pcClone.setOperation(config.getOperation());
-
-                    } 
-
                     // If the bundle exists and we are retrying to push the bundle
                     // there is no need to run all the bundlers again.
                     if (!bundleExists || !publishAuditAPI.isPublishRetry(config.getId())) {
@@ -145,15 +135,12 @@ public class PublisherAPIImpl implements PublisherAPI {
                                 + ", we don't need to run bundlers again");
                     }
 
-                    config.getManifestFile().ifPresent((manifestFile) -> {
-                        try {
-                            manifestBuilder.close();
-                            output.copyFile(manifestFile, "/" + ManifestBuilder.MANIFEST_NAME);
-                        } catch (IOException e) {
-                            Logger.error(PublisherAPIImpl.class, "Error trying to copy the manifest file: " +
-                                    e.getMessage());
-                        }
-                    });
+                    if (config.getManifestFile().isPresent()) {
+                        addManifestIntoBundleOutput(output, manifestBuilder,
+                                config.getManifestFile().get());
+                    } else {
+                        addBundleXMLIntoBundle(config, output);
+                    }
                 }
 
                 publisher.process(status);
@@ -172,6 +159,33 @@ public class PublisherAPIImpl implements PublisherAPI {
         }
 
         return status;
+    }
+
+    private void addBundleXMLIntoBundle(final PublisherConfig config, final BundleOutput output) {
+        if (config.isStatic()) {
+            //If static we just want to save the things that we need,
+            // at this point only the id, static and operation.
+            PublisherConfig pcClone = new PublisherConfig();
+            pcClone.setId(config.getId());
+            pcClone.setStatic(true);
+            pcClone.setOperation(config.getOperation());
+
+            BundlerUtil.writeBundleXML(pcClone, output);
+        } else {
+            BundlerUtil.writeBundleXML(config, output);
+        }
+    }
+
+    private void addManifestIntoBundleOutput(final BundleOutput output,
+            final ManifestBuilder manifestBuilder,
+            final File manifestFile) {
+        try {
+            manifestBuilder.close();
+            output.copyFile(manifestFile, "/" + ManifestBuilder.MANIFEST_NAME);
+        } catch (IOException e) {
+            Logger.error(PublisherAPIImpl.class, "Error trying to copy the manifest file: " +
+                    e.getMessage());
+        }
     }
 
     @Override

@@ -362,4 +362,14 @@ public class BundlerUtil {
         return bundleTarGzip.exists();
     }
 
+    public static void writeBundleXML(final PublisherConfig config, final BundleOutput output){
+        final String bundleXmlFilePath = File.separator + "bundle.xml";
+
+        try (final OutputStream outputStream = output.addFile(bundleXmlFilePath)) {
+            objectToXML(config, outputStream);
+        } catch ( IOException e ) {
+            Logger.error( BundlerUtil.class, e.getMessage(), e );
+        }
+    }
+
 }
