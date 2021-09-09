@@ -4,22 +4,11 @@ import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
 import java.util.Iterator;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.FileImageInputStream;
 import javax.imageio.stream.ImageInputStream;
-import org.apache.batik.anim.dom.SAXSVGDocumentFactory;
-import org.apache.batik.bridge.BridgeContext;
-import org.apache.batik.bridge.DocumentLoader;
-import org.apache.batik.bridge.GVTBuilder;
-import org.apache.batik.bridge.UserAgent;
-import org.apache.batik.bridge.UserAgentAdapter;
-import org.apache.batik.gvt.GraphicsNode;
-import org.apache.batik.util.XMLResourceDescriptor;
-import org.w3c.dom.Document;
 
 public final class ImageUtil {
 
@@ -49,40 +38,17 @@ public final class ImageUtil {
 		}
 		String suffix = imgFile.getName().substring(pos + 1);
 
-		if (suffix.equalsIgnoreCase("svg")){
-			return getSVGImageDimension( imgFile );
-		}else{
-			Iterator<ImageReader> iter = ImageIO.getImageReadersBySuffix(suffix);
-			if (iter.hasNext()) {
-				Dimension dimension = getImageDimension(imgFile, iter);
-				if (dimension != null) return dimension;
-			}
+
+		Iterator<ImageReader> iter = ImageIO.getImageReadersBySuffix(suffix);
+		if (iter.hasNext()) {
+			Dimension dimension = getImageDimension(imgFile, iter);
+			if (dimension != null) return dimension;
 		}
+		
 
 		throw new IOException("Not a known image file: " + imgFile.getAbsolutePath());
 	}
 
-	private Dimension getSVGImageDimension( File imgFile ) {
-		try {
-			SAXSVGDocumentFactory factory = new SAXSVGDocumentFactory(
-					XMLResourceDescriptor.getXMLParserClassName());
-
-			final InputStream is = Files.newInputStream(imgFile.toPath());
-
-			Document document = factory.createDocument(
-					imgFile.toURI().toURL().toString(), is);
-			UserAgent agent = new UserAgentAdapter();
-			DocumentLoader loader = new DocumentLoader(agent);
-			BridgeContext context = new BridgeContext(agent, loader);
-			context.setDynamic(true);
-			GVTBuilder builder = new GVTBuilder();
-			GraphicsNode root = builder.build(context, document);
-
-			return new Dimension((int) root.getPrimitiveBounds().getWidth(), (int) root.getPrimitiveBounds().getHeight());
-		}catch(IOException e){
-			return null;
-		}
-	}
 
 	private Dimension getImageDimension(File imgFile, Iterator<ImageReader> iter) {
 		ImageReader reader = iter.next();
