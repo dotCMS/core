@@ -80,12 +80,6 @@ public class PublisherAPIImpl implements PublisherAPI {
                     }
                 }
 
-                // Find out if we already have the bundle. It is important to note that we
-                // get this info before calling BundlerUtil.writeBundleXML() (code below)
-                // cause that logic will create the bundle folder and BundlerUtil.bundleExists
-                // will return true after that always.
-                final boolean bundleExists = BundlerUtil.bundleExists(config);
-
                 try (BundleOutput output = publisher.createBundleOutput();
                         ManifestBuilder manifestBuilder = new CSVManifestBuilder()){
 
@@ -94,12 +88,26 @@ public class PublisherAPIImpl implements PublisherAPI {
                     manifestBuilder.addMetadata(CSVManifestBuilder.OPERATION_METADATA_NAME,
                             config.getOperation().name());
 
-                    config.setManifestBuilder(manifestBuilder);
-                    status.addOutput(output);
-                    // Run bundlers
-                    // If the bundle exists and we are retrying to push the bundle
-                    // there is no need to run all the bundlers again.
-                    if (!bundleExists || !publishAuditAPI.isPublishRetry(config.getId())) {
+                    if (!output.bundleFileExists() || !publishAuditAPI.isPublishRetry(config.getId())) {
+                        output.create();
+                        config.setManifestBuilder(manifestBuilder);
+                        status.addOutput(output);
+                        // Run bundlers
+
+                        if (config.isStatic()) {
+                            //If static we just want to save the things that we need,
+                            // at this point only the id, static and operation.
+                            PublisherConfig pcClone = new PublisherConfig();
+                            pcClone.setId(config.getId());
+                            pcClone.setStatic(true);
+                            pcClone.setOperation(config.getOperation());
+                            Logger.info(this, "Writing bundle.xml file");
+                            BundlerUtil.writeBundleXML(pcClone, output);
+                        } else {
+                            Logger.info(this, "Writing bundle.xml file");
+                            BundlerUtil.writeBundleXML(config, output);
+                        }
+
                         PublishAuditStatus currentStatus = publishAuditAPI
                                 .getPublishAuditStatus(config.getId());
                         PublishAuditHistory currentStatusHistory = null;
@@ -130,16 +138,16 @@ public class PublisherAPIImpl implements PublisherAPI {
                                             PublishAuditStatus.Status.BUNDLING,
                                             currentStatusHistory);
                         }
+
+                        if (config.getManifestFile().isPresent()) {
+                            addManifestIntoBundleOutput(output, manifestBuilder,
+                                    config.getManifestFile().get());
+                        } else {
+                            addBundleXMLIntoBundle(config, output);
+                        }
                     } else {
                         Logger.info(this, "Retrying bundle: " + config.getId()
-                                + ", we don't need to run bundlers again");
-                    }
-
-                    if (config.getManifestFile().isPresent()) {
-                        addManifestIntoBundleOutput(output, manifestBuilder,
-                                config.getManifestFile().get());
-                    } else {
-                        addBundleXMLIntoBundle(config, output);
+                             + ", we don't need to run bundlers again");
                     }
                 }
 

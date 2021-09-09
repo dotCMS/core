@@ -213,7 +213,7 @@ public class FolderResource implements Serializable {
 
         final User user = initData.getUser();
 
-        String path = searchByPathForm.getPath();
+        String path = searchByPathForm.getPath().toLowerCase();
         String siteId = null;
         String folderPath = path;
 
