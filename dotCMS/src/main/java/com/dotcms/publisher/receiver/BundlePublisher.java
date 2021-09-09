@@ -1,5 +1,7 @@
 package com.dotcms.publisher.receiver;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.handler.BundleXMLascHandler;
@@ -57,6 +59,8 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.FileUtil;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.stream.Collectors;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.lang.StringUtils;
@@ -198,21 +202,13 @@ public class BundlePublisher extends Publisher {
         }
 
         Map<String, String> assetsDetails = null;
-        Collection<ManifestInfo> bundlerAssets = null;
 
         String finalBundlePath = ConfigUtils.getBundlePath() + File.separator + bundleID;
-        final File manifestFile = new File(finalBundlePath + File.separator + ManifestBuilder.MANIFEST_NAME);
-
-        final CSVManifestReader csvManifestReader = new CSVManifestReader(manifestFile);
+        BundleMetaDataFile bundleMetaDataFile = null;
 
         try {
-            bundlerAssets = csvManifestReader.getAssets(ManifestReason.INCLUDE_BY_USER);
-
-            if (bundlerAssets != null && !bundlerAssets.isEmpty()) {
-                for (ManifestInfo manifestInfo : bundlerAssets) {
-                    assetsDetails.put(manifestInfo.id(), manifestInfo.objectType().toLowerCase());
-                }
-            }
+            bundleMetaDataFile = new BundleMetaDataFile(finalBundlePath);
+            assetsDetails = bundleMetaDataFile.getAssetsDetails();
         } catch (Exception e) {
             Logger.error(BundlePublisher.class, "Unable to get assets list from received bundle with ID '" + bundleName + "': " + e.getMessage(), e);
         }
@@ -284,8 +280,9 @@ public class BundlePublisher extends Publisher {
             // Everything success and the process ends
             Logger.debug(this, "Notify PushPublishSuccessOnReceiverEvent and PushPublishEndOnReceiverEvent");
             localSystemEventsAPI.asyncNotify(new PushPublishSuccessOnReceiverEvent(config));
-            localSystemEventsAPI.asyncNotify(
-                    new PushPublishEndOnReceiverEvent(csvManifestReader.getPublishQueueElement()));
+
+            localSystemEventsAPI.asyncNotify(new PushPublishEndOnReceiverEvent(
+                    UtilMethods.isSet(bundleMetaDataFile) ? bundleMetaDataFile.getBundlerAssets() : Collections.EMPTY_LIST));
         } catch (Exception e) {
 
             localSystemEventsAPI.asyncNotify(new PushPublishFailureOnReceiverEvent(config.getAssets(), e));
@@ -402,4 +399,56 @@ public class BundlePublisher extends Publisher {
         }
     }
 
+    private static class BundleMetaDataFile {
+        private static String ASSET_DETAILS_KEY = "assetsDetails";
+        private static String BUNDLER_ASSETS_KEY = "bundlerAssets";
+
+        private final Map<String, Object> metaData;
+
+        BundleMetaDataFile(final String finalBundlePath) {
+            final String manifestFilePath = finalBundlePath + File.separator + ManifestBuilder.MANIFEST_NAME;
+            final File manifestFile = new File(manifestFilePath);
+
+            metaData = manifestFile.exists() ? getAssetsDetailsFromManifest(manifestFile) :
+                    getAssetsDetailsFromBundleXML(finalBundlePath);
+        }
+
+        private Map<String, Object> getAssetsDetailsFromBundleXML(final String finalBundlePath) {
+            File xml = new File(finalBundlePath + File.separator + "bundle.xml");
+
+            PushPublisherConfig readConfig = (PushPublisherConfig) BundlerUtil.xmlToObject(xml);
+            final List<PublishQueueElement> bundlerAssets = UtilMethods.isSet(readConfig.getAssets()) ?
+                    readConfig.getAssets() : Collections.EMPTY_LIST;
+
+            final Map<String, String> assetsDetails = bundlerAssets.stream()
+                    .collect(Collectors
+                            .toMap(PublishQueueElement::getAsset, PublishQueueElement::getType));
+            return map(ASSET_DETAILS_KEY, assetsDetails, BUNDLER_ASSETS_KEY, bundlerAssets);
+        }
+
+        private Map<String, Object> getAssetsDetailsFromManifest(final File manifestFile) {
+            final Map<String, String> assetsDetails = new HashMap<>();
+
+            Collection<ManifestInfo> bundlerAssets;
+            final CSVManifestReader csvManifestReader = new CSVManifestReader(manifestFile);
+            bundlerAssets = csvManifestReader.getAssets(ManifestReason.INCLUDE_BY_USER);
+
+            if (bundlerAssets != null && !bundlerAssets.isEmpty()) {
+                for (ManifestInfo manifestInfo : bundlerAssets) {
+                    assetsDetails.put(manifestInfo.id(), manifestInfo.objectType().toLowerCase());
+                }
+            }
+
+            return map(ASSET_DETAILS_KEY, assetsDetails,
+                    BUNDLER_ASSETS_KEY, csvManifestReader.getPublishQueueElement());
+        }
+
+        public Map<String, String> getAssetsDetails() {
+            return (Map<String, String>) metaData.get(ASSET_DETAILS_KEY);
+        }
+
+        public List<PublishQueueElement> getBundlerAssets() {
+            return (List<PublishQueueElement>) metaData.get(BUNDLER_ASSETS_KEY);
+        }
+    }
 }
