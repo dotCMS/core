@@ -563,28 +563,31 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 					containers.add(optionalContainer.get());
 				}
 			}
-        }
-        // this is a light weight search for pages that use this template
-        final List<ContentletSearch> pages =
-				APILocator.getContentletAPIImpl().searchIndex("+catchall:" + template.getIdentifier() + " +baseType:"
-                + BaseContentType.HTMLPAGE.getType(), 100, 0, null, user,respectFrontendRoles);
+        } else {//only do this if is not drawed
+			// this is a light weight search for pages that use this template
+			final List<ContentletSearch> pages =
+					APILocator.getContentletAPIImpl()
+							.searchIndex("+catchall:" + template.getIdentifier() + " +baseType:"
+											+ BaseContentType.HTMLPAGE.getType(), 100, 0, null, user,
+									respectFrontendRoles);
 
-        for (final ContentletSearch page : pages) {
-            final Set<String> containerIdSet =
-                    APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier())
-                    .stream()
-                    .map(MultiTree::getContainer)
-                    .collect(Collectors.toSet());
+			for (final ContentletSearch page : pages) {
+				final Set<String> containerIdSet =
+						APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier())
+								.stream()
+								.map(MultiTree::getContainer)
+								.collect(Collectors.toSet());
 
-
-            for (final String containerId : containerIdSet) {
-                final Container container = APILocator.getContainerAPI().getWorkingContainerById(containerId, user, false);
-                if(container==null) {
-                    continue;
-                }
-                containers.add(container);
-            }
-        }
+				for (final String containerId : containerIdSet) {
+					final Container container = APILocator.getContainerAPI()
+							.getWorkingContainerById(containerId, user, false);
+					if (container == null) {
+						continue;
+					}
+					containers.add(container);
+				}
+			}
+		}
         return new ArrayList<Container>(containers);
 
     }

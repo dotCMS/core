@@ -1,17 +1,30 @@
 
 package com.dotmarketing.business;
 
+import static com.dotcms.util.CollectionsUtils.list;
+
+import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.MessageType;
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessage;
+import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 
@@ -20,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.apache.commons.beanutils.BeanUtils;
@@ -465,7 +479,16 @@ public class VersionableAPIImpl implements VersionableAPI {
 
             if ( UtilMethods.isSet( structure.getPublishDateVar() ) ) {//Verify if the structure have a Publish Date Field set
                 if ( UtilMethods.isSet( identifier.getSysPublishDate() ) && identifier.getSysPublishDate().after( new Date() ) ) {
-                    throw new FutureContentletPublishStateException(contentlet);
+                    final String message = Try.of(() -> LanguageUtil.get("message.contentlet.publish.future.date"))
+                            .getOrElse("The content was saved successfully but cannot be published because it is scheduled to be published on future date.");
+                    final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder()
+                            .setMessage(message).setType(MessageType.SIMPLE_MESSAGE)
+                            .setSeverity(MessageSeverity.SUCCESS).setLife(5000);
+
+                    SystemMessageEventUtil.getInstance().pushMessage(systemMessageBuilder.create(),
+                            ImmutableList.of(versionable.getModUser()));
+                    Logger.info(this,message);
+                    return;
                 }
             }
             if ( UtilMethods.isSet( structure.getExpireDateVar() ) ) {//Verify if the structure have a Expire Date Field set
