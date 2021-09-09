@@ -1,6 +1,7 @@
 package com.dotmarketing.common.db;
 
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.util.DateUtil;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotcms.util.IntegrationTestInitService;
@@ -27,7 +28,7 @@ public class DBTimeZoneCheckTest {
                 assertTrue(DBTimeZoneCheck.isTimeZoneValid("CST"));
             }
         } finally {
-            DBTimeZoneCheck.isTimeZoneValid("UTC");
+            DBTimeZoneCheck.isTimeZoneValid(DateUtil.UTC);
         }
     }
 

@@ -70,8 +70,9 @@ public class DateUtil {
 
 	private static Map<String, DateTimeFormatter> formatterMap = new ConcurrentHashMap<>();
 
-	
 	private static Function0<TimeZone> companyTimeZone = Function0.of(()-> APILocator.systemTimeZone());
+
+	public static final String UTC = "UTC";
 
 	/**
 	 * This method allows you to add to a java.util.Date returning a Date

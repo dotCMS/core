@@ -9,6 +9,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -75,7 +76,7 @@ public class UserFactoryImpl implements UserFactory {
         defaultUser.setEmailAddress(User.DEFAULT + "@" + company.getMx());
 
         defaultUser.setLanguageId(null);
-        defaultUser.setTimeZoneId("UTC");
+        defaultUser.setTimeZoneId(DateUtil.UTC);
         defaultUser.setDottedSkins(false);
         defaultUser.setRoundedSkins(false);
         defaultUser.setGreeting("Welcome!");
