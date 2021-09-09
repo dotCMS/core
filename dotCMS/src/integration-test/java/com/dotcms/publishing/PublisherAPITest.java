@@ -129,7 +129,7 @@ public class PublisherAPITest extends IntegrationTestBase {
      * https://github.com/dotCMS/core/issues/12038
      */
     @Test
-    public void test_publish_fail_retry() throws IOException {
+    public void test_publish_fail_retry() throws Exception {
 
         Environment environment = null;
         Bundle bundle = null;
@@ -235,8 +235,7 @@ public class PublisherAPITest extends IntegrationTestBase {
                     getNoBundleXMLFileFilter());
 
             final File bundleXML = new File(bundleXMLPath);
-            assertTrue("bundle.xml exists", bundleXML.exists());
-            final long bundleXMLFirstDate = bundleXML.lastModified();
+            assertTrue("bundle.xml not exists", bundleXML.exists());
 
             // Let's wait 2 seconds between runs so we have different millis in files.
             Logger.info(this, "Waiting 2 seconds before 2nd PP run");
@@ -263,10 +262,6 @@ public class PublisherAPITest extends IntegrationTestBase {
             // Tar Gz File should have the same date.
             assertEquals("Tar Gz File should have the same date",
                     bundleTarGzFirstDate, bundleTarGzSecondDate);
-            final long bundleXMLSecondDate = bundleXML.lastModified();
-            // bundle.xml file should be updated each PP process, so dates shouldn't be the same.
-            assertNotEquals("bundle.xml file should be updated each PP process",
-                    bundleXMLFirstDate, bundleXMLSecondDate);
 
             final Map<String, Long> secondFileDates = getFileDatesByFolder(bundleFolder,
                     getNoBundleXMLFileFilter());

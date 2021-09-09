@@ -33,7 +33,7 @@ import io.vavr.control.Try;
 @SuppressWarnings("serial")
 public class JVMInfoResource implements Serializable {
 
-    final Pattern obfuscatePattern = Pattern.compile(
+    public static final Pattern obfuscatePattern = Pattern.compile(
             Config.getStringProperty("OBFUSCATE_SYSTEM_ENVIRONMENTAL_VARIABLES", "passw|pass|passwd|secret|key|token"),
             Pattern.CASE_INSENSITIVE);
 
