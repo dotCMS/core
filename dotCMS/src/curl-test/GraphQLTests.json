@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "e45ed1ce-0d56-4616-8155-f63f8d7729bc",
+		"_postman_id": "a4c5c4ab-03d5-4b79-87ab-9606e63ac0fc",
 		"name": "GraphQL",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -1059,87 +1059,6 @@
 								"graphql"
 							]
 						}
-					},
-					"response": []
-				},
-				{
-					"name": "publishUrlMappedContent",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200 \", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Ecotourism\");",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
-								}
-							]
-						},
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/175009d69e/fire?identifier=57ee7cd3-66fc-4f01-9b7e-11e53553c220",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"actions",
-								"175009d69e",
-								"fire"
-							],
-							"query": [
-								{
-									"key": "identifier",
-									"value": "57ee7cd3-66fc-4f01-9b7e-11e53553c220"
-								}
-							]
-						},
-						"description": "Fire any action uysing the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here. \n\n@Path(\"/actions/{actionId}/fire\")"
 					},
 					"response": []
 				},
