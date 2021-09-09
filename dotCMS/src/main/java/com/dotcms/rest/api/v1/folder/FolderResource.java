@@ -6,6 +6,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.beans.Host;
@@ -212,6 +213,11 @@ public class FolderResource implements Serializable {
                         .init();
 
         final User user = initData.getUser();
+
+        if(!UtilMethods.isSet(searchByPathForm) ||
+                UtilMethods.isNotSet(searchByPathForm.getPath())){
+            throw new BadRequestException("Path property must be send");
+        }
 
         String path = searchByPathForm.getPath().toLowerCase();
         String siteId = null;
