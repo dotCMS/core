@@ -39,7 +39,7 @@ jobs:
           echo "COMMIT_MESSG: ${COMMIT_MESSG}"
           echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
 
-          if [[ "${{ github.event_name }}" == "pull_request" || ${BUILD_ID} =~ master|^release-.*|^test-.* || ${COMMIT_MESSG} =~ run-all|run-unit ]]; then
+          if [[ "${{ github.event_name }}" == "pull_request" || ${BUILD_ID} =~ master|^release-[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$|^test-[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$ || ${COMMIT_MESSG} =~ run-all|run-unit ]]; then
             echo "jobRun=true" >> $GITHUB_ENV
           else
             echo "jobRun=false" >> $GITHUB_ENV
@@ -92,7 +92,7 @@ jobs:
           echo "COMMIT_MESSG: ${COMMIT_MESSG}"
           echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
 
-          [[ ${BUILD_ID} =~ master|^release-.*|^test-.* ]] && SPECIAL_BRANCH=true
+          [[ ${BUILD_ID} =~ master|^release-[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$|^test-[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$ ]] && SPECIAL_BRANCH=true
 
           if [[ ${IS_PR} == true || "${SPECIAL_BRANCH}" == 'true' || ${COMMIT_MESSG} =~ run-all|run-curl ]]; then
             echo "jobRun=true" >> $GITHUB_ENV
@@ -157,7 +157,7 @@ jobs:
           echo "COMMIT_MESSG: ${COMMIT_MESSG}"
           echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
 
-          [[ ${IS_PR} == false && ${BUILD_ID} =~ master|^release-.*|^test-.* ]] && SPECIAL_BRANCH=true
+          [[ ${IS_PR} == false && ${BUILD_ID} =~ master|^release-[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$|^test-[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$ ]] && SPECIAL_BRANCH=true
 
           # Evaluate postgres
           [[ ((! ${COMMIT_MESSG} =~ run-mysql|run-oracle|run-mssql) || ${COMMIT_MESSG} =~ run-all|run-postgres) \

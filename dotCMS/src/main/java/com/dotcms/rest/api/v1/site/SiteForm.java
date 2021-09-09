@@ -39,6 +39,8 @@ public class SiteForm {
 
     private final long   languageId;
 
+    private final boolean forceExecution;
+
     @JsonCreator
     public SiteForm(@JsonProperty("aliases")    final String aliases,
                     @JsonProperty("siteName")   final String siteName,
@@ -54,7 +56,8 @@ public class SiteForm {
                     @JsonProperty("embeddedDashboard")   final String embeddedDashboard,
                     @JsonProperty("languageId")          final long   languageId,
                     @JsonProperty("identifier")          final String   identifier,
-                    @JsonProperty("inode")               final String   inode) {
+                    @JsonProperty("inode")               final String   inode,
+                    @JsonProperty("forceExecution")  final boolean forceExecution) {
 
         this.aliases = aliases;
         this.siteName = siteName;
@@ -71,6 +74,7 @@ public class SiteForm {
         this.languageId        = languageId;
         this.identifier        = identifier;
         this.inode             = inode;
+        this.forceExecution = forceExecution;
     }
 
     public String getIdentifier() {
@@ -131,6 +135,10 @@ public class SiteForm {
 
     public String getEmbeddedDashboard() {
         return embeddedDashboard;
+    }
+
+    public boolean isForceExecution() {
+        return forceExecution;
     }
 
     @Override

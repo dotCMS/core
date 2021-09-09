@@ -13,6 +13,7 @@
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.business.DotStateException"%>
 <%@ page import="com.dotcms.publishing.BundlerUtil" %>
+<%@ page import="com.dotcms.publishing.manifest.ManifestUtil" %>
 
 <%
     String bundleId = request.getParameter("bundle");
@@ -76,7 +77,7 @@
 
     <button dojoType="dijit.form.Button" onClick="window.location='/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadBundle/bid/<%=bundleId%>';" iconClass="downloadIcon"><%= LanguageUtil.get(pageContext, "download") %></button>
 
-    <%if (BundlerUtil.tarGzipExists(bundleId)){%>
+    <%if (ManifestUtil.manifestExists(bundleId)){%>
         <button dojoType="dijit.form.Button" onClick="window.location='/api/bundle/<%=bundleId%>/manifest'" iconClass="downloadIcon"><%= LanguageUtil.get(pageContext, "manifest") %></button>
     <%}%>
 
