@@ -205,7 +205,7 @@ public class User extends UserModel implements Recipient, ManifestItem {
 
 	public void setTimeZoneId(String timeZoneId) {
 		if (Validator.isNull(timeZoneId)) {
-			timeZoneId = APILocator.getCompanyAPI().getDefaultCompany().getTimeZone().getID();
+			timeZoneId = APILocator.systemTimeZone().getID();
 		}
 
 		_timeZone = TimeZone.getTimeZone(timeZoneId);

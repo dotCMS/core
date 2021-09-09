@@ -415,7 +415,7 @@ public class DateUtilTest extends UnitTestBase {
         final String   easternUSTimeZone = "US/Eastern";
         final String   westernUSTimeZone = "US/Western";
         final TimeZone timeZone      = TimeZone.getTimeZone(easternUSTimeZone);
-        final TimeZone defaultTimeZone =  APILocator.getCompanyAPI().getDefaultCompany().getTimeZone();
+        final TimeZone defaultTimeZone =  APILocator.systemTimeZone();
 
         final Date date1 = DateUtil.convertDate("2015-02-04 11", timeZone, "yyyy-MM-dd HH");
 
@@ -448,7 +448,7 @@ public class DateUtilTest extends UnitTestBase {
 
         final String   gmt12TimeZone   = "GMT+1400";
         final TimeZone timeZone        = TimeZone.getTimeZone(gmt12TimeZone);
-        final TimeZone defaultTimeZone =  APILocator.getCompanyAPI().getDefaultCompany().getTimeZone();
+        final TimeZone defaultTimeZone =  APILocator.systemTimeZone();
 
         final Date date1 = DateUtil.convertDate("2015-02-04 11 GMT +1400", defaultTimeZone, "yyyy-MM-dd HH z Z");
 

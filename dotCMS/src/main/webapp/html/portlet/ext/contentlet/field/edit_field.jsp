@@ -313,7 +313,7 @@
             if(dateValue!=null) {
                 cal = new GregorianCalendar();
                 cal.setTime((Date) dateValue);
-                cal.setTimeZone(APILocator.getCompanyAPI().getDefaultCompany().getTimeZone());
+                cal.setTimeZone(APILocator.systemTimeZone());
                 dayOfMonth = cal.get(GregorianCalendar.DAY_OF_MONTH);
                 month = cal.get(GregorianCalendar.MONTH) + 1;
                 year = cal.get(GregorianCalendar.YEAR) ;
@@ -357,7 +357,7 @@
                    dojoType="dijit.form.TimeTextBox"
                     <%=field.isReadOnly()?"disabled=\"disabled\"":""%>/>
                     <div style="font-size: 85%;padding:5px 0px 0px 5px;color:#888">
-                        <%=APILocator.getCompanyAPI().getDefaultCompany().getTimeZone().getDisplayName()%>
+                        <%=APILocator.systemTimeZone().getDisplayName()%>
                     </div>  
             </div>
                   

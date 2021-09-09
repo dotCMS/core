@@ -533,7 +533,7 @@ public class UtilMethods {
         if (x == null) {
             return "";
         }
-        DATE_TO_HTML_TIME.setTimeZone(APILocator.getCompanyAPI().getDefaultCompany().getTimeZone());
+        DATE_TO_HTML_TIME.setTimeZone(APILocator.systemTimeZone());
         return DATE_TO_HTML_TIME.format(x);
     }
 
@@ -651,7 +651,7 @@ public class UtilMethods {
     public static final java.util.Date htmlDateTimeToDate(String d) {
         java.util.Date rDate = null;
         java.text.ParsePosition pos = new java.text.ParsePosition(0);
-        TimeZone tz = APILocator.getCompanyAPI().getDefaultCompany().getTimeZone();
+        TimeZone tz = APILocator.systemTimeZone();
         HTML_DATETIME_TO_DATE.setTimeZone(tz);
         rDate = HTML_DATETIME_TO_DATE.parse(d, pos);
 

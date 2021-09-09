@@ -144,7 +144,7 @@ public class DateTool implements ViewTool
      */
     public TimeZone getTimeZone()
     {
-        return APILocator.getCompanyAPI().getDefaultCompany().getTimeZone();
+        return APILocator.systemTimeZone();
     }
 
     /**

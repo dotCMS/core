@@ -108,7 +108,7 @@
 		<!-- }  -->
 
 		<!-- Timezone
-		<%= APILocator.getCompanyAPI().getDefaultCompany().getTimeZone().getID() %>
+		<%= APILocator.systemTimeZone().getID() %>
 		 -->
 		 <%if(isImage){ %>
 			 <td align="center">

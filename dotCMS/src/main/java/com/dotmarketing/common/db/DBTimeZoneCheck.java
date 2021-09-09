@@ -45,7 +45,7 @@ public class DBTimeZoneCheck {
         Connection connection = null;
         PreparedStatement statement = null;
         ResultSet resultSet = null;
-        final TimeZone defaultTimeZone = APILocator.getCompanyAPI().getDefaultCompany().getTimeZone();
+        final TimeZone defaultTimeZone = APILocator.systemTimeZone();
         try {
             final HikariDataSource hikari = (HikariDataSource) DbConnectionFactory.getDataSource();
             resolveDriverClass(hikari);

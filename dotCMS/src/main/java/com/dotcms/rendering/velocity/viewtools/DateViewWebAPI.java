@@ -42,8 +42,7 @@ public class DateViewWebAPI extends DateTool implements ViewTool {
 	
 	public static int getOffSet(Date date)
 	{
-		GregorianCalendar gc = new GregorianCalendar();		
- 		TimeZone tz = APILocator.getCompanyAPI().getDefaultCompany().getTimeZone();
+ 		TimeZone tz = APILocator.systemTimeZone();
 	 	int offset = tz.getOffset((date).getTime());
 	 	return offset;	 	
 	}
