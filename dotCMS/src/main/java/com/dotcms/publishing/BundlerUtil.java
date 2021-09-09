@@ -87,6 +87,21 @@ public class BundlerUtil {
         return getStaticBundleRoot(config.getName());
     }
 
+	/**
+	 * write bundle down
+     * @param config
+     * @param output
+     */
+	public static void writeBundleXML(final PublisherConfig config, final BundleOutput output){
+		final String bundleXmlFilePath = File.separator + "bundle.xml";
+
+		try (final OutputStream outputStream = output.addFile(bundleXmlFilePath)) {
+            objectToXML(config, outputStream);
+        } catch ( IOException e ) {
+            Logger.error( BundlerUtil.class, e.getMessage(), e );
+        }
+	}
+
     /**
      * Reads the main bundle.xml file inside a bundle directory in order to create based on that file a PublisherConfig object
      *
