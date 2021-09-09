@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "2f1e11a0-1ba4-4eba-82ff-64ccc9656399",
+		"_postman_id": "c77ff662-f50a-4742-9411-30dc765c7588",
 		"name": "FolderResource",
 		"description": "Test for FolderResource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -445,11 +445,11 @@
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"Folder Check\", function () {",
-									"    pm.expect(jsonData.entity[1].path).to.eql('/testfindfolder1/subfolder1/');",
+									"    pm.expect(jsonData.entity[0].path).to.eql('/testfindfolder1/subfolder1/');",
 									"});",
 									"",
 									"pm.test(\"Length Check\", function () {",
-									"    pm.expect(jsonData.entity.length).to.eql(3);",
+									"    pm.expect(jsonData.entity.length).to.eql(2);",
 									"});"
 								],
 								"type": "text/javascript"
