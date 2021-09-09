@@ -200,12 +200,12 @@ public class BundlePublisher extends Publisher {
         Map<String, String> assetsDetails = null;
         Collection<ManifestInfo> bundlerAssets = null;
 
-        try {
-            //Read the bundle to see what kind of configuration we need to apply
-            String finalBundlePath = ConfigUtils.getBundlePath() + File.separator + bundleID;
-            final File manifestFile = new File(finalBundlePath + File.separator + ManifestBuilder.MANIFEST_NAME);
+        String finalBundlePath = ConfigUtils.getBundlePath() + File.separator + bundleID;
+        final File manifestFile = new File(finalBundlePath + File.separator + ManifestBuilder.MANIFEST_NAME);
 
-            final CSVManifestReader csvManifestReader = new CSVManifestReader(manifestFile);
+        final CSVManifestReader csvManifestReader = new CSVManifestReader(manifestFile);
+
+        try {
             bundlerAssets = csvManifestReader.getAssets(ManifestReason.INCLUDE_BY_USER);
 
             if (bundlerAssets != null && !bundlerAssets.isEmpty()) {
@@ -284,7 +284,8 @@ public class BundlePublisher extends Publisher {
             // Everything success and the process ends
             Logger.debug(this, "Notify PushPublishSuccessOnReceiverEvent and PushPublishEndOnReceiverEvent");
             localSystemEventsAPI.asyncNotify(new PushPublishSuccessOnReceiverEvent(config));
-            localSystemEventsAPI.asyncNotify(new PushPublishEndOnReceiverEvent(bundlerAssets));
+            localSystemEventsAPI.asyncNotify(
+                    new PushPublishEndOnReceiverEvent(csvManifestReader.getPublishQueueElement()));
         } catch (Exception e) {
 
             localSystemEventsAPI.asyncNotify(new PushPublishFailureOnReceiverEvent(config.getAssets(), e));

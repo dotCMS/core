@@ -86,7 +86,12 @@ public class PublisherAPIImpl implements PublisherAPI {
                 final boolean bundleExists = BundlerUtil.bundleExists(config);
 
                 try (BundleOutput output = publisher.createBundleOutput();
-                     ManifestBuilder manifestBuilder = new CSVManifestBuilder()){
+                        ManifestBuilder manifestBuilder = new CSVManifestBuilder()){
+
+                    manifestBuilder.addMetadata(CSVManifestBuilder.BUNDLE_ID_METADATA_NAME,
+                            config.getId());
+                    manifestBuilder.addMetadata(CSVManifestBuilder.OPERATION_METADATA_NAME,
+                            config.getOperation().name());
 
                     config.setManifestBuilder(manifestBuilder);
                     status.addOutput(output);

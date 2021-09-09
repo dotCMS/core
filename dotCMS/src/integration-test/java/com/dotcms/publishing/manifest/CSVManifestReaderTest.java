@@ -302,7 +302,7 @@ public class CSVManifestReaderTest {
         assertEquals(1, includedAssets.size());
 
         final ManifestInfo assetIncluded = includedAssets.iterator().next();
-        assertEquals(contentType1, assetIncluded);
+        assertEquals(contentType1.getManifestInfo(), assetIncluded);
     }
 
     /**
@@ -375,5 +375,34 @@ public class CSVManifestReaderTest {
             this.asset = asset;
             this.lineExpected = linesExpected;
         }
+    }
+
+    /**
+     * Method to test: {@link CSVManifestReader#getMetadata(String)}
+     * When: Create a manifest with to Metadata header
+     * Should: return the right value
+     */
+    @Test()
+    public void getMetadata(){
+        File manifestFile = null;
+
+        final Language language = new LanguageDataGen().nextPersisted();
+
+        try(final CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
+            manifestBuilder.addMetadata("header_1", "First header");
+            manifestBuilder.addMetadata("header_2", "Second header");
+            manifestBuilder.include(language, ManifestReason.INCLUDE_AUTOMATIC_BY_DOTCMS.getMessage());
+            manifestFile = manifestBuilder.getManifestFile();
+        }
+
+        final ManifestReader manifestReader = new CSVManifestReader(manifestFile);
+        final Collection<ManifestInfo> includedAssets = manifestReader.getIncludedAssets();
+        assertEquals(1, includedAssets.size());
+
+        final ManifestInfo assetExcluded = includedAssets.iterator().next();
+        assertEquals(language.getManifestInfo(), assetExcluded);
+
+        assertEquals("First header", manifestReader.getMetadata("header_1"));
+        assertEquals("Second header", manifestReader.getMetadata("header_2"));
     }
 }

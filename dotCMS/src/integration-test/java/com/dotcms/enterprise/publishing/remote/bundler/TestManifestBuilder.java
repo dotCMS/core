@@ -23,6 +23,11 @@ public class TestManifestBuilder implements ManifestBuilder {
     }
 
     @Override
+    public void addMetadata(String name, String value) {
+
+    }
+
+    @Override
     public void close() throws IOException {
 
     }

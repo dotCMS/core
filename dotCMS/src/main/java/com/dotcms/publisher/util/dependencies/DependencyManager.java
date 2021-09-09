@@ -14,6 +14,7 @@ import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.publishing.PublisherFilter;
+import com.dotcms.publishing.manifest.CSVManifestBuilder;
 import com.dotcms.publishing.manifest.ManifestReason;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -124,6 +125,8 @@ public class DependencyManager {
 	public void setDependencies()
 			throws DotSecurityException, DotDataException, DotBundleException {
 		this.publisherFilter = APILocator.getPublisherAPI().createPublisherFilter(config.getId());
+
+		config.getManifestBuilder().addMetadata(CSVManifestBuilder.FILTER_METADATA_NAME, publisherFilter.toString());
 
 		Logger.debug(DependencyManager.class,
 				"publisherFilter.isDependencies() " + publisherFilter.isDependencies());

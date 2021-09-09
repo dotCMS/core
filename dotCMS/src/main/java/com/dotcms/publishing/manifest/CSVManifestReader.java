@@ -17,6 +17,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -28,21 +29,34 @@ public class CSVManifestReader implements ManifestReader{
 
     final Collection<CSVManifestItem> manifestItemsIncluded;
     final Collection<CSVManifestItem> manifestItemsExcluded;
-    //"INCLUDED/EXCLUDED,object type, Id, inode, title, site, folder, excluded by, included by";
+    final Map<String, String> metaData;
+
+    final static String COMMENTED_LINE_START = "#";
+
     public CSVManifestReader(final File csvManifestFile){
         try {
             final List<String> lines = FileUtils.readLines(csvManifestFile, StandardCharsets.UTF_8);
-            lines.remove(0);
 
             this.manifestItemsIncluded = getManifestInfos(lines, "INCLUDED");
             this.manifestItemsExcluded = getManifestInfos(lines, "EXCLUDED");
+            this.metaData = getAllMetaData(lines);
         } catch (IOException e) {
             throw new IllegalArgumentException("Not valid " + csvManifestFile.getAbsolutePath(), e);
         }
     }
 
+    private Map<String, String> getAllMetaData(final List<String> lines) {
+        return lines.stream()
+                .filter(line -> line.startsWith(COMMENTED_LINE_START))
+                .map(line -> line.split(":"))
+                .map(lineSplitted -> new String[]{lineSplitted[0].substring(1), lineSplitted[1]})
+                .collect(Collectors.toMap(lineSplitted -> lineSplitted[0], lineSplitted -> lineSplitted[1]));
+    }
+
     private Collection<CSVManifestItem> getManifestInfos(final List<String> lines, final String filterBy) {
         return lines.stream()
+                .filter(line -> !line.startsWith(COMMENTED_LINE_START))
+                .filter(line -> !line.equals(CSVManifestBuilder.HEADERS_LINE))
                 .filter(line -> line.startsWith(filterBy))
                 .map(CSVManifestItem::new)
                 .collect(toSet());
@@ -71,16 +85,21 @@ public class CSVManifestReader implements ManifestReader{
     }
 
     @Override
+    public String getMetadata(final String name){
+        return metaData.get(name);
+    }
+
+    @Override
     public Collection<ManifestInfo> getAssets() {
-        final Set set = new HashSet();
-        set.addAll(manifestItemsIncluded);
-        set.addAll(manifestItemsExcluded);
+        final Set<ManifestInfo> set = Stream.concat(manifestItemsIncluded.stream(), manifestItemsExcluded.stream())
+                .map(CSVManifestItem::getManifestInfo)
+                .collect(Collectors.toSet());
         return ImmutableSet.copyOf(set);
     }
 
     private static class CSVManifestItem {
         final ManifestInfo manifestInfo;
-        final String reason;
+         String reason;
 
         public CSVManifestItem(final String line) {
             final String[] lineSplit = line.split(",");
@@ -93,7 +112,7 @@ public class CSVManifestReader implements ManifestReader{
                     .path(lineSplit[6])
                     .build();
 
-            reason = lineSplit[0].equals("INCLUDED") ? lineSplit[7] : lineSplit[8];
+            reason = lineSplit[0].equals("INCLUDED") ? lineSplit[8] : lineSplit[7];
         }
 
         public ManifestInfo getManifestInfo() {
