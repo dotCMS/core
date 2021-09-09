@@ -9,6 +9,7 @@ import com.dotcms.publishing.manifest.ManifestItem.ManifestInfoBuilder;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.FileUtil;
 import com.google.common.collect.ImmutableList;
+import com.liferay.util.StringPool;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -51,7 +52,7 @@ public class CSVManifestReader implements ManifestReader{
     private Map<String, String> getAllMetaData(final List<String> lines) {
         return lines.stream()
                 .filter(line -> line.startsWith(COMMENTED_LINE_START))
-                .map(line -> line.split(":"))
+                .map(line -> line.split(StringPool.COLON))
                 .map(lineSplitted -> new String[]{lineSplitted[0].substring(1), lineSplitted[1]})
                 .collect(Collectors.toMap(lineSplitted -> lineSplitted[0], lineSplitted -> lineSplitted[1]));
     }
@@ -105,7 +106,7 @@ public class CSVManifestReader implements ManifestReader{
          String reason;
 
         public CSVManifestItem(final String line) {
-            final String[] lineSplit = line.split(",");
+            final String[] lineSplit = line.split(StringPool.COMMA);
             this.manifestInfo = new ManifestInfoBuilder()
                     .objectType(lineSplit[1])
                     .id(lineSplit[2])

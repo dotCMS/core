@@ -85,28 +85,16 @@ public class PublisherAPIImpl implements PublisherAPI {
 
                     manifestBuilder.addMetadata(CSVManifestBuilder.BUNDLE_ID_METADATA_NAME,
                             config.getId());
-                    manifestBuilder.addMetadata(CSVManifestBuilder.OPERATION_METADATA_NAME,
-                            config.getOperation().name());
+
+                    if (UtilMethods.isSet(config.getOperation())) {
+                        manifestBuilder.addMetadata(CSVManifestBuilder.OPERATION_METADATA_NAME,
+                                config.getOperation().name());
+                    }
 
                     if (!output.bundleFileExists() || !publishAuditAPI.isPublishRetry(config.getId())) {
                         output.create();
                         config.setManifestBuilder(manifestBuilder);
                         status.addOutput(output);
-                        // Run bundlers
-
-                        if (config.isStatic()) {
-                            //If static we just want to save the things that we need,
-                            // at this point only the id, static and operation.
-                            PublisherConfig pcClone = new PublisherConfig();
-                            pcClone.setId(config.getId());
-                            pcClone.setStatic(true);
-                            pcClone.setOperation(config.getOperation());
-                            Logger.info(this, "Writing bundle.xml file");
-                            BundlerUtil.writeBundleXML(pcClone, output);
-                        } else {
-                            Logger.info(this, "Writing bundle.xml file");
-                            BundlerUtil.writeBundleXML(config, output);
-                        }
 
                         PublishAuditStatus currentStatus = publishAuditAPI
                                 .getPublishAuditStatus(config.getId());
@@ -173,7 +161,7 @@ public class PublisherAPIImpl implements PublisherAPI {
         if (config.isStatic()) {
             //If static we just want to save the things that we need,
             // at this point only the id, static and operation.
-            PublisherConfig pcClone = new PublisherConfig();
+            final PublisherConfig pcClone = new PublisherConfig();
             pcClone.setId(config.getId());
             pcClone.setStatic(true);
             pcClone.setOperation(config.getOperation());

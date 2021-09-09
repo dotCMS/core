@@ -126,7 +126,10 @@ public class DependencyManager {
 			throws DotSecurityException, DotDataException, DotBundleException {
 		this.publisherFilter = APILocator.getPublisherAPI().createPublisherFilter(config.getId());
 
-		config.getManifestBuilder().addMetadata(CSVManifestBuilder.FILTER_METADATA_NAME, publisherFilter.toString());
+		if (UtilMethods.isSet(config.getManifestBuilder())) {
+			config.getManifestBuilder().addMetadata(CSVManifestBuilder.FILTER_METADATA_NAME,
+					publisherFilter.toString());
+		}
 
 		Logger.debug(DependencyManager.class,
 				"publisherFilter.isDependencies() " + publisherFilter.isDependencies());
