@@ -25,6 +25,9 @@ import jersey.repackaged.com.google.common.collect.ImmutableSet;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.FileUtils;
 
+/**
+ * Util class to read a CSV Manifest file
+ */
 public class CSVManifestReader implements ManifestReader{
 
     final Collection<CSVManifestItem> manifestItemsIncluded;
