@@ -906,6 +906,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
         config.setMinIdle(this.minIdleConnections);
         config.setMaxTotal(this.maxConnections);
 
+        GenericObjectPool<StatefulRedisConnection<String, V>> pool = null;
         if (redisUris.size() == 1) { // only one node
 
             final Supplier<StatefulRedisConnection<String, V>> connectionSupplier = () -> {
@@ -927,7 +928,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
                 }
             };
 
-            return ConnectionPoolSupport.createGenericObjectPool(connectionSupplier, config, true);
+            pool = ConnectionPoolSupport.createGenericObjectPool(connectionSupplier, config, true);
         } else {
 
             final Supplier<StatefulRedisConnection<String, V>> connectionSupplier = () -> {
@@ -955,8 +956,10 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
                 }
             };
 
-            return ConnectionPoolSupport.createGenericObjectPool(connectionSupplier, config, true);
+            pool = ConnectionPoolSupport.createGenericObjectPool(connectionSupplier, config, true);
         }
+
+        return pool;
     }
 
 }

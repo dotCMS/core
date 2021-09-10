@@ -31,6 +31,7 @@ import java.util.concurrent.Future;
  * Redis Resource
  * @author jsanca
  */
+@VisibleForTesting // This is not expose, visible only for internal testing
 @Path("/v1/redis")
 public class RedisResource {
 

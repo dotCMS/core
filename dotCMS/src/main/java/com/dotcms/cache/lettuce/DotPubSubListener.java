@@ -36,10 +36,7 @@ public class DotPubSubListener<K,V> implements RedisPubSubListener<K, V> {
     @Override
     public void message(K pattern, K channel, V message) {
 
-        if (this.channelSet.contains(channel)) {
-
-            this.messageConsumer.accept(message);
-        }
+        message(channel, message);
     }
 
     @Override

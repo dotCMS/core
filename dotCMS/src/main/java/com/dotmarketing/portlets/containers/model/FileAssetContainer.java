@@ -143,11 +143,11 @@ public class FileAssetContainer extends Container {
     }
 
     private Versionable toContentlet() {
-        Contentlet testContentlet =  new Contentlet();
-        testContentlet.setIdentifier(this.identifier);
-        testContentlet.setInode(this.inode);
-        testContentlet.setLanguageId(this.languageId);
-        return testContentlet;
+        final Contentlet contentlet =  new Contentlet();
+        contentlet.setIdentifier(this.identifier);
+        contentlet.setInode(this.inode);
+        contentlet.setLanguageId(this.languageId);
+        return contentlet;
     }
 
     public void setLanguage(final long languageId) {
