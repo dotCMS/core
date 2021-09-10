@@ -141,7 +141,7 @@ public interface ManifestItem {
         public String site(){
             if (UtilMethods.isSet(siteId)) {
                 final Host host = getHost(siteId);
-                return host.getHostname();
+                return UtilMethods.isSet(host) ? host.getHostname() : StringPool.BLANK;
             } else {
                 return StringPool.BLANK;
             }
