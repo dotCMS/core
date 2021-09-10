@@ -32,8 +32,10 @@ public class RedisPubSubImpl implements DotPubSubProvider {
 
             final DotPubSubEvent event = (DotPubSubEvent) message;
             lastEventIn = event;
+            topic.incrementReceivedCounters(event);
             topic.notify(event);
-        }, topic.getTopic());
+        }, topic.getTopic(), topic.getInstanceId());
+
         return this;
     }
 
@@ -72,7 +74,7 @@ public class RedisPubSubImpl implements DotPubSubProvider {
     public DotPubSubProvider unsubscribe(final DotPubSubTopic topic) {
 
         Logger.debug(this, ()-> "Unsubscribing topic: " + topic.getTopic());
-        this.redisClient.unsubscribe(topic.getTopic());
+        this.redisClient.unsubscribeSubscriber(topic.getInstanceId(), topic.getTopic());
         return this;
     }
 

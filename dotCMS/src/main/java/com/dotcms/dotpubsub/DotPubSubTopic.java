@@ -6,6 +6,14 @@ import com.dotmarketing.util.Logger;
 
 public interface DotPubSubTopic extends EventSubscriber<DotPubSubEvent>, KeyFilterable {
 
+    default String getInstanceId () {
+        return "-1";
+    }
+
+    default void setInstanceId (String instanceId) {
+
+    }
+
     default long messagesSent() {
         return -1;
     }

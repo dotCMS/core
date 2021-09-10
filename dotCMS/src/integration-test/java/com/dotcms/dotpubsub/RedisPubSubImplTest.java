@@ -2,7 +2,11 @@ package com.dotcms.dotpubsub;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Collection;
 import java.util.Map;
+
+import com.dotcms.cache.lettuce.RedisClient;
+import com.dotcms.cache.lettuce.RedisClientFactory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -12,7 +16,8 @@ import com.dotmarketing.util.UUIDGenerator;
 
 public class RedisPubSubImplTest {
     
-    static RedisGroupsPubSubImpl pubsubA,pubsubB;
+    static RedisPubSubImpl pubsubA,pubsubB;
+    static RedisClient<String, Object> redisClient;
     static DotPubSubTopic topicA;
     static final String clusterId = UUIDGenerator.shorty();
     static final String fakeServerA = UUIDGenerator.shorty();
@@ -21,36 +26,43 @@ public class RedisPubSubImplTest {
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
         
-        Config.setProperty("DOT_REDIS_CLIENT_URL", "redis://password@oboxturbo");
-
-        pubsubA = new RedisGroupsPubSubImpl(fakeServerA,clusterId,true);
+        pubsubA = new RedisPubSubImpl();
         
-        pubsubB = new RedisGroupsPubSubImpl(fakeServerB,clusterId,true);
+        pubsubB = new RedisPubSubImpl();
         
         topicA = new CacheTransportTopic(fakeServerA,pubsubA);
+
+        redisClient = RedisClientFactory.getClient("pubsub");
     }
 
     @Test
     public void test_adding_removing_topics()  throws Exception {
-        
-        pubsubA.subscribe(new CacheTransportTopic(fakeServerA,pubsubA));
-        pubsubB.subscribe(new CacheTransportTopic(fakeServerB,pubsubB));
-        
-        assert(pubsubA.getTopics().size()==1);
-        assert(pubsubB.getTopics().size()==1);
+
+        final String channelName = "dotcache_topic";
+        final CacheTransportTopic cacheTransportTopic1 = new CacheTransportTopic(fakeServerA,pubsubA);
+        final CacheTransportTopic cacheTransportTopic2 = new CacheTransportTopic(fakeServerB,pubsubB);
+        pubsubA.subscribe(cacheTransportTopic1);
+        pubsubB.subscribe(cacheTransportTopic2);
+
+        final Collection<String> channels    = redisClient.getChannels();
+        final Collection<Object> subscribers =  redisClient.getSubscribers(channelName);
+
+        assert(channels.size()==1);
+        assert(channels.stream().anyMatch(channel -> channelName.equals(channel)));
+        assert(subscribers.size()==2);
 
         pubsubA.unsubscribe(new CacheTransportTopic(fakeServerA,pubsubA));
         pubsubB.unsubscribe(new CacheTransportTopic(fakeServerB,pubsubB));
 
-        assert(pubsubA.getTopics().size()==0);
-        assert(pubsubB.getTopics().size()==0);
-        
+        final Collection<String> channelsAgain    = redisClient.getChannels();
+        final Collection<Object> subscribersAgain =  redisClient.getSubscribers(channelName);
+
+        assert(channelsAgain.size()==0);
+        assert(subscribersAgain.size()==0);
     }
-    
-    
+
     @Test
     public void test_publisher()  throws Exception {
-        
 
         // serverA subscribes to topis
         pubsubA.subscribe(topicA);
@@ -65,20 +77,12 @@ public class RedisPubSubImplTest {
         assert(topicA.messagesReceived()>0);
     }
     
-    
-    
-    
-    
-    
-    
     @AfterClass
     public static void afterClass() throws Exception {
         
         pubsubA.stop();
         
         pubsubB.stop();
-        
-        
     }
     
     
