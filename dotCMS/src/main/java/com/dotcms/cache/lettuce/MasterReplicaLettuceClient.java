@@ -24,6 +24,7 @@ import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.sync.RedisCommands;
 import io.lettuce.core.codec.CompressionCodec;
 import io.lettuce.core.codec.RedisCodec;
+import io.lettuce.core.internal.LettuceAssert;
 import io.lettuce.core.masterreplica.MasterReplica;
 import io.lettuce.core.masterreplica.StatefulRedisMasterReplicaConnection;
 import io.lettuce.core.output.ValueOutput;
@@ -35,6 +36,7 @@ import io.lettuce.core.pubsub.api.async.RedisPubSubAsyncCommands;
 import io.lettuce.core.resource.DefaultClientResources;
 import io.lettuce.core.resource.DirContextDnsResolver;
 import io.lettuce.core.support.ConnectionPoolSupport;
+import io.lettuce.core.support.ConnectionWrapping;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
@@ -55,6 +57,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -898,7 +901,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
     private GenericObjectPool<StatefulRedisConnection<String, V>> buildPool() {
 
         //todo: we have to have a mechanism when the connection is wrong on a bad space, to remove it from the pool and create a new one
-        final GenericObjectPoolConfig config = new GenericObjectPoolConfig();
+        final GenericObjectPoolConfig<StatefulRedisConnection<String, V>>  config = new GenericObjectPoolConfig<>();
 
         config.setTestOnBorrow(true);
         config.setMinEvictableIdleTimeMillis(TimeUnit.MINUTES.toMillis(5));
@@ -961,5 +964,4 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
 
         return pool;
     }
-
 }
