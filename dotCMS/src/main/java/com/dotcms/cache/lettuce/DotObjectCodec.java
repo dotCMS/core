@@ -47,8 +47,8 @@ public class DotObjectCodec<K,V> implements RedisCodec<K, V> {
     @Override
     public ByteBuffer encodeValue(final V value) {
 
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-             ObjectOutputStream output = new ObjectOutputStream(baos)) {
+        try (final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             final ObjectOutputStream output = new ObjectOutputStream(baos)) {
 
             output.writeObject(value);
             output.flush();
