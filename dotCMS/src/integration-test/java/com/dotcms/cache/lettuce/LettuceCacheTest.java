@@ -8,6 +8,11 @@ import org.junit.Test;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.UUIDGenerator;
 
+/**
+ * Test for {@link RedisCache}
+ * @author jsanca
+ */
+
 public class LettuceCacheTest {
     
     
@@ -23,7 +28,7 @@ public class LettuceCacheTest {
      * all key values that are put into redis are prefixed by a random key.
      * When a flushall is called, this key is cycled, which basically invalidates
      * all cached entries.  The prefix key is stored in redis itself so multiple 
-     * servers in the c
+     * servers in the cluster
      */
     @Test
     public void test_prefix_key_cycling() {
@@ -52,13 +57,10 @@ public class LettuceCacheTest {
         String key = "key";
         String cacheKey = cache.cacheKey(group, key);
         assert (cacheKey!=null);
-        assert (cacheKey.startsWith(prefix));
-        assert (cacheKey.startsWith(prefix+ "." + group + "."));
         assert (cacheKey.equals(prefix+ "." + group+ "." + key));
 
         String cacheKey2 = cache.cacheKey(group, null);
         assert (cacheKey2!=null);
-        assert (cacheKey2.startsWith(prefix));
         assert (cacheKey2.equals(prefix + "." + group + "."));
 
         String cacheKey3 = cache.cacheKey(group);
