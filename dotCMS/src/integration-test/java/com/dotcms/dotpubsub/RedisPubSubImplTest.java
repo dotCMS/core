@@ -14,6 +14,10 @@ import com.dotcms.cache.transport.CacheTransportTopic;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
 
+/**
+ * Test for {@link RedisPubSubImpl}
+ * @author jsanca
+ */
 public class RedisPubSubImplTest {
     
     static RedisPubSubImpl pubsubA,pubsubB;
@@ -35,6 +39,13 @@ public class RedisPubSubImplTest {
         redisClient = RedisClientFactory.getClient("pubsub");
     }
 
+    /**
+     * Method to test: {@link RedisPubSubImpl#subscribe(DotPubSubTopic)}
+     * Given Scenario: subscribe two topics and verify all ok
+     * ExpectedResult: after subscription, two subscribers should be add and one channel
+     * after the unsubscription, no subscribers and not channel
+     *
+     */
     @Test
     public void test_adding_removing_topics()  throws Exception {
 
@@ -61,6 +72,12 @@ public class RedisPubSubImplTest {
         assert(subscribersAgain.size()==0);
     }
 
+    /**
+     * Method to test: {@link RedisPubSubImpl#subscribe(DotPubSubTopic)} and {@link RedisPubSubImpl#publish(DotPubSubEvent)}
+     * Given Scenario: subscribe one topic and send a message
+     * ExpectedResult: after sent a message the message receiver should be more than zero.
+     *
+     */
     @Test
     public void test_publisher()  throws Exception {
 
