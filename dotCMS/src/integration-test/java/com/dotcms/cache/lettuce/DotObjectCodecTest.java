@@ -5,8 +5,18 @@ import org.junit.Test;
 
 import java.nio.ByteBuffer;
 
+/**
+ * Test for {@link DotObjectCodec}
+ * @author jsanca
+ */
 public class DotObjectCodecTest {
 
+    /**
+     * Method to test: {@link DotObjectCodec#encodeKey}
+     * Given Scenario: send a null to encode
+     * ExpectedResult: Expected returns a null
+     *
+     */
     @Test
     public void test_encode_null_key() throws Exception {
 
@@ -14,6 +24,12 @@ public class DotObjectCodecTest {
         Assert.assertNull(codec.encodeKey(null));
     }
 
+    /**
+     * Method to test: {@link DotObjectCodec#encodeKey} and {@link DotObjectCodec#decodeKey(ByteBuffer)}
+     * Given Scenario: tries to encode and decode a key
+     * ExpectedResult: the key encoded can be decoded
+     *
+     */
     @Test
     public void test_encode_decode_key() throws Exception {
 
@@ -26,6 +42,12 @@ public class DotObjectCodecTest {
         Assert.assertEquals(key, recoveryKey);
     }
 
+    /**
+     * Method to test: {@link DotObjectCodec#encodeValue}
+     * Given Scenario: send a null to encode
+     * ExpectedResult: Expected returns a not null ByteBuffer
+     *
+     */
     @Test()
     public void test_encode_null_value() throws Exception {
 
@@ -34,6 +56,12 @@ public class DotObjectCodecTest {
         Assert.assertNotNull(byteBuffer);
     }
 
+    /**
+     * Method to test: {@link DotObjectCodec#decodeValue}
+     * Given Scenario: send a null to decodeValue
+     * ExpectedResult: Expected decode exception
+     *
+     */
     @Test(expected = DecodeException.class)
     public void test_decode_null_value() throws Exception {
 
@@ -41,6 +69,12 @@ public class DotObjectCodecTest {
         codec.decodeValue(null);
     }
 
+    /**
+     * Method to test: {@link DotObjectCodec#decodeValue}
+     * Given Scenario: encode and decode a value
+     * ExpectedResult: the encoded value will be decoded ok
+     *
+     */
     @Test
     public void test_encode_decode_value() throws Exception {
 
