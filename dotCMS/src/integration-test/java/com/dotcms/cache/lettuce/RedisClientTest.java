@@ -6,6 +6,10 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+/**
+ * Test for {@link RedisClient}
+ * @author jsanca
+ */
 public class RedisClientTest {
 
     @BeforeClass
@@ -18,6 +22,12 @@ public class RedisClientTest {
         }
     }
 
+    /**
+     * Method to test: {@link RedisClientFactory#getClient(String)}
+     * Given Scenario: ask twice for the same client
+     * ExpectedResult: both clients should be the same
+     *
+     */
     @Test
     public void test_client_is_singleton() throws Exception {
 
