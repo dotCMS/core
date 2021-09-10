@@ -188,9 +188,7 @@ public interface ManifestItem {
             return Objects.equals(objectType.toLowerCase(), that.objectType.toLowerCase()) &&
                     Objects.equals(id.toLowerCase(), that.id.toLowerCase()) &&
                     Objects.equals(inode.toLowerCase(), that.inode.toLowerCase()) &&
-                    Objects.equals(title.toLowerCase(), that.title.toLowerCase()) &&
-                    Objects.equals(site().toLowerCase(), that.site().toLowerCase()) &&
-                    Objects.equals(folder().toLowerCase(), that.folder().toLowerCase());
+                    Objects.equals(title.toLowerCase(), that.title.toLowerCase());
         }
 
         @Override
