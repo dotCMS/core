@@ -10,6 +10,7 @@ import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.concurrent.Debouncer;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.beans.Identifier;
@@ -42,6 +43,7 @@ public class VersionableAPIImpl implements VersionableAPI {
 
 	private final VersionableFactory versionableFactory;
 	private final PermissionAPI permissionAPI;
+    final Debouncer debouncer = new Debouncer();
 
 	public VersionableAPIImpl() {
 		versionableFactory = FactoryLocator.getVersionableFactory();
@@ -479,15 +481,9 @@ public class VersionableAPIImpl implements VersionableAPI {
 
             if ( UtilMethods.isSet( structure.getPublishDateVar() ) ) {//Verify if the structure have a Publish Date Field set
                 if ( UtilMethods.isSet( identifier.getSysPublishDate() ) && identifier.getSysPublishDate().after( new Date() ) ) {
-                    final String message = Try.of(() -> LanguageUtil.get("message.contentlet.publish.future.date"))
-                            .getOrElse("The content was saved successfully but cannot be published because it is scheduled to be published on future date.");
-                    final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder()
-                            .setMessage(message).setType(MessageType.SIMPLE_MESSAGE)
-                            .setSeverity(MessageSeverity.SUCCESS).setLife(5000);
-
-                    SystemMessageEventUtil.getInstance().pushMessage(systemMessageBuilder.create(),
-                            ImmutableList.of(versionable.getModUser()));
-                    Logger.info(this,message);
+                    final Runnable futurePublishDateRunnable = ()->
+                    {futurePublishDateMessage(versionable.getModUser());};
+                    debouncer.debounce("contentPublishDateError"+versionable.getModUser(),futurePublishDateRunnable,5000,TimeUnit.MILLISECONDS);
                     return;
                 }
             }
@@ -509,6 +505,23 @@ public class VersionableAPIImpl implements VersionableAPI {
             info.setLiveInode( versionable.getInode() );
             this.versionableFactory.saveVersionInfo( info, true );
         }
+    }
+
+    /**
+     * Method to encapsulate the logic of a growl message when content has a future publish date
+     * @param user user to show the growl
+     */
+    private void futurePublishDateMessage(final String user){
+        final String message = Try.of(() -> LanguageUtil.get("message.contentlet.publish.future.date"))
+                .getOrElse("The content was saved successfully but cannot be published because"
+                        + " it is scheduled to be published on future date.");
+        final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder()
+                .setMessage(message).setType(MessageType.SIMPLE_MESSAGE)
+                .setSeverity(MessageSeverity.SUCCESS).setLife(5000);
+
+        SystemMessageEventUtil.getInstance().pushMessage(systemMessageBuilder.create(),
+                ImmutableList.of(user));
+        Logger.info(this,message);
     }
 
     @WrapInTransaction
