@@ -21,7 +21,7 @@ public class Task210901UpdateDateTimezonesTest {
      */
     @Test
     public void test() throws Exception {
-        Task210901UpdateDateTimezones tztask = new Task210901UpdateDateTimezones();
+        final Task210901UpdateDateTimezones tztask = new Task210901UpdateDateTimezones();
         if(tztask.forceRun()) {
             tztask.executeUpgrade();
         }
