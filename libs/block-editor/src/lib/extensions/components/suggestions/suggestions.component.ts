@@ -6,10 +6,16 @@ import { MenuItem } from 'primeng/api';
 import { SuggestionsService } from '../../services/suggestions.service';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { SuggestionListComponent } from '../suggestion-list/suggestion-list.component';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { headerIcons, pIcon, ulIcon, olIcon } from './suggestion-icons';
 
 export interface SuggestionsCommandProps {
     payload?: DotCMSContentlet;
     type: { name: string; level?: number };
+}
+
+export interface DotMenuItem  extends Omit<MenuItem, 'icon'> {
+    icon: string | SafeUrl;
 }
 
 @Component({
@@ -21,18 +27,22 @@ export class SuggestionsComponent implements OnInit {
     @ViewChild('list', { static: true }) list: SuggestionListComponent;
 
     @Input() onSelection: (props: SuggestionsCommandProps) => void;
-    items: MenuItem[] = [];
+    items: DotMenuItem[] = [];
 
     title = 'Select a block';
 
-    constructor(private suggestionsService: SuggestionsService, private cd: ChangeDetectorRef) {}
+    constructor(
+        private suggestionsService: SuggestionsService,
+        private cd: ChangeDetectorRef,
+        private domSanitizer: DomSanitizer
+    ) {}
 
     ngOnInit(): void {
         const headings = [...Array(3).keys()].map((level) => {
             const size = level + 1;
             return {
                 label: `Heading ${size}`,
-                icon: `/assets/block-editor/h${size}.svg`,
+                icon: this.sanitizeUrl(headerIcons[level]),
                 command: () => {
                     this.onSelection({
                         type: {
@@ -47,7 +57,7 @@ export class SuggestionsComponent implements OnInit {
         const paragraph = [
             {
                 label: 'Paragraph',
-                icon: `/assets/block-editor/p.svg`,
+                icon: this.sanitizeUrl(pIcon),
                 command: () => {
                     this.onSelection({
                         type: {
@@ -61,7 +71,7 @@ export class SuggestionsComponent implements OnInit {
         const list = [
             {
                 label: 'List Ordered',
-                icon: `/assets/block-editor/ol.svg`,
+                icon: this.sanitizeUrl(olIcon),
                 command: () => {
                     this.onSelection({
                         type: {
@@ -72,7 +82,7 @@ export class SuggestionsComponent implements OnInit {
             },
             {
                 label: 'List Unordered',
-                icon: `/assets/block-editor/ul.svg`,
+                icon: this.sanitizeUrl(ulIcon),
                 command: () => {
                     this.onSelection({
                         type: {
@@ -82,7 +92,6 @@ export class SuggestionsComponent implements OnInit {
                 }
             }
         ];
-
         this.items = [
             {
                 label: 'Contentlets',
@@ -203,5 +212,9 @@ export class SuggestionsComponent implements OnInit {
                 this.cd.detectChanges();
                 this.resetKeyManager();
             });
+    }
+
+    private sanitizeUrl( url: string ): SafeUrl {
+        return this.domSanitizer.bypassSecurityTrustUrl(url);
     }
 }

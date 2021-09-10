@@ -1,0 +1,19 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400&display=swap');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+
+dotcms-block-editor {
+    display: block;
+    height: 100%;
+    width: 100%;
+    .ProseMirror {
+        box-sizing: border-box;
+        -webkit-box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        border: solid 2px #222;
+        display: block;
+        height: 100%;
+        min-height: 500px;
+        border-radius: 4px;
+        padding: 1rem 4rem;
+    }
+}
