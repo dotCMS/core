@@ -1,9 +1,13 @@
 package com.dotmarketing.util;
 
+import com.liferay.util.StringPool;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.text.ParseException;
+import java.util.Optional;
 
 public class RegEXTest {
 
@@ -81,5 +85,43 @@ public class RegEXTest {
         Assert.assertTrue(RegEX.containsCaseInsensitive(text1, regex));
         Assert.assertTrue(RegEX.containsCaseInsensitive(text2, regex));
         Assert.assertTrue(RegEX.containsCaseInsensitive(text3, regex));
+    }
+
+    @Test
+    public void test_replace_token_by_white_space () throws ParseException {
+
+        final String replace      = "_sepsep_";
+        final String replacement  = " ";
+        final String token        = "CMS_sepsep_Administrator";
+        final String expected     = "CMS Administrator";
+
+        final String result = RegEX.replace(token, replacement, replace);
+
+        Assert.assertEquals(expected, result);
+    }
+
+    @Test
+    public void test_replace_token_by_white_space_on_pattern () throws ParseException {
+
+        final String pattern      = "/_sepsep_/ /";
+        Optional<Tuple2<String, String>> substitutionTokenOpt = Optional.empty();
+
+        if (UtilMethods.isSet(pattern) && pattern.startsWith(StringPool.FORWARD_SLASH)
+                && pattern.endsWith(StringPool.FORWARD_SLASH)) {
+
+            final String [] substitutionTokens = pattern.substring(1, pattern.length()-1).split(StringPool.FORWARD_SLASH);
+            substitutionTokenOpt = substitutionTokens.length == 2? Optional.ofNullable(Tuple.of(substitutionTokens[0], substitutionTokens[1])): Optional.empty();
+        }
+
+        Assert.assertTrue(substitutionTokenOpt.isPresent());
+
+        final String replace      = substitutionTokenOpt.get()._1();
+        final String replacement  = substitutionTokenOpt.get()._2();
+        final String token        = "CMS_sepsep_Administrator";
+        final String expected     = "CMS Administrator";
+
+        final String result = RegEX.replace(token, replacement, replace);
+
+        Assert.assertEquals(expected, result);
     }
 }

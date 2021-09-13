@@ -35,6 +35,9 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.Encryptor;
+import com.liferay.util.StringPool;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
 
@@ -46,6 +49,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 import static com.dotmarketing.util.UtilMethods.isSet;
 
@@ -345,6 +349,8 @@ public class SAMLHelper {
                 final String[] rolePatterns = this.getSamlConfigurationService().getConfigAsArrayString(
                         identityProviderConfiguration, SamlName.DOTCMS_SAML_INCLUDE_ROLES_PATTERN);
 
+                final Optional<Tuple2<String, String>> roleKeySubstitutionOpt = this.getRoleKeySubstitution (identityProviderConfiguration);
+
                 Logger.debug(this, () -> "Role Patterns: " + this.toString(rolePatterns) + ", remove role prefix: " + removeRolePrefix);
 
                 // add roles
@@ -363,7 +369,7 @@ public class SAMLHelper {
                         }
                     }
 
-                    this.addRole(user, removeRolePrefix, role);
+                    this.addRole(user, removeRolePrefix, this.processReplacement(role, roleKeySubstitutionOpt) );
                 }
             }
 
@@ -372,6 +378,33 @@ public class SAMLHelper {
 
         Logger.info(this, "Roles have been ignore by the build roles strategy: " + buildRolesStrategy
                 + ", or roles have been not set from the IdP");
+    }
+
+    private String processReplacement(final String role, final Optional<Tuple2<String, String>> roleKeySubstitutionOpt) {
+
+        if (roleKeySubstitutionOpt.isPresent()) {
+
+            final String replace  = roleKeySubstitutionOpt.get()._1();
+            final String replacement      = roleKeySubstitutionOpt.get()._2();
+            return RegEX.replace(role, replacement, replace);
+        }
+
+        return role;
+    }
+
+    private Optional<Tuple2<String, String>> getRoleKeySubstitution(final IdentityProviderConfiguration identityProviderConfiguration) {
+
+        final String roleKeySubstitution = this.getSamlConfigurationService().getConfigAsString(
+                identityProviderConfiguration, SamlName.DOT_SAML_ROLE_KEY_SUBSTITUTION);
+
+        if (UtilMethods.isSet(roleKeySubstitution) && roleKeySubstitution.startsWith(StringPool.FORWARD_SLASH)
+                && roleKeySubstitution.endsWith(StringPool.FORWARD_SLASH)) {
+
+            final String [] substitutionTokens = roleKeySubstitution.substring(1, roleKeySubstitution.length()-1).split(StringPool.FORWARD_SLASH);
+            return substitutionTokens.length == 2? Optional.ofNullable(Tuple.of(substitutionTokens[0], substitutionTokens[1])): Optional.empty();
+        }
+
+        return Optional.empty();
     }
 
     private void addRole(final User user, final String removeRolePrefix, final String roleObject)
