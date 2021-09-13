@@ -36,9 +36,9 @@ jobs:
         id: discover-docker-tags
         uses: dotcms/discover-docker-tags-action@main
         with:
-          version: ${{ ENV.DOTCMS_VERSION }}
+          version: ${{ env.DOTCMS_VERSION }}
           hash: ${{ env.BUILD_HASH }}
-          label: ''
+          label: 'SNAPSHOT'
           update_stable: false
           also_latest: false
         if: env.jobRun == 'true'
