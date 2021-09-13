@@ -380,7 +380,7 @@ public class SAMLHelper {
                 + ", or roles have been not set from the IdP");
     }
 
-    private String processReplacement(final String role, final Optional<Tuple2<String, String>> roleKeySubstitutionOpt) {
+    protected String processReplacement(final String role, final Optional<Tuple2<String, String>> roleKeySubstitutionOpt) {
 
         if (roleKeySubstitutionOpt.isPresent()) {
 
@@ -396,6 +396,11 @@ public class SAMLHelper {
 
         final String roleKeySubstitution = this.getSamlConfigurationService().getConfigAsString(
                 identityProviderConfiguration, SamlName.DOT_SAML_ROLE_KEY_SUBSTITUTION);
+
+        return getRoleKeySubstitution(roleKeySubstitution);
+    }
+
+    protected Optional<Tuple2<String, String>> getRoleKeySubstitution(final String roleKeySubstitution) {
 
         if (UtilMethods.isSet(roleKeySubstitution) && roleKeySubstitution.startsWith(StringPool.FORWARD_SLASH)
                 && roleKeySubstitution.endsWith(StringPool.FORWARD_SLASH)) {
