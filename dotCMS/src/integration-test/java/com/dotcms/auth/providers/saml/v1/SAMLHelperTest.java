@@ -228,6 +228,28 @@ public class SAMLHelperTest extends IntegrationTestBase {
     }
 
     @Test()
+    public void test_getRoleKeySubstitution_processReplacement_doing_null_substitution() throws DotDataException, DotSecurityException, IOException {
+
+        final SamlAuthenticationService samlAuthenticationService         = new MockSamlAuthenticationService();
+        final CompanyAPI companyAPI                                       = mock(CompanyAPI.class);
+        final Company    company                                          = new Company();
+        final SAMLHelper           		samlHelper                        = new SAMLHelper(samlAuthenticationService, companyAPI);
+
+        company.setAuthType(Company.AUTH_TYPE_EA);
+        when(companyAPI.getDefaultCompany()).thenReturn(company);
+
+        final String pattern      = null;
+        final Optional<Tuple2<String, String>> substitutionTokenOpt = samlHelper.getRoleKeySubstitution(pattern);
+
+        Assert.assertFalse(substitutionTokenOpt.isPresent());
+        final String expected     = "CMS Administrator";
+
+        final String roleResult   = samlHelper.processReplacement(expected, substitutionTokenOpt);
+
+        Assert.assertEquals(expected, roleResult);
+    }
+
+    @Test()
     public void test_getRoleKeySubstitution_processReplacement_doing_substitution() throws DotDataException, DotSecurityException, IOException {
 
         final SamlAuthenticationService samlAuthenticationService         = new MockSamlAuthenticationService();
@@ -248,8 +270,6 @@ public class SAMLHelperTest extends IntegrationTestBase {
         final String roleResult   = samlHelper.processReplacement(tokenRole, substitutionTokenOpt);
 
         Assert.assertEquals(expected, roleResult);
-
-        ;
     }
 
 }
