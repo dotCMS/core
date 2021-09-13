@@ -50,6 +50,15 @@ public interface ExpiringMap<K, V> {
     V put(K key, V value, final long ttl, final TimeUnit unit);
 
     /**
+     * This allows expiration based on the default ttt used when built the caffeine cache.
+     * @param key K
+     * @param value V
+     * @param useCacheTtl {@link boolean} useCacheTtl if true, the entry will expire using the ttl specified when the the internal caffeine cache got built not the {@link ExpiringEntryStrategy}.
+     * @return
+     */
+    V put(final K key, final V value, final boolean useCacheTtl);
+
+    /**
      *  Put a value with a key, will use the {@link ExpiringEntryStrategy} in other to figure out the timeout for the entry
      * @param key    K
      * @param value  V

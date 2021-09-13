@@ -97,10 +97,19 @@ public class ExpiringMapBuilder<K,V> {
         }
 
         @Override
-        public V put(final K key, final V value) {
+        public V put(final K key, final V value, final boolean useCacheTtl) {
+           if(useCacheTtl){
+               this.cache.put(key, value);
+               return value;
+           } else {
+              final Tuple2<Long, TimeUnit> expiring = this.strategy.getExpireTime(key, value);
+              return this.put(key, value, expiring._1, expiring._2);
+           }
+        }
 
-            final Tuple2<Long, TimeUnit> expiring = this.strategy.getExpireTime(key, value);
-            return this.put(key, value, expiring._1, expiring._2);
+        @Override
+        public V put(final K key, final V value) {
+            return this.put(key, value, false);
         }
 
         @Override
