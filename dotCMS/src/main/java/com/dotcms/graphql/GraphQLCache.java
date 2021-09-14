@@ -8,7 +8,7 @@ import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import io.vavr.Lazy;
-import io.vavr.Tuple2;
+//import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoField;
@@ -33,6 +33,8 @@ public class GraphQLCache implements Cachable {
     private final Lazy<Boolean> ENABLED_FROM_CONFIG = Lazy.of(()->Config
             .getBooleanProperty(GRAPHQL_CACHE_RESULTS_CONFIG_PROPERTY, true));
 
+    private long defaultTTL = 30;
+
     /**
      * Gets the value from cache, if any and non-expired, for the given key.
      * Optionally it can be instructed to refresh the value for the key in the background only if
@@ -46,32 +48,34 @@ public class GraphQLCache implements Cachable {
      */
 
     private Optional<String> get(final String key, final boolean refresh,
-            final Supplier<String> valueSupplier, Integer ttl) {
+            final Supplier<String> valueSupplier, final long ttl) {
         if(cannotCache()) {
             return Optional.empty();
         }
 
-        Optional<String> result = Optional.empty();
+//        Optional<String> result = Optional.empty();
         final String cacheKey = hashKey(key);
-        final Tuple2<String, LocalDateTime> resultExpireTimeTuple
-                = (Tuple2<String, LocalDateTime>) cache.getNoThrow(cacheKey, getPrimaryGroup());
+        return Optional.ofNullable((String)cache.getNoThrow(cacheKey, getPrimaryGroup()));
 
-        if(UtilMethods.isSet(resultExpireTimeTuple)) {
-            if(refresh) { // return from cache even if expired and refresh in background
-                result = Optional.of(resultExpireTimeTuple._1());
-                refreshKey(key, valueSupplier, ttl);
-            } else {
-                final LocalDateTime expireTime = resultExpireTimeTuple._2();
+//        final Tuple2<String, LocalDateTime> resultExpireTimeTuple
+//                = (Tuple2<String, LocalDateTime>) cache.getNoThrow(cacheKey, getPrimaryGroup());
+//
+//        if(UtilMethods.isSet(resultExpireTimeTuple)) {
+//            if(refresh) { // return from cache even if expired and refresh in background
+//                result = Optional.of(resultExpireTimeTuple._1());
+//                refreshKey(key, valueSupplier, ttl);
+//            } else {
+//                final LocalDateTime expireTime = resultExpireTimeTuple._2();
+//
+//                if (expireTime == null || expireTime.isAfter(LocalDateTime.now())) {
+//                    result = Optional.of(resultExpireTimeTuple._1());
+//                } else { // expired, let's remove from cache
+//                    remove(key);
+//                }
+//            }
+//        }
 
-                if (expireTime == null || expireTime.isAfter(LocalDateTime.now())) {
-                    result = Optional.of(resultExpireTimeTuple._1());
-                } else { // expired, let's remove from cache
-                    remove(key);
-                }
-            }
-        }
-
-        return result;
+//        return result;
     }
 
     /**
@@ -81,7 +85,7 @@ public class GraphQLCache implements Cachable {
      */
 
     public Optional<String> get(final String key) {
-        return get(key, false, null, null);
+        return get(key, false, null, defaultTTL);
     }
 
     /**
@@ -99,7 +103,7 @@ public class GraphQLCache implements Cachable {
     }
 
     private void refreshKey(final String key, final Supplier<String> valueSupplier,
-            final Integer cacheTTL) {
+            final long cacheTTL) {
         DotConcurrentFactory.getInstance()
                 .getSingleSubmitter().submit(()->
                         put(key, Try.of(valueSupplier::get).getOrElse(Strings.EMPTY), cacheTTL));
@@ -112,18 +116,18 @@ public class GraphQLCache implements Cachable {
      * @param ttl time in seconds to consider the value as expired. If null, then it will cache
      * the value for the time specified in the config property <code>cache.graphqlquerycache.seconds</code>
      */
-    public void put(String key, String result, Integer ttl) {
+    public void put(String key, String result, long ttl) {
         if(cannotCache()) return;
 
         if(UtilMethods.isNotSet(result)) return;
 
-        final LocalDateTime cachedSincePlusTTL = ttl!=null ? LocalDateTime.now().plus(ttl,
-                ChronoField.SECOND_OF_DAY.getBaseUnit()) : null;
+//        final LocalDateTime cachedSincePlusTTL = ttl!=null ? LocalDateTime.now().plus(ttl,
+//                ChronoField.SECOND_OF_DAY.getBaseUnit()) : null;
 
-        Tuple2<String, LocalDateTime> resultExpireTimeTuple =
-                new Tuple2<>(result, cachedSincePlusTTL);
+//        Tuple2<String, LocalDateTime> resultExpireTimeTuple =
+//                new Tuple2<>(result, cachedSincePlusTTL);
         final String cacheKey = hashKey(key);
-        cache.put(cacheKey, resultExpireTimeTuple, getPrimaryGroup());
+        cache.put(cacheKey, result, ttl, getPrimaryGroup());
     }
 
     /**
@@ -133,7 +137,7 @@ public class GraphQLCache implements Cachable {
      * @param result the value
      */
     public void put(String key, String result) {
-        this.put(key, result, null);
+        this.put(key, result, defaultTTL);
     }
 
     private String hashKey(final String query) {

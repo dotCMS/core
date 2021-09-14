@@ -91,12 +91,15 @@ public class CaffineCache2 extends CacheProvider {
 
     @Override
     public void put(String group, String key, Object content) {
+        this.put(group, key, content, -1);
+    }
 
+    @Override
+    public void put(String group, String key, Object content, final long ttl) {
         // Get the cache for the given group
         Cache<String, Object> cache = getCache(group);
-
         // Add the given content to the group and for a given key
-        cache.put(key, new Expirable(10, content));
+        cache.put(key, new Expirable(ttl, content));
     }
 
     @Override
@@ -105,12 +108,10 @@ public class CaffineCache2 extends CacheProvider {
         // Get the cache for the given group
         Cache<String, Object> cache = getCache(group);
 
-
-
         // Get the content from the group and for a given key
-        return cache.getIfPresent(key);
+        Expirable expirable = (Expirable) cache.getIfPresent(key);
 
-
+        return expirable!=null?expirable.getContent():null;
     }
 
     @Override
@@ -193,16 +194,22 @@ public class CaffineCache2 extends CacheProvider {
             final boolean isDefault = (Config.getIntProperty("cache." + group + ".size", -1) == -1);
 
 
-            final int configured = isDefault ? Config.getIntProperty("cache." + DEFAULT_CACHE + ".size")
+            final int size = isDefault ? Config.getIntProperty("cache." + DEFAULT_CACHE + ".size")
                 : (Config.getIntProperty("cache." + group + ".size", -1) != -1)
                   ? Config.getIntProperty("cache." + group + ".size")
                       : Config.getIntProperty("cache." + DEFAULT_CACHE + ".size");
+
+            final int seconds = isDefault ? Config.getIntProperty("cache." + DEFAULT_CACHE + ".seconds", 100)
+                    : (Config.getIntProperty("cache." + group + ".seconds", -1) != -1)
+                            ? Config.getIntProperty("cache." + group + ".seconds")
+                            : Config.getIntProperty("cache." + DEFAULT_CACHE + ".seconds", 100);
+
 
 
             com.github.benmanes.caffeine.cache.stats.CacheStats cstats = foundCache.stats();
             stats.addStat(CacheStats.REGION, group);
             stats.addStat(CacheStats.REGION_DEFAULT, isDefault + "");
-            stats.addStat(CacheStats.REGION_CONFIGURED_SIZE, nf.format(configured));
+            stats.addStat(CacheStats.REGION_CONFIGURED_SIZE, "size:" + nf.format(size) + " / " + seconds + "s");
             stats.addStat(CacheStats.REGION_SIZE, nf.format(foundCache.estimatedSize()));
             stats.addStat(CacheStats.REGION_LOAD, nf.format(cstats.missCount()+cstats.hitCount()));
             stats.addStat(CacheStats.REGION_HITS, nf.format(cstats.hitCount()));
@@ -254,6 +261,9 @@ public class CaffineCache2 extends CacheProvider {
                             size = Config.getIntProperty("cache." + DEFAULT_CACHE + ".size", 100);
                         }
 
+                        final int defaultTTL = Config.getIntProperty("cache." + cacheName + ".seconds", -1);
+
+
                         Logger.info(this.getClass(),
                                 "***\t Building Cache : " + cacheName + ", size:" + size
                                         + ",Concurrency:"
@@ -269,12 +279,17 @@ public class CaffineCache2 extends CacheProvider {
                                 .recordStats()
                                 .expireAfter(new Expiry<String, Expirable>() {
                                     public long expireAfterCreate(String key, Expirable expirable, long currentTime) {
+                                        long ttlInSeconds;
 
-                                        if (expirable.getTtl()<=0) {
-                                            return Long.MAX_VALUE;
+                                        if (expirable.getTtl()>0) {
+                                            ttlInSeconds = expirable.getTtl();
+                                        } else if(defaultTTL>0) {
+                                            ttlInSeconds = defaultTTL;
+                                        } else {
+                                            ttlInSeconds = Long.MAX_VALUE;
                                         }
-                                        long seconds = expirable.getTtl();
-                                        return TimeUnit.SECONDS.toNanos(seconds);
+
+                                        return TimeUnit.SECONDS.toNanos(ttlInSeconds);
                                     }
                                     public long expireAfterUpdate(String key, Expirable expirable,
                                             long currentTime, long currentDuration) {
