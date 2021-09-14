@@ -40,7 +40,7 @@ jobs:
           hash: ${{ env.BUILD_HASH }}
           label: ''
           update_stable: false
-          also_latest: alse
+          also_latest: false
         if: env.jobRun == 'true'
       - name: Publish docker image
         id: publish-docker-image
