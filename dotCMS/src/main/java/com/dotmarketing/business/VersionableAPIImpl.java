@@ -521,7 +521,7 @@ public class VersionableAPIImpl implements VersionableAPI {
 
         SystemMessageEventUtil.getInstance().pushMessage(systemMessageBuilder.create(),
                 ImmutableList.of(user));
-        Logger.info(this,message);
+        Logger.debug(this,message);
     }
 
     @WrapInTransaction
