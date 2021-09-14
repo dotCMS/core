@@ -964,4 +964,132 @@ public class TemplateAPITest extends IntegrationTestBase {
         assertTrue(template.getIdentifier().contains(Constants.TEMPLATE_FOLDER_PATH));
         assertEquals(fileAssetTemplate.getIdentifier(),template.getIdentifier());
     }
+
+    /**
+     * Method to test: {@link TemplateAPI#saveDraftTemplate(Template, Host, User, boolean)}
+     * Given Scenario: Saves a new template if the identifier does not exists.
+     * ExpectedResult: Template successfully saved.
+     */
+    @Test
+    public void saveDraftTemplate_identifierNotExists_success()
+            throws DotSecurityException, DotDataException {
+        final Host newHost = new SiteDataGen().nextPersisted();
+        final String title = "Template" + System.currentTimeMillis();
+        final String body="<html><body> I'm mostly empty </body></html>";
+
+        Template template=new Template();
+        template.setTitle(title);
+        template.setBody(body);
+        template = templateAPI.saveDraftTemplate(template, newHost, user, false);
+
+        assertTrue(UtilMethods.isSet(template.getInode()));
+        assertTrue(UtilMethods.isSet(template.getIdentifier()));
+        assertEquals(template.getBody(), body);
+        assertEquals(template.getTitle(), title);
+    }
+
+    /**
+     * Method to test: {@link TemplateAPI#saveDraftTemplate(Template, Host, User, boolean)}
+     * Given Scenario: Saves a new template version if the inode does not exists.
+     * ExpectedResult: Template version successfully saved.
+     */
+    @Test
+    public void saveDraftTemplate_inodeNotExists_success()
+            throws DotSecurityException, DotDataException {
+        final Host newHost = new SiteDataGen().nextPersisted();
+        final String title = "Template" + System.currentTimeMillis();
+        final String body="<html><body> I'm mostly empty </body></html>";
+
+        Template template=new Template();
+        template.setTitle(title);
+        template.setBody(body);
+        template = templateAPI.saveDraftTemplate(template, newHost, user, false);
+        final String templateOriginalInode = template.getInode();
+
+        assertTrue(UtilMethods.isSet(template.getInode()));
+        assertTrue(UtilMethods.isSet(template.getIdentifier()));
+        assertEquals(template.getBody(), body);
+        assertEquals(template.getTitle(), title);
+
+        //new version
+        template.setTitle(title + "_UPDATED");
+        template.setInode("");
+        template = templateAPI.saveDraftTemplate(template, newHost, user, false);
+
+        assertTrue(UtilMethods.isSet(template.getInode()));
+        assertTrue(UtilMethods.isSet(template.getIdentifier()));
+        assertEquals(template.getTitle(), title + "_UPDATED");
+        assertNotEquals(templateOriginalInode,template.getInode());
+    }
+
+    /**
+     * Method to test: {@link TemplateAPI#saveDraftTemplate(Template, Host, User, boolean)}
+     * Given Scenario: If the user calling the saveDraftTemplate method is not the same that last
+     *                  updated the template a new version will be created.
+     * ExpectedResult: Template version successfully saved.
+     */
+    @Test
+    public void saveDraftTemplate_lastUpdatedUserIsNotTheSame_success()
+            throws DotDataException, DotSecurityException {
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHostA = new SiteDataGen().nextPersisted();
+
+        //Create the limited user
+        final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
+        APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
+
+        //Give Permissions Over the Host Can Add children
+        Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                newHostA.getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, true);
+        APILocator.getPermissionAPI().save(permissions, newHostA, user, false);
+        //Give Permissions Over the Host READ/EDIT Templates
+        permissions = new Permission(PermissionableType.TEMPLATES.getCanonicalName(),
+                newHostA.getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true);
+        APILocator.getPermissionAPI().save(permissions, newHostA, user, false);
+
+        //Create template
+        Template templateA = new TemplateDataGen().title(title).next();
+        templateA = APILocator.getTemplateAPI().saveTemplate(templateA,newHostA,limitedUser,false);
+        final String templateOriginalInode = templateA.getInode();
+
+        //new version using system user
+        templateA.setTitle(title + "_UPDATED");
+        templateA.setInode("");
+        templateA = templateAPI.saveDraftTemplate(templateA, newHostA, user, false);
+
+        assertTrue(UtilMethods.isSet(templateA.getInode()));
+        assertTrue(UtilMethods.isSet(templateA.getIdentifier()));
+        assertEquals(templateA.getTitle(), title + "_UPDATED");
+        assertNotEquals(templateOriginalInode,templateA.getInode());
+    }
+
+    /**
+     * Method to test: {@link TemplateAPI#saveDraftTemplate(Template, Host, User, boolean)}
+     * Given Scenario: Calling the saveDraftTemplate using the same user, id and inode, shouldn't
+     *                  create a new version.
+     * ExpectedResult: Template saved successfully but keep the inode
+     */
+    @Test
+    public void saveDraftTemplate_success() throws DotSecurityException, DotDataException {
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHostA = new SiteDataGen().nextPersisted();
+
+        //Create template
+        Template templateA = new TemplateDataGen().title(title).next();
+        templateA = APILocator.getTemplateAPI().saveDraftTemplate(templateA,newHostA,user,false);
+        final String templateOriginalInode = templateA.getInode();
+
+        //new Draft should keep the same inode
+        templateA.setTitle(title + "_UPDATED");
+        templateA = templateAPI.saveDraftTemplate(templateA, newHostA, user, false);
+
+        assertTrue(UtilMethods.isSet(templateA.getInode()));
+        assertTrue(UtilMethods.isSet(templateA.getIdentifier()));
+        assertEquals(templateA.getTitle(), title + "_UPDATED");
+        assertEquals(templateOriginalInode,templateA.getInode());
+    }
 }
