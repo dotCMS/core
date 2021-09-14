@@ -166,11 +166,6 @@ public interface RedisClient<K, V> {
      */
     Future<Long> deleteNonBlocking(final K... keys);
 
-    /**
-     * Flush all cache
-     * @return
-     */
-    String flushAll();
 
     /**
      * Scan each the key (one by one, the results are consumed by keyConsumer

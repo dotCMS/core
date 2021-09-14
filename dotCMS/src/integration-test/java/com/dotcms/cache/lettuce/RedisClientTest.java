@@ -14,12 +14,7 @@ public class RedisClientTest {
 
     @BeforeClass
     public static void startup() throws Exception {
-        final RedisClient<String, Object> redisClient = RedisClientFactory.getClient("test");
 
-        if (redisClient.ping()) {
-
-            redisClient.flushAll();
-        }
     }
 
     /**
