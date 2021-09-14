@@ -2,6 +2,9 @@ package com.dotcms;
 
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
+import com.dotcms.cache.lettuce.DotObjectCodecTest;
+import com.dotcms.cache.lettuce.LettuceCacheTest;
+import com.dotcms.cache.lettuce.RedisClientTest;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
@@ -9,6 +12,7 @@ import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.dotpubsub.PostgresPubSubImplTest;
+import com.dotcms.dotpubsub.RedisPubSubImplTest;
 import com.dotcms.ema.EMAWebInterceptorTest;
 import com.dotcms.enterprise.HTMLDiffUtilTest;
 import com.dotcms.enterprise.cluster.ClusterFactoryTest;
@@ -456,7 +460,10 @@ import org.junit.runners.Suite.SuiteClasses;
         BundlePublisherTest.class,
         CategoryFactoryTest.class,
         Task210805DropUserProxyTableTest.class,
-        Task210816DeInodeRelationshipTest.class,
+        DotObjectCodecTest.class,
+        RedisClientTest.class,
+        LettuceCacheTest.class,
+        RedisPubSubImplTest.class,
         BundlerUtilIntegrationTest.class,
         Task210816DeInodeRelationshipTest.class,
         WorkflowEmailUtilTest.class,
