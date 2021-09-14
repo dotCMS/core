@@ -68,7 +68,7 @@ export class DotMaterialIcon {
 
     findMatch = (searchTerm: string): string[] => {
         return this.suggestionlist.filter(
-            (term) => term.slice(0, searchTerm.length) === searchTerm && term !== searchTerm
+            (term) => term.includes(searchTerm) && term !== searchTerm
         );
     };
 
@@ -86,7 +86,8 @@ export class DotMaterialIcon {
     onFocus = (resetSearch: boolean) => {
         this.showSuggestions = true;
         this.selectedSuggestionIndex = undefined;
-        const match = resetSearch ? '' : this.value;
+        // On first focus, this.value is null
+        const match = resetSearch ? '' : this.value || '';
         this.suggestionArr = this.findMatch(match);
 
         if (resetSearch) {
