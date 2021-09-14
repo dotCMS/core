@@ -227,6 +227,12 @@ public class SAMLHelperTest extends IntegrationTestBase {
         Assert.assertEquals (nativeUser.getLastName(),     recoveredNativeUser.getLastName());
     }
 
+    /**
+     * Method to test: {@link SAMLHelper#getRoleKeySubstitution(String)}  {@link SAMLHelper#processReplacement(String, Optional)}
+     * Given Scenario: sending an null pattern should be doing nothing
+     * ExpectedResult: The role does not change
+     *
+     */
     @Test()
     public void test_getRoleKeySubstitution_processReplacement_doing_null_substitution() throws DotDataException, DotSecurityException, IOException {
 
@@ -249,6 +255,12 @@ public class SAMLHelperTest extends IntegrationTestBase {
         Assert.assertEquals(expected, roleResult);
     }
 
+    /**
+     * Method to test: {@link SAMLHelper#getRoleKeySubstitution(String)}  {@link SAMLHelper#processReplacement(String, Optional)}
+     * Given Scenario: sending an substitution pattern should be doing the replacement
+     * ExpectedResult: The role will be clean up
+     *
+     */
     @Test()
     public void test_getRoleKeySubstitution_processReplacement_doing_substitution() throws DotDataException, DotSecurityException, IOException {
 

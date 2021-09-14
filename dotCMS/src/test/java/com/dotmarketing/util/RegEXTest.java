@@ -87,6 +87,12 @@ public class RegEXTest {
         Assert.assertTrue(RegEX.containsCaseInsensitive(text3, regex));
     }
 
+    /**
+     * Method to test: {@link RegEX#replace(String, String, String)}
+     * Given Scenario: Do a replace by white space
+     * ExpectedResult: The token is replaced with white space
+     *
+     */
     @Test
     public void test_replace_token_by_white_space () throws ParseException {
 
@@ -100,6 +106,12 @@ public class RegEXTest {
         Assert.assertEquals(expected, result);
     }
 
+    /**
+     * Method to test: {@link RegEX#replace(String, String, String)}
+     * Given Scenario: Do a parsing and replace
+     * ExpectedResult: The role will be clean up
+     *
+     */
     @Test
     public void test_replace_token_by_white_space_on_pattern () throws ParseException {
 
