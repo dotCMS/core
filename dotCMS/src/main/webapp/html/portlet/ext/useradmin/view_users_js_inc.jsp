@@ -385,6 +385,9 @@
 		loadUserAdditionalInfo(currentUser);
 
 		buildRolesTree();
+		
+		// Update current tap after switching user.
+		renderCurrentTab();
 	}
 
 	//Setting up tab actions
