@@ -5,6 +5,7 @@
             [class.dot-nav-sub__link--active]="subItem.active"
             (click)="onItemClick($event, subItem)"
             [routerLink]="subItem.menuLink"
+            [state]="{ menuId: data.id }"
             >{{ subItem.label }}</a
         >
     </li>

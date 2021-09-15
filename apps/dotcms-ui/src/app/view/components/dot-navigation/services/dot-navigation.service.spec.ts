@@ -1,15 +1,14 @@
-import { waitForAsync } from '@angular/core/testing';
+import { TestBed, waitForAsync } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Router, NavigationEnd } from '@angular/router';
 
-import { LoginServiceMock } from '../../../../test/login-service.mock';
-import { DOTTestBed } from '../../../../test/dot-test-bed';
+import { LoginServiceMock } from '@dotcms/app/test/login-service.mock';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DotMenu } from '@models/navigation';
 import { DotMenuService } from '@services/dot-menu.service';
 import { DotNavigationService } from './dot-navigation.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
-
+import { DotIframeService } from '../../_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotcmsEventsService, LoginService, Auth } from '@dotcms/dotcms-js';
 
 import { Observable, Subject, of } from 'rxjs';
@@ -18,6 +17,18 @@ import { skip } from 'rxjs/operators';
 class RouterMock {
     _events: Subject<any> = new Subject();
     _routerState: any;
+
+    url = '';
+
+    getCurrentNavigation() {
+        return {
+            extras: {
+                state: {
+                    menuId: '123'
+                }
+            }
+        };
+    }
 
     get events() {
         return this._events.asObservable();
@@ -34,6 +45,8 @@ class RouterMock {
     triggerNavigationEnd(url: string): void {
         this._events.next(new NavigationEnd(0, url || '/url/789', url || '/url/789'));
     }
+
+    navigateByUrl() {}
 }
 class DotMenuServiceMock {
     loadMenu(): Observable<DotMenu[]> {
@@ -137,13 +150,14 @@ describe('DotNavigationService', () => {
     let dotcmsEventsService: DotcmsEventsService;
     let dotEventService: DotEventsService;
     let dotMenuService: DotMenuService;
-    let loginService: LoginServiceMock;
+    let loginService: LoginService;
     let router;
 
     beforeEach(
         waitForAsync(() => {
-            const testbed = DOTTestBed.configureTestingModule({
+            const testbed = TestBed.configureTestingModule({
                 providers: [
+                    DotEventsService,
                     DotNavigationService,
                     {
                         provide: DotcmsEventsService,
@@ -160,18 +174,36 @@ describe('DotNavigationService', () => {
                     {
                         provide: Router,
                         useClass: RouterMock
+                    },
+                    {
+                        provide: DotIframeService,
+                        useValue: {
+                            reload: jasmine.createSpy()
+                        }
+                    },
+                    {
+                        provide: DotRouterService,
+                        useValue: {
+                            currentPortlet: {
+                                id: '123-567'
+                            },
+                            reloadCurrentPortlet: jasmine.createSpy(),
+                            gotoPortlet: jasmine
+                                .createSpy()
+                                .and.returnValue(new Promise((resolve) => resolve(true)))
+                        }
                     }
                 ],
                 imports: [RouterTestingModule]
             });
 
-            service = testbed.get(DotNavigationService);
-            dotRouterService = testbed.get(DotRouterService);
-            dotcmsEventsService = testbed.get(DotcmsEventsService);
-            dotMenuService = testbed.get(DotMenuService);
-            loginService = testbed.get(LoginService);
-            dotEventService = testbed.get(DotEventsService);
-            router = testbed.get(Router);
+            service = testbed.inject(DotNavigationService);
+            dotRouterService = testbed.inject(DotRouterService);
+            dotcmsEventsService = testbed.inject(DotcmsEventsService);
+            dotMenuService = testbed.inject(DotMenuService);
+            loginService = testbed.inject(LoginService);
+            dotEventService = testbed.inject(DotEventsService);
+            router = testbed.inject(Router);
 
             spyOn(dotEventService, 'notify');
             spyOn(dotMenuService, 'reloadMenu').and.callThrough();
@@ -290,10 +322,25 @@ describe('DotNavigationService', () => {
     });
 
     it('should go to first portlet on auth change', () => {
-        spyOn(service, 'goToFirstPortlet');
-        loginService.triggerNewAuth(baseMockAuth);
-        expect(service.goToFirstPortlet).toHaveBeenCalledTimes(1);
-        expect(dotMenuService.reloadMenu).toHaveBeenCalledTimes(1);
+        ((loginService as unknown) as LoginServiceMock).triggerNewAuth(baseMockAuth);
+
+        spyOn(dotMenuService, 'loadMenu').and.returnValue(
+            of([
+                {
+                    active: false,
+                    id: '123',
+                    isOpen: false,
+                    menuItems: [],
+                    name: 'Nav 1',
+                    tabDescription: 'Navigation 1',
+                    tabIcon: 'icon',
+                    tabName: 'name',
+                    url: 'abc-def'
+                }
+            ])
+        );
+
+        expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('url/one');
     });
 
     it('should expand and set active menu option by url when is not collapsed', () => {
@@ -301,16 +348,16 @@ describe('DotNavigationService', () => {
 
         service.items$.subscribe((menus: DotMenu[]) => {
             if (counter === 0) {
-                expect(menus[1].isOpen).toBe(false);
-                expect(menus[1].menuItems[0].active).toBe(true);
+                expect(menus[0].isOpen).toBe(true);
+                expect(menus[0].menuItems[0].active).toBe(false);
             } else {
                 expect(menus[1].isOpen).toBe(false);
-                expect(menus[1].menuItems[0].active).toBe(true);
+                expect(menus[1].menuItems[0].active).toBe(false);
             }
             counter++;
         });
 
-        router.triggerNavigationEnd('/789');
+        router.triggerNavigationEnd('/123');
     });
 
     // TODO: needs to fix this, looks like the dotcmsEventsService instance is different here not sure why.

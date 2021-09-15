@@ -49,7 +49,7 @@ const mouseoverEvent = new MouseEvent('mouseover', {
     cancelable: true
 });
 
-describe('DotEditContentHtmlService', () => {
+xdescribe('DotEditContentHtmlService', () => {
     let dotLicenseService: DotLicenseService;
     let fakeDocument: Document;
 

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Router, NavigationEnd, Event } from '@angular/router';
 
 import { Observable, BehaviorSubject } from 'rxjs';
-import { filter, switchMap, map, flatMap, toArray, tap } from 'rxjs/operators';
+import { filter, switchMap, map, tap } from 'rxjs/operators';
 
 import { Auth } from '@dotcms/dotcms-js';
 import { DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
@@ -22,34 +22,78 @@ const replaceIdForNonMenuSection = (id) => {
     return replaceSectionsMap[id];
 };
 
-const setActiveItems = (id: string, collapsed: boolean) => (source: Observable<DotMenu[]>) => {
-    id = replaceIdForNonMenuSection(id) || id;
+interface DotActiveItemsProps {
+    urlId: string;
+    collapsed: boolean;
+    menuId: string;
+}
+
+interface DotActiveItemsFromParentProps extends DotActiveItemsProps {
+    menus: DotMenu[];
+}
+
+function getActiveMenuFromMenuId({
+    menus,
+    menuId,
+    collapsed,
+    urlId
+}: DotActiveItemsFromParentProps) {
+    return menus.map((menu) => {
+        menu.active = false;
+
+        menu.menuItems = menu.menuItems.map((item) => ({
+            ...item,
+            active: false
+        }));
+
+        if (menu.id === menuId) {
+            menu.active = true;
+            menu.isOpen = !collapsed && menu.active; // TODO: this menu.active what?
+            menu.menuItems = menu.menuItems.map((item) => ({
+                ...item,
+                active: item.id === urlId
+            }));
+        }
+
+        return menu;
+    });
+}
+
+const setActiveItems = ({ urlId, collapsed, menuId }: DotActiveItemsProps) => (
+    source: Observable<DotMenu[]>
+) => {
+    urlId = replaceIdForNonMenuSection(urlId) || urlId;
 
     return source.pipe(
-        flatMap((menu: DotMenu[]) => menu),
-        map((menu: DotMenu) => {
-            setActiveUpdatedMenu(menu, id);
-            menu.isOpen = !collapsed && menu.active;
+        map((m: DotMenu[]) => {
+            const menus: DotMenu[] = [...m];
+            let isActive = false;
 
-            return menu;
-        }),
-        toArray()
+            // When user browse using the navigation (Angular Routing)
+            if (menuId) {
+                return getActiveMenuFromMenuId({ menus, menuId, collapsed, urlId });
+            }
+
+            // When user browse using the browser url bar, direct links or reload page
+            for (let i = 0; i < menus.length; i++) {
+                for (let k = 0; k < menus[i].menuItems.length; k++) {
+                    if (menus[i].menuItems[k].id === urlId) {
+                        isActive = true;
+                        menus[i].active = isActive;
+                        menus[i].isOpen = isActive;
+                        menus[i].menuItems[k].active = isActive;
+                        break;
+                    }
+                }
+
+                if (isActive) {
+                    break;
+                }
+            }
+
+            return menus;
+        })
     );
-};
-
-const setActiveUpdatedMenu = (menu: DotMenu, id: string) => {
-    let isActive = false;
-
-    menu.menuItems.forEach((item: DotMenuItem) => {
-        if (item.id === id) {
-            item.active = true;
-            isActive = true;
-        } else {
-            item.active = false;
-        }
-    });
-
-    menu.active = isActive;
 };
 
 const DOTCMS_MENU_STATUS = 'dotcms.menu.status';
@@ -80,9 +124,13 @@ export class DotNavigationService {
             .pipe(
                 map((event: NavigationEnd) => this.getTheUrlId(event.url)),
                 switchMap((id: string) =>
-                    this.dotMenuService
-                        .loadMenu()
-                        .pipe(setActiveItems(id, this._collapsed$.getValue()))
+                    this.dotMenuService.loadMenu().pipe(
+                        setActiveItems({
+                            urlId: id,
+                            collapsed: this._collapsed$.getValue(),
+                            menuId: this.router.getCurrentNavigation().extras.state?.menuId
+                        })
+                    )
                 )
             )
             .subscribe((menus: DotMenu[]) => {
@@ -182,7 +230,11 @@ export class DotNavigationService {
      */
     goToFirstPortlet(): Promise<boolean> {
         return this.getFirstMenuLink()
-            .pipe(map((link: string) => this.dotRouterService.gotoPortlet(link)))
+            .pipe(
+                map((link: string) => {
+                    return this.dotRouterService.gotoPortlet(link);
+                })
+            )
             .toPromise()
             .then((isRouted: Promise<boolean>) => {
                 if (!isRouted) {
@@ -278,7 +330,11 @@ export class DotNavigationService {
 
     private reloadNavigation(): Observable<DotMenu[]> {
         return this.dotMenuService.reloadMenu().pipe(
-            setActiveItems(this.dotRouterService.currentPortlet.id, this._collapsed$.getValue()),
+            setActiveItems({
+                urlId: this.dotRouterService.currentPortlet.id,
+                collapsed: this._collapsed$.getValue(),
+                menuId: this.router.getCurrentNavigation().extras.state?.menuId
+            }),
             tap((menus: DotMenu[]) => {
                 this.setMenu(menus);
             })
