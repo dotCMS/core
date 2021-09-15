@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "2f1e11a0-1ba4-4eba-82ff-64ccc9656399",
+		"_postman_id": "c77ff662-f50a-4742-9411-30dc765c7588",
 		"name": "FolderResource",
 		"description": "Test for FolderResource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -576,6 +576,64 @@
 								"byPath"
 							]
 						}
+					},
+					"response": []
+				},
+				{
+					"name": "Find Folder Subfolders Without Passing The Path 400 BadRequest",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/byPath",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"byPath"
+							]
+						},
+						"description": "Calls the endpoint to get the subfolders, but no body is sent so a 400 must be returned."
 					},
 					"response": []
 				}

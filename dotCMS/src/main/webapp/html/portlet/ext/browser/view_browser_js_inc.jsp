@@ -993,7 +993,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
         var localOffset = date.getTimezoneOffset();
         <%
-            TimeZone tz = TimeZone.getDefault();
+            TimeZone tz = APILocator.systemTimeZone();
             int offset = tz.getOffset((new Date()).getTime());
         %>
         var serverOffset = <%= offset / 1000 / 60 %>;
