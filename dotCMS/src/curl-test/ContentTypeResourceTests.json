@@ -19,6 +19,7 @@
 									"",
 									"pm.collectionVariables.set(\"contentTypeID\", jsonData.entity[0].id);",
 									"pm.collectionVariables.set(\"contentTypeVAR\", jsonData.entity[0].variable);",
+									"pm.collectionVariables.set(\"contentTypeFieldID\", jsonData.entity[0].fields[0].id);",
 									"",
 									"pm.test(\"Status code should be ok 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -212,7 +213,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"My Structure\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"host\": \"SYSTEM_HOST\",\n    \"name\": \"My Custom Structure {{$randomBankAccount}}\",\n\t\"variable\": \"{{contentTypeVAR}}\",\n\t\"fixed\": false,\n    \"id\": \"{{contentTypeID}}\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 2,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"],\n    \"icon\": \"icon2\",\n    \"sortOrder\": 2\n}",
+							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"My Structure\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"host\": \"SYSTEM_HOST\",\n    \"name\": \"My Custom Structure {{$randomBankAccount}}\",\n\t\"variable\": \"{{contentTypeVAR}}\",\n\t\"fixed\": false,\n    \"id\": \"{{contentTypeID}}\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n                    \"contentTypeId\": \"{{contentTypeID}}\",\n                    \"dataType\": \"TEXT\",\n                    \"fieldType\": \"Text\",\n                    \"fieldTypeLabel\": \"Text\",\n                    \"fieldVariables\": [],\n                    \"fixed\": true,\n                    \"iDate\": 1631719532000,\n                    \"id\": \"{{contentTypeFieldID}}\",\n                    \"indexed\": true,\n                    \"listed\": true,\n                    \"modDate\": 1631719532000,\n                    \"name\": \"Name\",\n                    \"readOnly\": false,\n                    \"required\": true,\n                    \"searchable\": true,\n                    \"sortOrder\": 2,\n                    \"unique\": false,\n                    \"variable\": \"name\"\n\t\t}\n\t],\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"],\n    \"icon\": \"icon2\",\n    \"sortOrder\": 2\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -648,6 +649,10 @@
 		},
 		{
 			"key": "contentTypeVAR",
+			"value": ""
+		},
+		{
+			"key": "contentTypeFieldID",
 			"value": ""
 		}
 	]
