@@ -8,6 +8,7 @@ import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.provider.CacheSizingUtil;
 import com.dotmarketing.business.cache.provider.CacheStats;
+import com.dotmarketing.business.cache.provider.timedcache.Expirable;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -91,27 +92,28 @@ public class CaffineCache2 extends CacheProvider {
 
     @Override
     public void put(String group, String key, Object content) {
-        this.put(group, key, content, -1);
-    }
 
-    @Override
-    public void put(String group, String key, Object content, final long ttl) {
         // Get the cache for the given group
         Cache<String, Object> cache = getCache(group);
+
         // Add the given content to the group and for a given key
-        cache.put(key, new Expirable(ttl, content));
+        cache.put(key, content);
     }
+
+//    @Override
+//    public void put(String group, String key, Object content, final long ttl) {
+//        // Get the cache for the given group
+//        Cache<String, Object> cache = getCache(group);
+//        // Add the given content to the group and for a given key
+//        cache.put(key, new Expirable(ttl, content));
+//    }
 
     @Override
     public Object get(String group, String key) {
-
         // Get the cache for the given group
         Cache<String, Object> cache = getCache(group);
-
         // Get the content from the group and for a given key
-        Expirable expirable = (Expirable) cache.getIfPresent(key);
-
-        return expirable!=null?expirable.getContent():null;
+        return cache.getIfPresent(key);
     }
 
     @Override
@@ -314,28 +316,6 @@ public class CaffineCache2 extends CacheProvider {
                 }
             }
         }
-
         return cache;
     }
-
-    static class Expirable {
-        private long ttl;
-        private Object content;
-
-        public Expirable(long ttl, Object content) {
-            this.ttl = ttl;
-            this.content = content;
-        }
-
-        public long getTtl() {
-            return ttl;
-        }
-
-        public Object getContent() {
-            return content;
-        }
-    }
-
-
-
 }

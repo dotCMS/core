@@ -5,13 +5,11 @@ import com.dotcms.enterprise.license.LicenseManager;
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
+import com.dotmarketing.business.cache.provider.timedcache.Expirable;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import io.vavr.Lazy;
-//import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoField;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.util.Strings;
@@ -20,7 +18,7 @@ import org.apache.logging.log4j.util.Strings;
  * A Expiring cache implementation to store the results of GraphQL requests.
  *
  * The amount of time the results will be cached can be specified either by providing a TTL (int)
- * by calling {@link #put(String, String, Integer)} method or by the config property <code>cache.graphqlquerycache.seconds</code>
+ * by calling {@link #put(String, String, long)} method or by the config property <code>cache.graphqlquerycache.seconds</code>
  * which applies when calling {@link #put(String, String)}, which does not take a TTL
  *
  * This entire cache can be turned off by setting GRAPHQL_CACHE_RESULTS=false in the dotmarketing-config.properties
@@ -53,29 +51,12 @@ public class GraphQLCache implements Cachable {
             return Optional.empty();
         }
 
-//        Optional<String> result = Optional.empty();
         final String cacheKey = hashKey(key);
-        return Optional.ofNullable((String)cache.getNoThrow(cacheKey, getPrimaryGroup()));
+        final Object value = cache.getNoThrow(cacheKey, getPrimaryGroup());
 
-//        final Tuple2<String, LocalDateTime> resultExpireTimeTuple
-//                = (Tuple2<String, LocalDateTime>) cache.getNoThrow(cacheKey, getPrimaryGroup());
-//
-//        if(UtilMethods.isSet(resultExpireTimeTuple)) {
-//            if(refresh) { // return from cache even if expired and refresh in background
-//                result = Optional.of(resultExpireTimeTuple._1());
-//                refreshKey(key, valueSupplier, ttl);
-//            } else {
-//                final LocalDateTime expireTime = resultExpireTimeTuple._2();
-//
-//                if (expireTime == null || expireTime.isAfter(LocalDateTime.now())) {
-//                    result = Optional.of(resultExpireTimeTuple._1());
-//                } else { // expired, let's remove from cache
-//                    remove(key);
-//                }
-//            }
-//        }
-
-//        return result;
+        return value instanceof Expirable
+                ? Optional.ofNullable((String) ((Expirable) value).getContent())
+                : Optional.ofNullable((String)value);
     }
 
     /**
@@ -121,13 +102,8 @@ public class GraphQLCache implements Cachable {
 
         if(UtilMethods.isNotSet(result)) return;
 
-//        final LocalDateTime cachedSincePlusTTL = ttl!=null ? LocalDateTime.now().plus(ttl,
-//                ChronoField.SECOND_OF_DAY.getBaseUnit()) : null;
-
-//        Tuple2<String, LocalDateTime> resultExpireTimeTuple =
-//                new Tuple2<>(result, cachedSincePlusTTL);
         final String cacheKey = hashKey(key);
-        cache.put(cacheKey, result, ttl, getPrimaryGroup());
+        cache.put(cacheKey, new Expirable(result, ttl), getPrimaryGroup());
     }
 
     /**
