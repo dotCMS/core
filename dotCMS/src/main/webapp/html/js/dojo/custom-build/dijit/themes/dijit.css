@@ -1397,6 +1397,7 @@ Main class hierarchy:
     z-index: 1;
 }
 .dijitTabListWrapper {
+	width: 100% !important;
 	overflow: hidden;
     z-index: 1;
 }

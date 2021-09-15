@@ -207,8 +207,7 @@
 
 <%@ include file="/html/portlet/ext/contentlet/field/edit_field_js.jsp" %>
 
-
-<html:form action="<%= formAction %>" styleId="fm" target="<%= targetFrame %>" onsubmit="return false;">
+<html:form action="<%= formAction %>" styleId="fm" target="<%= targetFrame %>" onsubmit="return false;" style="height:100%;">
 	<input name="wfActionAssign" id="wfActionAssign" type="hidden" value="">
 	<input name="wfActionComments" id="wfActionComments" type="hidden" value="">
 	<input name="wfActionId" id="wfActionId" type="hidden" value="">
