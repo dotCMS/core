@@ -468,8 +468,7 @@ import org.junit.runners.Suite.SuiteClasses;
         DotObjectCodecTest.class,
         RedisClientTest.class,
         LettuceCacheTest.class,
-        RedisPubSubImplTest.class,
-        BundlerUtilIntegrationTest.class
+        RedisPubSubImplTest.class
 })
 public class MainSuite {
 
