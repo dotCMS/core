@@ -2,7 +2,7 @@ package com.dotcms.publishing.manifest;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.CategoryDataGen;
@@ -20,6 +20,7 @@ import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.WorkflowDataGen;
 import com.dotcms.publisher.util.PusheableAsset;
+import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -38,8 +39,8 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.util.FileUtil;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -47,15 +48,17 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
-public class CSVManifestBuilderTest {
-
+public class CSVManifestReaderTest {
     private static String headers = "INCLUDED/EXCLUDED,object type, Id, inode, title, site, folder, excluded by, included by";
 
     public static void prepare() throws Exception {
@@ -65,26 +68,26 @@ public class CSVManifestBuilderTest {
     @DataProvider()
     public static Object[] assets() throws Exception {
         prepare();
-        return new TestCase[]{
-            getContentTypeTestCase(),
-            getTemplateTestCase(),
-            getFileTemplateTestCase(),
-            getContainerTestCase(),
-            getFileContainerTestCase(),
-            getFolderTestCase(),
-            getHostTestCase(),
-            getCategoryTestCase(),
-            getLinkTestCase(),
-            getWorkflowTestCase(),
-            getLanguegeTestCase(),
-            getRuleTestCase(),
-            getUserTestCase(),
-            getContentletTestCase(),
-            getRelationshipsTestCase()
+        return new CSVManifestReaderTest.TestCase[]{
+                getContentTypeTestCase(),
+                getTemplateTestCase(),
+                getFileTemplateTestCase(),
+                getContainerTestCase(),
+                getFileContainerTestCase(),
+                getFolderTestCase(),
+                getHostTestCase(),
+                getCategoryTestCase(),
+                getLinkTestCase(),
+                getWorkflowTestCase(),
+                getLanguegeTestCase(),
+                getRuleTestCase(),
+                getUserTestCase(),
+                getContentletTestCase(),
+                getRelationshipsTestCase()
         };
     }
 
-    private static TestCase getRelationshipsTestCase() throws DotDataException, DotSecurityException {
+    private static CSVManifestReaderTest.TestCase getRelationshipsTestCase() throws DotDataException, DotSecurityException {
         final ContentType parentContentType = new ContentTypeDataGen().nextPersisted();
         final ContentType childContentType = new ContentTypeDataGen().nextPersisted();
 
@@ -96,10 +99,10 @@ public class CSVManifestBuilderTest {
         final String line = list(PusheableAsset.RELATIONSHIP.getType(), relationship.getInode(),
                 "", relationship.getTitle(), "", "")
                 .stream().collect(Collectors.joining(","));
-        return new TestCase(relationship, line);
+        return new CSVManifestReaderTest.TestCase(relationship, line);
     }
 
-    private static TestCase getContentletTestCase() throws DotDataException, DotSecurityException {
+    private static CSVManifestReaderTest.TestCase getContentletTestCase() throws DotDataException, DotSecurityException {
         final User systemUser = APILocator.systemUser();
         final ContentType contentType = new ContentTypeDataGen().nextPersisted();
         final Contentlet contentlet = new ContentletDataGen(contentType).nextPersisted();
@@ -111,108 +114,108 @@ public class CSVManifestBuilderTest {
         final String line = list(PusheableAsset.CONTENTLET.getType(), contentlet.getIdentifier(), contentlet.getInode(),
                 contentlet.getName(), host.getName(), folder.getPath())
                 .stream().collect(Collectors.joining(","));
-        return new TestCase(contentlet, line);
+        return new CSVManifestReaderTest.TestCase(contentlet, line);
     }
 
-    private static TestCase getUserTestCase() throws DotDataException, DotSecurityException {
+    private static CSVManifestReaderTest.TestCase getUserTestCase() throws DotDataException, DotSecurityException {
         final User user = new UserDataGen().nextPersisted();
 
         final String line = list(PusheableAsset.USER.getType(),
                 String.valueOf(user.getUserId()), "", user.getFullName(), "", "")
                 .stream().collect(Collectors.joining(","));
-        return new TestCase(user, line);
+        return new CSVManifestReaderTest.TestCase(user, line);
     }
 
-    private static TestCase getRuleTestCase() throws DotDataException, DotSecurityException {
+    private static CSVManifestReaderTest.TestCase getRuleTestCase() throws DotDataException, DotSecurityException {
         final Rule rule = new RuleDataGen().nextPersisted();
         final Folder folder = APILocator.getFolderAPI()
                 .find(rule.getFolder(), APILocator.systemUser(), false);
         final String line = list(PusheableAsset.RULE.getType(),
                 String.valueOf(rule.getId()), "", rule.getName(), "", folder.getPath())
                 .stream().collect(Collectors.joining(","));
-        return new TestCase(rule, line);
+        return new CSVManifestReaderTest.TestCase(rule, line);
     }
 
-    private static TestCase getLanguegeTestCase() {
+    private static CSVManifestReaderTest.TestCase getLanguegeTestCase() {
         final Language language = new LanguageDataGen().nextPersisted();
 
         final String line = list(PusheableAsset.LANGUAGE.getType(),
                 String.valueOf(language.getId()), "", language.getLanguage(), "", "")
                 .stream().collect(Collectors.joining(","));
-        return new TestCase(language, line);
+        return new CSVManifestReaderTest.TestCase(language, line);
     }
 
-    private static TestCase getTemplateTestCase() {
+    private static CSVManifestReaderTest.TestCase getTemplateTestCase() {
         final Template template = new TemplateDataGen().nextPersisted();
 
         final String line = list(PusheableAsset.TEMPLATE.getType(), template.getIdentifier(),
                 template.getInode(), template.getTitle(), "", "")
                 .stream().collect(Collectors.joining(","));
-        return new TestCase(template, line);
+        return new CSVManifestReaderTest.TestCase(template, line);
     }
 
-    private static TestCase getContainerTestCase() {
+    private static CSVManifestReaderTest.TestCase getContainerTestCase() {
         final Container container = new ContainerDataGen().nextPersisted();
         final String line = list(PusheableAsset.CONTAINER.getType(), container.getIdentifier(),
                 container.getInode(), container.getTitle(), "", "")
                 .stream().collect(Collectors.joining(","));
-        return new TestCase(container, line);
+        return new CSVManifestReaderTest.TestCase(container, line);
     }
 
-    private static TestCase getFileContainerTestCase()
+    private static CSVManifestReaderTest.TestCase getFileContainerTestCase()
             throws DotDataException, DotSecurityException {
         final FileAssetContainer fileAssetContainer = new ContainerAsFileDataGen().nextPersisted();
 
         final String line = list(PusheableAsset.CONTAINER.getType(), fileAssetContainer.getIdentifier(),
                 fileAssetContainer.getInode(), fileAssetContainer.getTitle(), "", "")
                 .stream().collect(Collectors.joining(","));
-        return new TestCase(fileAssetContainer, line);
+        return new CSVManifestReaderTest.TestCase(fileAssetContainer, line);
     }
 
-    private static TestCase getFolderTestCase() {
+    private static CSVManifestReaderTest.TestCase getFolderTestCase() {
         final Folder parent = new FolderDataGen().nextPersisted();
         final Folder folder = new FolderDataGen().parent(parent).nextPersisted();
         final String line = list(PusheableAsset.FOLDER.getType(), folder.getIdentifier(), folder.getInode(),
                 folder.getTitle(), folder.getHost().getName(), parent.getPath())
                 .stream().collect(Collectors.joining(","));
-        return new TestCase(folder, line);
+        return new CSVManifestReaderTest.TestCase(folder, line);
     }
 
-    private static TestCase getCategoryTestCase() {
+    private static CSVManifestReaderTest.TestCase getCategoryTestCase() {
         final Category category = new CategoryDataGen().nextPersisted();
-        final String line = list(PusheableAsset.CATEGORY.getType(), category.getInode(), StringPool.BLANK,
-                 category.getTitle(), "", "")
+        final String line = list(PusheableAsset.CATEGORY.getType(), category.getIdentifier(),
+                category.getInode(), category.getTitle(), "", "")
                 .stream().collect(Collectors.joining(","));
-        return new TestCase(category, line);
+        return new CSVManifestReaderTest.TestCase(category, line);
     }
 
-    private static TestCase getHostTestCase() {
+    private static CSVManifestReaderTest.TestCase getHostTestCase() {
         final Host host = new SiteDataGen().nextPersisted();
         final String line = list(PusheableAsset.SITE.getType(), host.getIdentifier(),
                 host.getInode(), host.getTitle(), "System Host", "/")
                 .stream().collect(Collectors.joining(","));
-        return new TestCase(host, line);
+        return new CSVManifestReaderTest.TestCase(host, line);
     }
 
-    private static TestCase getWorkflowTestCase() throws DotDataException, DotSecurityException {
+    private static CSVManifestReaderTest.TestCase getWorkflowTestCase() throws DotDataException, DotSecurityException {
         final WorkflowScheme workflowScheme = new WorkflowDataGen().nextPersisted();
         final String line = list(PusheableAsset.WORKFLOW.getType(), workflowScheme.getId(),
                 "", workflowScheme.getName(), "", "")
                 .stream().collect(Collectors.joining(","));
-        return new TestCase(workflowScheme, line);
+        return new CSVManifestReaderTest.TestCase(workflowScheme, line);
     }
 
-    private static TestCase getLinkTestCase() throws DotDataException, DotSecurityException {
+    private static CSVManifestReaderTest.TestCase getLinkTestCase() throws DotDataException, DotSecurityException {
         final Link link = new LinkDataGen().nextPersisted();
         final Host host = APILocator.getHostAPI()
                 .find(link.getHostId(), APILocator.systemUser(), false);
         final String line = list(PusheableAsset.LINK.getType(), link.getIdentifier(),
                 link.getInode(), link.getTitle(), "", "")
                 .stream().collect(Collectors.joining(","));
-        return new TestCase(link, line);
+        return new CSVManifestReaderTest.TestCase(link, line);
     }
 
-    private static TestCase getFileTemplateTestCase()
+    private static CSVManifestReaderTest.TestCase getFileTemplateTestCase()
             throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final FileAssetTemplate template = new TemplateAsFileDataGen().designTemplate(true)
@@ -221,10 +224,10 @@ public class CSVManifestBuilderTest {
         final String line = list(PusheableAsset.TEMPLATE.getType(), template.getIdentifier(),
                 template.getInode(), template.getTitle(), "", template.getPath())
                 .stream().collect(Collectors.joining(","));
-        return new TestCase(template, line);
+        return new CSVManifestReaderTest.TestCase(template, line);
     }
 
-    private static TestCase getContentTypeTestCase() throws DotDataException, DotSecurityException {
+    private static CSVManifestReaderTest.TestCase getContentTypeTestCase() throws DotDataException, DotSecurityException {
         final User systemUser = APILocator.systemUser();
         final ContentType contentType = new ContentTypeDataGen().nextPersisted();
         final Host host = APILocator.getHostAPI().find(contentType.host(), systemUser, false);
@@ -233,92 +236,135 @@ public class CSVManifestBuilderTest {
         final String line = list(PusheableAsset.CONTENT_TYPE.getType(), contentType.id(),
                 "", contentType.name(), host.getName(), folder.getPath())
                 .stream().collect(Collectors.joining(","));
-        return new TestCase(contentType, line);
+        return new CSVManifestReaderTest.TestCase(contentType, line);
     }
 
-    /**
-     * Method to test: {@link CSVManifestBuilder#getManifestFile()}
-     * when: Create a ManifestBuilder but don't include or exclude anything
-     * should: Create the manifest file with just the headers
-     */
-    @Test(expected = IllegalStateException.class)
-    public void emptyManifestFile() throws IOException {
-        try(final CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
-           manifestBuilder.getManifestFile();
-        }
-    }
+
 
     /**
-     * Method to test: {@link CSVManifestBuilder#getManifestFile()}
-     * when: Create a ManifestBuilder and include a asset
-     * should: Create the manifest file with just the headers
+     * Method to test: {@link CSVManifestReader#getIncludedAssets()}
+     * when: Create a Manifest File and include a asset and excluded another on
+     * should: Return just the Included one
      */
     @Test
     @UseDataProvider("assets")
-    public void include(final TestCase testCase) throws IOException {
-        final String includeReason = "Include testing";
+    public void include(final CSVManifestReaderTest.TestCase testCase) throws IOException {
+        final String includeReason = ManifestReason.INCLUDE_BY_USER.getMessage();
 
         File manifestFile = null;
+
+        final Host systemHost = APILocator.systemHost();
 
         try(final CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
             manifestBuilder.include(testCase.asset, includeReason);
+            manifestBuilder.exclude(systemHost, ManifestReason.EXCLUDE_SYSTEM_OBJECT.getMessage());
             manifestFile = manifestBuilder.getManifestFile();
         }
 
-        final List<String> expected = list(headers);
-        expected.add("INCLUDED," + testCase.lineExpected + ",," + includeReason);
+        final ManifestReader manifestReader = new CSVManifestReader(manifestFile);
+        final Collection<ManifestInfo> includedAssets = manifestReader.getIncludedAssets();
+        assertEquals(1, includedAssets.size());
 
-        assertManifestLines(manifestFile, expected);
+        final ManifestInfo assetIncluded = includedAssets.iterator().next();
+        assertEquals(testCase.asset.getManifestInfo(), assetIncluded);
+
+        final Collection<ManifestInfo> assets = manifestReader.getAssets();
+        assertEquals(2, assets.size());
+
+        for (final ManifestInfo asset : assets) {
+            assertTrue(asset.equals(assetIncluded) || asset.equals(systemHost.getManifestInfo()));
+        }
     }
 
     /**
-     * Method to test: {@link CSVManifestBuilder#getManifestFile()}
-     * when: Create a ManifestBuilder and exclude a asset
-     * should: Create the manifest file with just the headers
+     * Method to test: {@link CSVManifestReader#getAssets(ManifestReason)}
+     * when: Create a Manifest File and include two asset with different reason
+     * should: Return just the asset with the reason requested
      */
     @Test
-    @UseDataProvider("assets")
-    public void exclude(final TestCase testCase) throws IOException {
-        final String exludeReason = "Exclude testing";
+    public void getAssets() throws IOException {
+        final String includeReason1 = ManifestReason.INCLUDE_BY_USER.getMessage();
+        final String includeReason2 = ManifestReason.INCLUDE_AUTOMATIC_BY_DOTCMS.getMessage();
 
         File manifestFile = null;
 
+        final ContentType contentType1 = new ContentTypeDataGen().nextPersisted();
+        final ContentType contentType2 = new ContentTypeDataGen().nextPersisted();
+
         try(final CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
-            manifestBuilder.exclude(testCase.asset, exludeReason);
+            manifestBuilder.include(contentType1, includeReason1);
+            manifestBuilder.include(contentType2, includeReason2);
             manifestFile = manifestBuilder.getManifestFile();
         }
 
-        final List<String> expected = list(headers);
-        expected.add("EXCLUDED," + testCase.lineExpected + "," + exludeReason + ",");
+        final ManifestReader manifestReader = new CSVManifestReader(manifestFile);
+        final Collection<ManifestInfo> includedAssets = manifestReader.getAssets(ManifestReason.INCLUDE_BY_USER);
+        assertEquals(1, includedAssets.size());
 
-        assertManifestLines(manifestFile, expected);
+        final ManifestInfo assetIncluded = includedAssets.iterator().next();
+        assertEquals(contentType1.getManifestInfo(), assetIncluded);
     }
 
-    private void assertManifestLines(final File manifestFile, final List<String> expected)
-            throws IOException {
-        final List<String> lines = getFileLines(manifestFile);
+    /**
+     * Method to test: {@link CSVManifestReader#getExcludedAssets()} ()}
+     * when: Create a Manifest File and include a asset and excluded another on
+     * should: Return just the Excluded one
+     */
+    @Test
+    @UseDataProvider("assets")
+    public void exclude(final CSVManifestReaderTest.TestCase testCase) throws IOException {
+        File manifestFile = null;
 
-        assertEquals("Manifest\n" + lines.stream()
-                .collect(Collectors.joining("\n")), expected.size(), lines.size());
+        final Language language = new LanguageDataGen().nextPersisted();
 
-        for (int index = 0; index < lines.size(); index++) {
-            final String line = lines.get(index);
-            final String lineExpected = expected.get(index);
+        try(final CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
+            manifestBuilder.exclude(testCase.asset, ManifestReason.EXCLUDE_BY_FILTER.getMessage());
+            manifestBuilder.include(language, ManifestReason.INCLUDE_AUTOMATIC_BY_DOTCMS.getMessage());
+            manifestFile = manifestBuilder.getManifestFile();
+        }
 
-            assertEquals(lineExpected, line);
+        final ManifestReader manifestReader = new CSVManifestReader(manifestFile);
+        final Collection<ManifestInfo> excludedAssets = manifestReader.getExcludedAssets();
+        assertEquals(1, excludedAssets.size());
+
+        final ManifestInfo assetExcluded = excludedAssets.iterator().next();
+        assertEquals(testCase.asset.getManifestInfo(), assetExcluded);
+
+        final Collection<ManifestInfo> assets = manifestReader.getAssets();
+        assertEquals(2, assets.size());
+
+        for (final ManifestInfo asset : assets) {
+            assertTrue(asset.equals(assetExcluded) || asset.equals(language.getManifestInfo()));
         }
     }
 
-    private List<String> getFileLines(final File manifestFile) throws IOException {
-        String line;
-        final List<String> lines = new ArrayList();
-        try (BufferedReader csvReader = new BufferedReader(new FileReader(manifestFile))) {
-            while ((line = csvReader.readLine()) != null) {
-                lines.add(line);
-            }
-        }
+    private String getManifestFileLine(final ManifestItem manifestItem) {
+        final ManifestInfo manifestInfo = manifestItem.getManifestInfo();
 
-        return lines;
+        return list(
+                manifestInfo.objectType(),
+                manifestInfo.id(),
+                manifestInfo.inode(),
+                manifestInfo.title(),
+                manifestInfo.site(),
+                manifestInfo.folder()).stream().collect(Collectors.joining(","));
+    }
+
+    /**
+     * Method to test: {@link CSVManifestReader#getAssets(ManifestReason)}
+     * when: Create a ManifestBuilder but don't include or exclude anything
+     * should: Create the manifest file with just the headers
+     */
+    @Test()
+    public void emptyManifestFile() throws IOException {
+        final File emptyManifestFile = FileUtil.createTemporaryFile("emptyManifestFile");
+        FileUtils.write(emptyManifestFile, headers, StandardCharsets.UTF_8);
+
+        final ManifestReader manifestReader = new CSVManifestReader(emptyManifestFile);
+
+        assertTrue(manifestReader.getIncludedAssets().isEmpty());
+        assertTrue(manifestReader.getExcludedAssets().isEmpty());
+        assertTrue(manifestReader.getAssets().isEmpty());
     }
 
     private static class TestCase {
@@ -332,79 +378,31 @@ public class CSVManifestBuilderTest {
     }
 
     /**
-     * Method to test: {@link CSVManifestBuilder#addMetadata(String, String)}
-     * When: Add two headers to a Manifest
-     * Should: create two comment line before the headers
-     *
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws IOException
+     * Method to test: {@link CSVManifestReader#getMetadata(String)}
+     * When: Create a manifest with to Metadata header
+     * Should: return the right value
      */
-    @Test
-    public void addHeader() throws DotDataException, DotSecurityException, IOException {
-        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
-        final String includeReason = "Include testing";
-        final TestCase testCase = getContentTypeTestCase();
-
+    @Test()
+    public void getMetadata(){
         File manifestFile = null;
 
+        final Language language = new LanguageDataGen().nextPersisted();
+
         try(final CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
-            manifestBuilder.addMetadata("header_1", "first test header");
-            manifestBuilder.addMetadata("header_2", "second test header");
-            manifestBuilder.include(testCase.asset, includeReason);
+            manifestBuilder.addMetadata("header_1", "First header");
+            manifestBuilder.addMetadata("header_2", "Second header");
+            manifestBuilder.include(language, ManifestReason.INCLUDE_AUTOMATIC_BY_DOTCMS.getMessage());
             manifestFile = manifestBuilder.getManifestFile();
         }
 
-        final String contentTypeLineExpected = "INCLUDED," + testCase.lineExpected + ",," + includeReason;
+        final ManifestReader manifestReader = new CSVManifestReader(manifestFile);
+        final Collection<ManifestInfo> includedAssets = manifestReader.getIncludedAssets();
+        assertEquals(1, includedAssets.size());
 
-        final List<String> lines = getFileLines(manifestFile);
+        final ManifestInfo assetExcluded = includedAssets.iterator().next();
+        assertEquals(language.getManifestInfo(), assetExcluded);
 
-        assertEquals(4, lines.size());
-
-        assertEquals("#header_1:first test header", lines.get(0));
-        assertEquals("#header_2:second test header", lines.get(1));
-        assertEquals(headers, lines.get(2));
-        assertEquals(contentTypeLineExpected, lines.get(3));
-
-    }
-
-    /**
-     * Method to test: {@link CSVManifestBuilder#addMetadata(String, String)}
-     * When: Add a header after include a asset in the manifest
-     * Should: throw a {@link IllegalStateException}
-     *
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws IOException
-     */
-    @Test(expected = IllegalStateException.class)
-    public void callAddHeaderAfterInclude(){
-        final String includeReason = "Include testing";
-        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
-
-        try(final CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
-            manifestBuilder.include(contentType, includeReason);
-            manifestBuilder.addMetadata("header_1", "first test header");
-        }
-    }
-
-    /**
-     * Method to test: {@link CSVManifestBuilder#addMetadata(String, String)}
-     * When: Add a header after exclude a asset in the manifest
-     * Should: throw a {@link IllegalStateException}
-     *
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws IOException
-     */
-    @Test(expected = IllegalStateException.class)
-    public void callAddHeaderAfterExclude(){
-        final String excludedReason = "exclude testing";
-        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
-
-        try(final CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
-            manifestBuilder.exclude(contentType, excludedReason);
-            manifestBuilder.addMetadata("header_1", "first test header");
-        }
+        assertEquals("First header", manifestReader.getMetadata("header_1"));
+        assertEquals("Second header", manifestReader.getMetadata("header_2"));
     }
 }
