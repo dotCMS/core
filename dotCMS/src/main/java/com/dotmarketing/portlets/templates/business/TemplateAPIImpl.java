@@ -466,23 +466,84 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		Try.run(()->FactoryLocator.getTemplateFactory().deleteTemplateByInode(inode)).onFailure(e -> new RuntimeException(e));
 	}
 
+	/*
+	 * if the identifier does not exists, will create a new one.
+	 * if does not have an inode, will create a new version
+	 * If the latest updated user is not the same of "user" argument, will create a new version
+	 */
+	@WrapInTransaction
+	public Template saveDraftTemplate(final Template template, final Host host, final User user,
+                                      final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+		if (UtilMethods.isSet(template.getInode()) && UtilMethods.isSet(template.getIdentifier())) {
+
+            final Identifier identifier = APILocator.getIdentifierAPI().find(template.getIdentifier());
+            if (identifier != null && UtilMethods.isSet(identifier.getId())) {
+
+                this.checkTemplate(template);
+
+                if (!permissionAPI.doesUserHavePermission(template, PERMISSION_EDIT, user, respectFrontendRoles)) {
+                    throw new DotSecurityException("You don't have permission to edit the template.");
+                }
+
+                if (template.isDrawed() && !UtilMethods.isSet(template.getDrawedBody())) {
+                    throw new DotStateException("Drawed template MUST have a drawed body:" + template);
+                }
+
+                if (UtilMethods.isSet(template.getTheme())) {
+
+                    this.setThemeName(template, user, respectFrontendRoles);
+                }
+
+                final Template workingTemplate =
+                        this.findWorkingTemplate(template.getIdentifier(), user, respectFrontendRoles);
+                // Only draft if there is a working version that is not live
+                // and always create a new version if the user is different
+                if (null != workingTemplate &&
+                        !workingTemplate.isLive() && workingTemplate.getModUser().equals(user.getUserId())) {
+
+                    template.setModDate(new Date());
+                    // if we are the latest and greatest and are a draft
+                    if (!workingTemplate.getInode().equals(template.getInode())) {
+
+                        template.setInode(workingTemplate.getInode());
+                    }
+
+                    this.templateFactory.save(template, template.getInode());
+                    templateFactory.deleteFromCache(workingTemplate);
+
+                    return template;
+                }
+            }
+        }
+
+        // if identifier do not exists, save new version
+        return this.saveTemplate(template, host, user, respectFrontendRoles);
+
+	}
+
+	public void setThemeName (final Template template, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+        final Theme theme = APILocator.getThemeAPI().findThemeById(template.getTheme(),user,respectFrontendRoles);
+        if(null != theme && InodeUtils.isSet(theme.getInode())) {
+
+            template.setThemeName(theme.getName());
+        } else {
+
+            Logger.error(this.getClass(),"Invalid Theme: " + template.getTheme());
+            throw new DotDataException("Invalid theme: " + template.getTheme());
+        }
+    }
+
 	@WrapInTransaction
 	public Template saveTemplate(final Template template, final Host host, final User user, final boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
 
 		boolean existingId=false;
 
-		if (template.isAnonymous() && LicenseManager.getInstance().isCommunity()) {
+		this.checkTemplate(template);
 
-			Logger.warn(this, String.format("License required to save layout: template -> %s", template));
-			throw new InvalidLicenseException();
-		}
-
-		if (!UtilMethods.isSet(template.getTitle())){
-			throw new DotDataException("Title is required on templates");
-		}
-
-	    if(UtilMethods.isSet(template.getIdentifier())) {
+		if(UtilMethods.isSet(template.getIdentifier())) {
 		    final Identifier ident=APILocator.getIdentifierAPI().find(template.getIdentifier());
 		    existingId = ident!=null && UtilMethods.isSet(ident.getId());
 		}
@@ -511,13 +572,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		}
 
 		if(UtilMethods.isSet(template.getTheme())) {
-			final Theme theme = APILocator.getThemeAPI().findThemeById(template.getTheme(),user,respectFrontendRoles);
-			if(null != theme && InodeUtils.isSet(theme.getInode())){
-				template.setThemeName(theme.getName());
-			}else{
-				Logger.error(this.getClass(),"Invalid Theme: " + template.getTheme());
-				throw new DotDataException("Invalid theme: " + template.getTheme());
-			}
+            this.setThemeName(template, user, respectFrontendRoles);
 		}
 
 		if (existingId) {
@@ -540,7 +595,20 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
         return template;
 	}
 
-    @CloseDBIfOpened
+	private void checkTemplate(final Template template) throws DotDataException {
+
+		if (template.isAnonymous() && LicenseManager.getInstance().isCommunity()) {
+
+			Logger.warn(this, String.format("License required to save layout: template -> %s", template));
+			throw new InvalidLicenseException();
+		}
+
+		if (!UtilMethods.isSet(template.getTitle())) {
+			throw new DotDataException("Title is required on templates");
+		}
+	}
+
+	@CloseDBIfOpened
     @Override
     public List<Container> getContainersInTemplate(final Template template, final User user, final boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
