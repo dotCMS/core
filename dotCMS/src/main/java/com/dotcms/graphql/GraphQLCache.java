@@ -5,7 +5,7 @@ import com.dotcms.enterprise.license.LicenseManager;
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
-import com.dotmarketing.business.cache.provider.timedcache.Expirable;
+import com.dotmarketing.business.cache.provider.timedcache.ExpirableCacheEntry;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import io.vavr.Lazy;
@@ -54,8 +54,10 @@ public class GraphQLCache implements Cachable {
         final String cacheKey = hashKey(key);
         final Object value = cache.getNoThrow(cacheKey, getPrimaryGroup());
 
-        return value instanceof Expirable
-                ? Optional.ofNullable((String) ((Expirable) value).getContent())
+        refreshKey(cacheKey, valueSupplier, ttl);
+
+        return value instanceof ExpirableCacheEntry
+                ? Optional.ofNullable((String) ((ExpirableCacheEntry) value).getContent())
                 : Optional.ofNullable((String)value);
     }
 
@@ -103,7 +105,7 @@ public class GraphQLCache implements Cachable {
         if(UtilMethods.isNotSet(result)) return;
 
         final String cacheKey = hashKey(key);
-        cache.put(cacheKey, new Expirable(result, ttl), getPrimaryGroup());
+        cache.put(cacheKey, new ExpirableCacheEntry(result, ttl), getPrimaryGroup());
     }
 
     /**
