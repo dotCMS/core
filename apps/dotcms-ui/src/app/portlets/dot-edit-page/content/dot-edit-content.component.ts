@@ -1,4 +1,4 @@
-import { Observable, Subject, fromEvent, merge, of } from 'rxjs';
+import { Observable, Subject, fromEvent, merge, of, forkJoin } from 'rxjs';
 
 import { filter, takeUntil, pluck, take, tap, skip, catchError } from 'rxjs/operators';
 import { ActivatedRoute } from '@angular/router';
@@ -35,9 +35,9 @@ import { IframeOverlayService } from '@components/_common/iframe/service/iframe-
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotContentTypeService } from '@services/dot-content-type';
 import { DotContainerStructure } from '@models/container/dot-container.model';
-import { DotContentPaletteComponent } from '@portlets/dot-edit-page/components/dot-content-palette/dot-content-palette.component';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { HttpErrorResponse } from '@angular/common/http';
+import { DotPropertiesService } from '@services/dot-properties/dot-properties.service';
 
 /**
  * Edit content page component, render the html of a page and bind all events to make it ediable.
@@ -89,7 +89,8 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         public dotLoadingIndicatorService: DotLoadingIndicatorService,
         public sanitizer: DomSanitizer,
         public iframeOverlayService: IframeOverlayService,
-        private httpErrorManagerService: DotHttpErrorManagerService
+        private httpErrorManagerService: DotHttpErrorManagerService,
+        private dotConfigurationService: DotPropertiesService
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
@@ -147,7 +148,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         this.subscribePageModelChange();
         this.subscribeOverlayService();
         this.subscribeDraggedContentType();
-        this.loadContentPallet();
     }
 
     ngOnDestroy(): void {
@@ -239,12 +239,19 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         this.dotEditContentHtmlService.removeContentletPlaceholder();
     }
 
-    private loadContentPallet(filter = ''): void {
-        this.dotContentTypeService
-            .getContentTypes(filter)
+    private loadContentPallet(pageState: DotPageRenderState): void {
+        const CONTENT_HIDDEN_KEY = 'CONTENT_PALETTE_HIDDEN_CONTENT_TYPES';
+        forkJoin([
+            this.dotContentTypeService.getContentTypes(),
+            this.dotConfigurationService.getKeyAsList(CONTENT_HIDDEN_KEY)
+        ])
             .pipe(take(1))
-            .subscribe((items) => {
-                this.contentPalletItems = items;
+            .subscribe((results) => {
+                this.contentPalletItems = this.getAllowedContentTypes(
+                    results[0],
+                    results[1],
+                    pageState
+                );
             });
     }
 
@@ -418,7 +425,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
     private renderPage(pageState: DotPageRenderState): void {
         if (this.shouldEditMode(pageState)) {
-            this.setAllowedContentTypes(pageState);
+            this.loadContentPallet(pageState);
             this.dotEditContentHtmlService.initEditMode(pageState, this.iframe);
             this.isEditMode = true;
         } else {
@@ -502,19 +509,25 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
             });
     }
 
-    private setAllowedContentTypes(pageState: DotPageRenderState): void {
+    private getAllowedContentTypes(
+        contentTypeList: DotCMSContentType[],
+        blackList: string[],
+        pageState: DotPageRenderState
+    ): DotCMSContentType[] {
         let allowedContent = new Set();
         Object.values(pageState.containers).forEach((container) => {
             Object.values(container.containerStructures).forEach(
                 (containerStructure: DotContainerStructure) => {
-                    allowedContent.add(containerStructure.contentTypeVar);
+                    allowedContent.add(containerStructure.contentTypeVar.toLocaleLowerCase());
                 }
             );
         });
+        blackList.forEach((content) => allowedContent.delete(content.toLocaleLowerCase()));
 
-        this.contentPalletItems = this.contentPalletItems.filter(
+        return contentTypeList.filter(
             (contentType) =>
-                allowedContent.has(contentType.variable) || contentType.baseType === 'WIDGET'
+                allowedContent.has(contentType.variable.toLocaleLowerCase()) ||
+                contentType.baseType === 'WIDGET'
         );
     }
 }
