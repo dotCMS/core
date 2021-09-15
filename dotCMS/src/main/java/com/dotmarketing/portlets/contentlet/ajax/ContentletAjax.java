@@ -1109,14 +1109,15 @@ public class ContentletAjax {
 							UtilMethods.isSet(fieldValue) && field.getFieldType().equals(FieldType.TIME.toString()) ||
 							UtilMethods.isSet(fieldValue) && field.getFieldType().equals(FieldType.DATE_TIME.toString())) {
 						try {
-							Date date = DateUtil.convertDate(fieldValue, new String[]{"yyyy-MM-dd HH:mm:ss", "E MMM dd HH:mm:ss z yyyy"});
+						    
+							Date date = con.getDateProperty(fieldContentlet);
 							if (field.getFieldType().equals(FieldType.DATE.toString()))
 								fieldValue = UtilMethods.dateToHTMLDate(date);
 							if (field.getFieldType().equals(FieldType.TIME.toString()))
 								fieldValue = UtilMethods.dateToHTMLTime(date);
 							if (field.getFieldType().equals(FieldType.DATE_TIME.toString()))
 								fieldValue = UtilMethods.dateToHTMLDate(date) + " " + UtilMethods.dateToHTMLTime(date);
-						} catch (java.text.ParseException e) {
+						} catch (Exception e) {
 							Logger.error(ContentletAjax.class, e.getMessage(), e);
 							throw new DotRuntimeException(e.getMessage(), e);
 						}

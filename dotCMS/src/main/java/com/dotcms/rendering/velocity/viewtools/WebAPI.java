@@ -168,14 +168,14 @@ public class WebAPI implements ViewTool {
 	}
 
 	public String dateToHTMLDateTimeRange(Date from, Date to) {
-		return UtilMethods.dateToHTMLDateTimeRange(from, to, GregorianCalendar.getInstance().getTimeZone());
+		return UtilMethods.dateToHTMLDateTimeRange(from, to, APILocator.systemTimeZone());
 	}
 
 	public String dateToHTMLTimeRange(Date from, Date to) {
 
-		String ret = UtilMethods.dateToHTMLTime(from, GregorianCalendar.getInstance().getTimeZone());
+		String ret = UtilMethods.dateToHTMLTime(from, APILocator.systemTimeZone());
 		if (from.compareTo(to) != 0) {
-			ret += " - " + UtilMethods.dateToHTMLTime(to, GregorianCalendar.getInstance().getTimeZone());
+			ret += " - " + UtilMethods.dateToHTMLTime(to, APILocator.systemTimeZone());
 		}
 		return ret;
 	}

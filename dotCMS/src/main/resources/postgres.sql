@@ -3,8 +3,8 @@ create table Address (
 	companyId varchar(100) not null,
 	userId varchar(100) not null,
 	userName varchar(100) null,
-	createDate timestamp null,
-	modifiedDate timestamp null,
+	createDate timestamptz null,
+	modifiedDate timestamptz null,
 	className varchar(100) null,
 	classPK varchar(100) null,
 	description varchar(100) null,
@@ -63,7 +63,7 @@ create table Image (
 create table PasswordTracker (
 	passwordTrackerId varchar(100) not null primary key,
 	userId varchar(100) not null,
-	createDate timestamp not null,
+	createDate timestamptz not null,
 	password_ varchar(100) not null
 );
 
@@ -89,19 +89,19 @@ create table PollsQuestion (
 	companyId varchar(100) not null,
 	userId varchar(100) not null,
 	userName varchar(100) null,
-	createDate timestamp null,
-	modifiedDate timestamp null,
+	createDate timestamptz null,
+	modifiedDate timestamptz null,
 	title varchar(100) null,
 	description text null,
-	expirationDate timestamp null,
-	lastVoteDate timestamp null
+	expirationDate timestamptz null,
+	lastVoteDate timestamptz null
 );
 
 create table PollsVote (
 	questionId varchar(100) not null,
 	userId varchar(100) not null,
 	choiceId varchar(100) not null,
-	voteDate timestamp null,
+	voteDate timestamptz null,
 	primary key (questionId, userId)
 );
 
@@ -126,27 +126,27 @@ create table PortletPreferences (
 
 create table Release_ (
 	releaseId varchar(100) not null primary key,
-	createDate timestamp null,
-	modifiedDate timestamp null,
+	createDate timestamptz null,
+	modifiedDate timestamptz null,
 	buildNumber integer null,
-	buildDate timestamp null
+	buildDate timestamptz null
 );
 
 create table User_ (
 	userId varchar(100) not null primary key,
 	companyId varchar(100) not null,
-	createDate timestamp null,
-	mod_date timestamp null,
+	createDate timestamptz null,
+	mod_date timestamptz null,
 	password_ text null,
 	passwordEncrypted bool,
-	passwordExpirationDate timestamp null,
+	passwordExpirationDate timestamptz null,
 	passwordReset bool,
 	firstName varchar(100) null,
 	middleName varchar(100) null,
 	lastName varchar(100) null,
 	nickName varchar(100) null,
 	male bool,
-	birthday timestamp null,
+	birthday timestamptz null,
 	emailAddress varchar(100) null,
 	smsId varchar(100) null,
 	aimId varchar(100) null,
@@ -168,15 +168,15 @@ create table User_ (
 	refreshRate varchar(100) null,
 	layoutIds varchar(100) null,
 	comments text null,
-	loginDate timestamp null,
+	loginDate timestamptz null,
 	loginIP varchar(100) null,
-	lastLoginDate timestamp null,
+	lastLoginDate timestamptz null,
 	lastLoginIP varchar(100) null,
 	failedLoginAttempts integer,
 	agreedToTermsOfUse bool,
 	active_ bool,
     delete_in_progress BOOLEAN DEFAULT FALSE,
-    delete_date TIMESTAMP,
+    delete_date timestamptz,
     additional_info JSONB NULL
 );
 
@@ -184,7 +184,7 @@ create table UserTracker (
 	userTrackerId varchar(100) not null primary key,
 	companyId varchar(100) not null,
 	userId varchar(100) not null,
-	modifiedDate timestamp null,
+	modifiedDate timestamptz null,
 	remoteAddr varchar(100) null,
 	remoteHost varchar(100) null,
 	userAgent varchar(100) null
@@ -194,7 +194,7 @@ create table UserTrackerPath (
 	userTrackerPathId varchar(100) not null primary key,
 	userTrackerId varchar(100) not null,
 	path text not null,
-	pathDate timestamp not null
+	pathDate timestamptz not null
 );
 
 --
@@ -515,7 +515,7 @@ INSERT INTO QRTZ_EXCL_locks values('MISFIRE_ACCESS');
 create table calendar_reminder (
    user_id varchar(255) not null,
    event_id varchar(36) not null,
-   send_date timestamp not null,
+   send_date timestamptz not null,
    primary key (user_id, event_id, send_date)
 );
 create table analytic_summary_pages (
@@ -532,13 +532,13 @@ create table tag (
    host_id varchar(255),
    user_id varchar(255),
    persona boolean default false,
-   mod_date timestamp,
+   mod_date timestamptz,
    primary key (tag_id)
 );
 create table user_comments (
    inode varchar(36) not null,
    user_id varchar(255),
-   cdate timestamp,
+   cdate timestamptz,
    comment_user_id varchar(100),
    type varchar(255),
    method varchar(255),
@@ -562,8 +562,8 @@ create table contentlet_version_info (
    live_inode varchar(36),
    deleted bool not null,
    locked_by varchar(100),
-   locked_on timestamp,
-   version_ts timestamp not null,
+   locked_on timestamptz,
+   version_ts timestamptz not null,
    primary key (identifier, lang)
 );
 create table fixes_audit (
@@ -571,7 +571,7 @@ create table fixes_audit (
    table_name varchar(255),
    action varchar(255),
    records_altered int4,
-   datetime timestamp,
+   datetime timestamptz,
    primary key (id)
 );
 create table container_version_info (
@@ -580,8 +580,8 @@ create table container_version_info (
    live_inode varchar(36),
    deleted bool not null,
    locked_by varchar(100),
-   locked_on timestamp,
-   version_ts timestamp not null,
+   locked_on timestamptz,
+   version_ts timestamptz not null,
    primary key (identifier)
 );
 create table trackback (
@@ -591,7 +591,7 @@ create table trackback (
    excerpt varchar(255),
    url varchar(255),
    blog_name varchar(255),
-   track_date timestamp not null,
+   track_date timestamptz not null,
    primary key (id)
 );
 create table plugin (
@@ -599,8 +599,8 @@ create table plugin (
    plugin_name varchar(255) not null,
    plugin_version varchar(255) not null,
    author varchar(255) not null,
-   first_deployed_date timestamp not null,
-   last_deployed_date timestamp not null,
+   first_deployed_date timestamptz not null,
+   last_deployed_date timestamptz not null,
    primary key (id)
 );
 create table mailing_list (
@@ -615,8 +615,8 @@ create table recipient (
    name varchar(255),
    lastname varchar(255),
    email varchar(255),
-   sent timestamp,
-   opened timestamp,
+   sent timestamptz,
+   opened timestamptz,
    last_result int4,
    last_message varchar(255),
    user_id varchar(100),
@@ -625,7 +625,7 @@ create table recipient (
 create table web_form (
    web_form_id varchar(36) not null,
    form_type varchar(255),
-   submit_date timestamp,
+   submit_date timestamptz,
    prefix varchar(255),
    first_name varchar(255),
    middle_initial varchar(255),
@@ -650,7 +650,7 @@ create table web_form (
 );
 create table analytic_summary_period (
    id int8 not null,
-   full_date timestamp,
+   full_date timestamptz,
    day int4,
    week int4,
    month int4,
@@ -679,7 +679,7 @@ create table analytic_summary (
    referring_sites int8,
    search_engines int8,
    bounce_rate int4,
-   avg_time_on_site timestamp,
+   avg_time_on_site timestamptz,
    primary key (id),
    unique (summary_period_id, host_id)
 );
@@ -693,7 +693,7 @@ create table template (
    inode varchar(36) not null,
    show_on_menu bool,
    title varchar(255),
-   mod_date timestamp,
+   mod_date timestamptz,
    mod_user varchar(100),
    sort_order int4,
    friendly_name varchar(255),
@@ -736,7 +736,7 @@ create table structure (
    folder varchar(36) not null,
    expire_date_var varchar(255),
    publish_date_var varchar(255),
-   mod_date timestamp,
+   mod_date timestamptz,
    sort_order int4,
    icon varchar(255),
    primary key (inode)
@@ -775,7 +775,7 @@ create table permission (
 	create table contentlet (inode varchar(36) not null,
 	show_on_menu bool,
 	title varchar(255),
-	mod_date timestamp,
+	mod_date timestamptz,
 	mod_user varchar(100),
 	sort_order int4,
 	friendly_name varchar(255),
@@ -783,31 +783,31 @@ create table permission (
 	disabled_wysiwyg varchar(255),
 	identifier varchar(36),
 	language_id int8,
-	date1 timestamp,
-	date2 timestamp,
-	date3 timestamp,
-	date4 timestamp,
-	date5 timestamp,
-	date6 timestamp,
-	date7 timestamp,
-	date8 timestamp,
-	date9 timestamp,
-	date10 timestamp,
-	date11 timestamp,
-	date12 timestamp,
-	date13 timestamp,
-	date14 timestamp,
-	date15 timestamp,
-	date16 timestamp,
-	date17 timestamp,
-	date18 timestamp,
-	date19 timestamp,
-	date20 timestamp,
-	date21 timestamp,
-	date22 timestamp,
-	date23 timestamp,
-	date24 timestamp,
-	date25 timestamp,
+	date1 timestamptz,
+	date2 timestamptz,
+	date3 timestamptz,
+	date4 timestamptz,
+	date5 timestamptz,
+	date6 timestamptz,
+	date7 timestamptz,
+	date8 timestamptz,
+	date9 timestamptz,
+	date10 timestamptz,
+	date11 timestamptz,
+	date12 timestamptz,
+	date13 timestamptz,
+	date14 timestamptz,
+	date15 timestamptz,
+	date16 timestamptz,
+	date17 timestamptz,
+	date18 timestamptz,
+	date19 timestamptz,
+	date20 timestamptz,
+	date21 timestamptz,
+	date22 timestamptz,
+	date23 timestamptz,
+	date24 timestamptz,
+	date25 timestamptz,
 	text1 varchar(255),
 	text2 varchar(255),
 	text3 varchar(255),
@@ -960,7 +960,7 @@ create table report_asset (
 );
 create table workflow_comment (
    id varchar(36) not null,
-   creation_date timestamp,
+   creation_date timestamptz,
    posted_by varchar(255),
    wf_comment text,
    workflowtask_id varchar(36),
@@ -974,14 +974,14 @@ create table category (
    active bool,
    keywords text,
    category_velocity_var_name varchar(255),
-   mod_date timestamp,
+   mod_date timestamptz,
    primary key (inode)
 );
 create table chain_link_code (
    id int8 not null,
    class_name varchar(255) unique,
    code text not null,
-   last_mod_date timestamp not null,
+   last_mod_date timestamptz not null,
    language varchar(255) not null,
    primary key (id)
 );
@@ -989,7 +989,7 @@ create table analytic_summary_visits (
    id int8 not null,
    summary_period_id int8 not null,
    host_id varchar(36),
-   visit_time timestamp,
+   visit_time timestamptz,
    visits int8,
    primary key (id)
 );
@@ -999,8 +999,8 @@ create table template_version_info (
    live_inode varchar(36),
    deleted bool not null,
    locked_by varchar(100),
-   locked_on timestamp,
-   version_ts timestamp not null,
+   locked_on timestamptz,
+   version_ts timestamptz not null,
    primary key (identifier)
 );
 create table user_preferences (
@@ -1029,10 +1029,10 @@ create table identifier (
    asset_name varchar(255),
    host_inode varchar(36),
    asset_type varchar(64),
-   syspublish_date timestamp,
-   sysexpire_date timestamp,
+   syspublish_date timestamptz,
+   sysexpire_date timestamptz,
    owner varchar(255),
-   create_date timestamp,
+   create_date timestamptz,
    asset_subtype varchar(255),
    primary key (id),
    unique (parent_path, asset_name, host_inode)
@@ -1041,8 +1041,8 @@ create table clickstream (
    clickstream_id int8 not null,
    cookie_id varchar(255),
    user_id varchar(255),
-   start_date timestamp,
-   end_date timestamp,
+   start_date timestamptz,
+   end_date timestamptz,
    referer varchar(255),
    remote_address varchar(255),
    remote_hostname varchar(255),
@@ -1069,9 +1069,9 @@ create table multi_tree (
 );
 create table workflow_task (
    id varchar(36) not null,
-   creation_date timestamp,
-   mod_date timestamp,
-   due_date timestamp,
+   creation_date timestamptz,
+   mod_date timestamptz,
+   due_date timestamptz,
    created_by varchar(255),
    assigned_to varchar(255),
    belongs_to varchar(255),
@@ -1115,7 +1115,7 @@ create table tag_inode (
    tag_id varchar(100) not null,
    inode varchar(100) not null,
    field_var_name varchar(255),
-   mod_date timestamp,
+   mod_date timestamptz,
    primary key (tag_id, inode)
 );
 create table click (
@@ -1145,7 +1145,7 @@ create table clickstream_request (
    request_order int4,
    query_string text,
    language_id int8,
-   timestampper timestamp,
+   timestamptzper timestamptz,
    host_id varchar(36),
    associated_identifier varchar(36),
    primary key (clickstream_request_id)
@@ -1156,7 +1156,7 @@ create table content_rating (
    user_id varchar(255),
    session_id varchar(255),
    identifier varchar(36),
-   rating_date timestamp,
+   rating_date timestamptz,
    user_ip varchar(255),
    long_live_cookie_id varchar(255),
    primary key (id)
@@ -1174,7 +1174,7 @@ create table analytic_summary_workstream (
    asset_type varchar(255),
    mod_user_id varchar(255),
    host_id varchar(36),
-   mod_date timestamp,
+   mod_date timestamptz,
    action varchar(255),
    name varchar(255),
    primary key (id)
@@ -1184,7 +1184,7 @@ create table dashboard_user_preferences (
    summary_404_id int8,
    user_id varchar(255),
    ignored bool,
-   mod_date timestamp,
+   mod_date timestamptz,
    primary key (id)
 );
 create table campaign (
@@ -1195,8 +1195,8 @@ create table campaign (
    subject varchar(255),
    message text,
    user_id varchar(255),
-   start_date timestamp,
-   completed_date timestamp,
+   start_date timestamptz,
+   completed_date timestamptz,
    active bool,
    locked bool,
    sends_per_hour varchar(15),
@@ -1206,7 +1206,7 @@ create table campaign (
    sendto varchar(15),
    isrecurrent bool,
    wassent bool,
-   expiration_date timestamp,
+   expiration_date timestamptz,
    parent_campaign varchar(36),
    primary key (inode)
 );
@@ -1230,7 +1230,7 @@ create table dot_containers (
    post_loop text,
    show_on_menu bool,
    title varchar(255),
-   mod_date timestamp,
+   mod_date timestamptz,
    mod_user varchar(100),
    sort_order int4,
    friendly_name varchar(255),
@@ -1253,14 +1253,14 @@ create table communication (
    email_subject varchar(255),
    html_page_inode varchar(36),
    text_message text,
-   mod_date timestamp,
+   mod_date timestamptz,
    modified_by varchar(255),
    ext_comm_id varchar(255),
    primary key (inode)
 );
 create table workflow_history (
    id varchar(36) not null,
-   creation_date timestamp,
+   creation_date timestamptz,
    made_by varchar(255),
    change_desc text,
    workflowtask_id varchar(36),
@@ -1275,14 +1275,14 @@ create table host_variable (
    variable_key varchar(255),
    variable_value varchar(255),
    user_id varchar(255),
-   last_mod_date timestamp,
+   last_mod_date timestamptz,
    primary key (id)
 );
 create table links (
    inode varchar(36) not null,
    show_on_menu bool,
    title varchar(255),
-   mod_date timestamp,
+   mod_date timestamptz,
    mod_user varchar(100),
    sort_order int4,
    friendly_name varchar(255),
@@ -1322,7 +1322,7 @@ create table field (
    read_only bool,
    searchable bool,
    unique_ bool,
-   mod_date timestamp,
+   mod_date timestamptz,
    primary key (inode)
 );
 create table relationship (
@@ -1336,7 +1336,7 @@ create table relationship (
    parent_required bool,
    child_required bool,
    fixed bool,
-   mod_date timestamp,
+   mod_date timestamptz,
    primary key (inode),
    unique (relation_type_value)
 );
@@ -1349,7 +1349,7 @@ create table folder (
    files_masks varchar(255),
    identifier varchar(36),
    default_file_type varchar(36),
-   mod_date timestamp,
+   mod_date timestamptz,
    primary key (inode)
 );
 create table clickstream_404 (
@@ -1359,7 +1359,7 @@ create table clickstream_404 (
    request_uri varchar(255),
    user_id varchar(255),
    host_id varchar(36),
-   timestampper timestamp,
+   timestamptzper timestamptz,
    primary key (clickstream_404_id)
 );
 create table cms_layout (
@@ -1376,7 +1376,7 @@ create table field_variable (
    variable_key varchar(255),
    variable_value text,
    user_id varchar(255),
-   last_mod_date timestamp,
+   last_mod_date timestamptz,
    primary key (id)
 );
 create table report_parameter (
@@ -1403,8 +1403,8 @@ create table link_version_info (
    live_inode varchar(36),
    deleted bool not null,
    locked_by varchar(100),
-   locked_on timestamp,
-   version_ts timestamp not null,
+   locked_on timestamptz,
+   version_ts timestamptz not null,
    primary key (identifier)
 );
 create table template_containers (
@@ -1421,21 +1421,21 @@ create table user_filter (
    lastname varchar(100),
    emailaddress varchar(100),
    birthdaytypesearch varchar(100),
-   birthday timestamp,
-   birthdayfrom timestamp,
-   birthdayto timestamp,
+   birthday timestamptz,
+   birthdayfrom timestamptz,
+   birthdayto timestamptz,
    lastlogintypesearch varchar(100),
    lastloginsince varchar(100),
-   loginfrom timestamp,
-   loginto timestamp,
+   loginfrom timestamptz,
+   loginto timestamptz,
    createdtypesearch varchar(100),
    createdsince varchar(100),
-   createdfrom timestamp,
-   createdto timestamp,
+   createdfrom timestamptz,
+   createdto timestamptz,
    lastvisittypesearch varchar(100),
    lastvisitsince varchar(100),
-   lastvisitfrom timestamp,
-   lastvisitto timestamp,
+   lastvisitfrom timestamptz,
+   lastvisitto timestamptz,
    city varchar(100),
    state varchar(100),
    country varchar(100),
@@ -1476,7 +1476,7 @@ create table user_filter (
 create table inode (
    inode varchar(36) not null,
    owner varchar(255),
-   idate timestamp,
+   idate timestamptz,
    type varchar(64),
    primary key (inode)
 );
@@ -1539,7 +1539,7 @@ create index idx_click_1 on click (link);
 alter table click add constraint fk5a5c5885fb51eb foreign key (inode) references inode;
 create index idx_user_clickstream_request_2 on clickstream_request (request_uri);
 create index idx_user_clickstream_request_1 on clickstream_request (clickstream_id);
-create index idx_user_clickstream_request_4 on clickstream_request (timestampper);
+create index idx_user_clickstream_request_4 on clickstream_request (timestamptzper);
 create index idx_user_clickstream_request_3 on clickstream_request (associated_identifier);
 create index idx_dashboard_workstream_2 on analytic_summary_workstream (host_id);
 create index idx_dashboard_workstream_1 on analytic_summary_workstream (mod_user_id);
@@ -1645,7 +1645,7 @@ CREATE TABLE dist_journal
   object_to_index character varying(1024) NOT NULL,
   serverid character varying(64),
   journal_type integer NOT NULL,
-  time_entered timestamp without time zone NOT NULL,
+  time_entered timestamptz NOT NULL,
   CONSTRAINT dist_journal_pkey PRIMARY KEY (id),
   CONSTRAINT dist_journal_object_to_index_key UNIQUE (object_to_index, serverid, journal_type)
 );
@@ -1659,7 +1659,7 @@ create table plugin_property (
 );
 alter table plugin_property add constraint fk_plugin_plugin_property foreign key (plugin_id) references plugin(id);
 
-CREATE TABLE dist_process ( id bigserial NOT NULL, object_to_index character varying(1024) NOT NULL, serverid character varying(64), journal_type integer NOT NULL, time_entered timestamp without time zone NOT NULL, CONSTRAINT dist_process_pkey PRIMARY KEY (id));
+CREATE TABLE dist_process ( id bigserial NOT NULL, object_to_index character varying(1024) NOT NULL, serverid character varying(64), journal_type integer NOT NULL, time_entered timestamptz NOT NULL, CONSTRAINT dist_process_pkey PRIMARY KEY (id));
 CREATE INDEX dist_process_index on dist_process (object_to_index, serverid,journal_type);
 
 CREATE TABLE dist_reindex_journal
@@ -1669,7 +1669,7 @@ CREATE TABLE dist_reindex_journal
   ident_to_index character varying(100) NOT NULL,
   serverid character varying(64),
   priority integer NOT NULL,
-  time_entered timestamp without time zone NOT NULL DEFAULT CURRENT_DATE,
+  time_entered timestamptz NOT NULL DEFAULT CURRENT_DATE,
   index_val varchar(325),
   dist_action integer NOT NULL DEFAULT 1,
   CONSTRAINT dist_reindex_journal_pkey PRIMARY KEY (id)
@@ -1684,7 +1684,7 @@ CREATE INDEX dist_reindex_index5 ON dist_reindex_journal (priority, time_entered
 CREATE INDEX dist_reindex_index6 ON dist_reindex_journal (priority);
 CREATE INDEX idx_identifier ON identifier USING btree (id);
 
-CREATE TABLE quartz_log (id bigserial NOT NULL, JOB_NAME character varying(255) NOT NULL, serverid character varying(64), time_started timestamp without time zone NOT NULL, CONSTRAINT quartz_log_pkey PRIMARY KEY (id));
+CREATE TABLE quartz_log (id bigserial NOT NULL, JOB_NAME character varying(255) NOT NULL, serverid character varying(64), time_started timestamptz NOT NULL, CONSTRAINT quartz_log_pkey PRIMARY KEY (id));
 
 alter table cms_role add CONSTRAINT cms_role_name_role_key UNIQUE (role_key);
 alter table cms_role add CONSTRAINT cms_role_name_db_fqn UNIQUE (db_fqn);
@@ -1789,7 +1789,7 @@ CREATE TRIGGER required_identifier_host_inode_trigger BEFORE INSERT OR UPDATE
 
 create table import_audit (
 	id bigint not null,
-	start_date timestamp,
+	start_date timestamptz,
 	userid varchar(255),
 	filename varchar(512),
 	status int,
@@ -2113,7 +2113,7 @@ create table workflow_scheme(
 	mandatory boolean default false,
 	default_scheme boolean default false,
 	entry_action_id varchar(36),
-	mod_date timestamp
+	mod_date timestamptz
 );
 
 create table workflow_step(
@@ -2242,8 +2242,8 @@ CREATE TABLE publishing_queue (
     operation INT8,
     asset VARCHAR(2000) NOT NULL,
     language_id INT8 NOT NULL,
-    entered_date TIMESTAMP,
-    publish_date TIMESTAMP,
+    entered_date timestamptz,
+    publish_date timestamptz,
     type VARCHAR(256),
     bundle_id VARCHAR(256)
 );
@@ -2252,8 +2252,8 @@ CREATE TABLE publishing_queue_audit
 (bundle_id VARCHAR(256) PRIMARY KEY NOT NULL,
 status INTEGER,
 status_pojo text,
-status_updated TIMESTAMP,
-create_date TIMESTAMP);
+status_updated timestamptz,
+create_date timestamptz);
 
 -- ****** Content Publishing Framework - End Point Management *******
 CREATE TABLE publishing_end_point (
@@ -2276,10 +2276,10 @@ create table publishing_environment(
 create table sitesearch_audit (
     job_id varchar(36),
     job_name varchar(255) not null,
-    fire_date timestamp not null,
+    fire_date timestamptz not null,
     incremental bool not null,
-    start_date timestamp,
-    end_date timestamp,
+    start_date timestamptz,
+    end_date timestamptz,
     host_list varchar(500) not null,
     all_hosts bool not null,
     lang_list varchar(500) not null,
@@ -2295,8 +2295,8 @@ create table sitesearch_audit (
 create table publishing_bundle(
   id varchar(36) NOT NULL  primary key,
   name varchar(255) NOT NULL,
-  publish_date TIMESTAMP,
-  expire_date TIMESTAMP,
+  publish_date timestamptz,
+  expire_date timestamptz,
   owner varchar(100),
   force_push bool,
   filter_key varchar(100)
@@ -2317,7 +2317,7 @@ create table publishing_pushed_assets(
 	bundle_id varchar(36) NOT NULL,
 	asset_id varchar(36) NOT NULL,
 	asset_type varchar(255) NOT NULL,
-	push_date TIMESTAMP,
+	push_date timestamptz,
 	environment_id varchar(36) NOT NULL,
 	endpoint_ids text,
 	publisher text
@@ -2334,7 +2334,7 @@ CREATE INDEX idx_pub_qa_1 ON publishing_queue_audit (status);
 CREATE TABLE dot_cluster(cluster_id varchar(36), cluster_salt VARCHAR(256), PRIMARY KEY (cluster_id) );
 CREATE TABLE cluster_server(server_id varchar(36), cluster_id varchar(36) NOT NULL, name varchar(100), ip_address varchar(39) NOT NULL, host varchar(255), cache_port SMALLINT, es_transport_tcp_port SMALLINT, es_network_port SMALLINT, es_http_port SMALLINT, key_ varchar(100), PRIMARY KEY (server_id));
 ALTER TABLE cluster_server add constraint fk_cluster_id foreign key (cluster_id) REFERENCES dot_cluster(cluster_id);
-CREATE TABLE cluster_server_uptime(id varchar(36), server_id varchar(36) references cluster_server(server_id), startup timestamp without time zone null, heartbeat timestamp without time zone null, PRIMARY KEY (id));
+CREATE TABLE cluster_server_uptime(id varchar(36), server_id varchar(36) references cluster_server(server_id), startup timestamptz null, heartbeat timestamptz null, PRIMARY KEY (id));
 ALTER TABLE cluster_server_uptime add constraint fk_cluster_server_id foreign key (server_id) REFERENCES cluster_server(server_id);
 
 -- so the foreign keys needs an explicit index (!!) --
@@ -2362,7 +2362,7 @@ CREATE TABLE notification (
     message TEXT NOT NULL,
     notification_type VARCHAR(100),
     notification_level VARCHAR(100),
-    time_sent TIMESTAMP NOT NULL,
+    time_sent timestamptz NOT NULL,
     was_read BOOL
 );
 ALTER TABLE notification ADD CONSTRAINT PK_notification PRIMARY KEY (group_id, user_id);
@@ -2382,7 +2382,7 @@ alter table container_structures add constraint FK_cs_inode foreign key (contain
 
 
 -- license repo
-create table sitelic(id varchar(36) primary key, serverid varchar(100), license text not null, lastping timestamp not null, startup_time bigint);
+create table sitelic(id varchar(36) primary key, serverid varchar(100), license text not null, lastping timestamptz not null, startup_time bigint);
 
 -- Integrity Checker
 create table folders_ir(folder varchar(255), local_inode varchar(36), remote_inode varchar(36), local_identifier varchar(36), remote_identifier varchar(36), endpoint_id varchar(40), PRIMARY KEY (local_inode, endpoint_id));
@@ -2402,17 +2402,17 @@ create table cluster_server_action(
 	response varchar(2048), 
 	action_id varchar(1024) not null,
 	completed bool, 
-	entered_date timestamp not null,
+	entered_date timestamptz not null,
 	time_out_seconds bigint not null,
 	PRIMARY KEY (server_action_id)
 );
 
 -- Rules Engine
-create table dot_rule(id varchar(36) primary key,name varchar(255) not null,fire_on varchar(20),short_circuit boolean default false,parent_id varchar(36) not null,folder varchar(36) not null,priority int default 0,enabled boolean default false,mod_date timestamp);
-create table rule_condition_group(id varchar(36) primary key,rule_id varchar(36) references dot_rule(id),operator varchar(10) not null,priority int default 0,mod_date timestamp);
-create table rule_condition(id varchar(36) primary key,conditionlet text not null,condition_group varchar(36) references rule_condition_group(id),comparison varchar(36) not null,operator varchar(10) not null,priority int default 0,mod_date timestamp);
+create table dot_rule(id varchar(36) primary key,name varchar(255) not null,fire_on varchar(20),short_circuit boolean default false,parent_id varchar(36) not null,folder varchar(36) not null,priority int default 0,enabled boolean default false,mod_date timestamptz);
+create table rule_condition_group(id varchar(36) primary key,rule_id varchar(36) references dot_rule(id),operator varchar(10) not null,priority int default 0,mod_date timestamptz);
+create table rule_condition(id varchar(36) primary key,conditionlet text not null,condition_group varchar(36) references rule_condition_group(id),comparison varchar(36) not null,operator varchar(10) not null,priority int default 0,mod_date timestamptz);
 create table rule_condition_value (id varchar(36) primary key,condition_id varchar(36) references rule_condition(id), paramkey varchar(255) not null, value text,priority int default 0);
-create table rule_action (id varchar(36) primary key,rule_id varchar(36) references dot_rule(id),priority int default 0,actionlet text not null,mod_date timestamp);
+create table rule_action (id varchar(36) primary key,rule_id varchar(36) references dot_rule(id),priority int default 0,actionlet text not null,mod_date timestamptz);
 create table rule_action_pars(id varchar(36) primary key,rule_action_id varchar(36) references rule_action(id), paramkey varchar(255) not null,value text);
 create index idx_rules_fire_on on dot_rule (fire_on);
 
@@ -2433,15 +2433,15 @@ CREATE INDEX idx_lower_structure_name ON structure (LOWER(velocity_var_name));
 CREATE TABLE api_token_issued(
     token_id varchar(255) NOT NULL, 
     token_userid varchar(255) NOT NULL, 
-    issue_date TIMESTAMP NOT NULL, 
-    expire_date TIMESTAMP NOT NULL, 
+    issue_date timestamptz NOT NULL, 
+    expire_date timestamptz NOT NULL, 
     requested_by_userid  varchar(255) NOT NULL, 
     requested_by_ip  varchar(255) NOT NULL, 
-    revoke_date TIMESTAMP, 
+    revoke_date timestamptz, 
     allowed_from  varchar(255) , 
     issuer  varchar(255) , 
     claims  text , 
-    mod_date  TIMESTAMP NOT NULL, 
+    mod_date  timestamptz NOT NULL, 
     PRIMARY KEY (token_id)
  );
 
@@ -2449,7 +2449,7 @@ create index idx_api_token_issued_user ON api_token_issued (token_userid);
 
 create table storage_group (
     group_name varchar(255)  not null,
-    mod_date   timestamp without time zone NOT NULL DEFAULT CURRENT_DATE,
+    mod_date   timestamptz NOT NULL DEFAULT CURRENT_DATE,
     PRIMARY KEY (group_name)
 );
 
@@ -2457,7 +2457,7 @@ create table storage (
     path       varchar(255) not null,
     group_name varchar(255) not null,
     hash       varchar(64) not null,
-    mod_date   timestamp without time zone NOT NULL DEFAULT CURRENT_DATE,
+    mod_date   timestamptz NOT NULL DEFAULT CURRENT_DATE,
     hash_ref   varchar(64),
     PRIMARY KEY (path, group_name),
     FOREIGN KEY (group_name) REFERENCES storage_group (group_name)
@@ -2468,7 +2468,7 @@ CREATE INDEX idx_storage_hash ON storage (hash);
 create table storage_data (
     hash_id  varchar(64) not null,
     data     bytea not null,
-    mod_date timestamp without time zone NOT NULL DEFAULT CURRENT_DATE,
+    mod_date timestamptz NOT NULL DEFAULT CURRENT_DATE,
     PRIMARY KEY (hash_id)
 );
 
@@ -2476,7 +2476,7 @@ create table storage_x_data (
     storage_hash varchar(64)                 not null,
     data_hash    varchar(64)                 not null,
     data_order   integer                     not null,
-    mod_date     timestamp without time zone NOT NULL DEFAULT CURRENT_DATE,
+    mod_date     timestamptz NOT NULL DEFAULT CURRENT_DATE,
     PRIMARY KEY (storage_hash, data_hash),
     FOREIGN KEY (data_hash) REFERENCES storage_data (hash_id)
 );
