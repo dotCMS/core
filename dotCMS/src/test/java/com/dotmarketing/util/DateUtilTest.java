@@ -6,6 +6,8 @@ import com.dotcms.company.CompanyAPIFactory;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.unittest.TestUtil;
 import com.dotmarketing.business.APILocator;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.CompanyPersistence;
 import com.liferay.portal.model.Company;
 import com.liferay.util.InstancePool;
@@ -15,6 +17,8 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+
+import io.vavr.control.Try;
 import org.junit.Test;
 
 import javax.servlet.ServletContext;
@@ -411,7 +415,7 @@ public class DateUtilTest extends UnitTestBase {
         final String   easternUSTimeZone = "US/Eastern";
         final String   westernUSTimeZone = "US/Western";
         final TimeZone timeZone      = TimeZone.getTimeZone(easternUSTimeZone);
-        final TimeZone defaultTimeZone =  TimeZone.getDefault();
+        final TimeZone defaultTimeZone =  APILocator.systemTimeZone();
 
         final Date date1 = DateUtil.convertDate("2015-02-04 11", timeZone, "yyyy-MM-dd HH");
 
@@ -444,7 +448,7 @@ public class DateUtilTest extends UnitTestBase {
 
         final String   gmt12TimeZone   = "GMT+1400";
         final TimeZone timeZone        = TimeZone.getTimeZone(gmt12TimeZone);
-        final TimeZone defaultTimeZone =  TimeZone.getDefault();
+        final TimeZone defaultTimeZone =  APILocator.systemTimeZone();
 
         final Date date1 = DateUtil.convertDate("2015-02-04 11 GMT +1400", defaultTimeZone, "yyyy-MM-dd HH z Z");
 

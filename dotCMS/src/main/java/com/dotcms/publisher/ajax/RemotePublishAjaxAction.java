@@ -221,7 +221,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 
             final TimeZone currentTimeZone =
                     UtilMethods.isSet(timezoneId) ? TimeZone.getTimeZone(timezoneId)
-                            : TimeZone.getDefault();
+                            : APILocator.systemTimeZone();
 
             final Date publishDate = DateUtil
                     .convertDate(_contentPushPublishDate + "-" + _contentPushPublishTime,
