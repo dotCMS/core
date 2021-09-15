@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "485608e3-23df-41f5-ba20-c3f3c39d3f3a",
+		"_postman_id": "fb04eba0-1188-475b-9963-41b2ae680af8",
 		"name": "ContentType Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -18,6 +18,7 @@
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.collectionVariables.set(\"contentTypeID\", jsonData.entity[0].id);",
+									"pm.collectionVariables.set(\"contentTypeVAR\", jsonData.entity[0].variable);",
 									"",
 									"pm.test(\"Status code should be ok 200\", function () {",
 									"    pm.response.to.have.status(200);",
@@ -211,7 +212,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"My Structure\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"host\": \"SYSTEM_HOST\",\n    \"name\": \"My Custom Structure {{$randomBankAccount}}\",\n\t\"variable\": \"myStructure{{$randomBankAccount}}\",\n\t\"fixed\": false,\n    \"id\": \"{{contentTypeID}}\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 2,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"],\n    \"icon\": \"icon2\",\n    \"sortOrder\": 2\n}",
+							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"My Structure\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"host\": \"SYSTEM_HOST\",\n    \"name\": \"My Custom Structure {{$randomBankAccount}}\",\n\t\"variable\": \"{{contentTypeVAR}}\",\n\t\"fixed\": false,\n    \"id\": \"{{contentTypeID}}\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 2,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"],\n    \"icon\": \"icon2\",\n    \"sortOrder\": 2\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -643,6 +644,10 @@
 		},
 		{
 			"key": "contentTypeID",
+			"value": ""
+		},
+		{
+			"key": "contentTypeVAR",
 			"value": ""
 		}
 	]
