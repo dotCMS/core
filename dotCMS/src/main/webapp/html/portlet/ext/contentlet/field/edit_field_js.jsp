@@ -1,3 +1,9 @@
+<%@page import="java.util.Calendar"%>
+<%@page import="java.text.SimpleDateFormat"%>
+<%@page import="java.time.ZoneId"%>
+<%@page import="java.util.TimeZone"%>
+<%@page import="java.time.ZonedDateTime"%>
+<%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="org.apache.velocity.context.Context"%>
 
 <%@page import="com.dotcms.contenttype.model.field.WysiwygField"%>
@@ -121,10 +127,12 @@ var cmsfile=null;
 			}
 		}
 
-		field.value = dateValue;
+
+        <%String offset = new SimpleDateFormat("Z").format(Calendar.getInstance(APILocator.systemTimeZone()).getTime());%>
+		field.value = dateValue + " <%=offset%>";
 
 		if(typeof updateStartRecurrenceDate === 'function' && (varName == 'startDate' || varName == 'endDate')){
-       updateStartRecurrenceDate(varName);
+		    updateStartRecurrenceDate(varName);
 		}
 	}
 

@@ -385,6 +385,12 @@
 		loadUserAdditionalInfo(currentUser);
 
 		buildRolesTree();
+
+		// Update Api Keys After switching user.
+		loadApiKeys();
+		
+		// Update User Permissions After switching user.
+		RoleAjax.getUserRole(currentUser.id, userRoleCallback);
 	}
 
 	//Setting up tab actions
