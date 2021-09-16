@@ -105,16 +105,6 @@ public class VanityUrlFilterTest {
         Assert.assertNotNull(response.getHeader("X-DOT-VanityUrl"));
     }
 
-    class MockFilterChain implements FilterChain{
-
-        public ServletRequest request;
-
-        @Override
-        public void doFilter(ServletRequest arg0, ServletResponse arg1) throws IOException, ServletException {
-            this.request=arg0;
-        }
-    }
-
     /**
      * Method to test: {@link VanityURLFilter#doFilter(ServletRequest, ServletResponse, FilterChain)}
      * Given Scenario: the url is the same of the forward to, so even if match the vanity does not need the redirect
