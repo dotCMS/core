@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Jonathan Gamba
  *         Date: 9/1/15
  */
+@Deprecated
 public class GuavaCache extends CacheProvider {
 
     private static final long serialVersionUID = 1348649382678659786L;

@@ -304,7 +304,9 @@ public class TaskLocatorUtil {
 		.add(Task210802UpdateStructureTable.class)
         .add(Task210805DropUserProxyTable.class)
 		.add(Task210816DeInodeRelationship.class)
+		.add(Task210901UpdateDateTimezones.class)
 		.add(Task210908AddCompanyDefaultLanguage.class)
+
         .build();
         
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());

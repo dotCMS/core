@@ -38,9 +38,16 @@ import jersey.repackaged.com.google.common.collect.ImmutableMap;
  * @author Jonathan Gamba
  *         Date: 8/14/15
  */
+@Deprecated
 public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTransport {
 
     private final AtomicBoolean isInitialized = new AtomicBoolean(false);
+
+    @Override
+    public boolean requiresAutowiring() {
+       
+        return true;
+    }
 
     final private Map<String, Serializable> cacheStatus = new ConcurrentHashMap<>();
     private JChannel channel;
