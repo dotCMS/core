@@ -119,7 +119,12 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
     public Optional<CachedVanityUrl> getDirectMapping(final String url, final Host host, final Language lang) {
 
         final CachedVanityUrl cachedVanityUrl = (CachedVanityUrl) cache.getNoThrow(key(host, lang, url), VANITY_URL_DIRECT_GROUP);
-        return null == cachedVanityUrl || cachedVanityUrl == NOT_FOUND404 || NOT_FOUND404.vanityUrlId.equals(cachedVanityUrl.vanityUrlId)?
+
+        if (null == cachedVanityUrl) {
+            return null;
+        }
+
+        return cachedVanityUrl == NOT_FOUND404 || NOT_FOUND404.vanityUrlId.equals(cachedVanityUrl.vanityUrlId)?
                 Optional.empty(): Optional.ofNullable(cachedVanityUrl);
     }
     
