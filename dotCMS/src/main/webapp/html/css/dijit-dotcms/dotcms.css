@@ -10854,6 +10854,10 @@ a.category_higlighted, a.tag_higlighted {
   z-index: 1;
 }
 
+#fm {
+  height: 100%;
+}
+
 .content-edit__form,
 .content-edit__advaced-form {
   padding: 0 30px;
