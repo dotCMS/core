@@ -1,15 +1,16 @@
 package com.dotcms.graphql;
 
+import com.dotcms.cache.Expirable;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
-import com.dotmarketing.business.cache.provider.timedcache.ExpirableCacheEntry;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import java.io.Serializable;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.util.Strings;
@@ -30,8 +31,6 @@ public class GraphQLCache implements Cachable {
 
     private final Lazy<Boolean> ENABLED_FROM_CONFIG = Lazy.of(()->Config
             .getBooleanProperty(GRAPHQL_CACHE_RESULTS_CONFIG_PROPERTY, true));
-
-    private long defaultTTL = 30;
 
     /**
      * Gets the value from cache, if any and non-expired, for the given key.
@@ -57,7 +56,7 @@ public class GraphQLCache implements Cachable {
         refreshKey(cacheKey, valueSupplier, ttl);
 
         return value instanceof ExpirableCacheEntry
-                ? Optional.ofNullable((String) ((ExpirableCacheEntry) value).getContent())
+                ? Optional.ofNullable(((ExpirableCacheEntry) value).getResults())
                 : Optional.ofNullable((String)value);
     }
 
@@ -68,7 +67,7 @@ public class GraphQLCache implements Cachable {
      */
 
     public Optional<String> get(final String key) {
-        return get(key, false, null, defaultTTL);
+        return get(key, false, null, -1);
     }
 
     /**
@@ -115,7 +114,7 @@ public class GraphQLCache implements Cachable {
      * @param result the value
      */
     public void put(String key, String result) {
-        this.put(key, result, defaultTTL);
+        this.put(key, result, -1);
     }
 
     private String hashKey(final String query) {
@@ -149,6 +148,25 @@ public class GraphQLCache implements Cachable {
     public void remove(final String key) {
         final String cacheKey = hashKey(key);
         this.cache.remove(cacheKey, getPrimaryGroup());
+    }
+
+    private static class ExpirableCacheEntry implements Expirable, Serializable {
+        private static final long serialVersionUID = 1L;
+        private final long ttl;
+        private final String results;
+
+        public ExpirableCacheEntry(String results, long ttl) {
+            this.results = results;
+            this.ttl = ttl;
+        }
+
+        public long getTtl() {
+            return ttl;
+        }
+
+        public String getResults() {
+            return results;
+        }
     }
 
 }

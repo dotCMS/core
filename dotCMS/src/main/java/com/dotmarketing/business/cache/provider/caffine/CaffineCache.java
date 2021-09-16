@@ -1,13 +1,12 @@
 package com.dotmarketing.business.cache.provider.caffine;
 
-import com.dotcms.business.Expirable;
+import com.dotcms.cache.Expirable;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.provider.CacheSizingUtil;
 import com.dotmarketing.business.cache.provider.CacheStats;
-import com.dotmarketing.business.cache.provider.timedcache.ExpirableCacheEntry;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
