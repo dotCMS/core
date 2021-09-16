@@ -34,13 +34,11 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -393,5 +391,28 @@ public class LanguagesResource {
 
     private Language getLanguage(final LanguageForm form) {
         return this.languageAPI.getLanguage(form.getLanguageCode(), form.getCountryCode());
+    }
+
+    @PUT
+    @Path("/{language}/_makedefault")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response makeDefault(@Context final HttpServletRequest httpServletRequest,
+            @Context final HttpServletResponse httpServletResponse,
+            @PathParam("language") final Long languageId,
+            final MakeDefaultLangForm makeDefaultLangForm
+    ) throws DotDataException, DotSecurityException {
+
+        final User user = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .requiredPortlet(PortletID.LANGUAGES.toString())
+                .init().getUser();
+
+        return Response.ok(new ResponseEntityView(languageAPI
+                .makeDefault(languageId, makeDefaultLangForm.isFireTransferAssetsJob(), user)))
+                .build(); // 200
     }
 }

@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.languagesmanager.business;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
@@ -9,18 +10,20 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotLanguageException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.DisplayedLanguage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
+import com.dotmarketing.quartz.job.DefaultLanguageTransferAssetJob;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -462,4 +465,37 @@ public class LanguageAPIImpl implements LanguageAPI {
     public boolean canDefaultFileToDefaultLanguage() {
         return Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE",true);
     }
+
+	/**
+	 * {@inheritDoc}
+	 * @return
+	 */
+    @Override
+	public Language makeDefault(Long languageId, boolean fireTransferAssetsJob, final User user)
+			throws DotDataException, DotSecurityException {
+    	if(!user.isAdmin()){
+    		throw new DotSecurityException("Only admin users are allowed to perform a default language switch.");
+		}
+
+		final Language oldDefaultLanguage = getDefaultLanguage();
+
+		factory.makeDefault(languageId);
+        final Language newDefault = factory.getDefaultLanguage();
+        if(fireTransferAssetsJob){
+			DefaultLanguageTransferAssetJob.triggerDefaultLanguageTransferAssetJob(oldDefaultLanguage.getId(), newDefault.getId());
+		}
+
+        return newDefault;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @return
+	 */
+	public void transferAssets(final Long oldDefaultLanguage, final Long newDefaultLanguage)
+			throws DotDataException, DotIndexException {
+        factory.transferAssets(oldDefaultLanguage, newDefaultLanguage);
+		MaintenanceUtil.flushCache();
+		APILocator.getContentletAPI().refreshAllContent();
+	}
 }

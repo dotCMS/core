@@ -1,5 +1,8 @@
 package com.dotmarketing.util;
 
+import static com.dotcms.util.ConversionUtils.toLong;
+import static com.dotmarketing.util.ConfigUtils.getDeclaredDefaultLanguage;
+
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
@@ -19,6 +22,7 @@ import com.dotmarketing.business.LayoutsRoles;
 import com.dotmarketing.business.PortletsLayouts;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UsersRoles;
+import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -48,6 +52,7 @@ import com.liferay.util.Base64;
 import com.liferay.util.Encryptor;
 import com.liferay.util.EncryptorException;
 import com.liferay.util.FileUtil;
+import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
@@ -708,7 +713,6 @@ public class ImportStarterUtil {
                 for (Object aL : l) {
                     final Language lang = (Language) aL;
 
-
                     DotConnect dc = new DotConnect();
                     dc.setSQL("insert into language (id,language_code,country_code,language,country) values (?,?,?,?,?)");
                     dc.addParam(lang.getId());
@@ -718,8 +722,36 @@ public class ImportStarterUtil {
                     dc.addParam(lang.getCountry());
                     dc.loadResults();
 
-
                 }
+
+                //Once all the languages are loaded We'll attempt updating the company table with the default language.
+                long existingLangId = 1;
+                final String defaultCompanyId = PublicCompanyFactory.getDefaultCompanyId();
+                final Tuple2<String, String> defaultLanguageDeclaration = getDeclaredDefaultLanguage();
+                final String langCode = defaultLanguageDeclaration._1;
+                final String countryCode = defaultLanguageDeclaration._2;
+
+                if (UtilMethods.isSet(langCode) || UtilMethods.isSet(countryCode)) {
+                    final Map<String, Object> map = new DotConnect()
+                            .setSQL("select * from language where lower(language_code) = ? and lower(country_code) = ?")
+                            .addParam(langCode)
+                            .addParam(countryCode)
+                            .loadObjectResults()
+                            .stream()
+                            .findFirst()
+                            .orElse(null);
+                    if(null != map) {
+                        existingLangId = toLong(map.get("id"), 1L);
+                    } else {
+                        Logger.warn(ImportStarterUtil.class,String.format("Failed to set the declared default language [%s-%s] as the system default language",langCode,countryCode));
+                    }
+                }
+                    //If no default lang is found fallback to 1
+                    new DotConnect().setSQL("UPDATE company SET default_language_id = ? WHERE companyid = ? ")
+                            .addParam(existingLangId)
+                            .addParam(defaultCompanyId)
+                            .loadResult();
+
 
             } else if (_importClass.equals(UsersRoles.class)) {
                 for (Object role : l) {

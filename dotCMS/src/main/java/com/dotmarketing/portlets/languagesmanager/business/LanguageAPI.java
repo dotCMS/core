@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.languagesmanager.business;
 
+import com.dotcms.content.elasticsearch.business.DotIndexException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
@@ -297,5 +298,23 @@ public interface LanguageAPI {
      * @return
      */
     Map<String, String> getStringsAsMap(Locale locale, Collection<String> keys);
+
+	/**
+	 * Makes a language the new default
+	 * The new default language is returned if the update operation succeeds.
+	 * @param languageId
+	 * @param fireTransferAssetsJob
+	 * @return
+	 */
+	Language makeDefault(final Long languageId, boolean fireTransferAssetsJob, final User user)
+			throws DotDataException, DotSecurityException;
+
+	/**
+	 * Once we change the default language this can transfer assets from the old default lang into the the new one.
+	 * @param oldDefaultLanguage
+	 * @param newDefaultLanguage
+	 */
+	void transferAssets(final Long oldDefaultLanguage, final Long newDefaultLanguage)
+			throws DotDataException, DotIndexException;
 
 }

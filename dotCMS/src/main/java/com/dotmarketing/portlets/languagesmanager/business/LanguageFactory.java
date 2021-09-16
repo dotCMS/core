@@ -82,6 +82,22 @@ public abstract class LanguageFactory {
     protected abstract Language getDefaultLanguage();
 
     /**
+     *
+     * @param languageId
+     * @throws DotDataException
+     */
+    protected abstract void makeDefault(final Long languageId) throws DotDataException;
+
+
+    /**
+     *
+     * @param oldDefaultLanguage
+     * @param newDefaultLanguage
+     */
+    protected abstract void transferAssets(final Long oldDefaultLanguage, final Long newDefaultLanguage)
+            throws DotDataException;
+
+    /**
      * 
      * @param id
      * @return
