@@ -1780,9 +1780,13 @@
 		showDotCMSSystemMessage(userLocaleSavedMsg);
 	}
 
-	function findRole(roleid) {
+	const roleCacheMap = {};
 
-		var roleNode;
+	function findRole(roleid) {
+		var roleNode = roleCacheMap[roleid];
+		if (roleNode) {
+			return roleNode;
+		}
 
 		var xhrArgs = {
 			url : "/api/role/loadbyid/id/" + roleid,
