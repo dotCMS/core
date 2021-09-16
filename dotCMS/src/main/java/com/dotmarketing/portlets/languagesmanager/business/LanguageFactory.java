@@ -82,7 +82,7 @@ public abstract class LanguageFactory {
     protected abstract Language getDefaultLanguage();
 
     /**
-     *
+     * make a the given language the new default
      * @param languageId
      * @throws DotDataException
      */
@@ -90,7 +90,7 @@ public abstract class LanguageFactory {
 
 
     /**
-     *
+     * updates the default language on all assets
      * @param oldDefaultLanguage
      * @param newDefaultLanguage
      */

@@ -303,10 +303,9 @@ public interface LanguageAPI {
 	 * Makes a language the new default
 	 * The new default language is returned if the update operation succeeds.
 	 * @param languageId
-	 * @param fireTransferAssetsJob
 	 * @return
 	 */
-	Language makeDefault(final Long languageId, boolean fireTransferAssetsJob, final User user)
+	Language makeDefault(final Long languageId, final User user)
 			throws DotDataException, DotSecurityException;
 
 	/**
@@ -314,7 +313,7 @@ public interface LanguageAPI {
 	 * @param oldDefaultLanguage
 	 * @param newDefaultLanguage
 	 */
-	void transferAssets(final Long oldDefaultLanguage, final Long newDefaultLanguage)
-			throws DotDataException, DotIndexException;
+	void transferAssets(final Long oldDefaultLanguage, final Long newDefaultLanguage, final User user)
+			throws DotDataException, DotIndexException, DotSecurityException;
 
 }

@@ -471,29 +471,24 @@ public class LanguageAPIImpl implements LanguageAPI {
 	 * @return
 	 */
     @Override
-	public Language makeDefault(Long languageId, boolean fireTransferAssetsJob, final User user)
+	public Language makeDefault(Long languageId, final User user)
 			throws DotDataException, DotSecurityException {
     	if(!user.isAdmin()){
     		throw new DotSecurityException("Only admin users are allowed to perform a default language switch.");
 		}
-
-		final Language oldDefaultLanguage = getDefaultLanguage();
-
 		factory.makeDefault(languageId);
-        final Language newDefault = factory.getDefaultLanguage();
-        if(fireTransferAssetsJob){
-			DefaultLanguageTransferAssetJob.triggerDefaultLanguageTransferAssetJob(oldDefaultLanguage.getId(), newDefault.getId());
-		}
-
-        return newDefault;
+        return factory.getDefaultLanguage();
 	}
 
 	/**
 	 * {@inheritDoc}
 	 * @return
 	 */
-	public void transferAssets(final Long oldDefaultLanguage, final Long newDefaultLanguage)
-			throws DotDataException, DotIndexException {
+	public void transferAssets(final Long oldDefaultLanguage, final Long newDefaultLanguage, final User user)
+			throws DotDataException, DotIndexException, DotSecurityException {
+		if(!user.isAdmin()){
+			throw new DotSecurityException("Only admin users are allowed to perform a default language switch for assets");
+		}
         factory.transferAssets(oldDefaultLanguage, newDefaultLanguage);
 		MaintenanceUtil.flushCache();
 		APILocator.getContentletAPI().refreshAllContent();

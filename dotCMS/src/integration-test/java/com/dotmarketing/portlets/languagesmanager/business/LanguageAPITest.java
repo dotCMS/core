@@ -1,9 +1,13 @@
 package com.dotmarketing.portlets.languagesmanager.business;
 
+import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
 import static com.dotcms.integrationtestutil.content.ContentUtils.createTestKeyValueContent;
 import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentlets;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
@@ -12,8 +16,12 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotLanguageException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.ImmutableList;
@@ -25,6 +33,7 @@ import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -262,6 +271,70 @@ public class LanguageAPITest {
 				APILocator.getLanguageAPI().deleteLanguage(newLanguage);
 			}
 		}
+	}
+
+
+	/**
+	 * Basically we test two methods in conjunction {@link LanguageAPI#makeDefault(Long, User)} and {@link LanguageAPI#transferAssets(Long, Long, User)}
+	 * Given scenario: Create 2 Languages besides the default. Then Create content under the default and switch to a new language. And Call the transferAssets method 
+	 * Expected Result: The api should be able to switch to a new lang and transfer all assets under the old lang to a new default lang.
+	 *
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 * @throws DotIndexException
+	 */
+	@Test
+	public void Create_Content_Under_Default_Lang_Make_New_Default_Language_And_Test_Assets_Lang_Transfer()
+			throws DotDataException, DotSecurityException, DotIndexException {
+		final LanguageAPI languageAPI = APILocator.getLanguageAPI();
+		final Language defaultLang = languageAPI.getDefaultLanguage();
+		final Language newDefaultLanguage = new LanguageDataGen().nextPersisted();
+		final Language thirdLanguage = new LanguageDataGen().nextPersisted();
+
+		final ContentType news = getNewsLikeContentType("News");
+
+		final Contentlet persistedWithOldDefaultLang = new ContentletDataGen(news)
+				.languageId(defaultLang.getId())
+				.setProperty("title", "News Test")
+				.setProperty("urlTitle", "news-test").setProperty("byline", "news-test")
+				.setProperty("sysPublishDate", new Date()).setProperty("story", "news-test")
+				.nextPersisted();
+
+		final Contentlet persistedWithThirdLang = new ContentletDataGen(news)
+				.languageId(thirdLanguage.getId())
+				.setProperty("title", "News Test")
+				.setProperty("urlTitle", "news-test").setProperty("byline", "news-test")
+				.setProperty("sysPublishDate", new Date()).setProperty("story", "news-test")
+				.nextPersisted();
+
+
+	  final User admin = mockAdminUser();
+      languageAPI.makeDefault(newDefaultLanguage.getId(), admin);
+	  assertEquals(newDefaultLanguage, languageAPI.getDefaultLanguage());
+      languageAPI.transferAssets(defaultLang.getId(),newDefaultLanguage.getId(), admin);
+
+		final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+
+		 Contentlet contentlet = contentletAPI
+				.find(persistedWithOldDefaultLang.getInode(), admin, false);
+
+		assertEquals(newDefaultLanguage.getId(),contentlet.getLanguageId());
+
+		contentlet = contentletAPI
+				.find(persistedWithThirdLang.getInode(), admin, false);
+
+		assertEquals(thirdLanguage.getId(),contentlet.getLanguageId());
+
+	}
+
+	private User mockAdminUser() {
+		final User adminUser = mock(User.class);
+		when(adminUser.getUserId()).thenReturn("dotcms.org.1");
+		when(adminUser.getEmailAddress()).thenReturn("admin@dotcms.com");
+		when(adminUser.getFirstName()).thenReturn("Admin");
+		when(adminUser.getLastName()).thenReturn("User");
+		when(adminUser.isAdmin()).thenReturn(true);
+		return adminUser;
 	}
 
 }

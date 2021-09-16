@@ -25,6 +25,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
+import com.dotmarketing.quartz.job.DefaultLanguageTransferAssetJob;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.StringUtils;
@@ -411,8 +412,14 @@ public class LanguagesResource {
                 .requiredPortlet(PortletID.LANGUAGES.toString())
                 .init().getUser();
 
-        return Response.ok(new ResponseEntityView(languageAPI
-                .makeDefault(languageId, makeDefaultLangForm.isFireTransferAssetsJob(), user)))
-                .build(); // 200
+
+        final Language oldDefaultLanguage = languageAPI.getDefaultLanguage();
+        final Language newDefault = languageAPI.makeDefault(languageId, user);
+
+        if(makeDefaultLangForm.isFireTransferAssetsJob()){
+            DefaultLanguageTransferAssetJob
+                    .triggerDefaultLanguageTransferAssetJob(oldDefaultLanguage.getId(), newDefault.getId());
+        }
+        return Response.ok(new ResponseEntityView(newDefault)).build(); // 200
     }
 }
