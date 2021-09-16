@@ -18,8 +18,8 @@ public class ConversionUtilsTest extends UnitTestBase {
     @Test
     public void convertToArrayTest () {
 
-        final int    [] array  =  IntStream.range(0, 5).toArray();
-        final String [] sarray = ConversionUtils.INSTANCE.convertToArray(number -> "test" + number, String.class, array);
+        final Converter<Integer, String> converter = (Integer number) -> "test" + number;
+        final String [] sarray = ConversionUtils.INSTANCE.convertToArray(converter, String.class, 0, 1,2,3,4,5);
 
         for (int i = 0; i < sarray.length; ++i) {
 
