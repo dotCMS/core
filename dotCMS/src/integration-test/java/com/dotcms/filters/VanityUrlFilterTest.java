@@ -2,9 +2,11 @@ package com.dotcms.filters;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collection;
 import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
@@ -101,6 +103,16 @@ public class VanityUrlFilterTest {
         Assert.assertEquals(301,  response.getStatus());
         Assert.assertEquals(forwardTo,  response.getHeader("Location"));
         Assert.assertNotNull(response.getHeader("X-DOT-VanityUrl"));
+    }
+
+    class MockFilterChain implements FilterChain{
+
+        public ServletRequest request;
+
+        @Override
+        public void doFilter(ServletRequest arg0, ServletResponse arg1) throws IOException, ServletException {
+            this.request=arg0;
+        }
     }
 
     /**
