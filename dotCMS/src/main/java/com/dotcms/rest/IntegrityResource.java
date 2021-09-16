@@ -10,7 +10,6 @@ import com.dotcms.publisher.pusher.AuthCredentialPushPublishUtil;
 import com.dotcms.repackage.com.google.common.cache.Cache;
 import com.dotcms.repackage.com.google.common.cache.CacheBuilder;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-import com.dotcms.rest.api.v1.HTTPMethod;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -48,7 +47,6 @@ import javax.ws.rs.client.Invocation.Builder;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import org.apache.commons.lang3.StringUtils;
@@ -106,69 +104,48 @@ public class IntegrityResource {
         }
     }
 
-    private static void cacheEndpointState(String endpointId, Map<String, NewCookie> cookiesMap) {
-
+    private static Response cacheEndpointState(String endpointId, Response response) {
         EndpointState endpointState = endpointStateCache.getIfPresent(endpointId);
         if (endpointState == null) {
             endpointStateCache.put(endpointId, endpointState = new EndpointState());
         }
 
-        for (Map.Entry<String, NewCookie> cookieEntry : cookiesMap.entrySet()) {
-            endpointState.addCookie(cookieEntry.getKey(), cookieEntry.getValue());
+        response.getCookies().forEach(endpointState::addCookie);
+        return response;
+    }
+
+    private static Optional<Builder> builderFromEndpoint(final PublishingEndPoint endpoint,
+                                                         final String url,
+                                                         final MediaType mediaType) {
+        final Optional<String> requestToken = AuthCredentialPushPublishUtil.INSTANCE.getRequestToken(endpoint);
+        if (!requestToken.isPresent()) {
+            Logger.warn(IntegrityResource.class, "No Auth Token set for endpoint: " + endpoint.getId());
+            return Optional.empty();
         }
-    }
-
-    private static void applyEndpointState(String endpointId, Builder requestBuilder) {
-
-        final EndpointState endpointState = endpointStateCache.getIfPresent(endpointId);
-
-        if (endpointState != null) {
-            for (Cookie cookie : endpointState.getCookies().values()) {
-                requestBuilder.cookie(cookie);
-            }
-        }
-    }
-
-    private Response postWithEndpointState(
-            final PublishingEndPoint endpoint,
-            final String url,
-            final MediaType mediaType) {
-
-        return postWithEndpointState(endpoint, url, mediaType, HTTPMethod.POST, null);
-    }
-
-    private Response postWithEndpointState(
-            final PublishingEndPoint endpoint,
-            final String url,
-            final MediaType mediaType,
-            final HTTPMethod method) {
-        return postWithEndpointState(endpoint, url, mediaType, method, null);
-    }
-
-    private Response postWithEndpointState(
-            final PublishingEndPoint endpoint,
-            final String url,
-            final MediaType mediaType,
-            final HTTPMethod method,
-            Entity<FormDataMultiPart> entity) {
 
         final Builder requestBuilder = RestClientBuilder.newClient().target(url).request(mediaType);
-
-        applyEndpointState(endpoint.getId(), requestBuilder);
-
-        final Optional<String> requestToken = AuthCredentialPushPublishUtil.INSTANCE.getRequestToken(endpoint);
-
-        if (!requestToken.isPresent()) {
-            Logger.warn(IntegrityResource.class, "No Auth Token set for endpoint:" + endpoint.getId());
-            return response("No Auth Token set for endpoint", true);
+        final EndpointState endpointState = endpointStateCache.getIfPresent(endpoint.getId());
+        if (endpointState != null) {
+            endpointState.getCookies().values().forEach(requestBuilder::cookie);
         }
-
         requestBuilder.header("Authorization", requestToken.get());
-        final Response response = method == HTTPMethod.POST ? requestBuilder.post(entity) : requestBuilder.delete();
 
-        cacheEndpointState(endpoint.getId(), response.getCookies());
+        return Optional.of(requestBuilder);
+    }
 
-        return response;
+    private Response postWithEndpointState(final PublishingEndPoint endpoint,
+                                           final String url,
+                                           final Entity<FormDataMultiPart> entity) {
+        return builderFromEndpoint(endpoint, url, MediaType.TEXT_PLAIN_TYPE)
+                .map(builder -> cacheEndpointState(endpoint.getId(), builder.post(entity)))
+                .orElse(response("No Auth Token set for endpoint", true));
+    }
+
+    private Response getWithEndpointState(final PublishingEndPoint endpoint,
+                                          final String url) {
+        return builderFromEndpoint(endpoint, url, new MediaType("application", "zip"))
+                .map(builder -> cacheEndpointState(endpoint.getId(), builder.get()))
+                .orElse(response("No Auth Token set for endpoint", true));
     }
 
     /**
@@ -207,7 +184,9 @@ public class IntegrityResource {
         final AuthCredentialPushPublishUtil.PushPublishAuthenticationToken pushPublishAuthenticationToken
                 = AuthCredentialPushPublishUtil.INSTANCE.processAuthHeader(request);
 
-        final Optional<Response> failResponse = PushPublishResourceUtil.getFailResponse(request, pushPublishAuthenticationToken);
+        final Optional<Response> failResponse = PushPublishResourceUtil.getFailResponse(
+                request,
+                pushPublishAuthenticationToken);
 
         if (failResponse.isPresent()) {
             return failResponse.get();
@@ -256,20 +235,19 @@ public class IntegrityResource {
     /**
      * Checks if the generation of Integrity Data is done.
      * If FINISHED, returns a zip with the data
-     * if PROCESSING, returns HttpStatus.SC_PROCESSING
+     * if PROCESSING, returns HttpStatus.SC_ACCEPTED
      * if ERROR, returns HttpStatus.SC_INTERNAL_SERVER_ERROR, including the error message
      *
-     * Usage: /getdata
+     * Usage: /integrityData
      *
      */
-    @POST
-    @Path("/{requestId}/status")
+    @GET
+    @Path("/{requestId}/integrityData")
     @Produces("application/zip")
-    public Response getIntegrityData(@Context HttpServletRequest request, @PathParam("requestId") final String requestId)  {
-
+    public Response getIntegrityData(@Context HttpServletRequest request,
+                                     @PathParam("requestId") final String requestId)  {
         final String remoteIp = RestEndPointIPUtil.resolveRemoteIp(request);
         final String localAddress = RestEndPointIPUtil.getFullLocalIp(request);
-
         final AuthCredentialPushPublishUtil.PushPublishAuthenticationToken pushPublishAuthenticationToken
                 = AuthCredentialPushPublishUtil.INSTANCE.processAuthHeader(request);
 
@@ -287,7 +265,7 @@ public class IntegrityResource {
                                 "Receiver at %s:> job is already running for endpoint id: %s, therefore it's not ready and need to wait",
                                 localAddress,
                                 pushPublishAuthenticationToken.getKey()));
-                return Response.status(HttpStatus.SC_PROCESSING).build();
+                return Response.status(HttpStatus.SC_ACCEPTED).build();
             }
 
             final Optional<IntegrityUtil.IntegrityDataExecutionMetadata> integrityMetadata =
@@ -321,7 +299,7 @@ public class IntegrityResource {
                                 "Receiver at %s:> integrity data generation for endpoint id %s still ongoing therefore it's not ready and need to wait",
                                 localAddress,
                                 pushPublishAuthenticationToken.getKey()));
-                return Response.status(HttpStatus.SC_PROCESSING).build();
+                return Response.status(HttpStatus.SC_ACCEPTED).build();
             } else if (integrityMetadata.get().getProcessStatus() == ProcessStatus.FINISHED &&
                     IntegrityUtil.doesIntegrityDataFileExist(
                             pushPublishAuthenticationToken.getKey(),
@@ -533,9 +511,9 @@ public class IntegrityResource {
     }
 
     private Response generateIntegrityCheckerRequest(final PublishingEndPoint endpoint) {
-        String url = endpoint.toURL()+"/api/integrity/_generateintegritydata";
+        String url = endpoint.toURL() + "/api/integrity/_generateintegritydata";
 
-        return postWithEndpointState(endpoint, url, MediaType.TEXT_PLAIN_TYPE);
+        return postWithEndpointState(endpoint, url, null);
     }
 
     /**
@@ -987,17 +965,16 @@ public class IntegrityResource {
     }
 
     private Response sendFixConflictsRequest(String type, PublishingEndPoint endpoint, File bundle) {
-
         FormDataMultiPart form = new FormDataMultiPart();
         form.field("TYPE", type);
-        form.bodyPart(new FileDataBodyPart("DATA_TO_FIX", bundle,
+        form.bodyPart(
+                new FileDataBodyPart("DATA_TO_FIX",
+                bundle,
                 MediaType.MULTIPART_FORM_DATA_TYPE));
-
-        String url = String.format("%s/api/integrity/_fixconflictsfromremote/", endpoint.toURL());
-
         return postWithEndpointState(
-                endpoint, url, MediaType.TEXT_PLAIN_TYPE,
-                HTTPMethod.POST, Entity.entity(form, form.getMediaType()));
+                endpoint,
+                String.format("%s/api/integrity/_fixconflictsfromremote/", endpoint.toURL()),
+                Entity.entity(form, form.getMediaType()));
     }
 
     /**
@@ -1153,9 +1130,7 @@ public class IntegrityResource {
 
             while(processing) {
 
-                Response response = null;
-
-                response = statusIntegrityCheckerRequest();
+                final Response response = statusIntegrityCheckerRequest();
 
                 if (response.getStatus() == HttpStatus.SC_OK) {
 
@@ -1202,7 +1177,9 @@ public class IntegrityResource {
                     } else {
                         String noConflictMessage;
                         try {
-                            noConflictMessage = LanguageUtil.get(loggedUser.getLocale(), "push_publish_integrity_conflicts_not_found");
+                            noConflictMessage = LanguageUtil.get(
+                                    loggedUser.getLocale(),
+                                    "push_publish_integrity_conflicts_not_found");
                         } catch (LanguageException e) {
                             noConflictMessage = "No Integrity Conflicts found";
                         }
@@ -1210,21 +1187,22 @@ public class IntegrityResource {
                         setStatus(session, endpoint.getId(), ProcessStatus.NO_CONFLICTS, noConflictMessage);
                     }
 
-                } else if (response.getStatus() == HttpStatus.SC_PROCESSING) {
-                    Logger.info(this.getClass(), "Integrity check is still provessinf");
+                } else if (response.getStatus() == HttpStatus.SC_ACCEPTED) {
+                    Logger.info(this.getClass(), "Integrity check is still processing");
                 } else {
                     setStatus(session, endpoint.getId(), ProcessStatus.ERROR, null);
-                    Logger.error(this.getClass(), "Response indicating a " + response.getStatusInfo().getReasonPhrase() + " (" + response.getStatus() + ") Error trying to retrieve the Integrity data from the Endpoint [" + endpoint.getId() + "].");
+                    Logger.error(
+                            this.getClass(),
+                            "Response indicating a " + response.getStatusInfo().getReasonPhrase() + " (" + response.getStatus() + ") Error trying to retrieve the Integrity data from the Endpoint [" + endpoint.getId() + "].");
                     processing = false;
                 }
             }
         }
 
         private Response statusIntegrityCheckerRequest() {
-            String url = String.format("%s/api/integrity/%s/status", endpoint.toURL(), integrityDataRequestID);
-
-            return postWithEndpointState(
-                    endpoint, url, new MediaType("application", "zip"));
+            return getWithEndpointState(
+                    endpoint,
+                    String.format("%s/api/integrity/%s/integrityData", endpoint.toURL(), integrityDataRequestID));
         }
     }
 }
