@@ -203,7 +203,7 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 
 	public void setTimeZoneId(String timeZoneId) {
 		if (Validator.isNull(timeZoneId)) {
-			timeZoneId = TimeZone.getDefault().getID();
+			timeZoneId = APILocator.systemTimeZone().getID();
 		}
 
 		_timeZone = TimeZone.getTimeZone(timeZoneId);
