@@ -3,16 +3,18 @@ package com.dotcms.datagen;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.publishing.remote.bundler.AssignableFromMap;
 import com.dotcms.publisher.bundle.bean.Bundle;
+import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishQueueElement;
+import com.dotcms.publisher.business.PublisherAPIImpl;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.FilterDescriptor;
-import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -26,6 +28,7 @@ import com.google.common.collect.Lists;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.jgroups.util.Util.assertTrue;
 
@@ -164,22 +167,20 @@ public class BundleDataGen extends AbstractDataGen<Bundle> {
     }
 
     private List<PublishQueueElement> getPublishQueueElements(Bundle bundle) {
-        final List<PublishQueueElement> publishQueueElements = new ArrayList<>();
-
-        for (final AssetsItem assetItem : assets) {
-            final PublishQueueElement publishQueueElement = new PublishQueueElement();
-            publishQueueElement.setId(1);
-            publishQueueElement.setOperation(PublisherConfig.Operation.PUBLISH.ordinal());
-            publishQueueElement.setAsset(assetItem.inode);
-            publishQueueElement.setEnteredDate(new Date());
-            publishQueueElement.setPublishDate(new Date());
-            publishQueueElement.setBundleId(bundle.getId());
-            publishQueueElement.setType(assetItem.pusheableAsset.getType());
-
-            publishQueueElements.add(publishQueueElement);
+        try {
+            return PublisherAPIImpl.getInstance().getQueueElementsByBundleId(bundle.getId());
+        } catch (DotPublisherException e) {
+            throw new DotRuntimeException(e);
         }
+    }
 
-        return publishQueueElements;
+    private void savePublishQueueElements(Bundle bundle) {
+        try {
+            List<String> ids = assets.stream().map(asset -> asset.inode).collect(Collectors.toList());
+            PublisherAPIImpl.getInstance().saveBundleAssets( ids, bundle.getId(), APILocator.systemUser() );
+        } catch (DotPublisherException e) {
+            throw new DotRuntimeException(e);
+        }
     }
 
     @Override
@@ -187,6 +188,7 @@ public class BundleDataGen extends AbstractDataGen<Bundle> {
         try {
             APILocator.getBundleAPI().saveBundle(bundle);
             final Bundle bundleFromDataBase = APILocator.getBundleAPI().getBundleByName(bundle.getName());
+            savePublishQueueElements(bundle);
 
             if (config != null) {
                 config.setAssets(getPublishQueueElements(bundleFromDataBase));

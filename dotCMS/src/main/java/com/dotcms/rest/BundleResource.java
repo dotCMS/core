@@ -17,6 +17,10 @@ import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
+import com.dotcms.publisher.business.PublishQueueElement;
+import com.dotcms.publisher.business.PublishQueueElementTransformer;
+import com.dotcms.publisher.business.PublisherAPI;
+import com.dotcms.publisher.business.PublisherAPIImpl;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig;
@@ -25,6 +29,7 @@ import com.dotcms.publishing.manifest.ManifestUtil;
 import com.dotcms.publishing.output.TarGzipBundleOutput;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.rest.param.ISODateParam;
 import com.dotmarketing.business.APILocator;
@@ -54,6 +59,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.Reader;
+import java.util.Map;
 import java.util.Optional;
 import javax.ws.rs.core.StreamingOutput;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -107,6 +113,35 @@ public class BundleResource {
     private final WebResource            webResource            = new WebResource();
     private final BundleAPI              bundleAPI              = APILocator.getBundleAPI();
     private final SystemMessageEventUtil systemMessageEventUtil = SystemMessageEventUtil.getInstance();
+
+    private final PublishQueueElementTransformer publishQueueElementTransformer =
+            new PublishQueueElementTransformer();
+
+    @Path("/{bundleId}")
+    @GET
+    @Produces({MediaType.APPLICATION_JSON})
+    public Response getPublishQueueElements(@PathParam("bundleId") final String bundleId,
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response) {
+
+        new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        try {
+            final List<PublishQueueElement> queueElements = PublisherAPIImpl.getInstance()
+                    .getQueueElementsByBundleId(bundleId);
+            final List<Map<String, String>> detailedAssets = publishQueueElementTransformer
+                    .transform(queueElements);
+
+            return Response.ok(detailedAssets).build();
+        } catch (DotPublisherException e) {
+            throw new BadRequestException(e, bundleId, e.getMessage());
+        }
+    }
 
     /**
      * Returns a list of un-send bundles (haven't been sent to any Environment) filtered by owner and name
