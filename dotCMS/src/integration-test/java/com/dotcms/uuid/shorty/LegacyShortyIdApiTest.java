@@ -18,6 +18,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
@@ -92,10 +93,10 @@ public class LegacyShortyIdApiTest {
         dc.setSQL(GET_INODE, 2);
         dc.addParam("containers");
         List<Map<String, Object>> res = dc.loadObjectResults();
-        builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "containers" });
+        //builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "containers" });
 		dc.setSQL(GET_ID_CONTAINERS, 2);
 		res = dc.loadObjectResults();
-		builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "containers" });
+		//builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "containers" });
 
         //Create 2 Contentlets, and save the inode and the identifier of them
         final ContentType contentGenericType = APILocator.getContentTypeAPI(APILocator.systemUser())
@@ -108,19 +109,19 @@ public class LegacyShortyIdApiTest {
                 .setProperty("body", "TestBody").nextPersisted();
 		dc.setSQL(GET_ID_CONTENTLETS, 2);
 		res = dc.loadObjectResults();
-        builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "contentlet" });
+        //builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "contentlet" });
 
         dc.setSQL(GET_INODE, 2);
         dc.addParam("contentlet");
         res = dc.loadObjectResults();
-        builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "contentlet" });
+        //builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "contentlet" });
 
         //Create 2 Folders, and save the inode and the identifier of them
         new FolderDataGen().nextPersisted();
         new FolderDataGen().nextPersisted();
 		dc.setSQL(GET_ID_FOLDERS, 2);
 		res = dc.loadObjectResults();
-        builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "folder" });
+        //builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "folder" });
 
         dc.setSQL(GET_INODE, 2);
         dc.addParam("folder");
@@ -132,24 +133,24 @@ public class LegacyShortyIdApiTest {
         new LinkDataGen().nextPersisted();
 		dc.setSQL(GET_ID_LINKS, 2);
 		res = dc.loadObjectResults();
-		builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "links" });
+		//builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "links" });
 
         dc.setSQL(GET_INODE, 2);
         dc.addParam("links");
         res = dc.loadObjectResults();
-        builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "links" });
+        //builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "links" });
 
         //Create 2 Templates, and save the inode and the identifier of them
         new TemplateDataGen().nextPersisted();
         new TemplateDataGen().nextPersisted();
 		dc.setSQL(GET_ID_TEMPLATES, 2);
 		res = dc.loadObjectResults();
-		builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "template" });
+		//builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "template" });
 
 		dc.setSQL(GET_INODE, 2);
 		dc.addParam("template");
 		res = dc.loadObjectResults();
-		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "template" });
+		//builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "template" });
 
         //Create 2 Categories, and save the inode of them
         new CategoryDataGen().nextPersisted();
@@ -157,7 +158,7 @@ public class LegacyShortyIdApiTest {
 		dc.setSQL(GET_INODE, 2);
 		dc.addParam("category");
 		res = dc.loadObjectResults();
-		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "category" });
+		//builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "category" });
 
         //Create 2 Fields in a new Content Type, and save the inode of them
         final ContentType contentType = new ContentTypeDataGen().nextPersisted();
@@ -166,15 +167,12 @@ public class LegacyShortyIdApiTest {
 		dc.setSQL(GET_INODE, 2);
 		dc.addParam("field");
 		res = dc.loadObjectResults();
-		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "field" });
+		//builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "field" });
 
         //Create 2 Relationships, and save the inode of them
-        new RelationshipDataGen(true).nextPersisted();
-        new RelationshipDataGen(true).nextPersisted();
-		dc.setSQL(GET_INODE, 2);
-		dc.addParam("relationship");
-		res = dc.loadObjectResults();
-		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "relationship" });
+        final Relationship relationship1 = new RelationshipDataGen(true).nextPersisted();
+        final Relationship relationship2 = new RelationshipDataGen(true).nextPersisted();
+		//builder.add(new String[] { relationship2.getInode(), "inode", "relationship" });
 		expectedIds = builder.build();
 	}
 
