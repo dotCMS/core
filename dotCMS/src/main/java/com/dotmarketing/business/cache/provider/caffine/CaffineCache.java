@@ -26,6 +26,20 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 
+/**
+ * In-Memory Cache implementation using https://github.com/ben-manes/caffeine
+ *
+ * Supports key-specific time invalidations by providing an {@link Expirable} object
+ * in the {@link #put(String, String, Object)} method with the desired TTL.
+ *
+ * A group-wide invalidation time can also be set by config properties.
+ *
+ * i.e., for the "graphqlquerycache" group
+ *
+ * cache.graphqlquerycache.chain=com.dotmarketing.business.cache.provider.caffine.CaffineCache
+ * cache.graphqlquerycache.seconds=15
+ *
+ */
 public class CaffineCache extends CacheProvider {
 
     private static final long serialVersionUID = 1348649382678659786L;
