@@ -836,9 +836,13 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                 Event.observe(asset.inode + '-TR', 'mouseover', mouseOverContent);
 
                 if (publish) {
-                    // reverteffect -> It's need it to return the element to its place
-                    // We can't use the reverteffect function librery has by default because the initial element doesn't have
-                    // an initial value of top_offset or left_offset.
+                    /*
+                        reverteffect: Needs to return the element to its place.
+                        We can't use the default reverteffect function because the initial element doesn't have an initial 
+                        value of top_offset or left_offset.
+                        
+                        More info: https://madrobby.github.io/scriptaculous/draggable/
+                    */
                     var draggable = new Draggable(asset.inode + '-DIV', { ghosting:true, revert:true, zindex: 1000, reverteffect: function(element) { element.style.position = 'relative'; } });
                     contentDraggables[contentDraggables.length] = draggable;
                 }
@@ -947,9 +951,13 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                 Event.observe(asset.inode + '-TR', 'mouseover', mouseOverContent);
 
                 if((!asset.live && write) || (asset.live && publish)) {
-                    // reverteffect -> It's need it to return the element to its place
-                    // We can't use the reverteffect function librery has by default because the initial element doesn't have
-                    // an initial value of top_offset or left_offset.
+                    /*
+                        reverteffect: Needs to return the element to its place.
+                        We can't use the default reverteffect function because the initial element doesn't have an initial 
+                        value of top_offset or left_offset.
+                        
+                        More info: https://madrobby.github.io/scriptaculous/draggable/
+                    */
                     var draggable = new Draggable(asset.inode + '-DIV', { ghosting:true, revert:true, zindex: 1000, reverteffect: function(element) { element.style.position = 'relative'; } });
                     contentDraggables[contentDraggables.length] = draggable;
                 }
