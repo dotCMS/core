@@ -779,7 +779,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
 
         var subFoldersCount = 0;
-        console.log(content[0]);
+
         //Loading the contents table at the rigth hand side
         var table = $('assetListBody');
         for (var i = 0; i < content.length; i++) {
