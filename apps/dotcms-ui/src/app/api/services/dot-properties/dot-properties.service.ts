@@ -22,11 +22,7 @@ export class DotPropertiesService {
             .requestView({
                 url: `/api/v1/configuration/config?keys=${key}`
             })
-            .pipe(
-                take(1),
-                pluck('bodyJsonObject'),
-                map((response) => response[key])
-            );
+            .pipe(take(1), pluck('entity', key));
     }
 
     /**
@@ -43,10 +39,6 @@ export class DotPropertiesService {
             .requestView<{ [key: string]: any }>({
                 url: `/api/v1/configuration/config?keys=${finalKey}`
             })
-            .pipe(
-                take(1),
-                pluck('bodyJsonObject'),
-                map((response) => response[finalKey])
-            );
+            .pipe(take(1), pluck('entity', key));
     }
 }

@@ -35,7 +35,7 @@ export class DotPageRenderState extends DotPageRender {
     get containers(): {
         [key: string]: {
             container: DotContainer;
-            containerStructures?: DotContainerStructure;
+            containerStructures?: DotContainerStructure[];
         };
     } {
         return this.dotRenderedPage.containers;
