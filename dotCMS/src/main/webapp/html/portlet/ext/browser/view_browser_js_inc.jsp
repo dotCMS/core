@@ -779,7 +779,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
 
         var subFoldersCount = 0;
-
+        console.log(content[0]);
         //Loading the contents table at the rigth hand side
         var table = $('assetListBody');
         for (var i = 0; i < content.length; i++) {
@@ -836,7 +836,10 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                 Event.observe(asset.inode + '-TR', 'mouseover', mouseOverContent);
 
                 if (publish) {
-                    var draggable = new Draggable(asset.inode + '-DIV', { ghosting:true, revert:true, zindex: 1000 });
+                    // reverteffect -> It's need it to return the element to its place
+                    // We can't use the reverteffect function librery has by default because the initial element doesn't have
+                    // an initial value of top_offset or left_offset.
+                    var draggable = new Draggable(asset.inode + '-DIV', { ghosting:true, revert:true, zindex: 1000, reverteffect: function(element) { element.style.position = 'relative'; } });
                     contentDraggables[contentDraggables.length] = draggable;
                 }
 
@@ -944,7 +947,10 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                 Event.observe(asset.inode + '-TR', 'mouseover', mouseOverContent);
 
                 if((!asset.live && write) || (asset.live && publish)) {
-                    var draggable = new Draggable(asset.inode + '-DIV', { ghosting:true, revert:true, zindex: 1000 });
+                    // reverteffect -> It's need it to return the element to its place
+                    // We can't use the reverteffect function librery has by default because the initial element doesn't have
+                    // an initial value of top_offset or left_offset.
+                    var draggable = new Draggable(asset.inode + '-DIV', { ghosting:true, revert:true, zindex: 1000, reverteffect: function(element) { element.style.position = 'relative'; } });
                     contentDraggables[contentDraggables.length] = draggable;
                 }
             }
