@@ -1794,6 +1794,7 @@
 			sync: true,
 			load : function(data) {
 				roleNode = data;
+				roleCacheMap[roleid] = data;
 			},
 			error : function(error) {
                 console.error("Error returning Role data for role id [" + roleid + "]", error);
