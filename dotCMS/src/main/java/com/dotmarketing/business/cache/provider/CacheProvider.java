@@ -77,18 +77,6 @@ public abstract class CacheProvider implements Serializable {
     public abstract void put ( String group, String key, final Object content );
 
     /**
-     * Adds the given content to the given region and for the given key
-     *
-     * @param group
-     * @param key
-     * @param content
-     * @param content
-     */
-    public void put ( String group, String key, final Object content, final long ttl) {
-        throw new UnsupportedOperationException("Not implemented");
-    }
-
-    /**
      * Searches and return the content in a given region and with a given key
      *
      * @param group

@@ -86,18 +86,6 @@ public interface DotCacheAdministrator  {
 	void put ( String key, Object content, String group );
 
 	/**
-	 * Puts an object in a cache
-	 * This will create journal entries for other servers in a clustered environment.
-	 * @param key
-	 * @param content
-	 * @param ttl time to live
-	 * @param group
-	 */
-	default void put ( String key, Object content, long ttl, String group ) {
-		throw new UnsupportedOperationException("Not implemented");
-	}
-
-	/**
 	 * Remove an object from the cache.  
 	 * This will create journal entries for other servers in a clustered environment. 
 	 * @param key
