@@ -76,7 +76,9 @@ public abstract class LanguageFactory {
     protected abstract String getLanguageCodeAndCountry(long id, String langId);
 
     /**
-     * 
+     * This gets the default lang already loaded into cache
+     * If not in cache it will load it from the db
+     * If it doesnt exists already it create it.
      * @return
      */
     protected abstract Language getDefaultLanguage();

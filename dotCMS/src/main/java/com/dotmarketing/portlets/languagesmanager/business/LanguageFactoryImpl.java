@@ -177,6 +177,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 			saveLanguage(language);
 
 			try {
+				//Writes the default lang in the company table
 				writeDefaultLanguage(language.getId());
 				CacheLocator.getLanguageCache().setDefaultLanguage(language);
 			} catch (DotDataException e) {
@@ -189,8 +190,15 @@ public class LanguageFactoryImpl extends LanguageFactory {
 
 	}
 
+	/**
+	 * Usually something like this should be located at the API level
+	 * However this method is already used in a few places that require the logic to be at this level
+	 * This is not a transactional method. The language will be loaded from cache on a the first atttempt
+	 * if not found it will be loaded from the db and if not found there either it will be created.
+	 * any of the db operations are executed separately in a transactional method
+	 * @return
+	 */
 	@Override
-	@WrapInTransaction
 	protected Language getDefaultLanguage() {
 
 		final LanguageCache languageCache = CacheLocator.getLanguageCache();
@@ -201,15 +209,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 		}
 
 		if (createDefaultLanguageLock.compareAndSet(null, defaultLanguage)) {
-			final long defaultLangId = readDefaultLanguage();
-			if (0 != defaultLangId) {
-				//Verify if it already exist. if so out put it into cache.
-				defaultLanguage = getLanguage(defaultLangId);
-			}
-			if (null == defaultLanguage) {
-				//if it doesn't creates the default lang and put it in cache.
-				defaultLanguage = createDefaultLanguage();
-			}
+			defaultLanguage = transactionalGetDefaultLanguage();
 			languageCache.setDefaultLanguage(defaultLanguage);
 			//update the lock.
 			createDefaultLanguageLock.set(defaultLanguage);
@@ -218,6 +218,24 @@ public class LanguageFactoryImpl extends LanguageFactory {
 		return createDefaultLanguageLock.get();
 	}
 
+	/**
+	 * Transactional Get/Create lang method
+	 * @return
+	 */
+	@WrapInTransaction
+	private Language transactionalGetDefaultLanguage(){
+		Language defaultLanguage = null;
+		final long defaultLangId = readDefaultLanguage();
+		if (0 != defaultLangId) {
+			//Verify if it already exist. if so out put it into cache.
+			defaultLanguage = getLanguage(defaultLangId);
+		}
+		if (null == defaultLanguage) {
+			//if it doesn't exist then creates the default lang and put it in cache.
+			defaultLanguage = createDefaultLanguage();
+		}
+		return defaultLanguage;
+	}
 
 	void writeDefaultLanguage(final long languageId) throws DotDataException {
 		final String companyId = APILocator.getCompanyAPI().getDefaultCompany().getCompanyId();
@@ -239,7 +257,6 @@ public class LanguageFactoryImpl extends LanguageFactory {
 
 
 	@Override
-	@WrapInTransaction
 	protected void makeDefault(final Long languageId) throws DotDataException {
 		final Language language = getLanguage(languageId);
 		if(null == language ){
@@ -252,7 +269,6 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	}
 
 	@Override
-	@WrapInTransaction
 	protected void transferAssets(final Long oldDefaultLanguage, final Long newDefaultLanguage)
 			throws DotDataException {
 

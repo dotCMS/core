@@ -10,7 +10,6 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -20,7 +19,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.DisplayedLanguage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
-import com.dotmarketing.quartz.job.DefaultLanguageTransferAssetJob;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
@@ -30,10 +28,6 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import org.apache.commons.lang.math.NumberUtils;
-import org.apache.velocity.tools.view.context.ViewContext;
-
-import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -43,6 +37,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.lang.math.NumberUtils;
+import org.apache.velocity.tools.view.context.ViewContext;
 
 /**
  * Implementation class for the {@link LanguageAPI}.
@@ -136,6 +133,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 
 	@Override
 	@WrapInTransaction
+	@Deprecated
 	public Language createDefaultLanguage() {
 
         final Language  language =
@@ -177,6 +175,11 @@ public class LanguageAPIImpl implements LanguageAPI {
 		return factory.getLanguageCodeAndCountry(id, langId);
 	}
 
+	/**
+	 * This method does not need to be transactional as long as it reads from cache
+	 * The relevant transactional bits are located in the factory layer that actually writes and creates the default lang
+	 * @return
+	 */
     @CloseDBIfOpened
 	@Override
 	public Language getDefaultLanguage() {
@@ -470,6 +473,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 	 * {@inheritDoc}
 	 * @return
 	 */
+	@WrapInTransaction
     @Override
 	public Language makeDefault(Long languageId, final User user)
 			throws DotDataException, DotSecurityException {
@@ -484,13 +488,16 @@ public class LanguageAPIImpl implements LanguageAPI {
 	 * {@inheritDoc}
 	 * @return
 	 */
+	@WrapInTransaction
 	public void transferAssets(final Long oldDefaultLanguage, final Long newDefaultLanguage, final User user)
 			throws DotDataException, DotIndexException, DotSecurityException {
 		if(!user.isAdmin()){
 			throw new DotSecurityException("Only admin users are allowed to perform a default language switch for assets");
 		}
         factory.transferAssets(oldDefaultLanguage, newDefaultLanguage);
-		MaintenanceUtil.flushCache();
-		APILocator.getContentletAPI().refreshAllContent();
+		HibernateUtil.addCommitListener(() -> {
+			MaintenanceUtil.flushCache();
+			APILocator.getContentletAPI().refreshAllContent();
+		});
 	}
 }
