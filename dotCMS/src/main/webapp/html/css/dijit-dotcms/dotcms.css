@@ -4665,8 +4665,10 @@ html, body {
 }
 
 .dijitTabContainerTop-container {
+  /* 42px is the height of the dijitTabListContainer */
+  height: calc(100% - 42px);
   border-top: none;
-  overflow: visible;
+  overflow: auto;
 }
 
 .dijitTabContainerBottom-container {
@@ -4684,7 +4686,6 @@ html, body {
   border-style: solid;
   border-color: #ECEDEE;
   height: 42px !important;
-  width: 100% !important;
   overflow: visible;
 }
 
@@ -10845,7 +10846,6 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .content-edit__main {
-  overflow: auto;
   height: 100%;
   margin: 0px 300px 0 0;
   position: relative;
