@@ -7,8 +7,6 @@ import com.dotmarketing.util.UtilMethods;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
-import com.dotcms.publishing.PublisherConfig;
-import com.dotcms.publishing.PublisherConfig.Operation;
 
 /**
  * Util class to read a Manifest file
@@ -22,14 +20,13 @@ public interface ManifestReader {
     String getMetadata(final String name);
 
     default List<PublishQueueElement> getPublishQueueElement(){
-        final Operation operation = Operation
-                .valueOf(getMetadata(CSVManifestBuilder.OPERATION_METADATA_NAME));
+        final IntegrityType integrityType = IntegrityType.valueOf(getMetadata(CSVManifestBuilder.OPERATION_METADATA_NAME));
 
         return getAssets().stream()
                 .map(manifestInfo -> {
                     final PublishQueueElement publishQueueElement = new PublishQueueElement();
                     publishQueueElement.setAsset(UtilMethods.isSet(manifestInfo.inode()) ? manifestInfo.inode() : manifestInfo.id());
-                    publishQueueElement.setOperation(operation.ordinal());
+                    publishQueueElement.setOperation(integrityType.ordinal());
                     publishQueueElement.setBundleId(
                             getMetadata(CSVManifestBuilder.BUNDLE_ID_METADATA_NAME));
                     publishQueueElement.setType(manifestInfo.objectType());
