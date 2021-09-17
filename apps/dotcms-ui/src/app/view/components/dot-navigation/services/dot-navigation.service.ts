@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Router, NavigationEnd, Event } from '@angular/router';
 
 import { Observable, BehaviorSubject } from 'rxjs';
-import { filter, switchMap, map, tap } from 'rxjs/operators';
+import { filter, switchMap, map, tap, take } from 'rxjs/operators';
 
 import { Auth } from '@dotcms/dotcms-js';
 import { DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
@@ -25,7 +25,7 @@ const replaceIdForNonMenuSection = (id) => {
 interface DotActiveItemsProps {
     urlId: string;
     collapsed: boolean;
-    menuId: string;
+    menuId?: string;
 }
 
 interface DotActiveItemsFromParentProps extends DotActiveItemsProps {
@@ -138,7 +138,7 @@ export class DotNavigationService {
             });
 
         this.dotcmsEventsService.subscribeTo('UPDATE_PORTLET_LAYOUTS').subscribe(() => {
-            this.reloadNavigation().subscribe((menus: DotMenu[]) => {
+            this.reloadNavigation().pipe(take(1)).subscribe((menus: DotMenu[]) => {
                 this.setMenu(menus);
             });
         });
@@ -332,8 +332,7 @@ export class DotNavigationService {
         return this.dotMenuService.reloadMenu().pipe(
             setActiveItems({
                 urlId: this.dotRouterService.currentPortlet.id,
-                collapsed: this._collapsed$.getValue(),
-                menuId: this.router.getCurrentNavigation().extras.state?.menuId
+                collapsed: this._collapsed$.getValue()
             }),
             tap((menus: DotMenu[]) => {
                 this.setMenu(menus);
