@@ -18,6 +18,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.function.Supplier;
+
+import com.dotmarketing.business.APILocator;
 import org.apache.commons.io.FileUtils;
 import org.apache.felix.framework.util.FelixConstants;
 import org.apache.felix.http.proxy.DispatcherTracker;
@@ -45,6 +48,8 @@ import com.google.common.collect.ImmutableList;
  */
 public class OSGIUtil {
 
+    private static final String OSGI_EXTRA_CONFIG_FILE_PATH_KEY = "OSGI_EXTRA_CONFIG_FILE_PATH_KEY";
+
     //List of jar prefixes of the jars to be included in the osgi-extra-generated.conf file
     private List<String> dotCMSJarPrefixes = ImmutableList.of("dotcms", "ee-");
     public final List<String> portletIDsStopped = Collections.synchronizedList(new ArrayList<>());
@@ -66,7 +71,6 @@ public class OSGIUtil {
 
     public static final String BUNDLE_HTTP_BRIDGE_SYMBOLIC_NAME = "org.apache.felix.http.bundle";
     private static final String PROPERTY_OSGI_PACKAGES_EXTRA = "org.osgi.framework.system.packages.extra";
-    private String FELIX_EXTRA_PACKAGES_FILE_GENERATED;
     public String FELIX_EXTRA_PACKAGES_FILE;
 
 
@@ -123,10 +127,18 @@ public class OSGIUtil {
         return felixProps;
     }
 
+
+    private String getOsgiExtraConfigPath () {
+
+        final Supplier<String> supplier = () -> APILocator.getFileAssetAPI().getRealAssetsRootPath()
+                + File.separator + "server" + File.separator + "osgi" + File.separator +  "osgi-extra.conf";
+        final String dirPath = Config.getStringProperty(OSGI_EXTRA_CONFIG_FILE_PATH_KEY, supplier.get());
+        return Paths.get(dirPath).normalize().toString();
+    }
+
     /**
      * Initializes the framework OSGi using the servlet context
      *
-     * @param context The servlet context
      * @return Framework
      */
     public synchronized Framework initializeFramework() {
@@ -149,8 +161,7 @@ public class OSGIUtil {
             }
         }
 
-        FELIX_EXTRA_PACKAGES_FILE = felixProps.getProperty(FELIX_BASE_DIR) + File.separator + "osgi-extra.conf";
-        FELIX_EXTRA_PACKAGES_FILE_GENERATED = felixProps.getProperty(FELIX_BASE_DIR) + File.separator + "osgi-extra-generated.conf";
+        FELIX_EXTRA_PACKAGES_FILE = this.getOsgiExtraConfigPath();
 
         // Verify the bundles are in the right place
         verifyBundles(felixProps);
@@ -208,8 +219,8 @@ public class OSGIUtil {
     }
 
 
-    
-    
+
+
     /**
      * Stops the OSGi framework
      */
@@ -333,10 +344,6 @@ public class OSGIUtil {
                 Logger.info(OSGIUtil.class, () -> "Found property  " + felixKey + "=" + value);
             }
 
-            
-            
-            
-            
         }
         return properties;
     }
@@ -355,50 +362,15 @@ public class OSGIUtil {
     public String getExtraOSGIPackages() throws IOException {
 
         final File extraPackagesFile = new File(FELIX_EXTRA_PACKAGES_FILE);
-        final File extraPackagesGeneratedFile = new File(FELIX_EXTRA_PACKAGES_FILE_GENERATED);
-
-        // if neither exist, we generate a FELIX_EXTRA_PACKAGES_FILE_GENERATED
-        if (!(extraPackagesFile.exists() || extraPackagesGeneratedFile.exists())) {
-
-            final StringBuilder bob = new StringBuilder();
-            final Collection<String> list = ResourceCollectorUtil.getResources(dotCMSJarPrefixes);
-            for (final String name : list) {
-                if (name.charAt(0) == '/' || name.contains(":")) {
-                    continue;
-                }
-                if ("/".equals(File.separator)) {
-                    bob.append(name.replace(File.separator, ".")).append(",").append("\n");
-                } else {
-                    // Zip entries have '/' as separator on all platforms
-                    bob.append(name.replace(File.separator, ".").replace("/", ".")).append(",")
-                            .append("\n");
-                }
-            }
-
-            bob.append("org.osgi.framework,\n")
-                    .append("org.osgi.framework.wiring,\n")
-                    .append("org.osgi.service.packageadmin,\n")
-                    .append("org.osgi.framework.startlevel,\n")
-                    .append("org.osgi.service.startlevel,\n")
-                    .append("org.osgi.service.url,\n")
-                    .append("org.osgi.util.tracker,\n")
-                    .append("javax.inject.Qualifier,\n")
-                    .append("javax.servlet.resources,\n")
-                    .append("javax.servlet;javax.servlet.http;version=3.1.0\n"
-                    );
-
-            try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(
-                    Files.newOutputStream(Paths.get(FELIX_EXTRA_PACKAGES_FILE_GENERATED)),
-                    "utf-8"))) {
-                writer.write(bob.toString());
-            }
-        }
 
         StringWriter stringWriter;
         if (extraPackagesFile.exists()) {
             stringWriter = readExtraPackagesFiles(extraPackagesFile);
         } else {
-            stringWriter = readExtraPackagesFiles(extraPackagesGeneratedFile);
+            if (extraPackagesFile.getParentFile().mkdirs()) {
+                extraPackagesFile.createNewFile();
+            }
+            stringWriter = new StringWriter();
         }
 
         //Clean up the properties, it is better to keep it simple and in a standard format
@@ -504,7 +476,6 @@ public class OSGIUtil {
      * If bundle path is different to the default one then move all bundles to the new directory and get rid of the default one
      *
      * @param props The properties
-     * @param context The servlet context
      */
     private void verifyBundles(Properties props) {
         String bundlePath = props.getProperty(AUTO_DEPLOY_DIR_PROPERTY);
@@ -544,7 +515,6 @@ public class OSGIUtil {
      * If still not found, it fetches it from the 'felix.base.dir' property
      * If value is null an exception is thrown.
      *
-     * @param context The servlet context
      * @return String
      */
     public String getBaseDirectory() {
