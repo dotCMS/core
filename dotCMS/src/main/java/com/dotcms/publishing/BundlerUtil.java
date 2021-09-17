@@ -1,7 +1,15 @@
 package com.dotcms.publishing;
 
+import static com.dotcms.util.CollectionsUtils.list;
+
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publisher.business.PublishAuditAPI;
+import com.dotcms.publisher.business.PublishAuditStatus;
+import com.dotcms.publisher.business.PublishAuditStatus.Status;
+import com.dotcms.publisher.business.PublishQueueElement;
+import com.dotcms.publisher.business.PublisherAPI;
+import com.dotcms.publishing.manifest.ManifestUtil;
 import com.dotcms.publishing.output.BundleOutput;
 import com.dotcms.publishing.output.TarGzipBundleOutput;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
@@ -21,25 +29,40 @@ import java.io.*;
 import java.nio.file.Files;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 
 public class BundlerUtil {
 
     static XStream xmlSerializer = null;
+    public static final List<Status> STATUS_TO_RETRY = list(
+            Status.FAILED_TO_PUBLISH, Status.SUCCESS, Status.SUCCESS_WITH_WARNINGS,
+            Status.FAILED_TO_SEND_TO_ALL_GROUPS, Status.FAILED_TO_SEND_TO_SOME_GROUPS, Status.FAILED_TO_SENT
+    );
 
 	/**
 	 * does bundle exist
 	 * @param config
 	 * @return
 	 */
-	public static boolean bundleExists(PublisherConfig config){
+	public static boolean bundleExists(final PublisherConfig config){
 		if(config.getId() ==null){
 			throw new DotStateException("publishing config.id is null.  Please set an id before publishing (it will be the folder name under which the bundle will be created)");
 		}
 
-		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getName();
-		bundlePath += File.separator + "bundle.xml";
+		if (config.isStatic()) {
+            String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getName();
+            bundlePath += File.separator + "bundle.xml";
 
-		return new File(bundlePath).exists();
+            return new File(bundlePath).exists();
+        } else {
+            try {
+                return ManifestUtil.manifestExists(config.getId());
+            } catch (IOException e) {
+                Logger.warn(BundlerUtil.class, () -> e.getMessage());
+                return false;
+            }
+        }
+
 	}
 
     public static File getBundleRoot(String name) {
@@ -66,6 +89,54 @@ public class BundlerUtil {
             dir.mkdirs();
         }
         return dir;
+    }
+
+    public static boolean isRetryable(final PublishAuditStatus status) {
+        return UtilMethods.isSet(status) && isRetryable(status.getStatus());
+    }
+
+    public static boolean isRetryable(final String bundleId) {
+        try {
+            final PublishAuditStatus publishAuditStatus = PublishAuditAPI.getInstance()
+                    .getPublishAuditStatus(bundleId);
+
+            return isRetryable(publishAuditStatus) && !isInPublishQueue(bundleId)
+                    && bundleExists(bundleId);
+        } catch (DotPublisherException e) {
+            Logger.error(BundlerUtil.class, e.getMessage());
+            return false;
+        }
+    }
+
+    private static boolean bundleExists(String bundleId) {
+        final PublisherConfig basicConfig = new PublisherConfig();
+        basicConfig.setId(bundleId);
+        final File bundleRoot = BundlerUtil.getBundleRoot( basicConfig.getName(), false );
+
+        final File bundleStaticFile = new File(bundleRoot.getAbsolutePath() + PublisherConfig.STATIC_SUFFIX);
+        if ( !bundleStaticFile.exists() ) {
+            return true;
+        }
+
+        final File bundleFile = new File( ConfigUtils.getBundlePath() + File.separator + basicConfig.getId() + ".tar.gz" );
+        if ( !bundleFile.exists() ) {
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean isInPublishQueue(String bundleId) throws DotPublisherException {
+        List<PublishQueueElement> foundBundles = PublisherAPI.getInstance()
+                .getQueueElementsByBundleId(bundleId);
+
+        if ( foundBundles != null && !foundBundles.isEmpty() ) {
+            return true;
+        }
+        return false;
+    }
+
+    public static boolean isRetryable(final PublishAuditStatus.Status status) {
+        return UtilMethods.isSet(status) && STATUS_TO_RETRY.contains(status);
     }
 
 	/**

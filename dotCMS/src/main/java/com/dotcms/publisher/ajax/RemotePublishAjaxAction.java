@@ -1,5 +1,7 @@
 package com.dotcms.publisher.ajax;
 
+import static com.dotcms.util.CollectionsUtils.list;
+
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher;
 import com.dotcms.publisher.bundle.bean.Bundle;
@@ -20,8 +22,11 @@ import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
+import com.dotcms.publishing.PublisherConfig.Operation;
+import com.dotcms.publishing.manifest.CSVManifestBuilder;
+import com.dotcms.publishing.manifest.CSVManifestReader;
+import com.dotcms.publishing.manifest.ManifestReaderFactory;
 import com.dotmarketing.util.DateUtil;
-import com.lmax.disruptor.util.Util;
 import java.util.TimeZone;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileItemFactory;
@@ -29,7 +34,6 @@ import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.rest.PushPublisherJob;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -342,9 +346,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             }
 
             //We will be able to retry failed and successfully bundles
-            if (!(status.getStatus().equals(Status.FAILED_TO_PUBLISH) || status.getStatus()
-                    .equals(Status.SUCCESS) || status.getStatus()
-                    .equals(Status.SUCCESS_WITH_WARNINGS))) {
+            if (!BundlerUtil.isRetryable(status)) {
                 appendMessage( responseMessage, "publisher_retry.error.only.failed.publish", bundleId, true );
                 continue;
             }
@@ -406,7 +408,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             Verify if the bundle exist and was created correctly..., meaning, if there is not a .tar.gz file is because
             something happened on the creation of the bundle.
              */
-            File bundleFile = new File( bundleRoot + File.separator + ".." + File.separator + basicConfig.getId() + ".tar.gz" );
+            File bundleFile = new File( ConfigUtils.getBundlePath() + File.separator + basicConfig.getId() + ".tar.gz" );
             if ( !bundleFile.exists() ) {
                 Logger.warn( this.getClass(), "No Push Publish Bundle with id: " + bundleId + " found." );
                 appendMessage( responseMessage, "publisher_retry.error.not.found", bundleId, true );
@@ -414,16 +416,21 @@ public class RemotePublishAjaxAction extends AjaxAction {
             }
 
             if ( !BundlerUtil.bundleExists( basicConfig ) ) {
-                Logger.error( this.getClass(), "No Bundle Descriptor for bundle id: " + bundleId + " found." );
+                Logger.error( this.getClass(), String.format("Bundle's tar.gzip file for %s not exists" , bundleId));
                 appendMessage( responseMessage, "publisher_retry.error.not.descriptor.found", bundleId, true );
                 continue;
             }
 
             try {
-                //Read the bundle to see what kind of configuration we need to apply
-                String bundlePath = ConfigUtils.getBundlePath() + File.separator + basicConfig.getId();
-                File xml = new File( bundlePath + File.separator + "bundle.xml" );
-                PushPublisherConfig config = (PushPublisherConfig) BundlerUtil.xmlToObject( xml );
+
+                final CSVManifestReader csvManifestReader = ManifestReaderFactory.INSTANCE
+                        .createCSVManifestReader(basicConfig.getId());
+
+                final String operation = csvManifestReader
+                        .getMetadata(CSVManifestBuilder.OPERATION_METADATA_NAME);
+
+                final PushPublisherConfig config = new PushPublisherConfig();
+                config.setOperation(Operation.valueOf(operation));
 
                 //We can not retry Received Bundles, just bundles that we are trying to send
                 Boolean sending = sendingBundle( request, config, bundleId );
@@ -436,7 +443,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 				if (null == bundle) {
 					Logger.error(this.getClass(), "No Bundle with id: " + bundleId + " found.");
 					appendMessage(responseMessage, "publisher_retry.error.not.found", bundleId, true);
-					continue;
+					continue;o
 				}
                 if (status.getStatus().equals(Status.SUCCESS) || status.getStatus()
                         .equals(Status.SUCCESS_WITH_WARNINGS)) {
@@ -452,7 +459,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 
                 //Get the identifiers on this bundle
                 HashSet<String> identifiers = new HashSet<String>();
-                List<PublishQueueElement> assets = config.getAssets();
+                List<PublishQueueElement> assets = csvManifestReader.getPublishQueueElement();
                 if ( config.getLuceneQueries() != null && !config.getLuceneQueries().isEmpty() ) {
                     identifiers.addAll( PublisherUtil.getContentIds( config.getLuceneQueries() ) );
                 }
@@ -461,10 +468,6 @@ public class RemotePublishAjaxAction extends AjaxAction {
                         identifiers.add( asset.getAsset() );
                     }
                 }
-
-                //Cleaning previous bundle folder and tar file to avoid sending modified data 
-                FileUtils.cleanDirectory(new File(bundlePath));
-                bundleFile.delete();
                 
                 //Now depending of the operation lets add it to the queue job
                 if ( config.getOperation().equals( PushPublisherConfig.Operation.PUBLISH ) ) {
