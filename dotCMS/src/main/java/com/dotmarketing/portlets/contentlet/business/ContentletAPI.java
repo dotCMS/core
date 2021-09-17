@@ -465,20 +465,6 @@ public interface ContentletAPI {
             final boolean respectFrontendRoles)
             throws DotSecurityException, DotDataException;
 
-	/**
-	 * Will get all the contentlets for a structure and set the system host and system folder for the host values
-	 * Will check Write/Edit permissions on the Contentlet. So to guarantee all Contentlets will be cleaned make
-	 * sure to pass in an Admin User.  If a user doesn't have permissions to clean all teh contentlets it will clean 
-	 * as many as it can and throw the DotSecurityException  
-	 * @param structure
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 * @throws DotMappingException 
-	 */
-	public void cleanHostField(Structure structure, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotMappingException;
-
 
 	/**
 	 * Retrieves all references for a Contentlet. The result is an ArrayList of type Map whose key will 

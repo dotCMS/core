@@ -294,20 +294,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	@Override
-	protected void cleanIdentifierHostField(String structureInode) throws DotDataException, DotMappingException, DotStateException, DotSecurityException {
-	    StringBuffer sql = new StringBuffer("update identifier set parent_path='/', host_inode=? ");
-        sql.append(" where id in (select identifier from contentlet where structure_inode = ?)");
-        DotConnect dc = new DotConnect();
-        dc.setSQL(sql.toString());
-        dc.addParam(APILocator.getHostAPI().findSystemHost().getIdentifier());
-        dc.addParam(structureInode);
-        dc.loadResults();
-        //we could do a select here to figure out exactly which guys to evict
-        contentletCache.clearCache();
-        CacheLocator.getIdentifierCache().clearCache();
-	}
-
-	@Override
 	protected long contentletCount() throws DotDataException {
 	    DotConnect dc = new DotConnect();
         dc.setSQL("select count(*) as count from contentlet");
