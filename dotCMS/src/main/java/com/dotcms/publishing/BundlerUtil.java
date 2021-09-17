@@ -95,6 +95,20 @@ public class BundlerUtil {
         return UtilMethods.isSet(status) && isRetryable(status.getStatus());
     }
 
+    /**
+     * Return true if a bundle ca ne retry.
+     * A bundle cab be retry if:
+     *
+     * - If the method {@link BundlerUtil#isRetryable(Status)} return true
+     * - And The Bundle is not in the Publish Queue, it meean that the
+     * {@link PublisherAPI#getQueueElementsByBundleId(String)}  return a empty list
+     * - If the bundle's file exists, it mean:
+     *      - The bundle's tar.gzip file exists if it no a static bundle.
+     *      - The bundle's root folder exists if it a static bundle.
+     *
+     * @param bundleId
+     * @return
+     */
     public static boolean isRetryable(final String bundleId) {
         try {
             final PublishAuditStatus publishAuditStatus = PublishAuditAPI.getInstance()
@@ -135,6 +149,19 @@ public class BundlerUtil {
         return false;
     }
 
+    /**
+     * Return true if <code>status</code> is one of the follow {@link PublishAuditStatus.Status}:
+     *
+     * - {@link PublishAuditStatus#Status#FAILED_TO_PUBLISH}
+     * - {@link PublishAuditStatus#Status#SUCCESS}
+     * - {@link PublishAuditStatus#Status#SUCCESS_WITH_WARNINGS}
+     * - {@link PublishAuditStatus#Status#FAILED_TO_SEND_TO_ALL_GROUPS}
+     * - {@link PublishAuditStatus#Status#FAILED_TO_SEND_TO_SOME_GROUPS}
+     * - {@link PublishAuditStatus#Status#FAILED_TO_SENT}
+     *
+     * @param status
+     * @return
+     */
     public static boolean isRetryable(final PublishAuditStatus.Status status) {
         return UtilMethods.isSet(status) && STATUS_TO_RETRY.contains(status);
     }

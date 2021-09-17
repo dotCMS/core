@@ -8,6 +8,9 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.Optional;
 
+/**
+ * Factory for {@link CSVManifestReader}
+ */
 public enum ManifestReaderFactory {
     INSTANCE;
 
