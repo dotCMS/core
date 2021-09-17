@@ -2,14 +2,12 @@ package com.dotcms.company;
 
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Encapsulates company useful functionality such as:

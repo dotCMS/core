@@ -733,7 +733,7 @@ public class ImportStarterUtil {
 
                 if (UtilMethods.isSet(langCode) || UtilMethods.isSet(countryCode)) {
                     final Map<String, Object> map = new DotConnect()
-                            .setSQL("select * from language where lower(language_code) = ? and lower(country_code) = ?")
+                            .setSQL("select id from language where lower(language_code) = ? and lower(country_code) = ?")
                             .addParam(langCode)
                             .addParam(countryCode)
                             .loadObjectResults()

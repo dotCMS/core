@@ -288,43 +288,45 @@ public class LanguageAPITest {
 			throws DotDataException, DotSecurityException, DotIndexException {
 		final LanguageAPI languageAPI = APILocator.getLanguageAPI();
 		final Language defaultLang = languageAPI.getDefaultLanguage();
-		final Language newDefaultLanguage = new LanguageDataGen().nextPersisted();
-		final Language thirdLanguage = new LanguageDataGen().nextPersisted();
+		final User admin = mockAdminUser();
+		try {
+			final Language newDefaultLanguage = new LanguageDataGen().nextPersisted();
+			final Language thirdLanguage = new LanguageDataGen().nextPersisted();
 
-		final ContentType news = getNewsLikeContentType("News");
+			final ContentType news = getNewsLikeContentType("News");
 
-		final Contentlet persistedWithOldDefaultLang = new ContentletDataGen(news)
-				.languageId(defaultLang.getId())
-				.setProperty("title", "News Test")
-				.setProperty("urlTitle", "news-test").setProperty("byline", "news-test")
-				.setProperty("sysPublishDate", new Date()).setProperty("story", "news-test")
-				.nextPersisted();
+			final Contentlet persistedWithOldDefaultLang = new ContentletDataGen(news)
+					.languageId(defaultLang.getId())
+					.setProperty("title", "News Test")
+					.setProperty("urlTitle", "news-test").setProperty("byline", "news-test")
+					.setProperty("sysPublishDate", new Date()).setProperty("story", "news-test")
+					.nextPersisted();
 
-		final Contentlet persistedWithThirdLang = new ContentletDataGen(news)
-				.languageId(thirdLanguage.getId())
-				.setProperty("title", "News Test")
-				.setProperty("urlTitle", "news-test").setProperty("byline", "news-test")
-				.setProperty("sysPublishDate", new Date()).setProperty("story", "news-test")
-				.nextPersisted();
+			final Contentlet persistedWithThirdLang = new ContentletDataGen(news)
+					.languageId(thirdLanguage.getId())
+					.setProperty("title", "News Test")
+					.setProperty("urlTitle", "news-test").setProperty("byline", "news-test")
+					.setProperty("sysPublishDate", new Date()).setProperty("story", "news-test")
+					.nextPersisted();
 
+			languageAPI.makeDefault(newDefaultLanguage.getId(), admin);
+			assertEquals(newDefaultLanguage, languageAPI.getDefaultLanguage());
+			languageAPI.transferAssets(defaultLang.getId(), newDefaultLanguage.getId(), admin);
 
-	  final User admin = mockAdminUser();
-      languageAPI.makeDefault(newDefaultLanguage.getId(), admin);
-	  assertEquals(newDefaultLanguage, languageAPI.getDefaultLanguage());
-      languageAPI.transferAssets(defaultLang.getId(),newDefaultLanguage.getId(), admin);
+			final ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
-		final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+			Contentlet contentlet = contentletAPI
+					.find(persistedWithOldDefaultLang.getInode(), admin, false);
 
-		 Contentlet contentlet = contentletAPI
-				.find(persistedWithOldDefaultLang.getInode(), admin, false);
+			assertEquals(newDefaultLanguage.getId(), contentlet.getLanguageId());
 
-		assertEquals(newDefaultLanguage.getId(),contentlet.getLanguageId());
+			contentlet = contentletAPI
+					.find(persistedWithThirdLang.getInode(), admin, false);
 
-		contentlet = contentletAPI
-				.find(persistedWithThirdLang.getInode(), admin, false);
-
-		assertEquals(thirdLanguage.getId(),contentlet.getLanguageId());
-
+			assertEquals(thirdLanguage.getId(), contentlet.getLanguageId());
+		} finally {
+			languageAPI.makeDefault(defaultLang.getId(), admin);
+		}
 	}
 
 	private User mockAdminUser() {

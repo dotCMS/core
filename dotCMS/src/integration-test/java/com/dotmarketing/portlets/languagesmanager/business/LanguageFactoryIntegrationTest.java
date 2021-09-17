@@ -54,7 +54,6 @@ public class LanguageFactoryIntegrationTest extends IntegrationTestBase {
          assertTrue(languages.size() >= 2);
     }
 
-    @Ignore("English isn't necessarily the default language. ")
     @Test
     public void test_get_default_language(){
         final Language language = languageFactory.getDefaultLanguage();

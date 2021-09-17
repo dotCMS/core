@@ -41,13 +41,13 @@ public class Task210908AddCompanyDefaultLanguageTest {
             final String dropColumnSQL = "ALTER TABLE company DROP COLUMN default_language_id";
             dotConnect.executeStatement(dropColumnSQL);
         } catch (SQLException e) {
-            throw new DotDataException(e.getMessage(), e);
+            Logger.warn(Task210908AddCompanyDefaultLanguageTest.class, e.getMessage(), e);
         }
     }
 
     /**
-     * Given scenario:
-     * Expected Results:
+     * Given scenario: We drop the column if it already exists. Run the upgrade task
+     * Expected Results: The column must be there
      * @throws DotDataException
      */
     @Test
@@ -67,8 +67,8 @@ public class Task210908AddCompanyDefaultLanguageTest {
     }
 
     /**
-     * Given scenario:
-     * Expected Results:
+     * Given scenario: Test upgrade task adding an existing lang
+     * Expected Results: Success.
      * @throws DotDataException
      */
     @Test
@@ -105,8 +105,8 @@ public class Task210908AddCompanyDefaultLanguageTest {
     }
 
     /**
-     * Given scenario:
-     * Expected Results:
+     * Given scenario: Test upgrade task adding a non-existing lang
+     * Expected Results: Failure
      * @throws DotDataException
      */
     @Test(expected = DotDataException.class)
