@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - release-*
+      - pipeline-enhancement
 jobs:
   publish_image:
     name: Publish DotCMS docker image on release push
@@ -46,13 +47,13 @@ jobs:
         id: publish-docker-image
         uses: dotcms/publish-docker-image-action@main
         with:
-          dot_cicd_branch: master
+          dot_cicd_branch: pipeline-enhancement
           build_id: ${{ env.BUILD_ID }}
           tags: ${{ steps.discover-docker-tags.outputs.discovered_tags }}
           github_user_token: ${{ secrets.CICD_GITHUB_TOKEN }}
           docker_hub_username: ${{ secrets.DOCKER_USERNAME }}
           docker_hub_token: ${{ secrets.DOCKER_TOKEN }}
-          dry_run: false
+          dry_run: true
         if: env.jobRun == 'true'
 #       - name: Slack Notification
 #         if: success()

@@ -2,12 +2,15 @@ name: release-process-automation
 on:
   release:
     types: [published]
+  push:
+    branches:
+      - pipeline-enhancement
 jobs:
   release-process:
     name: Release Process Automation
     runs-on: ubuntu-latest
     env:
-      DOT_CICD_BRANCH: master
+      DOT_CICD_BRANCH: pipeline-enhancement
       GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
       REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}

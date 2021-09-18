@@ -6,12 +6,13 @@ on:
       - master
       - release-*
       - test-*
+      - pipeline-enhancement
 jobs:
   run-unit-tests-job:
     name: Unit Tests
     runs-on: ubuntu-latest
     env:
-      DOT_CICD_BRANCH: master
+      DOT_CICD_BRANCH: pipeline-enhancement
       EXPORT_REPORTS: true
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
@@ -58,7 +59,7 @@ jobs:
     name: Curl Tests
     runs-on: ubuntu-latest
     env:
-      DOT_CICD_BRANCH: master
+      DOT_CICD_BRANCH: pipeline-enhancement
       EXPORT_REPORTS: true
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
@@ -123,7 +124,7 @@ jobs:
       matrix:
         databaseType: [ postgres, mysql, oracle, mssql ]
     env:
-      DOT_CICD_BRANCH: master
+      DOT_CICD_BRANCH: pipeline-enhancement
       EXPORT_REPORTS: true
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
