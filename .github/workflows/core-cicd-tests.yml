@@ -6,7 +6,6 @@ on:
       - master
       - release-*
       - test-*
-      - pipeline-enhancement
 jobs:
   run-unit-tests-job:
     name: Unit Tests
