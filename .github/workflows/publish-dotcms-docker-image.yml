@@ -43,7 +43,7 @@ jobs:
         id: discover-docker-tags
         uses: dotcms/discover-docker-tags-action@main
         with:
-          version: ${{ ENV.DOTCMS_VERSION }}
+          version: ${{ env.DOTCMS_VERSION }}
           hash: ${{ env.BUILD_HASH }}
           label: ${{ github.event.inputs.custom_label }}
           update_stable: ${{ github.event.inputs.update_stable }}
@@ -52,7 +52,7 @@ jobs:
         id: publish-docker-image
         uses: dotcms/publish-docker-image-action@main
         with:
-          dot_cicd_branch: master
+          dot_cicd_branch: pipeline-enhancement
           build_id: ${{ env.BUILD_ID }}
           tags: ${{ steps.discover-docker-tags.outputs.discovered_tags }}
           github_user_token: ${{ secrets.CICD_GITHUB_TOKEN }}

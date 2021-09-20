@@ -40,7 +40,7 @@ jobs:
         id: discover-docker-tags
         uses: dotcms/discover-docker-tags-action@main
         with:
-          version: ${{ ENV.DOTCMS_VERSION }}
+          version: ${{ env.DOTCMS_VERSION }}
           hash: ${{ env.BUILD_HASH }}
           label: ${{ github.event.inputs.custom_label }}
           update_stable: ${{ github.event.inputs.updata_stable_tags }}
