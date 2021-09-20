@@ -263,7 +263,7 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>27.0.1-android</version>
+                <version>29.0-android</version>
                 <scope>compile</scope>
             </dependency>
 
