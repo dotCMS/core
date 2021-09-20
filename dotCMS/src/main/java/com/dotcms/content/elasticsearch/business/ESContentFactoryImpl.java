@@ -56,6 +56,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
+import com.dotmarketing.portlets.contentlet.business.json.SchemelessContentJsonSupport.INSTANCE;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -1928,6 +1929,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
     private void upsertContentlet(final Contentlet contentlet, final String inode) throws DotDataException {
+
+        final String json = INSTANCE.get().toJson(contentlet);
+        System.out.println(json);
+
         final UpsertCommand upsertContentletCommand = UpsertCommandFactory.getUpsertCommand();
         final SimpleMapAppContext replacements = new SimpleMapAppContext();
 
