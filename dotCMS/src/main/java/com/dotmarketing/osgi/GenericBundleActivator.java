@@ -24,11 +24,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import org.apache.felix.framework.OSGIUtil;
-import org.apache.felix.http.proxy.DispatcherTracker;
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
 import org.apache.velocity.tools.view.ToolInfo;
 import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
-import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
@@ -134,7 +132,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
         //Override the classes found in the Override-Classes attribute
         overrideClasses(context);
 
-        forceHttpServiceLoading( context );
         //Forcing the loading of the ToolboxManager
         forceToolBoxLoading( context );
         //Forcing the loading of the WorkflowService
@@ -279,57 +276,9 @@ public abstract class GenericBundleActivator implements BundleActivator {
         }
     }
 
-    /**
-     * Forcing the registry of the HttpService, usually need it when the felix framework is reloaded and we need to update the
-     * bundle context of our already registered services.
-     *
-     * @param context
-     */
-    private void forceHttpServiceLoading ( BundleContext context ) throws Exception {
 
-        try {
-            //Working with the http bridge
-            if ( System.getProperty(WebKeys.OSGI_ENABLED)!=null ) {//If it is null probably the servlet wasn't even been loaded...
 
-                if (null == OSGIProxyServlet.bundleContext) {
-                    synchronized (this) {
-                        if (null == OSGIProxyServlet.bundleContext) {
-                            initProxyServlet(context);
-                        }
-                    }
-                } else {
-                    try {
-                        OSGIProxyServlet.bundleContext.getBundle();
-                    } catch (IllegalStateException e) {
-                        initProxyServlet(context);
-                    }
-                }
 
-            }
-        } catch ( Exception e ) {
-            Logger.error( this, "Error loading HttpService.", e );
-            throw e;
-        }
-    }
-
-    /**
-     * Sets the bundle context to the OSGIProxyServlet
-     */
-    private void initProxyServlet(BundleContext context) throws Exception {
-
-        Bundle[] bundles = context.getBundles();
-        for (Bundle bundle : bundles) {
-            if (bundle.getSymbolicName().equals(OSGIUtil.BUNDLE_HTTP_BRIDGE_SYMBOLIC_NAME)) {
-                //If we are here is because we have an invalid bundle context, so we need to provide a new one
-                BundleContext httpBundle = bundle.getBundleContext();
-                OSGIProxyServlet.tracker = new DispatcherTracker(httpBundle, null,
-                        OSGIProxyServlet.servletConfig);
-                OSGIProxyServlet.tracker.open();
-                OSGIProxyServlet.bundleContext = httpBundle;
-            }
-
-        }
-    }
 
     
     

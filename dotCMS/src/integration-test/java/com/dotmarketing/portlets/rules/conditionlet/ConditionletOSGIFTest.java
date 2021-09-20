@@ -9,7 +9,6 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.osgi.GenericBundleActivator;
 import com.dotmarketing.osgi.HostActivator;
-import com.dotmarketing.osgi.OSGIProxyServlet;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.util.Config;
@@ -36,7 +35,6 @@ public class ConditionletOSGIFTest {
 
         Mockito.when(Config.CONTEXT.getRealPath("/WEB-INF/felix")).thenReturn(Config.getStringProperty("felix.base.dir","/WEB-INF/felix"));
         final ServletConfig servletConfig = mock(ServletConfig.class);
-        OSGIProxyServlet.servletConfig = servletConfig;
 
         OSGIUtil.getInstance().initializeFramework();
     }

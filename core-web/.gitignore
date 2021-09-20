@@ -1,0 +1,86 @@
+# config/log files   #
+######################
+bin/*.sh
+*.log
+.classpath
+.settings/*
+.project
+.idea/
+.vscode
+*.iml
+*.ipr
+*.iws
+
+# none enterprise stuff should make it here #
+#######################################
+dotCMS/src/main/enterprise
+dotCMS/src/main/enterprise/*
+
+#Temporary Build Migration Ignores
+dotCMS/src/main/webapp/html/ng
+
+# Instance Files     #
+######################
+dotCMS/src/main/webapp/WEB-INF/felix/felix-cache
+dotCMS/src/main/webapp/WEB-INF/felix/osgi-extra-generated.conf
+dotCMS/src/main/webapp/WEB-INF/felix/osgi-extra.conf
+dotCMS/src/main/webapp/html/js/tinymce/jscripts/tiny_mce/*.gz
+
+_original
+# OS generated files #
+######################
+.DS_Store*
+ehthumbs.db
+Icon?
+Thumbs.db
+
+# Build #
+######################
+libs/test
+build/
+!dotCMS/src/main/webapp/html/js/dojo/custom-build/build/
+out/
+dotCMS/src/main/webapp/WEB-INF/generated_web.xml
+dotCMS/src/main/webapp/WEB-INF/lib/*.jar
+dotCMS/src/main/webapp/WEB-INF/felix/bundle/dot.*.jar
+dotCMS/src/main/webapp/WEB-INF/lib/plugin-*.jar
+dotCMS/starter.zip
+dotCMS/src/integration-test/resources/starter.zip
+.ant-targets-build.xml
+.gradle/
+/*.local.*
+dotCMS/src/main/webapp/dotAdmin
+dotCMS/src/main/webapp/dotcms-webcomponents
+dotCMS/bin/*
+dotCMS/classes
+
+# Changes after gradle migration #
+###############################
+dist/
+dist-output/
+dotCMS/build/
+dotCMS/.gradle/
+dotCMS/.settings/
+dotCMS/src/main/webapp/WEB-INF/classes/
+dotCMS/src/main/webapp/WEB-INF/lib/
+dotCMS/src/main/webapp/WEB-INF/velocity/static/plugins/
+dotCMS/src/main/webapp/html/plugins/
+
+# immutables.github.io generated folder#
+###############################
+dotCMS/src/main/generated/
+
+# integration tests reports and logs
+###############################
+docker/tests/integration/output
+docker/tests/integration/license
+docker/tests/integration/backup
+
+dot-cicd/
+tmp/
+# maven files
+###############################
+# https://github.com/takari/maven-wrapper#usage-without-binary-jar
+.mvn/wrapper/maven-wrapper.jar
+target/
+installs/
