@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <web-app xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 		 xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
-                      http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+                      http://java.sun.com/xml/ns/javaee/web-app_3_1.xsd"
 		 version="3.0" metadata-complete="true">
     <display-name>dotCMS</display-name>
 	<!-- Don't ever delete the following comment tags, it will break the build -->
@@ -186,12 +186,6 @@
 	<listener>
 		<listener-class>com.dotmarketing.listeners.ContextLifecycleListener</listener-class>
 	</listener>
-	<listener>
-	    <listener-class>com.dotmarketing.listeners.ClickstreamListener</listener-class>
-	</listener>
-    <listener>
-        <listener-class>org.apache.felix.http.proxy.impl.ProxyServletContextListener</listener-class>
-    </listener>
     <listener>
     	<listener-class>com.dotcms.listeners.SessionMonitor</listener-class>
     </listener>
@@ -227,11 +221,7 @@
 			98
 		</load-on-startup>
 	</servlet>
-	<servlet>
-		<servlet-name>proxy</servlet-name>
-		<servlet-class>com.dotmarketing.osgi.OSGIProxyServlet</servlet-class>
-		<load-on-startup>0</load-on-startup>
-	</servlet>
+
 	
 	<servlet>
 		<servlet-name>Init</servlet-name>
@@ -413,11 +403,7 @@
 	END OF TEST FRAMEWORK SERVLETS -->
 	
     <!-- DOTCMS SERVLET-MAPPINGS -->
-	<servlet-mapping>
-        <servlet-name>proxy</servlet-name>
-        <url-pattern>/app/*</url-pattern>
-    </servlet-mapping>
-    
+
     <servlet-mapping>
       <servlet-name>springmvc</servlet-name>
       <url-pattern>/spring/*</url-pattern>

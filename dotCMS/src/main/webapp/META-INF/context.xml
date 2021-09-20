@@ -1,4 +1,4 @@
-<Context path="${catalina.home}/webapps/ROOT" docBase="${catalina.home}/webapps/ROOT" reloadable="false" crossContext="true">
+<Context reloadable="false" crossContext="true">
 <Resources allowLinking="true" />
 
     <!-- http://tomcat.apache.org/tomcat-8.0-doc/config/jar-scanner.html -->

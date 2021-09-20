@@ -18,9 +18,10 @@ import com.google.common.collect.ImmutableMap;
 import java.io.Serializable;
 import java.util.*;
 
+import javax.annotation.Nullable;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
-import org.elasticsearch.common.Nullable;
+
 import org.immutables.value.Value;
 import org.immutables.value.Value.Derived;
 
