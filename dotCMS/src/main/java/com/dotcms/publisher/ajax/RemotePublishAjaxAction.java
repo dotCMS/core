@@ -443,7 +443,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 				if (null == bundle) {
 					Logger.error(this.getClass(), "No Bundle with id: " + bundleId + " found.");
 					appendMessage(responseMessage, "publisher_retry.error.not.found", bundleId, true);
-					continue;o
+					continue;
 				}
                 if (status.getStatus().equals(Status.SUCCESS) || status.getStatus()
                         .equals(Status.SUCCESS_WITH_WARNINGS)) {
