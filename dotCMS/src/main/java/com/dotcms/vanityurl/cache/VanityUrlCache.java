@@ -18,7 +18,7 @@ public abstract class VanityUrlCache implements Cachable {
 
     // presents a vanity that does not exists on the cache
     public static CachedVanityUrl NOT_FOUND404
-            = new CachedVanityUrl("NOT_FOUND404", "NOT_FOUND404", -1, "SYSTEM_HOST", "404", 404, -1);
+            = new CachedVanityUrl("NOT_FOUND404", "DOT_NOT_FOUND404", -1, "SYSTEM_HOST", "404", 404, -1);
 
     /**
      * Removes all entries from cache

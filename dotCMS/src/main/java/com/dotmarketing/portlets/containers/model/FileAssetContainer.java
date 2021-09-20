@@ -78,7 +78,7 @@ public class FileAssetContainer extends Container {
     }
 
     private FileAsset loadAsset(String inode) {
-        return Try.of(()->APILocator.getFileAssetAPI().find(preLoopAsset, APILocator.systemUser(), false)).getOrNull();
+        return Try.of(()->APILocator.getFileAssetAPI().find(inode, APILocator.systemUser(), false)).getOrNull();
     }
     
     
