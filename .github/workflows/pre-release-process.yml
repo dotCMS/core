@@ -22,7 +22,7 @@ jobs:
     name: Automation of pre-release process
     runs-on: ubuntu-latest
     env:
-      DOT_CICD_BRANCH: master
+      DOT_CICD_BRANCH: pipeline-enhancement
       RELEASE_VERSION: ${{ github.event.inputs.release_version }}
       DRY_RUN: ${{ github.event.inputs.dry_run }}
       DEBUG: true
@@ -69,7 +69,7 @@ jobs:
         id: publish-docker-image
         uses: dotcms/publish-docker-image-action@main
         with:
-          dot_cicd_branch: master
+          dot_cicd_branch: pipeline-enhancement
           build_id: release-${{ env.RELEASE_VERSION }}
           tags: ${{ steps.discover-docker-tags.outputs.discovered_tags }}
           github_user_token: ${{ secrets.CICD_GITHUB_TOKEN }}
