@@ -274,13 +274,14 @@ public class CaffineCache extends CacheProvider {
                         LoadingCache loadingCache = Caffeine.newBuilder()
                                 .maximumSize(size)
                                 .recordStats()
-                                .expireAfter(new Expiry<String, Expirable>() {
-                                    public long expireAfterCreate(String key, Expirable expirable, long currentTime) {
+                                .expireAfter(new Expiry<String, Object>() {
+                                    public long expireAfterCreate(String key, Object value, long currentTime) {
                                         long ttlInSeconds;
 
-                                        if (expirable.getTtl()>0) {
-                                            ttlInSeconds = expirable.getTtl();
-                                        } else if(defaultTTL>0) {
+                                        if(value instanceof Expirable
+                                                && ((Expirable) value).getTtl() > 0) {
+                                            ttlInSeconds = ((Expirable) value).getTtl();
+                                        } else if (defaultTTL > 0) {
                                             ttlInSeconds = defaultTTL;
                                         } else {
                                             ttlInSeconds = Long.MAX_VALUE;
@@ -288,11 +289,11 @@ public class CaffineCache extends CacheProvider {
 
                                         return TimeUnit.SECONDS.toNanos(ttlInSeconds);
                                     }
-                                    public long expireAfterUpdate(String key, Expirable expirable,
+                                    public long expireAfterUpdate(String key, Object value,
                                             long currentTime, long currentDuration) {
                                         return currentDuration;
                                     }
-                                    public long expireAfterRead(String key, Expirable expirable,
+                                    public long expireAfterRead(String key, Object value,
                                             long currentTime, long currentDuration) {
                                         return currentDuration;
                                     }
