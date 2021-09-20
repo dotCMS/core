@@ -8,9 +8,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
+import com.dotcms.repackage.javax.validation.constraints.Max;
+import com.dotcms.repackage.javax.validation.constraints.Min;
+import com.dotcms.repackage.javax.validation.constraints.NotNull;
 
 public class ExportSecretForm extends Validated {
 

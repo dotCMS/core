@@ -7,10 +7,8 @@ import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.concurrent.Debouncer;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.osgi.HostActivator;
-import com.dotmarketing.osgi.OSGIProxyServlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
@@ -409,12 +407,6 @@ public class OSGIUtil {
     public void stopFramework() {
 
         try {
-            //Closing tracker associated to the HttpServlet
-            DispatcherTracker tracker = OSGIProxyServlet.tracker;
-            if (null != tracker) {
-                tracker.close();
-                OSGIProxyServlet.tracker = null;
-            }
 
             if (null != felixFramework) {
 
