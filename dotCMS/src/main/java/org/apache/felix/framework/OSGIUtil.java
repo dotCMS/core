@@ -11,6 +11,7 @@ import java.io.StringWriter;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -18,7 +19,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+
+import com.dotmarketing.business.APILocator;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.apache.felix.framework.util.FelixConstants;
 import org.apache.felix.http.proxy.DispatcherTracker;
 import org.apache.felix.main.AutoProcessor;
@@ -52,6 +56,7 @@ public class OSGIUtil {
     public WorkflowAPIOsgiService workflowOsgiService;
     private static final String WEB_INF_FOLDER = "/WEB-INF";
     private static final String FELIX_BASE_DIR = "felix.base.dir";
+    private static final String FELIX_UPLOAD_DIR = "felix.upload.dir";
     private static final String FELIX_FILEINSTALL_DIR = "felix.fileinstall.dir";
     private static final String FELIX_UNDEPLOYED_DIR = "felix.undeployed.dir";
     private static final String FELIX_FRAMEWORK_STORAGE = org.osgi.framework.Constants.FRAMEWORK_STORAGE;
@@ -61,7 +66,7 @@ public class OSGIUtil {
      * Felix directory list
      */
     private static final String[] FELIX_DIRECTORIES = new String[] {
-        FELIX_BASE_DIR, FELIX_FILEINSTALL_DIR, FELIX_UNDEPLOYED_DIR, AUTO_DEPLOY_DIR_PROPERTY, FELIX_FRAMEWORK_STORAGE
+        FELIX_BASE_DIR, FELIX_UPLOAD_DIR, FELIX_FILEINSTALL_DIR, FELIX_UNDEPLOYED_DIR, AUTO_DEPLOY_DIR_PROPERTY, FELIX_FRAMEWORK_STORAGE
     };
 
     public static final String BUNDLE_HTTP_BRIDGE_SYMBOLIC_NAME = "org.apache.felix.http.bundle";
@@ -97,6 +102,7 @@ public class OSGIUtil {
         Logger.info(this, () -> "Felix base dir: " + felixDirectory);
 
         final String felixAutoDeployDirectory = Config.getStringProperty(AUTO_DEPLOY_DIR_PROPERTY,  felixDirectory + File.separator + "bundle") ;
+        final String felixUploadDirectory     = Config.getStringProperty(FELIX_UPLOAD_DIR, felixDirectory + File.separator + "upload") ;
         final String felixLoadDirectory =       Config.getStringProperty(FELIX_FILEINSTALL_DIR,     felixDirectory + File.separator + "load") ;
         final String felixUndeployDirectory =   Config.getStringProperty(FELIX_UNDEPLOYED_DIR,      felixDirectory + File.separator + "undeployed") ;
         final String felixCacheDirectory =      Config.getStringProperty(FELIX_FRAMEWORK_STORAGE,   felixDirectory + File.separator + "felix-cache") ;
@@ -104,6 +110,7 @@ public class OSGIUtil {
         felixProps.put(FELIX_BASE_DIR, felixDirectory);
         felixProps.put(AUTO_DEPLOY_DIR_PROPERTY, felixAutoDeployDirectory);
         felixProps.put(FELIX_FRAMEWORK_STORAGE, felixCacheDirectory);
+        felixProps.put(FELIX_UPLOAD_DIR, felixUploadDirectory);
         felixProps.put(FELIX_FILEINSTALL_DIR, felixLoadDirectory);
         felixProps.put(FELIX_UNDEPLOYED_DIR, felixUndeployDirectory);
 
@@ -148,6 +155,8 @@ public class OSGIUtil {
                         () -> "Building Directory:" + felixProps.getProperty(key));
             }
         }
+
+        this.startWatchingUploadFolder(felixProps.getProperty(FELIX_UPLOAD_DIR));
 
         FELIX_EXTRA_PACKAGES_FILE = felixProps.getProperty(FELIX_BASE_DIR) + File.separator + "osgi-extra.conf";
         FELIX_EXTRA_PACKAGES_FILE_GENERATED = felixProps.getProperty(FELIX_BASE_DIR) + File.separator + "osgi-extra-generated.conf";
@@ -207,9 +216,33 @@ public class OSGIUtil {
         return felixFramework;
     }
 
+    private void startWatchingUploadFolder(final String uploadFolder) {
 
-    
-    
+        try {
+
+            final File uploadFolderFile = new File(uploadFolder);
+            Logger.debug(APILocator.class, "Start watching OSGI Upload dir: " + uploadFolder);
+            APILocator.getFileWatcherAPI().watchFile(uploadFolderFile,
+                    ()->this.fireReload(uploadFolderFile));
+        } catch (IOException e) {
+            Logger.error(Config.class, e.getMessage(), e);
+        }
+    }
+
+    private void fireReload(final File uploadFolderFile) {
+
+        APILocator.getLocalSystemEventsAPI().asyncNotify(
+                new OSGIUploadBundleEvent(Instant.now(), uploadFolderFile));
+
+        final String[] pathnames = uploadFolderFile.list(new SuffixFileFilter(".jar"));
+
+        for (final String pathname : pathnames) {
+
+            Logger.info(this, "OSGI - pathname: " + pathname);
+        }
+    }
+
+
     /**
      * Stops the OSGi framework
      */
@@ -481,6 +514,14 @@ public class OSGIUtil {
         return created;
     }
 
+    /**
+     * Fetches the Felix Upload path
+     *
+     * @return String
+     */
+    public String getFelixUploadPath() {
+        return getFelixPath(FELIX_UPLOAD_DIR, "upload");
+    }
     /**
      * Fetches the Felix Deploy path
      *
