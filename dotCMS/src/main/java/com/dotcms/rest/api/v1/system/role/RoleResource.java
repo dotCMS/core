@@ -294,4 +294,46 @@ public class RoleResource implements Serializable {
 						.startsWith(roleNameToFilterClean)).collect(Collectors.toList()):
 				roleList;
 	}
+
+
+	/**
+	 * Load role based on the role id.
+	 *
+	 * @param roleId id of the role to search for.
+	 * @param loadChildrenRoles true - will add the data of all children roles of the requested role. Default Value: false
+	 * @return {@link RoleView} role requested.
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@GET
+	@Path("/{roleid}")
+	@Produces("application/json")
+	public Response loadRoleByRoleId(@Context final HttpServletRequest request,
+			@Context final HttpServletResponse response,
+			@PathParam   ("roleid") final String roleId,
+			@DefaultValue("false") @QueryParam("loadChildrenRoles") final boolean loadChildrenRoles)
+			throws DotDataException, DotSecurityException {
+
+		new WebResource.InitBuilder(this.webResource).requiredBackendUser(true)
+				.requiredFrontendUser(false).requestAndResponse(request, response)
+				.rejectWhenNoUser(true).init();
+
+		final Role role = this.roleAPI.loadRoleById(roleId);
+
+		if (null == role || !UtilMethods.isSet(role.getId())) {
+
+			throw new DoesNotExistException("The role: " + roleId + " does not exists");
+		}
+
+		final List<RoleView> childrenRoles = new ArrayList<>();
+		if(loadChildrenRoles){
+			final List<String> roleChildrenIdList = null!=role.getRoleChildren() ? role.getRoleChildren() : new ArrayList<>();
+			for(final String childRoleId : roleChildrenIdList){
+				childrenRoles.add(new RoleView(this.roleAPI.loadRoleById(childRoleId),new ArrayList<>()));
+			}
+		}
+
+		return Response.ok(new ResponseEntityView(new RoleView(role,childrenRoles))).build();
+
+	}
 }
