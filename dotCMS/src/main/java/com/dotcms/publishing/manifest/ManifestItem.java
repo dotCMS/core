@@ -10,7 +10,9 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.liferay.util.StringPool;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 public interface ManifestItem {
 
@@ -111,13 +113,13 @@ public interface ManifestItem {
         private String folderPath;
 
         public ManifestInfo(final ManifestInfoBuilder builder){
-            this.objectType = builder.objectType;
-            this.id = builder.id;
-            this.title = builder.title;
-            this.siteId = builder.siteId;
-            this.folderId = builder.folderId;
-            this.folderPath = builder.folderPath;
-            this.inode = builder.inode;
+            this.objectType = UtilMethods.isSet(builder.objectType) ? builder.objectType : StringPool.BLANK ;
+            this.id = UtilMethods.isSet(builder.id) ? builder.id : StringPool.BLANK;
+            this.title = UtilMethods.isSet(builder.title)? builder.title : StringPool.BLANK;
+            this.siteId = UtilMethods.isSet(builder.siteId)? builder.siteId : StringPool.BLANK;
+            this.folderId = UtilMethods.isSet(builder.folderId)? builder.folderId : StringPool.BLANK;
+            this.folderPath = UtilMethods.isSet(builder.folderPath)? builder.folderPath : StringPool.BLANK;
+            this.inode = UtilMethods.isSet(builder.inode) ? builder.inode : StringPool.BLANK;
         }
 
         public String objectType(){
@@ -139,7 +141,7 @@ public interface ManifestItem {
         public String site(){
             if (UtilMethods.isSet(siteId)) {
                 final Host host = getHost(siteId);
-                return host.getHostname();
+                return UtilMethods.isSet(host) ? host.getHostname() : StringPool.BLANK;
             } else {
                 return StringPool.BLANK;
             }
@@ -172,6 +174,38 @@ public interface ManifestItem {
             } catch (DotSecurityException | DotDataException e) {
                 throw new DotRuntimeException(e);
             }
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            ManifestInfo that = (ManifestInfo) o;
+            return Objects.equals(objectType.toLowerCase(), that.objectType.toLowerCase()) &&
+                    Objects.equals(id.toLowerCase(), that.id.toLowerCase()) &&
+                    Objects.equals(inode.toLowerCase(), that.inode.toLowerCase()) &&
+                    Objects.equals(title.toLowerCase(), that.title.toLowerCase());
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(objectType, id, inode, title, siteId, folderId, folderPath);
+        }
+
+        @Override
+        public String toString() {
+            return "ManifestInfo{" +
+                    "objectType='" + objectType + '\'' +
+                    ", id='" + id + '\'' +
+                    ", inode='" + inode + '\'' +
+                    ", title='" + title + '\'' +
+                    ", siteId='" + site() + '\'' +
+                    ", folderPath='" + folder() + '\'' +
+                    '}';
         }
     }
 }

@@ -1,8 +1,16 @@
 package com.dotmarketing.portlets.containers.model;
 
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import static com.dotcms.util.CollectionsUtils.map;
 
 import com.dotmarketing.beans.Host;
+
 import com.dotmarketing.beans.Source;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -12,11 +20,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import io.vavr.control.Try;
 
 /**
  * This is a {@link Container} plus a list of {@link FileAsset}
@@ -26,10 +30,9 @@ import java.util.Map;
 public class FileAssetContainer extends Container {
 
     @JsonIgnore
-    private transient final Map<String, Object> metaDataMap;
+    private final Map<String, Object> metaDataMap;
 
-    @JsonIgnore
-    private transient final Contentlet contentlet = new Contentlet();
+
 
     private long languageId;
     private Host host;
@@ -42,14 +45,14 @@ public class FileAssetContainer extends Container {
     }
 
     @JsonIgnore
-    private transient FileAsset postLoopAsset = null;
+    private String postLoopAsset = null;
 
     @JsonIgnore
     private transient FileAsset defaultContainerLayoutAsset = null;
 
     @JsonIgnore
     public FileAsset getPostLoopAsset() {
-        return postLoopAsset;
+        return loadAsset(postLoopAsset);
     }
 
     @JsonIgnore
@@ -58,7 +61,7 @@ public class FileAssetContainer extends Container {
     }
 
     public void setPostLoopAsset(final FileAsset postLoopAsset) {
-        this.postLoopAsset = postLoopAsset;
+        this.postLoopAsset = postLoopAsset.getInode();
     }
 
     public void setDefaultContainerLayoutAsset(final FileAsset defaultContainerLayoutAsset) {
@@ -67,28 +70,33 @@ public class FileAssetContainer extends Container {
 
 
     @JsonIgnore
-    private transient FileAsset preLoopAsset = null;
+    private String preLoopAsset = null;
 
     @JsonIgnore
     public FileAsset getPreLoopAsset() {
-        return preLoopAsset;
+       return loadAsset(preLoopAsset);
     }
 
+    private FileAsset loadAsset(String inode) {
+        return Try.of(()->APILocator.getFileAssetAPI().find(inode, APILocator.systemUser(), false)).getOrNull();
+    }
+    
+    
     public void setPreLoopAsset(final FileAsset preLoopAsset) {
-        this.preLoopAsset = preLoopAsset;
+        this.preLoopAsset = preLoopAsset.getInode();
     }
 
     /////
     @JsonIgnore
-    private transient List<FileAsset> containerStructuresAssets = Collections.emptyList();
+    private List<String> containerStructuresAssets = Collections.emptyList();
 
     @JsonIgnore
     public List<FileAsset> getContainerStructuresAssets() {
-        return containerStructuresAssets;
+        return containerStructuresAssets.stream().map(s->loadAsset(s)).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     public void setContainerStructuresAssets(List<FileAsset> containerStructuresAssets) {
-        this.containerStructuresAssets = containerStructuresAssets;
+        this.containerStructuresAssets = containerStructuresAssets.stream().map(f->f.getInode()).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     public void addMetaData(final String key, final Object value) {
@@ -135,7 +143,7 @@ public class FileAssetContainer extends Container {
     }
 
     private Versionable toContentlet() {
-
+        final Contentlet contentlet =  new Contentlet();
         contentlet.setIdentifier(this.identifier);
         contentlet.setInode(this.inode);
         contentlet.setLanguageId(this.languageId);

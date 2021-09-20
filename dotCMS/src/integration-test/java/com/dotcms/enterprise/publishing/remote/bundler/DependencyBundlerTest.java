@@ -1248,7 +1248,8 @@ public class DependencyBundlerTest {
                 );
             }
 
-            PublisherAPIImplTest.assertManifestFile(manifestBuilder.getManifestFile(), manifestLines);
+            PublisherAPIImplTest.assertManifestFile(manifestBuilder.getManifestFile(),
+                    manifestLines, list("#Filter:"));
         }
 
         assertAll(config, dependencies);

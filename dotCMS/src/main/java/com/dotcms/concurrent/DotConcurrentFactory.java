@@ -205,6 +205,10 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
                         "threadPool",  DotConcurrentImpl.class.cast(dotConcurrent).getThreadPoolExecutor().toString(),
                         "maxPoolSize", DotConcurrentImpl.class.cast(dotConcurrent).getThreadPoolExecutor().getMaximumPoolSize(),
                         "keepAlive",   DotConcurrentImpl.class.cast(dotConcurrent).getThreadPoolExecutor().getKeepAliveTime(TimeUnit.MILLISECONDS),
+                        "queue-length",DotConcurrentImpl.class.cast(dotConcurrent).getThreadPoolExecutor().getQueue().size(),
+                        "activeCount", DotConcurrentImpl.class.cast(dotConcurrent).getThreadPoolExecutor().getActiveCount(),
+                        "completedTaskCount", DotConcurrentImpl.class.cast(dotConcurrent).getThreadPoolExecutor().getCompletedTaskCount(),
+                        "TaskCount", DotConcurrentImpl.class.cast(dotConcurrent).getThreadPoolExecutor().getTaskCount(),
                         "queue",       toString(DotConcurrentImpl.class.cast(dotConcurrent).getThreadPoolExecutor().getQueue()),
                         "isShutdown",  DotConcurrentImpl.class.cast(dotConcurrent).shutdown
                         ):
@@ -213,6 +217,10 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
                                 "threadPool",  "noInfo",
                                 "maxPoolSize", dotConcurrent.getMaxPoolSize(),
                                 "keepAlive",   -1,
+                                "queue-length","noInfo",
+                                "activeCount", "noInfo",
+                                "completedTaskCount", "noInfo",
+                                "TaskCount", "noInfo",
                                 "queue",       "noInfo",
                                 "isShutdown",  dotConcurrent.isAborting()
                         )
@@ -221,6 +229,10 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
                         "threadPool",  "noInfo",
                         "maxPoolSize", -1,
                         "keepAlive",   -1,
+                        "queue-length","noInfo",
+                        "activeCount", "noInfo",
+                        "completedTaskCount", "noInfo",
+                        "TaskCount", "noInfo",
                         "queue",       "noInfo",
                         "isShutdown",  false
                 );

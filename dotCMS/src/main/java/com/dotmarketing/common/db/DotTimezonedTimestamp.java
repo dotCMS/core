@@ -2,6 +2,7 @@ package com.dotmarketing.common.db;
 
 
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.base.Preconditions;
 
@@ -28,6 +29,7 @@ public class DotTimezonedTimestamp {
     }
 
     public static DotTimezonedTimestamp now() {
-        return new DotTimezonedTimestamp(new Date(), Config.getStringProperty("db.datestimezone","UTC"));
+        return new DotTimezonedTimestamp(new Date(), Config.getStringProperty("db.datestimezone",
+                DateUtil.UTC));
     }
 }

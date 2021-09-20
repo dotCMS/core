@@ -38,7 +38,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.cos', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.counter-ejb', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.daisydiff', version:'ukv_3'
-    compile group: 'com.dotcms.lib', name: 'dot.dnsjava', version:'2.0.8_2'
     compile group: 'com.dotcms.lib', name: 'dot.dwr', version:'3rc2modified_3'
 
     compile group: 'com.lmax', name: 'disruptor', version: '3.3.4'
@@ -296,8 +295,26 @@ dependencies {
 
     compile group: 'net.jodah', name: 'failsafe', version:'1.0.4'
 
-    compile group: 'redis.clients', name: 'jedis', version:'2.7.3'
-    compile group: 'org.apache.commons', name: 'commons-pool2', version:'2.0'
+    compile ( group: 'redis.clients', name: 'jedis', version:'2.7.3'){
+        exclude(module: 'commons-pool2')
+    }
+    
+    compile ( group: 'io.lettuce', name: 'lettuce-core', version:'6.1.1.RELEASE'){
+        exclude(module: 'commons-pool2')
+        exclude(module: 'spring-beans')
+        exclude(module: 'spring-context')
+        exclude(module: 'spring-framework')
+        exclude(module: 'rxjava')
+        exclude(module: 'brave')
+        exclude(module: 'cdi-api')
+        exclude(module: 'javax.inject')
+        exclude(module: 'HdrHistogram')
+        exclude(module: 'LatencyUtils')
+        exclude(module: 'io.netty')
+    }
+    compile group: 'io.netty', name: 'netty-all', version: '4.1.45.Final'   
+    
+    compile group: 'org.apache.commons', name: 'commons-pool2', version:'2.9.0'
     compile group: 'com.dotcms.lib', name: 'dot.maxmind-db', version:'1.0.0_2'
     compile group: 'org.openjdk.jmh', name: 'jmh-core', version:'0.1'
 

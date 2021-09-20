@@ -15,6 +15,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.FieldVariable;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
 /**
@@ -96,10 +97,12 @@ public class FieldAPIImpl implements FieldAPI, Serializable {
 		FieldsCache.removeFieldVariables(field);
 	}
 
-	@WrapInTransaction
-	public FieldVariable findFieldVariable(String id, User user,
-			boolean respectFrontendRoles) throws DotDataException,
-			DotSecurityException {		
+	@CloseDBIfOpened
+	public FieldVariable findFieldVariable(final String id, final User user,
+			final boolean respectFrontendRoles) throws DotDataException,
+			DotSecurityException {
+
+		Logger.debug(this, ()-> "Finding the field variable: " + id);
 		return FieldFactory.getFieldVariable(id);		
 	}
 
