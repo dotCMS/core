@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "43e23ab3-ea75-445c-b698-06692a360bc4",
+		"_postman_id": "b5186041-46dd-4af8-abdb-7b4c1d8a8425",
 		"name": "RoleResource",
 		"description": "Contains test for role resources",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -12,7 +12,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "85655e20-caca-441e-b86b-8d72ee1ad549",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -79,7 +78,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "1b50d117-2cfe-4b46-8a18-c8dd473ca629",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -152,7 +150,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "ad827023-fd9d-4f46-8f2e-367f9c1d8796",
 						"exec": [
 							"pm.test(\"Status code should be 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -212,7 +209,203 @@
 				"description": "load users and roles by role filtering by name"
 			},
 			"response": []
+		},
+		{
+			"name": "Get Role ById Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json().entity;",
+							"",
+							"pm.test(\"Check Role Name\", function () {",
+							"    pm.expect(jsonData.name).to.eq(\"System\");",
+							"});",
+							"",
+							"pm.test(\"Check Role Children\", function () {",
+							"    pm.expect(jsonData.roleChildren.length).to.eql(0);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/roles/2adccac3-a56b-4078-be40-94e343f20712",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"roles",
+						"2adccac3-a56b-4078-be40-94e343f20712"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Role ById RoleId Does Not Exists",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 404\", function () {",
+							"    pm.response.to.have.status(404);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/roles/2adccac3-4078-be40-94e343f20712",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"roles",
+						"2adccac3-4078-be40-94e343f20712"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Role ById LoadChildrenRoles Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json().entity;",
+							"",
+							"pm.test(\"Check Role Name\", function () {",
+							"    pm.expect(jsonData.name).to.eq(\"System\");",
+							"});",
+							"",
+							"pm.test(\"Check Role Children\", function () {",
+							"    pm.expect(jsonData.roleChildren.length).not.to.eql(0);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/roles/2adccac3-a56b-4078-be40-94e343f20712?loadChildrenRoles=true",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"roles",
+						"2adccac3-a56b-4078-be40-94e343f20712"
+					],
+					"query": [
+						{
+							"key": "loadChildrenRoles",
+							"value": "true"
+						}
+					]
+				}
+			},
+			"response": []
 		}
-	],
-	"protocolProfileBehavior": {}
+	]
 }
