@@ -52,6 +52,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
+import org.eclipse.persistence.internal.oxm.schema.model.Content;
 
 
 public class PushPublishigDependencyProcesor implements DependencyProcessor{

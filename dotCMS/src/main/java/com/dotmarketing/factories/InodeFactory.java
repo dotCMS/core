@@ -14,7 +14,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -33,6 +32,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
+import org.junit.experimental.categories.Categories;
 
 /**
  * 
@@ -59,8 +59,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		try {
@@ -105,8 +105,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		try {
@@ -157,8 +157,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		try {
@@ -208,8 +208,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		try {
@@ -257,8 +257,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		try {
@@ -308,8 +308,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		try {
@@ -360,8 +360,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		try {
@@ -411,8 +411,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		try {
@@ -464,8 +464,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		try {
@@ -529,8 +529,8 @@ public class InodeFactory {
 			if(c.equals(Template.class)){
 				throw new DotStateException("Template mapping was deleted from hibernate files");
 			}
-            if(c.equals(Category.class)){
-                throw new DotStateException("Category mapping was deleted from hibernate files");
+            if(c.equals(Categories.class)){
+                throw new DotStateException("Categories mapping was deleted from hibernate files");
             }
 
             final String tableName = ((Inode) c.newInstance()).getType();
@@ -581,8 +581,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		if (inodes == null || inodes.length == 0) {
@@ -666,8 +666,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		try {
@@ -739,8 +739,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		if (inodes == null || inodes.size() == 0) {
@@ -828,8 +828,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 
 		try {
@@ -913,8 +913,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		try {
@@ -1022,8 +1022,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		return getInodesOfClass(c, 0, 0);
@@ -1042,8 +1042,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		try {
@@ -1082,8 +1082,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		try {
@@ -1119,8 +1119,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		try {
@@ -1164,8 +1164,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		try {
@@ -1200,8 +1200,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		try {
@@ -1237,8 +1237,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		try {
@@ -1272,8 +1272,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		Object obj ;
@@ -1303,8 +1303,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		try {
@@ -1358,8 +1358,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		try {
@@ -1402,8 +1402,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		try {
@@ -1443,8 +1443,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		try {
@@ -1487,8 +1487,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 
 		try 
@@ -1540,8 +1540,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		try {
@@ -1587,8 +1587,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		try {
@@ -1682,8 +1682,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		final List children = getChildrenClass(parent, c);
@@ -1784,8 +1784,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		try {
@@ -1841,8 +1841,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		try {
@@ -1896,8 +1896,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 
 		orderby = SQLUtil.sanitizeSortBy(orderby);
@@ -1942,8 +1942,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		try {
@@ -1983,8 +1983,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		try {
@@ -2029,8 +2029,8 @@ public class InodeFactory {
 		if(c.equals(Template.class)){
 			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-        if(c.equals(Category.class)){
-            throw new DotStateException("Category mapping was deleted from hibernate files");
+        if(c.equals(Categories.class)){
+            throw new DotStateException("Categories mapping was deleted from hibernate files");
         }
 		
 		if (inodes == null || inodes.length == 0)

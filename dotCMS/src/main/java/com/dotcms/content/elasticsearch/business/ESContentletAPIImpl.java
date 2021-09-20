@@ -182,7 +182,7 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-//import org.junit.Test;
+import org.junit.Test;
 import org.springframework.beans.BeanUtils;
 
 import javax.activation.MimeType;

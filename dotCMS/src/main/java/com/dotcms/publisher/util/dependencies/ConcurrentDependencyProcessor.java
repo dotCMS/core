@@ -20,7 +20,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-
+import org.eclipse.jetty.util.ConcurrentHashSet;
 
 /**
  * it allow process a set of Assets to calculate its dependency in a multi-threading environment.
@@ -106,7 +106,7 @@ public class ConcurrentDependencyProcessor implements DependencyProcessor {
         Set<String> set = assetsRequestToProcess.get(pusheableAsset);
 
         if (set == null) {
-            set = ConcurrentHashMap.newKeySet();
+            set = new ConcurrentHashSet<>();
             assetsRequestToProcess.put(pusheableAsset, set);
         }
 

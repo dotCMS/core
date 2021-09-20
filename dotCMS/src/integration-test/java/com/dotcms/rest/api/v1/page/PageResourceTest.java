@@ -138,8 +138,8 @@ public class PageResourceTest {
         // Mock setAttribute
         Mockito.doAnswer((InvocationOnMock invocation)-> {
 
-                String key = invocation.getArgument(0, String.class);
-                Object value = invocation.getArgument(1, Object.class);
+                String key = invocation.getArgumentAt(0, String.class);
+                Object value = invocation.getArgumentAt(1, Object.class);
                 if (null != key && null != value) {
                     attributes.put(key, value);
                 }

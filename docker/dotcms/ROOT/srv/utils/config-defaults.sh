@@ -51,10 +51,10 @@ TOMCAT_HOME=/srv/dotserver/tomcat-${TOMCAT_VERSION}
 : ${PROVIDER_DB_PORT:=""} 
 
 # Database username
-: ${PROVIDER_DB_USERNAME:="dotcms"}
+: ${PROVIDER_DB_USERNAME:="dotcmsdbuser"}
 
 # Database password
-: ${PROVIDER_DB_PASSWORD:="dotcms"}
+: ${PROVIDER_DB_PASSWORD:="password"}
 
 # Maximum number of database connections
 : ${PROVIDER_DB_MAXCONNS:="200"}

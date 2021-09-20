@@ -78,9 +78,3 @@ docker/tests/integration/backup
 
 dot-cicd/
 tmp/
-# maven files
-###############################
-# https://github.com/takari/maven-wrapper#usage-without-binary-jar
-.mvn/wrapper/maven-wrapper.jar
-target
-dependency-reduced-pom.xml

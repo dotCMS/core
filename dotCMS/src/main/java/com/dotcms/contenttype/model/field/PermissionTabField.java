@@ -1,6 +1,5 @@
 package com.dotcms.contenttype.model.field;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -11,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
+import static com.dotcms.util.CollectionsUtils.list;
 
 @JsonSerialize(as = ImmutablePermissionTabField.class)
 @JsonDeserialize(as = ImmutablePermissionTabField.class)
@@ -41,7 +41,7 @@ public abstract class PermissionTabField extends Field implements OnePerContentT
 
 	@JsonIgnore
 	public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties(){
-		return Arrays.asList(ContentTypeFieldProperties.NAME);
+		return list(ContentTypeFieldProperties.NAME);
 	}
 
 	@JsonIgnore

@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Properties;
 import org.apache.commons.io.FileUtils;
 import org.apache.felix.framework.util.FelixConstants;
+import org.apache.felix.http.proxy.DispatcherTracker;
 import org.apache.felix.main.AutoProcessor;
 import org.apache.felix.main.Main;
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
@@ -29,6 +30,7 @@ import org.osgi.framework.ServiceReference;
 import org.osgi.framework.launch.Framework;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotmarketing.osgi.HostActivator;
+import com.dotmarketing.osgi.OSGIProxyServlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -214,6 +216,12 @@ public class OSGIUtil {
     public void stopFramework() {
 
         try {
+            //Closing tracker associated to the HttpServlet
+            DispatcherTracker tracker = OSGIProxyServlet.tracker;
+            if (null != tracker) {
+                tracker.close();
+                OSGIProxyServlet.tracker = null;
+            }
 
             if (null != felixFramework) {
 

@@ -81,8 +81,8 @@ public class VelocityServletIntegrationTest {
         doAnswer(new Answer<Void>() {
             @Override
             public Void answer(final InvocationOnMock invocation) throws Throwable {
-                final String key = invocation.getArgument(0, String.class);
-                final Object value = invocation.getArgument(1, Object.class);
+                final String key = invocation.getArgumentAt(0, String.class);
+                final Object value = invocation.getArgumentAt(1, Object.class);
                 attributes.put(key, value);
                 return null;
             }
@@ -92,7 +92,7 @@ public class VelocityServletIntegrationTest {
         doAnswer(new Answer<Object>() {
             @Override
             public Object answer(final InvocationOnMock invocation) throws Throwable {
-                final String key = invocation.getArgument(0, String.class);
+                final String key = invocation.getArgumentAt(0, String.class);
                 return attributes.get(key);
             }
         }).when(request).getAttribute(anyString());

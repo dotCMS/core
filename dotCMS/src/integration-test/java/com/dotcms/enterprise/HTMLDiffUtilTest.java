@@ -180,15 +180,15 @@ public class HTMLDiffUtilTest extends IntegrationTestBase {
 
         // Mock setAttribute
         Mockito.doAnswer((Answer<Void>) invocation -> {
-            final String key = invocation.getArgument(0, String.class);
-            final Object value = invocation.getArgument(1, Object.class);
+            final String key = invocation.getArgumentAt(0, String.class);
+            final Object value = invocation.getArgumentAt(1, Object.class);
             attributes.put(key, value);
             return null;
         }).when(request).setAttribute(Mockito.anyString(), Mockito.anyObject());
 
         // Mock getAttribute
         Mockito.doAnswer((Answer<Object>) invocation -> {
-            final String key = invocation.getArgument(0, String.class);
+            final String key = invocation.getArgumentAt(0, String.class);
             return attributes.get(key);
         }).when(request).getAttribute(Mockito.anyString());
 
@@ -268,15 +268,15 @@ public class HTMLDiffUtilTest extends IntegrationTestBase {
 
         // Mock setAttribute
         Mockito.doAnswer((Answer<Void>) invocation -> {
-            final String key = invocation.getArgument(0, String.class);
-            final Object value = invocation.getArgument(1, Object.class);
+            final String key = invocation.getArgumentAt(0, String.class);
+            final Object value = invocation.getArgumentAt(1, Object.class);
             attributes.put(key, value);
             return null;
         }).when(request).setAttribute(Mockito.anyString(), Mockito.anyObject());
 
         // Mock getAttribute
         Mockito.doAnswer((Answer<Object>) invocation -> {
-            final String key = invocation.getArgument(0, String.class);
+            final String key = invocation.getArgumentAt(0, String.class);
             return attributes.get(key);
         }).when(request).getAttribute(Mockito.anyString());
 
