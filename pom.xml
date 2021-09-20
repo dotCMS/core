@@ -24,7 +24,7 @@
         <asm.version>9.2</asm.version>
 
         <jackson.version>2.11.4</jackson.version>
-        <log4j.version>2.11.1</log4j.version>
+        <log4j.version>2.13.2</log4j.version>
         <!-- OSGI import-package -->
         <osgi.slf4j.import.packages>org.slf4j;version="[1.7,3.0)", org.slf4j.event;version="[1.7,3.0)", org.slf4j.helpers;version="[1.7,3.0)", org.slf4j.spi;version="[1.7,3.0)"</osgi.slf4j.import.packages>
 

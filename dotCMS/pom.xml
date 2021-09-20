@@ -25,7 +25,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <tomcat.version>9.0.41</tomcat.version>
         <felix.version>5.6.10</felix.version>
-        <log4j.version>2.11.1</log4j.version>
+        <log4j.version>2.13.2</log4j.version>
         <npm.repositoryUrl>https://registry.npmjs.org</npm.repositoryUrl>
         <powermock.version>2.0.9</powermock.version>
 
