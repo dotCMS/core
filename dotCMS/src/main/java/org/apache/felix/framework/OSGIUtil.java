@@ -50,7 +50,7 @@ public class OSGIUtil {
 
     private static final String OSGI_EXTRA_CONFIG_FILE_PATH_KEY = "OSGI_EXTRA_CONFIG_FILE_PATH_KEY";
 
-    //List of jar prefixes of the jars to be included in the osgi-extra-generated.conf file
+    //List of jar prefixes of the jars to be included in the osgi-extra.conf file
     private List<String> dotCMSJarPrefixes = ImmutableList.of("dotcms", "ee-");
     public final List<String> portletIDsStopped = Collections.synchronizedList(new ArrayList<>());
     public final List<String> actionletsStopped = Collections.synchronizedList(new ArrayList<>());
@@ -368,7 +368,7 @@ public class OSGIUtil {
             stringWriter = readExtraPackagesFiles(extraPackagesFile);
         } else {
             if (extraPackagesFile.getParentFile().mkdirs()) {
-                extraPackagesFile.createNewFile();
+                this.createNewExtraPackageFile (extraPackagesFile);
             }
             stringWriter = new StringWriter();
         }
@@ -376,6 +376,23 @@ public class OSGIUtil {
         //Clean up the properties, it is better to keep it simple and in a standard format
         return stringWriter.toString().replaceAll("\\\n", "").
                 replaceAll("\\\r", "").replaceAll("\\\\", "");
+    }
+
+    private void createNewExtraPackageFile(final File extraPackagesFile) throws IOException {
+
+        final String utf8 = "utf-8";
+        try (BufferedWriter writer = new BufferedWriter(
+                new OutputStreamWriter(Files.newOutputStream(extraPackagesFile.toPath()),utf8));
+             InputStream initialStream = OSGIUtil.class.getResourceAsStream("/osgi/osgi-extra.conf")) {
+
+            final byte[] buffer = new byte[1024];
+            int bytesRead = -1;
+            while ((bytesRead = initialStream.read(buffer)) != -1) {
+                writer.write(new String(buffer, utf8), 0, bytesRead);
+            }
+
+            writer.flush();
+        }
     }
 
     private StringWriter readExtraPackagesFiles(final File extraPackagesFile)
