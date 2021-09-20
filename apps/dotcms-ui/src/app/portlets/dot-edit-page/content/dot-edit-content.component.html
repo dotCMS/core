@@ -61,7 +61,10 @@
         </div>
     </ng-container>
 </div>
-<div class="dot-edit-content__palette" [class.editMode]='isEditMode'  [class.collapsed]="paletteCollapsed">
+<div class="dot-edit-content__palette"
+     *ngIf="isEnterpriseLicense"
+     [class.editMode]="isEditMode"
+     [class.collapsed]="paletteCollapsed">
     <dot-content-palette
         [items]='contentPalletItems'>
     </dot-content-palette>

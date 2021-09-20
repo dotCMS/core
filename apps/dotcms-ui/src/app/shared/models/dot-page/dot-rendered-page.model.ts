@@ -1,6 +1,6 @@
 import { DotPage } from './dot-page.model';
 import { DotEditPageViewAs } from '@models/dot-edit-page-view-as/dot-edit-page-view-as.model';
-import { DotContainer } from '@shared/models/container/dot-container.model';
+import { DotContainer, DotContainerStructure } from '@shared/models/container/dot-container.model';
 import { DotLayout, DotTemplate } from '@shared/models/dot-edit-layout-designer';
 
 export module DotPageRender {
@@ -10,6 +10,7 @@ export module DotPageRender {
         containers?: {
             [key: string]: {
                 container: DotContainer;
+                containerStructures?: DotContainerStructure[];
             };
         };
         template?: DotTemplate;

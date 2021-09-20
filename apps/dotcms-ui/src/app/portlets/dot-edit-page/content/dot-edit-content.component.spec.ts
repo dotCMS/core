@@ -61,7 +61,7 @@ import { SiteServiceMock } from '@tests/site-service.mock';
 import { LoginServiceMock, mockUser } from '@tests/login-service.mock';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotWorkflowServiceMock } from '@tests/dot-workflow-service.mock';
-import { mockDotRenderedPage } from '@tests/dot-page-render.mock';
+import { mockDotRenderedPage, processedContainers } from '@tests/dot-page-render.mock';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
 import { DotPageContent } from '../shared/models';
@@ -175,7 +175,7 @@ const mockRenderedPageState = new DotPageRenderState(
     new DotPageRender(mockDotRenderedPage())
 );
 
-fdescribe('DotEditContentComponent', () => {
+describe('DotEditContentComponent', () => {
     const siteServiceMock = new SiteServiceMock();
     let component: DotEditContentComponent;
     let de: DebugElement;
@@ -193,6 +193,14 @@ fdescribe('DotEditContentComponent', () => {
     let dotDialogService: DotAlertConfirmService;
     let dotCustomEventHandlerService: DotCustomEventHandlerService;
     let dotConfigurationService: DotPropertiesService;
+    let dotLicenseService: DotLicenseService;
+
+    function detectChangesForIframeRender(fix) {
+        fix.detectChanges();
+        tick(1);
+        fix.detectChanges();
+        tick(10);
+    }
 
     beforeEach(() => {
         const messageServiceMock = new MockDotMessageService({
@@ -329,19 +337,20 @@ fdescribe('DotEditContentComponent', () => {
         dotDialogService = de.injector.get(DotAlertConfirmService);
         dotCustomEventHandlerService = de.injector.get(DotCustomEventHandlerService);
         dotConfigurationService = de.injector.get(DotPropertiesService);
+        dotLicenseService = de.injector.get(DotLicenseService);
         spyOn(dotPageStateService, 'reload');
 
         spyOn(dotEditContentHtmlService, 'renderAddedForm').and.returnValue(
             of([{ identifier: '123', uuid: 'uui-1' }])
-        );
-        spyOn(dotConfigurationService, 'getKeyAsList').and.returnValue(
-            of(['host', 'vanityurl', 'persona', 'languagevariable'])
         );
     });
 
     describe('elements', () => {
         beforeEach(() => {
             spyOn<any>(dotEditPageService, 'save').and.returnValue(of({}));
+            spyOn(dotConfigurationService, 'getKeyAsList').and.returnValue(
+                of(['host', 'vanityurl', 'persona', 'languagevariable'])
+            );
         });
 
         describe('dot-form-selector', () => {
@@ -594,13 +603,6 @@ fdescribe('DotEditContentComponent', () => {
         });
 
         describe('iframe', () => {
-            function detectChangesForIframeRender(fix) {
-                fix.detectChanges();
-                tick(1);
-                fix.detectChanges();
-                tick(10);
-            }
-
             function getIframe() {
                 return de.query(
                     By.css(
@@ -674,6 +676,7 @@ fdescribe('DotEditContentComponent', () => {
                 }));
 
                 it('should show/hide content palette in edit mode with correct content', fakeAsync(() => {
+                    spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
                     const state = new DotPageRenderState(
                         mockUser(),
                         new DotPageRender({
@@ -683,7 +686,8 @@ fdescribe('DotEditContentComponent', () => {
                                 lockedBy: null
                             },
                             viewAs: {
-                                mode: DotPageMode.EDIT
+                                mode: DotPageMode.EDIT,
+                                language: 1
                             }
                         })
                     );
@@ -705,6 +709,31 @@ fdescribe('DotEditContentComponent', () => {
                     paletteController.triggerEventHandler('click', '');
                     fixture.detectChanges();
                     expect(classList.contains('collapsed')).toEqual(true);
+                }));
+
+                it('should not display palette when is not enterprise', fakeAsync(() => {
+                    spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
+                    const state = new DotPageRenderState(
+                        mockUser(),
+                        new DotPageRender({
+                            ...mockDotRenderedPage(),
+                            page: {
+                                ...mockDotRenderedPage().page,
+                                lockedBy: null
+                            },
+                            viewAs: {
+                                mode: DotPageMode.EDIT,
+                                language: 1
+                            }
+                        })
+                    );
+                    route.parent.parent.data = of({
+                        content: state
+                    });
+                    detectChangesForIframeRender(fixture);
+                    fixture.detectChanges();
+                    const contentPaletteWrapper = de.query(By.css('.dot-edit-content__palette'));
+                    expect(contentPaletteWrapper).toBeNull();
                 }));
             });
 
@@ -1213,6 +1242,9 @@ fdescribe('DotEditContentComponent', () => {
         let httpErrorManagerService: DotHttpErrorManagerService;
         beforeEach(() => {
             httpErrorManagerService = de.injector.get(DotHttpErrorManagerService);
+            spyOn(dotConfigurationService, 'getKeyAsList').and.returnValue(
+                of(['host', 'vanityurl', 'persona', 'languagevariable'])
+            );
         });
 
         describe('iframe events', () => {
@@ -1233,5 +1265,53 @@ fdescribe('DotEditContentComponent', () => {
                 expect(dotPageStateService.reload).toHaveBeenCalledTimes(1);
             });
         });
+    });
+
+    describe('empty scenarios', () => {
+        let httpErrorManagerService: DotHttpErrorManagerService;
+        beforeEach(() => {
+            httpErrorManagerService = de.injector.get(DotHttpErrorManagerService);
+            spyOn(dotConfigurationService, 'getKeyAsList').and.returnValue(of(undefined));
+        });
+
+        it('should show content palette correctly when blacklist list is empty', fakeAsync(() => {
+            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
+            const state = new DotPageRenderState(
+                mockUser(),
+                new DotPageRender({
+                    ...mockDotRenderedPage(),
+                    page: {
+                        ...mockDotRenderedPage().page,
+                        lockedBy: null
+                    },
+                    viewAs: {
+                        mode: DotPageMode.EDIT,
+                        language: 1
+                    },
+                    containers: {
+                        ...mockDotRenderedPage().containers,
+                        '/persona/': {
+                            container: processedContainers[0].container,
+                            containerStructures: [{ contentTypeVar: 'persona' }]
+                        },
+                        '/host/': {
+                            container: processedContainers[0].container,
+                            containerStructures: [{ contentTypeVar: 'host' }]
+                        }
+                    }
+                })
+            );
+
+            route.parent.parent.data = of({
+                content: state
+            });
+            detectChangesForIframeRender(fixture);
+            fixture.detectChanges();
+            const contentPaletteWrapper = de.query(By.css('.dot-edit-content__palette'));
+            const contentPalette: DotContentPaletteComponent = de.query(
+                By.css('dot-content-palette')
+            ).componentInstance;
+            expect(contentPalette.items).toEqual(responseData.slice(0, 5));
+        }));
     });
 });

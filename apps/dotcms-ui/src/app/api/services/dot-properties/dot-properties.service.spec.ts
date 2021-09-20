@@ -5,11 +5,13 @@ import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 
 const fakeResponse = {
-    key1: 'data',
-    'list:key1': ['1', '2']
+    entity: {
+        key1: 'data',
+        list: ['1', '2']
+    }
 };
 
-fdescribe('DotPropertiesService', () => {
+describe('DotPropertiesService', () => {
     let service: DotPropertiesService;
     let httpMock: HttpTestingController;
 
@@ -30,7 +32,7 @@ fdescribe('DotPropertiesService', () => {
         expect(service).toBeTruthy();
 
         service.getKey(key).subscribe((response) => {
-            expect(response).toEqual(fakeResponse.key1);
+            expect(response).toEqual(fakeResponse.entity.key1);
         });
         const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${key}`);
         expect(req.request.method).toBe('GET');
@@ -38,11 +40,11 @@ fdescribe('DotPropertiesService', () => {
     });
 
     it('should get ky as a list', () => {
-        const key = 'key1';
+        const key = 'list';
         expect(service).toBeTruthy();
 
         service.getKeyAsList(key).subscribe((response) => {
-            expect(response).toEqual(fakeResponse['list:key1']);
+            expect(response).toEqual(fakeResponse.entity.list);
         });
         const req = httpMock.expectOne(`/api/v1/configuration/config?keys=list:${key}`);
         expect(req.request.method).toBe('GET');

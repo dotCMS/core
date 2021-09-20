@@ -38,6 +38,7 @@ import { DotContainerStructure } from '@models/container/dot-container.model';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DotPropertiesService } from '@services/dot-properties/dot-properties.service';
+import { DotLicenseService } from '@services/dot-license/dot-license.service';
 
 /**
  * Edit content page component, render the html of a page and bind all events to make it ediable.
@@ -66,6 +67,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     contentPalletItems: DotCMSContentType[] = [];
     isEditMode: boolean = false;
     paletteCollapsed = false;
+    isEnterpriseLicense = false;
 
     private readonly customEventsHandler;
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -90,7 +92,8 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         public sanitizer: DomSanitizer,
         public iframeOverlayService: IframeOverlayService,
         private httpErrorManagerService: DotHttpErrorManagerService,
-        private dotConfigurationService: DotPropertiesService
+        private dotConfigurationService: DotPropertiesService,
+        private dotLicenseService: DotLicenseService
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
@@ -140,6 +143,12 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit() {
+        this.dotLicenseService
+            .isEnterprise()
+            .pipe(take(1))
+            .subscribe((isEnterprise) => {
+                this.isEnterpriseLicense = isEnterprise;
+            });
         this.dotLoadingIndicatorService.show();
         this.setInitalData();
         this.subscribeSwitchSite();
@@ -425,7 +434,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
     private renderPage(pageState: DotPageRenderState): void {
         if (this.shouldEditMode(pageState)) {
-            this.loadContentPallet(pageState);
+            if (this.isEnterpriseLicense) {
+                this.loadContentPallet(pageState);
+            }
             this.dotEditContentHtmlService.initEditMode(pageState, this.iframe);
             this.isEditMode = true;
         } else {
@@ -510,8 +521,8 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     }
 
     private getAllowedContentTypes(
-        contentTypeList: DotCMSContentType[],
-        blackList: string[],
+        contentTypeList: DotCMSContentType[] = [],
+        blackList: string[] = [],
         pageState: DotPageRenderState
     ): DotCMSContentType[] {
         let allowedContent = new Set();
