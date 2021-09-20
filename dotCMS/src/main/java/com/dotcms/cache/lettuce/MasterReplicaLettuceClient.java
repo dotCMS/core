@@ -481,19 +481,6 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
         return ConcurrentUtils.constantFuture(0l);
     }
 
-    @Override
-    public String flushAll() {
-
-        try (StatefulRedisConnection<String,V> conn = this.getConn()) {
-
-            if (this.isOpen(conn)) {
-                return conn.sync().flushall();
-            }
-        }
-
-        return "Error";
-    }
-
     /// HASHES
 
     @Override
