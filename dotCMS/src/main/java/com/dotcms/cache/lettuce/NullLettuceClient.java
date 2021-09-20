@@ -101,11 +101,6 @@ public class NullLettuceClient<K, V> implements RedisClient {
     }
 
     @Override
-    public String flushAll() {
-        return null;
-    }
-
-    @Override
     public void scanEachKey(String matchesPattern, int keyBatchingSize, Consumer keyConsumer) {
 
     }
