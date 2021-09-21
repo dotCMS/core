@@ -239,6 +239,9 @@ public class OSGIUtil {
         for (final String pathname : pathnames) {
 
             Logger.info(this, "OSGI - pathname: " + pathname);
+            // todo: as soon as we detected a file is being upload
+            // todo: we need to analyzed the exports into the META-INF
+            // todo: then discard the fragments and move the bundles to load.
         }
     }
 
