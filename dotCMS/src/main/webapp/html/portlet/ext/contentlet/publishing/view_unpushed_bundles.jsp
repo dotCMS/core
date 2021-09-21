@@ -23,6 +23,7 @@
 
 
 <%
+	final int MAX_BUNDLE_ASSET_TO_SHOW = 20;
 
 	if(null!=request.getParameter("delBundle")){
 		String id = request.getParameter("delBundle");
@@ -139,7 +140,7 @@
 				</table>
 
 				<script>
-					<%if (assets.size() > 20) {%>
+					<%if (assets.size() > MAX_BUNDLE_ASSET_TO_SHOW) {%>
 						addShowMoreRow('<%=bundle.getId()%>', '<%=assets.size()%>');
 					<%}%>
 
@@ -149,7 +150,7 @@
 
 						final List<Map<String, String>> assetsTransformed = publishQueueElementTransformer
 								.transform(assets).stream()
-								.limit(20).collect(Collectors.toList());
+								.limit(MAX_BUNDLE_ASSET_TO_SHOW).collect(Collectors.toList());
 
 						for(Map<String, String> asset : assetsTransformed){
 
@@ -217,7 +218,7 @@
 		let newCell = newRow.insertCell();
 		newCell.colSpan = 2;
 
-		newCell.innerHTML = "Showing 20 of " + nAssets + "&nbsp;" +
+		newCell.innerHTML = "Showing <%=MAX_BUNDLE_ASSET_TO_SHOW%>> of " + nAssets + "&nbsp;" +
 				"<a href=\"javascript:requestAssets('" + bundleId + "')\">" +
 				"<strong style=\"text-decoration: underline;\">View all</strong>" +
 				"</a>";
@@ -230,7 +231,7 @@
 		newCell.colSpan = 2;
 
 		newCell.innerHTML = "Showing Less" + "&nbsp;" +
-				"<a href=\"javascript:requestAssets('" + bundleId + "', 20)\">" +
+				"<a href=\"javascript:requestAssets('" + bundleId + "', <%=MAX_BUNDLE_ASSET_TO_SHOW%>)\">" +
 				"<strong style=\"text-decoration: underline;\">Show less</strong>" +
 				"</a>";
 	}
