@@ -22,11 +22,9 @@
 
 package com.liferay.portal.model;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
-import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
+import com.dotcms.util.DotCloneable;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Role;
@@ -57,7 +55,7 @@ import java.util.TimeZone;
  * @version $Revision: 1.34 $
  *
  */
-public class User extends UserModel implements Recipient, ManifestItem {
+public class User extends UserModel implements Recipient, ManifestItem, DotCloneable {
 
 	public static final String DEFAULT = "default";
 
