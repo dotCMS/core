@@ -300,7 +300,8 @@ public class RoleResource implements Serializable {
 	 * Load role based on the role id.
 	 *
 	 * @param roleId id of the role to search for.
-	 * @param loadChildrenRoles true - will add the data of all children roles of the requested role. Default Value: false
+	 * @param loadChildrenRoles true - will add the data of all children roles of the requested role.
+	 * 							false - will only show the data of the requested role.
 	 * @return {@link RoleView} role requested.
 	 * @throws DotDataException
 	 * @throws DotSecurityException
@@ -311,7 +312,7 @@ public class RoleResource implements Serializable {
 	public Response loadRoleByRoleId(@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response,
 			@PathParam   ("roleid") final String roleId,
-			@DefaultValue("false") @QueryParam("loadChildrenRoles") final boolean loadChildrenRoles)
+			@DefaultValue("true") @QueryParam("loadChildrenRoles") final boolean loadChildrenRoles)
 			throws DotDataException, DotSecurityException {
 
 		new WebResource.InitBuilder(this.webResource).requiredBackendUser(true)
@@ -334,6 +335,49 @@ public class RoleResource implements Serializable {
 		}
 
 		return Response.ok(new ResponseEntityView(new RoleView(role,childrenRoles))).build();
+
+	}
+
+	/**
+	 * Loads the root roles.
+	 *
+	 * @param loadChildrenRoles true - will add the data of all children roles of the requested role.
+	 * 							false - will only show the data of the requested role.
+	 * @return list of {@link RoleView}
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@GET
+	@Produces("application/json")
+	public Response loadRootRoles(@Context final HttpServletRequest request,
+			@Context final HttpServletResponse response,
+			@DefaultValue("true") @QueryParam("loadChildrenRoles") final boolean loadChildrenRoles)
+			throws DotDataException, DotSecurityException {
+
+		new WebResource.InitBuilder(this.webResource).requiredBackendUser(true)
+				.requiredFrontendUser(false).requestAndResponse(request, response)
+				.rejectWhenNoUser(true).init();
+
+		final List<RoleView> rootRolesView = new ArrayList<>();
+		final List<Role> rootRoles = this.roleAPI.findRootRoles();
+
+		if(loadChildrenRoles){
+			for(final Role role : rootRoles) {
+				final List<RoleView> childrenRoles = new ArrayList<>();
+				final List<String> roleChildrenIdList =
+						null != role.getRoleChildren() ? role.getRoleChildren() : new ArrayList<>();
+				for (final String childRoleId : roleChildrenIdList) {
+					childrenRoles.add(new RoleView(this.roleAPI.loadRoleById(childRoleId),
+							new ArrayList<>()));
+				}
+				rootRolesView.add(new RoleView(role,childrenRoles));
+			}
+		} else {
+			rootRoles.stream()
+					.forEach(role -> rootRolesView.add(new RoleView(role, new ArrayList<>())));
+		}
+
+		return Response.ok(new ResponseEntityView(rootRolesView)).build();
 
 	}
 }
