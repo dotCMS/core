@@ -112,6 +112,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         map.put(CONTENT_TYPE_KEY, type != null ? type.variable() : NOT_APPLICABLE);
         map.put(BASE_TYPE_KEY, type != null ? type.baseType().name() : NOT_APPLICABLE);
         map.put(LANGUAGEID_KEY, contentlet.getLanguageId());
+
         final Optional<Field> titleImage = contentlet.getTitleImage();
         final boolean hasTitleImage = titleImage.isPresent();
         map.put(HAS_TITLE_IMAGE_KEY, hasTitleImage);
@@ -120,6 +121,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         } else {
            map.put(TITLE_IMAGE_KEY, TITLE_IMAGE_NOT_FOUND);
         }
+
         final Host host = toolBox.hostAPI.find(contentlet.getHost(), APILocator.systemUser(), true);
         map.put(HOST_NAME, host != null ? host.getHostname() : NOT_APPLICABLE);
         map.put(HOST_KEY, host != null ? host.getIdentifier() : NOT_APPLICABLE);
@@ -177,7 +179,8 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
      * After the execution of this method if the BINARIES flag is turned on
      * all the binary fields will be replaced and transformed by a /dA/.. path.
      */
-    private void addBinaries(final Contentlet contentlet, final Map<String, Object> map, final Set<TransformOptions> options) {
+    private void addBinaries(final Contentlet contentlet, final Map<String, Object> map,
+            final Set<TransformOptions> options) {
 
         final List<Field> binaries = contentlet.getContentType().fields(BinaryField.class);
 
@@ -190,7 +193,8 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
             binaries.forEach(field -> {
                 map.remove(field.variable());
             });
-            Logger.info(DefaultTransformStrategy.class, ()->"Transformer was instructed to exclude binaries.");
+            Logger.info(DefaultTransformStrategy.class,
+                    () -> "Transformer was instructed to exclude binaries.");
             return;
         }
 
@@ -215,12 +219,15 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
                             map.put(field.variable() + "ContentAsset",
                                     contentlet.getIdentifier() + "/" + field.variable());
                         } else {
-                            Logger.warn(FileAssetViewStrategy.class,"We're missing a binary");
+                            Logger.warn(FileAssetViewStrategy.class, String.format("Binary file from field '%s' " +
+                                    "in Contentlet with ID '%s' is not present", velocityVarName, contentlet
+                                    .getIdentifier()));
                         }
                     }
-                } catch (Exception e) {
-                    Logger.warn(this,
-                            "Unable to get Binary from field with var " + field.variable());
+                } catch (final Exception e) {
+                    Logger.warn(this, String.format("An error occurred when retrieving the Binary file from field" +
+                                    " '%s' in Contentlet with ID '%s': %s", field.variable(), contentlet.getIdentifier(),
+                            e.getMessage()));
                 }
             }
         }
@@ -269,9 +276,9 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
                     }
                 }
 
-            } catch (DotDataException | DotSecurityException e) {
-                Logger.warn(DefaultTransformStrategy.class,
-                        "Unable to get categories from content with id ");
+            } catch (final DotDataException | DotSecurityException e) {
+                Logger.warn(DefaultTransformStrategy.class, String.format("An error occurred when adding Categories " +
+                        "to Contentlet with ID '%s': %s", contentlet.getIdentifier(), e.getMessage()));
             }
         }
     }
