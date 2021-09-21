@@ -218,9 +218,9 @@
 		let newCell = newRow.insertCell();
 		newCell.colSpan = 2;
 
-		newCell.innerHTML = "Showing <%=MAX_BUNDLE_ASSET_TO_SHOW%>> of " + nAssets + "&nbsp;" +
+		newCell.innerHTML = "<%=LanguageUtil.get(pageContext, "unpublished.bundles.item.show", MAX_BUNDLE_ASSET_TO_SHOW) %> " + nAssets + "&nbsp;" +
 				"<a href=\"javascript:requestAssets('" + bundleId + "')\">" +
-				"<strong style=\"text-decoration: underline;\">View all</strong>" +
+				"<strong style=\"text-decoration: underline;\"><%=LanguageUtil.get(pageContext, "unpublished.bundles.view.all=") %></strong>" +
 				"</a>";
 	}
 
@@ -230,9 +230,9 @@
 		let newCell = newRow.insertCell();
 		newCell.colSpan = 2;
 
-		newCell.innerHTML = "Showing Less" + "&nbsp;" +
-				"<a href=\"javascript:requestAssets('" + bundleId + "', <%=MAX_BUNDLE_ASSET_TO_SHOW%>)\">" +
-				"<strong style=\"text-decoration: underline;\">Show less</strong>" +
+		newCell.innerHTML = "<%=LanguageUtil.get(pageContext, "unpublished.bundles.item.all.show")%>&nbsp;" +
+				"<a href=\"javascript:requestAssets('" + bundleId + "', '<%=MAX_BUNDLE_ASSET_TO_SHOW%>')\">" +
+				"<strong style=\"text-decoration: underline;\"><%=LanguageUtil.get(pageContext, "unpublished.bundles.item.less.show")%></strong>" +
 				"</a>";
 	}
 
