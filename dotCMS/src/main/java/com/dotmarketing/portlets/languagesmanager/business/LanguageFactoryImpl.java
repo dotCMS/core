@@ -11,6 +11,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -273,33 +274,70 @@ public class LanguageFactoryImpl extends LanguageFactory {
 			throws DotDataException {
 
 		final DotConnect dotConnect = new DotConnect();
-		dotConnect
-				.setSQL(" UPDATE contentlet SET language_id = ? WHERE  NOT EXISTS ( "
-						+ " SELECT c.identifier FROM contentlet c WHERE c.language_id = ? AND c.identifier = identifier "
-						+ ") AND language_id = ?  ")
-				.addParam(newDefaultLanguage)
-				.addParam(newDefaultLanguage)
-				.addParam(oldDefaultLanguage)
-				.loadResult();
+		if (DbConnectionFactory.isMySql()) {
 
-		dotConnect
-				.setSQL(" UPDATE contentlet_version_info SET lang = ? WHERE NOT EXISTS ( "
-						+ " SELECT cvi.identifier FROM contentlet_version_info cvi WHERE lang = ? AND cvi.identifier = identifier "
-						+ ") AND lang = ? ")
-				.addParam(newDefaultLanguage)
-				.addParam(newDefaultLanguage)
-				.addParam(oldDefaultLanguage)
-				.loadResult();
+			dotConnect
+					.setSQL(" UPDATE contentlet SET language_id = ? WHERE  NOT EXISTS ( "
+							  + " SELECT identifier FROM ( "
+							     + " SELECT c.identifier FROM contentlet c WHERE c.language_id = ? AND c.identifier = identifier "
+							  + " ) AS T"
+							+ ") AND language_id = ?  ")
+					.addParam(newDefaultLanguage)
+					.addParam(newDefaultLanguage)
+					.addParam(oldDefaultLanguage)
+					.loadResult();
 
-		dotConnect
-				.setSQL(" UPDATE workflow_task SET language_id = ? WHERE NOT EXISTS ( "
-						+ " SELECT wft.webasset FROM workflow_task wft WHERE wft.language_id = ? AND wft.webasset = webasset "
-						+ ") AND language_id = ? ")
-				.addParam(newDefaultLanguage)
-				.addParam(newDefaultLanguage)
-				.addParam(oldDefaultLanguage)
-				.loadResult();
+			dotConnect
+					.setSQL(" UPDATE contentlet_version_info SET lang = ? WHERE NOT EXISTS ( "
+							  + " SELECT identifier FROM ( "
+							     + " SELECT cvi.identifier FROM contentlet_version_info cvi WHERE lang = ? AND cvi.identifier = identifier "
+							  + " ) AS T"
+							+ ") AND lang = ? ")
+					.addParam(newDefaultLanguage)
+					.addParam(newDefaultLanguage)
+					.addParam(oldDefaultLanguage)
+					.loadResult();
 
+
+			dotConnect
+					.setSQL(" UPDATE workflow_task SET language_id = ? WHERE NOT EXISTS ( "
+							+ " SELECT webasset FROM ( "
+							   + " SELECT wft.webasset FROM workflow_task wft WHERE wft.language_id = ? AND wft.webasset = webasset "
+							+ " ) AS T"
+							+ ") AND language_id = ? ")
+					.addParam(newDefaultLanguage)
+					.addParam(newDefaultLanguage)
+					.addParam(oldDefaultLanguage)
+					.loadResult();
+
+		} else {
+			dotConnect
+					.setSQL(" UPDATE contentlet SET language_id = ? WHERE  NOT EXISTS ( "
+							+ " SELECT c.identifier FROM contentlet c WHERE c.language_id = ? AND c.identifier = identifier "
+							+ ") AND language_id = ?  ")
+					.addParam(newDefaultLanguage)
+					.addParam(newDefaultLanguage)
+					.addParam(oldDefaultLanguage)
+					.loadResult();
+
+			dotConnect
+					.setSQL(" UPDATE contentlet_version_info SET lang = ? WHERE NOT EXISTS ( "
+							+ " SELECT cvi.identifier FROM contentlet_version_info cvi WHERE lang = ? AND cvi.identifier = identifier "
+							+ ") AND lang = ? ")
+					.addParam(newDefaultLanguage)
+					.addParam(newDefaultLanguage)
+					.addParam(oldDefaultLanguage)
+					.loadResult();
+
+			dotConnect
+					.setSQL(" UPDATE workflow_task SET language_id = ? WHERE NOT EXISTS ( "
+							+ " SELECT wft.webasset FROM workflow_task wft WHERE wft.language_id = ? AND wft.webasset = webasset "
+							+ ") AND language_id = ? ")
+					.addParam(newDefaultLanguage)
+					.addParam(newDefaultLanguage)
+					.addParam(oldDefaultLanguage)
+					.loadResult();
+		}
 	}
 
 	@Override

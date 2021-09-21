@@ -12,7 +12,9 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageDataGen;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
@@ -38,6 +40,7 @@ public class Task210908AddCompanyDefaultLanguageTest {
         Logger.debug(this, "Prepping for testing `add` column.");
         try {
             DbConnectionFactory.getConnection().setAutoCommit(true);
+            dotConnect.setSQL("UPDATE company SET default_language_id = NULL").loadResult();
             final String dropColumnSQL = "ALTER TABLE company DROP COLUMN default_language_id";
             dotConnect.executeStatement(dropColumnSQL);
         } catch (SQLException e) {
@@ -72,15 +75,11 @@ public class Task210908AddCompanyDefaultLanguageTest {
      * @throws DotDataException
      */
     @Test
-    public void Test_UpgradeTask_Added_New_Language_Success() throws DotDataException {
+    public void Test_UpgradeTask_Added_New_Language_Success()
+            throws DotDataException, DotSecurityException {
         final LanguageAPI languageAPI = APILocator.getLanguageAPI();
-        final Language lang = languageAPI.getLanguage("CR","es");
-        if(lang != null && lang.getId() > 0) {
-            languageAPI.deleteLanguage(lang);
-        }
-        final Language language = new Language(0,"CR","es", "Spanish", "Costa Rica");
-        languageAPI.saveLanguage(language);
-
+        final Language defaultLang = languageAPI.getDefaultLanguage();
+        final Language language = new LanguageDataGen().nextPersisted();
         final Task210908AddCompanyDefaultLanguage task = new Task210908AddCompanyDefaultLanguage();
         final Tuple2<String, String> defaultLanguageDeclaration = getDeclaredDefaultLanguage();
 
@@ -96,11 +95,12 @@ public class Task210908AddCompanyDefaultLanguageTest {
             final List<Map<String, Object>> maps = dotConnect.addParam(Task210908AddCompanyDefaultLanguage.DEFAULT_COMPANY_ID).loadObjectResults();
             assertEquals("There can only be 1.", 1, maps.size());
             final Map<String, Object> map = maps.get(0);
-            Assert.assertEquals(language.getId(),(long)map.get("default_language_id"));
+            Assert.assertEquals(language.getId(),((Number)map.get("default_language_id")).longValue());
 
         }finally {
             Config.setProperty(DEFAULT_LANGUAGE_CODE, defaultLanguageDeclaration._1());
             Config.setProperty(DEFAULT_LANGUAGE_COUNTRY_CODE, defaultLanguageDeclaration._2());
+            languageAPI.makeDefault(defaultLang.getId(), APILocator.systemUser());
         }
     }
 
