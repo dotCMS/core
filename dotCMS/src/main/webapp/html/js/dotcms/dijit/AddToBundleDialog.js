@@ -42,7 +42,6 @@ dojo.declare("dotcms.dijit.AddToBundleDialog", null, {
             });
 
             document.querySelector('#bundleSelect').addEventListener('keypress', function (e) {
-                debugger
                 if (e.keyCode == 13) {
                     container.addToBundle();
                 }
