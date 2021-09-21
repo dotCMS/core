@@ -223,3 +223,5 @@ This maintenance release includes the following code fixes:
 109. https://github.com/dotCMS/core/issues/20764 : [GraphQL] : Additional logging for GraphQL schema generation
 
 110. https://github.com/dotCMS/core/issues/20766 : Incorrect date parsing when creating bundle
+
+111. 
