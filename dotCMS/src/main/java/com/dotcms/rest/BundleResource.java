@@ -30,6 +30,7 @@ import com.dotcms.publishing.output.TarGzipBundleOutput;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.rest.param.ISODateParam;
 import com.dotmarketing.business.APILocator;
@@ -130,7 +131,7 @@ public class BundleResource {
     @Produces({MediaType.APPLICATION_JSON})
     public Response getPublishQueueElements(@PathParam("bundleId") final String bundleId,
             @Context final HttpServletRequest request,
-            @Context final HttpServletResponse response) {
+            @Context final HttpServletResponse response) throws DotDataException {
 
         new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -140,6 +141,13 @@ public class BundleResource {
                 .init();
 
         try {
+
+            final Bundle bundleById = APILocator.getBundleAPI().getBundleById(bundleId);
+
+            if (bundleById == null) {
+                throw new NotFoundException(String.format("Bundle %s not exists", bundleId));
+            }
+
             final List<PublishQueueElement> queueElements = PublisherAPIImpl.getInstance()
                     .getQueueElementsByBundleId(bundleId);
             final List<Map<String, String>> detailedAssets = publishQueueElementTransformer
