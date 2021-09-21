@@ -271,7 +271,7 @@ public class CaffineCache extends CacheProvider {
                                         + ",Concurrency:"
                                         + Config.getIntProperty("cache.concurrencylevel", 32));
 
-                        LoadingCache loadingCache = Caffeine.newBuilder()
+                        cache = Caffeine.newBuilder()
                                 .maximumSize(size)
                                 .recordStats()
                                 .expireAfter(new Expiry<String, Object>() {
@@ -300,7 +300,7 @@ public class CaffineCache extends CacheProvider {
                                 })
                                 .build(key -> null);
 
-                        groups.put(cacheName, loadingCache);
+                        groups.put(cacheName, cache);
 
                     } else {
                         Logger.info(this.getClass(),

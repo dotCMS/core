@@ -44,7 +44,7 @@ public class GraphQLCache implements Cachable {
      * @return optional of the cached value
      */
 
-    private Optional<String> get(final String key, final boolean refresh,
+    private Optional<String> get(final String key,
             final Supplier<String> valueSupplier, final long ttl) {
         if(cannotCache()) {
             return Optional.empty();
@@ -53,7 +53,8 @@ public class GraphQLCache implements Cachable {
         final String cacheKey = hashKey(key);
         final Object value = cache.getNoThrow(cacheKey, getPrimaryGroup());
 
-        refreshKey(cacheKey, valueSupplier, ttl);
+
+        refreshKey(key, valueSupplier, ttl);
 
         return value instanceof ExpirableCacheEntry
                 ? Optional.ofNullable(((ExpirableCacheEntry) value).getResults())
@@ -67,7 +68,7 @@ public class GraphQLCache implements Cachable {
      */
 
     public Optional<String> get(final String key) {
-        return get(key, false, null, -1);
+        return get(key, null, -1);
     }
 
     /**
@@ -81,14 +82,18 @@ public class GraphQLCache implements Cachable {
 
     public Optional<String> getAndRefresh(final String key, final Supplier<String> valueSupplier,
             final Integer ttl) {
-        return get(key, true, valueSupplier, ttl);
+        return get(key, valueSupplier, ttl);
     }
 
     private void refreshKey(final String key, final Supplier<String> valueSupplier,
             final long cacheTTL) {
+        if(valueSupplier==null) return;
+
         DotConcurrentFactory.getInstance()
-                .getSingleSubmitter().submit(()->
-                        put(key, Try.of(valueSupplier::get).getOrElse(Strings.EMPTY), cacheTTL));
+                .getSingleSubmitter().submit(()-> {
+                        remove(key);
+                        put(key, Try.of(valueSupplier::get).getOrElse(Strings.EMPTY), cacheTTL);
+                });
     }
 
     /**
