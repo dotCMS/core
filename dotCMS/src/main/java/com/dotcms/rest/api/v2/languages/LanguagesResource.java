@@ -412,11 +412,12 @@ public class LanguagesResource {
                 .requiredPortlet(PortletID.LANGUAGES.toString())
                 .init().getUser();
 
-
+        Logger.info(LanguagesResource.class, String.format("Switching to a new default language with id `%s`. ",languageId));
         final Language oldDefaultLanguage = languageAPI.getDefaultLanguage();
         final Language newDefault = languageAPI.makeDefault(languageId, user);
-
+        Logger.info(LanguagesResource.class, String.format("Successfully switched to a new default language with id `%s`. ",languageId));
         if(makeDefaultLangForm.isFireTransferAssetsJob()){
+            Logger.info(LanguagesResource.class, String.format(" A Job has been scheduled to transfer all assets from the old default language `%d` to `%d`. ",oldDefaultLanguage.getId(),languageId));
             DefaultLanguageTransferAssetJob
                     .triggerDefaultLanguageTransferAssetJob(oldDefaultLanguage.getId(), newDefault.getId());
         }
