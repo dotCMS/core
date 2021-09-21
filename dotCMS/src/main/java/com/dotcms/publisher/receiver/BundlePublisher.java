@@ -36,7 +36,13 @@ import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.rest.BundlePublisherResource;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.system.event.local.type.pushpublish.receiver.PushPublishEndOnReceiverEvent;
+import com.dotcms.system.event.local.type.pushpublish.receiver.PushPublishFailureOnReceiverEvent;
+import com.dotcms.system.event.local.type.pushpublish.receiver.PushPublishStartOnReceiverEvent;
+import com.dotcms.system.event.local.type.pushpublish.receiver.PushPublishSuccessOnReceiverEvent;
 import com.dotcms.util.CloseUtils;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
@@ -46,6 +52,12 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.FileUtil;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.tools.tar.TarBuffer;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -58,11 +70,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.exception.ExceptionUtils;
-import org.apache.tools.tar.TarBuffer;
 
 /**
  * This publisher will be in charge of retrieving the bundle, un-zipping it, and
@@ -134,6 +141,7 @@ public class BundlePublisher extends Publisher {
             throw new RuntimeException( "need an enterprise license to run this" );
         }
 
+        final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
         boolean hasWarnings = false;
         String bundleName = config.getId();
         String bundleID = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
@@ -156,6 +164,9 @@ public class BundlePublisher extends Publisher {
 
             auditAPI.updatePublishAuditStatus(bundleID, PublishAuditStatus.Status.PUBLISHING_BUNDLE,
                 currentStatusHistory);
+            // Notify to anyone subscribed the PP is about to start
+            Logger.debug(this, "Notify PushPublishStartOnReceiverEvent");
+            localSystemEventsAPI.asyncNotify(new PushPublishStartOnReceiverEvent(config.getAssets()));
         } catch (Exception e) {
             Logger.error(BundlePublisher.class, "Unable to update audit table for bundle with ID '" + bundleName + "': " + e.getMessage(), e);
         }
@@ -172,12 +183,17 @@ public class BundlePublisher extends Publisher {
             bundleIS = Files.newInputStream(Paths.get(bundlePath + bundleName));
             untar(bundleIS, folderOut.getAbsolutePath() + File.separator + bundleName, bundleName);
         } catch (IOException e) {
+
+            // Notify to anyone subscribed the PP is failed
+            Logger.debug(this, "Notify PushPublishFailureOnReceiverEvent");
+            localSystemEventsAPI.asyncNotify(new PushPublishFailureOnReceiverEvent(config.getAssets(), e));
             throw new DotPublishingException("Cannot extract the selected archive", e);
         } finally {
             CloseUtils.closeQuietly(bundleIS);
         }
 
         Map<String, String> assetsDetails = null;
+        List<PublishQueueElement> bundlerAssets = null;
 
         try {
             //Read the bundle to see what kind of configuration we need to apply
@@ -187,7 +203,7 @@ public class BundlePublisher extends Publisher {
 
             //Get the identifiers on this bundle
             assetsDetails = new HashMap<>();
-            List<PublishQueueElement> bundlerAssets = readConfig.getAssets();
+            bundlerAssets = readConfig.getAssets();
 
             if (bundlerAssets != null && !bundlerAssets.isEmpty()) {
                 for (PublishQueueElement asset : bundlerAssets) {
@@ -236,6 +252,9 @@ public class BundlePublisher extends Publisher {
 
                 auditAPI.updatePublishAuditStatus(bundleID, PublishAuditStatus.Status.FAILED_TO_PUBLISH,
                         currentStatusHistory);
+
+                Logger.debug(this, "Notify PushPublishFailureOnReceiverEvent");
+                localSystemEventsAPI.asyncNotify(new PushPublishFailureOnReceiverEvent(config.getAssets(), e));
             } catch (DotPublisherException e1) {
                 throw new DotPublishingException("Cannot update audit of bundle with ID '" + bundleName + "': ", e);
             }
@@ -258,7 +277,14 @@ public class BundlePublisher extends Publisher {
                     hasWarnings ? Status.SUCCESS_WITH_WARNINGS : PublishAuditStatus.Status.SUCCESS,
                     currentStatusHistory);
             config.setPublishAuditStatus(auditAPI.getPublishAuditStatus(bundleID));
+
+            // Everything success and the process ends
+            Logger.debug(this, "Notify PushPublishSuccessOnReceiverEvent and PushPublishEndOnReceiverEvent");
+            localSystemEventsAPI.asyncNotify(new PushPublishSuccessOnReceiverEvent(config));
+            localSystemEventsAPI.asyncNotify(new PushPublishEndOnReceiverEvent(bundlerAssets));
         } catch (Exception e) {
+
+            localSystemEventsAPI.asyncNotify(new PushPublishFailureOnReceiverEvent(config.getAssets(), e));
             Logger.error(BundlePublisher.class, "Unable to update audit table for bundle with ID '" + bundleName + "': " + e.getMessage(), e);
         }
 

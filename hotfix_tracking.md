@@ -224,4 +224,6 @@ This maintenance release includes the following code fixes:
 
 110. https://github.com/dotCMS/core/issues/20766 : Incorrect date parsing when creating bundle
 
-111. 
+111. https://github.com/dotCMS/core/issues/20690 : Add PushPublishingListener to dotCDN #20690
+
+112. 
