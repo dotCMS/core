@@ -117,7 +117,15 @@ public class BundleResource {
     private final PublishQueueElementTransformer publishQueueElementTransformer =
             new PublishQueueElementTransformer();
 
-    @Path("/{bundleId}")
+    /**
+     * Return the assets from a bundleId
+     *
+     * @param bundleId
+     * @param request
+     * @param response
+     * @return
+     */
+    @Path("/{bundleId}/assets")
     @GET
     @Produces({MediaType.APPLICATION_JSON})
     public Response getPublishQueueElements(@PathParam("bundleId") final String bundleId,

@@ -18,6 +18,8 @@
 <%@ page import="com.dotmarketing.portlets.contentlet.business.DotContentletStateException" %>
 <%@ page import="com.dotmarketing.util.Logger" %>
 <%@page import="com.dotcms.publisher.business.DotPublisherException"%>
+<%@ page import="com.dotcms.publisher.business.PublishQueueElementTransformer" %>
+<%@ page import="java.util.stream.Collectors" %>
 
 
 <%
@@ -81,7 +83,8 @@
 
 				PublisherAPI publisherAPI = PublisherAPI.getInstance();
 				List<PublishQueueElement> assets = publisherAPI.getQueueElementsByBundleId(bundle.getId());%>
-				<table  class="listingTable" style="margin-bottom: 50px;">
+				<table id="un_publish_table_<%=bundle.getId()%>" class="listingTable" style="margin-bottom: 50px;">
+					<thead>
 					<tr>
 						<th width="100%" onclick="goToEditBundle('<%=bundle.getId()%>')" style="cursor:pointer">
 							<b><%=StringEscapeUtils.unescapeJava(bundle.getName())%></b> 
@@ -131,93 +134,46 @@
 							<!-- END Actions -->
 						</th>
 					</tr>
-					
-					
-	
-					<%boolean hasRow = false;
-					for(PublishQueueElement asset : assets){
-						hasRow=true;
+					</thead>
+					<tbody></tbody>
+				</table>
 
-                        String identifier = asset.getAsset();
-                        String assetType = asset.getType();
+				<script>
+					<%if (assets.size() > 20) {%>
+						addShowMoreRow('<%=bundle.getId()%>', '<%=assets.size()%>');
+					<%}%>
 
-                        Contentlet contentlet = null;
-                        String structureName = "";
-                        String title = "";
-                        String inode = "";
-                        String langCode = "";
-                        String countryCode = "";
+					<%
+						final PublishQueueElementTransformer publishQueueElementTransformer =
+								new PublishQueueElementTransformer();
 
-                        if ( assetType.equals( "contentlet" ) ) {
+						final List<Map<String, String>> assetsTransformed = publishQueueElementTransformer
+								.transform(assets).stream()
+								.limit(20).collect(Collectors.toList());
 
-                            //Searches and returns for a this Identifier a Contentlet using the default language
-                            try {
-                                contentlet = PublishAuditUtil.getInstance().findContentletByIdentifier( identifier );
-                            } catch ( DotContentletStateException e ) {
-                                Logger.warn( this.getClass(), "Unable to find contentlet with identifier: [" + identifier + "]", e );
-                                try{
-                                	Logger.info( this.getClass(), "Cleaning Publishing Queue, idenifier [" + identifier + "] no longer exists");
-                                	publisherAPI.deleteElementFromPublishQueueTable(identifier);	
-                                } catch (DotPublisherException dpe){
-                                	Logger.warn( this.getClass(), "Unable to delete Asset from Publishing Queue with identifier: [" + identifier + "]", dpe );
-                                }
-                                
-                            }
-                            if (contentlet != null) {
-                                title = contentlet.getTitle();
-                                inode = contentlet.getInode();
-                                structureName = contentlet.getStructure().getName();
-                            }
-                        } else if (assetType.equals("language")) {
-                            Language language = APILocator.getLanguageAPI().getLanguage(identifier);
-                            langCode = language.getLanguageCode();
-                            countryCode = language.getCountryCode();
-                            title = language.getLanguage() + "(" + countryCode + ")";
-                            structureName = CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL, assetType);
-                        } else if (!assetType.equals("category")) {
-                            title = PublishAuditUtil.getInstance().getTitle(assetType, identifier);
-                            if (title.equals( assetType )) {
-                                title = "";
-                                Logger.warn( this.getClass(), "Unable to find Asset of type: [" + assetType + "] with identifier: [" + identifier + "]" );
-                                try{
-                                	Logger.info( this.getClass(), "Cleaning Publishing Queue, identifier [" + identifier + "] no longer exists");
-                                	publisherAPI.deleteElementFromPublishQueueTable(identifier);	
-                                } catch (DotPublisherException dpe){
-                                	Logger.warn( this.getClass(), "Unable to delete Asset from Publishing Queue with identifier: [" + identifier + "]", dpe );
-                                }
-                            }
-                        }
-                    %>
-                    <%
-                      title = StringEscapeUtils.escapeHtml(title);
-                      if (contentlet != null || !title.equals( "" ) ) {%>
-                        <tr>
-							<td colspan="2">
-                                <span class="deleteIcon" style="margin-right:2px; cursor: pointer" onclick="deleteAsset('<%=asset.getAsset()%>', '<%=bundle.getId()%>')"></span>&nbsp;
+						for(Map<String, String> asset : assetsTransformed){
 
-                                <%if ( assetType.equals( "contentlet" ) ) {%>
-                                    <a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id="+PortletID.CONTENT+"&p_p_action=1&p_p_state=maximized&p_p_mode=view&_"+PortletID.CONTENT+"_struts_action=/ext/contentlet/edit_contentlet&_content_cmd=edit&inode=<%=inode %>&referer=<%=referer %>">
-                                        <strong style="text-decoration: underline;"><%= title %></strong>  : <%=structureName %>
-                                    </a>
-                                <%} else if (assetType.equals("language")) {%>
-                                    <a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id="+PortletID.LANGUAGES+"&p_p_action=1&p_p_state=maximized&p_p_mode=view&_"+PortletID.LANGUAGES+"_struts_action=/ext/languages_manager/edit_language&_"+PortletID.LANGUAGES+"_id=1&_"+PortletID.LANGUAGES+"_cmd=edit&referer=<%=referer %>">
-                                        <img src="/html/images/languages/<%= langCode %>_<%= countryCode %>.gif" border="0" />
-                                        <strong style="text-decoration: underline;"><%= title %></strong>  : <%= structureName %>
-                                    </a>
-                                <%} else {%>
-                                    <strong><%= title %></strong> : <%= assetType%>
-                                <%}%>
-							</td>
-                        </tr>
-				    <%}
-                }%>
-			
-				<%if(!hasRow){ %>
-					<tr><td colspan="2"><div style="text-align: center"><%= LanguageUtil.get(pageContext, "publisher_bundle_is_empty") %></div></td></tr>
-				<%}%>
+							final String title = StringEscapeUtils.escapeHtml(asset.get(PublishQueueElementTransformer.TITLE_KEY));
+							if (!title.equals( "" ) ) {%>
 
-			<%}%>
+								addRow({
+									title:'<%=asset.get(PublishQueueElementTransformer.TITLE_KEY)%>',
+									inode:'<%=asset.get(PublishQueueElementTransformer.INODE_KEY)%>',
+									type:'<%=asset.get(PublishQueueElementTransformer.TYPE_KEY)%>',
+									content_type_name:'<%= asset.get(PublishQueueElementTransformer.CONTENT_TYPE_NAME_KEY) %>',
+									language_code:'<%= asset.get(PublishQueueElementTransformer.LANGUAGE_CODE_KEY)  %>',
+									country_code:'<%= asset.get(PublishQueueElementTransformer.COUNTRY_CODE_KEY) %>'
+								}, '<%=bundle.getId()%>');
+							<%}
+						}
+					%>
 
+					<%if (assetsTransformed.isEmpty()){%>
+						addEmptyRow();
+					<%}%>
+
+				</script>
+		<%}%>
 
 		<%if(!hasBundles){ %>
 			<table  class="listingTable">
@@ -227,3 +183,85 @@
 			</table>
 			<br>
 		<%}%>
+
+
+<script>
+	function addRow(data, bundleId){
+		console.log('addRow', data, '<%=layoutId %>');
+		let tbodyRef = document.getElementById('un_publish_table_' + bundleId).getElementsByTagName('tbody')[0];
+		let newRow = tbodyRef.insertRow();
+		let newCell = newRow.insertCell();
+		newCell.colSpan = 2;
+
+		var content = "<span class=\"deleteIcon\" style=\"margin-right:2px; cursor: pointer\" onclick=\"deleteAsset('" + data.title + "','" + bundleId + "')\"/></span>&nbsp;";
+
+		if (data.type === "contentlet" ) {
+			content += "<a href=\"/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=<%=PortletID.CONTENT%>&p_p_action=1&p_p_state=maximized&p_p_mode=view&_<%=PortletID.CONTENT%>_struts_action=/ext/contentlet/edit_contentlet&_content_cmd=edit&inode=" + data.inode + "&referer=<%=referer %>\">" +
+					"<strong style=\"text-decoration: underline;\">" + data.title + "</strong>  : " + data.content_type_name +
+					"</a>";
+		} else if (data.type === "language" ) {
+			content += "<a href=\"/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=<%=PortletID.LANGUAGES%>&p_p_action=1&p_p_state=maximized&p_p_mode=view&_<%=PortletID.LANGUAGES%>_struts_action=/ext/languages_manager/edit_language&_<%=PortletID.LANGUAGES%>_id=1&_<%=PortletID.LANGUAGES%> _cmd=edit&referer=<%=referer %>\">" +
+					"<img src=\"/html/images/languages/" + data.language_code + "_" + data.country_code + ".gif\" border=\"0\" />&nbsp;" +
+					"<strong style=\"text-decoration: underline;\">" + data.title + "</strong>  : " + data.content_type_name +
+					"</a>";
+		} else {
+			content += "<strong>" + data.title + "</strong> : " + data.type;
+		}
+		
+		newCell.innerHTML = content;
+	}
+
+	function addShowMoreRow(bundleId, nAssets){
+		let tbodyRef = document.getElementById('un_publish_table_' + bundleId).getElementsByTagName('tbody')[0];
+		let newRow = tbodyRef.insertRow();
+		let newCell = newRow.insertCell();
+		newCell.colSpan = 2;
+
+		newCell.innerHTML = "Showing 20 of " + nAssets + "&nbsp;" +
+				"<a href=\"javascript:requestAssets('" + bundleId + "')\">" +
+				"<strong style=\"text-decoration: underline;\">View all</strong>" +
+				"</a>";
+	}
+
+	function addShowLessRow(bundleId){
+		let tbodyRef = document.getElementById('un_publish_table_' + bundleId).getElementsByTagName('tbody')[0];
+		let newRow = tbodyRef.insertRow();
+		let newCell = newRow.insertCell();
+		newCell.colSpan = 2;
+
+		newCell.innerHTML = "Showing Less" + "&nbsp;" +
+				"<a href=\"javascript:requestAssets('" + bundleId + "', 20)\">" +
+				"<strong style=\"text-decoration: underline;\">Show less</strong>" +
+				"</a>";
+	}
+
+	function addEmptyRow(){
+		let tbodyRef = document.getElementsByClassName('listingTable')[0].getElementsByTagName('tbody')[0];
+		let newRow = tbodyRef.insertRow();
+		let newCell = newRow.insertCell();
+
+		newCell.innerHTML = "<div style=\"text-align: center\"><%= LanguageUtil.get(pageContext, "publisher_bundle_is_empty") %></div>";
+	}
+
+	function requestAssets(bundleId, numberToShow = -1){
+		fetch('/api/bundle/' + bundleId + "/assets").then((response) => response.json()).then((data) => {
+			let tbodyRef = document.getElementById('un_publish_table_' + bundleId).getElementsByTagName('tbody')[0];
+			while (tbodyRef.firstChild) {
+				tbodyRef.removeChild(tbodyRef.firstChild);
+			}
+
+
+
+			if (numberToShow !== -1) {
+				addShowMoreRow(bundleId, data.length);
+				data = data.slice(0, numberToShow);
+			} else {
+				addShowLessRow(bundleId);
+			}
+
+			data.forEach(asset => addRow(asset, bundleId));
+		}).catch(function (err) {
+			console.warn('Something went wrong.', err);
+		});
+	}
+</script>

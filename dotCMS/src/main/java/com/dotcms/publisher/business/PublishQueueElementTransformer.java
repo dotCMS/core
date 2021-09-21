@@ -21,12 +21,35 @@ public class PublishQueueElementTransformer {
     public static final String TYPE_KEY = "type";
     public static final String TITLE_KEY = "title";
     public static final String INODE_KEY = "inode";
-    public static final String CONTENT_TYPE_NAME_KEY = "content type name";
-    public static final String LANGUAGE_CODE_KEY = "language code";
-    public static final String COUNTRY_CODE_KEY = "country code";
+    public static final String CONTENT_TYPE_NAME_KEY = "content_type_name";
+    public static final String LANGUAGE_CODE_KEY = "language_code";
+    public static final String COUNTRY_CODE_KEY = "country_code";
 
     public PublishQueueElementTransformer(){}
 
+    /**
+     * Transform the {@link PublishQueueElement} into a {@link Map}, the map contain the follow items:
+     *
+     * For each content:
+     * - type: The value is content for each content.
+     * - title: Content's title.
+     * - inode: Content's inode.
+     * - content type name: Content's content type name.
+     *
+     * For each language:
+     * - type: The value is content for each language.
+     * - title: String with the sintax [language]-[country_code].
+     * - language code: Language's code.
+     * - country code: Language's country code.
+     * - content type name: The value is 'Language' for each language
+     *
+     * For anything else:
+     * - type: asset's type.
+     * - title: asset's title.
+     *
+     * @param publishQueueElements
+     * @return
+     */
     public List<Map<String, String>> transform(final List<PublishQueueElement> publishQueueElements){
         return publishQueueElements.stream()
                 .map(PublishQueueElementTransformer::getMap)
