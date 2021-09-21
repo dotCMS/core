@@ -48,7 +48,7 @@ create table Company (
 	authType varchar2(100) null,
 	autoLogin number(1, 0),
 	strangers number(1, 0),
-    default_language_id number(19,0) not null
+    default_language_id number(19,0) null
 );
 
 create table Counter (
