@@ -3,7 +3,15 @@ package com.dotcms.rest.api.v1.contenttype;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.FieldDiffCommand;
+import com.dotcms.contenttype.business.FieldDiffItemsKey;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.field.ColumnField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.LineDividerField;
+import com.dotcms.contenttype.model.field.RowField;
+import com.dotcms.contenttype.model.field.TabDividerField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
@@ -18,6 +26,8 @@ import com.dotcms.rest.annotation.PermissionsUtil;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.diff.DiffItem;
+import com.dotcms.util.diff.DiffResult;
 import com.dotcms.util.pagination.ContentTypesPaginator;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.workflow.form.WorkflowSystemActionForm;
@@ -37,9 +47,11 @@ import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -208,7 +220,7 @@ public class ContentTypeResource implements Serializable {
 							new HashSet<>(form.getWorkflowsIds()), form.getSystemActions(), contentTypeAPI, false);
 					final ImmutableMap.Builder<Object, Object> builderMap =
 							ImmutableMap.builder()
-							.putAll(new JsonContentTypeTransformer(tuple2._1).mapObject())
+							.putAll(new JsonContentTypeTransformer(contentTypeAPI.find(tuple2._1.variable())).mapObject())
 							.put("workflows", this.workflowHelper.findSchemesByContentType(contentType.id(), initData.getUser()))
 							.put("systemActionMappings", tuple2._2.stream()
 									.collect(Collectors.toMap(mapping-> mapping.getSystemAction(), mapping->mapping)));
@@ -246,6 +258,11 @@ public class ContentTypeResource implements Serializable {
 		final List<SystemActionWorkflowActionMapping> systemActionWorkflowActionMappings = new ArrayList<>();
 		final ContentType contentTypeSaved = contentTypeAPI.save(contentType);
 		this.workflowHelper.saveSchemesByContentType(contentTypeSaved.id(), user, workflowsIds);
+
+		if (!isNew) {
+			this.handleFields(contentType, user, contentTypeAPI);
+		}
+
 		if (UtilMethods.isSet(systemActionMappings)) {
 
 			for (final Tuple2<WorkflowAPI.SystemAction,String> tuple2 : systemActionMappings) {
@@ -281,6 +298,94 @@ public class ContentTypeResource implements Serializable {
 
 		return Tuple.of(contentTypeSaved, systemActionWorkflowActionMappings);
 	}
+
+	/**
+	 * We need to handle in this way b/c when the content type exists the fields are not being updated
+	 * @param newContentType
+	 * @param user
+	 * @param contentTypeAPI
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@WrapInTransaction
+	private void handleFields(final ContentType newContentType, final User user, final ContentTypeAPI contentTypeAPI) throws DotDataException, DotSecurityException {
+
+		final ContentType currentContentType = contentTypeAPI.find(newContentType.variable());
+
+		final DiffResult<FieldDiffItemsKey, Field> diffResult = new FieldDiffCommand().applyDiff(currentContentType.fieldMap(), newContentType.fieldMap());
+
+		if (!diffResult.getToDelete().isEmpty()) {
+
+			APILocator.getContentTypeFieldLayoutAPI().deleteField(currentContentType, diffResult.getToDelete().
+					values().stream().map(Field::id).collect(Collectors.toList()), user);
+		}
+
+		if (!diffResult.getToAdd().isEmpty()) {
+
+			APILocator.getContentTypeFieldAPI().saveFields(new ArrayList<>(diffResult.getToAdd().values()), user);
+		}
+
+		if (!diffResult.getToUpdate().isEmpty()) {
+
+			handleUpdateFieldAndFieldVariables(user, diffResult);
+		}
+	}
+
+	private void handleUpdateFieldAndFieldVariables(final User user,
+													final DiffResult<FieldDiffItemsKey, Field> diffResult) throws DotSecurityException, DotDataException {
+
+		final List<Field> fieldToUpdate = new ArrayList<>();
+		final List<Tuple2<Field, List<DiffItem>>> fieldVariableToUpdate = new ArrayList<>();
+
+		for (final Map.Entry<FieldDiffItemsKey, Field> entry : diffResult.getToUpdate().entrySet()) {
+
+			final Map<Boolean, List<DiffItem>> diffPartition = // split the differences between the ones that are for the field and the ones that are for field variables
+					entry.getKey().getDiffItems().stream().collect(Collectors.partitioningBy(diff -> diff.getVariable().startsWith("fieldVariable.")));
+			final List<DiffItem> fieldVariableList = diffPartition.get(Boolean.TRUE);  // field variable diffs
+			final List<DiffItem> fieldList         = diffPartition.get(Boolean.FALSE); // field diffs
+			if (UtilMethods.isSet(fieldList)) {
+				Logger.debug(this, "Updating the field : " + entry.getValue().variable() + " diff: " + fieldList);
+				fieldToUpdate.add(entry.getValue());
+			}
+
+			if (UtilMethods.isSet(fieldVariableList)) {
+				Logger.debug(this, "Updating the field - field Variables : " + entry.getValue().variable() + " diff: " + fieldVariableList);
+				fieldVariableToUpdate.add(Tuple.of(entry.getValue(), fieldVariableList));
+			}
+		}
+
+		if (UtilMethods.isSet(fieldToUpdate)) { // any diff on fields, so update the fields (but not update field variables :( )
+			APILocator.getContentTypeFieldAPI().saveFields(fieldToUpdate, user);
+		}
+
+		if (UtilMethods.isSet(fieldVariableToUpdate)) { // any diff on field variables, lets see what kind of diffs are.
+
+			for (final Tuple2<Field, List<DiffItem>> fieldVariableTuple : fieldVariableToUpdate) {
+
+				final Map<String, FieldVariable>  fieldVariableMap = fieldVariableTuple._1().fieldVariablesMap();
+				for (final DiffItem diffItem : fieldVariableTuple._2()) {
+
+					// normalizing the real varname
+					final String fieldVariableVarName = StringUtils.replace(diffItem.getVariable(), "fieldVariable.", StringPool.BLANK);
+					if ("delete".equals(diffItem.getDetail()) && fieldVariableMap.containsKey(fieldVariableVarName)) {
+
+						APILocator.getContentTypeFieldAPI().delete(fieldVariableMap.get(fieldVariableVarName));
+					}
+
+					// if add or update, it is pretty much the same
+					if ("add".equals(diffItem.getDetail()) || "update".equals(diffItem.getDetail())) {
+
+						if ("update".equals(diffItem.getDetail()) && !fieldVariableMap.containsKey(fieldVariableVarName)) {
+							// on update get the current field and gets the id
+							continue;
+						}
+
+						APILocator.getContentTypeFieldAPI().save(fieldVariableMap.get(fieldVariableVarName), user);
+					}
+				}
+			}
+		}
+	} // handleUpdateFieldAndFieldVariables.
 
 	@DELETE
 	@Path("/id/{idOrVar}")
