@@ -804,7 +804,6 @@ describe('Load fields and drag and drop', () => {
         fixture.detectChanges();
 
         const tabLinks = de.queryAll(By.css('.p-tabview-nav li'));
-        console.log(tabLinks[1].nativeElement.classList);
         expect(tabLinks[1].nativeElement.classList.contains('p-disabled')).toBe(true);
     });
 

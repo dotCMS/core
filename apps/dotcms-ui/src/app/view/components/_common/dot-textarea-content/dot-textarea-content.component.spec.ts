@@ -80,7 +80,6 @@ describe('DotTextareaContentComponent', () => {
         fixture.detectChanges();
         await fixture.whenStable();
         const selectButton = de.query(By.css('.textarea-content__select-field'));
-        console.log(selectButton.componentInstance.value);
         expect(selectButton.componentInstance.value).toBe('plain');
     });
 

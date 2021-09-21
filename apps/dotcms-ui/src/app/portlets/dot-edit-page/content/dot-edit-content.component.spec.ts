@@ -84,8 +84,8 @@ import { DotContentTypeService } from '@services/dot-content-type';
 import { DotContentPaletteModule } from '@portlets/dot-edit-page/components/dot-content-palette/dot-content-palette.module';
 import { DotContentPaletteComponent } from '@portlets/dot-edit-page/components/dot-content-palette/dot-content-palette.component';
 import { HttpErrorResponse } from '@angular/common/http';
+import { DotGenerateSecurePasswordService } from '@services/dot-generate-secure-password/dot-generate-secure-password.service';
 import { DotPropertiesService } from '@services/dot-properties/dot-properties.service';
-import { DotIconModule } from '@dotcms/ui';
 
 const responseData: DotCMSContentType[] = [
     {
@@ -144,6 +144,14 @@ class MockGlobalMessageComponent {}
     template: '<dot-edit-content></dot-edit-content>'
 })
 class HostTestComponent {}
+
+@Component({
+    selector: 'dot-icon',
+    template: ''
+})
+class MockDotIconComponent {
+    @Input() name: string;
+}
 
 @Component({
     selector: 'dot-whats-changed',
@@ -225,6 +233,7 @@ describe('DotEditContentComponent', () => {
                 DotEditContentComponent,
                 MockDotWhatsChangedComponent,
                 MockDotFormSelectorComponent,
+                MockDotIconComponent,
                 HostTestComponent,
                 MockGlobalMessageComponent
             ],
@@ -241,7 +250,6 @@ describe('DotEditContentComponent', () => {
                 DotOverlayMaskModule,
                 DotWizardModule,
                 DotContentPaletteModule,
-                DotIconModule,
                 RouterTestingModule.withRoutes([
                     {
                         component: DotEditContentComponent,
@@ -261,6 +269,7 @@ describe('DotEditContentComponent', () => {
                 DotEditPageService,
                 DotGlobalMessageService,
                 DotPageStateService,
+                DotGenerateSecurePasswordService,
                 DotCustomEventHandlerService,
                 DotPropertiesService,
                 { provide: DotContentTypeService, useClass: MockDotContentTypeService },

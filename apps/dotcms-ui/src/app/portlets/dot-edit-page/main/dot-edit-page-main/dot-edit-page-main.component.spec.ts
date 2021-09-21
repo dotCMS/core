@@ -53,6 +53,7 @@ import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/
 import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { DotGenerateSecurePasswordService } from '@services/dot-generate-secure-password/dot-generate-secure-password.service';
 
 @Injectable()
 class MockDotContentletEditorService {
@@ -149,6 +150,7 @@ describe('DotEditPageMainComponent', () => {
                     StringUtils,
                     DotcmsEventsService,
                     LoggerService,
+                    DotGenerateSecurePasswordService,
                     DotEventsSocket,
                     { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                     DotcmsConfigService,

@@ -222,7 +222,6 @@ describe('SearchableDropdownComponent', () => {
     it('should display defaultFilterTemplate', () => {
         hostFixture.detectChanges();
         const searchInput = de.query(By.css('[data-testid="searchInput"]'));
-        console.log(searchInput.attributes);
         expect(searchInput).not.toBeNull();
     });
 

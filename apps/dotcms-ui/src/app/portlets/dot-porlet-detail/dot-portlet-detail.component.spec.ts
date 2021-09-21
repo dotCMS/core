@@ -43,6 +43,7 @@ import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fi
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { DotGenerateSecurePasswordService } from '@services/dot-generate-secure-password/dot-generate-secure-password.service';
 
 describe('DotPortletDetailComponent', () => {
     let fixture: ComponentFixture<DotPortletDetailComponent>;
@@ -80,7 +81,8 @@ describe('DotPortletDetailComponent', () => {
                     ConfirmationService,
                     DotWorkflowActionsFireService,
                     DotGlobalMessageService,
-                    DotEventsService
+                    DotEventsService,
+                    DotGenerateSecurePasswordService
                 ],
                 declarations: [DotPortletDetailComponent],
                 imports: [
