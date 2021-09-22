@@ -72,6 +72,7 @@ jobs:
       - name: Get commit message
         id: get-commit-message
         uses: dotcms/get-commit-message@master
+        
         with:
           accessToken: ${{ secrets.GITHUB_TOKEN }}
       - name: Set Common Vars
