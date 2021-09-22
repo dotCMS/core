@@ -88,8 +88,13 @@ export class DotRouterService {
      * @memberof DotRouterService
      */
     goToEditPage(queryParams: Params): Promise<boolean> {
-        return this.router.navigate(['/edit-page/content'], {
-            queryParams
+        const menuId = 'edit-page';
+
+        return this.router.navigate([`/${menuId}/content`], {
+            queryParams,
+            state: {
+                menuId
+            }
         });
     }
 

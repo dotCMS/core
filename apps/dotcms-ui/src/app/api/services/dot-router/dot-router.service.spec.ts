@@ -156,14 +156,20 @@ describe('DotRouterService', () => {
     it('should go to edit page', () => {
         service.goToEditPage({ url: 'abc/def' });
         expect(router.navigate).toHaveBeenCalledWith(['/edit-page/content'], {
-            queryParams: { url: 'abc/def' }
+            queryParams: { url: 'abc/def' },
+            state: {
+                menuId: 'edit-page'
+            }
         });
     });
 
     it('should go to edit page with language_id', () => {
         service.goToEditPage({ url: 'abc/def', language_id: '1' });
         expect(router.navigate).toHaveBeenCalledWith(['/edit-page/content'], {
-            queryParams: { url: 'abc/def', language_id: '1' }
+            queryParams: { url: 'abc/def', language_id: '1' },
+            state: {
+                menuId: 'edit-page'
+            }
         });
     });
 
