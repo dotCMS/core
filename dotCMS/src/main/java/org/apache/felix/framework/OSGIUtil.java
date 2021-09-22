@@ -242,6 +242,9 @@ public class OSGIUtil {
             // todo: as soon as we detected a file is being upload
             // todo: we need to analyzed the exports into the META-INF
             // todo: then discard the fragments and move the bundles to load.
+            // the fragment needs to read the export
+            // the bundle needs to read the import
+
         }
     }
 
@@ -548,7 +551,6 @@ public class OSGIUtil {
      * If bundle path is different to the default one then move all bundles to the new directory and get rid of the default one
      *
      * @param props The properties
-     * @param context The servlet context
      */
     private void verifyBundles(Properties props) {
         String bundlePath = props.getProperty(AUTO_DEPLOY_DIR_PROPERTY);
