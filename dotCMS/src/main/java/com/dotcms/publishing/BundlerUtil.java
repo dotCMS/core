@@ -97,7 +97,7 @@ public class BundlerUtil {
 
     /**
      * Return true if a bundle ca ne retry.
-     * A bundle cab be retry if:
+     * A bundle can be retry if:
      *
      * - If the method {@link BundlerUtil#isRetryable(Status)} return true
      * - And The Bundle is not in the Publish Queue, it meean that the

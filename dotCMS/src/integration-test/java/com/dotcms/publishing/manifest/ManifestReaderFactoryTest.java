@@ -33,6 +33,14 @@ public class ManifestReaderFactoryTest {
         IntegrationTestInitService.getInstance().init();
     }
 
+    /***
+     * Method to test: {@link CSVManifestReader#getAssets(ManifestReason)}
+     * when: A Manifest is created and a {@link ContentType} is added
+     * should: the method {@link CSVManifestReader#getAssets(ManifestReason)} called with
+     * {@link ManifestReason#INCLUDE_BY_USER} should return the content tupe added
+     *
+     * @throws DotPublishingException
+     */
     @Test
     public void createCSVManifestReader() throws DotPublishingException {
         final ContentType contentType = new ContentTypeDataGen().nextPersisted();
