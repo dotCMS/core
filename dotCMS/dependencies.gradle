@@ -612,6 +612,10 @@ dependencies {
     // https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-rekognition
     compile group: 'com.amazonaws', name: 'aws-java-sdk-rekognition', version: '1.11.839'
 
+    // https://mvnrepository.com/artifact/biz.aQute.bnd/biz.aQute.bndlib
+    compileOnly group: 'biz.aQute.bnd', name: 'biz.aQute.bndlib', version: '5.3.0'
+
+
     providedCompile "javax.servlet:javax.servlet-api:3.1.0"
     providedCompile fileTree("../libs/buildlibs").include('**/*.jar')
     providedCompile fileTree("../libs/buildlibs").include('mail.jar')
