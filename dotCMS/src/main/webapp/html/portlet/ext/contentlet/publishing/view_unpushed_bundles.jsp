@@ -220,7 +220,7 @@
 
 		newCell.innerHTML = "<%=LanguageUtil.get(pageContext, "unpublished.bundles.item.show", MAX_BUNDLE_ASSET_TO_SHOW) %> " + nAssets + "&nbsp;" +
 				"<a href=\"javascript:requestAssets('" + bundleId + "')\">" +
-				"<strong style=\"text-decoration: underline;\"><%=LanguageUtil.get(pageContext, "unpublished.bundles.view.all=") %></strong>" +
+				"<strong style=\"text-decoration: underline;\"><%=LanguageUtil.get(pageContext, "unpublished.bundles.view.all") %></strong>" +
 				"</a>";
 	}
 
