@@ -1894,39 +1894,6 @@ public class ContentletAPITest extends ContentletBaseTest {
     }
 
     /**
-     * Testing {@link ContentletAPI#cleanHostField(com.dotmarketing.portlets.structure.model.Structure, com.liferay.portal.model.User, boolean)}
-     *
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws DotMappingException
-     * @see ContentletAPI
-     * @see Contentlet
-     */
-    @Test
-    public void cleanHostField () throws DotDataException, DotSecurityException, DotMappingException {
-
-        //Getting a known structure
-        Structure structure = structures.iterator().next();
-
-        //Search the contentlet for this structure
-        List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
-
-        //Check the current identifies
-        Identifier contentletIdentifier = APILocator.getIdentifierAPI().find( contentletList.iterator().next() );
-
-        //Cleaning the host field for the identifier
-        contentletAPI.cleanHostField( structure, user, false );
-
-        //Now get again the identifier to see if the change was made
-        Identifier changedContentletIdentifier = APILocator.getIdentifierAPI().find( contentletList.iterator().next() );
-
-        //Validations
-        assertNotNull( changedContentletIdentifier );
-        assertNotSame( contentletIdentifier, changedContentletIdentifier );
-        assertNotSame( contentletIdentifier.getHostId(), changedContentletIdentifier.getHostId() );
-    }
-
-    /**
      * Tests method {@link ContentletAPI#getContentletReferences(Contentlet, User, boolean)}.
      * <p>
      * Checks that expected containers and pages (in the correct language) are returned by the method.
