@@ -198,7 +198,7 @@ public class ContentTypeResource implements Serializable {
 		Response response = null;
 
 		try {
-			ContentType contentType = form.getContentType();
+			final ContentType contentType = form.getContentType();
 
 			Logger.debug(this, String.format("Updating content type  '%s' ", form.getRequestJson()));
 
@@ -260,7 +260,7 @@ public class ContentTypeResource implements Serializable {
 		this.workflowHelper.saveSchemesByContentType(contentTypeSaved.id(), user, workflowsIds);
 
 		if (!isNew) {
-			this.handleFields(contentType, user, contentTypeAPI);
+			this.handleFields(contentTypeSaved, user, contentTypeAPI);
 		}
 
 		if (UtilMethods.isSet(systemActionMappings)) {
