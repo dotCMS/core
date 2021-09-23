@@ -789,6 +789,7 @@ create table contentlet (
    disabled_wysiwyg varchar(255),
    identifier varchar(36),
    language_id bigint,
+   content_as_json text,
    date1 datetime,
    date2 datetime,
    date3 datetime,

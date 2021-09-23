@@ -147,7 +147,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
     private static final String[] UPSERT_INODE_EXTRA_COLUMNS = {"owner", "idate", "type"};
     private static final String[] UPSERT_EXTRA_COLUMNS = {"show_on_menu", "title", "mod_date", "mod_user",
             "sort_order", "friendly_name", "structure_inode", "disabled_wysiwyg", "identifier",
-            "language_id", "date1", "date2", "date3", "date4", "date5", "date6", "date7", "date8",
+            "language_id",
+            //"content_as_json",
+            "date1", "date2", "date3", "date4", "date5", "date6", "date7", "date8",
             "date9", "date10", "date11", "date12", "date13", "date14", "date15", "date16", "date17",
             "date18", "date19", "date20", "date21", "date22", "date23", "date24", "date25", "text1",
             "text2", "text3", "text4", "text5", "text6", "text7", "text8", "text9", "text10",
@@ -171,7 +173,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     private static final String[] UPSERT_EXTRA_COLUMNS_ORACLE = {"show_on_menu", "title", "mod_date", "mod_user",
             "sort_order", "friendly_name", "structure_inode", "disabled_wysiwyg", "identifier",
-            "language_id", "date1", "date2", "date3", "date4", "date5", "date6", "date7", "date8",
+            "language_id",
+            //"content_as_json",
+            "date1", "date2", "date3", "date4", "date5", "date6", "date7", "date8",
             "date9", "date10", "date11", "date12", "date13", "date14", "date15", "date16", "date17",
             "date18", "date19", "date20", "date21", "date22", "date23", "date24", "date25", "text1",
             "text2", "text3", "text4", "text5", "text6", "text7", "text8", "text9", "text10",
@@ -196,7 +200,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     private static final String[] UPSERT_EXTRA_COLUMNS_MYSQL = {"show_on_menu", "title", "mod_date", "mod_user",
             "sort_order", "friendly_name", "structure_inode", "disabled_wysiwyg", "identifier",
-            "language_id", "date1", "date2", "date3", "date4", "date5", "date6", "date7", "date8",
+            "language_id",
+            //"content_as_json",
+            "date1", "date2", "date3", "date4", "date5", "date6", "date7", "date8",
             "date9", "date10", "date11", "date12", "date13", "date14", "date15", "date16", "date17",
             "date18", "date19", "date20", "date21", "date22", "date23", "date24", "date25", "text1",
             "text2", "text3", "text4", "text5", "text6", "text7", "text8", "text9", "text10",
@@ -1935,10 +1941,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
     private void upsertContentlet(final Contentlet contentlet, final String inode) throws DotDataException {
-
-        final String json = INSTANCE.get().toJson(contentlet);
-        System.out.println(json);
-
         final UpsertCommand upsertContentletCommand = UpsertCommandFactory.getUpsertCommand();
         final SimpleMapAppContext replacements = new SimpleMapAppContext();
 
@@ -2032,6 +2034,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
             addDynamicFields(upsertValues, fieldsMap,"bool");
         } catch (JsonProcessingException e) {
             throw new DotDataException(e);
+        }
+
+        final Optional<String> json = INSTANCE.get().toJson(contentlet);
+        if(json.isPresent()){
+           System.out.println(json.get());
         }
 
         return upsertValues;

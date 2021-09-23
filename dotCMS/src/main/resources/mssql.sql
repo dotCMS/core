@@ -1018,6 +1018,7 @@ create table permission (
     disabled_wysiwyg NVARCHAR(255) null,
     identifier NVARCHAR(36) null,
     language_id numeric(19,0) null,
+    content_as_json NVARCHAR(MAX),
     date1 datetime null,
     date2 datetime null,
     date3 datetime null,

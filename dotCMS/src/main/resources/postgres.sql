@@ -784,6 +784,7 @@ create table permission (
 	disabled_wysiwyg varchar(255),
 	identifier varchar(36),
 	language_id int8,
+	content_as_json jsonb,
 	date1 timestamptz,
 	date2 timestamptz,
 	date3 timestamptz,

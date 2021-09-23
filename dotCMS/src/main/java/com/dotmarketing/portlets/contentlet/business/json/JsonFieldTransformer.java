@@ -5,7 +5,7 @@ import java.io.Serializable;
 import java.util.Map;
 import org.apache.commons.text.CaseUtils;
 
-public interface JsonFieldTransformer <T extends Field, V extends  Serializable>{
+public interface JsonFieldTransformer <T extends Field, V extends Serializable>{
 
     Map<String, Serializable> toJsonMap(T field, V object);
 
