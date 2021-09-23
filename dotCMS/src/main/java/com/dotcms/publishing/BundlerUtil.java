@@ -55,12 +55,7 @@ public class BundlerUtil {
 
             return new File(bundlePath).exists();
         } else {
-            try {
-                return ManifestUtil.manifestExists(config.getId());
-            } catch (IOException e) {
-                Logger.warn(BundlerUtil.class, () -> e.getMessage());
-                return false;
-            }
+		    return ManifestUtil.manifestExists(config.getId());
         }
 
 	}
