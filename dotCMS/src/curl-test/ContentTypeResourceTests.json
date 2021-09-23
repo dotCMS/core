@@ -238,14 +238,24 @@
 					"response": []
 				},
 				{
-					"name": "Delete ContentType",
+					"name": "Update Content Type without sending variable success",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
 									"pm.test(\"Status code should be ok 200\", function () {",
 									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"icon check\", function () {",
+									"    pm.expect(jsonData.entity.description).to.eql('My Structure test');",
+									"});",
+									"",
+									"pm.test(\"sortOrder check\", function () {",
+									"    pm.expect(jsonData.entity.sortOrder).to.eql(2);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -277,8 +287,17 @@
 								}
 							]
 						},
-						"method": "DELETE",
+						"method": "PUT",
 						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"My Structure test\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"host\": \"SYSTEM_HOST\",\n    \"name\": \"My Custom Structure {{$randomBankAccount}}\",\n\t\"fixed\": false,\n    \"id\": \"{{contentTypeID}}\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n                    \"contentTypeId\": \"{{contentTypeID}}\",\n                    \"dataType\": \"TEXT\",\n                    \"fieldType\": \"Text\",\n                    \"fieldTypeLabel\": \"Text\",\n                    \"fieldVariables\": [],\n                    \"fixed\": true,\n                    \"iDate\": 1631719532000,\n                    \"id\": \"{{contentTypeFieldID}}\",\n                    \"indexed\": true,\n                    \"listed\": true,\n                    \"modDate\": 1631719532000,\n                    \"name\": \"Name\",\n                    \"readOnly\": false,\n                    \"required\": true,\n                    \"searchable\": true,\n                    \"sortOrder\": 2,\n                    \"unique\": false,\n                    \"variable\": \"name\"\n\t\t}\n\t],\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"],\n    \"icon\": \"icon2\",\n    \"sortOrder\": 2\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeID}}",
 							"host": [
@@ -292,11 +311,70 @@
 								"{{contentTypeID}}"
 							]
 						},
-						"description": "Given a content type ID.\nExpect that code is 200.\nExpect content type is deleted successfully."
+						"description": "Given a content type ID and a payload containing content type properties.\nExpect that code is 200.\nExpect content type is updated without issues.\nExpect that the new properties (icon and sortOrder) are updated with the new values."
 					},
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Delete ContentType",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeID}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"contenttype",
+						"id",
+						"{{contentTypeID}}"
+					]
+				},
+				"description": "Given a content type ID.\nExpect that code is 200.\nExpect content type is deleted successfully."
+			},
+			"response": []
 		},
 		{
 			"name": "Create ContentType with field variables",
