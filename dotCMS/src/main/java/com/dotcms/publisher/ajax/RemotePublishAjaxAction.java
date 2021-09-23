@@ -25,8 +25,11 @@ import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.publishing.manifest.CSVManifestBuilder;
 import com.dotcms.publishing.manifest.CSVManifestReader;
+import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
 import com.dotcms.publishing.manifest.ManifestReaderFactory;
+import com.dotcms.publishing.manifest.ManifestReason;
 import com.dotmarketing.util.DateUtil;
+import java.util.Collection;
 import java.util.TimeZone;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileItemFactory;
@@ -459,13 +462,12 @@ public class RemotePublishAjaxAction extends AjaxAction {
 
                 //Get the identifiers on this bundle
                 HashSet<String> identifiers = new HashSet<String>();
-                List<PublishQueueElement> assets = csvManifestReader.getPublishQueueElement();
-                if ( config.getLuceneQueries() != null && !config.getLuceneQueries().isEmpty() ) {
-                    identifiers.addAll( PublisherUtil.getContentIds( config.getLuceneQueries() ) );
-                }
+                final Collection<ManifestInfo> assets = csvManifestReader
+                        .getAssets(ManifestReason.INCLUDE_BY_USER);
+
                 if ( assets != null && !assets.isEmpty() ) {
-                    for ( PublishQueueElement asset : assets ) {
-                        identifiers.add( asset.getAsset() );
+                    for ( ManifestInfo asset : assets ) {
+                        identifiers.add( asset.id() );
                     }
                 }
                 
