@@ -5,6 +5,7 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 
+<script type="text/javascript" src="/html/js/generate-password/bundle.js"></script>
 <script type="text/javascript" src="/dwr/interface/UserAjax.js"></script>
 <script type="text/javascript" src="/dwr/interface/RoleAjax.js"></script>
 <script type="text/javascript" src="/dwr/interface/TagAjax.js"></script>
@@ -491,6 +492,26 @@
 		userChanged = true;
 		passwordChanged = true;
 	}
+
+    //Sends custom NG event to display modal with secure password
+    function generateSecurePasswordModal() {
+        const data = {
+			password: window.passwordGenerator.generate({
+                length: 16,
+                numbers: true,
+                symbols: true
+            })
+		};
+		const customEvent = document.createEvent("CustomEvent");
+		customEvent.initCustomEvent("ng-event", false, false,  {
+			name: "generate-secure-password",
+			data: data
+		});
+		document.dispatchEvent(customEvent);
+
+        dijit.byId('password').attr('value', data.password);
+        dijit.byId('passwordCheck').attr('value', data.password);
+    }
 
 	//Handler from when the user info has changed
 	var emailChanged = false;

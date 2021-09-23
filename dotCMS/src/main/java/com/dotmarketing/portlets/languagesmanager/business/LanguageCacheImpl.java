@@ -16,6 +16,7 @@ public class LanguageCacheImpl extends LanguageCache {
 
 	private static final String LANG_404_STR = "LANG__404";
 	static final String ALL_LANGUAGES_KEY="ALL_LANGUAGES_KEY";
+	static final String DEFAULT_LANGUAGE = "DEFAULT_LANGUAGE";
 	public static Language LANG_404 = new Language(-1,
 			LANG_404_STR, LANG_404_STR, LANG_404_STR,
 			LANG_404_STR);
@@ -43,6 +44,26 @@ public class LanguageCacheImpl extends LanguageCache {
 	public void clearLanguages() {
 		DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
 		cache.remove(ALL_LANGUAGES_KEY, getPrimaryGroup());
+	}
+
+	public Language getDefaultLanguage(){
+		DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+		Language defaultLang = LANG_404;
+		try {
+			defaultLang = (Language)cache.get(DEFAULT_LANGUAGE, getPrimaryGroup());
+			if(null == defaultLang){
+			   cache.put(DEFAULT_LANGUAGE, LANG_404, getPrimaryGroup());
+			   defaultLang = LANG_404;
+			}
+		} catch (DotCacheException e) {
+			Logger.debug(LanguageCacheImpl.class,"Default Language not found in Cache.", e);
+		}
+		return defaultLang;
+	}
+
+	public void setDefaultLanguage(Language defaultLanguage){
+		DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+		cache.put(DEFAULT_LANGUAGE, defaultLanguage, getPrimaryGroup());
 	}
 
     public void addLanguage(Language l) {
