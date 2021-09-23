@@ -2,14 +2,16 @@ package com.dotmarketing.portlets.languagesmanager.business;
 
 import static com.dotmarketing.portlets.languagesmanager.business.LanguageCacheImpl.LANG_404;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.util.CloseUtils;
+import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DeterministicIdentifierAPIImpl;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -45,6 +47,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+
 /**
  * Implementation class for the {@link LanguageFactory}.
  *
@@ -66,7 +70,12 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	private static final String SELECT_LANGUAGE_BY_ID="select * from language where id = ?";
 	private static final String SELECT_ALL_LANGUAGES="select * from language where id <> ? order by language_code ";
 
-	private static volatile Language defaultLanguage;
+	public static final String DEFAULT_LANGUAGE_CODE = "DEFAULT_LANGUAGE_CODE";
+	public static final String DEFAULT_LANGUAGE_COUNTRY_CODE = "DEFAULT_LANGUAGE_COUNTRY_CODE";
+	public static final String DEFAULT_LANGUAGE_COUNTRY = "DEFAULT_LANGUAGE_COUNTRY";
+	public static final String DEFAULT_LANGUAGE_STR = "DEFAULT_LANGUAGE_STR";
+
+	private final AtomicReference<Language> createDefaultLanguageLock = new AtomicReference<>();
 
 	private final Map<String, Date> readTimeStamps = new HashMap<String, Date>();
 
@@ -152,25 +161,183 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	@Override
 	protected Language createDefaultLanguage() {
 
-		Language language = getLanguage (Config.getStringProperty("DEFAULT_LANGUAGE_CODE", "en"), Config.getStringProperty("DEFAULT_LANGUAGE_COUNTRY_CODE","US"));
+		Language language = getLanguage (Config.getStringProperty(DEFAULT_LANGUAGE_CODE, "en"), Config.getStringProperty(
+				DEFAULT_LANGUAGE_COUNTRY_CODE,"US"));
 		//If the default language does not exist, create it
 		if(!UtilMethods.isSet(language)) {
 			Logger.info(this,"Creating Default Language");
 			language = new Language();
 			language.setCountry(
-					Config.getStringProperty("DEFAULT_LANGUAGE_COUNTRY", "United States"));
+					Config.getStringProperty(DEFAULT_LANGUAGE_COUNTRY, "United States"));
 			language.setCountryCode(
-					Config.getStringProperty("DEFAULT_LANGUAGE_COUNTRY_CODE", "US"));
-			language.setLanguage(Config.getStringProperty("DEFAULT_LANGUAGE_STR", "English"));
-			language.setLanguageCode(Config.getStringProperty("DEFAULT_LANGUAGE_CODE", "en"));
+					Config.getStringProperty(DEFAULT_LANGUAGE_COUNTRY_CODE, "US"));
+			language.setLanguage(Config.getStringProperty(DEFAULT_LANGUAGE_STR, "English"));
+			language.setLanguageCode(Config.getStringProperty(DEFAULT_LANGUAGE_CODE, "en"));
 
 			//saves the new language
 			saveLanguage(language);
+
+			try {
+				//Writes the default lang in the company table
+				writeDefaultLanguage(language.getId());
+				CacheLocator.getLanguageCache().setDefaultLanguage(language);
+			} catch (DotDataException e) {
+				throw new DotRuntimeException(String.format("Unable to persist language with id `%s` as the default in the default company.",language), e);
+			}
 		}
 
 
 		return language;
 
+	}
+
+	/**
+	 * Usually something like this should be located at the API level
+	 * However this method is already used in a few places that require the logic to be at this level
+	 * This is not a transactional method. The language will be loaded from cache on a the first atttempt
+	 * if not found it will be loaded from the db and if not found there either it will be created.
+	 * any of the db operations are executed separately in a transactional method
+	 * @return
+	 */
+	@Override
+	protected Language getDefaultLanguage() {
+
+		final LanguageCache languageCache = CacheLocator.getLanguageCache();
+		Language defaultLanguage = languageCache.getDefaultLanguage();
+
+		if(!LANG_404.equals(defaultLanguage)){
+			return defaultLanguage;
+		}
+
+		if (createDefaultLanguageLock.compareAndSet(null, defaultLanguage)) {
+			defaultLanguage = transactionalGetDefaultLanguage();
+			languageCache.setDefaultLanguage(defaultLanguage);
+			//update the lock.
+			createDefaultLanguageLock.set(defaultLanguage);
+		}
+
+		return createDefaultLanguageLock.get();
+	}
+
+	/**
+	 * Transactional Get/Create lang method
+	 * @return
+	 */
+	@WrapInTransaction
+	private Language transactionalGetDefaultLanguage(){
+		Language defaultLanguage = null;
+		final long defaultLangId = readDefaultLanguage();
+		if (0 != defaultLangId) {
+			//Verify if it already exist. if so out put it into cache.
+			defaultLanguage = getLanguage(defaultLangId);
+		}
+		if (null == defaultLanguage) {
+			//if it doesn't exist then creates the default lang and put it in cache.
+			defaultLanguage = createDefaultLanguage();
+		}
+		return defaultLanguage;
+	}
+
+	void writeDefaultLanguage(final long languageId) throws DotDataException {
+		final String companyId = APILocator.getCompanyAPI().getDefaultCompany().getCompanyId();
+		new DotConnect()
+				.setSQL("UPDATE company SET default_language_id = ? WHERE companyid = ? ")
+				.addParam(languageId)
+				.addParam(companyId)
+				.loadResult();
+	}
+
+	long readDefaultLanguage() {
+
+		final String companyId = APILocator.getCompanyAPI().getDefaultCompany().getCompanyId();
+		final String defaultLanguageId = new DotConnect()
+				.setSQL("SELECT default_language_id FROM company WHERE companyid = ? ")
+				.addParam(companyId).getString("default_language_id");
+		return ConversionUtils.toLong(defaultLanguageId);
+	}
+
+
+	@Override
+	protected void makeDefault(final Long languageId) throws DotDataException {
+		final Language language = getLanguage(languageId);
+		if(null == language ){
+		   throw new DotDataException(String.format("Unable to make default language with id %s the default one.",languageId));
+		}
+		if (createDefaultLanguageLock.compareAndSet(getDefaultLanguage(), language)) {
+			writeDefaultLanguage(languageId);
+			CacheLocator.getLanguageCache().clearCache();
+		}
+	}
+
+	@Override
+	protected void transferAssets(final Long oldDefaultLanguage, final Long newDefaultLanguage)
+			throws DotDataException {
+
+		final DotConnect dotConnect = new DotConnect();
+		if (DbConnectionFactory.isMySql()) {
+
+			dotConnect
+					.setSQL(" UPDATE contentlet SET language_id = ? WHERE  NOT EXISTS ( "
+							  + " SELECT identifier FROM ( "
+							     + " SELECT c.identifier FROM contentlet c WHERE c.language_id = ? AND c.identifier = identifier "
+							  + " ) AS T"
+							+ ") AND language_id = ?  ")
+					.addParam(newDefaultLanguage)
+					.addParam(newDefaultLanguage)
+					.addParam(oldDefaultLanguage)
+					.loadResult();
+
+			dotConnect
+					.setSQL(" UPDATE contentlet_version_info SET lang = ? WHERE NOT EXISTS ( "
+							  + " SELECT identifier FROM ( "
+							     + " SELECT cvi.identifier FROM contentlet_version_info cvi WHERE lang = ? AND cvi.identifier = identifier "
+							  + " ) AS T"
+							+ ") AND lang = ? ")
+					.addParam(newDefaultLanguage)
+					.addParam(newDefaultLanguage)
+					.addParam(oldDefaultLanguage)
+					.loadResult();
+
+
+			dotConnect
+					.setSQL(" UPDATE workflow_task SET language_id = ? WHERE NOT EXISTS ( "
+							+ " SELECT webasset FROM ( "
+							   + " SELECT wft.webasset FROM workflow_task wft WHERE wft.language_id = ? AND wft.webasset = webasset "
+							+ " ) AS T"
+							+ ") AND language_id = ? ")
+					.addParam(newDefaultLanguage)
+					.addParam(newDefaultLanguage)
+					.addParam(oldDefaultLanguage)
+					.loadResult();
+
+		} else {
+			dotConnect
+					.setSQL(" UPDATE contentlet SET language_id = ? WHERE  NOT EXISTS ( "
+							+ " SELECT c.identifier FROM contentlet c WHERE c.language_id = ? AND c.identifier = identifier "
+							+ ") AND language_id = ?  ")
+					.addParam(newDefaultLanguage)
+					.addParam(newDefaultLanguage)
+					.addParam(oldDefaultLanguage)
+					.loadResult();
+
+			dotConnect
+					.setSQL(" UPDATE contentlet_version_info SET lang = ? WHERE NOT EXISTS ( "
+							+ " SELECT cvi.identifier FROM contentlet_version_info cvi WHERE lang = ? AND cvi.identifier = identifier "
+							+ ") AND lang = ? ")
+					.addParam(newDefaultLanguage)
+					.addParam(newDefaultLanguage)
+					.addParam(oldDefaultLanguage)
+					.loadResult();
+
+			dotConnect
+					.setSQL(" UPDATE workflow_task SET language_id = ? WHERE NOT EXISTS ( "
+							+ " SELECT wft.webasset FROM workflow_task wft WHERE wft.language_id = ? AND wft.webasset = webasset "
+							+ ") AND language_id = ? ")
+					.addParam(newDefaultLanguage)
+					.addParam(newDefaultLanguage)
+					.addParam(oldDefaultLanguage)
+					.loadResult();
+		}
 	}
 
 	@Override
@@ -261,29 +428,6 @@ public class LanguageFactoryImpl extends LanguageFactory {
 		}
 
 		return language.getLanguageCode() + (UtilMethods.isSet(language.getCountryCode()) ? "_" + language.getCountryCode():"");
-	}
-
-	@Override
-	protected Language getDefaultLanguage() {
-
-		if (defaultLanguage == null) {
-
-			synchronized (this) {
-
-				if (defaultLanguage == null) {
-
-					defaultLanguage = getLanguage(Config.getStringProperty("DEFAULT_LANGUAGE_CODE", "en"),
-							Config.getStringProperty("DEFAULT_LANGUAGE_COUNTRY_CODE", "US"));
-
-					if (defaultLanguage==null || defaultLanguage.getId() == 0) {
-
-						defaultLanguage = createDefaultLanguage();
-					}
-				}
-			}
-		}
-
-		return defaultLanguage;
 	}
 
 	@Override
