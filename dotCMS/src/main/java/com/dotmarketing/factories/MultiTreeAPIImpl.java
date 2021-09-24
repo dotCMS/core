@@ -591,9 +591,10 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                         .addParam(tree.getContentlet());
                 final int contentExist = Integer.parseInt(db.loadObjectResults().get(0).get("cc").toString());
                 if(contentExist != 0){
-                    final String errorMsg = String.format("This content: %s has already been added into the Container: %s",tree.getContentlet(),tree.getContainerAsID());
-                    Logger.error(this,errorMsg);
-                    throw new DotDataException(errorMsg);
+                    final String contentletTitle = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(tree.getContentlet()).getTitle();
+                    final String errorMsg = String.format("This content: '%s' has already been added to this section. Content ID: %s",contentletTitle,tree.getContentlet());
+                    Logger.debug(this,errorMsg);
+                    throw new IllegalArgumentException(errorMsg);
                 }
 
                 insertParams

@@ -347,9 +347,7 @@ public class PublishFactory {
                 } catch (DotRuntimeException e) {
 					final Throwable rootCause = ExceptionUtil.getRootCause(e);
 
-					if (FutureContentletPublishStateException.class.equals(rootCause.getClass())) {
-						futureContentlets.add(((FutureContentletPublishStateException) rootCause).getContentlet());
-					} else if (ExpiredContentletPublishStateException.class.equals(rootCause.getClass())) {
+					if (ExpiredContentletPublishStateException.class.equals(rootCause.getClass())) {
 						expiredContentlets.add(((ExpiredContentletPublishStateException) rootCause).getContentlet());
 					}
 				}

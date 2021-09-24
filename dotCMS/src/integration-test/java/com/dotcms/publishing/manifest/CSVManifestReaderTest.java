@@ -46,6 +46,8 @@ import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -298,6 +300,35 @@ public class CSVManifestReaderTest {
         }
 
         final ManifestReader manifestReader = new CSVManifestReader(manifestFile);
+        final Collection<ManifestInfo> includedAssets = manifestReader.getAssets(ManifestReason.INCLUDE_BY_USER);
+        assertEquals(1, includedAssets.size());
+
+        final ManifestInfo assetIncluded = includedAssets.iterator().next();
+        assertEquals(contentType1.getManifestInfo(), assetIncluded);
+    }
+
+    /**
+     * Method to test: {@link CSVManifestReader#getAssets(ManifestReason)}
+     * when: Create a Manifest File and include two asset with different reason
+     * should: Return just the asset with the reason requested
+     */
+    @Test
+    public void createCSVManifestReaderWithInputStream() throws FileNotFoundException {
+        final String includeReason1 = ManifestReason.INCLUDE_BY_USER.getMessage();
+        final String includeReason2 = ManifestReason.INCLUDE_AUTOMATIC_BY_DOTCMS.getMessage();
+
+        File manifestFile = null;
+
+        final ContentType contentType1 = new ContentTypeDataGen().nextPersisted();
+        final ContentType contentType2 = new ContentTypeDataGen().nextPersisted();
+
+        try(final CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
+            manifestBuilder.include(contentType1, includeReason1);
+            manifestBuilder.include(contentType2, includeReason2);
+            manifestFile = manifestBuilder.getManifestFile();
+        }
+
+        final ManifestReader manifestReader = new CSVManifestReader(new FileReader(manifestFile));
         final Collection<ManifestInfo> includedAssets = manifestReader.getAssets(ManifestReason.INCLUDE_BY_USER);
         assertEquals(1, includedAssets.size());
 
