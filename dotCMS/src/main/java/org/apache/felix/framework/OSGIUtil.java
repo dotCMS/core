@@ -18,7 +18,14 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.dotcms.api.system.event.Visibility;
+import com.dotcms.notifications.bean.NotificationAction;
+import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.notifications.bean.NotificationType;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.exception.DotDataException;
+import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
@@ -26,6 +33,7 @@ import org.apache.felix.framework.util.FelixConstants;
 import org.apache.felix.http.proxy.DispatcherTracker;
 import org.apache.felix.main.AutoProcessor;
 import org.apache.felix.main.Main;
+import org.apache.poi.ss.formula.functions.T;
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -276,6 +284,17 @@ public class OSGIUtil {
                 if (needManuallyRestartFramework) {
 
                     // todo: send a notification that the files "pathnames" has been added and new to restart the osgi framework
+
+                    try {
+                        APILocator.getNotificationAPI().generateNotification("Restart OSGI",
+                                "New bundles have been added to dotCMS: " + Arrays.asList(pathnames) +
+                                        ", needs to restart the OSGI Framework, run this link: xxx.com", null,
+                                NotificationLevel.INFO, NotificationType.GENERIC,
+                                Visibility.USER, Role.CMS_ADMINISTRATOR_ROLE, Role.CMS_ADMINISTRATOR_ROLE, null
+                        );
+                    } catch (DotDataException e) {
+                        Logger.error(this, e.getMessage(), e);
+                    }
                 } else {
 
                     this.moveNewBundlesToFelixLoadFolder(uploadFolderFile, pathnames);
@@ -286,9 +305,42 @@ public class OSGIUtil {
         }
     }
 
-    public void moveNewBundlesToFelixLoadFolder(final File uploadFolderFile, final String[] pathnames) {
+    /**
+     * Move this bundles from the upload folder to the deploy folder.
+     * @param pathnames String array of bundle file names.
+     */
+    public void moveNewBundlesToFelixLoadFolder(final String[] pathnames) {
 
-        // todo move to load folder these paths
+        this.moveNewBundlesToFelixLoadFolder(new File(this.getFelixUploadPath()), pathnames);
+    }
+
+    private void moveNewBundlesToFelixLoadFolder(final File uploadFolderFile, final String[] pathnames) {
+
+        final File deployDirectory = new File(this.getFelixDeployPath());
+        try {
+
+            if (deployDirectory.exists() && deployDirectory.canWrite()) {
+
+                for (final String pathname : pathnames) {
+
+                    final File bundle = new File(uploadFolderFile, pathname);
+                    Logger.debug(this, "Moving the bundle: " + bundle + " to " + deployDirectory);
+                    if (FileUtil.move(bundle, deployDirectory)) {
+
+                        Logger.debug(this, "Moved the bundle: " + bundle + " to " + deployDirectory);
+                    } else {
+                        Logger.debug(this, "Could not move the bundle: " + bundle + " to " + deployDirectory);
+                    }
+                }
+            } else {
+
+                Logger.warn(this, "The directory: " + this.getFelixDeployPath()
+                        + " does not exists or can not read");
+            }
+        } catch (IOException e) {
+
+            Logger.error(this, e.getMessage(), e);
+        }
     }
 
 
