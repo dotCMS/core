@@ -786,6 +786,7 @@ create table permission (
 	disabled_wysiwyg varchar2(255),
 	identifier varchar2(36),
 	language_id number(19,0),
+    content_as_json nclob,
 	date1 date,
 	date2 date,
 	date3 date,

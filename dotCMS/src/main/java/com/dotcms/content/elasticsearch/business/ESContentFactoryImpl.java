@@ -77,6 +77,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Ints;
 import com.liferay.portal.model.User;
@@ -99,6 +100,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -144,9 +146,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
     public static final int ES_TRACK_TOTAL_HITS_DEFAULT = 10000000;
     public static final String ES_TRACK_TOTAL_HITS = "ES_TRACK_TOTAL_HITS";
     private static final String[] UPSERT_INODE_EXTRA_COLUMNS = {"owner", "idate", "type"};
+
     private static final String[] UPSERT_EXTRA_COLUMNS = {"show_on_menu", "title", "mod_date", "mod_user",
             "sort_order", "friendly_name", "structure_inode", "disabled_wysiwyg", "identifier",
-            "language_id", "date1", "date2", "date3", "date4", "date5", "date6", "date7", "date8",
+            "language_id", "content_as_json",
+            "date1", "date2", "date3", "date4", "date5", "date6", "date7", "date8",
             "date9", "date10", "date11", "date12", "date13", "date14", "date15", "date16", "date17",
             "date18", "date19", "date20", "date21", "date22", "date23", "date24", "date25", "text1",
             "text2", "text3", "text4", "text5", "text6", "text7", "text8", "text9", "text10",
@@ -1945,6 +1949,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
                         : DbConnectionFactory.isOracle() ? UPSERT_EXTRA_COLUMNS_ORACLE
                                 : UPSERT_EXTRA_COLUMNS);
 
+        if (DbConnectionFactory.isPostgres()) {
+            replacements
+                    .setColumnFormatFunctions(ImmutableMap
+                            .of("content_as_json", col -> col + " ::jsonb"));
+        }
 
         List<Object> parameters = new ArrayList<>();
         parameters.add(inode);
@@ -2015,7 +2024,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         upsertValues.add(UtilMethods.isSet(contentlet.getIdentifier())?contentlet.getIdentifier():null);
         upsertValues.add(contentlet.getLanguageId());
-
+        upsertValues.add("{ \"contentlets\": [ ] }");
         final Map<String, Object> fieldsMap = getFieldsMap(contentlet);
 
         try {
