@@ -1,18 +1,23 @@
 package com.dotmarketing.util;
 
+import aQute.bnd.osgi.Analyzer;
+import aQute.bnd.osgi.Descriptors;
+import aQute.bnd.osgi.Jar;
+import aQute.bnd.osgi.Packages;
+import com.liferay.util.StringPool;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.jar.Attributes;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -20,7 +25,41 @@ import java.util.zip.ZipFile;
 /**
  * list resources available from the classpath @ *
  */
-public class ResourceCollectorUtil{
+public class ResourceCollectorUtil {
+
+    public static Collection<String> getImports(final File file) {
+
+        try (final JarFile jarFile     = new JarFile(file)){
+
+            final Manifest manifest    = jarFile.getManifest();
+            final String importPackage = manifest.getMainAttributes().getValue("Import-Package");
+            return UtilMethods.isSet(importPackage)?
+                    Stream.of(importPackage.split(StringPool.COMMA)).collect(Collectors.toList()):
+                    Collections.emptyList();
+        }  catch (Exception e) {
+
+            Logger.error(ResourceCollectorUtil.class, e.getMessage(), e);
+        }
+
+        return Collections.emptyList();
+    }
+
+    public static Collection<String> getExports(final File file) {
+
+        try (final JarFile jarFile     = new JarFile(file)){
+
+            final Manifest manifest    = jarFile.getManifest();
+            final String exportPackage = manifest.getMainAttributes().getValue("Export-Package");
+            return UtilMethods.isSet(exportPackage)?
+                    Stream.of(exportPackage.split(StringPool.COMMA)).collect(Collectors.toList()):
+                    Collections.emptyList();
+        }  catch (Exception e) {
+
+            Logger.error(ResourceCollectorUtil.class, e.getMessage(), e);
+        }
+
+        return Collections.emptyList();
+    }
 
     /**
      * for all elements of java.class.path get a Collection of resources Pattern

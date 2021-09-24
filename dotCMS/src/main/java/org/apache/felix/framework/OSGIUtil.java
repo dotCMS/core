@@ -12,13 +12,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 import com.dotmarketing.business.APILocator;
 import org.apache.commons.io.FileUtils;
@@ -133,7 +127,6 @@ public class OSGIUtil {
     /**
      * Initializes the framework OSGi using the servlet context
      *
-     * @param context The servlet context
      * @return Framework
      */
     public synchronized Framework initializeFramework() {
@@ -235,17 +228,24 @@ public class OSGIUtil {
                 new OSGIUploadBundleEvent(Instant.now(), uploadFolderFile));
 
         final String[] pathnames = uploadFolderFile.list(new SuffixFileFilter(".jar"));
+        final Set<String> osgiUserPackages = new TreeSet<>();
 
         for (final String pathname : pathnames) {
 
             Logger.info(this, "OSGI - pathname: " + pathname);
-            // todo: as soon as we detected a file is being upload
-            // todo: we need to analyzed the exports into the META-INF
-            // todo: then discard the fragments and move the bundles to load.
-            // the fragment needs to read the export
-            // the bundle needs to read the import
+            final File fileJar = new File(uploadFolderFile, pathname);
+            Collection<String> packages = Collections.emptyList();
+            if (fileJar.exists() && fileJar.canRead()) {
 
+                packages = pathname.contains(".fragment")?
+                    ResourceCollectorUtil.getExports(fileJar):
+                    ResourceCollectorUtil.getImports(fileJar);
+            }
+
+            osgiUserPackages.addAll(packages);
         }
+
+        Logger.info(this, osgiUserPackages.toString());
     }
 
 
@@ -590,7 +590,6 @@ public class OSGIUtil {
      * If still not found, it fetches it from the 'felix.base.dir' property
      * If value is null an exception is thrown.
      *
-     * @param context The servlet context
      * @return String
      */
     public String getBaseDirectory() {
