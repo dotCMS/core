@@ -13,6 +13,14 @@ import org.xbill.DNS.Section;
 import org.xbill.DNS.Type;
 
 public class DNSUtil {
+
+	/**
+	 * Return the server name from the IP Address
+	 *
+	 * @param hostIp
+	 * @return
+	 * @throws IOException
+	 */
 	public static String reverseDns(String hostIp) throws IOException {
 
 		Resolver res = new ExtendedResolver();

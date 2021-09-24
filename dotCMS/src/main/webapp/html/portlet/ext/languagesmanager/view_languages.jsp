@@ -68,6 +68,7 @@ var pushHandler = new dotcms.dojo.push.PushHandler('Push Publish');
 		</tr>
 
 	<%
+		final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
 	    int l = 0;
 	    for (int k=0; k < (list.size()+1)/2;k++) {
 	%>
@@ -83,6 +84,7 @@ var pushHandler = new dotcms.dojo.push.PushHandler('Push Publish');
 			    final String strLangCode = ((com.dotmarketing.portlets.languagesmanager.model.Language)list.get(l)).getLanguageCode();
 			    final String strCountryCode = ((com.dotmarketing.portlets.languagesmanager.model.Language)list.get(l)).getCountryCode();
 			    final String langIcon = LanguageUtil.getLiteralLocale(strLangCode, strCountryCode);
+				final boolean isDefaultLang = (defaultLang.getId() == longLanguageId);
 			%>
 			<td id="tdLanguage-<%=String.valueOf(longLanguageId)%>" class="tdLanguage" 
                 data-href-edit-variables="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
@@ -93,17 +95,25 @@ var pushHandler = new dotcms.dojo.push.PushHandler('Push Publish');
                 data-href-edit-language="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
                     <portlet:param name="struts_action" value="/ext/languages_manager/edit_language" />
                     <portlet:param name="id" value="<%= String.valueOf(longLanguageId) %>" />
-                    <portlet:param name="<%= Constants.CMD %>" value="edit" /></portlet:actionURL>">
+                    <portlet:param name="<%= Constants.CMD %>" value="edit" /></portlet:actionURL>"
+				data-href-make-default="<%= isDefaultLang ? "" : String.valueOf(longLanguageId)%>"
+			>
                 <a href="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
                     <portlet:param name="struts_action" value="/ext/languages_manager/edit_language_keys" />
                     <portlet:param name="id" value="<%= String.valueOf(longLanguageId) %>" />
                     <portlet:param name="referer" value="<%= referer %>" />
-                    <portlet:param name="<%= Constants.CMD %>" value="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, \"edit\")) %>" /></portlet:actionURL>">
-					<img
-					src="/html/images/languages/<%= langIcon %>.gif"
-					border="0" />
+                    <portlet:param name="<%= Constants.CMD %>" value="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, \"edit\")) %>" /></portlet:actionURL>"
+						<% if(isDefaultLang){ %>
+				          title="<%=LanguageUtil.get(pageContext, "default-language")%>"
+						<% } %>
+				>
+					<img src="/html/images/languages/<%= langIcon %>.gif" border="0" />
 					<%= strLanguage %>&nbsp;<%= (UtilMethods.isSet(strCountryCode) ? ("(" + strCountryCode + ")&nbsp;") : StringPool.BLANK) %>
 			    </a>
+
+				<% if(isDefaultLang){ %>
+				   <span class="liveIcon"></span>
+				<% } %>
 			</td>
 		    <% } else { %>
 		        <td></td>
@@ -139,7 +149,7 @@ dojo.addOnLoad(function() {
                 var hrefVariables = {};
                 hrefVariables["editVariablesHref"] = element.getAttribute("data-href-edit-variables");
                 hrefVariables["editLanguageHref"] = element.getAttribute("data-href-edit-language");
-
+                hrefVariables["makeDefaultLanguageHref"] = element.getAttribute("data-href-make-default");
                 showLanguagePopUp(element.id.replace("tdLanguage-", "").strip(), hrefVariables, cmsAdminUser, "<%=referer%>", e);
             }
         });
