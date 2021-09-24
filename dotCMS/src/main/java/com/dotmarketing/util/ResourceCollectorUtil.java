@@ -1,9 +1,5 @@
 package com.dotmarketing.util;
 
-import aQute.bnd.osgi.Analyzer;
-import aQute.bnd.osgi.Descriptors;
-import aQute.bnd.osgi.Jar;
-import aQute.bnd.osgi.Packages;
 import com.liferay.util.StringPool;
 
 import java.io.File;
@@ -12,7 +8,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.*;
-import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.regex.Pattern;
