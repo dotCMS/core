@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "fb04eba0-1188-475b-9963-41b2ae680af8",
+		"_postman_id": "781dabe1-4d2a-464d-b3b6-b57fbd130381",
 		"name": "ContentType Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -314,67 +314,361 @@
 						"description": "Given a content type ID and a payload containing content type properties.\nExpect that code is 200.\nExpect content type is updated without issues.\nExpect that the new properties (icon and sortOrder) are updated with the new values."
 					},
 					"response": []
+				},
+				{
+					"name": "Delete ContentType",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeID}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"id",
+								"{{contentTypeID}}"
+							]
+						},
+						"description": "Given a content type ID.\nExpect that code is 200.\nExpect content type is deleted successfully."
+					},
+					"response": []
 				}
 			]
 		},
 		{
-			"name": "Delete ContentType",
-			"event": [
+			"name": "Test CRUD Fields",
+			"item": [
 				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code should be ok 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
+					"name": "Create ContentType",
+					"event": [
 						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.collectionVariables.set(\"contentTypeID\", jsonData.entity[0].id);",
+									"pm.collectionVariables.set(\"contentTypeVAR\", jsonData.entity[0].variable);",
+									"pm.collectionVariables.set(\"contentTypeFieldID\", jsonData.entity[0].fields[0].id);",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"fields check\", function () {",
+									"    pm.expect(jsonData.entity[0].fields.length).to.eql(2);",
+									"});",
+									"",
+									"pm.test(\"description check\", function () {",
+									"    pm.expect(jsonData.entity[0].description).to.eql('THE DESCRIPTION');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
 						}
-					]
-				},
-				"method": "DELETE",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeID}}",
-					"host": [
-						"{{serverURL}}"
 					],
-					"path": [
-						"api",
-						"v1",
-						"contenttype",
-						"id",
-						"{{contentTypeID}}"
-					]
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\", \n    \"defaultType\": false, \n    \"name\": \"Test Content Type\", \n    \"description\": \"THE DESCRIPTION\", \n    \"host\": \"SYSTEM_HOST\", \n    \"owner\": \"dotcms.org.1\", \n    \"fixed\": false, \n    \"system\": false, \n    \"folder\": \"SYSTEM_FOLDER\",\n    \"fields\": [\n            {\n                \"dataType\": \"SYSTEM\",\n                \"dbColumn\": \"system_field1\",\n                \"fieldVariables\": [],\n                \"fixed\": false,\n                \"iDate\": 1308941714000,\n                \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableHostFolderField\",\n                \"indexed\": true,\n                \"listed\": false,\n                \"modDate\": 1478557845000,\n                \"name\": \"Host/Folder\",\n                \"readOnly\": false,\n                \"required\": true,\n                \"searchable\": true,\n                \"sortOrder\": 1,\n                \"unique\": false,\n                \"variable\": \"hostfolder\"\n            },\n            {\n                \"dataType\": \"LONG_TEXT\",\n                \"dbColumn\": \"text_area2\",\n                \"fieldVariables\": [],\n                \"fixed\": false,\n                \"iDate\": 1453474468000,\n                \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTagField\",\n                \"indexed\": true,\n                \"listed\": false,\n                \"modDate\": 1478557845000,\n                \"name\": \"Tags\",\n                \"readOnly\": false,\n                \"required\": false,\n                \"searchable\": true,\n                \"sortOrder\": 3,\n                \"unique\": false,\n                \"variable\": \"tags\"\n            }],\n            \"workflow\": [\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}\n"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						},
+						"description": "Given a content type payload containing field variables.\nWhen sending a POST.\nExpect that code is 200.\nExpect content type is created with the provided fields.\nExpect that new properties of content types are set (icon and sortOrder)."
+					},
+					"response": []
 				},
-				"description": "Given a content type ID.\nExpect that code is 200.\nExpect content type is deleted successfully."
-			},
-			"response": []
+				{
+					"name": "Get Content Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"pm.test(\"fields check\", function () {",
+									"    pm.expect(jsonData.entity.fields.length).to.eql(2);",
+									"});",
+									"",
+									"pm.test(\"description check\", function () {",
+									"    pm.expect(jsonData.entity.description).to.eql('THE DESCRIPTION');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeID}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"id",
+								"{{contentTypeID}}"
+							]
+						},
+						"description": "Given a content type ID. \nExpect that code is 200.\nExpect that the new content type properties (icon and sortOrder) are returned."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Content Type without sending variable success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"fields check\", function () {",
+									"    pm.expect(jsonData.entity.fields.length).to.eql(3);",
+									"});",
+									"",
+									"pm.test(\"description check\", function () {",
+									"    pm.expect(jsonData.entity.description).to.eql('THE DESCRIPTION');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"THE DESCRIPTION\",\n        \"fields\": [\n            {\n                \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableHostFolderField\",\n                \"contentTypeId\": \"9de7a9fcebd8abb9546bf8c3141bd688\",\n                \"dataType\": \"SYSTEM\",\n                \"fieldType\": \"Host-Folder\",\n                \"fieldTypeLabel\": \"Site or Folder\",\n                \"fieldVariables\": [],\n                \"fixed\": false,\n                \"iDate\": 1308941714000,\n                \"id\": \"97cc4329034fd1ad9239b26fe989ab4c\",\n                \"indexed\": true,\n                \"listed\": false,\n                \"modDate\": 1632506750000,\n                \"name\": \"Host/Folder CHANGED\",\n                \"readOnly\": false,\n                \"required\": true,\n                \"searchable\": true,\n                \"sortOrder\": 1,\n                \"unique\": false,\n                \"variable\": \"hostfolder\"\n            }\n        ],\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"host\": \"SYSTEM_HOST\",\n    \"name\": \"Test Content Type\",\n\t\"fixed\": false,\n    \"id\": \"{{contentTypeID}}\",\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"],\n    \"icon\": \"icon2\",\n    \"sortOrder\": 2\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeID}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"id",
+								"{{contentTypeID}}"
+							]
+						},
+						"description": "Given a content type ID and a payload containing content type properties.\nExpect that code is 200.\nExpect content type is updated without issues.\nExpect that the new properties (icon and sortOrder) are updated with the new values."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete ContentType",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeID}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"id",
+								"{{contentTypeID}}"
+							]
+						},
+						"description": "Given a content type ID.\nExpect that code is 200.\nExpect content type is deleted successfully."
+					},
+					"response": []
+				}
+			]
 		},
 		{
 			"name": "Create ContentType with field variables",
