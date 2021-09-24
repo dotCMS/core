@@ -1461,6 +1461,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
         final int trackTotalHits = Config.getIntProperty(ES_TRACK_TOTAL_HITS, ES_TRACK_TOTAL_HITS_DEFAULT);
         searchSourceBuilder.trackTotalHitsUpTo(trackTotalHits);
     }
+     /**
+      * We return total hits of -1 when an error occurs
+      */
+     private final static SearchHits ERROR_HIT = new SearchHits(new SearchHit[] {}, new TotalHits(0, Relation.EQUAL_TO), 0);
      
      final static SearchHits EMPTY_HIT = new SearchHits(new SearchHit[] {}, new TotalHits(0, Relation.EQUAL_TO), 0);
 
@@ -1485,15 +1489,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
         } catch (final ElasticsearchStatusException | IndexNotFoundException | SearchPhaseExecutionException e) {
             final String exceptionMsg = (null != e.getCause() ? e.getCause().getMessage() : e.getMessage());
             Logger.warn(this.getClass(), "----------------------------------------------");
-            Logger.warn(this.getClass(), String.format("Elasticsearch error in index '%s'", (searchRequest.indices()!=null) ? String.join(",", searchRequest.indices()): "unknown"));
+            Logger.warn(this.getClass(), String.format("Elasticsearch SEARCH error in index '%s'", (searchRequest.indices()!=null) ? String.join(",", searchRequest.indices()): "unknown"));
             Logger.warn(this.getClass(), String.format("Thread: %s", Thread.currentThread().getName() ));
             Logger.warn(this.getClass(), String.format("ES Query: %s", String.valueOf(searchRequest.source()) ));
             Logger.warn(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), exceptionMsg));
             Logger.warn(this.getClass(), "----------------------------------------------");
-            if(shouldQueryCache()) {
-                queryCache.put(searchRequest, EMPTY_HIT);
+            if(shouldQueryCache(exceptionMsg)) {
+                queryCache.put(searchRequest, ERROR_HIT);
             }
-            return EMPTY_HIT;
+            return ERROR_HIT;
         } catch(final IllegalStateException e) {
             rebuildRestHighLevelClientIfNeeded(e);
             Logger.warnAndDebug(ESContentFactoryImpl.class, e);
@@ -1507,8 +1511,16 @@ public class ESContentFactoryImpl extends ContentletFactory {
             Logger.warnAndDebug(ESContentFactoryImpl.class, errorMsg, e);
             throw new DotRuntimeException(errorMsg, e);
         }
+    }
             
         
+    private boolean shouldQueryCache(final String exceptionMsg) {
+        if(!shouldQueryCache() || null == exceptionMsg) {
+            return false;
+        }
+        final String exception = exceptionMsg.toLowerCase();
+        return exception.contains("parse_exception") || 
+               exception.contains("search_phase_execution_exception");
         
     }
 
@@ -1538,6 +1550,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
             Logger.warn(this.getClass(), String.format("ES Query: %s", String.valueOf(countRequest.source()) ));
             Logger.warn(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), exceptionMsg));
             Logger.warn(this.getClass(), "----------------------------------------------");
+            if(shouldQueryCache(exceptionMsg)) {
+                queryCache.put(countRequest, -1L);
+            }
             return -1L;
         } catch(final IllegalStateException e) {
             rebuildRestHighLevelClientIfNeeded(e);
