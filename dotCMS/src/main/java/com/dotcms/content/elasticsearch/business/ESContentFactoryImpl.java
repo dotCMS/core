@@ -1475,6 +1475,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
         final int trackTotalHits = Config.getIntProperty(ES_TRACK_TOTAL_HITS, ES_TRACK_TOTAL_HITS_DEFAULT);
         searchSourceBuilder.trackTotalHitsUpTo(trackTotalHits);
     }
+     
+     final static SearchHits EMPTY_HIT = new SearchHits(new SearchHit[] {}, new TotalHits(0, Relation.EQUAL_TO), 0);
 
     /**
      * if enabled SearchRequests are executed and then cached
@@ -1498,10 +1500,14 @@ public class ESContentFactoryImpl extends ContentletFactory {
             final String exceptionMsg = (null != e.getCause() ? e.getCause().getMessage() : e.getMessage());
             Logger.warn(this.getClass(), "----------------------------------------------");
             Logger.warn(this.getClass(), String.format("Elasticsearch error in index '%s'", (searchRequest.indices()!=null) ? String.join(",", searchRequest.indices()): "unknown"));
+            Logger.warn(this.getClass(), String.format("Thread: %s", Thread.currentThread().getName() ));
             Logger.warn(this.getClass(), String.format("ES Query: %s", String.valueOf(searchRequest.source()) ));
             Logger.warn(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), exceptionMsg));
             Logger.warn(this.getClass(), "----------------------------------------------");
-            return new SearchHits(new SearchHit[] {}, new TotalHits(0, Relation.EQUAL_TO), 0);
+            if(shouldQueryCache()) {
+                queryCache.put(searchRequest, EMPTY_HIT);
+            }
+            return EMPTY_HIT;
         } catch(final IllegalStateException e) {
             rebuildRestHighLevelClientIfNeeded(e);
             Logger.warnAndDebug(ESContentFactoryImpl.class, e);

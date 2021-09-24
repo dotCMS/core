@@ -76,10 +76,28 @@ public abstract class LanguageFactory {
     protected abstract String getLanguageCodeAndCountry(long id, String langId);
 
     /**
-     * 
+     * This gets the default lang already loaded into cache
+     * If not in cache it will load it from the db
+     * If it doesnt exists already it create it.
      * @return
      */
     protected abstract Language getDefaultLanguage();
+
+    /**
+     * make a the given language the new default
+     * @param languageId
+     * @throws DotDataException
+     */
+    protected abstract void makeDefault(final Long languageId) throws DotDataException;
+
+
+    /**
+     * updates the default language on all assets
+     * @param oldDefaultLanguage
+     * @param newDefaultLanguage
+     */
+    protected abstract void transferAssets(final Long oldDefaultLanguage, final Long newDefaultLanguage)
+            throws DotDataException;
 
     /**
      * 

@@ -155,6 +155,25 @@ public interface TemplateAPI {
 	Template saveTemplate(Template template, Host destination, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
+	 * Save a draft template,
+	 *
+	 * if the identifier does not exists, will create a new one.
+	 * if does not have an inode, will create a new version
+	 * If the latest updated user is not the same of "user" argument, will create a new version
+	 *
+	 * Otherwise will be just update the template without generating a new version
+	 *
+	 * @param template
+	 * @param destination
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return Template
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	Template saveDraftTemplate(Template template, Host destination, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	/**
 	 * Publish a template if has the appropiate permissions
 	 * @param template {@link Template} to publish (valid template)
 	 * @param user     {@link User} user to check the permissions

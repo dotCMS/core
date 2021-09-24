@@ -81,14 +81,19 @@ public class ESSearchProxyTest extends IntegrationTestBase {
                 + " +conhost:"+ newHost.getIdentifier()
                 +" +" + blogContentType.variable() + ".sysPublishDate:[2021-01-01t00\\:00\\:00 TO 2121-12-01t00\\:00\\:00]\""
                 +"}}}";
-        final List<ESSearchResults> resultsList = getEsSearchResults(query);
+        final List<ESSearchResults> resultsList = getEsSearchResults(query, false);
         Assert.assertFalse(resultsList.isEmpty());
     }
 
     private List<ESSearchResults> getEsSearchResults(final String query)
             throws DotSecurityException, DotDataException {
-        final ESSearchProxy esSearchProxy = new ESSearchProxy();
-        return (List<ESSearchResults>) esSearchProxy.esSearch(query,true, user,false);
+        return (List<ESSearchResults>) getEsSearchResults(query,true);
     }
 
+    private List<ESSearchResults> getEsSearchResults(final String query, final boolean live)
+            throws DotSecurityException, DotDataException {
+        final ESSearchProxy esSearchProxy = new ESSearchProxy();
+        return (List<ESSearchResults>) esSearchProxy.esSearch(query,live, user,false);
+    }
 }
+

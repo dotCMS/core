@@ -211,6 +211,10 @@
                                           <td><input id="emailAddress" type="text" onkeyup="userEmailChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></td>
                                       </tr>
                                       <tr>
+                                          <th></th>
+                                          <td><button dojoType="dijit.form.Button" onclick="generateSecurePasswordModal()" type="button"><%= LanguageUtil.get(pageContext, "generate.secure.password") %></button></td>
+                                      </tr>
+                                      <tr>
                                           <th><%= LanguageUtil.get(pageContext, "Password") %>:</th>
                                           <td><input id="password" type="password" onkeyup="userPasswordChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" autocomplete="new-password" /></td>
                                       </tr>
@@ -387,6 +391,7 @@
 
 					<!-- START Permissions Tab -->
 					<div dojoType="dijit.layout.ContentPane" id="userPermissionsTab" title="<%= LanguageUtil.get(pageContext, "Permissions") %>">
+						<h3 id="fullUserName" class="fullUserName"></h3>
 						<%@ include file="/html/portlet/ext/roleadmin/view_role_permissions_inc.jsp" %>
 					</div>
 					<!-- END Permissions Tab -->
@@ -399,7 +404,8 @@
 					
 					<!-- START API Keys Tab -->
 					<div dojoType="dijit.layout.ContentPane" id="apiKeysTab" title="<%= LanguageUtil.get(pageContext, "api.token.all.keys") %>">
-					 <div class="buttonRow" style="text-align:right"><input type="checkbox" id="showRevokedApiTokens" onclick="loadApiKeys()" dojoType="dijit.form.CheckBox" /> <%= LanguageUtil.get(pageContext, "api.token.show.inactive") %></div>  
+                        <h3 id="fullUserName" class="fullUserName"></h3>
+						<div class="buttonRow" style="text-align:right"><input type="checkbox" id="showRevokedApiTokens" onclick="loadApiKeys()" dojoType="dijit.form.CheckBox" /> <%= LanguageUtil.get(pageContext, "api.token.show.inactive") %></div>  
                         <div id="apiKeysDiv"></div>
                         <div class="buttonRow">
                             <button dojoType="dijit.form.Button" onclick="showRequestTokenDialog()" type="button" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "api.token.request.new.token") %></button>
