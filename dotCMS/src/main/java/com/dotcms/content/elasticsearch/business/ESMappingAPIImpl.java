@@ -564,7 +564,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 			final Map<String, Object> readOnlyMetadata = (Map<String, Object>) contentlet.get(FileAssetAPI.META_DATA_FIELD);
             if(readOnlyMetadata.isEmpty()){
-            	Logger.warn(ESMappingAPIImpl.class,String.format("No pre-calculated metadata available to populate keyValue field on contentlet with id `%s`.",contentlet.getIdentifier()));
+            	Logger.debug(ESMappingAPIImpl.class,String.format("No pre-calculated metadata available to populate keyValue field on contentlet with id `%s`.",contentlet.getIdentifier()));
             	return;
 			}
 

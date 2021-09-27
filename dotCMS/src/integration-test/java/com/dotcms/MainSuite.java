@@ -44,6 +44,7 @@ import com.dotcms.publishing.PushPublishFiltersInitializerTest;
 import com.dotcms.publishing.job.SiteSearchJobImplTest;
 import com.dotcms.publishing.manifest.CSVManifestBuilderTest;
 import com.dotcms.publishing.manifest.CSVManifestReaderTest;
+import com.dotcms.publishing.manifest.ManifestReaderFactoryTest;
 import com.dotcms.rendering.velocity.directive.DotParseTest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateToolTest;
@@ -121,6 +122,7 @@ import com.dotmarketing.startup.runonce.Task210719CleanUpTitleFieldTest;
 import com.dotmarketing.startup.runonce.Task210802UpdateStructureTableTest;
 import com.dotmarketing.startup.runonce.Task210805DropUserProxyTableTest;
 import com.dotmarketing.startup.runonce.Task210816DeInodeRelationshipTest;
+import com.dotmarketing.startup.runonce.Task210908AddCompanyDefaultLanguageTest;
 import com.dotmarketing.startup.runonce.Task210901UpdateDateTimezonesTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
@@ -468,7 +470,9 @@ import org.junit.runners.Suite.SuiteClasses;
         DotObjectCodecTest.class,
         RedisClientTest.class,
         LettuceCacheTest.class,
-        RedisPubSubImplTest.class
+        RedisPubSubImplTest.class,
+        ManifestReaderFactoryTest.class,
+        Task210908AddCompanyDefaultLanguageTest.class
 })
 public class MainSuite {
 

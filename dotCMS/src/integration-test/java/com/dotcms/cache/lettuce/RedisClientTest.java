@@ -13,14 +13,7 @@ import org.junit.Test;
 public class RedisClientTest {
 
     @BeforeClass
-    public static void startup() throws Exception {
-        final RedisClient<String, Object> redisClient = RedisClientFactory.getClient("test");
-
-        if (redisClient.ping()) {
-
-            redisClient.flushAll();
-        }
-    }
+    public static void startup() throws Exception {}
 
     /**
      * Method to test: {@link RedisClientFactory#getClient(String)}

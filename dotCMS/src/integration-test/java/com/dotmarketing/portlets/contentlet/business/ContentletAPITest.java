@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import static com.dotcms.contenttype.model.type.BaseContentType.FILEASSET;
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.business.APILocator.getContentTypeFieldAPI;
 import static java.io.File.separator;
@@ -118,6 +119,7 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
+import io.vavr.control.Try;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -1891,39 +1893,6 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Validations
         assertTrue( value2.isEmpty() );        
-    }
-
-    /**
-     * Testing {@link ContentletAPI#cleanHostField(com.dotmarketing.portlets.structure.model.Structure, com.liferay.portal.model.User, boolean)}
-     *
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws DotMappingException
-     * @see ContentletAPI
-     * @see Contentlet
-     */
-    @Test
-    public void cleanHostField () throws DotDataException, DotSecurityException, DotMappingException {
-
-        //Getting a known structure
-        Structure structure = structures.iterator().next();
-
-        //Search the contentlet for this structure
-        List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
-
-        //Check the current identifies
-        Identifier contentletIdentifier = APILocator.getIdentifierAPI().find( contentletList.iterator().next() );
-
-        //Cleaning the host field for the identifier
-        contentletAPI.cleanHostField( structure, user, false );
-
-        //Now get again the identifier to see if the change was made
-        Identifier changedContentletIdentifier = APILocator.getIdentifierAPI().find( contentletList.iterator().next() );
-
-        //Validations
-        assertNotNull( changedContentletIdentifier );
-        assertNotSame( contentletIdentifier, changedContentletIdentifier );
-        assertNotSame( contentletIdentifier.getHostId(), changedContentletIdentifier.getHostId() );
     }
 
     /**
@@ -7347,6 +7316,28 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals(customMeta.get("foo"),"bar");
         assertEquals(customMeta.get("bar"),"foo");
         
+
+    }
+
+    @Test
+    public void testContentCheckin_mapIncludeExpectedProperties() throws IOException {
+        final ContentType fileType =
+                new ContentTypeDataGen().baseContentType(FILEASSET).nextPersisted();
+
+        File tempFile = File.createTempFile("testMissingProps", ".jpg");
+
+        final Contentlet fileAsset = new ContentletDataGen(fileType)
+                .setProperty(FileAssetAPI.BINARY_FIELD, tempFile)
+                .setProperty(FileAssetAPI.TITLE_FIELD, "testMissingProps").nextPersisted();
+
+        Optional<Contentlet> fileAsContentOptional = APILocator.getContentletAPI()
+                .findContentletByIdentifierOrFallback(fileAsset.getIdentifier(),
+                        Try.of(fileAsset::isLive).getOrElse(false), fileAsset.getLanguageId(),
+                        user, true);
+
+        assertTrue(fileAsContentOptional.isPresent());
+        assertNotNull(fileAsContentOptional.get().getMap().get("fileName"));
+        assertTrue(((String)fileAsContentOptional.get().getMap().get("fileName")).startsWith("testMissingProps"));
 
     }
 

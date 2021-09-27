@@ -630,7 +630,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
      * it's editing the english version of the page
      * Should: Throw an exception saying that the content already exists in that container.
      */
-    @Test(expected = DotDataException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void test_overridesMultitreesByPersonalization_AddContentTwiceDiffLangEditing_throwException() throws Exception {
         final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
         final Language espLanguage = new LanguageDataGen().country("ESP").languageCode("esp").nextPersisted();
