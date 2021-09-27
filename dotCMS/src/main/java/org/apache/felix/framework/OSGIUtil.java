@@ -247,7 +247,7 @@ public class OSGIUtil {
         APILocator.getLocalSystemEventsAPI().asyncNotify(
                 new OSGIUploadBundleEvent(Instant.now(), uploadFolderFile));
 
-        final String[] pathnames = uploadFolderFile.list(new SuffixFileFilter(".jar"));
+            final String[] pathnames = uploadFolderFile.list(new SuffixFileFilter(".jar"));
 
         if (UtilMethods.isSet(pathnames)) {
 
@@ -259,49 +259,51 @@ public class OSGIUtil {
                 Collection<String> packages = Collections.emptyList();
                 if (fileJar.exists() && fileJar.canRead()) {
 
-                    packages = pathname.contains(".fragment")? // todo: ResourceCollectorUtil.getPackages(fileJar) "Fragment-Host: system.bundle; extension:=framework"
-                        ResourceCollectorUtil.getExports(fileJar):
-                        ResourceCollectorUtil.getImports(fileJar);
+                    packages = ResourceCollectorUtil.getPackages(fileJar);
                 }
 
                 osgiUserPackages.addAll(packages);
             }
 
-            try {
+            processOsgiPackages(uploadFolderFile, pathnames, osgiUserPackages);
+        }
+    }
 
-                boolean needManuallyRestartFramework = false;
-                final TreeSet<String> copyExportedPackagesSet = new TreeSet<>(this.exportedPackagesSet);
-                copyExportedPackagesSet.addAll(osgiUserPackages);
-                if (!copyExportedPackagesSet.equals(this.exportedPackagesSet)) {
+    private void processOsgiPackages(File uploadFolderFile, String[] pathnames, Set<String> osgiUserPackages) {
+        try {
 
-                    Logger.info(this, "There are a new changes into the exported packages");
-                    this.exportedPackagesSet.addAll(copyExportedPackagesSet);
-                    this.writeExtraPackagesFiles(FELIX_EXTRA_PACKAGES_FILE, this.exportedPackagesSet);
-                    needManuallyRestartFramework = true;
-                }
+            boolean needManuallyRestartFramework = false;
+            final TreeSet<String> copyExportedPackagesSet = new TreeSet<>(this.exportedPackagesSet);
+            copyExportedPackagesSet.addAll(osgiUserPackages);
+            if (!copyExportedPackagesSet.equals(this.exportedPackagesSet)) {
 
-
-                if (needManuallyRestartFramework) {
-
-                    // todo: send a notification that the files "pathnames" has been added and new to restart the osgi framework
-
-                    try {
-                        APILocator.getNotificationAPI().generateNotification("Restart OSGI",
-                                "New bundles have been added to dotCMS: " + Arrays.asList(pathnames) +
-                                        ", needs to restart the OSGI Framework, run this link: xxx.com", null,
-                                NotificationLevel.INFO, NotificationType.GENERIC,
-                                Visibility.USER, Role.CMS_ADMINISTRATOR_ROLE, Role.CMS_ADMINISTRATOR_ROLE, null
-                        );
-                    } catch (DotDataException e) {
-                        Logger.error(this, e.getMessage(), e);
-                    }
-                } else {
-
-                    this.moveNewBundlesToFelixLoadFolder(uploadFolderFile, pathnames);
-                }
-            } catch (IOException e) {
-                Logger.error(this, e.getMessage(), e);
+                Logger.info(this, "There are a new changes into the exported packages");
+                this.exportedPackagesSet.addAll(copyExportedPackagesSet);
+                this.writeExtraPackagesFiles(FELIX_EXTRA_PACKAGES_FILE, this.exportedPackagesSet);
+                needManuallyRestartFramework = true;
             }
+
+
+            if (needManuallyRestartFramework) {
+
+                // todo: send a notification that the files "pathnames" has been added and new to restart the osgi framework
+
+                try {
+                    APILocator.getNotificationAPI().generateNotification("Restart OSGI",
+                            "New bundles have been added to dotCMS: " + Arrays.asList(pathnames) +
+                                    ", needs to restart the OSGI Framework, run this link: todo:xxx.com", null,
+                            NotificationLevel.INFO, NotificationType.GENERIC,
+                            Visibility.USER, Role.CMS_ADMINISTRATOR_ROLE, Role.CMS_ADMINISTRATOR_ROLE, null
+                    );
+                } catch (DotDataException e) {
+                    Logger.error(this, e.getMessage(), e);
+                }
+            } else {
+
+                this.moveNewBundlesToFelixLoadFolder(uploadFolderFile, pathnames);
+            }
+        } catch (IOException e) {
+            Logger.error(this, e.getMessage(), e);
         }
     }
 
@@ -342,7 +344,6 @@ public class OSGIUtil {
             Logger.error(this, e.getMessage(), e);
         }
     }
-
 
     /**
      * Stops the OSGi framework

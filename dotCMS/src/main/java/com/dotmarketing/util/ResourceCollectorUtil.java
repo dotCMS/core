@@ -22,6 +22,28 @@ import java.util.zip.ZipFile;
  */
 public class ResourceCollectorUtil {
 
+    public static Collection<String> getPackages(final File file) {
+
+        String importPackage = null;
+        try (final JarFile jarFile     = new JarFile(file)){
+
+            final Manifest manifest    = jarFile.getManifest();
+            final String fragmentHost  = manifest.getMainAttributes().getValue("Fragment-Host");
+            importPackage =  UtilMethods.isSet(fragmentHost) &&
+                    "system.bundle; extension:=framework".equals(fragmentHost.trim())?
+                    manifest.getMainAttributes().getValue("Export-Package"):
+                    manifest.getMainAttributes().getValue("Import-Package");
+        }  catch (Exception e) {
+
+            Logger.error(ResourceCollectorUtil.class, e.getMessage(), e);
+        }
+
+        return UtilMethods.isSet(importPackage)?
+                Stream.of(importPackage.split(StringPool.COMMA)).collect(Collectors.toList()):
+                Collections.emptyList();
+    }
+
+
     public static Collection<String> getImports(final File file) {
 
         try (final JarFile jarFile     = new JarFile(file)){
