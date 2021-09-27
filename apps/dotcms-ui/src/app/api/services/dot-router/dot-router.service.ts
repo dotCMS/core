@@ -31,6 +31,10 @@ export class DotRouterService {
         return this._routeHistory.url;
     }
 
+    get previousUrl(): string {
+        return this._routeHistory.previousUrl;
+    }
+
     get currentPortlet(): PortletNav {
         return {
             url: this.router.routerState.snapshot.url,
