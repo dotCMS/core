@@ -210,25 +210,6 @@ public class PublishFactoryTest extends IntegrationTestBase {
                 htmlPageAsset.getIdentifier(), htmlPageAsset.getLanguageId()).get();
 
         Assert.assertNotNull(contentletVersionInfo.getLiveInode());
-
-        assertFutureContentErrorMessage(contentlet_1, systemMessageEventUtilMock);
-    }
-
-    private void assertFutureContentErrorMessage(Contentlet contentlet_1, SystemMessageEventUtil systemMessageEventUtilMock) {
-        final SystemMessageBuilder messageBuilder = new SystemMessageBuilder()
-                .setMessage(
-                        String.format("The following contents in the Page have Publish Dates set to a future time. " +
-                        "These contents will not be displayed in the live version of the Page until their respective " +
-                        "Publish Dates: <ul>" +
-                        "<li>%s</li></ul>", contentlet_1.getTitle()))
-                .setSeverity(MessageSeverity.ERROR)
-                .setType(MessageType.SIMPLE_MESSAGE)
-                .setLife(TimeUnit.SECONDS.toMillis(5));
-
-        verify(systemMessageEventUtilMock, times(1)).pushMessage(
-                eq(messageBuilder.create()),
-                any()
-         );
     }
 
     /***
@@ -405,8 +386,6 @@ public class PublishFactoryTest extends IntegrationTestBase {
         Assert.assertNotNull(contentletVersionInfo.getLiveInode());
 
         assertExpiredContentErrorMessage(contentlet_1, systemMessageEventUtilMock);
-
-        assertFutureContentErrorMessage(contentlet_2, systemMessageEventUtilMock);
     }
 
     private void assertExpiredContentErrorMessage(Contentlet contentlet_1, SystemMessageEventUtil systemMessageEventUtilMock) {
