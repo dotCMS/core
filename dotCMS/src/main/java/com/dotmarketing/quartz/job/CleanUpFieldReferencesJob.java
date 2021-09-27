@@ -94,15 +94,6 @@ public class CleanUpFieldReferencesJob extends DotStatefulJob {
 
             }
 
-            //Refreshing permissions
-            if (field instanceof HostFolderField) {
-                try {
-                    contentletAPI.cleanHostField(structure, userAPI.getSystemUser(), false);
-                } catch(DotMappingException e) {}
-
-                permissionAPI.resetChildrenPermissionReferences(structure);
-            }
-
             // remove the file from the cache
             new ContentletLoader().invalidate(structure);
         } catch (DotSecurityException | DotDataException e) {
