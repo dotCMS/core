@@ -1,5 +1,7 @@
 package com.dotcms.graphql;
 
+import static java.time.temporal.ChronoUnit.SECONDS;
+
 import com.dotcms.cache.Expirable;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.enterprise.license.LicenseManager;
@@ -11,6 +13,9 @@ import com.dotmarketing.util.UtilMethods;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.util.Strings;
@@ -50,15 +55,23 @@ public class GraphQLCache implements Cachable {
             return Optional.empty();
         }
 
+        Optional<String> toReturn;
+
         final String cacheKey = hashKey(key);
         final Object value = cache.getNoThrow(cacheKey, getPrimaryGroup());
 
+        if(value instanceof ExpirableCacheEntry) {
+            final ExpirableCacheEntry cacheEntry = (ExpirableCacheEntry) value;
+            toReturn = Optional.of(((ExpirableCacheEntry) value).getResults());
 
-        refreshKey(key, valueSupplier, ttl);
+            if(cacheEntry.isExpired()) {
+                refreshKey(key, valueSupplier, ttl);
+            }
+        } else {
+            toReturn = Optional.ofNullable((String)value);
+        }
 
-        return value instanceof ExpirableCacheEntry
-                ? Optional.ofNullable(((ExpirableCacheEntry) value).getResults())
-                : Optional.ofNullable((String)value);
+        return toReturn;
     }
 
     /**
@@ -158,19 +171,34 @@ public class GraphQLCache implements Cachable {
     private static class ExpirableCacheEntry implements Expirable, Serializable {
         private static final long serialVersionUID = 1L;
         private final long ttl;
+        private final long gracePeriod = 60;
+        private final LocalDateTime since;
         private final String results;
 
         public ExpirableCacheEntry(String results, long ttl) {
             this.results = results;
             this.ttl = ttl;
+            since = LocalDateTime.now();
         }
 
         public long getTtl() {
-            return ttl;
+            return ttl + gracePeriod;
         }
 
         public String getResults() {
             return results;
+        }
+
+        public LocalDateTime getSince() {
+            return since;
+        }
+
+        public long getGracePeriod() {
+            return gracePeriod;
+        }
+
+        public boolean isExpired() {
+            return LocalDateTime.now().isAfter(since.plus(ttl, SECONDS));
         }
     }
 
