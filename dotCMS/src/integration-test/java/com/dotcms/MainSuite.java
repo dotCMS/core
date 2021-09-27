@@ -44,6 +44,7 @@ import com.dotcms.publishing.PushPublishFiltersInitializerTest;
 import com.dotcms.publishing.job.SiteSearchJobImplTest;
 import com.dotcms.publishing.manifest.CSVManifestBuilderTest;
 import com.dotcms.publishing.manifest.CSVManifestReaderTest;
+import com.dotcms.publishing.manifest.ManifestReaderFactoryTest;
 import com.dotcms.rendering.velocity.directive.DotParseTest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateToolTest;
@@ -470,8 +471,8 @@ import org.junit.runners.Suite.SuiteClasses;
         RedisClientTest.class,
         LettuceCacheTest.class,
         RedisPubSubImplTest.class,
+        ManifestReaderFactoryTest.class,
         Task210908AddCompanyDefaultLanguageTest.class
-
 })
 public class MainSuite {
 
