@@ -1,30 +1,18 @@
 package org.apache.felix.framework;
 
-import java.io.*;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Instant;
-import java.util.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import com.dotcms.api.system.event.Visibility;
-import com.dotcms.notifications.bean.NotificationAction;
-import com.dotcms.notifications.bean.NotificationLevel;
-import com.dotcms.notifications.bean.NotificationType;
+import com.dotcms.concurrent.Debouncer;
+import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.osgi.HostActivator;
+import com.dotmarketing.osgi.OSGIProxyServlet;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.ResourceCollectorUtil;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
+import com.google.common.collect.ImmutableList;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import org.apache.commons.io.FileUtils;
@@ -33,22 +21,38 @@ import org.apache.felix.framework.util.FelixConstants;
 import org.apache.felix.http.proxy.DispatcherTracker;
 import org.apache.felix.main.AutoProcessor;
 import org.apache.felix.main.Main;
-import org.apache.poi.ss.formula.functions.T;
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.launch.Framework;
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotmarketing.osgi.HostActivator;
-import com.dotmarketing.osgi.OSGIProxyServlet;
-import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.ResourceCollectorUtil;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
-import com.google.common.collect.ImmutableList;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.StringWriter;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created by Jonathan Gamba
@@ -72,6 +76,7 @@ public class OSGIUtil {
     private static final String AUTO_DEPLOY_DIR_PROPERTY =  AutoProcessor.AUTO_DEPLOY_DIR_PROPERTY;
     private static final String UTF_8 = "utf-8";
     private final TreeSet<String> exportedPackagesSet = new TreeSet<>();
+    private final Debouncer debouncer = new Debouncer();
     /**
      * Felix directory list
      */
@@ -269,7 +274,9 @@ public class OSGIUtil {
         }
     }
 
-    private void processOsgiPackages(File uploadFolderFile, String[] pathnames, Set<String> osgiUserPackages) {
+    private void processOsgiPackages(final File uploadFolderFile,
+                                     final String[] pathnames,
+                                     final Set<String> osgiUserPackages) {
         try {
 
             boolean needManuallyRestartFramework = false;
@@ -283,28 +290,25 @@ public class OSGIUtil {
                 needManuallyRestartFramework = true;
             }
 
-
             if (needManuallyRestartFramework) {
 
-                // todo: send a notification that the files "pathnames" has been added and new to restart the osgi framework
+                final long delay = Config.getLongProperty("OSGI_UPLOAD_DEBOUNCE_DELAY_MILLIS", DateUtil.TEN_SECOND_MILLIS);
 
-                try {
-                    APILocator.getNotificationAPI().generateNotification("Restart OSGI",
-                            "New bundles have been added to dotCMS: " + Arrays.asList(pathnames) +
-                                    ", needs to restart the OSGI Framework, run this link: todo:xxx.com", null,
-                            NotificationLevel.INFO, NotificationType.GENERIC,
-                            Visibility.USER, Role.CMS_ADMINISTRATOR_ROLE, Role.CMS_ADMINISTRATOR_ROLE, null
-                    );
-                } catch (DotDataException e) {
-                    Logger.error(this, e.getMessage(), e);
+                if(delay>0) {
+
+                    debouncer.debounce("restartOsgi", this::restartOsgi, delay, TimeUnit.MILLISECONDS);
                 }
-            } else {
-
-                this.moveNewBundlesToFelixLoadFolder(uploadFolderFile, pathnames);
             }
+
+            this.moveNewBundlesToFelixLoadFolder(uploadFolderFile, pathnames);
         } catch (IOException e) {
             Logger.error(this, e.getMessage(), e);
         }
+    }
+
+    // move all on upload folder to load, and restarts osgi.
+    private void restartOsgi() {
+
     }
 
     /**
