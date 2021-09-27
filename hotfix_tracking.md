@@ -229,3 +229,5 @@ This maintenance release includes the following code fixes:
 112. https://github.com/dotCMS/core/issues/20452 : "Back end user" role breaks front end user permissions #20452
 
 113. https://github.com/dotCMS/core/issues/20270 : [Content Types] : The "Site or Folder" field dropdown randomly disappears #20270
+
+114. https://github.com/dotCMS/core/issues/20642 : WYSIWYG fields insert image does not respect the setting of WYSIWYG_IMAGE_URL_PATTERN #20642

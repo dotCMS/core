@@ -184,7 +184,7 @@ public class ResourceLink {
 
         private String getConfiguredImageURL(final Contentlet contentlet, final File binary, final Host host) {
 
-            final  String pattern = Config.getStringProperty("WYSIWYG_IMAGE_URL_PATTERN", "{path}{name}?language_id={languageId}");
+            final  String pattern = Config.getStringProperty("WYSIWYG_IMAGE_URL_PATTERN", "/dA/{shortyInode}/{name}");
             return replaceUrlPattern(pattern, contentlet, binary, host);
         }
 
