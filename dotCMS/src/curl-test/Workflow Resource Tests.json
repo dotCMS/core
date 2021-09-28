@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "60795f2c-fa49-4254-b81c-effa0f130a0c",
+		"_postman_id": "bdef1af8-0450-42e4-9438-ee84b83323b3",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -7966,6 +7966,298 @@
 			"name": "FireActionById",
 			"item": [
 				{
+					"name": "Fire Destroy",
+					"item": [
+						{
+							"name": "Create ContentType",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.collectionVariables.set(\"contentTypeID\", jsonData.entity[0].id);",
+											"pm.collectionVariables.set(\"contentTypeVAR\", jsonData.entity[0].variable);",
+											"pm.collectionVariables.set(\"contentTypeFieldID\", jsonData.entity[0].fields[0].id);",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"fields check\", function () {",
+											"    pm.expect(jsonData.entity[0].fields.length).to.eql(1);",
+											"});",
+											"",
+											"pm.test(\"description check\", function () {",
+											"    pm.expect(jsonData.entity[0].description).to.eql('THE DESCRIPTION');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"type": "text",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\", \n    \"defaultType\": false, \n    \"name\": \"Test Content Type\", \n    \"description\": \"THE DESCRIPTION\", \n    \"host\": \"SYSTEM_HOST\", \n    \"owner\": \"dotcms.org.1\", \n    \"fixed\": false, \n    \"system\": false, \n    \"folder\": \"SYSTEM_FOLDER\",\n    \"fields\": [\n            {\n                \"dataType\": \"LONG_TEXT\",\n                \"dbColumn\": \"text_area2\",\n                \"fieldVariables\": [],\n                \"fixed\": false,\n                \"iDate\": 1453474468000,\n                \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n                \"indexed\": true,\n                \"listed\": false,\n                \"modDate\": 1478557845000,\n                \"name\": \"Title\",\n                \"readOnly\": false,\n                \"required\": false,\n                \"searchable\": true,\n                \"sortOrder\": 3,\n                \"unique\": false,\n                \"variable\": \"title\"\n            }],\n            \"workflow\": [\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}\n"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype"
+									]
+								},
+								"description": "Given a content type payload containing field variables.\nWhen sending a POST.\nExpect that code is 200.\nExpect content type is created with the provided fields.\nExpect that new properties of content types are set (icon and sortOrder)."
+							},
+							"response": []
+						},
+						{
+							"name": "Create contentlet",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.collectionVariables.set(\"contentletID\", jsonData.entity.identifier);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"contentlet\":{\n\t\t\"stName\": \"{{contentTypeVAR}}\",\n\t\t\"title\": \"test\"\n\t}\n}"
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/workflow/actions/default/fire/NEW",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"NEW"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Archive contentlet",
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": " ",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/4da13a42-5d59-480c-ad8f-94a3adf809fe/fire?identifier={{contentletID}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"4da13a42-5d59-480c-ad8f-94a3adf809fe",
+										"fire"
+									],
+									"query": [
+										{
+											"key": "identifier",
+											"value": "{{contentletID}}"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Destroy Contentlet",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": " {}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/1e0f1c6b-b67f-4c99-983d-db2b4bfa88b2/fire?identifier={{contentletID}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"1e0f1c6b-b67f-4c99-983d-db2b4bfa88b2",
+										"fire"
+									],
+									"query": [
+										{
+											"key": "identifier",
+											"value": "{{contentletID}}"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
 					"name": "invalidateSession",
 					"event": [
 						{
@@ -13805,6 +14097,22 @@
 		},
 		{
 			"key": "temporalFileOneId",
+			"value": ""
+		},
+		{
+			"key": "contentletID",
+			"value": ""
+		},
+		{
+			"key": "contentTypeID",
+			"value": ""
+		},
+		{
+			"key": "contentTypeVAR",
+			"value": ""
+		},
+		{
+			"key": "contentTypeFieldID",
 			"value": ""
 		}
 	]
