@@ -751,7 +751,6 @@
 		var autoExpand = false;
 
 		if(tree==null) {
-			// store = new dojox.data.JsonRestStore({ target: "/api/role/loadchildren/id", labelAttribute:"name"});
 			store = new dojo.store.JsonRest({ target: "/api/v1/roles"});
 		} else {
 			store = new dojo.data.ItemFileReadStore({ data: tree });
