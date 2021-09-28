@@ -252,7 +252,7 @@ public class OSGIUtil {
         APILocator.getLocalSystemEventsAPI().asyncNotify(
                 new OSGIUploadBundleEvent(Instant.now(), uploadFolderFile));
 
-            final String[] pathnames = uploadFolderFile.list(new SuffixFileFilter(".jar"));
+        final String[] pathnames = uploadFolderFile.list(new SuffixFileFilter(".jar"));
 
         if (UtilMethods.isSet(pathnames)) {
 
@@ -298,9 +298,10 @@ public class OSGIUtil {
 
                     debouncer.debounce("restartOsgi", this::restartOsgi, delay, TimeUnit.MILLISECONDS);
                 }
-            }
+            } else {
 
-            this.moveNewBundlesToFelixLoadFolder(uploadFolderFile, pathnames);
+                this.moveNewBundlesToFelixLoadFolder(uploadFolderFile, pathnames);
+            }
         } catch (IOException e) {
             Logger.error(this, e.getMessage(), e);
         }
@@ -309,6 +310,27 @@ public class OSGIUtil {
     // move all on upload folder to load, and restarts osgi.
     private void restartOsgi() {
 
+        final File uploadPath    = new File(this.getFelixUploadPath());
+        final String[] pathnames = uploadPath.list(new SuffixFileFilter(".jar"));
+
+        this.moveNewBundlesToFelixLoadFolder(uploadPath, pathnames);
+        //Remove Portlets in the list
+        this.portletIDsStopped.stream().forEach(APILocator.getPortletAPI()::deletePortlet);
+        Logger.info( this, "Portlets Removed: " + this.portletIDsStopped.toString() );
+
+        //Remove Actionlets in the list
+        this.actionletsStopped.stream().forEach(this.workflowOsgiService::removeActionlet);
+        Logger.info( this, "Actionlets Removed: " + this.actionletsStopped.toString());
+
+        //Cleanup lists
+        this.portletIDsStopped.clear();
+        this.actionletsStopped.clear();
+
+        //First we need to stop the framework
+        this.stopFramework();
+
+        //Now we need to initialize it
+        this.initializeFramework();
     }
 
     /**
@@ -331,7 +353,8 @@ public class OSGIUtil {
 
                     final File bundle = new File(uploadFolderFile, pathname);
                     Logger.debug(this, "Moving the bundle: " + bundle + " to " + deployDirectory);
-                    if (FileUtil.move(bundle, deployDirectory)) {
+                    final File bundleDestination = new File(deployDirectory, bundle.getName());
+                    if (FileUtil.move(bundle, bundleDestination)) {
 
                         Logger.debug(this, "Moved the bundle: " + bundle + " to " + deployDirectory);
                     } else {
@@ -502,7 +525,7 @@ public class OSGIUtil {
         }
 
         this.exportedPackagesSet.addAll(Stream.of(stringWriter.toString()
-                .split(StringPool.COMMA)).collect(Collectors.toList()));
+                .split(StringPool.COMMA)).filter(UtilMethods::isSet).collect(Collectors.toList()));
 
         //Clean up the properties, it is better to keep it simple and in a standard format
         return stringWriter.toString().replaceAll("\\\n", "").
@@ -540,11 +563,11 @@ public class OSGIUtil {
     private void writeExtraPackagesFiles(final String extraPackagesFile, final Set<String> packages)
             throws IOException {
 
-        final StringWriter writer = new StringWriter();
+
         try (OutputStream outputStream = Files.newOutputStream(new File(extraPackagesFile).toPath())) {
             for (final String myPackage : packages) {
 
-                outputStream.write((myPackage + "\n").getBytes(UTF_8));
+                outputStream.write((myPackage.trim() + ",\n").getBytes(UTF_8));
             }
         }
     }
