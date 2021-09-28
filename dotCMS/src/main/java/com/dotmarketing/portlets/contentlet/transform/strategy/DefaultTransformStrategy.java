@@ -296,9 +296,12 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
             map.put("isLocked", contentlet.isLocked());
         }
         map.put("hasLiveVersion", toolBox.versionableAPI.hasLiveVersion(contentlet));
-
-        map.put("publishDate", Try.of(contentlet::getModDate).getOrNull());
-
+        final Object publishDate = contentlet.get("publishDate");
+        if (null != publishDate) {
+            map.put("publishDate", publishDate);
+        } else {
+            map.put("publishDate", Try.of(contentlet::getModDate).getOrNull());
+        }
     }
 
 }
