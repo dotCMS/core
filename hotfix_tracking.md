@@ -235,3 +235,5 @@ This maintenance release includes the following code fixes:
 115. https://github.com/dotCMS/core/issues/20469 : When generating a site statically, we need to generate the default language last. #20469
 
 116. https://github.com/dotCMS/core/issues/20791 : [REST API] : Page API returns publishDate and modDate fields with the same value
+
+117. https://github.com/dotCMS/core/issues/18301 : SASS not working with multiple independent SCSS files. Causes hanging on front-end
