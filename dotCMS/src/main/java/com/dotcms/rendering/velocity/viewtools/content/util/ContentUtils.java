@@ -63,85 +63,67 @@ public class ContentUtils {
 			return find(inodeOrIdentifier,user,null,EDIT_OR_PREVIEW_MODE, sessionLang);
 		}
 
-	    
-	    public static Contentlet find(String inodeOrIdentifier, User user, String tmDate, boolean EDIT_OR_PREVIEW_MODE, long sessionLang){
-			String[] recDates = null;
-			try {
-				recDates = RecurrenceUtil.getRecurrenceDates(inodeOrIdentifier);
-				inodeOrIdentifier = RecurrenceUtil.getBaseEventIdentifier(inodeOrIdentifier);
-				Contentlet c = conAPI.find(inodeOrIdentifier, user, true);
-				if(c != null){
-					if(c.getStructure().getVelocityVarName().equals(EventAPI.EVENT_STRUCTURE_VAR)
-							&& (recDates!=null && recDates.length==2)){
-						String startDate = recDates[0];
-						String endDate = recDates[1];
-						if(UtilMethods.isSet(startDate) && UtilMethods.isSet(endDate)){
-							c.setDateProperty("startDate", new Date(Long.parseLong(startDate)));
-							c.setDateProperty("endDate", new Date(Long.parseLong(endDate)));
-						}
-					}
-					return c;
-				}
-			} catch (Exception e) {
-				Logger.error(ContentUtils.class,e.getMessage(),e);
-				return null;
-			}
-			
-			try {
-			
-	    		List<Contentlet> l=null;
-	    		if(tmDate!=null) {                      
-	    		    // timemachine future dates
-	    		    Date ffdate=new Date(Long.parseLong(tmDate));
-	    		    Identifier ident=APILocator.getIdentifierAPI().find(inodeOrIdentifier);
-	    		    if(ident==null || !UtilMethods.isSet(ident.getId())) return null;
-	    		    boolean showlive=true;
-	    		    if(UtilMethods.isSet(ident.getSysExpireDate()) && ffdate.after(ident.getSysExpireDate()))
-	    		        return null; // it has expired. return nothing
-	    		    if(UtilMethods.isSet(ident.getSysPublishDate()) && ffdate.after(ident.getSysPublishDate()))
-	    		        showlive=false; // it would be published. show the working
-	    		    l = conAPI.search("+identifier:" + inodeOrIdentifier + 
-	    		            " +deleted:false " + (showlive ? "+live:true" : "+working:true"), 0, -1, "modDate", user, true);
-	    		}
-	    		else {
-	    		   String stateQuery = EDIT_OR_PREVIEW_MODE ? "+working:true +deleted:false" : "+live:true +deleted:false";
-	    		   l = conAPI.search("+identifier:" + inodeOrIdentifier + " " + stateQuery, 0, -1, "modDate", user, true);
-	    		}
-			
-				
-				if(l== null || l.size() < 1){
-					return null;
-				}else{
-					if(l.size()>1){
-						Logger.warn(ContentUtils.class, "More than one live or working content found with identifier = " + inodeOrIdentifier);
-						
-						//If the list of contentlest with the same identifier is > 1
-						//try to search if there is one with the same language id.
-						for (Contentlet contentlet : l){
-							if(contentlet.getLanguageId() == sessionLang)
-								return contentlet;
-						}
-					}
-					if(l.get(0).getStructure().getVelocityVarName().equals(EventAPI.EVENT_STRUCTURE_VAR)
-							&& (recDates!=null && recDates.length==2)){
-						String startDate = recDates[0];
-						String endDate = recDates[1];
-						if(UtilMethods.isSet(startDate) && UtilMethods.isSet(endDate)){
-							l.get(0).setDateProperty("startDate", new Date(Long.parseLong(startDate)));
-							l.get(0).setDateProperty("endDate", new Date(Long.parseLong(endDate)));
-						}
-					}
-					//If anything else match, return the firs result. 
-					return (Contentlet) l.get(0);
-				}
-			} catch (Exception e) {
-				String msg = e.getMessage();
-				msg = (msg.contains("\n")) ? msg.substring(0,msg.indexOf("\n")) : msg;
-				Logger.warn(ContentUtils.class,msg);
-				Logger.debug(ContentUtils.class,e.getMessage(),e);
-			}
-			return null;
-		}
+	    private static Contentlet fixRecurringDates(Contentlet contentlet, String[] recDates) {
+	        if( null == contentlet || !contentlet.isCalendarEvent() || recDates==null || recDates.length!=2) {
+	            return contentlet;
+	        }
+            if(UtilMethods.isSet(recDates[0]) && UtilMethods.isSet(recDates[1])){
+                contentlet.setDateProperty("startDate", new Date(Long.parseLong(recDates[0])));
+                contentlet.setDateProperty("endDate", new Date(Long.parseLong(recDates[1])));
+            }
+            
+            return contentlet;
+	    }
+		
+		
+		
+        public static Contentlet find(final String inodeOrIdentifierIn, User user, String tmDate, boolean EDIT_OR_PREVIEW_MODE,
+                        long sessionLang) {
+            final String inodeOrIdentifier = RecurrenceUtil.getBaseEventIdentifier(inodeOrIdentifierIn);
+            final String[] recDates = RecurrenceUtil.getRecurrenceDates(inodeOrIdentifier);
+            try {
+                // by inode
+                Contentlet contentlet = conAPI.find(inodeOrIdentifier, user, true);
+                if (contentlet != null) {
+                    return fixRecurringDates(contentlet, recDates);
+                }
+
+                // timemachine
+                if (tmDate != null) {
+                    // timemachine future dates
+                    final Date ffdate = new Date(Long.parseLong(tmDate));
+                    final Identifier ident = APILocator.getIdentifierAPI().find(inodeOrIdentifier);
+                    if (ident == null || !UtilMethods.isSet(ident.getId())) {
+                        return null;
+                    }
+
+                    // timemachine content has expired. return nothing
+                    if (UtilMethods.isSet(ident.getSysExpireDate()) && ffdate.after(ident.getSysExpireDate())) {
+                        return null;
+                    }
+                    
+                    // timemachine contentis to be published in the future, return the working version
+                    if (UtilMethods.isSet(ident.getSysPublishDate()) && ffdate.after(ident.getSysPublishDate())) {
+                        return APILocator.getContentletAPI()
+                                        .findContentletByIdentifierOrFallback(inodeOrIdentifier, true, sessionLang, user, true)
+                                        .orElse(null);
+                    }
+                }
+
+                contentlet = APILocator.getContentletAPI().findContentletByIdentifierOrFallback(inodeOrIdentifier,
+                                EDIT_OR_PREVIEW_MODE, sessionLang, user, true).orElse(null);
+
+                return fixRecurringDates(contentlet, recDates);
+
+            } catch (Exception e) {
+                String msg = e.getMessage();
+                msg = (msg.contains("\n")) ? msg.substring(0, msg.indexOf("\n")) : msg;
+                Logger.warn(ContentUtils.class, msg);
+                Logger.debug(ContentUtils.class, e.getMessage(), e);
+                return null;
+            }
+
+        }
 		
 		/**
 		 * Returns empty List if no results are found
