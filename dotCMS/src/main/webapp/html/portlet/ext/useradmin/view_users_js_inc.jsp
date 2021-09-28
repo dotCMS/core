@@ -760,22 +760,14 @@
 
 	    treeModel = new dijit.tree.ObjectStoreModel({
 	        store: store,
-	        query: { top:true },
-	        rootId: "root",
-	        rootLabel: "Root",
+	        
 	        deferItemLoadingUntilExpand: true,
 	        childrenAttrs: ["roleChildren"],
 			getChildren: (object, onComplete) => {
-				if (object.id === 'root') {
-					fetch(`/api/v1/roles`)
-					.then(response => response.json())
-					.then(data => {
-						onComplete(data.entity);
-					})
-					.catch(() => onComplete([]));
+				if (object.id === 'root' && roleCacheMap['root']) { 
+					onComplete(roleCacheMap['root'].roleChildren)
 				} else {
-					fetch(`/api/v1/roles/${object.id}`)
-					.then(response => response.json())
+					dotGetRoles(object.id)
 					.then(data => {
 						data.entity.roleChildren.forEach((role) => {
 							roleCacheMap[role.id] = role;
@@ -785,17 +777,18 @@
 					.catch(() => onComplete([]));
 				}
 			},
-			getRoot: function(onItem) {
+			getRoot: (onItem) => {
 				if(roleCacheMap['root']){
 					onItem(roleCacheMap['root'])
 				} else {
-					this.store.get("").then( data => {
+					dotGetRoles().then( data => {
 						data.entity.forEach((role) => {
 							roleCacheMap[role.id] = role;
 						});
 						roleCacheMap['root'] = {id:'root', name:'root', roleChildren: data.entity}
 						onItem({id:'root', name:'root', roleChildren: data.entity})
-					});		
+					})
+					.catch(() => onItem([]));		
 				}
 			}
 	    });
@@ -810,6 +803,10 @@
 	    dojo.create('div',{id:'userRolesTree'},'userRolesTreeWrapper');
 
 	    initializeRolesTreeWidget(treeModel, autoExpand);
+	}
+
+	function dotGetRoles(id ='') {
+		return fetch(`/api/v1/roles/${id}`).then(response => response.json())
 	}
 
 	function initializeRolesTreeWidget(treeModel, autoExpand) {
