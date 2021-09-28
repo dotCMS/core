@@ -228,4 +228,4 @@ This maintenance release includes the following code fixes:
 
 112. https://github.com/dotCMS/core/issues/20801 : Warning log message incomplete for not allowed categories when retrieving content
 
-113. 
+113. https://github.com/dotCMS/core/issues/20791 : [REST API] : Page API returns publishDate and modDate fields with the same value
