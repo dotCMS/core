@@ -23,6 +23,8 @@
 	dojo.require("dojo.data.ItemFileReadStore");
 	dojo.require("dijit.dijit");
 	dojo.require("dojox.data.JsonRestStore");
+	dojo.require("dojo.store.JsonRest");
+	dojo.require("dijit.tree.ObjectStoreModel");
 
 	dojo.require("dotcms.dijit.form.HostFolderFilteringSelect");
 	dojo.require("dotcms.dojo.data.UsersReadStore");
@@ -677,6 +679,7 @@
             if("CMS Administrator" == roles[i].roleKey){
                 dijit.byId("adminRoleCheck").attr('checked',true);
             }
+			roleCacheMap[roles[i].id] = roles[i];
 	        
 	    }
 	    
@@ -748,19 +751,45 @@
 		var autoExpand = false;
 
 		if(tree==null) {
-			store = new dojox.data.JsonRestStore({ target: "/api/role/loadchildren/id", labelAttribute:"name"});
+			store = new dojo.store.JsonRest({ target: "/api/v1/roles"});
 		} else {
 			store = new dojo.data.ItemFileReadStore({ data: tree });
 			autoExpand = true;
 		}
 
-	    treeModel = new dijit.tree.TreeStoreModel({
+	    treeModel = new dijit.tree.ObjectStoreModel({
 	        store: store,
-	        query: { top:true },
-	        rootId: "root",
-	        rootLabel: "Root",
+	        
 	        deferItemLoadingUntilExpand: true,
-	        childrenAttrs: ["children"]
+	        childrenAttrs: ["roleChildren"],
+			getChildren: (object, onComplete) => {
+				if (object.id === 'root' && roleCacheMap['root']) { 
+					onComplete(roleCacheMap['root'].roleChildren)
+				} else {
+					dotGetRoles(object.id)
+					.then(data => {
+						data.entity.roleChildren.forEach((role) => {
+							roleCacheMap[role.id] = role;
+						});
+						onComplete(data.entity.roleChildren);
+					})
+					.catch(() => onComplete([]));
+				}
+			},
+			getRoot: (onItem) => {
+				if(roleCacheMap['root']){
+					onItem(roleCacheMap['root'])
+				} else {
+					dotGetRoles().then( data => {
+						data.entity.forEach((role) => {
+							roleCacheMap[role.id] = role;
+						});
+						roleCacheMap['root'] = {id:'root', name:'root', roleChildren: data.entity}
+						onItem({id:'root', name:'root', roleChildren: data.entity})
+					})
+					.catch(() => onItem([]));		
+				}
+			}
 	    });
 
 	    var treeContainer = dijit.byId('userRolesTree');
@@ -773,6 +802,10 @@
 	    dojo.create('div',{id:'userRolesTree'},'userRolesTreeWrapper');
 
 	    initializeRolesTreeWidget(treeModel, autoExpand);
+	}
+
+	function dotGetRoles(id ='') {
+		return fetch(`/api/v1/roles/${id}`).then(response => response.json())
 	}
 
 	function initializeRolesTreeWidget(treeModel, autoExpand) {
@@ -1031,7 +1064,7 @@
 
 				if(!alreadyAdded) {
 					var role = findRole(id);
-					var dbfqnLabel = getDBFQNLabel(role.DBFQN);
+					var dbfqnLabel = getDBFQNLabel(role.dbfqn);
 		            var c = win.doc.createElement('option');
 		            c.innerHTML = dbfqnLabel;
 		            c.value = id;
@@ -1780,9 +1813,13 @@
 		showDotCMSSystemMessage(userLocaleSavedMsg);
 	}
 
-	function findRole(roleid) {
+	const roleCacheMap = {};
 
-		var roleNode;
+	function findRole(roleid) {
+		var roleNode = roleCacheMap[roleid];
+		if (roleNode) {
+			return roleNode;
+		}
 
 		var xhrArgs = {
 			url : "/api/role/loadbyid/id/" + roleid,
@@ -1790,6 +1827,7 @@
 			sync: true,
 			load : function(data) {
 				roleNode = data;
+				roleCacheMap[roleid] = data;
 			},
 			error : function(error) {
                 console.error("Error returning Role data for role id [" + roleid + "]", error);
