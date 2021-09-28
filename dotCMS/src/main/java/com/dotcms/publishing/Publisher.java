@@ -1,5 +1,6 @@
 package com.dotcms.publishing;
 
+import com.dotcms.enterprise.publishing.staticpublishing.LanguageFolder;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.pusher.PushUtils;
 import com.dotmarketing.beans.Host;
@@ -10,6 +11,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
@@ -27,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TreeSet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.collections.map.CompositeMap;
@@ -127,7 +130,20 @@ public abstract class Publisher implements IPublisher {
 
 	}
 
-	public Language getLanguageFromFilePath(File file) throws DotPublishingException{
+    protected TreeSet<LanguageFolder> getLanguageFolders(File hostFolder)
+            throws DotPublishingException {
+        final TreeSet<LanguageFolder> languagesFolders = new TreeSet<>();
+
+        final File[] bundleLanguagesFolders = hostFolder.listFiles(FileUtil.getOnlyFolderFileFilter());
+
+        for (final File bundleLanguagesFolder : bundleLanguagesFolders) {
+            languagesFolders.add(new LanguageFolder(bundleLanguagesFolder,
+                    getLanguageFromFilePath(bundleLanguagesFolder)));
+        }
+        return languagesFolders;
+    }
+
+	private Language getLanguageFromFilePath(File file) throws DotPublishingException{
 		try{
 			if(!file.getAbsolutePath().contains(config.getId())){
 				throw new DotPublishingException("no bundle file found");
