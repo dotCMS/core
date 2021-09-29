@@ -563,11 +563,16 @@ public class OSGIUtil {
     private void writeExtraPackagesFiles(final String extraPackagesFile, final Set<String> packages)
             throws IOException {
 
-
+        int count = 0;
         try (OutputStream outputStream = Files.newOutputStream(new File(extraPackagesFile).toPath())) {
             for (final String myPackage : packages) {
 
-                outputStream.write((myPackage.trim() + ",\n").getBytes(UTF_8));
+                if (count < packages.size()-1) {
+                    outputStream.write((myPackage.trim() + ",\n").getBytes(UTF_8));
+                } else {
+                    outputStream.write((myPackage.trim()).getBytes(UTF_8));
+                }
+                count++;
             }
         }
     }
