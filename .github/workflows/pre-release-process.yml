@@ -62,7 +62,7 @@ jobs:
         id: discover-docker-tags
         uses: dotcms/discover-docker-tags-action@main
         with:
-          version: ${{ ENV.RELEASE_VERSION }}
+          version: ${{ env.RELEASE_VERSION }}
           hash: ${{ env.BUILD_HASH }}
           label: prerelease
           update_stable: single
@@ -70,7 +70,7 @@ jobs:
         id: publish-docker-image
         uses: dotcms/publish-docker-image-action@main
         with:
-          dot_cicd_branch: master
+          dot_cicd_branch: ${{ env.DOT_CICD_BRANCH }}
           build_id: release-${{ env.RELEASE_VERSION }}
           tags: ${{ steps.discover-docker-tags.outputs.discovered_tags }}
           github_user_token: ${{ secrets.CICD_GITHUB_TOKEN }}
