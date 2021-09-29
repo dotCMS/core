@@ -121,7 +121,9 @@ public class ContentletTransformer implements DBTransformer {
                 folder = APILocator.getFolderAPI().findSystemFolder();
             }
 
-            if(folder==null) return;
+            if(folder==null) { 
+                return;
+            }
 
             contentlet.setHost(identifier.getHostId());
             contentlet.setFolder(folder.getInode());
