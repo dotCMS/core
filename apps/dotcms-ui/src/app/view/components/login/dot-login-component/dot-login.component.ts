@@ -81,7 +81,7 @@ export class DotLoginComponent implements OnInit, OnDestroy {
                     this.setMessage('');
                     this.dotLoadingIndicatorService.hide();
                     this.dotRouterService.goToMain(user['editModeUrl']);
-                    this.dotFormatDateService.setLang(user.languageId.split('_')[0]);
+                    this.dotFormatDateService.setLang(user.languageId);
                 },
                 (res: any) => {
                     if (this.isBadRequestOrUnathorized(res.status)) {

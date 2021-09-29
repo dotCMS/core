@@ -26,8 +26,23 @@ export class DotFormatDateService {
         this._localeOptions = locale;
     }
 
-    async setLang(lang: string) {
-        const localeLang = await import(`date-fns/locale/${lang}/index.js`);
+    async setLang(languageId: string) {
+        let [langCode, countryCode] = languageId.replace('_', '-').split('-');
+        let localeLang;
+
+        langCode = langCode?.toLowerCase() || 'en'
+        countryCode = countryCode?.toLocaleUpperCase() || 'US';
+
+        try {
+            localeLang = await import(`date-fns/locale/${langCode}-${countryCode}/index.js`);
+        } catch (error) {
+            try {
+                localeLang = await import(`date-fns/locale/${langCode}/index.js`);
+            } catch (error) {
+                localeLang = await import(`date-fns/locale/en-US/index.js`);
+            }
+        }
+        
         this.localeOptions = { locale: localeLang.default };
     }
 
