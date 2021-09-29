@@ -11,7 +11,11 @@ import com.dotmarketing.util.FileUtil;
 import com.google.common.collect.ImmutableList;
 import com.liferay.util.StringPool;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
@@ -25,27 +29,44 @@ import java.util.stream.Stream;
 import jersey.repackaged.com.google.common.collect.ImmutableSet;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 
 /**
  * Util class to read a CSV Manifest file
  */
 public class CSVManifestReader implements ManifestReader{
 
-    final Collection<CSVManifestItem> manifestItemsIncluded;
-    final Collection<CSVManifestItem> manifestItemsExcluded;
-    final Map<String, String> metaData;
+    private Collection<CSVManifestItem> manifestItemsIncluded;
+    private Collection<CSVManifestItem> manifestItemsExcluded;
+    private Map<String, String> metaData;
 
     final static String COMMENTED_LINE_START = "#";
 
+    public CSVManifestReader(final Reader manifestReader){
+        init(manifestReader);
+    }
+
     public CSVManifestReader(final File csvManifestFile){
+        init(csvManifestFile);
+    }
+
+    private void init(final File csvManifestFile){
+        try{
+            init(new FileReader(csvManifestFile));
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Not valid " + csvManifestFile.getAbsolutePath(), e);
+        }
+    }
+
+    private void init(final Reader manifestReader){
         try {
-            final List<String> lines = FileUtils.readLines(csvManifestFile, StandardCharsets.UTF_8);
+            final List<String> lines = IOUtils.readLines(manifestReader);
 
             this.manifestItemsIncluded = getManifestInfos(lines, "INCLUDED");
             this.manifestItemsExcluded = getManifestInfos(lines, "EXCLUDED");
             this.metaData = getAllMetaData(lines);
         } catch (IOException e) {
-            throw new IllegalArgumentException("Not valid " + csvManifestFile.getAbsolutePath(), e);
+            throw new IllegalArgumentException("Not valid InputStream manifest: " + e.getMessage(), e);
         }
     }
 
