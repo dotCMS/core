@@ -51,6 +51,14 @@ class MockDotAppsCardComponent {
 }
 
 @Component({
+    selector: 'dot-icon',
+    template: ''
+})
+class MockDotIconComponent {
+    @Input() name: string;
+}
+
+@Component({
     selector: 'dot-apps-import-export-dialog',
     template: ''
 })
@@ -93,7 +101,8 @@ describe('DotAppsListComponent', () => {
                 MockDotAppsCardComponent,
                 MockDotNotLicensedComponent,
                 DotMessagePipe,
-                MockDotAppsImportExportDialogComponent
+                MockDotAppsImportExportDialogComponent,
+                MockDotIconComponent
             ],
             imports: [ButtonModule],
             providers: [
@@ -136,6 +145,15 @@ describe('DotAppsListComponent', () => {
 
         it('should contain 2 app configurations', () => {
             expect(fixture.debugElement.queryAll(By.css('dot-apps-card')).length).toBe(2);
+        });
+
+        it('should contain a dot-icon and a link with info on how to create apps', () => {
+            const link = fixture.debugElement.query(By.css('.dot-apps__header-info a'));
+            const icon = fixture.debugElement.query(By.css('.dot-apps__header-info dot-icon'));
+            expect(link.nativeElement.href).toBe('https://dotcms.com/docs/latest/apps-integrations');
+            expect(link.nativeElement.target).toBe('_blank');
+            expect(icon.componentInstance.name).toBe('help');
+            
         });
 
         it('should set messages to Search Input', () => {
