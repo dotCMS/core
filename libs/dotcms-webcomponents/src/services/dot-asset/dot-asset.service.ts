@@ -46,11 +46,12 @@ export class DotAssetService {
             const errors: DotHttpErrorResponse[] = [];
             const data: DotCMSContentlet[] = [];
             for (const res of response) {
-                data.push((await res.json()).entity);
+                const responseData = (await res.json());
+                data.push(responseData.entity);
                 if (res.status !== 200) {
                     let message = '';
                     try {
-                        message = (await res.json()).errors[0].message;
+                        message = responseData.message;
                     } catch {
                         message = fallbackErrorMessages[res.status];
                     }
