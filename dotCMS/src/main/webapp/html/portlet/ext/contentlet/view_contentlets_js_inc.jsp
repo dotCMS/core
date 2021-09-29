@@ -1888,7 +1888,7 @@
 
 			wfActionMapList.map((wfAction) => {
 				actions.push({ label: wfAction.name,
-					action: () => { contentAdmin.executeWfAction(wfAction.id, wfAction.assignable.toString(), wfAction.commentable.toString(), wfAction.hasPushPublishActionlet.toString(), data.inode, wfAction.moveable.toString())}
+					action: () => { contentAdmin.executeWfAction(wfAction.id, wfAction.assignable.toString(), wfAction.commentable.toString(), wfAction.hasPushPublishActionlet.toString(), data.inode, wfAction.moveable ? wfAction.moveable.toString() : 'false')}
 				});
 			});
 
