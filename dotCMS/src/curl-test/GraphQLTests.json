@@ -8065,7 +8065,7 @@
 									"response": []
 								},
 								{
-									"name": "Get Content - Cache: TTL 500s - Return v1",
+									"name": "Get Content - Cache: TTL 60s - Return v1",
 									"event": [
 										{
 											"listen": "test",
@@ -8092,7 +8092,7 @@
 											}
 										},
 										"url": {
-											"raw": "{{serverURL}}/api/v1/graphql?dotcachettl=500",
+											"raw": "{{serverURL}}/api/v1/graphql?dotcachettl=60",
 											"host": [
 												"{{serverURL}}"
 											],
@@ -8104,7 +8104,7 @@
 											"query": [
 												{
 													"key": "dotcachettl",
-													"value": "500"
+													"value": "60"
 												}
 											]
 										},
@@ -8176,7 +8176,7 @@
 									"response": []
 								},
 								{
-									"name": "Get Content - Cache: TTL 500s & Return true - v1",
+									"name": "Get Content - Cache: TTL 60s & Return true - v1",
 									"event": [
 										{
 											"listen": "test",
@@ -8187,6 +8187,15 @@
 													"    var contentTypeVar = pm.collectionVariables.get(\"contentTypeVariable\")",
 													"    pm.expect(jsonData.data[contentTypeVar+\"Collection\"][0].name).to.eql(\"content v1\");",
 													"});"
+												],
+												"type": "text/javascript"
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"setTimeout(function(){}, [70000]);"
 												],
 												"type": "text/javascript"
 											}
@@ -8203,7 +8212,7 @@
 											}
 										},
 										"url": {
-											"raw": "{{serverURL}}/api/v1/graphql?dotcachettl=500&dotcacherefresh=true",
+											"raw": "{{serverURL}}/api/v1/graphql?dotcachettl=60&dotcacherefresh=true",
 											"host": [
 												"{{serverURL}}"
 											],
@@ -8215,7 +8224,7 @@
 											"query": [
 												{
 													"key": "dotcachettl",
-													"value": "500"
+													"value": "60"
 												},
 												{
 													"key": "dotcacherefresh",
@@ -8228,7 +8237,7 @@
 									"response": []
 								},
 								{
-									"name": "Wait 10s - Get Content - Cache: TTL 500s & Return true - v2",
+									"name": "Wait 10s - Get Content - Cache: TTL 60s & Return true - v2",
 									"event": [
 										{
 											"listen": "test",
@@ -8264,7 +8273,7 @@
 											}
 										},
 										"url": {
-											"raw": "{{serverURL}}/api/v1/graphql?dotcachettl=500",
+											"raw": "{{serverURL}}/api/v1/graphql?dotcachettl=60",
 											"host": [
 												"{{serverURL}}"
 											],
@@ -8276,7 +8285,7 @@
 											"query": [
 												{
 													"key": "dotcachettl",
-													"value": "500"
+													"value": "60"
 												}
 											]
 										},

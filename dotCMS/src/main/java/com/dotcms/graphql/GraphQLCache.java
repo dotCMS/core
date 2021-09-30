@@ -171,7 +171,8 @@ public class GraphQLCache implements Cachable {
     private static class ExpirableCacheEntry implements Expirable, Serializable {
         private static final long serialVersionUID = 1L;
         private final long ttl;
-        private final long gracePeriod = 60;
+        private final long gracePeriod =
+                Config.getIntProperty("cache.graphqlquerycache.graceperiod", 60);
         private final LocalDateTime since;
         private final String results;
 
