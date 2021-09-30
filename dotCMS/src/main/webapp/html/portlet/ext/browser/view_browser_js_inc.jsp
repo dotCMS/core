@@ -843,7 +843,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                         
                         More info: https://madrobby.github.io/scriptaculous/draggable/
                     */
-                    var draggable = new Draggable(asset.inode + '-DIV', { ghosting:true, revert:true, zindex: 1000, reverteffect: function(element) { element.style.position = 'relative'; } });
+                    var draggable = new Draggable(asset.inode + '-DIV', { ghosting:true, revert:true, zindex: 1000, reverteffect: function(element) { element.style.position = 'relative'; element.style.width = 'auto' } });
                     contentDraggables[contentDraggables.length] = draggable;
                 }
 
@@ -958,7 +958,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                         
                         More info: https://madrobby.github.io/scriptaculous/draggable/
                     */
-                    var draggable = new Draggable(asset.inode + '-DIV', { ghosting:true, revert:true, zindex: 1000, reverteffect: function(element) { element.style.position = 'relative'; } });
+                    var draggable = new Draggable(asset.inode + '-DIV', { ghosting:true, revert:true, zindex: 1000, reverteffect: function(element) { element.style.position = 'relative'; element.style.width = 'auto' } });
                     contentDraggables[contentDraggables.length] = draggable;
                 }
             }
