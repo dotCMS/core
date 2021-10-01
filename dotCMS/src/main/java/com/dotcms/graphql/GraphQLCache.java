@@ -65,7 +65,11 @@ public class GraphQLCache implements Cachable {
             toReturn = Optional.of(((ExpirableCacheEntry) value).getResults());
 
             if(cacheEntry.isExpired()) {
-                refreshKey(key, valueSupplier, ttl);
+                if(null==valueSupplier) { // not refreshing, so not returning dirty entry
+                    toReturn = Optional.empty();
+                } else {
+                    refreshKey(key, valueSupplier, ttl);
+                }
             }
         } else {
             toReturn = Optional.ofNullable((String)value);
