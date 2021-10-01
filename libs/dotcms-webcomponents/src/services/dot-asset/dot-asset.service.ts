@@ -51,7 +51,7 @@ export class DotAssetService {
                 if (res.status !== 200) {
                     let message = '';
                     try {
-                        message = responseData.message;
+                        message = responseData.message || responseData.errors[0].message;
                     } catch {
                         message = fallbackErrorMessages[res.status];
                     }
