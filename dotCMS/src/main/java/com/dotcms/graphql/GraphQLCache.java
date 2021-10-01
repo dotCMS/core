@@ -33,6 +33,7 @@ import org.apache.logging.log4j.util.Strings;
 public class GraphQLCache implements Cachable {
     private final DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
     public static final String GRAPHQL_CACHE_RESULTS_CONFIG_PROPERTY = "GRAPHQL_CACHE_RESULTS";
+    private static long GRACE_PERIOD = Config.getIntProperty("cache.graphqlquerycache.graceperiod", 60);
 
     private final Lazy<Boolean> ENABLED_FROM_CONFIG = Lazy.of(()->Config
             .getBooleanProperty(GRAPHQL_CACHE_RESULTS_CONFIG_PROPERTY, true));
@@ -105,8 +106,12 @@ public class GraphQLCache implements Cachable {
         DotConcurrentFactory.getInstance()
                 .getSingleSubmitter().submit(()-> {
                         remove(key);
-                        put(key, Try.of(valueSupplier::get).getOrElse(Strings.EMPTY), cacheTTL);
+                        put(key, Try.of(valueSupplier::get).getOrElse(Strings.EMPTY), cacheTTL, true);
                 });
+    }
+
+    public void put(String key, String result, long ttl) {
+        put(key, result, ttl, false);
     }
 
     /**
@@ -116,13 +121,17 @@ public class GraphQLCache implements Cachable {
      * @param ttl time in seconds to consider the value as expired. If null, then it will cache
      * the value for the time specified in the config property <code>cache.graphqlquerycache.seconds</code>
      */
-    public void put(String key, String result, long ttl) {
+    public void put(String key, String result, long ttl, final boolean refresh) {
         if(cannotCache()) return;
 
         if(UtilMethods.isNotSet(result)) return;
 
+        final ExpirableCacheEntry cacheEntry = refresh
+                ? new ExpirableCacheEntry(result, ttl, GRACE_PERIOD)
+                : new ExpirableCacheEntry(result, ttl);
+
         final String cacheKey = hashKey(key);
-        cache.put(cacheKey, new ExpirableCacheEntry(result, ttl), getPrimaryGroup());
+        cache.put(cacheKey, cacheEntry, getPrimaryGroup());
     }
 
     /**
@@ -171,14 +180,18 @@ public class GraphQLCache implements Cachable {
     private static class ExpirableCacheEntry implements Expirable, Serializable {
         private static final long serialVersionUID = 1L;
         private final long ttl;
-        private final long gracePeriod =
-                Config.getIntProperty("cache.graphqlquerycache.graceperiod", 60);
+        private final long gracePeriod;
         private final LocalDateTime since;
         private final String results;
 
-        public ExpirableCacheEntry(String results, long ttl) {
+        public ExpirableCacheEntry(final String results, final long ttl) {
+            this(results, ttl, 0);
+        }
+
+        public ExpirableCacheEntry(final String results, final long ttl, final long gracePeriod) {
             this.results = results;
             this.ttl = ttl;
+            this.gracePeriod = gracePeriod;
             since = LocalDateTime.now();
         }
 
