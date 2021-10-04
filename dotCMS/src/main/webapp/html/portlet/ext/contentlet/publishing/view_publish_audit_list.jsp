@@ -345,7 +345,7 @@
 				<%--BundleTitle--%>
 				<%try{ %>
 					<% if(bundleAssets.keySet().size()>0){ %>
-						<td id="q<%=bundle.getId()%>" valign="top" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')"></td>
+						<td id="td_assets_<%=c.getBundleId()%>" valign="top" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')"></td>
 					<%}else{ %>
 
 						<td valign="top" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
@@ -404,21 +404,21 @@
 <%} %>
 
 <script>
-	<%
-		for(PublishAuditStatus publishAuditStatus : iresults) {
-			final List<PublishQueueElement> assets = PublisherAPI.getInstance()
-				.getQueueElementsByBundleId(publishAuditStatus.getBundleId());
+		<%
+            final PublishQueueElementTransformer publishQueueElementTransformer =
+                    new PublishQueueElementTransformer();
 
-			final PublishQueueElementTransformer publishQueueElementTransformer =
-						new PublishQueueElementTransformer();
+            for(PublishAuditStatus publishAuditStatus : iresults) {
+                final Map<String,String> assets = publishAuditStatus.getStatusPojo().getAssets();
 
-			final List<Map<String, Object>> assetsTransformed = publishQueueElementTransformer
-						.transform(assets).stream()
-						.limit(3).collect(Collectors.toList());
+                final List<Map<String,Object>> assetsTransformed = assets.entrySet().stream()
+                    .limit(3)
+                    .map(entry -> publishQueueElementTransformer.getMap(entry.getKey(), entry.getValue()))
+                    .collect(Collectors.toList());
 
-	%>
-		<%if (assetsTransformed.size() > 3) {%>
-			addShowMoreMessage('<%=publishAuditStatus.getBundleId()%>');
+        %>
+		<%if (assets.size() > 3) {%>
+			addShowMoreMessage('<%=publishAuditStatus.getBundleId()%>', '<%=assets.size()%>');
 		<%}%>
 
 		<%
@@ -434,25 +434,32 @@
 
 	<%}%>
 
-	function addRow(tile, type, bundleId) {
+	function addRow(title, type, bundleId) {
 		let td = document.getElementById("td_assets_" + bundleId);
-		td.innerHTML += '<div>' +
-				(tile === type) ? type : '<strong>' + type + '</strong> : ' + title +
-		'</div>';
+		let html = '<div>' +
+				((title === type) ? type : '<strong>' + type + '</strong> : ' + title) + '</div>';
+		td.innerHTML += html;
 	}
 
 	function addShowMoreMessage(bundleId){
-		return '<div><%=LanguageUtil.get(pageContext, "publisher_audit_more_assets") %></div>' +
+		let td = document.getElementById("td_assets_" + bundleId);
+
+		td.innerHTML += '<div>' + nAssets + ' <%=LanguageUtil.get(pageContext, "publisher_audit_more_assets") %>&nbsp;' +
 				"<a href=\"javascript:requestAssets('" + bundleId + "')\">" +
 				"<strong style=\"text-decoration: underline;\"><%=LanguageUtil.get(pageContext, "bundles.view.all") %></strong>" +
-				"</a>";
+				"</a>" +
+		'</div>';
 	}
 
+
 	function addShowLessMessage(bundleId){
-		return '<div><%=LanguageUtil.get(pageContext, "bundles.item.all.show") %></div>' +
+		let td = document.getElementById("td_assets_" + bundleId);
+
+		td.innerHTML +=  '<div><%=LanguageUtil.get(pageContext, "bundles.item.all.show") %>&nbsp;' +
 				"<a href=\"javascript:requestAssets('" + bundleId + "', 3)\">" +
 				"<strong style=\"text-decoration: underline;\"><%=LanguageUtil.get(pageContext, "bundles.item.less.show")%></strong>" +
-				"</a>";
+				"</a>" +
+		'</div>';
 	}
 
 	function requestAssets(bundleId, numberToShow = -1){

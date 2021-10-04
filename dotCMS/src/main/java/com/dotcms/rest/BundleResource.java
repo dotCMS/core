@@ -62,6 +62,7 @@ import java.io.FileReader;
 import java.io.Reader;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.ws.rs.core.StreamingOutput;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
@@ -150,8 +151,20 @@ public class BundleResource {
 
             final List<PublishQueueElement> queueElements = PublisherAPIImpl.getInstance()
                     .getQueueElementsByBundleId(bundleId);
-            final List<Map<String, Object>> detailedAssets = publishQueueElementTransformer
-                    .transform(queueElements);
+
+            final List<Map<String, Object>> detailedAssets;
+
+            if (UtilMethods.isSet(queueElements)) {
+                detailedAssets = publishQueueElementTransformer.transform(queueElements);
+            } else {
+                final PublishAuditStatus publishAuditStatus = PublishAuditAPI.getInstance()
+                        .getPublishAuditStatus(bundleId);
+
+                final Map<String, String> assets = publishAuditStatus.getStatusPojo().getAssets();
+                detailedAssets = assets.entrySet().stream()
+                        .map(entry -> publishQueueElementTransformer.getMap(entry.getKey(), entry.getValue()))
+                        .collect(Collectors.toList());
+            }
 
             return Response.ok(detailedAssets).build();
         } catch (DotPublisherException e) {

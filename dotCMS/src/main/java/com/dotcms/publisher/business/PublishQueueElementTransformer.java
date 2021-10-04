@@ -61,72 +61,78 @@ public class PublishQueueElementTransformer {
     }
 
     private static Map<String, Object> getMap(final PublishQueueElement publishQueueElement) {
+        return getMap(publishQueueElement.getAsset(),
+                publishQueueElement.getType(), publishQueueElement.getOperation());
+    }
 
-        if (isContentlet(publishQueueElement)) {
-            return getMapForContentlet(publishQueueElement);
-        } else if (isLanguage(publishQueueElement)) {
-            return getMapForLanguage(publishQueueElement);
+    public Map<String, Object> getMap(final String id, final String type) {
+        return getMap(id, type, -1);
+    }
+
+    private static Map<String, Object> getMap(final String id, final String type,
+            final Integer operation) {
+
+        final Map<String, Object> result;
+
+        if (isContentlet(type)) {
+            result = getMapForContentlet(id);
+        } else if (isLanguage(type)) {
+            result = getMapForLanguage(id);
         } else {
 
-            String title = PublishAuditUtil.getInstance()
-                    .getTitle(publishQueueElement.getType(),
-                            publishQueueElement.getAsset());
+            String title = PublishAuditUtil.getInstance().getTitle(type, id);
 
-            if (title.equals( publishQueueElement.getType() )) {
+            if (title.equals( type )) {
                 title = "";
                 Logger.warn( PublishQueueElementTransformer.class, () ->
-                        "Unable to find Asset of type: [" + publishQueueElement.getType() + "] with identifier: [" + publishQueueElement.getAsset() + "]" );
+                        "Unable to find Asset of type: [" + type + "] with identifier: [" + id + "]" );
 
                 try{
-                    Logger.info( PublishQueueElementTransformer.class, "Cleaning Publishing Queue, identifier [" + publishQueueElement.getAsset() + "] no longer exists");
-                    PublisherAPIImpl.getInstance().deleteElementFromPublishQueueTable(publishQueueElement.getAsset());
+                    Logger.info( PublishQueueElementTransformer.class, "Cleaning Publishing Queue, identifier [" + id + "] no longer exists");
+                    PublisherAPIImpl.getInstance().deleteElementFromPublishQueueTable(type);
                 } catch (DotPublisherException dpe){
                     Logger.warn(PublishQueueElementTransformer.class,
-                            () -> "Unable to delete Asset from Publishing Queue with identifier: [" + publishQueueElement.getAsset() + "]", dpe );
+                            () -> "Unable to delete Asset from Publishing Queue with identifier: [" + type + "]", dpe );
                 }
             }
 
-            return map(
-                TYPE_KEY, publishQueueElement.getType(),
-                TITLE_KEY, title,
-                OPERATION_KEY, publishQueueElement.getOperation().toString(),
-                ASSET_KEY, publishQueueElement.getAsset()
-            );
+            result = map(TITLE_KEY, title);
         }
+
+        result.putAll(map(
+                TYPE_KEY, type,
+                OPERATION_KEY, operation,
+                ASSET_KEY, id
+        ));
+
+        return result;
     }
 
-    private static Map<String, Object> getMapForLanguage(
-            final PublishQueueElement publishQueueElement) {
+    private static Map<String, Object> getMapForLanguage(final String id) {
 
-        final Language language = APILocator.getLanguageAPI().getLanguage(publishQueueElement.getAsset());
+        final Language language = APILocator.getLanguageAPI().getLanguage(id);
 
         return map(
-                TYPE_KEY, publishQueueElement.getType(),
                 TITLE_KEY, String.format( "%s(%s)", language.getLanguage(), language.getCountryCode()),
                 LANGUAGE_CODE_KEY, language.getLanguageCode(),
                 COUNTRY_CODE_KEY, language.getCountryCode(),
-                CONTENT_TYPE_NAME_KEY,  CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL, publishQueueElement.getType()),
-                OPERATION_KEY, publishQueueElement.getOperation().toString(),
-                ASSET_KEY, publishQueueElement.getAsset()
+                CONTENT_TYPE_NAME_KEY,  CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL,
+                        PusheableAsset.LANGUAGE.getType())
         );
     }
 
-    private static Map<String, Object> getMapForContentlet(
-            final PublishQueueElement publishQueueElement) {
+    private static Map<String, Object> getMapForContentlet(final String id) {
 
         final Contentlet contentlet;
 
         try {
             contentlet = PublishAuditUtil.getInstance()
-                    .findContentletByIdentifier(publishQueueElement.getAsset());
+                    .findContentletByIdentifier(id);
 
             return map(
-                    TYPE_KEY, publishQueueElement.getType(),
                     TITLE_KEY, contentlet.getTitle(),
                     INODE_KEY, contentlet.getInode(),
                     CONTENT_TYPE_NAME_KEY, contentlet.getContentType().name(),
-                    OPERATION_KEY, publishQueueElement.getOperation().toString(),
-                    ASSET_KEY, publishQueueElement.getAsset(),
                     HTML_PAGE_KEY, contentlet.isHTMLPage()
             );
         } catch (DotSecurityException | DotDataException e) {
@@ -135,11 +141,11 @@ public class PublishQueueElementTransformer {
         }
     }
 
-    private static boolean isContentlet(PublishQueueElement publishQueueElement) {
-        return publishQueueElement.getType().equals(PusheableAsset.CONTENTLET.getType());
+    private static boolean isContentlet(final String type) {
+        return type.equals(PusheableAsset.CONTENTLET.getType());
     }
 
-    private static boolean isLanguage(PublishQueueElement publishQueueElement) {
-        return publishQueueElement.getType().equals(PusheableAsset.LANGUAGE.getType());
+    private static boolean isLanguage(final String type) {
+        return type.equals(PusheableAsset.LANGUAGE.getType());
     }
 }
