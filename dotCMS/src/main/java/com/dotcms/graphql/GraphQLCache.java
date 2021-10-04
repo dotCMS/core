@@ -1,5 +1,8 @@
 package com.dotcms.graphql;
 
+import static java.time.temporal.ChronoUnit.SECONDS;
+
+import com.dotcms.cache.Expirable;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotmarketing.business.Cachable;
@@ -8,10 +11,11 @@ import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import io.vavr.Lazy;
-import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoField;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.util.Strings;
@@ -20,7 +24,7 @@ import org.apache.logging.log4j.util.Strings;
  * A Expiring cache implementation to store the results of GraphQL requests.
  *
  * The amount of time the results will be cached can be specified either by providing a TTL (int)
- * by calling {@link #put(String, String, Integer)} method or by the config property <code>cache.graphqlquerycache.seconds</code>
+ * by calling {@link #put(String, String, long)} method or by the config property <code>cache.graphqlquerycache.seconds</code>
  * which applies when calling {@link #put(String, String)}, which does not take a TTL
  *
  * This entire cache can be turned off by setting GRAPHQL_CACHE_RESULTS=false in the dotmarketing-config.properties
@@ -45,33 +49,33 @@ public class GraphQLCache implements Cachable {
      * @return optional of the cached value
      */
 
-    private Optional<String> get(final String key, final boolean refresh,
-            final Supplier<String> valueSupplier, Integer ttl) {
+    private Optional<String> get(final String key,
+            final Supplier<String> valueSupplier, final long ttl) {
         if(cannotCache()) {
             return Optional.empty();
         }
 
-        Optional<String> result = Optional.empty();
+        Optional<String> toReturn;
+
         final String cacheKey = hashKey(key);
-        final Tuple2<String, LocalDateTime> resultExpireTimeTuple
-                = (Tuple2<String, LocalDateTime>) cache.getNoThrow(cacheKey, getPrimaryGroup());
+        final Object value = cache.getNoThrow(cacheKey, getPrimaryGroup());
 
-        if(UtilMethods.isSet(resultExpireTimeTuple)) {
-            if(refresh) { // return from cache even if expired and refresh in background
-                result = Optional.of(resultExpireTimeTuple._1());
-                refreshKey(key, valueSupplier, ttl);
-            } else {
-                final LocalDateTime expireTime = resultExpireTimeTuple._2();
+        if(value instanceof ExpirableCacheEntry) {
+            final ExpirableCacheEntry cacheEntry = (ExpirableCacheEntry) value;
+            toReturn = Optional.of(((ExpirableCacheEntry) value).getResults());
 
-                if (expireTime == null || expireTime.isAfter(LocalDateTime.now())) {
-                    result = Optional.of(resultExpireTimeTuple._1());
-                } else { // expired, let's remove from cache
-                    remove(key);
+            if(cacheEntry.isExpired()) {
+                if(null==valueSupplier) { // not refreshing, so not returning dirty entry
+                    toReturn = Optional.empty();
+                } else {
+                    refreshKey(key, valueSupplier, ttl);
                 }
             }
+        } else {
+            toReturn = Optional.ofNullable((String)value);
         }
 
-        return result;
+        return toReturn;
     }
 
     /**
@@ -81,7 +85,7 @@ public class GraphQLCache implements Cachable {
      */
 
     public Optional<String> get(final String key) {
-        return get(key, false, null, null);
+        return get(key, null, -1);
     }
 
     /**
@@ -95,14 +99,18 @@ public class GraphQLCache implements Cachable {
 
     public Optional<String> getAndRefresh(final String key, final Supplier<String> valueSupplier,
             final Integer ttl) {
-        return get(key, true, valueSupplier, ttl);
+        return get(key, valueSupplier, ttl);
     }
 
     private void refreshKey(final String key, final Supplier<String> valueSupplier,
-            final Integer cacheTTL) {
+            final long cacheTTL) {
+        if(valueSupplier==null) return;
+
         DotConcurrentFactory.getInstance()
-                .getSingleSubmitter().submit(()->
-                        put(key, Try.of(valueSupplier::get).getOrElse(Strings.EMPTY), cacheTTL));
+                .getSingleSubmitter().submit(()-> {
+                        remove(key);
+                        put(key, Try.of(valueSupplier::get).getOrElse(Strings.EMPTY), cacheTTL);
+                });
     }
 
     /**
@@ -112,18 +120,13 @@ public class GraphQLCache implements Cachable {
      * @param ttl time in seconds to consider the value as expired. If null, then it will cache
      * the value for the time specified in the config property <code>cache.graphqlquerycache.seconds</code>
      */
-    public void put(String key, String result, Integer ttl) {
+    public void put(String key, String result, long ttl) {
         if(cannotCache()) return;
 
         if(UtilMethods.isNotSet(result)) return;
 
-        final LocalDateTime cachedSincePlusTTL = ttl!=null ? LocalDateTime.now().plus(ttl,
-                ChronoField.SECOND_OF_DAY.getBaseUnit()) : null;
-
-        Tuple2<String, LocalDateTime> resultExpireTimeTuple =
-                new Tuple2<>(result, cachedSincePlusTTL);
         final String cacheKey = hashKey(key);
-        cache.put(cacheKey, resultExpireTimeTuple, getPrimaryGroup());
+        cache.put(cacheKey, new ExpirableCacheEntry(result, ttl), getPrimaryGroup());
     }
 
     /**
@@ -133,7 +136,7 @@ public class GraphQLCache implements Cachable {
      * @param result the value
      */
     public void put(String key, String result) {
-        this.put(key, result, null);
+        this.put(key, result, -1);
     }
 
     private String hashKey(final String query) {
@@ -167,6 +170,41 @@ public class GraphQLCache implements Cachable {
     public void remove(final String key) {
         final String cacheKey = hashKey(key);
         this.cache.remove(cacheKey, getPrimaryGroup());
+    }
+
+    private static class ExpirableCacheEntry implements Expirable, Serializable {
+        private static final long serialVersionUID = 1L;
+        private final long ttl;
+        private final long gracePeriod =
+                Config.getIntProperty("cache.graphqlquerycache.graceperiod", 60);
+        private final LocalDateTime since;
+        private final String results;
+
+        public ExpirableCacheEntry(String results, long ttl) {
+            this.results = results;
+            this.ttl = ttl;
+            since = LocalDateTime.now();
+        }
+
+        public long getTtl() {
+            return ttl + gracePeriod;
+        }
+
+        public String getResults() {
+            return results;
+        }
+
+        public LocalDateTime getSince() {
+            return since;
+        }
+
+        public long getGracePeriod() {
+            return gracePeriod;
+        }
+
+        public boolean isExpired() {
+            return LocalDateTime.now().isAfter(since.plus(ttl, SECONDS));
+        }
     }
 
 }

@@ -375,7 +375,7 @@ public class RedisCache extends CacheProvider {
      */
     private long keyCount(final String group) {
 
-        final String prefix = this.cacheKey(group) + StringPool.STAR;
+        final String prefix = LettuceAdapter.getMasterReplicaLettuceClient(this.getClient()).wrapKey(this.cacheKey(group) + StringPool.STAR);
         final String script = "return #redis.pcall('keys', '" + prefix + "')";
         Object keyCount     = ZERO;
 

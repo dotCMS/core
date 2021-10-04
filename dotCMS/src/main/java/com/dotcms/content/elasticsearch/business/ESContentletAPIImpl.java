@@ -1216,20 +1216,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
-    @CloseDBIfOpened
-    @Override
-    public void cleanHostField(Structure structure, User user, boolean respectFrontendRoles)
-            throws DotSecurityException, DotDataException, DotMappingException {
-
-        if(!permissionAPI.doesUserHavePermission(structure, PermissionAPI.PERMISSION_PUBLISH, user, respectFrontendRoles)){
-            throw new DotSecurityException("Must be able to publish structure to clean all the fields with user: "
-                    + (user != null ? user.getUserId() : "Unknown"));
-        }
-
-        contentFactory.cleanIdentifierHostField(structure.getInode());
-
-    }
-
     @WrapInTransaction
     @Override
     public void cleanField(final Structure structure, final Date deletionDate, final Field oldField, final User user,

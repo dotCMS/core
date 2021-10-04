@@ -1398,7 +1398,7 @@ Main class hierarchy:
 }
 .dijitTabListWrapper {
 	overflow: hidden;
-    z-index: 1;
+	z-index: 1;
 }
 
 .dj_a11y .tabStripButton img {

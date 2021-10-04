@@ -4665,8 +4665,10 @@ html, body {
 }
 
 .dijitTabContainerTop-container {
+  /* 42px is the height of the dijitTabListContainer */
+  height: calc(100% - 42px);
   border-top: none;
-  overflow: visible;
+  overflow: auto;
 }
 
 .dijitTabContainerBottom-container {
@@ -10844,10 +10846,16 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .content-edit__main {
-  margin: 16px 300px 0 0;
+  height: 100%;
+  margin: 0px 300px 0 0;
   position: relative;
+  padding-top: 16px;
   width: auto;
   z-index: 1;
+}
+
+#fm {
+  height: 100%;
 }
 
 .content-edit__form,

@@ -277,7 +277,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 		if (DbConnectionFactory.isMySql()) {
 
 			dotConnect
-					.setSQL(" UPDATE contentlet SET language_id = ? WHERE  NOT EXISTS ( "
+					.setSQL(" UPDATE contentlet SET language_id = ? WHERE identifier NOT IN ( "
 							  + " SELECT identifier FROM ( "
 							     + " SELECT c.identifier FROM contentlet c WHERE c.language_id = ? AND c.identifier = identifier "
 							  + " ) AS T"
@@ -288,7 +288,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 					.loadResult();
 
 			dotConnect
-					.setSQL(" UPDATE contentlet_version_info SET lang = ? WHERE NOT EXISTS ( "
+					.setSQL(" UPDATE contentlet_version_info SET lang = ? WHERE identifier NOT IN ( "
 							  + " SELECT identifier FROM ( "
 							     + " SELECT cvi.identifier FROM contentlet_version_info cvi WHERE lang = ? AND cvi.identifier = identifier "
 							  + " ) AS T"
@@ -300,7 +300,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 
 
 			dotConnect
-					.setSQL(" UPDATE workflow_task SET language_id = ? WHERE NOT EXISTS ( "
+					.setSQL(" UPDATE workflow_task SET language_id = ? WHERE webasset NOT IN ( "
 							+ " SELECT webasset FROM ( "
 							   + " SELECT wft.webasset FROM workflow_task wft WHERE wft.language_id = ? AND wft.webasset = webasset "
 							+ " ) AS T"
@@ -311,8 +311,9 @@ public class LanguageFactoryImpl extends LanguageFactory {
 					.loadResult();
 
 		} else {
+
 			dotConnect
-					.setSQL(" UPDATE contentlet SET language_id = ? WHERE  NOT EXISTS ( "
+					.setSQL(" UPDATE contentlet SET language_id = ? WHERE identifier NOT IN ( "
 							+ " SELECT c.identifier FROM contentlet c WHERE c.language_id = ? AND c.identifier = identifier "
 							+ ") AND language_id = ?  ")
 					.addParam(newDefaultLanguage)
@@ -321,7 +322,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 					.loadResult();
 
 			dotConnect
-					.setSQL(" UPDATE contentlet_version_info SET lang = ? WHERE NOT EXISTS ( "
+					.setSQL(" UPDATE contentlet_version_info SET lang = ? WHERE identifier NOT IN ( "
 							+ " SELECT cvi.identifier FROM contentlet_version_info cvi WHERE lang = ? AND cvi.identifier = identifier "
 							+ ") AND lang = ? ")
 					.addParam(newDefaultLanguage)
@@ -330,7 +331,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 					.loadResult();
 
 			dotConnect
-					.setSQL(" UPDATE workflow_task SET language_id = ? WHERE NOT EXISTS ( "
+					.setSQL(" UPDATE workflow_task SET language_id = ? WHERE webasset NOT IN ( "
 							+ " SELECT wft.webasset FROM workflow_task wft WHERE wft.language_id = ? AND wft.webasset = webasset "
 							+ ") AND language_id = ? ")
 					.addParam(newDefaultLanguage)

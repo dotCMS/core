@@ -288,11 +288,10 @@ public class LanguageAPITest {
 			throws DotDataException, DotSecurityException, DotIndexException {
 		final LanguageAPI languageAPI = APILocator.getLanguageAPI();
 		final Language defaultLang = languageAPI.getDefaultLanguage();
+		final Language newDefaultLanguage = new LanguageDataGen().nextPersisted();
 		final User admin = mockAdminUser();
 		try {
-			final Language newDefaultLanguage = new LanguageDataGen().nextPersisted();
 			final Language thirdLanguage = new LanguageDataGen().nextPersisted();
-
 			final ContentType news = getNewsLikeContentType("News");
 
 			final Contentlet persistedWithOldDefaultLang = new ContentletDataGen(news)
@@ -326,6 +325,7 @@ public class LanguageAPITest {
 			assertEquals(thirdLanguage.getId(), contentlet.getLanguageId());
 		} finally {
 			languageAPI.makeDefault(defaultLang.getId(), admin);
+			languageAPI.transferAssets(newDefaultLanguage.getId(), defaultLang.getId(), admin);
 		}
 	}
 

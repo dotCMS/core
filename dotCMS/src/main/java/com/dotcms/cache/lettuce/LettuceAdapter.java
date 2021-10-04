@@ -20,4 +20,8 @@ public class LettuceAdapter {
 
         return (StatefulRedisConnection<K, V>)redisClient.getConnection();
     }
+
+    public static <K,V> MasterReplicaLettuceClient<K, V> getMasterReplicaLettuceClient(final RedisClient<K, V> redisClient){
+        return (MasterReplicaLettuceClient<K,V>)redisClient;
+    }
 }

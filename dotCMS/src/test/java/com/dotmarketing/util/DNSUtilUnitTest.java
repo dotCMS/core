@@ -35,18 +35,6 @@ public class DNSUtilUnitTest {
 
     /**
      * Method to test: {@link DNSUtil#reverseDns(String)}
-     * When: Use local Ip address
-     * Should: return 127.0.0.1
-     *
-     * @throws IOException
-     */
-    @Test()
-    public void localIP() throws IOException {
-        assertEquals("127.0.0.1",DNSUtil.reverseDns("127.0.0.1"));
-    }
-
-    /**
-     * Method to test: {@link DNSUtil#reverseDns(String)}
      * When: Use with any IP
      * Should: return the same IP
      *

@@ -1,13 +1,6 @@
 package com.dotmarketing.business.cache.provider.caffine;
 
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
+import com.dotcms.cache.Expirable;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.cache.provider.CacheProvider;
@@ -19,10 +12,34 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.Expiry;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.collect.ImmutableSet;
 import io.vavr.control.Try;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 
+/**
+ * In-Memory Cache implementation using https://github.com/ben-manes/caffeine
+ *
+ * Supports key-specific time invalidations by providing an {@link Expirable} object
+ * in the {@link #put(String, String, Object)} method with the desired TTL.
+ *
+ * A group-wide invalidation time can also be set by config properties.
+ *
+ * i.e., for the "graphqlquerycache" group
+ *
+ * cache.graphqlquerycache.chain=com.dotmarketing.business.cache.provider.caffine.CaffineCache
+ * cache.graphqlquerycache.seconds=15
+ *
+ */
 public class CaffineCache extends CacheProvider {
 
     private static final long serialVersionUID = 1348649382678659786L;
@@ -48,7 +65,7 @@ public class CaffineCache extends CacheProvider {
 
     @Override
     public boolean isDistributed() {
-    	return false;
+        return false;
     }
 
     @Override
@@ -87,26 +104,18 @@ public class CaffineCache extends CacheProvider {
 
     @Override
     public void put(String group, String key, Object content) {
-
         // Get the cache for the given group
         Cache<String, Object> cache = getCache(group);
-
         // Add the given content to the group and for a given key
         cache.put(key, content);
     }
 
     @Override
     public Object get(String group, String key) {
-
         // Get the cache for the given group
         Cache<String, Object> cache = getCache(group);
-
-
-
         // Get the content from the group and for a given key
         return cache.getIfPresent(key);
-
-
     }
 
     @Override
@@ -175,11 +184,11 @@ public class CaffineCache extends CacheProvider {
         currentGroups.addAll(getGroups());
         NumberFormat nf = DecimalFormat.getInstance();
         DecimalFormat pf = new DecimalFormat("##.##%");
-        
+
         CacheSizingUtil sizer = new CacheSizingUtil();
-        
-        
-        
+
+
+
         for (String group : currentGroups) {
             final CacheStats stats = new CacheStats();
 
@@ -189,26 +198,30 @@ public class CaffineCache extends CacheProvider {
             final boolean isDefault = (Config.getIntProperty("cache." + group + ".size", -1) == -1);
 
 
-            final int configured = isDefault ? Config.getIntProperty("cache." + DEFAULT_CACHE + ".size")
-                : (Config.getIntProperty("cache." + group + ".size", -1) != -1)
-                  ? Config.getIntProperty("cache." + group + ".size")
-                      : Config.getIntProperty("cache." + DEFAULT_CACHE + ".size");
+            final int size = isDefault ? Config.getIntProperty("cache." + DEFAULT_CACHE + ".size")
+                    : (Config.getIntProperty("cache." + group + ".size", -1) != -1)
+                            ? Config.getIntProperty("cache." + group + ".size")
+                            : Config.getIntProperty("cache." + DEFAULT_CACHE + ".size");
 
+            final int seconds = isDefault ? Config.getIntProperty("cache." + DEFAULT_CACHE + ".seconds", 100)
+                    : (Config.getIntProperty("cache." + group + ".seconds", -1) != -1)
+                            ? Config.getIntProperty("cache." + group + ".seconds")
+                            : Config.getIntProperty("cache." + DEFAULT_CACHE + ".seconds", 100);
 
             com.github.benmanes.caffeine.cache.stats.CacheStats cstats = foundCache.stats();
             stats.addStat(CacheStats.REGION, group);
             stats.addStat(CacheStats.REGION_DEFAULT, isDefault + "");
-            stats.addStat(CacheStats.REGION_CONFIGURED_SIZE, nf.format(configured));
+            stats.addStat(CacheStats.REGION_CONFIGURED_SIZE, "size:" + nf.format(size) + " / " + seconds + "s");
             stats.addStat(CacheStats.REGION_SIZE, nf.format(foundCache.estimatedSize()));
             stats.addStat(CacheStats.REGION_LOAD, nf.format(cstats.missCount()+cstats.hitCount()));
             stats.addStat(CacheStats.REGION_HITS, nf.format(cstats.hitCount()));
             stats.addStat(CacheStats.REGION_HIT_RATE, pf.format(cstats.hitRate()));
             stats.addStat(CacheStats.REGION_AVG_LOAD_TIME, nf.format(cstats.averageLoadPenalty()/1000000) + " ms");
             stats.addStat(CacheStats.REGION_EVICTIONS, nf.format(cstats.evictionCount()));
-            
+
             long averageObjectSize = Try.of(()-> sizer.averageSize(foundCache.asMap())).getOrElse(-1L);
             long totalObjectSize = averageObjectSize * foundCache.estimatedSize();
-            
+
             stats.addStat(CacheStats.REGION_MEM_PER_OBJECT, "<div class='hideSizer'>" + String.format("%010d", averageObjectSize) + "</div>" + UtilMethods.prettyByteify(averageObjectSize));
             stats.addStat(CacheStats.REGION_MEM_TOTAL_PRETTY, "<div class='hideSizer'>" + String.format("%010d", totalObjectSize) + "</div>" + UtilMethods.prettyByteify(totalObjectSize));
             ret.addStatRecord(stats);
@@ -245,21 +258,47 @@ public class CaffineCache extends CacheProvider {
 
                     if (separateCache) {
                         int size = Config.getIntProperty("cache." + cacheName + ".size", -1);
-                        
+
                         if (size == -1) {
                             size = Config.getIntProperty("cache." + DEFAULT_CACHE + ".size", 100);
                         }
+
+                        final int defaultTTL = Config.getIntProperty("cache." + cacheName + ".seconds", -1);
+
 
                         Logger.info(this.getClass(),
                                 "***\t Building Cache : " + cacheName + ", size:" + size
                                         + ",Concurrency:"
                                         + Config.getIntProperty("cache.concurrencylevel", 32));
+
                         cache = Caffeine.newBuilder()
                                 .maximumSize(size)
                                 .recordStats()
-                                //.softValues()
-                                .build();
+                                .expireAfter(new Expiry<String, Object>() {
+                                    public long expireAfterCreate(String key, Object value, long currentTime) {
+                                        long ttlInSeconds;
 
+                                        if(value instanceof Expirable
+                                                && ((Expirable) value).getTtl() > 0) {
+                                            ttlInSeconds = ((Expirable) value).getTtl();
+                                        } else if (defaultTTL > 0) {
+                                            ttlInSeconds = defaultTTL;
+                                        } else {
+                                            ttlInSeconds = Long.MAX_VALUE;
+                                        }
+
+                                        return TimeUnit.SECONDS.toNanos(ttlInSeconds);
+                                    }
+                                    public long expireAfterUpdate(String key, Object value,
+                                            long currentTime, long currentDuration) {
+                                        return currentDuration;
+                                    }
+                                    public long expireAfterRead(String key, Object value,
+                                            long currentTime, long currentDuration) {
+                                        return currentDuration;
+                                    }
+                                })
+                                .build(key -> null);
 
                         groups.put(cacheName, cache);
 
@@ -272,8 +311,6 @@ public class CaffineCache extends CacheProvider {
                 }
             }
         }
-
         return cache;
     }
-
 }

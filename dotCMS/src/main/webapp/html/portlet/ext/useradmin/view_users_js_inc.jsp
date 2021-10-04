@@ -5,6 +5,7 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 
+<script type="text/javascript" src="/html/js/generate-password/bundle.js"></script>
 <script type="text/javascript" src="/dwr/interface/UserAjax.js"></script>
 <script type="text/javascript" src="/dwr/interface/RoleAjax.js"></script>
 <script type="text/javascript" src="/dwr/interface/TagAjax.js"></script>
@@ -272,17 +273,17 @@
          dojo.xhrGet(xhrArgs);
     }
 
-	
-	
+
+
 	function changeUserAccess(evt){
-	    
+
 	    if(!currentUser) return;
 
-	    
+
 	    UserAjax.assignUserAccess({"userid": currentUser.id, "access":evt.id, "granted":evt.checked},assignUserAccessCallback);
-	
-        
-        
+
+
+
 	}
 
     function setStarterPage(evt) {
@@ -307,15 +308,15 @@
             dojo.xhrPut(xhrArgs);
         }
     }
-	
-	
+
+
 	function assignUserAccessCallback(data){
-	    
+
 	    dojo.byId("canLoginToConsole").innerHTML=data.user.hasConsoleAccess
-	   
+
 	}
-	
-	
+
+
 	//Gathering the user info from the server and setting up the right hand side
 	//of user info
 	function editUserCallback(user) {
@@ -330,8 +331,8 @@
 			dojo.byId('userIdValue').innerHTML = user.id;
 			dojo.byId('userId').value = user.id;
 		}
-		
-		
+
+
 	    var myChar = (user.firstName && user.firstName.length>0) ? user.firstName.substring(0,1).toUpperCase() : "?";
 	    dojo.byId('gravatarTextHolder').style.display='none';
 	    dojo.byId('gravatarImage').style.display='none';
@@ -342,14 +343,14 @@
 	        dojo.byId('gravatarText').innerHTML=myChar;
 	        dojo.byId('gravatarImage').style.display='';
 	        dojo.byId('gravatarTextHolder').style.display='';
-	        
+
 	    }
 
-	    
 
-	    
 
-		
+
+
+
 		dojo.byId('fullUserName').style.display = '';
 		dojo.byId('userAccessBox').style.display = '';
 		dojo.byId('userIdLabel').style.display = '';
@@ -359,11 +360,11 @@
 		dijit.byId('emailAddress').attr('value', user.emailaddress);
 		var lastLoginStr = (user.lastLoginDate==null) ? "" : user.lastLoginDate.toLocaleString();
 		lastLoginStr+= (user.lastLoginIP==null) ? "" : " @ " + user.lastLoginIP;
-		
-		
+
+
 		dojo.byId('lastLogin').innerHTML = lastLoginStr;
 		dojo.byId('loginAttempts').innerHTML = (user.failedLoginAttempts==0) ? "n/a" : user.failedLoginAttempts;
-		
+
 		dijit.byId('password').attr('value', '********');
 		dijit.byId('passwordCheck').attr('value', '********');
 		dojo.query(".fullUserName").forEach(function (elem) { elem.innerHTML = user.name; });
@@ -388,7 +389,7 @@
 
 		// Update Api Keys After switching user.
 		loadApiKeys();
-		
+
 		// Update User Permissions After switching user.
 		RoleAjax.getUserRole(currentUser.id, userRoleCallback);
 	}
@@ -443,7 +444,7 @@
         currentUser = null;
         dojo.byId('userAccessBox').style.display = 'none';
         dojo.byId('fullUserName').style.display = 'none';
-        
+
 		//Clearing the form to enter a new user
 		if(!authByEmail) {
 			dojo.byId('userIdLabel').style.display = '';
@@ -492,6 +493,26 @@
 		passwordChanged = true;
 	}
 
+    //Sends custom NG event to display modal with secure password
+    function generateSecurePasswordModal() {
+        const data = {
+			password: window.passwordGenerator.generate({
+                length: 16,
+                numbers: true,
+                symbols: true
+            })
+		};
+		const customEvent = document.createEvent("CustomEvent");
+		customEvent.initCustomEvent("ng-event", false, false,  {
+			name: "generate-secure-password",
+			data: data
+		});
+		document.dispatchEvent(customEvent);
+
+        dijit.byId('password').attr('value', data.password);
+        dijit.byId('passwordCheck').attr('value', data.password);
+    }
+
 	//Handler from when the user info has changed
 	var emailChanged = false;
 	function userEmailChanged() {
@@ -501,7 +522,7 @@
 
 	//Handler to save the user details
 	function saveUserDetails() {
-         
+
 		//If the form is not valid focus on the first not valid field and
 		//hightlight the other not valid ones
 		if(!dijit.byId('userInfoForm').validate()) {
@@ -593,12 +614,12 @@
 	function showDeleteUserBox(){
 		dijit.byId('deleteUserDialog').show();
 	}
-	
+
 	function cancelDeleteUser(){
 		dijit.byId('deleteUserDialog').hide();
 	}
 	function deleteUser() {
-		var replacementUserId = dijit.byId('deleteUsersFilter').attr('value'); 
+		var replacementUserId = dijit.byId('deleteUsersFilter').attr('value');
 		if(currentUserId  == currentUser.id) {
 			alert(deleteYourOwnUserError);
 			return;
@@ -677,11 +698,11 @@
             if("CMS Administrator" == roles[i].roleKey){
                 dijit.byId("adminRoleCheck").attr('checked',true);
             }
-	        
+
 	    }
-	    
-	    
-	    
+
+
+
 		dojo.destroy("userRolesSelect");
 	    dojo.create('select',{id:'userRolesSelect'},'userRolesSelectWrapper');
 
@@ -1270,7 +1291,7 @@
          }
 	}
 
-	
+
 	function revokeKey(keyId){
 
 		    var xhrArgs = {
@@ -1284,25 +1305,25 @@
 
 		        }
 		    };
-		
+
 		    dojo.xhrPut(xhrArgs);
 
 	}
-	
+
 	function requestNewJwt() {
 		  var howLong = prompt("How Many Days?", "3560");
 		  howLong =  (howLong != null && parseInt(howLong)!=NaN ) ? parseInt(howLong) : 60;
 		  howLong = howLong<0 ? 60 : howLong > 1000000 ? 1000000 : howLong;
           var ipRange = prompt("CICR Network (e.g. 192.168.1.0/24)?", "0.0.0.0/0");
           ipRange =  (ipRange != null ) ? ipRange : "0.0.0.0/0";
-          
+
           var data = {};
           data.howLong=howLong;
           data.ipRange=ipRange;
-          
-          
-          
-          
+
+
+
+
           var xhrArgs = {
                   url : "/api/v1/apitoken",
                   handleAs : "json",
@@ -1314,54 +1335,54 @@
 
                   }
               };
-          
+
               dojo.xhrPost(xhrArgs);
-          
-          
+
+
 		}
-	
-	
-	
+
+
+
 	function revealJWT(jwt){
 
-        
+
         dijit.byId('tokenFormDialog').hide();
         dijit.byId('revealJwtDialog').show();
-        
+
         var myDiv = dojo.byId("revealTokenDiv");
 
         myDiv.value =  jwt;
 
-		
+
 	}
-	
-	
-	
-	
-	
-	
-	
+
+
+
+
+
+
+
     function getJwt(keyId){
 
-    	
+
         var xhrArgs = {
             url : "/api/v1/apitoken/" + keyId +"/jwt",
             handleAs : "json",
             load : function(data){
-    
+
             	revealJWT(data.entity.jwt);
-            	
+
             },
             error : function(error) {
                 console.error("Error getting JWT data for keyId [" + keyId + "]", error);
 
             }
         };
-    
+
         dojo.xhrGet(xhrArgs);
     }
-	
-	
+
+
 	   function deleteKey(keyId){
 
            var xhrArgs = {
@@ -1375,11 +1396,11 @@
 
                }
            };
-       
+
            dojo.xhrDelete(xhrArgs);
            }
-	
-	
+
+
   function loadApiKeys() {
 	  var showRevokedApiTokens = document.getElementById("showRevokedApiTokens").checked;
 	  var parent=document.getElementById("apiKeysDiv")
@@ -1398,36 +1419,36 @@
 	    dojo.xhrGet(xhrArgs);
 
    }
-	
-  
+
+
   function toDate(millis){
 	  if(millis==null){
 		  return "";
 	  }
      return new Date(millis).toLocaleString();
   }
-  
+
   function showRequestTokenDialog() {
 
 
 	  dijit.byId('tokenFormDialog').show();
 
   }
-  
+
   function requestNewAPIToken(formData) {
       var nowsers = new Date();
       var expires = formData.expiresDate;
 
       var timeDiff = expires.getTime() - nowsers.getTime();
-      
+
       if(timeDiff<1000){
     	  alert("you cannot request a key in the past");
     	  return;
       }
       var data={};
-      data.expirationSeconds = Math.ceil(timeDiff / 1000 ); 
+      data.expirationSeconds = Math.ceil(timeDiff / 1000 );
       data.userId = currentUser.id;
-      data.network=formData.network; 
+      data.network=formData.network;
       if(formData.nameLabel!=null && formData.nameLabel.length>0){
           data.claims={"label" : formData.nameLabel};
       }
@@ -1448,13 +1469,13 @@
 
             }
         };
-    
+
         dojo.xhrPost(xhrArgs);
-	  
-	  
+
+
   }
 
-  
+
   function toggleTokens(){
 
       if(document.getElementsByClassName('tokenLong')[0].style.display!="none") return;
@@ -1467,14 +1488,14 @@
       for (var i = 0; i < all.length; i++) {
         all[i].style.display = (all[i].style.display=="none") ? "" : "none";
       }
-      
-      
+
+
   }
-	
+
   function writeApiKeys(data) {
       var parent=document.getElementById("apiKeysDiv")
       var tokens = data.entity.tokens;
-   
+
       var myTable= `<table class="listingTable">
     	  <tr>
 	    	  <th style='width: 200px;'><%=LanguageUtil.get(pageContext, "api.token.id") %></th>
@@ -1487,7 +1508,7 @@
 	    	  <th></th>
     	  </tr>`;
       for (var i=0; i<tokens.length; i++) {
-    	  
+
     	  var token=tokens[i];
     	  var myRow=(token.valid) ? `<tr >` : `<tr style="background: rgb(250,250,250)">`;
     	  myRow +=((token.expired || token.revoked)   ? `<td style="text-decoration:line-through;cursor:pointer;" ` : `<td style="cursor:pointer;" `) + ` onclick="toggleTokens()"><span class="tokenShort">{token.idShort}</span><span style="display:none;" class="tokenLong">{token.id}</span></td>`;
@@ -1497,11 +1518,11 @@
           myRow +=(!token.revoked)? `<td >{token.revokedDate}</td>` : `<td style="text-decoration:line-through;">{token.revokedDate}</td>` ;
           myRow +=(token.valid)   ? `<td >{token.requestingUserId}</td>`: `<td>{token.requestingUserId}</td>`;
           myRow +=(token.valid)   ? `<td >{token.allowNetwork}</td>`:`<td>{token.allowNetwork}</td>`;
-          myRow +=(token.expired || token.revoked) 
+          myRow +=(token.expired || token.revoked)
                 ? `<td style="text-align:center"><a style="text-decoration:underline" href='javascript:deleteKey(\"{token.id}\")'><%=LanguageUtil.get(pageContext, "api.token.delete") %></a> </td>`
                 : `<td style="text-align:center"><a style="text-decoration:underline" href='javascript:revokeKey(\"{token.id}\")'><%=LanguageUtil.get(pageContext, "api.token.revoke") %></a> | <a style="text-decoration:underline" href='javascript:getJwt("{token.id}")'><%=LanguageUtil.get(pageContext, "api.token.get.token") %></a></td>`;
           myRow+=`</tr>`;
-	    	   
+
 
     	  myRow=myRow
     	  .replace(new RegExp("{token.id}", 'g'), token.id)
@@ -1513,18 +1534,18 @@
     	  .replace(new RegExp("{token.allowNetwork}", 'g'), (token.allowNetwork==null) ? "any" : token.allowNetwork)
     	  .replace(new RegExp("{token.issueDate}", 'g'), toDate(token.issueDate ))
     	  .replace(new RegExp("{token.requestingUserId}", 'g'), toDate(token.requestingUserId ))
-    	  .replace(new RegExp("{token.revoked}", 'g'), token.revoked) 
+    	  .replace(new RegExp("{token.revoked}", 'g'), token.revoked)
           .replace(new RegExp("{validClass}", 'g'), (!token.valid) ? "text-decoration:line-through;" : "")
-    	   myTable+=   myRow; 
+    	   myTable+=   myRow;
 
 
-    	  
+
       }
       myTable+="</table>";
       parent.innerHTML=myTable;
   }
-	
-	
+
+
 	function saveUserAdditionalInfo(){
 		if(currentUser == null)
 			return;
@@ -1809,5 +1830,5 @@
 	        });
 	    });
 	});
-	
+
 </script>
