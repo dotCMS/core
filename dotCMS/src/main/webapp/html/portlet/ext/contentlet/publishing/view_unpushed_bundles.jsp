@@ -148,13 +148,17 @@
 						final PublishQueueElementTransformer publishQueueElementTransformer =
 								new PublishQueueElementTransformer();
 
-						final List<Map<String, String>> assetsTransformed = publishQueueElementTransformer
-								.transform(assets).stream()
-								.limit(MAX_BUNDLE_ASSET_TO_SHOW).collect(Collectors.toList());
+						final List<Map<String, Object>> assetsTransformed = publishQueueElementTransformer
+								.transform(assets.stream()
+									.limit(MAX_BUNDLE_ASSET_TO_SHOW)
+									.collect(Collectors.toList())
+								);
 
-						for(Map<String, String> asset : assetsTransformed){
+						for(Map<String, Object> asset : assetsTransformed){
 
-							final String title = StringEscapeUtils.escapeHtml(asset.get(PublishQueueElementTransformer.TITLE_KEY));
+							final String title = UtilMethods.isSet(asset.get(PublishQueueElementTransformer.TITLE_KEY)) ?
+								StringEscapeUtils.escapeHtml(asset.get(PublishQueueElementTransformer.TITLE_KEY).toString()) : StringPool.BLANK;
+
 							if (!title.equals( "" ) ) {%>
 
 								addRow({
@@ -188,7 +192,6 @@
 
 <script>
 	function addRow(data, bundleId){
-		console.log('addRow', data, '<%=layoutId %>');
 		let tbodyRef = document.getElementById('un_publish_table_' + bundleId).getElementsByTagName('tbody')[0];
 		let newRow = tbodyRef.insertRow();
 		let newCell = newRow.insertCell();
@@ -220,7 +223,7 @@
 
 		newCell.innerHTML = "<%=LanguageUtil.get(pageContext, "unpublished.bundles.item.show", MAX_BUNDLE_ASSET_TO_SHOW) %> " + nAssets + "&nbsp;" +
 				"<a href=\"javascript:requestAssets('" + bundleId + "')\">" +
-				"<strong style=\"text-decoration: underline;\"><%=LanguageUtil.get(pageContext, "unpublished.bundles.view.all") %></strong>" +
+				"<strong style=\"text-decoration: underline;\"><%=LanguageUtil.get(pageContext, "bundles.view.all") %></strong>" +
 				"</a>";
 	}
 
@@ -230,9 +233,9 @@
 		let newCell = newRow.insertCell();
 		newCell.colSpan = 2;
 
-		newCell.innerHTML = "<%=LanguageUtil.get(pageContext, "unpublished.bundles.item.all.show")%>&nbsp;" +
+		newCell.innerHTML = "<%=LanguageUtil.get(pageContext, "bundles.item.all.show")%>&nbsp;" +
 				"<a href=\"javascript:requestAssets('" + bundleId + "', '<%=MAX_BUNDLE_ASSET_TO_SHOW%>')\">" +
-				"<strong style=\"text-decoration: underline;\"><%=LanguageUtil.get(pageContext, "unpublished.bundles.item.less.show")%></strong>" +
+				"<strong style=\"text-decoration: underline;\"><%=LanguageUtil.get(pageContext, "bundles.item.less.show")%></strong>" +
 				"</a>";
 	}
 

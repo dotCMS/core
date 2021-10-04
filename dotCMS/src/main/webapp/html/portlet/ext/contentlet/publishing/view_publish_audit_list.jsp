@@ -23,6 +23,8 @@
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@ page import="com.dotcms.publisher.bundle.bean.Bundle"%>
+<%@ page import="java.util.stream.Collectors" %>
+<%@ page import="com.dotcms.publisher.business.PublishQueueElementTransformer" %>
 <%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
 <%
 
@@ -343,33 +345,7 @@
 				<%--BundleTitle--%>
 				<%try{ %>
 					<% if(bundleAssets.keySet().size()>0){ %>
-						<td valign="top" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
-
-						    <%int count=0;for(String id : bundleAssets.keySet()) { %>
-							<%if(count > 0){%><br /><%} %>
-							<%if(count > 2){%>...<%=bundleAssets.keySet().size()-3%> <%=LanguageUtil.get(pageContext, "publisher_audit_more_assets") %><% break;} %>
-
-                            <%String assetType = bundleAssets.get(id); %>
-							<%String assetTitle = PublishAuditUtil.getInstance().getTitle(assetType, id); %>
-                            <%if (assetTitle.equals( assetType )) {%>
-                                <%=assetType %>
-                            <%} else {
-                            	if(assetType.equals("contentlet")) {
-                            		Contentlet con = PublishAuditUtil.getInstance().findContentletByIdentifier(id);
-                            		try {
-                            			APILocator.getHTMLPageAssetAPI().fromContentlet(con);
-                            			assetType = "htmlpage"; // content is an htmlpage
-                            		} catch(DotStateException e) {
-                            			// not an htmlpage 
-                            		}
-                            	}
-                            %>
-                            	
-                                <strong><%= assetType%></strong> : <%=StringEscapeUtils.escapeHtml(assetTitle)%>
-                            <%}%>
-
-						    <%count++;} %>
-						</td>
+						<td id="q<%=bundle.getId()%>" valign="top" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')"></td>
 					<%}else{ %>
 
 						<td valign="top" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
@@ -389,9 +365,10 @@
 				<%--BundleDateUpdated--%>
 			    <td valign="top" nowrap="nowrap" align="right"><%=DateUtil.prettyDateSince(c.getStatusUpdated()) %></td>
 			</tr>
-		<%
-			}
-		}%>
+		<%}%>
+	<%}%>
+	</table>
+
 <table width="97%" style="margin:10px;" >
 	<tr>
 		<%
@@ -426,3 +403,75 @@
 	</table>
 <%} %>
 
+<script>
+	<%
+		for(PublishAuditStatus publishAuditStatus : iresults) {
+			final List<PublishQueueElement> assets = PublisherAPI.getInstance()
+				.getQueueElementsByBundleId(publishAuditStatus.getBundleId());
+
+			final PublishQueueElementTransformer publishQueueElementTransformer =
+						new PublishQueueElementTransformer();
+
+			final List<Map<String, Object>> assetsTransformed = publishQueueElementTransformer
+						.transform(assets).stream()
+						.limit(3).collect(Collectors.toList());
+
+	%>
+		<%if (assetsTransformed.size() > 3) {%>
+			addShowMoreMessage('<%=publishAuditStatus.getBundleId()%>');
+		<%}%>
+
+		<%
+			for (final Map<String,Object> asset : assetsTransformed) {
+				final String assetType = UtilMethods.isSet(asset.get(PublishQueueElementTransformer.TYPE_KEY)) ?
+					asset.get(PublishQueueElementTransformer.TYPE_KEY).toString() : StringPool.BLANK;
+				final String assetTitle = UtilMethods.isSet(asset.get(PublishQueueElementTransformer.TITLE_KEY)) ?
+					asset.get(PublishQueueElementTransformer.TITLE_KEY).toString() : StringPool.BLANK;
+		%>
+				addRow('<%=StringEscapeUtils.escapeHtml(assetTitle)%>', '<%=assetType%>', '<%=publishAuditStatus.getBundleId()%>');
+			<%}%>
+
+
+	<%}%>
+
+	function addRow(tile, type, bundleId) {
+		let td = document.getElementById("td_assets_" + bundleId);
+		td.innerHTML += '<div>' +
+				(tile === type) ? type : '<strong>' + type + '</strong> : ' + title +
+		'</div>';
+	}
+
+	function addShowMoreMessage(bundleId){
+		return '<div><%=LanguageUtil.get(pageContext, "publisher_audit_more_assets") %></div>' +
+				"<a href=\"javascript:requestAssets('" + bundleId + "')\">" +
+				"<strong style=\"text-decoration: underline;\"><%=LanguageUtil.get(pageContext, "bundles.view.all") %></strong>" +
+				"</a>";
+	}
+
+	function addShowLessMessage(bundleId){
+		return '<div><%=LanguageUtil.get(pageContext, "bundles.item.all.show") %></div>' +
+				"<a href=\"javascript:requestAssets('" + bundleId + "', 3)\">" +
+				"<strong style=\"text-decoration: underline;\"><%=LanguageUtil.get(pageContext, "bundles.item.less.show")%></strong>" +
+				"</a>";
+	}
+
+	function requestAssets(bundleId, numberToShow = -1){
+		fetch('/api/bundle/' + bundleId + "/assets").then((response) => response.json()).then((data) => {
+			let td = document.getElementById("td_assets_" + bundleId);
+			while (td.firstChild) {
+				td.removeChild(td.firstChild);
+			}
+
+			if (numberToShow !== -1) {
+				addShowMoreRow(bundleId, data.length);
+				data = data.slice(0, numberToShow);
+			} else {
+				addShowLessRow(bundleId);
+			}
+
+			data.forEach(asset => addRow(asset.<%=PublishQueueElementTransformer.TITLE_KEY%>, asset.<%=PublishQueueElementTransformer.TYPE_KEY%>, bundleId));
+		}).catch(function (err) {
+			console.warn('Something went wrong.', err);
+		});
+	}
+</script>

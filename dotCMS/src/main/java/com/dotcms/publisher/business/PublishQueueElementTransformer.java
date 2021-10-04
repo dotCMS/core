@@ -24,6 +24,9 @@ public class PublishQueueElementTransformer {
     public static final String CONTENT_TYPE_NAME_KEY = "content_type_name";
     public static final String LANGUAGE_CODE_KEY = "language_code";
     public static final String COUNTRY_CODE_KEY = "country_code";
+    public static final String OPERATION_KEY = "operation";
+    public static final String ASSET_KEY = "asset";
+    public static final String HTML_PAGE_KEY = "isHtmlPage";
 
     public PublishQueueElementTransformer(){}
 
@@ -50,14 +53,14 @@ public class PublishQueueElementTransformer {
      * @param publishQueueElements
      * @return
      */
-    public List<Map<String, String>> transform(final List<PublishQueueElement> publishQueueElements){
+    public List<Map<String, Object>> transform(final List<PublishQueueElement> publishQueueElements){
         return publishQueueElements.stream()
                 .map(PublishQueueElementTransformer::getMap)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
-    private static Map<String, String> getMap(final PublishQueueElement publishQueueElement) {
+    private static Map<String, Object> getMap(final PublishQueueElement publishQueueElement) {
 
         if (isContentlet(publishQueueElement)) {
             return getMapForContentlet(publishQueueElement);
@@ -85,12 +88,14 @@ public class PublishQueueElementTransformer {
 
             return map(
                 TYPE_KEY, publishQueueElement.getType(),
-                TITLE_KEY, title
+                TITLE_KEY, title,
+                OPERATION_KEY, publishQueueElement.getOperation().toString(),
+                ASSET_KEY, publishQueueElement.getAsset()
             );
         }
     }
 
-    private static Map<String, String> getMapForLanguage(
+    private static Map<String, Object> getMapForLanguage(
             final PublishQueueElement publishQueueElement) {
 
         final Language language = APILocator.getLanguageAPI().getLanguage(publishQueueElement.getAsset());
@@ -100,11 +105,13 @@ public class PublishQueueElementTransformer {
                 TITLE_KEY, String.format( "%s(%s)", language.getLanguage(), language.getCountryCode()),
                 LANGUAGE_CODE_KEY, language.getLanguageCode(),
                 COUNTRY_CODE_KEY, language.getCountryCode(),
-                CONTENT_TYPE_NAME_KEY,  CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL, publishQueueElement.getType())
+                CONTENT_TYPE_NAME_KEY,  CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL, publishQueueElement.getType()),
+                OPERATION_KEY, publishQueueElement.getOperation().toString(),
+                ASSET_KEY, publishQueueElement.getAsset()
         );
     }
 
-    private static Map<String, String> getMapForContentlet(
+    private static Map<String, Object> getMapForContentlet(
             final PublishQueueElement publishQueueElement) {
 
         final Contentlet contentlet;
@@ -117,7 +124,10 @@ public class PublishQueueElementTransformer {
                     TYPE_KEY, publishQueueElement.getType(),
                     TITLE_KEY, contentlet.getTitle(),
                     INODE_KEY, contentlet.getInode(),
-                    CONTENT_TYPE_NAME_KEY, contentlet.getContentType().name()
+                    CONTENT_TYPE_NAME_KEY, contentlet.getContentType().name(),
+                    OPERATION_KEY, publishQueueElement.getOperation().toString(),
+                    ASSET_KEY, publishQueueElement.getAsset(),
+                    HTML_PAGE_KEY, contentlet.isHTMLPage()
             );
         } catch (DotSecurityException | DotDataException e) {
             Logger.error(PublishQueueElementTransformer.class, e.getMessage());

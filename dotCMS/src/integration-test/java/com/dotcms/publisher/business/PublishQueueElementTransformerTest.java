@@ -56,13 +56,13 @@ public class PublishQueueElementTransformerTest {
         final PublishQueueElementTransformer publishQueueElementTransformer =
                 new PublishQueueElementTransformer();
 
-        final List<Map<String, String>> detailedAssets = publishQueueElementTransformer
+        final List<Map<String, Object>> detailedAssets = publishQueueElementTransformer
                 .transform(queueElementsByBundleId);
 
         assertEquals(3, detailedAssets.size());
 
-        for (final Map<String, String> detailedAsset : detailedAssets) {
-            final String type = detailedAsset.get(PublishQueueElementTransformer.TYPE_KEY);
+        for (final Map<String, Object> detailedAsset : detailedAssets) {
+            final String type = detailedAsset.get(PublishQueueElementTransformer.TYPE_KEY).toString();
 
             if (type.equals(PusheableAsset.CONTENTLET.getType())) {
                 assertEquals(contentlet.getTitle(),

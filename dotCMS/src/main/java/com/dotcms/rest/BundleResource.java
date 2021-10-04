@@ -150,7 +150,7 @@ public class BundleResource {
 
             final List<PublishQueueElement> queueElements = PublisherAPIImpl.getInstance()
                     .getQueueElementsByBundleId(bundleId);
-            final List<Map<String, String>> detailedAssets = publishQueueElementTransformer
+            final List<Map<String, Object>> detailedAssets = publishQueueElementTransformer
                     .transform(queueElements);
 
             return Response.ok(detailedAssets).build();
