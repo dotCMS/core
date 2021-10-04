@@ -1510,6 +1510,10 @@
 
                                             }
                                           }
+                                                                          
+                                }else if (field["fieldFieldType"] === 'date_time' && formField.value) {
+                                        fieldsValues[fieldsValues.length] = selectedStruct+"."+field["fieldVelocityVarName"];
+                                        fieldsValues[fieldsValues.length] = new Intl.DateTimeFormat('en-US').format(new Date(formField.value)) + ' 00:00:00';
 
                                 }else {
                                         fieldsValues[fieldsValues.length] = selectedStruct+"."+field["fieldVelocityVarName"];
