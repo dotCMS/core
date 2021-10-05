@@ -107,6 +107,6 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
             return contentlet.get(key);
         }
 
-        return renderFieldValue(request, response, contentlet.get(key), contentlet, field);
+        return renderFieldValue(request, response, (String) contentlet.get(key), contentlet, field);
     }
 }

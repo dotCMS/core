@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.transform.strategy;
 
 import com.dotcms.api.APIProvider;
+import com.dotcms.api.vtl.model.DotJSON;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.contenttype.model.field.ConstantField;
@@ -21,6 +22,7 @@ import io.vavr.control.Try;
 import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -70,8 +72,8 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
         return map;
     }
 
-    private static Object getFieldValue(final Contentlet contentlet, final Field field) {
-        Object fieldValue = contentlet.get(field.variable());
+    private static String getFieldValue(final Contentlet contentlet, final Field field) {
+        String fieldValue = (String) contentlet.get(field.variable());
 
         if(!UtilMethods.isSet(fieldValue)) {
             // null value - maybe a constant field
@@ -93,11 +95,9 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
     }
 
     public static Object renderFieldValue(final HttpServletRequest request,
-            final HttpServletResponse response, final Object fieldValue,
+            final HttpServletResponse response, final String incomingFieldValue,
             final Contentlet contentlet, final Field field) {
-        if(!UtilMethods.isSet(fieldValue)) return null;
-
-        final String fieldValueAsStr = fieldValue.toString();
+        if(!UtilMethods.isSet(incomingFieldValue)) return null;
 
         final org.apache.velocity.context.Context context = (request!=null && response!=null)
                 ? VelocityUtil.getInstance().getContext(request, response)
@@ -105,17 +105,50 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
 
         context.put("content", contentlet);
         context.put("contentlet", contentlet);
+        context.put("dotJSON", new DotJSON());
+
+        final boolean returnAsJSON = incomingFieldValue.contains("dotJSON");
+
+        final String fieldValue = returnAsJSON ? prepareJSON(incomingFieldValue)
+                : incomingFieldValue;
 
         final StringWriter evalResult = new StringWriter();
 
         Try.runRunnable(()-> com.dotmarketing.util.VelocityUtil
                 .getEngine()
-                .evaluate(context, evalResult, "", fieldValueAsStr)).onFailure((error)->
+                .evaluate(context, evalResult, "", fieldValue)).onFailure((error)->
                 Logger.warnAndDebug(RenderFieldStrategy.class, "Unable to render velocity in field: "
                         + field.variable(), error)
         );
 
         return UtilMethods.isSet(evalResult.toString()) ? evalResult.toString() : fieldValue;
+    }
+
+    private static String prepareJSON(final String incomingFieldValue) {
+        final String valueWithOnlyVelocity = removeNonVelocityLines(incomingFieldValue);
+
+        return valueWithOnlyVelocity + System.lineSeparator()
+                + "#set($resultDotJSON = $json.generate($dotJSON.map))"
+                + System.lineSeparator()
+                + "$resultDotJSON";
+    }
+
+    private static String removeNonVelocityLines(final String incomingFieldValue) {
+        StringBuilder returnValue = new StringBuilder();
+
+        try(final Scanner scanner = new Scanner(incomingFieldValue)) {
+            while (scanner.hasNextLine()) {
+                final String line = scanner.nextLine().trim();
+                if (line.trim().startsWith("$") || line.trim().startsWith("#")) {
+                    returnValue.append(line);
+
+                    if(scanner.hasNextLine()) {
+                        returnValue.append(System.lineSeparator());
+                    }
+                }
+            }
+        }
+        return returnValue.toString();
     }
 
 }
