@@ -1,5 +1,6 @@
 package com.dotmarketing.filters;
 
+import java.util.Locale;
 import javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotmarketing.beans.Host;
@@ -174,7 +175,7 @@ public class TimeMachineFilter implements Filter {
 		basePath.append(ConfigUtils.getTimeMachinePath()).append(sep).append("tm_").append(selectedDate.getTime())
 				.append(sep);
 		// Site and language path (e.g., "live/demo.dotcms.com/1")
-		basePath.append(PageMode.LIVE.name()).append(sep).append(host.getHostname()).append(sep).append(selectedLangId);
+		basePath.append(PageMode.LIVE.name().toLowerCase()).append(sep).append(host.getHostname()).append(sep).append(selectedLangId);
 		// URI (e.g., "/folder/your-page")
 		uri = (java.io.File.separator.equals("\\") ? uri.replaceAll("/", "\\\\") : uri);
 		String completePath = basePath.toString() + uri;
