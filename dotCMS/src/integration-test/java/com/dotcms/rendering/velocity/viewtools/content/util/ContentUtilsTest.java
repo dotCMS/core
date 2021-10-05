@@ -16,6 +16,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtilsTest.TestCase.LANGUAGE_TYPE_FILTER;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtilsTest.TestCase.PUBLISH_TYPE_FILTER;
@@ -956,5 +957,25 @@ public class ContentUtilsTest {
         final List<Contentlet> contentNoTM = ContentUtils.pull(String.format("+structureName:%s", contentType.variable()), 10, null,
                 APILocator.systemUser(), null);
         assertEquals(1, contentNoTM.size());
+    }
+
+    /**
+     * Method to test: {@link ContentUtils#find(String, User, boolean, long)}
+     * When: there is a contentlet in multiligual we should get the one with the sessionLang
+     * Should: contentlet with the sessionLang
+     */
+    @Test
+    public void test_find_multilingual_contentlet_getContentletSuccessfully() throws DotSecurityException, DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        Contentlet contentlet = TestDataUtils.getGenericContentContent(true,1,host);
+        Contentlet contentletNewLang = APILocator.getContentletAPI().checkout(contentlet.getInode(),user,false);
+        contentletNewLang.setLanguageId(2);
+        APILocator.getContentletAPI().checkin(contentletNewLang,user,false);
+
+        Contentlet contentletFound = ContentUtils.find(contentlet.getIdentifier(),user,false,1);
+
+        assertEquals(contentlet.getInode(),contentletFound.getInode());
+        assertEquals(contentlet.getLanguageId(),contentletFound.getLanguageId());
+
     }
 }
