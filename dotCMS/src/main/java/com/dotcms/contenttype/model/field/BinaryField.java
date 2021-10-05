@@ -1,9 +1,19 @@
 package com.dotcms.contenttype.model.field;
 
+import com.dotcms.content.business.ContentletJsonAPIImpl;
+import com.dotcms.content.model.FieldValue;
+import com.dotcms.content.model.type.BinaryType;
+import com.dotcms.content.model.type.FloatType;
+import com.dotcms.content.model.type.LongType;
+import com.dotcms.content.model.type.TextType;
+import com.dotmarketing.util.Logger;
+import java.io.File;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.Optional;
 import org.immutables.value.Value;
 
 import com.google.common.collect.ImmutableList;
@@ -72,4 +82,23 @@ public abstract class BinaryField extends Field {
 			    ContentTypeFieldProperties.SEARCHABLE, ContentTypeFieldProperties.INDEXED,
 				ContentTypeFieldProperties.HINT, ContentTypeFieldProperties.LISTED);
 	}
+
+	/**
+	 *
+	 * @param value
+	 * @return
+	 */
+	public Optional<FieldValue<?>> fieldValue(final Object value){
+		if (value instanceof Float) {
+			return Optional.of(FloatType.of((Float) value));
+		}
+		if (value instanceof Long) {
+			return Optional.of(LongType.of((Long) value));
+		}
+		if (value instanceof String) {
+			return Optional.of(TextType.of((String) value));
+		}
+		return Optional.empty();
+	}
+
 }

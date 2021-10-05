@@ -6,9 +6,12 @@ import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.CustomField;
+import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.DateField;
+import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.ImageField;
+import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.LineDividerField;
 import com.dotcms.contenttype.model.field.RadioField;
 import com.dotcms.contenttype.model.field.SelectField;
@@ -2072,4 +2075,177 @@ public class TestDataUtils {
             jsonFiles.forEach(file -> file.delete());
         }
     }
+
+
+    public static ContentType getContentTypeWithAllAvailableFieldTypes() {
+        return getContentTypeWithAllAvailableFieldTypes("WithAllAvailableFieldTypes" + System.currentTimeMillis(),null);
+    }
+
+    @WrapInTransaction
+    public static ContentType getContentTypeWithAllAvailableFieldTypes(final String contentTypeName, Set<String> workflowIds) {
+
+        ContentType contentType = null;
+        try {
+            try {
+                contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentTypeName);
+            } catch (NotFoundInDbException e) {
+                //Do nothing...
+            }
+            if (contentType == null) {
+
+                final WorkflowScheme systemWorkflow = TestWorkflowUtils.getSystemWorkflow();
+                final Set<String> collectedWorkflowIds = new HashSet<>();
+                collectedWorkflowIds.add(systemWorkflow.getId());
+                if(null != workflowIds){
+                    collectedWorkflowIds.addAll(workflowIds);
+                }
+
+                List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("hostFolder")
+                                .velocityVarName("hostFolder")
+                                .type(HostFolderField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("textFieldNumeric")
+                                .velocityVarName("textFieldNumeric")
+                                .type(TextField.class)
+                                .dataType(DataTypes.INTEGER)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("textFieldFloat")
+                                .velocityVarName("textFieldFloat")
+                                .type(TextField.class)
+                                .dataType(DataTypes.FLOAT)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("textField")
+                                .velocityVarName("textField")
+                                .type(TextField.class)
+                                .dataType(DataTypes.TEXT)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("binaryField")
+                                .velocityVarName("binaryField")
+                                .type(BinaryField.class).dataType(DataTypes.SYSTEM)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("textAreaField")
+                                .velocityVarName("textAreaField")
+                                .type(TextAreaField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("dateField")
+                                .velocityVarName("dateField")
+                                .defaultValue(null)
+                                .type(DateField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("dateTimeField")
+                                .velocityVarName("dateTimeField")
+                                .defaultValue(null)
+                                .type(DateTimeField.class)
+                                .next()
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("tagField")
+                                .velocityVarName("tagField")
+                                .defaultValue(null)
+                                .type(TagField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("categoryField")
+                                .velocityVarName("categoryField")
+                                .type(CategoryField.class)
+                                .next()
+                );
+
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("keyValueField")
+                                .velocityVarName("keyValueField")
+                                .type(KeyValueField.class)
+                                .next()
+                );
+
+                //Category field
+                final Collection<Category> topLevelCategories = APILocator.getCategoryAPI()
+                        .findTopLevelCategories(APILocator.systemUser(), false);
+                final Optional<Category> anyTopLevelCategory = topLevelCategories.stream()
+                        .findAny();
+
+                anyTopLevelCategory.map(category -> new FieldDataGen()
+                        .type(CategoryField.class)
+                        .defaultValue(null)
+                        .values(category.getInode())
+                        .next()).ifPresent(fields::add);
+
+                /***
+                 @Type(value = BinaryField.class),
+                 @Type(value = CategoryField.class),
+                 @Type(value = CheckboxField.class),
+                 @Type(value = ConstantField.class),
+                 @Type(value = CustomField.class),
+                 @Type(value = DateField.class),
+                 @Type(value = DateTimeField.class),
+                 @Type(value = EmptyField.class),
+                 @Type(value = FileField.class),
+                 @Type(value = HiddenField.class),
+                 @Type(value = HostFolderField.class),
+                 @Type(value = ImageField.class),
+                 @Type(value = KeyValueField.class),
+                 @Type(value = LineDividerField.class),
+                 @Type(value = MultiSelectField.class),
+                 @Type(value = PermissionTabField.class),
+                 @Type(value = RadioField.class),
+                 @Type(value = RelationshipField.class),
+                 @Type(value = RelationshipsTabField.class),
+                 @Type(value = SelectField.class),
+                 @Type(value = TabDividerField.class),
+                 @Type(value = TagField.class),
+                 @Type(value = TextAreaField.class),
+                 @Type(value = TextField.class),
+                 @Type(value = TimeField.class),
+                 @Type(value = WysiwygField.class),
+                 @Type(value = RowField.class),
+                 @Type(value = ColumnField.class),
+                 */
+
+                contentType = new ContentTypeDataGen()
+                        .baseContentType(BaseContentType.CONTENT)
+                        .name(contentTypeName)
+                        .velocityVarName(contentTypeName)
+                        .fields(fields)
+                        .workflowId(collectedWorkflowIds)
+                        .nextPersisted();
+            }
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
+
+        return contentType;
+    }
+
+
 }

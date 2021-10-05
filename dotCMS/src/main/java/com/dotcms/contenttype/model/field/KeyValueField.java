@@ -2,12 +2,17 @@ package com.dotcms.contenttype.model.field;
 
 import static com.dotcms.util.CollectionsUtils.list;
 
+import com.dotcms.content.model.FieldValue;
+import com.dotcms.content.model.type.KeyValueType;
+import com.dotcms.contenttype.util.KeyValueFieldUtil;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.collect.ImmutableList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.immutables.value.Value;
 
 @JsonSerialize(as = ImmutableKeyValueField.class)
@@ -55,5 +60,19 @@ public abstract class KeyValueField extends Field {
 	@JsonIgnore
 	public String getContentTypeFieldLabelKey(){
 		return "Key-Value";
+	}
+
+	@Override
+	public Optional<FieldValue<?>> fieldValue(final Object value) {
+		if (value instanceof String) {
+			final Map<String, Object> map = KeyValueFieldUtil
+					.JSONValueToHashMap((String) value);
+			return Optional.of(KeyValueType.of(map));
+		}
+
+		if (value instanceof Map) {
+			return Optional.of(KeyValueType.of((Map<String, Object>) value));
+		}
+		return Optional.empty();
 	}
 }

@@ -1,8 +1,13 @@
 package com.dotcms.contenttype.model.field;
 
+import com.dotcms.content.business.ContentletJsonAPIImpl;
+import com.dotcms.content.model.FieldValue;
+import com.dotcms.content.model.type.LongTextType;
+import com.dotmarketing.util.Logger;
 import java.util.Collection;
 import java.util.List;
 
+import java.util.Optional;
 import org.immutables.value.Value;
 
 import com.google.common.collect.ImmutableList;
@@ -44,4 +49,14 @@ public abstract class TextAreaField extends Field {
 				ContentTypeFieldProperties.REGEX_CHECK, ContentTypeFieldProperties.DEFAULT_VALUE, ContentTypeFieldProperties.HINT,
 				ContentTypeFieldProperties.SEARCHABLE, ContentTypeFieldProperties.INDEXED);
 	}
+
+	@Override
+	public Optional<FieldValue<?>> fieldValue(Object value) {
+			if (value instanceof String) {
+				return Optional.of(LongTextType.of((String) value));
+			}
+		    return Optional.empty();
+	}
+
+
 }

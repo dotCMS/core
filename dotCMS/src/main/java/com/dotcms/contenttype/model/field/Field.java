@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.model.field;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.content.model.FieldValue;
 import com.dotcms.contenttype.model.component.FieldFormRenderer;
 import com.dotcms.contenttype.model.component.FieldValueRenderer;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
@@ -286,4 +287,15 @@ public abstract class Field implements FieldIf, Serializable {
   public List<String> fieldVariableKeys() {
     return Collections.emptyList();
   }
+
+  /**
+   *
+   * @param value
+   * @return
+   */
+  public Optional<FieldValue<?>> fieldValue(final Object value){
+     Logger.warn(Field.class, ()->String.format(" Empty impl called from field with name `%s` and variable `%s`. ",this.name(), variable())  );
+     return Optional.empty();
+  };
+
 }

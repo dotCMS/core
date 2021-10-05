@@ -1,8 +1,14 @@
 package com.dotcms.contenttype.model.field;
 
+import com.dotcms.content.model.FieldValue;
+import com.dotcms.content.model.type.DateTimeType;
+import java.time.Instant;
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 
+import java.util.Optional;
 import org.immutables.value.Value;
 
 import com.dotcms.contenttype.util.FieldUtil;
@@ -57,5 +63,13 @@ public abstract class DateTimeField extends Field {
 	@JsonIgnore
 	public String getContentTypeFieldLabelKey(){
 		return "Date-and-Time";
+	}
+
+	@Override
+	public Optional<FieldValue<?>> fieldValue(Object value) {
+		if (value instanceof Date) {
+			return Optional.of(DateTimeType.of(((Date) value).toInstant()));
+		}
+		return Optional.empty();
 	}
 }

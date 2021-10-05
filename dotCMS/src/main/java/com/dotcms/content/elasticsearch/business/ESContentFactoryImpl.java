@@ -1,5 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.content.business.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.AUTO_ASSIGN_WORKFLOW;
@@ -12,7 +13,8 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_IN_
 import static com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTokens;
 
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.content.business.DotMappingException;
+import com.dotcms.content.business.ContentletJsonAPI;
+import com.dotcms.content.business.ContentletJsonAPIImpl;
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -100,7 +102,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -1960,7 +1961,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         if (DbConnectionFactory.isPostgres()) {
             replacements
                     .setColumnFormatFunctions(ImmutableMap
-                            .of("content_as_json", col -> col + " ::jsonb"));
+                            .of(ContentletJsonAPI.CONTENTLET_AS_JSON, col -> col + " ::jsonb"));
         }
 
         List<Object> parameters = new ArrayList<>();
@@ -2032,7 +2033,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         upsertValues.add(UtilMethods.isSet(contentlet.getIdentifier())?contentlet.getIdentifier():null);
         upsertValues.add(contentlet.getLanguageId());
-        upsertValues.add("{ \"contentlets\": [ ] }");
+
+        final String json = Try.of(
+                () ->
+                        Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true)
+                                ? ContentletJsonAPIImpl.INSTANCE.get().toJson(contentlet) : null
+        ).getOrNull();
+        Logger.info(ESContentFactoryImpl.class, json);
+        upsertValues.add(json);
+
         final Map<String, Object> fieldsMap = getFieldsMap(contentlet);
 
         try {
