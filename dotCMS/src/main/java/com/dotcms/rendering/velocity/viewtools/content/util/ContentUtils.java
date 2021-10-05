@@ -102,10 +102,10 @@ public class ContentUtils {
                         return null;
                     }
                     
-                    // timemachine contentis to be published in the future, return the working version
+                    // timemachine content to be published in the future, return the working version
                     if (UtilMethods.isSet(ident.getSysPublishDate()) && ffdate.after(ident.getSysPublishDate())) {
                         return APILocator.getContentletAPI()
-                                        .findContentletByIdentifierOrFallback(inodeOrIdentifier, true, sessionLang, user, true)
+                                        .findContentletByIdentifierOrFallback(inodeOrIdentifier, false, sessionLang, user, true)
                                         .orElse(null);
                     }
                 }
