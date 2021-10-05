@@ -119,7 +119,7 @@ public class TimeMachineFilter implements Filter {
 				// File not found for the selected language
 				boolean useDefaultLanguage = APILocator.getLanguageAPI().canDefaultPageToDefaultLanguage();
 				if (!useDefaultLanguage) {
-					Logger.error(TimeMachineFilter.class, "No Time Machine file found:" + file._1.getAbsolutePath());
+					Logger.error(TimeMachineFilter.class, "Time Machine file NOT found:" + file._1.getAbsolutePath());
 					// Send page in default language is false, so send an error
 					sendError(request, response, ERROR_404, host.getHostname() + uri, HttpServletResponse.SC_BAD_REQUEST);
 				} else {
@@ -131,7 +131,7 @@ public class TimeMachineFilter implements Filter {
 						// It exists, so send file in the default language
 						sendFile(file, request, response);
 					} else {
-						Logger.error(TimeMachineFilter.class, "No Time Machine file found (Default Language):" + file._1.getAbsolutePath());
+						Logger.error(TimeMachineFilter.class, "Time Machine file NOT found (Default Language):" + file._1.getAbsolutePath());
 						sendError(request, response, ERROR_404, host.getHostname() + uri, HttpServletResponse.SC_BAD_REQUEST);
 					}
 				}
