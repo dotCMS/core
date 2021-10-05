@@ -321,8 +321,12 @@ public class ShortyServlet extends HttpServlet {
 
       final StringBuilder pathBuilder = new StringBuilder(path)
               .append(id).append("/byInode/true");
+        //This logic is to get the filters to apply in the order were sent
+        final boolean isFieldNameAtUri = id.split(StringPool.FORWARD_SLASH)[2].equalsIgnoreCase(fieldName);
+        final int substringStartPos = isFieldNameAtUri ? lowerUri.lastIndexOf(fieldName.toLowerCase())+fieldName.length()+1 : lowerUri.lastIndexOf(fieldName);
+        final String[] filters = lowerUri.substring(substringStartPos).split(StringPool.FORWARD_SLASH);
 
-      this.addImagePath(width, height, quality, jpeg, jpegp,webp, isImage, pathBuilder, focalPoint, cropWidth,cropHeight,resampleOpt);
+      this.addImagePath(width, height, quality, jpeg, jpegp,webp, isImage, pathBuilder, focalPoint, cropWidth,cropHeight,resampleOpt,filters);
       this.doForward(request, response, pathBuilder.toString());
     } catch (DotContentletStateException e) {
 
@@ -357,24 +361,43 @@ public class ShortyServlet extends HttpServlet {
                             final Optional<FocalPoint> focalPoint,
                             final int cropWidth,
                             final int cropHeight,
-                            final int resampleOpt) {
+                            final int resampleOpt,
+                            final String[] filters) {
         if (isImage) {
-
-            if (quality > 0) {
-                pathBuilder.append("/quality_q/" + quality);
-            } else {
-                pathBuilder.append(jpeg ? "/jpeg_q/75" : StringPool.BLANK);
-                pathBuilder.append(webp ? "/webp_q/75" : StringPool.BLANK);
-                pathBuilder.append(jpeg && jpegp ? "/jpeg_p/1" : StringPool.BLANK);
+            for(String filter : filters){
+                filter = StringPool.FORWARD_SLASH + filter;
+                if(widthPattern.matcher(filter).find()){
+                    pathBuilder.append(width > 0 ? "/resize_w/" + width : StringPool.BLANK);
+                    continue;
+                }
+                if(heightPattern.matcher(filter).find()){
+                    pathBuilder.append(height > 0 ? "/resize_h/" + height : StringPool.BLANK);
+                    continue;
+                }
+                if(cropWidthPattern.matcher(filter).find()){
+                    pathBuilder.append(cropWidth > 0 ? "/crop_w/" + cropWidth : StringPool.BLANK);
+                    continue;
+                }
+                if(cropHeightPattern.matcher(filter).find()){
+                    pathBuilder.append(cropHeight > 0 ? "/crop_h/" + cropHeight : StringPool.BLANK);
+                    continue;
+                }
+                if(filter.contains("fp")){
+                    pathBuilder.append(focalPoint.isPresent() ? "/fp/" + focalPoint.get() : StringPool.BLANK);
+                    continue;
+                }
+                if(resampleOptsPattern.matcher(filter).find()){
+                    pathBuilder.append(resampleOpt > 0 ? "/resize_ro/" + resampleOpt : StringPool.BLANK);
+                    continue;
+                }
+                if (quality > 0) {
+                    pathBuilder.append("/quality_q/" + quality);
+                } else {
+                    pathBuilder.append(jpeg ? "/jpeg_q/75" : StringPool.BLANK);
+                    pathBuilder.append(webp ? "/webp_q/75" : StringPool.BLANK);
+                    pathBuilder.append(jpeg && jpegp ? "/jpeg_p/1" : StringPool.BLANK);
+                }
             }
-
-            pathBuilder.append(focalPoint.isPresent() ? "/fp/" + focalPoint.get() : StringPool.BLANK);
-            pathBuilder.append(cropWidth > 0 ? "/crop_w/" + cropWidth : StringPool.BLANK);
-            pathBuilder.append(cropHeight > 0 ? "/crop_h/" + cropHeight : StringPool.BLANK);
-
-            pathBuilder.append(width > 0 ? "/resize_w/" + width : StringPool.BLANK);
-            pathBuilder.append(height > 0 ? "/resize_h/" + height : StringPool.BLANK);
-            pathBuilder.append(resampleOpt > 0 ? "/resize_ro/" + resampleOpt : StringPool.BLANK);
         }
   }
 
