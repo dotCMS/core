@@ -32,9 +32,22 @@ TOMCAT_HOME=/srv/dotserver/tomcat-${TOMCAT_VERSION}
 # dotCMS runas group GID
 : ${CMS_RUNAS_GID:="1000000000"}
 
+# gzip compression
+: ${CMS_COMPRESSION:="on"}
+: ${CMS_COMPRESSABLEMIMETYPE:="text/html,text/xml,text/csv,text/css,text/javascript,text/json,application/javascript,application/json,application/xml,application/x-javascript,font/eot,font/otf,font/ttf,image/svg+xml"}
+
+# Access Log and Remote IP Valve
+: ${CMS_ACCESSLOG_PATTERN:="%{Host}i %{org.apache.catalina.AccessLog.RemoteAddr}r %l %u %t &quot;%r&quot; %s %b %D %{Referer}i %{User-Agent}i"}
+: ${CMS_ACCESSLOG_FILEDATEFORMAT:=".yyyy-MM-dd"}
+: ${CMS_ACCESSLOG_MAXDAYS:="-1"}
+
+: ${CMS_REMOTEIP_REMOTEIPHEADER:="x-forwarded-for"}
+: ${CMS_REMOTEIP_INTERNALPROXIES:="10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|169\.254\.\d{1,3}\.\d{1,3}|127\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.1[6-9]{1}\.\d{1,3}\.\d{1,3}|172\.2[0-9]{1}\.\d{1,3}\.\d{1,3}|172\.3[0-1]{1}\.\d{1,3}\.\d{1,3}|0:0:0:0:0:0:0:1"}
+
 ## Plugins init (not implemented yet!!)
 : ${CMS_PLUGINS_OSGI_OVERWRITE_SHARED:="false"}
 : ${CMS_PLUGINS_OSGI_FIX_OWNER:="true"}
+
 
 ## Database config
 
@@ -107,8 +120,4 @@ TOMCAT_HOME=/srv/dotserver/tomcat-${TOMCAT_VERSION}
 : ${PROVIDER_LOADBALANCER_SVC_DELAY_MIN:="${SERVICE_DELAY_DEFAULT_MIN}"}
 : ${PROVIDER_LOADBALANCER_SVC_DELAY_STEP:="${SERVICE_DELAY_DEFAULT_STEP}"}
 : ${PROVIDER_LOADBALANCER_SVC_DELAY_MAX:="${SERVICE_DELAY_DEFAULT_MAX}"}
-
-
-
-
 

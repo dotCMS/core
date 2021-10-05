@@ -14,53 +14,88 @@
             minSpareThreads="25"
     />
 
-    <!-- HTTP Connector -->
+    <!-- HTTP Connector, no proxy
+	 client <-HTTP-> dotCMS:8080
+    -->
     <Connector
-            executor="tomcatConnectorThreadPool"
             port="8080"
+            scheme="http"
+            redirectPort="8443"
+            executor="tomcatConnectorThreadPool"
             protocol="org.apache.coyote.http11.Http11Nio2Protocol"
             connectionTimeout="3000"
             enableLookups="false"
-            redirectPort="8443"
             URIEncoding="UTF-8"
             bindOnInit="true"
-            scheme="http"
-            compression="on"
+            compression="{{ .Env.CMS_COMPRESSION }}"
+	    compressableMimeType="{{ .Env.CMS_COMPRESSABLEMIMETYPE }}"
             compressionMinSize="128"
-            compressableMimeType="text/html,text/xml,text/csv,text/css,text/javascript,text/json,application/javascript,application/json,application/xml,application/x-javascript"
             useSendfile="false"
     />
 
-    <!-- HTTP Connector from upstream proxy -->
-    <Connector executor="tomcatConnectorThreadPool" port="8081" protocol="org.apache.coyote.http11.Http11Nio2Protocol"
-                connectionTimeout="3000" enableLookups="false" redirectPort="443" URIEncoding="UTF-8" bindOnInit="false"
-                scheme="http" proxyPort="80" />
+    <!-- HTTP Connector from upstream proxy 
+         client <-HTTP-> proxy:80 <-HTTP-> dotCMS:8081
+    -->
+    <Connector 
+	    port="8081"
+	    proxyPort="80"
+	    scheme="http"
+	    redirectPort="443"
+	    executor="tomcatConnectorThreadPool" 
+	    protocol="org.apache.coyote.http11.Http11Nio2Protocol"
+	    connectionTimeout="3000"
+	    enableLookups="false"
+	    URIEncoding="UTF-8"
+            bindOnInit="true"
+            compression="{{ .Env.CMS_COMPRESSION }}"
+	    compressableMimeType="{{ .Env.CMS_COMPRESSABLEMIMETYPE }}"
+            compressionMinSize="128"
+            useSendfile="false"
+    />
 
-    <!-- HTTPS (SSL) Connector from upstream proxy -->
-    <Connector executor="tomcatConnectorThreadPool" port="8082" protocol="org.apache.coyote.http11.Http11Nio2Protocol"
-                connectionTimeout="3000" enableLookups="false" redirectPort="443" URIEncoding="UTF-8" bindOnInit="false"
-                scheme="https" proxyPort="443" secure="true" />
+    <!-- HTTPS (SSL) Connector from upstream proxy
+         client <-HTTPS-> proxy:443 <-HTTP-> dotCMS:8082
+     -->
+    <Connector 
+	    port="8082"
+	    proxyPort="443"
+	    scheme="https"
+	    redirectPort="443"
+	    executor="tomcatConnectorThreadPool"
+	    protocol="org.apache.coyote.http11.Http11Nio2Protocol"
+	    connectionTimeout="3000"
+	    enableLookups="false"
+	    URIEncoding="UTF-8"
+	    bindOnInit="true"
+	    secure="true" 
+            compression="{{ .Env.CMS_COMPRESSION }}"
+	    compressableMimeType="{{ .Env.CMS_COMPRESSABLEMIMETYPE }}"
+            compressionMinSize="128"
+            useSendfile="false"
+    />
 
 
     <!-- HTTPS (SSL) Connector
-      To use APR and native openssl for https, add:
-      sslImplementationName="org.apache.tomcat.util.net.openssl.OpenSSLImplementation"
+	 client <-HTTPS-> proxy:443 <-HTTPS-> dotCMS:8443
+
+         To use APR and native openssl for https, add:
+         sslImplementationName="org.apache.tomcat.util.net.openssl.OpenSSLImplementation"
     -->
     <Connector
-            executor="tomcatConnectorThreadPool"
             port="8443"
+            proxyPort="443"
+            scheme="https"
+            redirectPort="8443"
             protocol="org.apache.coyote.http11.Http11Nio2Protocol"
+            executor="tomcatConnectorThreadPool"
             connectionTimeout="3000"
             enableLookups="false"
-            redirectPort="8443"
             URIEncoding="UTF-8"
             bindOnInit="true"
-            scheme="https"
-            proxyPort="443"
             secure="true"
-            compression="on"
+            compression="{{ .Env.CMS_COMPRESSION }}"
+	    compressableMimeType="{{ .Env.CMS_COMPRESSABLEMIMETYPE }}"
             compressionMinSize="128"
-            compressableMimeType="text/html,text/xml,text/csv,text/css,text/javascript,text/json,application/javascript,application/json,application/xml,application/x-javascript"
             useSendfile="false"
             SSLEnabled="true"
             keystoreFile="conf/server.keystore"
@@ -71,16 +106,25 @@
     <Engine name="Catalina" defaultHost="localhost">
 
       <Host name="localhost"  appBase="webapps">
-        <!-- The remote IP valve picks up the X-FORWARDED-FOR header and uses it as the source ip -->
-        <Valve className="org.apache.catalina.valves.RemoteIpValve" remoteIpHeader="x-forwarded-for" proxiesHeader="x-forwarded-by" protocolHeader="x-forwarded-proto" />
+      <!-- The remote IP valve picks up the X-FORWARDED-FOR header (by default) and uses it as the source ip 
+           remoteIpHeader and internalProxies may need to change when behind some WAF or proxy servers
+      -->
+	      <Valve 
+		     className="org.apache.catalina.valves.RemoteIpValve" 
+		     remoteIpHeader="{{ .Env.CMS_REMOTEIP_REMOTEIPHEADER }}" 
+		     internalProxies="{{ .Env.CMS_REMOTEIP_INTERNALPROXIES }}" 
+	      />
 
-        <!-- Access log processes all example.
-              Documentation at: /docs/config/valve.html
-              Note: The pattern used is equivalent to using pattern="common" -->
-
-        <Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs"
-               prefix="dotcms_access" suffix=".log"
-               pattern="%{org.apache.catalina.AccessLog.RemoteAddr}r {{ .Env.CMS_VALVE_IP }} %l %u %t %r %H %v%U%q %s %b %{Referer}i %{User-Agent}i" />
+        <!-- Access log processes all example.  Documentation at: /docs/config/valve.html -->
+        <Valve
+               className="org.apache.catalina.valves.AccessLogValve" 
+               directory="logs"
+               prefix="dotcms_access" 
+               suffix=".log"
+	       pattern="{{ .Env.CMS_ACCESSLOG_PATTERN }}" 
+	       fileDateFormat="{{ .Env.CMS_ACCESSLOG_FILEDATEFORMAT }}"
+	       maxDays="{{ .Env.CMS_ACCESSLOG_MAXDAYS }}"
+        />
 
       </Host>
     </Engine>
