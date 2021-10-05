@@ -41,8 +41,9 @@ public class FieldDataFetcher implements DataFetcher<Object> {
                 }
             }
 
+
             final boolean renderField = Try.of(()-> (boolean) environment.getArgument("render"))
-                    .getOrElse(false);
+                    .getOrElse(false) || shouldParseDotJson((String) fieldValue, environment);
 
             final HttpServletRequest request = ((DotGraphQLContext) environment.getContext())
                     .getHttpServletRequest();
@@ -57,5 +58,11 @@ public class FieldDataFetcher implements DataFetcher<Object> {
             Logger.error(this, e.getMessage(), e);
             throw e;
         }
+    }
+
+    private boolean shouldParseDotJson(final String fieldValue, final DataFetchingEnvironment environment) {
+          return (!UtilMethods.isSet((Object) environment.getArgument("render")) ||
+                        ((Boolean) environment.getArgument("render")))
+                  && fieldValue.contains("dotJSON") ;
     }
 }
