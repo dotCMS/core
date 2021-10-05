@@ -458,7 +458,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 
                 //Clean the number of tries, we want to try it again
                 auditHistory.setNumTries( 0 );
-                publishAuditAPI.updatePublishAuditStatus( config.getId(), status.getStatus(), auditHistory, true );
+                publishAuditAPI.updatePublishAuditStatus( bundle.getId(), status.getStatus(), auditHistory, true );
 
                 //Get the identifiers on this bundle
                 HashSet<String> identifiers = new HashSet<String>();
