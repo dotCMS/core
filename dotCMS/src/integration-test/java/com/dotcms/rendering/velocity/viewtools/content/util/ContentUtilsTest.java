@@ -967,9 +967,10 @@ public class ContentUtilsTest {
     @Test
     public void test_find_multilingual_contentlet_getContentletSuccessfully() throws DotSecurityException, DotDataException {
         final Host host = new SiteDataGen().nextPersisted();
+        final long spanishLangId = TestDataUtils.getSpanishLanguage().getId();
         Contentlet contentlet = TestDataUtils.getGenericContentContent(true,1,host);
         Contentlet contentletNewLang = APILocator.getContentletAPI().checkout(contentlet.getInode(),user,false);
-        contentletNewLang.setLanguageId(2);
+        contentletNewLang.setLanguageId(spanishLangId);
         APILocator.getContentletAPI().checkin(contentletNewLang,user,false);
 
         Contentlet contentletFound = ContentUtils.find(contentlet.getIdentifier(),user,false,1);
