@@ -26,7 +26,7 @@
         URIEncoding="UTF-8"
         bindOnInit="true"
         compression="{{ .Env.CMS_COMPRESSION }}"
-        compressableMimeType="{{ .Env.CMS_COMPRESSABLEMIMETYPE }}"
+        compressibleMimeType="{{ .Env.CMS_COMPRESSIBLEMIMETYPE }}"
         compressionMinSize="128"
         useSendfile="false"
     />
@@ -46,7 +46,7 @@
         URIEncoding="UTF-8"
         bindOnInit="true"
         compression="{{ .Env.CMS_COMPRESSION }}"
-        compressableMimeType="{{ .Env.CMS_COMPRESSABLEMIMETYPE }}"
+        compressibleMimeType="{{ .Env.CMS_COMPRESSIBLEMIMETYPE }}"
         compressionMinSize="128"
         useSendfile="false"
     />
@@ -67,7 +67,7 @@
         bindOnInit="true"
         secure="true" 
         compression="{{ .Env.CMS_COMPRESSION }}"
-        compressableMimeType="{{ .Env.CMS_COMPRESSABLEMIMETYPE }}"
+        compressibleMimeType="{{ .Env.CMS_COMPRESSIBLEMIMETYPE }}"
         compressionMinSize="128"
         useSendfile="false"
     />
@@ -91,7 +91,7 @@
             bindOnInit="true"
             secure="true"
             compression="{{ .Env.CMS_COMPRESSION }}"
-            compressableMimeType="{{ .Env.CMS_COMPRESSABLEMIMETYPE }}"
+            compressibleMimeType="{{ .Env.CMS_COMPRESSIBLEMIMETYPE }}"
             compressionMinSize="128"
             useSendfile="false"
             SSLEnabled="true"

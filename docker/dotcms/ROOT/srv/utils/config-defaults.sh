@@ -34,7 +34,7 @@ TOMCAT_HOME=/srv/dotserver/tomcat-${TOMCAT_VERSION}
 
 # gzip compression
 : ${CMS_COMPRESSION:="on"}
-: ${CMS_COMPRESSABLEMIMETYPE:="text/html,text/xml,text/csv,text/css,text/javascript,text/json,application/javascript,application/json,application/xml,application/x-javascript,font/eot,font/otf,font/ttf,image/svg+xml"}
+: ${CMS_COMPRESSIBLEMIMETYPE:="text/html,text/xml,text/csv,text/css,text/javascript,text/json,application/javascript,application/json,application/xml,application/x-javascript,font/eot,font/otf,font/ttf,image/svg+xml"}
 
 # Access Log and Remote IP Valve
 : ${CMS_ACCESSLOG_PATTERN:="%{Host}i %{org.apache.catalina.AccessLog.RemoteAddr}r %l %u %t &quot;%r&quot; %s %b %D %{Referer}i %{User-Agent}i"}
