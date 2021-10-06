@@ -1345,7 +1345,7 @@ create table relationship (
 create table folder (
    inode varchar2(36) not null,
    name varchar2(255),
-   title varchar2(255) not null,
+   title varchar2(255),
    show_on_menu number(1,0),
    sort_order number(10,0),
    files_masks varchar2(255),
