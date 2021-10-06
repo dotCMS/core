@@ -47,7 +47,8 @@ create table Company (
 	emailAddress varchar2(100) null,
 	authType varchar2(100) null,
 	autoLogin number(1, 0),
-	strangers number(1, 0)
+	strangers number(1, 0),
+    default_language_id number(19,0) null
 );
 
 create table Counter (
@@ -2153,6 +2154,8 @@ alter table workflow_comment add constraint wf_id_comment_FK foreign key (workfl
 alter table workflow_history add constraint wf_id_history_FK foreign key (workflowtask_id) references workflow_task(id);
 
 alter table contentlet add constraint fk_contentlet_lang foreign key (language_id) references language(id);
+
+alter table company add constraint fk_default_lang_id foreign key (default_language_id) references language(id);
 
 create table workflow_scheme(
 	id varchar2(36) primary key,

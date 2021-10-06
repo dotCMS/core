@@ -25,6 +25,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
+import com.dotmarketing.quartz.job.DefaultLanguageTransferAssetJob;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.StringUtils;
@@ -34,13 +35,11 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -393,5 +392,35 @@ public class LanguagesResource {
 
     private Language getLanguage(final LanguageForm form) {
         return this.languageAPI.getLanguage(form.getLanguageCode(), form.getCountryCode());
+    }
+
+    @PUT
+    @Path("/{language}/_makedefault")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response makeDefault(@Context final HttpServletRequest httpServletRequest,
+            @Context final HttpServletResponse httpServletResponse,
+            @PathParam("language") final Long languageId,
+            final MakeDefaultLangForm makeDefaultLangForm
+    ) throws DotDataException, DotSecurityException {
+
+        final User user = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .requiredPortlet(PortletID.LANGUAGES.toString())
+                .init().getUser();
+
+        Logger.info(LanguagesResource.class, String.format("Switching to a new default language with id `%s`. ",languageId));
+        final Language oldDefaultLanguage = languageAPI.getDefaultLanguage();
+        final Language newDefault = languageAPI.makeDefault(languageId, user);
+        Logger.info(LanguagesResource.class, String.format("Successfully switched to a new default language with id `%s`. ",languageId));
+        if(makeDefaultLangForm.isFireTransferAssetsJob()){
+            Logger.info(LanguagesResource.class, String.format(" A Job has been scheduled to transfer all assets from the old default language `%d` to `%d`. ",oldDefaultLanguage.getId(),languageId));
+            DefaultLanguageTransferAssetJob
+                    .triggerDefaultLanguageTransferAssetJob(oldDefaultLanguage.getId(), newDefault.getId());
+        }
+        return Response.ok(new ResponseEntityView(newDefault)).build(); // 200
     }
 }

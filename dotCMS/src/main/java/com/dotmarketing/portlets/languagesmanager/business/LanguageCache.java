@@ -30,6 +30,10 @@ public abstract class LanguageCache implements Cachable{
     
     protected abstract void removeLanguage(Language l);
 
+    public abstract Language getDefaultLanguage();
+
+    public abstract void setDefaultLanguage(Language defaultLanguage);
+
     public abstract void clearCache();
     
 	public abstract String[] getGroups();

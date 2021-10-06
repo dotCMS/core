@@ -765,11 +765,14 @@
 
 		myReference.left = ( mousePosX - 10 ) + noPx;
 
-	    if((mousePosY + popupHeight) >= windowHeight && windowHeight > popupHeight)
-			myReference.top = ( mousePosY - popupHeight ) + noPx;
-		else
+	    if((mousePosY + popupHeight) >= windowHeight && windowHeight > popupHeight) {
+			const topPoint = mousePosY - popupHeight;
+			// Prevent the Popup from being cut off.
+			myReference.top = (topPoint < 0 ? 10 : topPoint) + noPx;
+		} else {
 			myReference.top = ( mousePosY ) + noPx;
-
+		}
+			
      	showDebugMessage('showPopUp showing');
 		Element.show (id);
 	}
