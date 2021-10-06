@@ -43,7 +43,8 @@ public class FieldDataFetcher implements DataFetcher<Object> {
 
 
             final boolean renderField = Try.of(()-> (boolean) environment.getArgument("render"))
-                    .getOrElse(false) || shouldParseDotJson((String) fieldValue, environment);
+                    .getOrElse(false) || (fieldValue instanceof String &&
+                    shouldParseDotJson((String) fieldValue, environment));
 
             final HttpServletRequest request = ((DotGraphQLContext) environment.getContext())
                     .getHttpServletRequest();
