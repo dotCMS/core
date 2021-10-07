@@ -292,25 +292,25 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 
 		final String statusPojoAsString = publishAuditStatus.get("status_pojo")
 				.toString();
+
 		final String assetsAsString = StringUtils
 				.substringBetween(statusPojoAsString, "<assets>", "</assets>");
 		final String[] entries = StringUtils
 				.substringsBetween(assetsAsString, "<entry>", "</entry>");
 
-		if (limitAssets != NO_LIMIT_ASSETS) {
-			final List<String> allEntries = Arrays
+		if (UtilMethods.isSet(entries) && limitAssets != NO_LIMIT_ASSETS) {
+			final String entriesLimitedAsString = Arrays
 					.stream(entries.length > limitAssets ?
 							Arrays.copyOfRange(entries, 0, limitAssets) : entries)
 					.map(arrayItem -> "<entry>" + arrayItem + "</entry>")
-					.collect(Collectors.toList());
+					.collect(Collectors.joining());
 
-			final String entriesLimitedAsString = allEntries.stream().collect(Collectors.joining());
 			final String statusPojoAsStringLimited = statusPojoAsString
 					.replace(assetsAsString, entriesLimitedAsString);
 			publishAuditStatus.put("status_pojo", statusPojoAsStringLimited);
-		}
 
-		publishAuditStatus.put("total_number_of_assets", entries.length);
+			publishAuditStatus.put("total_number_of_assets", entries.length);
+		}
 
 		return publishAuditStatus;
 	}
