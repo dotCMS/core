@@ -254,6 +254,16 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		return getAllPublishAuditStatus(limit, offset, NO_LIMIT_ASSETS);
 	}
 
+	/**
+	 * Get all the {@link PublishAuditStatus} limiting the number of assets of each one.
+	 *
+	 * @param limit Max number of PublishAuditStatus to return
+	 * @param offset
+	 * @param limitAssets Max number of asset to return for each PublishAuditStatus, if the value is
+	 *                       equals to -1 then all the assets are returned
+	 * @return
+	 * @throws DotPublisherException
+	 */
 	public List<PublishAuditStatus> getAllPublishAuditStatus(final int limit,
 			final int offset, final int limitAssets) throws DotPublisherException {
 		try{

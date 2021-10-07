@@ -16,6 +16,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+/**
+ * Util class to transform {@link PublishQueueElement} into Map
+ */
 public class PublishQueueElementTransformer {
 
     public static final String TYPE_KEY = "type";
