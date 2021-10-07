@@ -206,7 +206,7 @@
 		} else if (data.type === "language" ) {
 			content += "<a href=\"/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=<%=PortletID.LANGUAGES%>&p_p_action=1&p_p_state=maximized&p_p_mode=view&_<%=PortletID.LANGUAGES%>_struts_action=/ext/languages_manager/edit_language&_<%=PortletID.LANGUAGES%>_id=1&_<%=PortletID.LANGUAGES%> _cmd=edit&referer=<%=referer %>\">" +
 					"<img src=\"/html/images/languages/" + data.language_code + "_" + data.country_code + ".gif\" border=\"0\" />&nbsp;" +
-					"<strong style=\"text-decoration: underline;\">" + data.title + "</strong>  : " + data.content_type_name +
+					"<strong style=\"text-decoration: underline;\">" + data.title + "</strong>  : " + (data.content_type_name === 'Page Asset' ? 'Page' : data.content_type_name) +
 					"</a>";
 		} else {
 			content += "<strong>" + data.title + "</strong> : " + data.type;
@@ -223,7 +223,7 @@
 
 		newCell.innerHTML = "<%=LanguageUtil.get(pageContext, "unpublished.bundles.item.show", MAX_BUNDLE_ASSET_TO_SHOW) %> " + nAssets + "&nbsp;" +
 				"<a href=\"javascript:requestAssets('" + bundleId + "')\">" +
-				"<strong style=\"text-decoration: underline;\"><%=LanguageUtil.get(pageContext, "bundles.view.all") %></strong>" +
+				"<strong id='view_all_" + bundleId + "' style=\"text-decoration: underline;\"><%=LanguageUtil.get(pageContext, "bundles.view.all") %></strong>" +
 				"</a>";
 	}
 
@@ -235,7 +235,7 @@
 
 		newCell.innerHTML = "<%=LanguageUtil.get(pageContext, "bundles.item.all.show")%>&nbsp;" +
 				"<a href=\"javascript:requestAssets('" + bundleId + "', '<%=MAX_BUNDLE_ASSET_TO_SHOW%>')\">" +
-				"<strong style=\"text-decoration: underline;\"><%=LanguageUtil.get(pageContext, "bundles.item.less.show")%></strong>" +
+				"<strong id='view_less_" + bundleId + "' style=\"text-decoration: underline;\"><%=LanguageUtil.get(pageContext, "bundles.item.less.show")%></strong>" +
 				"</a>";
 	}
 
@@ -248,6 +248,13 @@
 	}
 
 	function requestAssets(bundleId, numberToShow = -1){
+
+		let viewAllNode = (numberToShow === -1) ? document.getElementById('view_all_' + bundleId) : document.getElementById('view_less_' + bundleId);
+
+		if (viewAllNode) {
+			viewAllNode.innerHTML = '<%= LanguageUtil.get(pageContext, "bundles.item.loading")  %>';
+		}
+
 		fetch('/api/bundle/' + bundleId + "/assets").then((response) => response.json()).then((data) => {
 			let tbodyRef = document.getElementById('un_publish_table_' + bundleId).getElementsByTagName('tbody')[0];
 			while (tbodyRef.firstChild) {

@@ -14,9 +14,12 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Implementation class for the {@link PublishAuditAPI}.
@@ -27,6 +30,8 @@ import java.util.Map;
  *
  */
 public class PublishAuditAPIImpl extends PublishAuditAPI {
+
+	public static int NO_LIMIT_ASSETS = -1;
 
 	private static PublishAuditAPIImpl instance= null;
 	private PublishAuditStatusMapper mapper = null;
@@ -232,7 +237,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			DotConnect dc = new DotConnect();
 			dc.setSQL(SELECT_ALL_ORDER_BY_STATUSUPDATED_DESC);
 
-			return mapper.mapRows(dc.loadObjectResults());
+			return mapper.mapRows(limitAssets(dc.loadObjectResults(), NO_LIMIT_ASSETS));
 		}catch(Exception e){
 			Logger.debug(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
@@ -241,6 +246,11 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 
 	@Override
 	public List<PublishAuditStatus> getAllPublishAuditStatus(Integer limit, Integer offset) throws DotPublisherException {
+		return getAllPublishAuditStatus(limit, offset, NO_LIMIT_ASSETS);
+	}
+
+	public List<PublishAuditStatus> getAllPublishAuditStatus(final int limit,
+			final int offset, final int limitAssets) throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
 			dc.setSQL(SELECT_ALL_ORDER_BY_STATUSUPDATED_DESC);
@@ -248,10 +258,41 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			dc.setStartRow(offset);
 			dc.setMaxRows(limit);
 
-			return mapper.mapRows(dc.loadObjectResults());
+			return mapper.mapRows(limitAssets(dc.loadObjectResults(), limitAssets));
 		}catch(Exception e){
 			Logger.debug(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
+		}
+	}
+
+	private List<Map<String, Object>> limitAssets(final List<Map<String, Object>> publishAuditStatus,
+			final int limitAssets) {
+
+		if (limitAssets != NO_LIMIT_ASSETS) {
+			return publishAuditStatus.stream()
+					.map(publishAuditStatusMap -> {
+						final String statusPojoAsString = publishAuditStatusMap.get("status_pojo")
+								.toString();
+						final String assetsAsString = StringUtils
+								.substringBetween(statusPojoAsString, "<assets>", "</assets>");
+						final String[] entries = StringUtils
+								.substringsBetween(assetsAsString, "<entry>", "</entry>");
+
+						final List<String> allEntries = Arrays
+								.stream(Arrays.copyOfRange(entries, 0, limitAssets - 1))
+								.map(arrayItem -> "<entry>" + arrayItem + "</entry>")
+								.collect(Collectors.toList());
+
+						final String entriesLimitedAsString = allEntries.stream().collect(Collectors.joining());
+						final String statusPojoAsStringLimited = statusPojoAsString
+								.replace(assetsAsString, entriesLimitedAsString);
+						publishAuditStatusMap.put("status_pojo", statusPojoAsStringLimited);
+						publishAuditStatusMap.put("total_number_of_assets", allEntries.size());
+						return publishAuditStatusMap;
+					})
+					.collect(Collectors.toList());
+		} else {
+			return publishAuditStatus;
 		}
 	}
 

@@ -27,7 +27,7 @@
 <%@ page import="com.dotcms.publisher.business.PublishQueueElementTransformer" %>
 <%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
 <%
-
+	final int MAX_ASSETS_TO_SHOW = 3;
     ContentletAPI conAPI = APILocator.getContentletAPI();
     PublishAuditAPI publishAuditAPI = PublishAuditAPI.getInstance();
 
@@ -71,7 +71,7 @@
     int counter =  0;
 
     try{
-   		iresults =  publishAuditAPI.getAllPublishAuditStatus(new Integer(limit),new Integer(offset));
+   		iresults =  publishAuditAPI.getAllPublishAuditStatus(limit, offset, MAX_ASSETS_TO_SHOW);
    		counter =   publishAuditAPI.countAllPublishAuditStatus().intValue();
     }catch(DotPublisherException e){
     	iresults = new ArrayList();
@@ -103,26 +103,29 @@
 <script type="text/javascript">
    dojo.require("dijit.Tooltip");
 
-   function showDetail(bundleId) {
-		var dialog = new dijit.Dialog({
-			id: 'bundleDetail',
-	        title: "<%= LanguageUtil.get(pageContext, "publisher_Audit_Detail_Desc")%>",
-	        style: "width: 700px; ",
-	        content: new dojox.layout.ContentPane({
-	            href: "/html/portlet/ext/contentlet/publishing/view_publish_audit_detail.jsp?bundle="+bundleId
-	        }),
-	        onHide: function() {
-	        	var dialog=this;
-	        	setTimeout(function() {
-	        		dialog.destroyRecursive();
-	        	},200);
-	        },
-	        onLoad: function() {
+   function showDetail(bundleId, event) {
+	   if (!event || event.target.className !== 'view_link') {
+		   var dialog = new dijit.Dialog({
+			   id: 'bundleDetail',
+			   title: "<%= LanguageUtil.get(pageContext, "publisher_Audit_Detail_Desc")%>",
+			   style: "width: 700px; ",
+			   content: new dojox.layout.ContentPane({
+				   href: "/html/portlet/ext/contentlet/publishing/view_publish_audit_detail.jsp?bundle="
+						   + bundleId
+			   }),
+			   onHide: function () {
+				   var dialog = this;
+				   setTimeout(function () {
+					   dialog.destroyRecursive();
+				   }, 200);
+			   },
+			   onLoad: function () {
 
-	        }
-	    });
-	    dialog.show();
-	    dojo.style(dialog.domNode,'top','80px');
+			   }
+		   });
+		   dialog.show();
+		   dojo.style(dialog.domNode, 'top', '80px');
+	   }
 	}
 
    function doAuditPagination(offset,limit) {
@@ -345,7 +348,9 @@
 				<%--BundleTitle--%>
 				<%try{ %>
 					<% if(bundleAssets.keySet().size()>0){ %>
-						<td id="td_assets_<%=c.getBundleId()%>" valign="top" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')"></td>
+						<td valign="top" style="cursor: pointer" onclick="showDetail('<%=c.getBundleId()%>', event)">
+							<table><tbody id="td_assets_<%=c.getBundleId()%>"></tbody></table>
+						</td>
 					<%}else{ %>
 
 						<td valign="top" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
@@ -412,12 +417,11 @@
                 final Map<String,String> assets = publishAuditStatus.getStatusPojo().getAssets();
 
                 final List<Map<String,Object>> assetsTransformed = assets.entrySet().stream()
-                    .limit(3)
                     .map(entry -> publishQueueElementTransformer.getMap(entry.getKey(), entry.getValue()))
                     .collect(Collectors.toList());
 
         %>
-		<%if (assets.size() > 3) {%>
+		<%if (publishAuditStatus.getTotalNumberOfAssets() > MAX_ASSETS_TO_SHOW) {%>
 			addShowMoreMessage('<%=publishAuditStatus.getBundleId()%>', '<%=assets.size()%>');
 		<%}%>
 
@@ -428,55 +432,79 @@
 				final String assetTitle = UtilMethods.isSet(asset.get(PublishQueueElementTransformer.TITLE_KEY)) ?
 					asset.get(PublishQueueElementTransformer.TITLE_KEY).toString() : StringPool.BLANK;
 		%>
-				addRow('<%=StringEscapeUtils.escapeHtml(assetTitle)%>', '<%=assetType%>', '<%=publishAuditStatus.getBundleId()%>');
+				addRow({
+					title: '<%=StringEscapeUtils.escapeHtml(assetTitle)%>',
+					type: '<%=assetType%>',
+					bundleId: '<%=publishAuditStatus.getBundleId()%>',
+					isHtml: <%=asset.get(PublishQueueElementTransformer.HTML_PAGE_KEY)%>
+				});
 			<%}%>
 
 
 	<%}%>
 
-	function addRow(title, type, bundleId) {
-		let td = document.getElementById("td_assets_" + bundleId);
+	function addRow(rowData) {
+		let tbody = document.getElementById("td_assets_" + rowData.bundleId);
+
+		let newRow = tbody.insertRow();
+		let newCell = newRow.insertCell();
+
+		let type = rowData.isHtml ? 'htmlpage' : rowData.type;
 		let html = '<div>' +
-				((title === type) ? type : '<strong>' + type + '</strong> : ' + title) + '</div>';
-		td.innerHTML += html;
+				((rowData.title === rowData.type) ? type : '<strong>' + type + '</strong> : ' + rowData.title) + '</div>';
+		newCell.innerHTML = html;
 	}
 
-	function addShowMoreMessage(bundleId){
+	function addShowMoreMessage(bundleId, nAssets){
 		let td = document.getElementById("td_assets_" + bundleId);
 
-		td.innerHTML += '<div>' + nAssets + ' <%=LanguageUtil.get(pageContext, "publisher_audit_more_assets") %>&nbsp;' +
+		let newRow = td.insertRow();
+		let newCell = newRow.insertCell();
+
+		newCell.innerHTML += nAssets + ' <%=LanguageUtil.get(pageContext, "publisher_audit_more_assets") %>&nbsp;' +
 				"<a href=\"javascript:requestAssets('" + bundleId + "')\">" +
-				"<strong style=\"text-decoration: underline;\"><%=LanguageUtil.get(pageContext, "bundles.view.all") %></strong>" +
-				"</a>" +
-		'</div>';
+				"<strong id='view_all_" + bundleId + "' class='view_link' style=\"text-decoration: underline;\"><%=LanguageUtil.get(pageContext, "bundles.view.all") %></strong>" +
+				"</a>";
 	}
 
 
 	function addShowLessMessage(bundleId){
 		let td = document.getElementById("td_assets_" + bundleId);
-
-		td.innerHTML +=  '<div><%=LanguageUtil.get(pageContext, "bundles.item.all.show") %>&nbsp;' +
+		let newRow = td.insertRow();
+		let newCell = newRow.insertCell();
+		newCell.innerHTML +=  '<%=LanguageUtil.get(pageContext, "bundles.item.all.show") %>&nbsp;' +
 				"<a href=\"javascript:requestAssets('" + bundleId + "', 3)\">" +
-				"<strong style=\"text-decoration: underline;\"><%=LanguageUtil.get(pageContext, "bundles.item.less.show")%></strong>" +
-				"</a>" +
-		'</div>';
+				"<strong id='view_less_" + bundleId + "' class='view_link' style=\"text-decoration: underline;\"><%=LanguageUtil.get(pageContext, "bundles.item.less.show")%></strong>" +
+				"</a>";
 	}
 
 	function requestAssets(bundleId, numberToShow = -1){
+		let viewAllNode = (numberToShow === -1) ? document.getElementById('view_all_' + bundleId) : document.getElementById('view_less_' + bundleId);
+
+		if (viewAllNode) {
+			viewAllNode.innerHTML = '<%= LanguageUtil.get(pageContext, "bundles.item.loading")  %>';
+		}
+
 		fetch('/api/bundle/' + bundleId + "/assets").then((response) => response.json()).then((data) => {
+			console.log('data', data);
 			let td = document.getElementById("td_assets_" + bundleId);
 			while (td.firstChild) {
 				td.removeChild(td.firstChild);
 			}
 
 			if (numberToShow !== -1) {
-				addShowMoreRow(bundleId, data.length);
+				addShowMoreMessage(bundleId, data.length);
 				data = data.slice(0, numberToShow);
 			} else {
-				addShowLessRow(bundleId);
+				addShowLessMessage(bundleId);
 			}
 
-			data.forEach(asset => addRow(asset.<%=PublishQueueElementTransformer.TITLE_KEY%>, asset.<%=PublishQueueElementTransformer.TYPE_KEY%>, bundleId));
+			data.forEach(asset => addRow({
+				title: asset.<%=PublishQueueElementTransformer.TITLE_KEY%>,
+				type: asset.<%=PublishQueueElementTransformer.TYPE_KEY%>,
+				bundleId: bundleId,
+				isHtml: asset.<%=PublishQueueElementTransformer.HTML_PAGE_KEY%>
+			}));
 		}).catch(function (err) {
 			console.warn('Something went wrong.', err);
 		});

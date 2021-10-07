@@ -106,7 +106,9 @@ public abstract class PublishAuditAPI {
 	 * @throws DotPublisherException
 	 */
 	public abstract List<PublishAuditStatus> getAllPublishAuditStatus(Integer limit, Integer offset) throws DotPublisherException;
-	
+
+	public abstract List<PublishAuditStatus> getAllPublishAuditStatus(int limit, int offset, int limitAssets) throws DotPublisherException;
+
 	/**
 	 * count all publish status
 	 * @param offset
