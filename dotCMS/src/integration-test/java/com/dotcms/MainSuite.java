@@ -31,6 +31,7 @@ import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleAPITest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
+import com.dotcms.publisher.business.PublishQueueElementTransformerTest;
 import com.dotcms.publisher.receiver.BundlePublisherTest;
 import com.dotcms.publisher.util.DependencyManagerTest;
 import com.dotcms.publisher.util.DependencyModDateUtilTest;
@@ -460,7 +461,8 @@ import org.junit.runners.Suite.SuiteClasses;
         BundlerUtilIntegrationTest.class,
         Task210816DeInodeRelationshipTest.class,
         WorkflowEmailUtilTest.class,
-        ConfigurationHelperTest.class
+        ConfigurationHelperTest.class,
+        PublishQueueElementTransformerTest.class
 })
 public class MainSuite {
 
