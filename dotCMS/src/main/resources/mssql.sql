@@ -35,7 +35,7 @@ create table Company (
     key_ NVARCHAR(MAX) null,
     portalURL NVARCHAR(100) not null,
     homeURL NVARCHAR(100) not null,
-    mx NVARCHAR(100) not null,
+    mx NVARCHAR(100) default 'dotcms.com',
     name NVARCHAR(100) not null,
     shortName NVARCHAR(100) not null,
     type_ NVARCHAR(100) null,
