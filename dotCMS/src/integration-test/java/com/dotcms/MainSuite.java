@@ -123,6 +123,7 @@ import com.dotmarketing.startup.runonce.Task210802UpdateStructureTableTest;
 import com.dotmarketing.startup.runonce.Task210805DropUserProxyTableTest;
 import com.dotmarketing.startup.runonce.Task210816DeInodeRelationshipTest;
 import com.dotmarketing.startup.runonce.Task210901UpdateDateTimezonesTest;
+import com.dotmarketing.startup.runonce.Task211007RemoveNotNullConstraintFromCompanyMXColumnTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -470,7 +471,8 @@ import org.junit.runners.Suite.SuiteClasses;
         RedisClientTest.class,
         LettuceCacheTest.class,
         RedisPubSubImplTest.class,
-        ManifestReaderFactoryTest.class
+        ManifestReaderFactoryTest.class,
+        Task211007RemoveNotNullConstraintFromCompanyMXColumnTest.class
 })
 public class MainSuite {
 
