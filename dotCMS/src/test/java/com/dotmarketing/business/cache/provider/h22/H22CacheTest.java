@@ -300,8 +300,8 @@ public class H22CacheTest {
 	 * In any case we should never ever get a RejectedExecutionException
 	 */
 	@Test
+	@Ignore("Failures are inconsistent")
 	@UseDataProvider("toleranceTestCases")
-	@Ignore
 	public void Test_Exhaust_Thread_Pool(final ToleranceTestCase testCase) throws Exception {
 
 		final boolean shouldAsync = Config.getBooleanProperty("cache_h22_async", true);
