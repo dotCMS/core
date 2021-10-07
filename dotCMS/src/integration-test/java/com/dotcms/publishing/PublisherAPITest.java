@@ -234,9 +234,6 @@ public class PublisherAPITest extends IntegrationTestBase {
             final Map<String, Long> firstFileDates = getFileDatesByFolder(bundleFolder,
                     getNoBundleXMLFileFilter());
 
-            final File bundleXML = new File(bundleXMLPath);
-            assertTrue("bundle.xml not exists", bundleXML.exists());
-
             // Let's wait 2 seconds between runs so we have different millis in files.
             Logger.info(this, "Waiting 2 seconds before 2nd PP run");
             Thread.sleep(2000);

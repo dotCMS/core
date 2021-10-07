@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "84e466e7-ee50-432d-b995-19450f952e3e",
+		"_postman_id": "70159dd0-e57b-4402-b90a-68aed054c091",
 		"name": "LanguageResource",
 		"description": "This collections is focused on the /v2/languages resource\nThis should cover Language CRUD Operations",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -1761,6 +1761,358 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Make Default",
+			"item": [
+				{
+					"name": "Get Default Language",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Expected Language info returned\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    let langs = jsonData.entity;",
+									"",
+									"    let defaultLanguage = null;",
+									"",
+									"    for (let i = 0; i < langs.length; i++) {",
+									"       let lang = langs[i];",
+									"       if(true === lang.defaultLanguage){",
+									"          defaultLanguage = lang;",
+									"          break;",
+									"       }",
+									"    }",
+									"",
+									"    pm.expect(defaultLanguage).not.eql(null);",
+									"    pm.collectionVariables.set(\"originalDefaultLanguageId\", defaultLanguage.id);",
+									"",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CreateNewLanguage",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"pm.test(\"Expected Language info returned\", function () {",
+									"    let jsonData = pm.response.json();",
+									"    let newLanguage = jsonData.entity;",
+									"    pm.expect(newLanguage.languageCode).to.eql(\"en\");",
+									"    pm.expect(newLanguage.countryCode).to.eql(\"GB\");",
+									"    pm.collectionVariables.set(\"newDefaultLanguageCandidate\", newLanguage);",
+									"    pm.collectionVariables.set(\"newDefaultLanguageCandidateId\", newLanguage.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"languageCode\":\"en\",\n\t\"language\":\"English\", \n\t\"countryCode\":\"GB\", \n\t\"country\":\"England\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Make Default",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"pm.test(\"Expected Language info returned\", function () {",
+									"    let jsonData = pm.response.json();    ",
+									"    let newLanguage = jsonData.entity;",
+									"    pm.expect(newLanguage.languageCode).to.eql(\"en\");",
+									"    pm.expect(newLanguage.countryCode).to.eql(\"GB\"); ",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"fireTransferAssetsJob\":false\t\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages/{{newDefaultLanguageCandidateId}}/_makedefault",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages",
+								"{{newDefaultLanguageCandidateId}}",
+								"_makedefault"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Default Language after update",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Expected Language info returned\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    let langs = jsonData.entity;",
+									"",
+									"    let newDefaultLanguage = null;",
+									"",
+									"    for (let i = 0; i < langs.length; i++) {",
+									"       let lang = langs[i];",
+									"       if(true === lang.defaultLanguage){",
+									"          newDefaultLanguage = lang;",
+									"          break;",
+									"       }",
+									"    }",
+									"",
+									"    pm.expect(newDefaultLanguage).not.eql(null);",
+									"    pm.expect(newDefaultLanguage.languageCode).to.eql(\"en\");",
+									"    pm.expect(newDefaultLanguage.countryCode).to.eql(\"GB\");",
+									"    pm.collectionVariables.set(\"newDefaultLanguage\", newDefaultLanguage);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Restore Original Default Language",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"let originalDefaultLanguageId = pm.collectionVariables.get(\"originalDefaultLanguageId\");",
+									"",
+									"pm.test(\"Expected Language info returned\", function () {",
+									"    let jsonData = pm.response.json();    ",
+									"    let newLanguage = jsonData.entity;",
+									"    pm.expect(newLanguage.id).to.eql(originalDefaultLanguageId);    ",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"fireTransferAssetsJob\":false\t\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages/{{originalDefaultLanguageId}}/_makedefault",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages",
+								"{{originalDefaultLanguageId}}",
+								"_makedefault"
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"variable": [
@@ -1775,6 +2127,30 @@
 		{
 			"key": "contentIdentifier",
 			"value": "e6f65042-d936-4615-af1b-e168e77c8bba"
+		},
+		{
+			"key": "defaultLanguage",
+			"value": ""
+		},
+		{
+			"key": "newDefaultLanguageCandidate",
+			"value": ""
+		},
+		{
+			"key": "newDefaultLanguageId",
+			"value": ""
+		},
+		{
+			"key": "newDefaultLanguageCandidateId",
+			"value": ""
+		},
+		{
+			"key": "originalDefaultLanguageId",
+			"value": ""
+		},
+		{
+			"key": "newDefaultLanguage",
+			"value": ""
 		}
 	]
 }

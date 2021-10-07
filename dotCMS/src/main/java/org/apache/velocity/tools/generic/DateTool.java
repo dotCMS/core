@@ -31,6 +31,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
+import com.dotmarketing.business.APILocator;
 
 
 /**
@@ -143,7 +144,7 @@ public class DateTool implements ViewTool
      */
     public TimeZone getTimeZone()
     {
-        return TimeZone.getDefault();
+        return APILocator.systemTimeZone();
     }
 
     /**

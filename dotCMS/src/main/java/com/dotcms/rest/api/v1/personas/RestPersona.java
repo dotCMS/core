@@ -3,7 +3,6 @@ package com.dotcms.rest.api.v1.personas;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.dotcms.repackage.org.hibernate.validator.constraints.Length;
 import com.dotcms.rest.api.Validated;
 
 /**
@@ -14,7 +13,7 @@ import com.dotcms.rest.api.Validated;
 @JsonDeserialize(builder = RestPersona.Builder.class)
 public final class RestPersona extends Validated  {
 
-    @Length(min = 36, max = 36)
+
     @JsonIgnore
     public final String key;
     public final String name;

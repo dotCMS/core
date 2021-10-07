@@ -4,6 +4,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.UtilMethods;
 
 import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -50,7 +51,8 @@ public class ConversionUtils implements Serializable {
 	/**
 	 * Converts from the array of Original objects to Destiny beans using a
 	 * converter.
-	 * 
+	 *
+	 * Return a List
 	 * @param originArray - 
 	 * @param converter - 
 	 * @return
@@ -72,6 +74,27 @@ public class ConversionUtils implements Serializable {
 
         return destinyList;
     } // convert
+
+	/**
+	 * Converts from the array of Original objects to Destiny beans using a
+	 * converter.
+	 * Returns an array
+	 *
+	 * @param originArray -
+	 * @param converter -
+	 * @return
+	 */
+	public <O, D> D[] convertToArray (final Converter<O, D> converter, final Class<D> clazz, final O... originArray) {
+
+		final D[] destinyArray =  (D[]) Array.newInstance(clazz, originArray.length);
+
+		for (int i = 0; i < originArray.length; ++i) {
+
+			destinyArray[i] = converter.convert(originArray[i]);
+		}
+
+		return destinyArray;
+	} // convert
 
     /**
 	 * Converts from the list of Original objects to Destiny beans using a

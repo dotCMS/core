@@ -1,9 +1,14 @@
 package com.dotmarketing.util;
 
+import static com.dotmarketing.portlets.languagesmanager.business.LanguageFactoryImpl.DEFAULT_LANGUAGE_CODE;
+import static com.dotmarketing.portlets.languagesmanager.business.LanguageFactoryImpl.DEFAULT_LANGUAGE_COUNTRY_CODE;
+
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.image.filter.ImageFilter;
 import com.liferay.util.FileUtil;
 import io.vavr.Lazy;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.File;
 
@@ -156,7 +161,15 @@ public class ConfigUtils {
                     : ConfigUtils.getAbsoluteAssetsRootPath();
             });
 
-    
-    
+
+	public static Tuple2<String,String> getDeclaredDefaultLanguage(){
+		final String langCode = Config.getStringProperty(DEFAULT_LANGUAGE_CODE, "en")
+				.toLowerCase();
+		final String countryCode = Config.getStringProperty(DEFAULT_LANGUAGE_COUNTRY_CODE, "US")
+				.toLowerCase();
+
+		return Tuple.of(langCode, countryCode);
+
+	}
     
 }

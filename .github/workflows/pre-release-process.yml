@@ -55,6 +55,7 @@ jobs:
           GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
           REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
           REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           FROM_BRANCH: ${{ github.event.inputs.from_branch }}
           NODE_VERSION: ${{ github.event.inputs.node_version }}
       - name: Discover docker tags

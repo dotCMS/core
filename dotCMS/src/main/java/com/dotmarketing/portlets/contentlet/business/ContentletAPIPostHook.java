@@ -275,18 +275,6 @@ public interface ContentletAPIPostHook {
             final User user, final boolean respectFrontendRoles) {
     }
 
-
-    /**
-	 * Will get all the contentlets for a structure and set the default values for a host field.  
-	 * Will check Write/Edit permissions on the Contentlet. So to guarantee all Contentlets will be cleaned make 
-	 * sure to pass in an Admin User.  If a user doesn't have permissions to clean all teh contentlets it will clean 
-	 * as many as it can and throw the DotSecurityException  
-	 * @param structure
-	 * @param user
-	 * @param respectFrontendRoles
-	 */
-	public default void cleanHostField(Structure structure, User user, boolean respectFrontendRoles){}
-
 	/**
 	 * Retrieves all references for a Contentlet. The result is an ArrayList of type Map whose key will 
 	 * be page or container with the respective object as the value.  

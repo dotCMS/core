@@ -410,22 +410,6 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
     }
 
 	@Override
-	public void cleanHostField(Structure structure, User user, boolean respectFrontendRoles)
-			throws DotSecurityException, DotDataException, DotMappingException {
-		for(ContentletAPIPreHook pre : preHooks){
-			boolean preResult = pre.cleanHostField(structure, user, respectFrontendRoles);
-			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
-			}
-		}
-		conAPI.cleanHostField(structure, user, respectFrontendRoles);
-		for(ContentletAPIPostHook post : postHooks){
-			post.cleanHostField(structure, user, respectFrontendRoles);
-		}
-	}
-
-	@Override
 	public void copyProperties(Contentlet contentlet, Map<String, Object> properties) throws DotContentletStateException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.copyProperties(contentlet, properties);

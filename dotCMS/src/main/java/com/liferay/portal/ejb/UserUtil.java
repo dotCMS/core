@@ -22,6 +22,7 @@
 
 package com.liferay.portal.ejb;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.ModelListener;
 import com.liferay.portal.util.PropsUtil;
@@ -82,6 +83,7 @@ public class UserUtil {
 		return user;
 	}
 
+	@WrapInTransaction
 	public static com.liferay.portal.model.User update(
 		com.liferay.portal.model.User user)
 		throws com.liferay.portal.SystemException {

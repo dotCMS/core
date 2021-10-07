@@ -56,6 +56,11 @@ public class CacheTransportTopic implements DotPubSubTopic {
         this.provider = provider;
     }
 
+    @Override
+    public String getInstanceId () {
+        return serverId;
+    }
+
     public enum CacheEventType {
         INVAL, PING, PONG, CLUSTER_REQ, CLUSTER_RES, UKN;
 

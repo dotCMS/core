@@ -3,25 +3,18 @@ package com.dotcms.publishing.manifest;
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 
-import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
 import com.dotcms.util.CloseUtils;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.util.FileUtil;
-import com.liferay.portal.model.User;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
-import java.io.Closeable;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 /**
@@ -37,17 +30,31 @@ import java.util.stream.Collectors;
  * - include by: reason why the asset was INCLUDE, if the asset was EXCLUDE then it is blank
  */
 public class CSVManifestBuilder implements ManifestBuilder {
-    private final static String HEADERS_LINE =
+
+    public final static String BUNDLE_ID_METADATA_NAME = "Bundle ID";
+    public final static String OPERATION_METADATA_NAME = "Operation";
+    public final static String FILTER_METADATA_NAME = "Filter";
+
+    public final static String HEADERS_LINE =
             "INCLUDED/EXCLUDED,object type, Id, inode, title, site, folder, excluded by, included by";
     private FileWriter csvWriter;
 
     private File manifestFile;
+    private Map<String, String> metaData;
 
     private synchronized void create() {
         try {
             manifestFile = File.createTempFile("ManifestBuilder_", ".csv");
 
             csvWriter = new FileWriter(manifestFile);
+
+            if (UtilMethods.isSet(metaData)) {
+                for (Entry<String, String> headersEntry : metaData.entrySet()) {
+                    writeLine(String.format("#%s:%s", headersEntry.getKey(),
+                            headersEntry.getValue()));
+                }
+            }
+
             writeLine(HEADERS_LINE);
         } catch (IOException e) {
             throw new DotRuntimeException(e);
@@ -129,6 +136,40 @@ public class CSVManifestBuilder implements ManifestBuilder {
         if (csvWriter != null) {
             CloseUtils.closeQuietly(csvWriter);
         }
+    }
+
+    /**
+     * Add a comment in the first lines of the Manifest file, for exaple the follow code:
+     *
+     * <code>
+     *     csvManifestBuilder.addHeader("first_header", "This is the first header")
+     *     csvManifestBuilder.addHeader("second_header", "This is the second header")
+     * </code>
+     *
+     * it going to produce the follow lines into the manifest file
+     *
+     * <pre>
+     * #first_header:This is the first header
+     * #second_header:This is the second header
+     *
+     * INCLUDED/EXCLUDED,object type, Id, inode, title, site, folder, excluded by, included by
+     * ...
+     * </pre>
+     * @param name
+     * @param value
+     */
+    @Override
+    public void addMetadata(final String name, final String value){
+
+        if (UtilMethods.isSet(manifestFile)) {
+            throw new IllegalStateException("It not possible add header after call include or exclude methods");
+        }
+
+        if (!UtilMethods.isSet(metaData)) {
+            metaData = new LinkedHashMap<>();
+        }
+
+        this.metaData.put(name, value);
     }
 
 }

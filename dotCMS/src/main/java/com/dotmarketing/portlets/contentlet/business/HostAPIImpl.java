@@ -909,46 +909,50 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     }
 
 
-    @WrapInTransaction
+    @CloseDBIfOpened
     private synchronized Host getOrCreateDefaultHost() throws DotDataException,
     DotSecurityException {
         
-        List<Field> fields = hostType().fields();
+        final List<Field> fields = hostType().fields();
         Field isDefault = null;
-        for(Field f : fields){
-            if("isDefault".equalsIgnoreCase(f.variable())){
-                isDefault=f;
+        for(final Field field : fields) {
+
+            if("isDefault".equalsIgnoreCase(field.variable())){
+                isDefault = field;
             }
         }
 
-        DotConnect dc = new DotConnect();
+        final DotConnect dc = new DotConnect();
         dc.setSQL("select working_inode from contentlet_version_info join contentlet on (contentlet.inode = contentlet_version_info.working_inode) " +
                   " where " + isDefault.dbColumn() +" = ? and structure_inode =?");
         dc.addParam(true);
         dc.addParam(hostType().inode());
-        String inode = dc.getString("working_inode");
+        final String inode = dc.getString("working_inode");
 
         Host defaultHost = new Host();
 
-        if(UtilMethods.isSet(inode)){
+        if(UtilMethods.isSet(inode)) {
+
             defaultHost = new Host(APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false));
             hostCache.add(defaultHost);
         } else {
+
             defaultHost.setDefault(true);
             defaultHost.setHostname("noDefault-"  + System.currentTimeMillis());
 
-            for(Field f : fields){
-                if(f.required() && UtilMethods.isSet(f.defaultValue())){
-                    defaultHost.setProperty(f.variable(), f.defaultValue());
+            for(final Field field : fields) {
+
+                if(field.required() && UtilMethods.isSet(field.defaultValue())) {
+
+                    defaultHost.setProperty(field.variable(), field.defaultValue());
                 }
             }
+
             defaultHost.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
             defaultHost = save(defaultHost, APILocator.systemUser(), false);
-         
 
             sendNotification();
         }
-
 
 
         return defaultHost;
