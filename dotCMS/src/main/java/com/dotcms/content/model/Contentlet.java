@@ -17,7 +17,7 @@ import org.immutables.value.Value;
 public interface Contentlet {
 
     String title();
-    String iNode();
+    String inode();
     String identifier();
     String contentType();
     Instant modDate();
@@ -32,7 +32,6 @@ public interface Contentlet {
     String owner();
     Long sortOrder();
     List<String> disabledWysiwyg();
-    List<String> tags();
     Map<String, FieldValue<?>> fields();
 
     //TODO: Verify if this is page specific or what other attributes outside contentlet are specific for "concrete" contentlet type

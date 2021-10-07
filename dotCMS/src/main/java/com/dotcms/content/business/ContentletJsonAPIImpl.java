@@ -68,6 +68,8 @@ import java.util.stream.Collectors;
 
 public class ContentletJsonAPIImpl implements ContentletJsonAPI {
 
+    private static final BinaryFileFilter binaryFileFilter = new BinaryFileFilter();
+
     final IdentifierAPI identifierAPI;
     final ContentTypeAPI contentTypeAPI;
     final FileAssetAPI fileAssetAPI;
@@ -105,8 +107,6 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
             final com.dotmarketing.portlets.contentlet.model.Contentlet contentlet)
             throws DotDataException {
 
-        contentlet.setTags();
-
         final Builder builder = ImmutableContentlet.builder();
         builder.baseType(contentlet.getBaseType().orElseGet(() -> BaseContentType.ANY).toString());
         builder.contentType(contentlet.getContentType().id());
@@ -120,35 +120,36 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
         builder.modUser(contentlet.getModUser());
         builder.modDate(Try.of(() -> contentlet.getModDate().toInstant()).getOrNull());
         builder.identifier(contentlet.getIdentifier());
-        builder.iNode(contentlet.getInode());
+        builder.inode(contentlet.getInode());
         builder.host(contentlet.getHost());
         builder.folder(contentlet.getFolder());
 
         final List<Field> fields = contentlet.getContentType().fields();
         for (final Field field : fields) {
-            if (null != contentlet.get(field.variable())) {
-                final Object value = contentlet.get(field.variable());
+
+            final Object value = contentlet.get(field.variable());
+            if (null != value) {
                 final Optional<FieldValue<?>> fieldValue = getFieldValue(value, field);
                 if (!fieldValue.isPresent()) {
                     Logger.warn(ContentletJsonAPIImpl.class,
-                            String.format("Unable to set field %s with the given value %s.",
+                            String.format("Unable to set field `%s` with the given value %s.",
                                     field.name(), value));
                 } else {
                     builder.putFields(field.variable(), fieldValue.get());
                 }
+            } else {
+                Logger.warn(ContentletJsonAPIImpl.class,
+                        String.format("Unable to set field `%s` as it wasn't set on the source contentlet", field.name()));
             }
         }
         return builder.build();
     }
 
 
-    public com.dotmarketing.portlets.contentlet.model.Contentlet mapContentletFromJson(final String json)
+    public com.dotmarketing.portlets.contentlet.model.Contentlet mapContentletFieldsFromJson(final String json)
             throws JsonProcessingException, DotDataException, DotSecurityException{
         final Map<String, Object> map = mapFieldsFromJson(json);
-        final com.dotmarketing.portlets.contentlet.model.Contentlet contentlet = new com.dotmarketing.portlets.contentlet.model.Contentlet(map);
-        populateFolderAndHost(contentlet);
-        //TODO: Add the Wysiwyg props here tooo
-        return contentlet;
+        return new com.dotmarketing.portlets.contentlet.model.Contentlet(map);
     }
 
     Map<String, Object> mapFieldsFromJson(final String json)
@@ -156,7 +157,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
 
         final Contentlet immutableContentlet = immutableFromJson(json);
         final Map<String, Object> map = new HashMap<>();
-        final String inode = immutableContentlet.iNode();
+        final String inode = immutableContentlet.inode();
         final String identifier = immutableContentlet.identifier();
         final String contentTypeId = immutableContentlet.contentType();
 
@@ -235,7 +236,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
                         + java.io.File.separator
                         + field.variable());
         if (binaryFileFolder.exists()) {
-            java.io.File[] files = binaryFileFolder.listFiles(new BinaryFileFilter());
+            final java.io.File[] files = binaryFileFolder.listFiles(binaryFileFilter);
             if (files != null && files.length > 0) {
                 return Optional.of(files[0]);
             }
@@ -247,64 +248,6 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
        final Object value = Try.of(()->fields.get(field.variable()).value()).getOrNull();
        return value instanceof Instant ? Date.from((Instant)value) : value;
     }
-
-    private void populateFolderAndHost(final com.dotmarketing.portlets.contentlet.model.Contentlet contentlet) throws DotDataException, DotSecurityException {
-        if (UtilMethods.isSet(contentlet.getIdentifier())) {
-            final Identifier identifier = identifierAPI.loadFromDb(contentlet.getIdentifier());
-            if (identifier == null) {
-                throw new DotStateException(
-                        String.format("Unable to find contentlet identifier in db. inode: %s identifier: %s ", contentlet.getInode(), contentlet.getIdentifier()));
-            }
-
-            final Folder folder;
-            if (!StringPool.FORWARD_SLASH.equals(identifier.getParentPath())) {
-                folder = folderAPI
-                        .findFolderByPath(identifier.getParentPath(), identifier.getHostId(),
-                                APILocator.systemUser(), false);
-            } else {
-                folder = folderAPI.findSystemFolder();
-            }
-
-            if(folder == null) {
-                return;
-            }
-
-            contentlet.setHost(identifier.getHostId());
-            contentlet.setFolder(folder.getInode());
-
-            final String contentTypeId = contentlet.getContentTypeId();
-            if(UtilMethods.isNotSet(contentTypeId)){
-                throw new DotStateException(
-                        String.format("ContentType Id isn't set for contentlet with inode: %s and identifier: %s ", contentlet.getInode(), contentlet.getIdentifier()));
-            }
-
-            // lets check if we have publish/expire fields to set
-            final ContentType contentType = contentTypeAPI.find(contentTypeId);
-
-            if (UtilMethods.isSet(contentType.publishDateVar())) {
-                contentlet.setDateProperty(contentType.publishDateVar(),
-                        identifier.getSysPublishDate());
-            }
-
-            if (UtilMethods.isSet(contentType.expireDateVar())) {
-                contentlet
-                        .setDateProperty(contentType.expireDateVar(),
-                                identifier.getSysExpireDate());
-            }
-        } else {
-            if (contentlet.isSystemHost()) {
-                // When we are saving a systemHost we cannot call
-                // APILocator.getHostAPI().findSystemHost() method, because this
-                // method will create a system host if not exist which cause
-                // a infinite loop.
-                contentlet.setHost(Host.SYSTEM_HOST);
-            } else {
-                contentlet.setHost(hostAPI.findSystemHost().getIdentifier());
-            }
-            contentlet.setFolder(folderAPI.findSystemFolder().getInode());
-        }
-    }
-
 
     Contentlet immutableFromJson(final String json) throws JsonProcessingException {
         return objectMapper.get().readValue(json, Contentlet.class);
@@ -322,15 +265,6 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
 
     private Optional<FieldValue<?>> getFieldValue(final Object value, final Field field) {
         return field.fieldValue(value);
-    }
-
-    public enum INSTANCE {
-        INSTANCE;
-        private final ContentletJsonAPIImpl provider = new ContentletJsonAPIImpl();
-
-        public static ContentletJsonAPI get() {
-            return INSTANCE.provider;
-        }
     }
 
 }

@@ -89,14 +89,15 @@ public abstract class BinaryField extends Field {
 	 * @return
 	 */
 	public Optional<FieldValue<?>> fieldValue(final Object value){
-		if (value instanceof Float) {
-			return Optional.of(FloatType.of((Float) value));
+		if (value instanceof File) {
+			return Optional.of(BinaryType.of(((File) value).getName()));
 		}
-		if (value instanceof Long) {
-			return Optional.of(LongType.of((Long) value));
+		if (value instanceof Path) {
+			final Path path = (Path) value;
+			return Optional.of(BinaryType.of(path.getFileName().toString()));
 		}
 		if (value instanceof String) {
-			return Optional.of(TextType.of((String) value));
+			return Optional.of(BinaryType.of((String) value));
 		}
 		return Optional.empty();
 	}

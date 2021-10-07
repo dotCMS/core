@@ -1,6 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.content.business.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.AUTO_ASSIGN_WORKFLOW;
@@ -14,7 +13,6 @@ import static com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTok
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.ContentletJsonAPI;
-import com.dotcms.content.business.ContentletJsonAPIImpl;
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -150,7 +148,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     private static final String[] UPSERT_EXTRA_COLUMNS = {"show_on_menu", "title", "mod_date", "mod_user",
             "sort_order", "friendly_name", "structure_inode", "disabled_wysiwyg", "identifier",
-            "language_id", "content_as_json",
+            "language_id", "contentlet_as_json",
             "date1", "date2", "date3", "date4", "date5", "date6", "date7", "date8",
             "date9", "date10", "date11", "date12", "date13", "date14", "date15", "date16", "date17",
             "date18", "date19", "date20", "date21", "date22", "date23", "date24", "date25", "text1",
@@ -2004,6 +2002,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	private List<Object> getParamsToSaveUpdateContent(final Contentlet contentlet)
             throws DotDataException {
 
+        final String json = contentlet.getStringProperty(Contentlet.CONTENTLET_AS_JSON);
+        Logger.info(ESContentFactoryImpl.class, json);
+
         final List<Object> upsertValues = new ArrayList<>();
 
         upsertValues.add(contentlet.getStringProperty("showOnMenu") != null && contentlet
@@ -2033,13 +2034,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         upsertValues.add(UtilMethods.isSet(contentlet.getIdentifier())?contentlet.getIdentifier():null);
         upsertValues.add(contentlet.getLanguageId());
-
-        final String json = Try.of(
-                () ->
-                        Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true)
-                                ? ContentletJsonAPIImpl.INSTANCE.get().toJson(contentlet) : null
-        ).getOrNull();
-        Logger.info(ESContentFactoryImpl.class, json);
         upsertValues.add(json);
 
         final Map<String, Object> fieldsMap = getFieldsMap(contentlet);

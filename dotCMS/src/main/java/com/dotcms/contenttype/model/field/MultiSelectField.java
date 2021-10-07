@@ -1,8 +1,13 @@
 package com.dotcms.contenttype.model.field;
 
+import com.dotcms.content.model.FieldValue;
+import com.dotcms.content.model.type.BoolType;
+import com.dotcms.content.model.type.LongType;
+import com.dotcms.content.model.type.TextType;
 import java.util.Collection;
 import java.util.List;
 
+import java.util.Optional;
 import org.immutables.value.Value;
 
 import com.google.common.collect.ImmutableList;
@@ -52,5 +57,15 @@ public abstract class MultiSelectField extends SelectableValuesField{
 	@JsonIgnore
 	public String getContentTypeFieldLabelKey(){
 		return "Multi-Select";
+	}
+
+	@Override
+	public Optional<FieldValue<?>> fieldValue(final Object value){
+
+		if (value instanceof String) {
+			return Optional.of(TextType.of((String) value));
+		}
+		return Optional.empty();
+
 	}
 }

@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
+import com.dotcms.content.business.ContentletJsonAPI;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
@@ -10,7 +11,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -19,18 +19,16 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.StringTokenizer;
-import org.apache.commons.beanutils.PropertyUtils;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -65,10 +63,32 @@ public class ContentletTransformer implements DBTransformer {
 
     @NotNull
     private static Contentlet transform(final Map<String, Object> map)  {
-        final Contentlet contentlet = new Contentlet();
+
+        Contentlet contentlet = null;
         final String inode = (String) map.get("inode");
         final String contentletId = (String) map.get(IDENTIFIER);
         final String contentTypeId = (String) map.get(STRUCTURE_INODE);
+
+        if(UtilMethods.isSet(map.get(ContentletJsonAPI.CONTENTLET_AS_JSON))){
+            final String json = map.get(ContentletJsonAPI.CONTENTLET_AS_JSON).toString();
+            contentlet = Try.of(()->
+                    APILocator.getContentletJsonAPI().mapContentletFieldsFromJson(json)
+            ).getOrNull();
+        }
+
+        if(contentlet != null){
+          try {
+              //populateFolderAndHost(contentlet, contentletId, contentTypeId);
+              populateWysiwyg(map, contentlet);
+              return contentlet;
+          }catch (Exception e){
+              throw new DotRuntimeException(String.format(
+                      " Failed to populate json-loaded contentlet with (identifier %s,  inode: %s ,  contentType: %s)",
+                      contentletId, inode, contentTypeId), e);
+          }
+        }
+
+        contentlet = new Contentlet();
 
         if (!UtilMethods.isSet(contentTypeId)) {
             throw new DotRuntimeException("Contentlet must have a content type.");
@@ -260,6 +280,12 @@ public class ContentletTransformer implements DBTransformer {
         } else {
             value = originalMap.get(field.getFieldContentlet());
         }
+
+        //KeyValue objects must be returned as Maps
+        if(LegacyFieldTypes.KEY_VALUE.legacyValue().equals(field.getFieldType()) && value instanceof String ){
+            value = com.dotmarketing.portlets.structure.model.KeyValueFieldUtil.JSONValueToHashMap((String)value);
+        }
+
         return value;
     }
 }

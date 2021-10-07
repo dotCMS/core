@@ -10,11 +10,11 @@ import org.immutables.value.Value.Parameter;
 
 @ValueTypeStyle
 @Immutable
-@JsonDeserialize(as = TagType.class)
-@JsonTypeName(value = AbstractTagType.TYPENAME)
-public interface AbstractTagType extends FieldValue<String> {
+@JsonDeserialize(as = BoolType.class)
+@JsonTypeName(value = AbstractBoolType.TYPENAME)
+public interface AbstractBoolType extends FieldValue<Boolean> {
 
-    String TYPENAME = "Tag";
+    String TYPENAME = "Bool";
 
     @Override
     default String type() {
@@ -23,6 +23,6 @@ public interface AbstractTagType extends FieldValue<String> {
 
     @JsonProperty("value")
     @Parameter
-    String value();
+    Boolean value();
 
 }

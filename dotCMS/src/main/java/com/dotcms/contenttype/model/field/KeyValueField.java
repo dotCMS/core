@@ -5,6 +5,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 import com.dotcms.content.model.FieldValue;
 import com.dotcms.content.model.type.KeyValueType;
 import com.dotcms.contenttype.util.KeyValueFieldUtil;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -64,14 +65,17 @@ public abstract class KeyValueField extends Field {
 
 	@Override
 	public Optional<FieldValue<?>> fieldValue(final Object value) {
-		if (value instanceof String) {
-			final Map<String, Object> map = KeyValueFieldUtil
-					.JSONValueToHashMap((String) value);
-			return Optional.of(KeyValueType.of(map));
-		}
+		//Metadata keyValues must never make it into our json.
+		if (!FileAssetAPI.META_DATA_FIELD.equals(this.variable())) {
+			if (value instanceof String) {
+				final Map<String, Object> map = KeyValueFieldUtil
+						.JSONValueToHashMap((String) value);
+				return Optional.of(KeyValueType.of(map));
+			}
 
-		if (value instanceof Map) {
-			return Optional.of(KeyValueType.of((Map<String, Object>) value));
+			if (value instanceof Map) {
+				return Optional.of(KeyValueType.of((Map<String, Object>) value));
+			}
 		}
 		return Optional.empty();
 	}

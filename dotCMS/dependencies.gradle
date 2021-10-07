@@ -84,6 +84,10 @@ dependencies {
         transitive = false
     }
 
+    compile (group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: '2.12.5'){
+        transitive = false
+    }
+
     compile ('com.fasterxml.jackson.datatype:jackson-datatype-guava:2.11.1'){
         transitive = false
     }

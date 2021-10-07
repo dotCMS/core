@@ -3,6 +3,8 @@ package com.dotcms.contenttype.model.field;
 import static com.dotcms.util.CollectionsUtils.list;
 
 import com.dotcms.content.model.FieldValue;
+import com.dotcms.content.model.type.FloatType;
+import com.dotcms.content.model.type.LongType;
 import com.dotcms.content.model.type.TextType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -51,6 +53,12 @@ public abstract class TextField extends Field {
 	public Optional<FieldValue<?>> fieldValue(final Object value) {
 		if (value instanceof String) {
 			return Optional.of(TextType.of((String) value));
+		}
+		if (value instanceof Float) {
+			return Optional.of(FloatType.of((Float) value));
+		}
+		if (value instanceof Long) {
+			return Optional.of(LongType.of((Long) value));
 		}
 		return Optional.empty();
 	}
