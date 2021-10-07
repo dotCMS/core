@@ -16,6 +16,7 @@ import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -209,6 +210,10 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	public PublishAuditStatus getPublishAuditStatus(String bundleId)
 			throws DotPublisherException {
 
+		return getPublishAuditStatus(bundleId, NO_LIMIT_ASSETS);
+	}
+
+	public PublishAuditStatus getPublishAuditStatus(String bundleId, int assetsLimit) throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
 			dc.setSQL(SELECT_ALL_BY_BUNDLEID);
@@ -220,7 +225,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 				throw new DotPublisherException("Found duplicate bundle status");
 			} else {
 				if(!res.isEmpty()) {
-					return mapper.mapObject(res.get(0));
+					return mapper.mapObject(limitAssets(res.get(0), assetsLimit));
 				}
 				return null;
 			}
@@ -267,33 +272,37 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 
 	private List<Map<String, Object>> limitAssets(final List<Map<String, Object>> publishAuditStatus,
 			final int limitAssets) {
+		return publishAuditStatus.stream()
+				.map(publishAuditStatusMap -> this.limitAssets(publishAuditStatusMap, limitAssets))
+				.collect(Collectors.toList());
+	}
+
+	private Map<String, Object> limitAssets(final Map<String, Object> publishAuditStatus,
+		final int limitAssets) {
+
+		final String statusPojoAsString = publishAuditStatus.get("status_pojo")
+				.toString();
+		final String assetsAsString = StringUtils
+				.substringBetween(statusPojoAsString, "<assets>", "</assets>");
+		final String[] entries = StringUtils
+				.substringsBetween(assetsAsString, "<entry>", "</entry>");
 
 		if (limitAssets != NO_LIMIT_ASSETS) {
-			return publishAuditStatus.stream()
-					.map(publishAuditStatusMap -> {
-						final String statusPojoAsString = publishAuditStatusMap.get("status_pojo")
-								.toString();
-						final String assetsAsString = StringUtils
-								.substringBetween(statusPojoAsString, "<assets>", "</assets>");
-						final String[] entries = StringUtils
-								.substringsBetween(assetsAsString, "<entry>", "</entry>");
-
-						final List<String> allEntries = Arrays
-								.stream(Arrays.copyOfRange(entries, 0, limitAssets - 1))
-								.map(arrayItem -> "<entry>" + arrayItem + "</entry>")
-								.collect(Collectors.toList());
-
-						final String entriesLimitedAsString = allEntries.stream().collect(Collectors.joining());
-						final String statusPojoAsStringLimited = statusPojoAsString
-								.replace(assetsAsString, entriesLimitedAsString);
-						publishAuditStatusMap.put("status_pojo", statusPojoAsStringLimited);
-						publishAuditStatusMap.put("total_number_of_assets", allEntries.size());
-						return publishAuditStatusMap;
-					})
+			final List<String> allEntries = Arrays
+					.stream(entries.length > limitAssets ?
+							Arrays.copyOfRange(entries, 0, limitAssets) : entries)
+					.map(arrayItem -> "<entry>" + arrayItem + "</entry>")
 					.collect(Collectors.toList());
-		} else {
-			return publishAuditStatus;
+
+			final String entriesLimitedAsString = allEntries.stream().collect(Collectors.joining());
+			final String statusPojoAsStringLimited = statusPojoAsString
+					.replace(assetsAsString, entriesLimitedAsString);
+			publishAuditStatus.put("status_pojo", statusPojoAsStringLimited);
 		}
+
+		publishAuditStatus.put("total_number_of_assets", entries.length);
+
+		return publishAuditStatus;
 	}
 
 	@Override

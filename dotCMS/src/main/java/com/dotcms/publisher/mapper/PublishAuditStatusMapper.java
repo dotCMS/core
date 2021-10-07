@@ -1,5 +1,6 @@
 package com.dotcms.publisher.mapper;
 
+import com.dotmarketing.util.UtilMethods;
 import java.util.Date;
 import java.util.Map;
 
@@ -24,7 +25,11 @@ public class PublishAuditStatusMapper extends CommonRowMapper<PublishAuditStatus
 		
 		objToReturn.setCreateDate((Date) row.get("create_date"));
 		objToReturn.setStatusUpdated((Date) row.get("status_updated"));
-		
+
+		if (UtilMethods.isSet(row.get("total_number_of_assets"))) {
+			objToReturn.setTotalNumberOfAssets(Integer.parseInt(row.get("total_number_of_assets").toString()));
+		}
+
 		return objToReturn;
 	}
 

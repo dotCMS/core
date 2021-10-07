@@ -63,6 +63,7 @@ import java.io.Reader;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.StreamingOutput;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
@@ -100,6 +101,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+import static com.dotcms.publisher.business.PublishAuditAPIImpl.NO_LIMIT_ASSETS;
 import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_BUNDLE;
 import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_PUBLISH;
 import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_SEND_TO_ALL_GROUPS;
@@ -131,6 +133,7 @@ public class BundleResource {
     @GET
     @Produces({MediaType.APPLICATION_JSON})
     public Response getPublishQueueElements(@PathParam("bundleId") final String bundleId,
+            @QueryParam("limit") final Integer limitParam,
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response) throws DotDataException {
 
@@ -142,7 +145,7 @@ public class BundleResource {
                 .init();
 
         try {
-
+            final int limit = UtilMethods.isSet(limitParam) ? limitParam : NO_LIMIT_ASSETS;
             final Bundle bundleById = APILocator.getBundleAPI().getBundleById(bundleId);
 
             if (bundleById == null) {
@@ -158,7 +161,7 @@ public class BundleResource {
                 detailedAssets = publishQueueElementTransformer.transform(queueElements);
             } else {
                 final PublishAuditStatus publishAuditStatus = PublishAuditAPI.getInstance()
-                        .getPublishAuditStatus(bundleId);
+                        .getPublishAuditStatus(bundleId, limit);
 
                 final Map<String, String> assets = publishAuditStatus.getStatusPojo().getAssets();
                 detailedAssets = assets.entrySet().stream()

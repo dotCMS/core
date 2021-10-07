@@ -422,7 +422,7 @@
 
         %>
 		<%if (publishAuditStatus.getTotalNumberOfAssets() > MAX_ASSETS_TO_SHOW) {%>
-			addShowMoreMessage('<%=publishAuditStatus.getBundleId()%>', '<%=assets.size()%>');
+			addShowMoreMessage('<%=publishAuditStatus.getBundleId()%>', '<%=publishAuditStatus.getTotalNumberOfAssets()%>');
 		<%}%>
 
 		<%
@@ -448,6 +448,7 @@
 
 		let newRow = tbody.insertRow();
 		let newCell = newRow.insertCell();
+		newCell.style.borderBottomWidth = "0px";
 
 		let type = rowData.isHtml ? 'htmlpage' : rowData.type;
 		let html = '<div>' +
@@ -485,8 +486,7 @@
 			viewAllNode.innerHTML = '<%= LanguageUtil.get(pageContext, "bundles.item.loading")  %>';
 		}
 
-		fetch('/api/bundle/' + bundleId + "/assets").then((response) => response.json()).then((data) => {
-			console.log('data', data);
+		fetch('/api/bundle/' + bundleId + "/assets?limit=" + numberToShow).then((response) => response.json()).then((data) => {
 			let td = document.getElementById("td_assets_" + bundleId);
 			while (td.firstChild) {
 				td.removeChild(td.firstChild);
