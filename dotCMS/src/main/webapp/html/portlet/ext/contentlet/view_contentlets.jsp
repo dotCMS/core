@@ -213,7 +213,6 @@
 <script type='text/javascript' src='/dwr/interface/ContentletAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/TagAjax.js'></script>
 
-
 <jsp:include page="/html/portlet/ext/folders/menu_actions_js.jsp" />
 
 <script type="text/javascript">
@@ -261,6 +260,7 @@
 
         ]
     };
+    console.log('***dataitem', dataItems)
 
     var dojoStore = new dojo.data.ItemFileReadStore({
         data: dataItems

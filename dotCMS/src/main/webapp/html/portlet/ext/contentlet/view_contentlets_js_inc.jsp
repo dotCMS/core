@@ -719,6 +719,8 @@
              return "";
 
           }else if(type.indexOf("date") > -1){
+              console.log('***** entro')
+              console.log(field)
                         dijit.registry.remove(selectedStruct+"."+ fieldContentlet + "Field");
                         if(dijit.byId(selectedStruct+"."+ fieldContentlet + "Field")){
                                 dijit.byId(selectedStruct+"."+ fieldContentlet + "Field").destroy();
@@ -1409,7 +1411,7 @@
 
 
         function doSearch1 (page, sortBy) {
-
+                console.log('****dosearch1')
 
                 if (page == undefined || page == null ) {
                     //Unless we are using pagination we don't need to keep the All selection across searches
@@ -1510,7 +1512,10 @@
 
                                             }
                                           }
-
+                                
+                                }else if (field["fieldFieldType"] === 'date_time' && formField.value) {
+                                        fieldsValues[fieldsValues.length] = selectedStruct+"."+field["fieldVelocityVarName"];
+                                        fieldsValues[fieldsValues.length] = new Intl.DateTimeFormat('en-US').format(new Date(formField.value)) + ' 00:00:00';
                                 }else {
                                         fieldsValues[fieldsValues.length] = selectedStruct+"."+field["fieldVelocityVarName"];
                                         fieldsValues[fieldsValues.length] = formField.value;
@@ -1924,16 +1929,16 @@
                 var row = table.insertRow(table.rows.length);
 
                 var th = document.createElement('th');
-                th.setAttribute("width","5%");
+                th.setAttribute("width","64px");
                 th.innerHTML = '&nbsp;';
                 row.appendChild(th);
 
-				if(languages.length>1) {
-	                th = document.createElement('th');
-	                th.setAttribute("style","width:70px;");
-	                th.innerHTML = '&nbsp;';
-	                row.appendChild(th);
-                }
+				// if(languages.length>1) {
+	            //     th = document.createElement('th');
+	            //     th.setAttribute("style","width:70px;");
+	            //     th.innerHTML = '&nbsp;';
+	            //     row.appendChild(th);
+                // }
 
                 for (var i = 0; i < headers.length; i++) {
                         var header = headers[i];
@@ -1948,6 +1953,23 @@
                                 th.setAttribute("nowrap","true");
                                 th.innerHTML = '<input type="checkbox" dojoType="dijit.form.CheckBox" name="checkAll" id="checkAll" onclick="checkUncheckAll()">&nbsp;&nbsp;' + getHeader(header);
                                 row.appendChild(th);
+
+                                th = document.createElement('th');
+                                th.innerHTML = '&nbsp;';
+                                th.setAttribute("nowrap","true");
+                                row.appendChild(th);
+
+                                th = document.createElement('th');
+                                th.innerHTML = '&nbsp;';
+                                th.setAttribute("nowrap","true");
+                                row.appendChild(th);
+
+                                th = document.createElement('th');
+                                th.innerHTML = '&nbsp;';
+                                th.setAttribute("nowrap","true");
+                                row.appendChild(th);
+
+
                         } else {
                         th.innHTML =
                                 th.innerHTML = getHeader(header);
@@ -1969,6 +1991,12 @@
 
                 th = document.createElement('th');
                 row.appendChild(th);
+//
+
+                th = document.createElement('th');
+                row.appendChild(th);
+//
+
 
                 var languageId;
                 var locale;
@@ -1995,48 +2023,84 @@
                         var row = table.insertRow(table.rows.length);
 
                         var cellData = data[i];
+                        console.log('***cellData', cellData)
                         row.setAttribute("id","tr" + cellData.inode);
 
 
 
+//
                         var cell = row.insertCell (row.cells.length);
-                        cell.style.whiteSpace="nowrap";
 
-                        cell.innerHTML = statusDataCell(cellData, i);
+            var iconName = getIconName(cellData['__type__']);
+            var hasTitleImage = (cellData.hasTitleImage ==='true');
+            cell.innerHTML = (hasTitleImage) 
+            	? '<img style="width:64px;height: 64px;object-fit: contain;" class="listingTitleImg" onError="replaceWithIcon(this.parentElement, \'' + iconName + '\')" src="/dA/' + cellData.inode + '/titleImage/256w" alt="' + cellData['__title__'].replace(/[^A-Za-z0-9_]/g, ' ') + '" >' 
+            	: '<span class="' + iconName +' uknIcon" style="font-size:24px;width:auto;"></span>';
+
+            
+            cell.setAttribute("style","height: 85px; text-align: center;");
+
+
+// var cell = row.insertCell (row.cells.length);
+//                        
+                        // cell.innerHTML = statusDataCell(cellData, i);
                         for (var j = 0; j < headers.length; j++) {
                                 var header = headers[j];
                                 var cell = row.insertCell (row.cells.length);
                                 cell.setAttribute("align","left");
                                 if (j == 0 ) {
 
-                                	if(languages.length>1){
-                                		cell.setAttribute("nowrap","true");
-                                        languageId = cellData["languageId"];
-                                        locale = "";
+                                	// if(languages.length>1){
+                                	// 	cell.setAttribute("nowrap","true");
+                                    //     languageId = cellData["languageId"];
+                                    //     locale = "";
 
-                                        for (var n = 0; n < languages.length; ++n) {
-                                            if (languages[n][0] == languageId) {
-                                            	displayLang = languages[n][1];
-                                            	if(languages[n][2]){
-                                            		displayLang += "_" + languages[n][2];
-                                            	}
-	                                            locale = "<img src='/html/images/languages/" + languages[n][5] + ".gif' style='margin-top:5px;display:inline-block;margin-right:5px;width:16px;height:11px;' />(" + displayLang + ")";
-	                                            break;
-                                        	}
-                                        }
+                                    //     for (var n = 0; n < languages.length; ++n) {
+                                    //         if (languages[n][0] == languageId) {
+                                    //         	displayLang = languages[n][1];
+                                    //         	if(languages[n][2]){
+                                    //         		displayLang += "_" + languages[n][2];
+                                    //         	}
+	                                //             locale = "<img src='/html/images/languages/" + languages[n][5] + ".gif' style='margin-top:5px;display:inline-block;margin-right:5px;width:16px;height:11px;' />(" + displayLang + ")";
+	                                //             break;
+                                    //     	}
+                                    //     }
 
-                                        if (locale == ""){
-                                        	locale = "&nbsp;";
-										}
-                                        cell.innerHTML = locale;
-                                        cell = row.insertCell (row.cells.length);
-                                        cell.setAttribute("align","left");
-									}
+                                    //     if (locale == ""){
+                                    //     	locale = "&nbsp;";
+									// 	}
+                                    //     cell.innerHTML = locale;
+                                    //     cell = row.insertCell (row.cells.length);
+                                    //     cell.setAttribute("align","left");
+									// }
 
                                     let fieldVarName  = header["fieldVelocityVarName"];
                                     let fieldVarTitle = cellData[fieldVarName + "_title_"];
                                     fieldVarTitle     = fieldVarTitle || cellData[fieldVarName]
                                     var value         = titleCell(cellData,fieldVarTitle, i);
+                                    
+                                    if (value != null){
+                                        cell.innerHTML = value;
+                                    }
+
+                                    var cell = row.insertCell (row.cells.length);
+                                    cell.setAttribute("align", "center");
+                                    cell.innerHTML = '<dot-state-icon />';
+                                    var stateIcon = document.querySelector("#tr" + cellData.inode + " dot-state-icon");
+                                    stateIcon.state = cellData;
+                                    stateIcon.size = '16px';
+
+
+                                    var cell = row.insertCell (row.cells.length);
+                                    cell.setAttribute("align", "center");
+                                    cell.innerHTML = '<dot-badge style="white-space: nowrap" bordered="true">' + cellData.language + '</dot-badge>';
+
+                                    var cell = row.insertCell (row.cells.length);
+                                    cell.setAttribute("align", "center");
+                                    cell.innerHTML = '<dot-contentlet-lock-icon locked="' + cellData.locked + '" />';
+
+                                    // <dot-contentlet-lock-icon locked={JSON.parse(contentlet.locked)} />
+
                                 }
                                 else{
 
@@ -2044,10 +2108,12 @@
                                     let fieldVarTitle = cellData[fieldVarName + "_title_"];
                                     fieldVarTitle     = fieldVarTitle || cellData[fieldVarName]
                                     var value         = fieldVarTitle;
+                                
+                                    if (value != null){
+                                        cell.innerHTML = value;
+                                    }
                                 }
-                                if (value != null){
-                                	cell.innerHTML = value;
-                                }
+                                
                         }
                         var cell = row.insertCell (row.cells.length);
                         cell.innerHTML = cellData["modUser"];
@@ -2158,7 +2224,19 @@
 
         }
 
+        function getIconName(iconCode) {
+            var startIndex = iconCode.indexOf('<span class') + 13;
+            var endIndex = iconCode.indexOf('</span>') - 2;
+            return iconCode.substring(startIndex, endIndex);
+        }
+
+        function replaceWithIcon(parentElement, iconName) {
+            console.log('*** no hay icon')
+            parentElement.innerHTML = '<span class="' + iconName +'" style="font-size:24px;width:auto;"></span>'
+        }
+
         function clearSearch () {
+            console.log('***clear')
 
                 document.getElementById('currentSortBy').value=DOTCMS_DEFAULT_CONTENT_SORT_BY;
                 dijit.byId("scheme_id").set("value",'catchall');
