@@ -313,24 +313,27 @@ public class OSGIUtil {
         final File uploadPath    = new File(this.getFelixUploadPath());
         final String[] pathnames = uploadPath.list(new SuffixFileFilter(".jar"));
 
-        this.moveNewBundlesToFelixLoadFolder(uploadPath, pathnames);
-        //Remove Portlets in the list
-        this.portletIDsStopped.stream().forEach(APILocator.getPortletAPI()::deletePortlet);
-        Logger.info( this, "Portlets Removed: " + this.portletIDsStopped.toString() );
+        if (UtilMethods.isSet(pathnames)) {
 
-        //Remove Actionlets in the list
-        this.actionletsStopped.stream().forEach(this.workflowOsgiService::removeActionlet);
-        Logger.info( this, "Actionlets Removed: " + this.actionletsStopped.toString());
+            this.moveNewBundlesToFelixLoadFolder(uploadPath, pathnames);
+            //Remove Portlets in the list
+            this.portletIDsStopped.stream().forEach(APILocator.getPortletAPI()::deletePortlet);
+            Logger.info(this, "Portlets Removed: " + this.portletIDsStopped.toString());
 
-        //Cleanup lists
-        this.portletIDsStopped.clear();
-        this.actionletsStopped.clear();
+            //Remove Actionlets in the list
+            this.actionletsStopped.stream().forEach(this.workflowOsgiService::removeActionlet);
+            Logger.info(this, "Actionlets Removed: " + this.actionletsStopped.toString());
 
-        //First we need to stop the framework
-        this.stopFramework();
+            //Cleanup lists
+            this.portletIDsStopped.clear();
+            this.actionletsStopped.clear();
 
-        //Now we need to initialize it
-        this.initializeFramework();
+            //First we need to stop the framework
+            this.stopFramework();
+
+            //Now we need to initialize it
+            this.initializeFramework();
+        }
     }
 
     /**
