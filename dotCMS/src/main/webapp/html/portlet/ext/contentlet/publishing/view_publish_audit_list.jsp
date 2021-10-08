@@ -427,10 +427,13 @@
 
 		<%
 			for (final Map<String,Object> asset : assetsTransformed) {
-				final String assetType = UtilMethods.isSet(asset.get(PublishQueueElementTransformer.TYPE_KEY)) ?
-					asset.get(PublishQueueElementTransformer.TYPE_KEY).toString() : StringPool.BLANK;
-				final String assetTitle = UtilMethods.isSet(asset.get(PublishQueueElementTransformer.TITLE_KEY)) ?
-					asset.get(PublishQueueElementTransformer.TITLE_KEY).toString() : StringPool.BLANK;
+				final Object assetTypeAsObject = asset.get(PublishQueueElementTransformer.TYPE_KEY);
+				final String assetType = UtilMethods.isSet(assetTypeAsObject) ?
+					assetTypeAsObject.toString() : StringPool.BLANK;
+
+				final Object assetTitleAsObject = asset.get(PublishQueueElementTransformer.TITLE_KEY);
+				final String assetTitle = UtilMethods.isSet(assetTitleAsObject) ?
+					assetTitleAsObject.toString() : StringPool.BLANK;
 		%>
 				addRow({
 					title: '<%=StringEscapeUtils.escapeHtml(assetTitle)%>',

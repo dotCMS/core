@@ -25,9 +25,10 @@ public class PublishAuditStatusMapper extends CommonRowMapper<PublishAuditStatus
 		
 		objToReturn.setCreateDate((Date) row.get("create_date"));
 		objToReturn.setStatusUpdated((Date) row.get("status_updated"));
+		final Object totalNumberOfAssetsObject = row.get("total_number_of_assets");
 
-		if (UtilMethods.isSet(row.get("total_number_of_assets"))) {
-			objToReturn.setTotalNumberOfAssets(Integer.parseInt(row.get("total_number_of_assets").toString()));
+		if (UtilMethods.isSet(totalNumberOfAssetsObject)) {
+			objToReturn.setTotalNumberOfAssets(Integer.parseInt(totalNumberOfAssetsObject.toString()));
 		}
 
 		return objToReturn;

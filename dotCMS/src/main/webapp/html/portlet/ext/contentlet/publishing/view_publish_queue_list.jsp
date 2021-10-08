@@ -314,12 +314,14 @@
 						String title = "";
 						String inode = "";
 						if ( assetType.equals( "contentlet" ) ) {
-                        	title =  UtilMethods.isSet(asset.get(PublishQueueElementTransformer.TITLE_KEY)) ?
-                                    asset.get(PublishQueueElementTransformer.TITLE_KEY).toString() : StringPool.BLANK;
-                            inode =  UtilMethods.isSet(asset.get(PublishQueueElementTransformer.INODE_KEY)) ?
-                                    asset.get(PublishQueueElementTransformer.INODE_KEY).toString() : StringPool.BLANK;
-                            structureName =  UtilMethods.isSet(asset.get(PublishQueueElementTransformer.CONTENT_TYPE_NAME_KEY)) ?
-                                    asset.get(PublishQueueElementTransformer.CONTENT_TYPE_NAME_KEY).toString() : StringPool.BLANK;
+							final Object assetTitleObject = asset.get(PublishQueueElementTransformer.TITLE_KEY);
+							title =  UtilMethods.isSet(assetTitleObject) ? assetTitleObject.toString() : StringPool.BLANK;
+
+							final Object inodeObject = asset.get(PublishQueueElementTransformer.INODE_KEY);
+							inode =  UtilMethods.isSet(inodeObject) ? inodeObject.toString() : StringPool.BLANK;
+
+							final Object structureObject = asset.get(PublishQueueElementTransformer.CONTENT_TYPE_NAME_KEY);
+							structureName =  UtilMethods.isSet(structureObject) ? structureObject.toString() : StringPool.BLANK;
                         %>
 						    <a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id="+PortletID.CONTENT+"&p_p_action=1&p_p_state=maximized&p_p_mode=view&_"+PortletID.CONTENT+"_struts_action=/ext/contentlet/edit_contentlet&_"+PortletID.CONTENT+"_cmd=edit&inode=<%=inode %>&referer=<%=referer %>">
 						        <%=StringEscapeUtils.escapeHtml(title)%>
