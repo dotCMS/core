@@ -69,7 +69,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 
 		if(!permissionAPI.doesUserHavePermission(category, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)) {
             throw new DotSecurityException(String.format("User '%s' doesn't have permission to edit Category '%s'",
-                    user.getUserId(), category.getInode()));
+					null != user ? user.getUserId() : null, category.getInode()));
         }
 		categoryFactory.delete(category);
 	}
@@ -91,7 +91,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 		final Category category = categoryFactory.find(id);
 		if(category != null && !permissionAPI.doesUserHavePermission(category, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
             throw new DotSecurityException(String.format("User '%s' doesn't have READ permission on Category '%s'",
-                    user.getUserId(), category.getInode()));
+                    null != user ? user.getUserId() : null, category.getInode()));
         }
 		return category;
 	}
@@ -136,7 +136,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 						!permissionAPI.doesUserHavePermissions(APILocator.systemHost().getIdentifier(),PermissionableType.CATEGORY,
 								PermissionAPI.PERMISSION_PUBLISH, user)) {
                     final String errorMsg = String.format("User '%s' doesn't have ADD CHILDREN and PUBLISH " +
-                            "permissions to save Category '%s' at the top level.", user.getUserId(), category
+                            "permissions to save Category '%s' at the top level.", null != user ? user.getUserId() : null, category
                             .getInode());
                     Logger.error(this, errorMsg);
 					throw new DotSecurityException(errorMsg);
@@ -146,7 +146,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 						.doesUserHavePermission(parent, PermissionAPI.PERMISSION_EDIT, user,
 								respectFrontendRoles)) {
                     final String errorMsg = String.format("User '%s' doesn't have EDIT permissions to save child " +
-                            "Category '%s' under parent Category '%s'.", user.getUserId(), category.getInode(),
+                            "Category '%s' under parent Category '%s'.", null != user ? user.getUserId() : null, category.getInode(),
                             parent.getInode());
                     Logger.error(this, errorMsg);
 					throw new DotSecurityException(errorMsg);
@@ -158,7 +158,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 					.doesUserHavePermission(category, PermissionAPI.PERMISSION_EDIT, user,
 							respectFrontendRoles)) {
                 final String errorMsg = String.format("User '%s' doesn't have EDIT permissions to save Category " +
-                        "'%s'", user.getUserId(), category.getInode());
+                        "'%s'", null != user ? user.getUserId() : null, category.getInode());
                 Logger.error(this, errorMsg);
 				throw new DotSecurityException(errorMsg);
 			}
@@ -211,7 +211,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 
 		if(!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)) {
             throw new DotSecurityException(String.format("User '%s' doesn't have EDIT permission to save child " +
-                    "Category '%s' under parent Category '%s'", user.getUserId(), child.getInode(), parent
+                    "Category '%s' under parent Category '%s'", null != user ? user.getUserId() : null, child.getInode(), parent
                     .getCategoryId()));
         }
 		categoryFactory.addChild(parent, child, null);
@@ -225,7 +225,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 
 		if(!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)) {
             throw new DotSecurityException(String.format("User '%s' doesn't have EDIT permission to save child " +
-                    "Category '%s' under parent Category '%s'", user.getUserId(), child.getInode(), parent
+                    "Category '%s' under parent Category '%s'", null != user ? user.getUserId() : null, child.getInode(), parent
                     .getCategoryId()));
         }
 		categoryFactory.addChild(parent, child, relationType);
@@ -239,7 +239,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 
 		if(!permissionAPI.doesUserHavePermission(child, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)) {
             throw new DotSecurityException(String.format("User '%s' doesn't have EDIT permission on child Category " +
-                    "'%s' to save parent Category '%s'", user.getUserId(), child.getCategoryId(), parent.getInode()));
+                    "'%s' to save parent Category '%s'", null != user ? user.getUserId() : null, child.getCategoryId(), parent.getInode()));
         }
 		categoryFactory.addParent(child, parent);
 	}
@@ -255,7 +255,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 		}
 		if(!permissionAPI.doesUserHavePermission(category, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
             throw new DotSecurityException(String.format("User '%s' doesn't have READ permission on Category with key" +
-                    " '%s'", user.getUserId(), category.getKey()));
+                    " '%s'", null != user ? user.getUserId() : null, category.getKey()));
         }
 		return category;
 	}
@@ -271,7 +271,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 		}
 		if(!permissionAPI.doesUserHavePermission(category, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
             throw new DotSecurityException(String.format("User '%s' doesn't have READ permission on Category with " +
-                    "name '%s'", user.getUserId(), category.getCategoryName()));
+                    "name '%s'", null != user ? user.getUserId() : null, category.getCategoryName()));
         }
 		return category;
 	}
@@ -436,7 +436,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 
 		if(!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)) {
             throw new DotSecurityException(String.format("User '%s' doesn't have EDIT permission to remove child " +
-                    "Category '%s' from parent Category '%s'", child.getInode(), parent.getCategoryId()));
+                    "Category '%s' from parent Category '%s'",null != user ? user.getUserId() : null, child.getInode(), parent.getCategoryId()));
         }
 		categoryFactory.removeChild(parent, child, null);
 	}
@@ -448,7 +448,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 
 		if(!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)) {
             throw new DotSecurityException(String.format("User '%s' doesn't have EDIT permission to remove child " +
-                    "Category '%s' from parent Category '%s'", child.getInode(), parent.getCategoryId()));
+                    "Category '%s' from parent Category '%s'", null != user ? user.getUserId() : null, child.getInode(), parent.getCategoryId()));
         }
 		categoryFactory.removeChild(parent, child, relationType);
 	}
@@ -460,7 +460,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 
 		if(!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)) {
             throw new DotSecurityException(String.format("User '%s' doesn't have EDIT permission to remove all " +
-                    "children from parent Category '%s'", parent.getCategoryId()));
+                    "children from parent Category '%s'", null != user ? user.getUserId() : null, parent.getCategoryId()));
         }
 		categoryFactory.removeChildren(parent);
 	}
@@ -472,7 +472,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 
 		if(!permissionAPI.doesUserHavePermission(child, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)) {
             throw new DotSecurityException(String.format("User '%s' doesn't have EDIT permission to remove parent " +
-                    "Category '%s' from child Category '%s'", parent.getInode(), child.getCategoryId()));
+                    "Category '%s' from child Category '%s'", null != user ? user.getUserId() : null, parent.getInode(), child.getCategoryId()));
         }
 		categoryFactory.removeParent(child, parent);
 	}
@@ -483,7 +483,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 
 		if(!permissionAPI.doesUserHavePermission(child, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)) {
             throw new DotSecurityException(String.format("User '%s' doesn't have EDIT permission to remove all " +
-                    "parents from child Category '%s'", child.getCategoryId()));
+                    "parents from child Category '%s'",null != user ? user.getUserId() : null, child.getCategoryId()));
         }
 		categoryFactory.removeParents(child);
 	}
@@ -495,7 +495,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 
 		if(!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)) {
             throw new DotSecurityException(String.format("User '%s' doesn't have EDIT permission to set any children " +
-                    "to parent Category '%s'", parent.getCategoryId()));
+                    "to parent Category '%s'",null != user ? user.getUserId() : null, parent.getCategoryId()));
         }
 		categoryFactory.setChildren(parent, children);
 	}
@@ -527,13 +527,15 @@ public class CategoryAPIImpl implements CategoryAPI {
 				}
 				if(!isCMSOwner){
                     final String errorMsg = String.format("User '%s' doesn't have the correct permissions to the " +
-                            "object the Category is being assigned to, or to the Category '%s'", child.getCategoryId());
+                            "object the Category is being assigned to, or to the Category '%s'",
+							null != user ? user.getUserId() : null, child.getCategoryId());
                     Logger.error(this, errorMsg);
 					throw new DotSecurityException(errorMsg);
 				}
 			}else{
                 final String errorMsg = String.format("User '%s' doesn't have EDIT or CMS Owner permissions to the " +
-                        "object the Category is being assigned to, or to the Category '%s'", child.getCategoryId());
+                        "object the Category is being assigned to, or to the Category '%s'",
+						null != user ? user.getUserId() : null, child.getCategoryId());
 				Logger.error(this, errorMsg);
 				throw new DotSecurityException(errorMsg);
 			}
@@ -788,7 +790,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 
 		if(!permissionAPI.doesUserHavePermission(category, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
             throw new DotSecurityException(String.format("User '%s' doesn't have READ permission to Category '%s'.",
-                    user.getUserId(), category.getInode()));
+					null != user ? user.getUserId() : null, category.getInode()));
         }
 		return category;
 	}
@@ -858,8 +860,8 @@ public class CategoryAPIImpl implements CategoryAPI {
 		try {
 			category = find(categoryField.values(), user, false);
 		} catch (final DotSecurityException | DotDataException e) {
-            Logger.error(getClass(), String.format("User '%s' couldn't get the Category from field '%s': %s", user
-                    .getUserId(), categoryField.id(), e.getMessage()), e);
+            Logger.error(getClass(), String.format("User '%s' couldn't get the Category from field '%s': %s",
+					null != user ? user.getUserId() : null, categoryField.id(), e.getMessage()), e);
         }
 		return category;
 	}
