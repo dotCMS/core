@@ -396,7 +396,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			limitedAssetResult.newStatusPojo = statusPojoAsString;
 		}
 
-		limitedAssetResult.numberTotalOfAssets = entries.length;
+		limitedAssetResult.numberTotalOfAssets = UtilMethods.isSet(entries) ? entries.length : 0;
 		return limitedAssetResult;
 	}
 
