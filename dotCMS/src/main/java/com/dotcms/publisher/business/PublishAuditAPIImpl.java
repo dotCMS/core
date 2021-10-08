@@ -225,7 +225,13 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 				throw new DotPublisherException("Found duplicate bundle status");
 			} else {
 				if(!res.isEmpty()) {
-					return mapper.mapObject(limitAssets(res.get(0), assetsLimit));
+					final Map<String, Object> publishAuditStatusMap = res.get(0);
+					final LimitedAssetResult limitedAssetResult = limitAssets(
+							publishAuditStatusMap.get("status_pojo").toString(), assetsLimit);
+
+					putStatusPojoAndNumberOfAssets(publishAuditStatusMap,
+							limitedAssetResult.newStatusPojo, limitedAssetResult.numberTotalOfAssets);
+					return mapper.mapObject(publishAuditStatusMap);
 				}
 				return null;
 			}
@@ -235,6 +241,14 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		}
 	}
 
+	private void putStatusPojoAndNumberOfAssets(
+			final Map<String, Object> publishAuditStatusMap,
+			final String newStatusPojo,
+			final int numberTotalOfAssets) {
+		publishAuditStatusMap.put("status_pojo", newStatusPojo);
+		publishAuditStatusMap.put("total_number_of_assets", numberTotalOfAssets);
+	}
+
 	@Override
 	@CloseDBIfOpened
 	public List<PublishAuditStatus> getAllPublishAuditStatus() throws DotPublisherException {
@@ -242,7 +256,17 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			DotConnect dc = new DotConnect();
 			dc.setSQL(SELECT_ALL_ORDER_BY_STATUSUPDATED_DESC);
 
-			return mapper.mapRows(limitAssets(dc.loadObjectResults(), NO_LIMIT_ASSETS));
+			return mapper.mapRows(
+				dc.loadObjectResults().stream()
+						.map(publishAuditStatusMap -> {
+							final LimitedAssetResult limitedAssetResult = limitAssets(
+									publishAuditStatusMap.get("status_pojo").toString(), NO_LIMIT_ASSETS);
+							putStatusPojoAndNumberOfAssets(publishAuditStatusMap,
+									limitedAssetResult.newStatusPojo, limitedAssetResult.numberTotalOfAssets);
+							return publishAuditStatusMap;
+						})
+						.collect(Collectors.toList())
+			);
 		}catch(Exception e){
 			Logger.debug(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
@@ -273,25 +297,84 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			dc.setStartRow(offset);
 			dc.setMaxRows(limit);
 
-			return mapper.mapRows(limitAssets(dc.loadObjectResults(), limitAssets));
+			return mapper.mapRows(
+				dc.loadObjectResults().stream()
+						.map(publishAuditStatusMap -> {
+							final LimitedAssetResult limitedAssetResult = limitAssets(
+									publishAuditStatusMap.get("status_pojo").toString(), limitAssets);
+							putStatusPojoAndNumberOfAssets(publishAuditStatusMap,
+									limitedAssetResult.newStatusPojo, limitedAssetResult.numberTotalOfAssets);
+							return publishAuditStatusMap;
+						})
+						.collect(Collectors.toList())
+			);
 		}catch(Exception e){
 			Logger.debug(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
 		}
 	}
+	
 
-	private List<Map<String, Object>> limitAssets(final List<Map<String, Object>> publishAuditStatus,
-			final int limitAssets) {
-		return publishAuditStatus.stream()
-				.map(publishAuditStatusMap -> this.limitAssets(publishAuditStatusMap, limitAssets))
-				.collect(Collectors.toList());
-	}
+	/**
+	 * Limit the assets in <code>statusPojoAsString</code>.
+	 *
+	 * The <code>statusPojoAsString</code> string represent {@link PublishAuditStatus#getStatusPojo()}
+	 * object as a xml format, it xml file can be use to get a {@link PublishAuditHistory}
+	 * using the {@link PublishAuditHistory#getObjectFromString(String)} method.
+	 *
+	 * This xml has the follow format:
+	 * <pre>
+	 * <com.dotcms.publisher.business.PublishAuditHistory>
+	 *   <endpointsMap/>
+	 *   <numTries>0</numTries>
+	 *   <assets>
+	 *     <entry>
+	 *       <string>efdd6642b609219ec94586f01fad90d7</string>
+	 *       <string>CONTENTLET</string>
+	 *     </entry>
+	 *     <entry>
+	 *       <string>3a991e4048f98a5420d1efa8cea7568b</string>
+	 *       <string>CONTENT_TYPE</string>
+	 *     </entry>
+	 *     <entry>
+	 *       <string>1c79263ca2c80c827c3c7d9daa0894f5</string>
+	 *       <string>CONTENTLET</string>
+	 *     </entry>
+	 *     <entry>
+	 *       <string>b05c0582d3301c3ef499975287b2f1b9</string>
+	 *       <string>CONTENTLET</string>
+	 *     </entry>
+	 *     <entry>
+	 *       <string>daf9d6e3aa8e1bc6d93bbd7df164d8e3</string>
+	 *       <string>CONTENTLET</string>
+	 *     </entry>
+	 *   </assets>
+	 * </com.dotcms.publisher.business.PublishAuditHistory>
+	 * </pre>
+	 *
+	 * The <assets> element into the <code>statusPojoAsString</code> xml represents thee assets into the
+	 * {@link PublishAuditHistory} object, each entry element is a assets into th bundle, the first
+	 * string child is the Id and the second one is the type.
+	 *
+	 * the <assets> element in the <code>statusPojoAsString</code> xml file is change,
+	 * according to the number of child into it:
+	 *
+	 * - If the number of entry is the same that the <code>limitAssets</code> parameter then the xml
+	 * is not changed.
+	 * - If the number of entry is lees than <code>limitAssets</code> parameter then the xml
+	 * 	 is not changed.
+	 * - If the number of entry is greater than <code>limitAssets</code> parameter then the
+	 *   different between the total od entries and the <code>limitAssets</code> value is remove from the
+	 *   assets element.
+	 *
+	 * @param statusPojoAsString
+	 * @param limitAssets
+	 * @return a {@link LimitedAssetResult} object with the new xml if it was changed and with the total
+	 * number of entries
+	 */
+	private LimitedAssetResult limitAssets(final String statusPojoAsString, final int limitAssets) {
 
-	private Map<String, Object> limitAssets(final Map<String, Object> publishAuditStatus,
-		final int limitAssets) {
-
-		final String statusPojoAsString = publishAuditStatus.get("status_pojo")
-				.toString();
+		final LimitedAssetResult limitedAssetResult = new LimitedAssetResult();
 
 		final String assetsAsString = StringUtils
 				.substringBetween(statusPojoAsString, "<assets>", "</assets>");
@@ -307,12 +390,14 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 
 			final String statusPojoAsStringLimited = statusPojoAsString
 					.replace(assetsAsString, entriesLimitedAsString);
-			publishAuditStatus.put("status_pojo", statusPojoAsStringLimited);
+			limitedAssetResult.newStatusPojo = statusPojoAsStringLimited;
 
-			publishAuditStatus.put("total_number_of_assets", entries.length);
+		} else {
+			limitedAssetResult.newStatusPojo = statusPojoAsString;
 		}
 
-		return publishAuditStatus;
+		limitedAssetResult.numberTotalOfAssets = entries.length;
+		return limitedAssetResult;
 	}
 
 	@Override
@@ -478,4 +563,11 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		return bundleIds;
 	}
 
+	/**
+	 * Result from the {@link PublishAuditAPIImpl#limitAssets(String, int)} method
+	 */
+	private static class LimitedAssetResult {
+		String newStatusPojo;
+		int numberTotalOfAssets;
+	}
 }
