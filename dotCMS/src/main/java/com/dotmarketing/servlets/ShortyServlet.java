@@ -323,7 +323,9 @@ public class ShortyServlet extends HttpServlet {
               .append(id).append("/byInode/true");
         //This logic is to get the filters to apply in the order were sent
         final boolean isFieldNameAtUri = id.split(StringPool.FORWARD_SLASH)[2].equalsIgnoreCase(fieldName);
-        final int substringStartPos = isFieldNameAtUri ? lowerUri.lastIndexOf(fieldName.toLowerCase())+fieldName.length()+1 : lowerUri.lastIndexOf(fieldName);
+        final int substringStartPos =
+                isFieldNameAtUri ? lowerUri.lastIndexOf(fieldName.toLowerCase())
+                        + fieldName.length() + 1 : lowerUri.lastIndexOf(fieldName.toLowerCase());
         final String[] filters = lowerUri.substring(substringStartPos).split(StringPool.FORWARD_SLASH);
 
       this.addImagePath(width, height, quality, jpeg, jpegp,webp, isImage, pathBuilder, focalPoint, cropWidth,cropHeight,resampleOpt,filters);
