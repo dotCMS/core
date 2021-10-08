@@ -11,6 +11,7 @@ import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.Operation;
+import com.dotcms.util.FunctionUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -174,9 +175,9 @@ public class BundleDataGen extends AbstractDataGen<Bundle> {
         }
     }
 
-    private void savePublishQueueElements(Bundle bundle) {
+    private void savePublishQueueElements(final Bundle bundle) {
         try {
-            List<String> ids = assets.stream().map(asset -> asset.inode).collect(Collectors.toList());
+            final List<String> ids = FunctionUtils.map(assets, asset -> asset.inode);
             PublisherAPIImpl.getInstance().saveBundleAssets( ids, bundle.getId(), APILocator.systemUser() );
         } catch (DotPublisherException e) {
             throw new DotRuntimeException(e);
