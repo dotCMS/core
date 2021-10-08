@@ -240,7 +240,9 @@ public class PublisherAPIImpl extends PublisherAPI{
                                           continue;
                                       }
                                       type = PusheableAsset.FOLDER.getType();
-                                  }
+                                  } else if ( !UtilMethods.isSet(type) &&  UtilMethods.isSet( APILocator.getWorkflowAPI().findScheme(identifier) )) {
+									  type = PusheableAsset.WORKFLOW.getType();
+								  }
                               } catch ( Exception ex ) {
                             	  try {
 									if ( UtilMethods.isSet( APILocator.getWorkflowAPI().findScheme(identifier) )) {
