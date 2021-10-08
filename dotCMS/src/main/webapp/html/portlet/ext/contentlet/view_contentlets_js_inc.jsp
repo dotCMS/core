@@ -2031,12 +2031,13 @@
 //
                         var cell = row.insertCell (row.cells.length);
 
-            var iconName = getIconName(cellData['__type__']);
+            var iconName = cellData.baseType !== 'FILEASSET' ?
+                cellData.contentTypeIcon : getIconName(cellData['__type__']);
             var hasTitleImage = (cellData.hasTitleImage ==='true');
+
             cell.innerHTML = (hasTitleImage) 
             	? '<img style="width:64px;height: 64px;object-fit: contain;" class="listingTitleImg" onError="replaceWithIcon(this.parentElement, \'' + iconName + '\')" src="/dA/' + cellData.inode + '/titleImage/256w" alt="' + cellData['__title__'].replace(/[^A-Za-z0-9_]/g, ' ') + '" >' 
-            	: '<span class="' + iconName +' uknIcon" style="font-size:24px;width:auto;"></span>';
-
+                : '<dot-contentlet-icon icon="' + iconName +'" size="48px" />';
             
             cell.setAttribute("style","height: 85px; text-align: center;");
 
@@ -2231,8 +2232,7 @@
         }
 
         function replaceWithIcon(parentElement, iconName) {
-            console.log('*** no hay icon')
-            parentElement.innerHTML = '<span class="' + iconName +'" style="font-size:24px;width:auto;"></span>'
+            parentElement.innerHTML = '<dot-contentlet-icon icon="' + iconName +'" size="48px" />'
         }
 
         function clearSearch () {
