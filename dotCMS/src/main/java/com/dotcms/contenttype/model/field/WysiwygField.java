@@ -3,7 +3,7 @@ package com.dotcms.contenttype.model.field;
 import static com.dotcms.util.CollectionsUtils.list;
 
 import com.dotcms.content.model.FieldValue;
-import com.dotcms.content.model.type.ListType;
+import com.dotcms.content.model.type.TextType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -56,24 +56,10 @@ public abstract class WysiwygField extends Field {
 		return "WYSIWYG";
 	}
 
-
 	@Override
 	public Optional<FieldValue<?>> fieldValue(final Object value) {
 		if (value instanceof String) {
-            /*
-
-            final String wysiwyg = (String) map.get(DISABLED_WYSIWYG);
-        if( UtilMethods.isSet(wysiwyg) ) {
-            final List<String> wysiwygFields = new ArrayList<String>();
-            final StringTokenizer st = new StringTokenizer(wysiwyg,StringPool.COMMA);
-            while( st.hasMoreTokens() ) wysiwygFields.add(st.nextToken().trim());
-            contentlet.setDisabledWysiwyg(wysiwygFields);
-        }
-
-             */
-
-
-			return Optional.of(ListType.of((List<?>) value));
+			return Optional.of(TextType.of((String) value));
 		}
 		return Optional.empty();
 	}

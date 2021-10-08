@@ -77,15 +77,7 @@ public class ContentletTransformer implements DBTransformer {
         }
 
         if(contentlet != null){
-          try {
-              //populateFolderAndHost(contentlet, contentletId, contentTypeId);
-              populateWysiwyg(map, contentlet);
               return contentlet;
-          }catch (Exception e){
-              throw new DotRuntimeException(String.format(
-                      " Failed to populate json-loaded contentlet with (identifier %s,  inode: %s ,  contentType: %s)",
-                      contentletId, inode, contentTypeId), e);
-          }
         }
 
         contentlet = new Contentlet();

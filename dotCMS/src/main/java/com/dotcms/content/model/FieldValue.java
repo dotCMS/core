@@ -9,7 +9,6 @@ import com.dotcms.content.model.type.AbstractDateType;
 import com.dotcms.content.model.type.AbstractFloatType;
 import com.dotcms.content.model.type.AbstractKeyValueType;
 import com.dotcms.content.model.type.AbstractListType;
-import com.dotcms.content.model.type.AbstractLongTextType;
 import com.dotcms.content.model.type.AbstractLongType;
 import com.dotcms.content.model.type.AbstractTextType;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -31,7 +30,6 @@ import org.immutables.value.Value.Parameter;
         @JsonSubTypes.Type(name = AbstractTextType.TYPENAME, value = AbstractTextType.class),
         @JsonSubTypes.Type(name = AbstractKeyValueType.TYPENAME, value = AbstractKeyValueType.class),
         @JsonSubTypes.Type(name = AbstractListType.TYPENAME, value = AbstractListType.class),
-        @JsonSubTypes.Type(name = AbstractLongTextType.TYPENAME, value = AbstractLongTextType.class),
         @JsonSubTypes.Type(name = AbstractLongType.TYPENAME, value = AbstractLongType.class),
         @JsonSubTypes.Type(name = AbstractTextType.TYPENAME, value = AbstractTextType.class),
         @JsonSubTypes.Type(name = AbstractBoolType.TYPENAME, value = AbstractBoolType.class),

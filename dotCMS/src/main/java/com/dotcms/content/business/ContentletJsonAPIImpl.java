@@ -1,5 +1,8 @@
 package com.dotcms.content.business;
 
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.DISABLED_WYSIWYG_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.FOLDER_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.HOST_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.IDENTIFIER_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.INODE_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.LANGUAGEID_KEY;
@@ -18,6 +21,7 @@ import com.dotcms.content.model.ImmutableContentlet.Builder;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.ColumnField;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
@@ -104,8 +108,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
     }
 
     ImmutableContentlet toImmutable(
-            final com.dotmarketing.portlets.contentlet.model.Contentlet contentlet)
-            throws DotDataException {
+            final com.dotmarketing.portlets.contentlet.model.Contentlet contentlet) {
 
         final Builder builder = ImmutableContentlet.builder();
         builder.baseType(contentlet.getBaseType().orElseGet(() -> BaseContentType.ANY).toString());
@@ -170,6 +173,9 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
         map.put(TITTLE_KEY, immutableContentlet.title());
         map.put(SORT_ORDER_KEY, immutableContentlet.sortOrder());
         map.put(LANGUAGEID_KEY, immutableContentlet.languageId());
+        map.put(HOST_KEY,immutableContentlet.host());
+        map.put(FOLDER_KEY,immutableContentlet.folder());
+        map.put(DISABLED_WYSIWYG_KEY,immutableContentlet.disabledWysiwyg());
 
         final ContentType contentType = contentTypeAPI.find(contentTypeId);
         final Map<String, Field> fieldsByVarName = contentType.fields().stream()
@@ -210,9 +216,10 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
     }
 
     private boolean isSettable(final Field field) {
-        return !(field instanceof LineDividerField || field instanceof TabDividerField
-                || field instanceof CategoryField || field instanceof PermissionTabField
-                || field instanceof RelationshipsTabField);
+        return !(field instanceof LineDividerField
+                 || field instanceof TabDividerField || field instanceof ColumnField
+                 || field instanceof CategoryField || field instanceof PermissionTabField
+                 || field instanceof RelationshipsTabField);
     }
 
     private boolean isSystemField(final Field field) {
