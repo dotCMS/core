@@ -22,6 +22,12 @@ import java.util.zip.ZipFile;
  */
 public class ResourceCollectorUtil {
 
+    /**
+     * Get the packages for a jar file, if the file is a fragment will return the Export packages
+     * If the file is a bundle will return the Import packages
+     * @param file File
+     * @return Collection string
+     */
     public static Collection<String> getPackages(final File file) {
 
         String importPackage = null;
@@ -43,7 +49,11 @@ public class ResourceCollectorUtil {
                 Collections.emptyList();
     }
 
-
+    /**
+     * Get the Import-Package from the jar file
+     * @param file File
+     * @return Collection String
+     */
     public static Collection<String> getImports(final File file) {
 
         try (final JarFile jarFile     = new JarFile(file)){
@@ -61,6 +71,11 @@ public class ResourceCollectorUtil {
         return Collections.emptyList();
     }
 
+    /**
+     * Get the Export-Package from the jar file
+     * @param file File
+     * @return Collection String
+     */
     public static Collection<String> getExports(final File file) {
 
         try (final JarFile jarFile     = new JarFile(file)){
