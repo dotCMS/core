@@ -168,16 +168,32 @@ public class BundleDataGen extends AbstractDataGen<Bundle> {
     }
 
     private List<PublishQueueElement> getPublishQueueElements(Bundle bundle) {
-        try {
-            return PublisherAPIImpl.getInstance().getQueueElementsByBundleId(bundle.getId());
-        } catch (DotPublisherException e) {
-            throw new DotRuntimeException(e);
+        final List<PublishQueueElement> publishQueueElements = new ArrayList<>();
+
+        for (final AssetsItem assetItem : assets) {
+            final PublishQueueElement publishQueueElement = new PublishQueueElement();
+            publishQueueElement.setId(1);
+            publishQueueElement.setOperation(PublisherConfig.Operation.PUBLISH.ordinal());
+            publishQueueElement.setAsset(assetItem.inode);
+            publishQueueElement.setEnteredDate(new Date());
+            publishQueueElement.setPublishDate(new Date());
+            publishQueueElement.setBundleId(bundle.getId());
+            publishQueueElement.setType(assetItem.pusheableAsset.getType());
+
+            publishQueueElements.add(publishQueueElement);
         }
+
+        return publishQueueElements;
     }
 
     private void savePublishQueueElements(final Bundle bundle) {
         try {
-            final List<String> ids = FunctionUtils.map(assets, asset -> asset.inode);
+            final List<AssetsItem> assetWithoutWorkflow = assets.stream()
+                    .filter(asset -> !asset.pusheableAsset.getType()
+                            .equals(PusheableAsset.WORKFLOW.getType()))
+                    .collect(Collectors.toList());
+
+            final List<String> ids = FunctionUtils.map(assetWithoutWorkflow, asset -> asset.inode);
             PublisherAPIImpl.getInstance().saveBundleAssets( ids, bundle.getId(), APILocator.systemUser() );
         } catch (DotPublisherException e) {
             throw new DotRuntimeException(e);
