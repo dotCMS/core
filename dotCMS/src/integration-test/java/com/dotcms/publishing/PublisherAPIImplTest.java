@@ -169,7 +169,6 @@ public class PublisherAPIImplTest {
                 getFolderWithDependencies(),
                 getHostWithDependencies(),
                 getLinkWithDependencies(),
-                getWorkflowWithDependencies(),
                 getLanguageWithDependencies(),
                 getRuleWithDependencies(),
                 getContentWithSeveralVersions()
