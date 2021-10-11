@@ -130,7 +130,6 @@ public class DependencyBundlerTest {
         all.addAll(createFolderTestCase());
         all.addAll(createHostTestCase());
         all.addAll(createLinkTestCase());
-        all.addAll(createWorkflowTestCase());
         all.addAll(createLanguageTestCase());
         all.addAll(createRuleTestCase());
         all.addAll(createContentTestCase());
@@ -712,18 +711,6 @@ public class DependencyBundlerTest {
                 new TestData(language, map(), filterDescriptorNotDependenciesRelationship, "Language with filterDescriptorNotDependenciesRelationship")
         );
 
-    }
-
-    private static Collection<TestData> createWorkflowTestCase() {
-        final WorkflowScheme workflowScheme = new WorkflowDataGen().nextPersisted();
-        final WorkflowStep workflowStep = new WorkflowStepDataGen(workflowScheme.getId()).nextPersisted();
-
-        return list(
-                new TestData(workflowScheme, map(), map(), filterDescriptorAllDependencies, "WorkflowScheme with filterDescriptorAllDependencies"),
-                new TestData(workflowScheme, map(), filterDescriptorNotDependencies, "WorkflowScheme with filterDescriptorNotDependencies"),
-                new TestData(workflowScheme, map(), map(), filterDescriptorNotRelationship, "WorkflowScheme with filterDescriptorNotRelationship"),
-                new TestData(workflowScheme, map(), filterDescriptorNotDependenciesRelationship, "WorkflowScheme with filterDescriptorNotDependenciesRelationship")
-        );
     }
 
     private static Collection<TestData> createHostTestCase() throws DotDataException {
