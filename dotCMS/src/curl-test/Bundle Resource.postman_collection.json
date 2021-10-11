@@ -1392,9 +1392,6 @@
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
-											"",
-											"    var jsonData = pm.response.json();",
-											"    pm.collectionVariables.set(\"bundleId\", jsonData[\"bundleId\"]);",
 											"});"
 										],
 										"type": "text/javascript"
@@ -1475,8 +1472,6 @@
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
 											"",
-											"    var jsonData = pm.response.json();",
-											"    pm.collectionVariables.set(\"bundleId\", jsonData[\"bundleId\"]);",
 											"});"
 										],
 										"type": "text/javascript"
@@ -1557,8 +1552,6 @@
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
 											"",
-											"    var jsonData = pm.response.json();",
-											"    pm.collectionVariables.set(\"bundleId\", jsonData[\"bundleId\"]);",
 											"});"
 										],
 										"type": "text/javascript"
@@ -1634,7 +1627,7 @@
 											"    jsonData.forEach(item => {",
 											"        if (item.type === \"contentlet\" && item.isHtmlPage){",
 											"            pm.expect(\"Page Asset\").to.eq(item.content_type_name);",
-											"            pm.expect(\"8b463ffb-08f2-4237-9bb2-b1f33545c9f4\").to.eq(item.inode);",
+											"            pm.expect(\"416eda77-aa6e-4f95-9a38-903be25a48ef\").to.eq(item.inode);",
 											"            pm.expect(\"page_test\").to.eq(item.title);",
 											"            pm.expect(true).to.eq(item.isHtmlPage);",
 											"        } else if (item.type === \"contentlet\") {",
@@ -1812,11 +1805,11 @@
 	"variable": [
 		{
 			"key": "bundleName",
-			"value": "bundleName-317"
+			"value": "bundleName-647"
 		},
 		{
 			"key": "bundleId",
-			"value": "01FHB6WSN2Q9KJKCSFZMQJMSEV"
+			"value": "01FHR10N7R176HHAGHDTNSYF9N"
 		}
 	]
 }
