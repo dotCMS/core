@@ -47,7 +47,7 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
 
     @ViewChild('searchableDropdown') searchableDropdown: SearchableDropdownComponent;
 
-    currentSiteSub$: Subject<Site> = new Subject();
+    currentSite: Site;
 
     sitesCurrentPage: Site[];
     moreThanOneSite = false;
@@ -60,13 +60,8 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
         private dotEventsService: DotEventsService
     ) {}
 
-    get currentSite$(): Observable<Site> {
-        return this.currentSiteSub$;
-    }
-
     ngOnInit(): void {
         this.paginationService.url = 'v1/site';
-
         this.paginationService.setExtraParams('archive', this.archive);
         this.paginationService.setExtraParams('live', this.live);
         this.paginationService.setExtraParams('system', this.system);
@@ -108,45 +103,24 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
      * @memberof SiteSelectorComponent
      */
     handleSitesRefresh(site: Site): void {
-        if (site.archived) {
-            this.paginationService
-                .getCurrentPage()
-                .pipe(
-                    takeUntil(this.destroy$),
-                    tap((items: Site[]) => {
-                        if (
-                            items.findIndex((item: Site) => site.identifier === item.identifier) >=
-                            0
-                        ) {
-                            throw new Error('Indexing... site still present');
-                        }
-                    }),
-                    retryWhen((error) => error.pipe(delay(1000)))
-                )
-                .subscribe((items: Site[]) => {
-                    this.updateValues(items);
-                });
-        } else {
-            this.siteService
-                .getSiteById(site.identifier)
-                .pipe(
-                    takeUntil(this.destroy$),
-                    tap((item: Site) => {
-                        if (item === undefined) {
-                            throw new Error('Indexing... site not present');
-                        }
-                    }),
-                    retryWhen((error) => error.pipe(delay(1000)))
-                )
-                .subscribe(() => {
-                    this.paginationService
-                        .getCurrentPage()
-                        .pipe(take(1))
-                        .subscribe((items: Site[]) => {
-                            this.updateValues(items);
-                        });
-                });
-        }
+        this.paginationService
+            .getCurrentPage()
+            .pipe(
+                take(1),
+                tap((items: Site[]) => {
+                    const siteIndex = items.findIndex(
+                        (item: Site) => site.identifier === item.identifier
+                    );
+                    const shouldRetry = site.archived ? siteIndex >= 0 : siteIndex === -1;
+                    if (shouldRetry) {
+                        throw new Error('Indexing... site still present');
+                    }
+                }),
+                retryWhen((error) => error.pipe(delay(1000), take(10)))
+            )
+            .subscribe((items: Site[]) => {
+                this.updateValues(items);
+            });
     }
 
     /**
@@ -199,8 +173,7 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
      * @memberof DotSiteSelectorComponent
      */
     updateCurrentSite(site: Site): void {
-        const newSite = { ...site };
-        this.currentSiteSub$.next(newSite);
+        this.currentSite = site;
     }
 
     private getSiteByIdFromCurrentPage(siteId: string): Site {
@@ -227,6 +200,7 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
 
     private updateValues(items: Site[]): void {
         this.sitesCurrentPage = [...items];
+        this.moreThanOneSite = items.length > 1;
         this.updateCurrentSite(this.siteService.currentSite);
     }
 }

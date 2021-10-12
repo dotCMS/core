@@ -1,19 +1,22 @@
 import { Observable, of as observableOf, of } from 'rxjs';
-import { ComponentFixture, waitForAsync, fakeAsync, tick } from '@angular/core/testing';
-import { DebugElement } from '@angular/core';
+import { ComponentFixture, waitForAsync, fakeAsync, tick, TestBed } from '@angular/core/testing';
+import { Component, DebugElement, Input } from '@angular/core';
 import { DotSiteSelectorComponent } from './dot-site-selector.component';
 import { By } from '@angular/platform-browser';
-import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { SearchableDropDownModule } from '../searchable-dropdown/searchable-dropdown.module';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { SiteServiceMock, mockSites } from '../../../../test/site-service.mock';
-import { Site, SiteService } from '@dotcms/dotcms-js';
+import { CoreWebService, Site, SiteService } from '@dotcms/dotcms-js';
 import { SearchableDropdownComponent } from '../searchable-dropdown/component/searchable-dropdown.component';
 import { PaginatorService } from '@services/paginator';
 import { IframeOverlayService } from '../iframe/service/iframe-overlay.service';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 const sites: Site[] = [
     {
@@ -36,9 +39,21 @@ const sites: Site[] = [
     }
 ];
 
+@Component({
+    selector: 'dot-test-host-component',
+    template: ` <dot-site-selector [id]="id" [cssClass]="cssClass"></dot-site-selector> `
+})
+class TestHostComponent {
+    @Input() id: string;
+    @Input() cssClass: string;
+}
+
 describe('SiteSelectorComponent', () => {
+    let fixtureHost: ComponentFixture<TestHostComponent>;
+    let componentHost: TestHostComponent;
     let comp: DotSiteSelectorComponent;
     let fixture: ComponentFixture<DotSiteSelectorComponent>;
+    let deHost: DebugElement;
     let de: DebugElement;
     let paginatorService: PaginatorService;
     let siteService: SiteService;
@@ -49,20 +64,32 @@ describe('SiteSelectorComponent', () => {
             const messageServiceMock = new MockDotMessageService({
                 search: 'Search'
             });
-            DOTTestBed.configureTestingModule({
-                declarations: [DotSiteSelectorComponent],
-                imports: [SearchableDropDownModule, BrowserAnimationsModule],
+            TestBed.configureTestingModule({
+                declarations: [TestHostComponent, DotSiteSelectorComponent],
+                imports: [
+                    SearchableDropDownModule,
+                    BrowserAnimationsModule,
+                    HttpClientTestingModule,
+                    CommonModule,
+                    FormsModule
+                ],
                 providers: [
                     { provide: DotMessageService, useValue: messageServiceMock },
                     { provide: SiteService, useValue: siteServiceMock },
+                    { provide: CoreWebService, useClass: CoreWebServiceMock },
                     IframeOverlayService,
-                    PaginatorService
+                    PaginatorService,
+                    DotEventsService
                 ]
-            });
+            }).compileComponents();
 
-            fixture = DOTTestBed.createComponent(DotSiteSelectorComponent);
-            comp = fixture.componentInstance;
-            de = fixture.debugElement;
+            fixtureHost = TestBed.createComponent(TestHostComponent);
+            deHost = fixtureHost.debugElement;
+            componentHost = fixtureHost.componentInstance;
+
+            de = deHost.query(By.css('dot-site-selector'));
+            comp = de.componentInstance;
+
             paginatorService = de.injector.get(PaginatorService);
             siteService = de.injector.get(SiteService);
         })
@@ -72,7 +99,7 @@ describe('SiteSelectorComponent', () => {
         const dotEventsService = de.injector.get(DotEventsService);
         spyOn(comp, 'getSitesList');
         spyOn(comp, 'handleSitesRefresh');
-        fixture.detectChanges();
+        fixtureHost.detectChanges();
         dotEventsService.notify('login-as');
         tick(0);
         dotEventsService.notify('logout-ass');
@@ -85,7 +112,7 @@ describe('SiteSelectorComponent', () => {
         comp.live = false;
         comp.system = false;
 
-        fixture.detectChanges();
+        fixtureHost.detectChanges();
 
         expect(paginatorService.extraParams.get('archive')).toBe('false');
         expect(paginatorService.extraParams.get('live')).toBe('false');
@@ -97,7 +124,7 @@ describe('SiteSelectorComponent', () => {
         comp.live = true;
         comp.system = true;
 
-        fixture.detectChanges();
+        fixtureHost.detectChanges();
 
         expect(paginatorService.extraParams.get('archive')).toBe('true');
         expect(paginatorService.extraParams.get('live')).toBe('true');
@@ -108,7 +135,7 @@ describe('SiteSelectorComponent', () => {
         spyOn<any>(siteService, 'switchSite$').and.returnValue(observableOf(sites[0]));
         spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(sites));
 
-        fixture.detectChanges();
+        fixtureHost.detectChanges();
 
         expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
     });
@@ -117,7 +144,7 @@ describe('SiteSelectorComponent', () => {
         spyOn<any>(siteService, 'refreshSites$').and.returnValue(observableOf(sites[0]));
         spyOn(comp, 'handleSitesRefresh').and.callThrough();
 
-        fixture.detectChanges();
+        fixtureHost.detectChanges();
 
         expect(comp.handleSitesRefresh).toHaveBeenCalledTimes(1);
     });
@@ -132,7 +159,7 @@ describe('SiteSelectorComponent', () => {
         spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(sites));
         spyOn<any>(siteService, 'switchSite$').and.returnValue(observableOf({}));
 
-        fixture.detectChanges();
+        fixtureHost.detectChanges();
 
         const searchableDropdownComponent: SearchableDropdownComponent = de.query(
             By.css('dot-searchable-dropdown')
@@ -156,7 +183,7 @@ describe('SiteSelectorComponent', () => {
         spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(sites));
         spyOn<any>(siteService, 'switchSite$').and.returnValue(observableOf({}));
 
-        fixture.detectChanges();
+        fixtureHost.detectChanges();
 
         const searchableDropdownComponent: SearchableDropdownComponent = de.query(
             By.css('dot-searchable-dropdown')
@@ -169,14 +196,12 @@ describe('SiteSelectorComponent', () => {
         expect(paginatorService.filter).toEqual(filter);
     });
 
-    it('should pass class name to searchable dropdown', async () => {
+    it('should pass class name to searchable dropdown', () => {
         paginatorService.filter = 'filter';
         paginatorService.totalRecords = 2;
         spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(sites));
-
-        comp.cssClass = 'hello';
-        fixture.detectChanges();
-        await fixture.whenStable();
+        componentHost.cssClass = 'hello';
+        fixtureHost.detectChanges();
 
         const dropdown = de.query(By.css('dot-searchable-dropdown'));
         expect(dropdown.classes.hello).toBe(true);
@@ -187,7 +212,7 @@ describe('SiteSelectorComponent', () => {
         paginatorService.totalRecords = 2;
         spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(sites));
 
-        fixture.detectChanges();
+        fixtureHost.detectChanges();
 
         const searchableDropdownComponent: SearchableDropdownComponent = de.query(
             By.css('dot-searchable-dropdown')
@@ -203,7 +228,7 @@ describe('SiteSelectorComponent', () => {
         paginatorService.totalRecords = 2;
         spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(sites));
         spyOn(comp, 'handleSitesRefresh');
-        fixture.detectChanges();
+        fixtureHost.detectChanges();
         const searchableDropdownComponent: DebugElement = de.query(
             By.css('dot-searchable-dropdown')
         );
@@ -214,38 +239,25 @@ describe('SiteSelectorComponent', () => {
         expect(result).toEqual({ fake: 'site' });
     });
 
-    it('should set current site correctly', async () => {
+    it('should set current site correctly', () => {
         paginatorService.filter = 'filter';
         paginatorService.totalRecords = 2;
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([]));
-        spyOn(comp, 'handleSitesRefresh');
-        comp.currentSite$.subscribe((res) => {
-            expect(res).toEqual(mockSites[0]);
-        });
-        await fixture.whenStable();
+        spyOn(siteService, 'getSiteById').and.returnValue(observableOf(mockSites[1]));
+        spyOn(paginatorService, 'getCurrentPage').and.returnValue(observableOf(mockSites));
+        fixtureHost.detectChanges();
+        expect(comp.currentSite).toEqual(siteService.currentSite);
     });
 
-    it('should set site based on passed id', async () => {
+    it('should set site based on passed id', () => {
         paginatorService.filter = 'filter';
         paginatorService.totalRecords = 2;
-        comp.id = mockSites[1].identifier;
         spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(mockSites));
         spyOn(siteService, 'getSiteById').and.returnValue(observableOf(mockSites[1]));
         spyOnProperty(siteService, 'currentSite', 'get').and.returnValue(mockSites[0]);
-        comp.currentSite$.subscribe((res) => {
-            expect(res).toEqual(mockSites[1]);
-        });
-        fixture.detectChanges();
-        await fixture.whenStable();
-    });
-
-    it('should set current on switchSite$', () => {
-        fixture.detectChanges();
-        siteServiceMock.setFakeCurrentSite(sites[1]);
-
-        comp.currentSite$.subscribe((site) => {
-            expect(site).toEqual(sites[1]);
-        });
+        fixtureHost.detectChanges();
+        componentHost.id = mockSites[1].identifier;
+        fixtureHost.detectChanges();
+        expect(comp.currentSite).toEqual(mockSites[1]);
     });
 
     describe('sitesCurrentPage', () => {
@@ -271,20 +283,19 @@ describe('SiteSelectorComponent', () => {
         }));
 
         it('should update until site is present after add', fakeAsync(() => {
-            spyOn<any>(siteService, 'getSiteById').and.callFake(() =>
-                mockFunction(2, sites[1], undefined)
+            const subSites = sites.slice(0, 2);
+            spyOn(paginatorService, 'getCurrentPage').and.callFake(() =>
+                mockFunction(3, subSites, [])
             );
-            spyOn(paginatorService, 'getCurrentPage').and.returnValue(of(sites));
             comp.handleSitesRefresh(sites[0]);
-            tick(2500);
-            expect(siteService.getSiteById).toHaveBeenCalledWith(sites[0].identifier);
-            expect(paginatorService.getCurrentPage).toHaveBeenCalledTimes(1);
+            tick(3500);
+            expect(comp.sitesCurrentPage).toEqual(subSites);
         }));
     });
 
     it('should display as field', () => {
         spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(sites));
-        fixture.detectChanges();
+        fixtureHost.detectChanges();
         const searchableDropdownComponent: DebugElement = de.query(
             By.css('dot-searchable-dropdown')
         );
@@ -294,7 +305,7 @@ describe('SiteSelectorComponent', () => {
     it('should display only one result as field', () => {
         comp.asField = true;
         spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([sites[0]]));
-        fixture.detectChanges();
+        fixtureHost.detectChanges();
         const searchableDropdownComponent: DebugElement = de.query(
             By.css('dot-searchable-dropdown')
         );
@@ -303,7 +314,7 @@ describe('SiteSelectorComponent', () => {
 
     it('should display as text if only one result', () => {
         spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([sites[0]]));
-        fixture.detectChanges();
+        fixtureHost.detectChanges();
         const siteTitle: DebugElement = de.query(By.css('.site-selector__title'));
         expect(siteTitle).not.toBeNull();
     });

@@ -7,7 +7,7 @@
     (pageChange)="handlePageChange($event)"
     (show)="show.emit()"
     [data]="sitesCurrentPage"
-    [ngModel]="currentSite$ | async"
+    [ngModel]="currentSite"
     [pageLinkSize]="3"
     [rows]="pageSize"
     [totalRecords]="paginationService.totalRecords"
@@ -19,6 +19,6 @@
 
 <ng-template #hostName>
     <span class="site-selector__title">
-        {{ (currentSite$ | async)?.hostname }}
+       {{ currentSite?.hostname }}
     </span>
 </ng-template>

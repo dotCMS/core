@@ -23,21 +23,17 @@ const replaceIdForNonMenuSection = (id) => {
 };
 
 interface DotActiveItemsProps {
-    urlId: string;
+    url: string;
     collapsed: boolean;
     menuId?: string;
+    previousUrl: string;
 }
 
 interface DotActiveItemsFromParentProps extends DotActiveItemsProps {
     menus: DotMenu[];
 }
 
-function getActiveMenuFromMenuId({
-    menus,
-    menuId,
-    collapsed,
-    urlId
-}: DotActiveItemsFromParentProps) {
+function getActiveMenuFromMenuId({ menus, menuId, collapsed, url }: DotActiveItemsFromParentProps) {
     return menus.map((menu) => {
         menu.active = false;
 
@@ -51,7 +47,7 @@ function getActiveMenuFromMenuId({
             menu.isOpen = !collapsed && menu.active; // TODO: this menu.active what?
             menu.menuItems = menu.menuItems.map((item) => ({
                 ...item,
-                active: item.id === urlId
+                active: item.id === url
             }));
         }
 
@@ -59,35 +55,62 @@ function getActiveMenuFromMenuId({
     });
 }
 
-const setActiveItems = ({ urlId, collapsed, menuId }: DotActiveItemsProps) => (
+function isDetailPage(id: string, url: string): boolean {
+    return url.split('/').includes('edit') && url.includes(id);
+}
+
+function isMenuActive(menus: DotMenu[]): boolean {
+    return !!menus.find((item) => item.active);
+}
+
+function isEditPageFromSiteBrowser(menuId: string, previousUrl: string): boolean {
+    return menuId === 'edit-page' && previousUrl === '/c/site-browser'
+}
+
+const setActiveItems = ({ url, collapsed, menuId, previousUrl }: DotActiveItemsProps) => (
     source: Observable<DotMenu[]>
 ) => {
-    urlId = replaceIdForNonMenuSection(urlId) || urlId;
+    let urlId = getTheUrlId(url);
 
     return source.pipe(
         map((m: DotMenu[]) => {
             const menus: DotMenu[] = [...m];
             let isActive = false;
 
+            if (isEditPageFromSiteBrowser(menuId, previousUrl) || isDetailPage(urlId, url) && isMenuActive(menus)) {
+                return null;
+            }
+
             // When user browse using the navigation (Angular Routing)
-            if (menuId) {
-                return getActiveMenuFromMenuId({ menus, menuId, collapsed, urlId });
+            if (menuId && menuId !== 'edit-page') {
+                return getActiveMenuFromMenuId({
+                    menus,
+                    menuId,
+                    collapsed,
+                    url: urlId,
+                    previousUrl
+                });
             }
 
             // When user browse using the browser url bar, direct links or reload page
-            for (let i = 0; i < menus.length; i++) {
-                for (let k = 0; k < menus[i].menuItems.length; k++) {
-                    if (menus[i].menuItems[k].id === urlId) {
-                        isActive = true;
-                        menus[i].active = isActive;
-                        menus[i].isOpen = isActive;
-                        menus[i].menuItems[k].active = isActive;
-                        break;
-                    }
-                }
+            urlId = replaceIdForNonMenuSection(urlId) || urlId;
 
-                if (isActive) {
-                    break;
+            for (let i = 0; i < menus.length; i++) {
+                menus[i].active = false;
+                menus[i].isOpen = false;
+
+                for (let k = 0; k < menus[i].menuItems.length; k++) {
+                    // Once we activate the first one all the others are close
+                    if (isActive) {
+                        menus[i].menuItems[k].active = false;
+                    }
+
+                    if (!isActive && menus[i].menuItems[k].id === urlId) {
+                        isActive = true;
+                        menus[i].active = true;
+                        menus[i].isOpen = true;
+                        menus[i].menuItems[k].active = true;
+                    }
                 }
             }
 
@@ -97,6 +120,11 @@ const setActiveItems = ({ urlId, collapsed, menuId }: DotActiveItemsProps) => (
 };
 
 const DOTCMS_MENU_STATUS = 'dotcms.menu.status';
+
+function getTheUrlId(url: string): string {
+    const urlSegments: string[] = url.split('/').filter(Boolean);
+    return urlSegments[0] === 'c' ? urlSegments.pop() : urlSegments[0];
+}
 
 @Injectable()
 export class DotNavigationService {
@@ -122,25 +150,28 @@ export class DotNavigationService {
 
         this.onNavigationEnd()
             .pipe(
-                map((event: NavigationEnd) => this.getTheUrlId(event.url)),
-                switchMap((id: string) =>
+                switchMap((event: NavigationEnd) =>
                     this.dotMenuService.loadMenu().pipe(
                         setActiveItems({
-                            urlId: id,
+                            url: event.url,
                             collapsed: this._collapsed$.getValue(),
-                            menuId: this.router.getCurrentNavigation().extras.state?.menuId
+                            menuId: this.router.getCurrentNavigation().extras.state?.menuId,
+                            previousUrl: this.dotRouterService.previousUrl
                         })
                     )
-                )
+                ),
+                filter((menu) => !!menu)
             )
             .subscribe((menus: DotMenu[]) => {
                 this.setMenu(menus);
             });
 
         this.dotcmsEventsService.subscribeTo('UPDATE_PORTLET_LAYOUTS').subscribe(() => {
-            this.reloadNavigation().pipe(take(1)).subscribe((menus: DotMenu[]) => {
-                this.setMenu(menus);
-            });
+            this.reloadNavigation()
+                .pipe(take(1))
+                .subscribe((menus: DotMenu[]) => {
+                    this.setMenu(menus);
+                });
         });
 
         this.loginService.auth$
@@ -317,11 +348,6 @@ export class DotNavigationService {
         return `/c/${menuItemId}`;
     }
 
-    private getTheUrlId(url: string): string {
-        const urlSegments: string[] = url.split('/').filter((item: string) => item.length);
-        return urlSegments[0] === 'c' ? urlSegments.pop() : urlSegments[0];
-    }
-
     private reloadIframePage(): void {
         if (this.router.url.indexOf('c/') > -1) {
             this.dotIframeService.reload();
@@ -331,8 +357,9 @@ export class DotNavigationService {
     private reloadNavigation(): Observable<DotMenu[]> {
         return this.dotMenuService.reloadMenu().pipe(
             setActiveItems({
-                urlId: this.dotRouterService.currentPortlet.id,
-                collapsed: this._collapsed$.getValue()
+                url: this.dotRouterService.currentPortlet.id,
+                collapsed: this._collapsed$.getValue(),
+                previousUrl: this.dotRouterService.previousUrl
             }),
             tap((menus: DotMenu[]) => {
                 this.setMenu(menus);

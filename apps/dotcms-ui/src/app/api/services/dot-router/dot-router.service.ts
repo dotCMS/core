@@ -31,6 +31,10 @@ export class DotRouterService {
         return this._routeHistory.url;
     }
 
+    get previousUrl(): string {
+        return this._routeHistory.previousUrl;
+    }
+
     get currentPortlet(): PortletNav {
         return {
             url: this.router.routerState.snapshot.url,
@@ -88,8 +92,13 @@ export class DotRouterService {
      * @memberof DotRouterService
      */
     goToEditPage(queryParams: Params): Promise<boolean> {
-        return this.router.navigate(['/edit-page/content'], {
-            queryParams
+        const menuId = 'edit-page';
+
+        return this.router.navigate([`/${menuId}/content`], {
+            queryParams,
+            state: {
+                menuId
+            }
         });
     }
 
