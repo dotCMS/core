@@ -211,6 +211,10 @@
                                           <td><input id="emailAddress" type="text" onkeyup="userEmailChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></td>
                                       </tr>
                                       <tr>
+                                          <th></th>
+                                          <td><button dojoType="dijit.form.Button" onclick="generateSecurePasswordModal()" type="button"><%= LanguageUtil.get(pageContext, "generate.secure.password") %></button></td>
+                                      </tr>
+                                      <tr>
                                           <th><%= LanguageUtil.get(pageContext, "Password") %>:</th>
                                           <td><input id="password" type="password" onkeyup="userPasswordChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" autocomplete="new-password" /></td>
                                       </tr>

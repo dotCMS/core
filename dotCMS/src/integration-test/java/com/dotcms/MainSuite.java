@@ -122,6 +122,7 @@ import com.dotmarketing.startup.runonce.Task210719CleanUpTitleFieldTest;
 import com.dotmarketing.startup.runonce.Task210802UpdateStructureTableTest;
 import com.dotmarketing.startup.runonce.Task210805DropUserProxyTableTest;
 import com.dotmarketing.startup.runonce.Task210816DeInodeRelationshipTest;
+import com.dotmarketing.startup.runonce.Task211012AddCompanyDefaultLanguageTest;
 import com.dotmarketing.startup.runonce.Task210901UpdateDateTimezonesTest;
 import com.dotmarketing.startup.runonce.Task211007RemoveNotNullConstraintFromCompanyMXColumnTest;
 import com.dotmarketing.util.ConfigTest;
@@ -473,6 +474,8 @@ import org.junit.runners.Suite.SuiteClasses;
         RedisPubSubImplTest.class,
         ManifestReaderFactoryTest.class,
         Task211007RemoveNotNullConstraintFromCompanyMXColumnTest.class
+        ManifestReaderFactoryTest.class,
+        Task211012AddCompanyDefaultLanguageTest.class
 })
 public class MainSuite {
 
