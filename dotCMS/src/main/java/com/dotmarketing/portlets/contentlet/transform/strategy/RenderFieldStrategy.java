@@ -66,7 +66,8 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
                     map.put(field.variable(),
                             renderFieldValue(HttpServletRequestThreadLocal.INSTANCE.getRequest(),
                                     HttpServletResponseThreadLocal.INSTANCE.getResponse(),
-                                    RenderFieldStrategy.getFieldValue(contentlet, field), contentlet, field)));
+                                    RenderFieldStrategy.getFieldValue(contentlet, field), contentlet,
+                                    field.variable())));
         }
 
         return map;
@@ -94,9 +95,36 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
                 || field instanceof ConstantField;
     }
 
+    public static Object parseAsJSON(final HttpServletRequest request,
+            final HttpServletResponse response, final String incomingFieldValue,
+            final Contentlet contentlet, final String fieldVar) {
+        if(!UtilMethods.isSet(incomingFieldValue)) return null;
+
+        final org.apache.velocity.context.Context context = (request!=null && response!=null)
+                ? VelocityUtil.getInstance().getContext(request, response)
+                : VelocityUtil.getBasicContext();
+
+        context.put("content", contentlet);
+        context.put("contentlet", contentlet);
+        context.put("dotJSON", new DotJSON());
+
+        final String fieldValue = prepareJSON(incomingFieldValue);
+
+        final StringWriter evalResult = new StringWriter();
+
+        Try.runRunnable(()-> com.dotmarketing.util.VelocityUtil
+                .getEngine()
+                .evaluate(context, evalResult, "", fieldValue)).onFailure((error)->
+                Logger.warnAndDebug(RenderFieldStrategy.class, "Unable to render velocity in field: "
+                        + fieldVar, error)
+        );
+
+        return UtilMethods.isSet(evalResult.toString()) ? evalResult.toString() : fieldValue;
+    }
+
     public static Object renderFieldValue(final HttpServletRequest request,
             final HttpServletResponse response, final String incomingFieldValue,
-            final Contentlet contentlet, final Field field) {
+            final Contentlet contentlet, final String fieldVar) {
         if(!UtilMethods.isSet(incomingFieldValue)) return null;
 
         final org.apache.velocity.context.Context context = (request!=null && response!=null)
@@ -118,7 +146,7 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
                 .getEngine()
                 .evaluate(context, evalResult, "", fieldValue)).onFailure((error)->
                 Logger.warnAndDebug(RenderFieldStrategy.class, "Unable to render velocity in field: "
-                        + field.variable(), error)
+                        + fieldVar, error)
         );
 
         return UtilMethods.isSet(evalResult.toString()) ? evalResult.toString() : fieldValue;

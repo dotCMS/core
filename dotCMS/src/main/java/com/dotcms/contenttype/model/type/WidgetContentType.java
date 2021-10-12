@@ -20,6 +20,8 @@ public abstract class WidgetContentType extends ContentType implements Expireabl
 	
 	public static final String WIDGET_CODE_FIELD_NAME = "Widget Code";
 	public static final String WIDGET_CODE_FIELD_VAR = "widgetCode";
+	public static final String WIDGET_CODE_JSON_FIELD_NAME = "Widget Code as JSON";
+	public static final String WIDGET_CODE_JSON_FIELD_VAR = "widgetCodeJSON";
 	public static final String WIDGET_USAGE_FIELD_NAME = "Widget Usage";
 	public static final String WIDGET_USAGE_FIELD_VAR = "widgetUsage";
 	public static final String WIDGET_TITLE_FIELD_NAME = "Widget Title";
@@ -55,7 +57,7 @@ public abstract class WidgetContentType extends ContentType implements Expireabl
 		Field preExecute = ImmutableConstantField.builder()
 				.name(WIDGET_PRE_EXECUTE_FIELD_NAME)
 				.variable(WIDGET_PRE_EXECUTE_FIELD_VAR)
-				.sortOrder(4)
+				.sortOrder(5)
 				.fixed(false)
 				.readOnly(false)
 				.searchable(true)
@@ -70,8 +72,17 @@ public abstract class WidgetContentType extends ContentType implements Expireabl
 				.readOnly(true)
 				.searchable(true)
 				.build();
+
+		Field codeJSONField = ImmutableConstantField.builder()
+				.name(WIDGET_CODE_JSON_FIELD_NAME)
+				.variable(WIDGET_CODE_JSON_FIELD_VAR)
+				.sortOrder(4)
+				.fixed(true)
+				.readOnly(true)
+				.searchable(true)
+				.build();
 		
-		Field usageField = ImmutableConstantField.builder()
+		Field usageField = ImmutableTextField.builder()
 				.name(WIDGET_USAGE_FIELD_NAME)
 				.variable(WIDGET_USAGE_FIELD_VAR)
 				.sortOrder(2)
@@ -79,12 +90,7 @@ public abstract class WidgetContentType extends ContentType implements Expireabl
 				.readOnly(false)
 				.searchable(true)
 				.build();
-		
 
-		
-		return ImmutableList.of(titleField,usageField,codeField,preExecute);
-		
-		
-		
+		return ImmutableList.of(titleField,usageField,codeField,codeJSONField,preExecute);
 	}
 }

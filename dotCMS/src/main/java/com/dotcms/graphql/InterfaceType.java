@@ -27,8 +27,10 @@ import com.dotcms.contenttype.model.type.WidgetContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.graphql.business.ContentAPIGraphQLTypesProvider;
+import com.dotcms.graphql.datafetcher.DotJSONDataFetcher;
 import com.dotcms.graphql.resolver.ContentResolver;
 import com.dotmarketing.util.Logger;
+import graphql.scalars.ExtendedScalars;
 import graphql.schema.GraphQLInterfaceType;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -101,6 +103,11 @@ public enum InterfaceType {
         final Map<String, TypeFetcher> widgetFields = new HashMap<>(contentFields);
         addBaseTypeFields(widgetFields, ImmutableWidgetContentType.builder().name("dummy")
                 .build().requiredFields());
+
+        // add widgetCodeJSON field
+//        widgetFields.put("widgetCodeJSON",
+//                new TypeFetcher(ExtendedScalars.Json, new DotJSONDataFetcher()));
+
         interfaceTypes.put("WIDGET", createInterfaceType(WIDGET_INTERFACE_NAME, widgetFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> vanityUrlFields = new HashMap<>(contentFields);
