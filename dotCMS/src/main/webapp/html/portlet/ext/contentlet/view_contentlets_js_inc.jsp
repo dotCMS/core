@@ -1942,16 +1942,19 @@
                                 row.appendChild(th);
 
                                 th = document.createElement('th');
+                                th.style.width="32px";
                                 th.innerHTML = '&nbsp;';
                                 th.setAttribute("nowrap","true");
                                 row.appendChild(th);
 
                                 th = document.createElement('th');
+                                th.style.width="54px";
                                 th.innerHTML = '&nbsp;';
                                 th.setAttribute("nowrap","true");
                                 row.appendChild(th);
 
                                 th = document.createElement('th');
+                                th.style.width="32px";
                                 th.innerHTML = '&nbsp;';
                                 th.setAttribute("nowrap","true");
                                 row.appendChild(th);
@@ -2002,6 +2005,8 @@
                 var structure_id;
                 var contentStructureType;
 
+                cbContentInodeList = data;
+
                 //Filling data
                 for (var i = 0; i < data.length; i++) {
                     var popupMenuItems = "";
@@ -2017,7 +2022,7 @@
                     var hasTitleImage = (cellData.hasTitleImage ==='true');
 
                     cell.innerHTML = (hasTitleImage) 
-                        ? '<img style="width:64px;height: 64px;object-fit: contain;" class="listingTitleImg" onError="replaceWithIcon(this.parentElement, \'' + iconName + '\')" src="/dA/' + cellData.inode + '/titleImage/256w" alt="' + cellData['__title__'].replace(/[^A-Za-z0-9_]/g, ' ') + '" >' 
+                        ? '<img draggable="false" style="width:64px;height: 64px;object-fit: contain;" class="listingTitleImg" onError="replaceWithIcon(this.parentElement, \'' + iconName + '\')" src="/dA/' + cellData.inode + '/titleImage/256w" alt="' + cellData['__title__'].replace(/[^A-Za-z0-9_]/g, ' ') + '" >' 
                         : '<dot-contentlet-icon icon="' + iconName +'" size="48px" />';
                     
                     cell.setAttribute("style","height: 85px; text-align: center;");
