@@ -63,10 +63,11 @@ public abstract class KeyValueField extends Field {
 		return "Key-Value";
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public Optional<FieldValue<?>> fieldValue(final Object value) {
-		//Metadata keyValues must never make it into our json.
-		if (!FileAssetAPI.META_DATA_FIELD.equals(this.variable())) {
 			if (value instanceof String) {
 				final Map<String, Object> map = KeyValueFieldUtil
 						.JSONValueToHashMap((String) value);
@@ -76,7 +77,6 @@ public abstract class KeyValueField extends Field {
 			if (value instanceof Map) {
 				return Optional.of(KeyValueType.of((Map<String, Object>) value));
 			}
-		}
 		return Optional.empty();
 	}
 }

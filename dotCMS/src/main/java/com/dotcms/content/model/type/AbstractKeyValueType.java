@@ -13,6 +13,9 @@ import org.immutables.value.Value.Auxiliary;
 import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Parameter;
 
+/**
+ * KeyValue-Field json representation
+ */
 @ValueTypeStyle
 @Immutable
 @JsonDeserialize(as = KeyValueType.class)
@@ -21,11 +24,17 @@ public interface AbstractKeyValueType extends FieldValue<Map<String,?>> {
 
     String TYPENAME = "KeyValue";
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     default String type() {
         return TYPENAME;
     };
 
+    /**
+     * {@inheritDoc}
+     */
     @JsonProperty("value")
     @Parameter
     Map<String,?> value();

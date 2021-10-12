@@ -8,6 +8,9 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Parameter;
 
+/**
+ * Binary Field json representation
+ */
 @ValueTypeStyle
 @Immutable
 @JsonDeserialize(as = BinaryType.class)
@@ -16,11 +19,17 @@ public interface AbstractBinaryType extends FieldValue<String> {
 
     String TYPENAME = "Binary";
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     default String type() {
         return TYPENAME;
     };
 
+    /**
+     * {@inheritDoc}
+     */
     @JsonProperty("value")
     @Parameter
     String value();

@@ -1,25 +1,23 @@
 package com.dotcms.content.model.type;
 
 import com.dotcms.content.model.FieldValue;
-import com.dotcms.content.model.type.ListType;
 import com.dotcms.content.model.annotation.ValueTypeStyle;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import java.util.List;
 import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Parameter;
 
 /**
- * List json representation for any List Like field we might need
+ * Wysiwyg-Field json representation
  */
-@Immutable
-@JsonDeserialize(as = ListType.class)
-@JsonTypeName(value = AbstractListType.TYPENAME)
 @ValueTypeStyle
-public interface AbstractListType<T> extends FieldValue<List<?>> {
+@Immutable
+@JsonDeserialize(as = WysiwygType.class)
+@JsonTypeName(value = AbstractWysiwygType.TYPENAME)
+public interface AbstractWysiwygType extends FieldValue<String> {
 
-    String TYPENAME = "List";
+    String TYPENAME = "Wysiwyg";
 
     /**
      * {@inheritDoc}
@@ -34,6 +32,5 @@ public interface AbstractListType<T> extends FieldValue<List<?>> {
      */
     @JsonProperty("value")
     @Parameter
-    List<?> value();
-
+    String value();
 }

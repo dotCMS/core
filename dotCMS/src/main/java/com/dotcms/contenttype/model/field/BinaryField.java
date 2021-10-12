@@ -1,12 +1,7 @@
 package com.dotcms.contenttype.model.field;
 
-import com.dotcms.content.business.ContentletJsonAPIImpl;
 import com.dotcms.content.model.FieldValue;
 import com.dotcms.content.model.type.BinaryType;
-import com.dotcms.content.model.type.FloatType;
-import com.dotcms.content.model.type.LongType;
-import com.dotcms.content.model.type.TextType;
-import com.dotmarketing.util.Logger;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -84,17 +79,12 @@ public abstract class BinaryField extends Field {
 	}
 
 	/**
-	 *
-	 * @param value
-	 * @return
+	 * {@inheritDoc}
 	 */
+	@Override
 	public Optional<FieldValue<?>> fieldValue(final Object value){
 		if (value instanceof File) {
 			return Optional.of(BinaryType.of(((File) value).getName()));
-		}
-		if (value instanceof Path) {
-			final Path path = (Path) value;
-			return Optional.of(BinaryType.of(path.getFileName().toString()));
 		}
 		if (value instanceof String) {
 			return Optional.of(BinaryType.of((String) value));

@@ -33,8 +33,6 @@ public interface Contentlet {
     Long sortOrder();
     List<String> disabledWysiwyg();
     Map<String, FieldValue<?>> fields();
-
-    //TODO: Verify if this is page specific or what other attributes outside contentlet are specific for "concrete" contentlet type
     @Nullable
     String friendlyName();
 

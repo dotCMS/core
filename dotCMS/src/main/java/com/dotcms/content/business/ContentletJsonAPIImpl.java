@@ -26,6 +26,7 @@ import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.LineDividerField;
 import com.dotcms.contenttype.model.field.PermissionTabField;
 import com.dotcms.contenttype.model.field.RelationshipsTabField;
@@ -34,10 +35,7 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -46,9 +44,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -56,7 +52,6 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.annotations.VisibleForTesting;
-import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.io.File;
@@ -70,6 +65,14 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * This is class takes care of translating a contentlet from it's regular mutable representation
+ * given by @see com.dotmarketing.portlets.contentlet.model.Contentlet to json For that purpose we
+ * use an intermediate representation generated via Immutables @see com.dotcms.content.model.Contentlet
+ * This is based on the original logic located in @See com.dotmarketing.portlets.contentlet.transform.ContentletTransformer
+ * which reads the contentlet from the columns located in the contentlet table.
+ * This is meant to deal with a json representation of contentlet stored in only one column.
+ */
 public class ContentletJsonAPIImpl implements ContentletJsonAPI {
 
     private static final BinaryFileFilter binaryFileFilter = new BinaryFileFilter();
@@ -81,6 +84,15 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
     final FolderAPI folderAPI;
     final HostAPI hostAPI;
 
+    /**
+     * API-Parametrized constructor
+     * @param identifierAPI
+     * @param contentTypeAPI
+     * @param fileAssetAPI
+     * @param contentletAPI
+     * @param folderAPI
+     * @param hostAPI
+     */
     @VisibleForTesting
     ContentletJsonAPIImpl(final IdentifierAPI identifierAPI,
             final ContentTypeAPI contentTypeAPI,
@@ -96,17 +108,32 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
         this.hostAPI = hostAPI;
     }
 
+    /**
+     * Default Constructor
+     */
     public ContentletJsonAPIImpl() {
         this(APILocator.getIdentifierAPI(), APILocator.getContentTypeAPI(APILocator.systemUser()),
              APILocator.getFileAssetAPI(), APILocator.getContentletAPI(),
              APILocator.getFolderAPI(), APILocator.getHostAPI());
     }
 
+    /**
+     * Public entry point. Going from json to regular contentlet
+     * @param contentlet regular "mutable" contentlet
+     * @return String json representation
+     * @throws JsonProcessingException
+     * @throws DotDataException
+     */
     public String toJson(final com.dotmarketing.portlets.contentlet.model.Contentlet contentlet)
             throws JsonProcessingException, DotDataException {
         return objectMapper.get().writeValueAsString(toImmutable(contentlet));
     }
 
+    /**
+     * internal method Makes a regular contentlet and makes an ImmutableContentlet which later will be translated into a json
+     * @param contentlet
+     * @return
+     */
     ImmutableContentlet toImmutable(
             final com.dotmarketing.portlets.contentlet.model.Contentlet contentlet) {
 
@@ -129,7 +156,9 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
 
         final List<Field> fields = contentlet.getContentType().fields();
         for (final Field field : fields) {
-
+            if (isNotMappable(field)) {
+                continue;
+            }
             final Object value = contentlet.get(field.variable());
             if (null != value) {
                 final Optional<FieldValue<?>> fieldValue = getFieldValue(value, field);
@@ -141,20 +170,35 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
                     builder.putFields(field.variable(), fieldValue.get());
                 }
             } else {
-                Logger.warn(ContentletJsonAPIImpl.class,
+                Logger.debug(ContentletJsonAPIImpl.class,
                         String.format("Unable to set field `%s` as it wasn't set on the source contentlet", field.name()));
             }
         }
         return builder.build();
     }
 
-
+    /**
+     * Public entry point when going from the json representation to a regular "mutable" contentlet
+     * @param json
+     * @return
+     * @throws JsonProcessingException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     public com.dotmarketing.portlets.contentlet.model.Contentlet mapContentletFieldsFromJson(final String json)
             throws JsonProcessingException, DotDataException, DotSecurityException{
         final Map<String, Object> map = mapFieldsFromJson(json);
         return new com.dotmarketing.portlets.contentlet.model.Contentlet(map);
     }
 
+    /**
+     * Internal method, takes the json a makes a map that later is used to build a regular mutable contentlet
+     * @param json
+     * @return
+     * @throws JsonProcessingException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     Map<String, Object> mapFieldsFromJson(final String json)
             throws JsonProcessingException, DotDataException, DotSecurityException {
 
@@ -210,11 +254,22 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
         return map;
     }
 
+    /**
+     * Determine if we're looking at File-Asset.
+     * @param contentType
+     * @param field
+     * @return
+     */
     private boolean isFileAsset(final ContentType contentType, final Field field) {
         return (contentType instanceof FileAssetContentType && FileAssetAPI.FILE_NAME_FIELD
                 .equals(field.variable()));
     }
 
+    /**
+     * Used to determine if we're looking at readOnly field.
+     * @param field
+     * @return
+     */
     private boolean isSettable(final Field field) {
         return !(field instanceof LineDividerField
                  || field instanceof TabDividerField || field instanceof ColumnField
@@ -222,15 +277,41 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
                  || field instanceof RelationshipsTabField);
     }
 
+    /**
+     * Used to determine if we're looking at a system field excluding BinaryFields which must make it into the json.
+     * @param field
+     * @return
+     */
     private boolean isSystemField(final Field field) {
         return (field.dataType() == DataTypes.SYSTEM && !(field instanceof BinaryField));
     }
 
-    private boolean isNotMappable(final Field field) {
-        return (!isSettable(field) || (field instanceof HostFolderField)
-                || (field instanceof TagField) || isSystemField(field));
+    /**
+     * Metadata must be skipped. Even though its KeyValue it should never make it into the final json
+     * @param field
+     * @return
+     */
+    private boolean isMetadataField(final Field field){
+        return (field instanceof KeyValueField && FileAssetAPI.META_DATA_FIELD.equals(field.variable()));
     }
 
+    /**
+     * This method basically tells whether or not the field must be processed.
+     * @param field
+     * @return
+     */
+    private boolean isNotMappable(final Field field) {
+        return (!isSettable(field) || (field instanceof HostFolderField)
+                || (field instanceof TagField) || isSystemField(field) || isMetadataField(field)
+        );
+    }
+
+    /**
+     * Once a BinaryField is found this will rebuild it.
+     * @param field
+     * @param inode
+     * @return
+     */
     private Optional<File> getBinary(final Field field, final String inode) {
         final java.io.File binaryFileFolder = new java.io.File(
                 fileAssetAPI.getRealAssetsRootPath()
@@ -251,15 +332,40 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
         return Optional.empty();
     }
 
+    /**
+     * Given the map of fieldValues indexed by VarName this applies any additional conversion logic that might be required
+     * @param fields
+     * @param field
+     * @return
+     */
     private Object getValue(final Map<String, FieldValue<?>> fields, final Field field){
        final Object value = Try.of(()->fields.get(field.variable()).value()).getOrNull();
        return value instanceof Instant ? Date.from((Instant)value) : value;
     }
 
+    /**
+     * Given the value extracted from the contentlet map and the respective field it maps to
+     * @param value
+     * @param field
+     * @return
+     */
+    private Optional<FieldValue<?>> getFieldValue(final Object value, final Field field) {
+        return field.fieldValue(value);
+    }
+
+    /**
+     * Json read to immutable
+     * @param json
+     * @return
+     * @throws JsonProcessingException
+     */
     Contentlet immutableFromJson(final String json) throws JsonProcessingException {
         return objectMapper.get().readValue(json, Contentlet.class);
     }
 
+    /**
+     * Jackson mapper configuration and lazy initialized instance.
+     */
     private final Lazy<ObjectMapper> objectMapper = Lazy.of(() -> {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
@@ -269,9 +375,5 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
         objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         return objectMapper;
     });
-
-    private Optional<FieldValue<?>> getFieldValue(final Object value, final Field field) {
-        return field.fieldValue(value);
-    }
 
 }

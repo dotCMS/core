@@ -1,25 +1,23 @@
-package com.dotcms.content.model.type;
+package com.dotcms.content.model.type.select;
 
 import com.dotcms.content.model.FieldValue;
-import com.dotcms.content.model.type.ListType;
 import com.dotcms.content.model.annotation.ValueTypeStyle;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import java.util.List;
 import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Parameter;
 
 /**
- * List json representation for any List Like field we might need
+ * Bool Single-Select Field json representation
  */
-@Immutable
-@JsonDeserialize(as = ListType.class)
-@JsonTypeName(value = AbstractListType.TYPENAME)
 @ValueTypeStyle
-public interface AbstractListType<T> extends FieldValue<List<?>> {
+@Immutable
+@JsonDeserialize(as = BoolSelectFieldType.class)
+@JsonTypeName(value = AbstractBoolSelectFieldType.TYPENAME)
+public interface AbstractBoolSelectFieldType extends FieldValue<Boolean> {
 
-    String TYPENAME = "List";
+    String TYPENAME = "BoolSelect";
 
     /**
      * {@inheritDoc}
@@ -34,6 +32,6 @@ public interface AbstractListType<T> extends FieldValue<List<?>> {
      */
     @JsonProperty("value")
     @Parameter
-    List<?> value();
+    Boolean value();
 
 }

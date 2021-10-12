@@ -3,9 +3,7 @@ package com.dotcms.contenttype.model.field;
 import static com.dotcms.util.CollectionsUtils.list;
 
 import com.dotcms.content.model.FieldValue;
-import com.dotcms.content.model.type.BoolType;
-import com.dotcms.content.model.type.LongType;
-import com.dotcms.content.model.type.TextType;
+import com.dotcms.content.model.type.CheckBoxFieldType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -51,10 +49,13 @@ public abstract class CheckboxField extends SelectableValuesField{
 				ContentTypeFieldProperties.HINT);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public Optional<FieldValue<?>> fieldValue(final Object value){
 		if (value instanceof String) {
-			return Optional.of(TextType.of((String) value));
+			return Optional.of(CheckBoxFieldType.of((String) value));
 		}
 		return Optional.empty();
 	}

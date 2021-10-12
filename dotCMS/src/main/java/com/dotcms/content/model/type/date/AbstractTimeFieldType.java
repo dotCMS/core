@@ -1,25 +1,24 @@
-package com.dotcms.content.model.type;
+package com.dotcms.content.model.type.date;
 
 import com.dotcms.content.model.FieldValue;
-import com.dotcms.content.model.type.ListType;
 import com.dotcms.content.model.annotation.ValueTypeStyle;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import java.util.List;
+import java.time.Instant;
 import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Parameter;
 
 /**
- * List json representation for any List Like field we might need
+ * Time Field json representation
  */
-@Immutable
-@JsonDeserialize(as = ListType.class)
-@JsonTypeName(value = AbstractListType.TYPENAME)
 @ValueTypeStyle
-public interface AbstractListType<T> extends FieldValue<List<?>> {
+@Immutable
+@JsonDeserialize(as = TimeFieldType .class)
+@JsonTypeName(value = AbstractTimeFieldType.TYPENAME)
+public interface AbstractTimeFieldType extends FieldValue<Instant> {
 
-    String TYPENAME = "List";
+    String TYPENAME = "Time";
 
     /**
      * {@inheritDoc}
@@ -34,6 +33,6 @@ public interface AbstractListType<T> extends FieldValue<List<?>> {
      */
     @JsonProperty("value")
     @Parameter
-    List<?> value();
+    Instant value();
 
 }

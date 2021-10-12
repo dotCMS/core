@@ -1,6 +1,7 @@
 package com.dotcms.content.business;
 
 import static com.dotcms.content.business.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -34,10 +35,9 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
     }
 
     @Test
-    public void Simple_json_Generation_Test() throws Exception {
+    public void Simple_Json_Test() throws Exception {
 
         final boolean defaultValue = Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
-        //disconnect the MD generation on indexing so we can test the generation directly using the API.
         Config.setProperty(SAVE_CONTENTLET_AS_JSON, false);
         try {
 
@@ -48,12 +48,6 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
                     .getContentTypeWithAllAvailableFieldTypes();
 
             new TagDataGen().name("tag1").nextPersisted();
-
-            String categoryName = "myTestCategory" + System.currentTimeMillis();
-
-            final Category category = new CategoryDataGen().setCategoryName(categoryName)
-                .setKey(categoryName + "Key").setCategoryVelocityVarName(categoryName)
-                .setSortOrder(1).nextPersisted();
 
             Contentlet in = new ContentletDataGen(contentType).host(site)
                     .languageId(1)
@@ -68,32 +62,42 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
                     .setProperty("dateTimeField",new Date())
                     .setProperty("tagField","tag1") //System field isn't expected to get saved in the json
                     .setProperty("keyValueField", "{\"key1\":\"val1\"}")
-                    .addCategory(category)
                     .nextPersisted();
 
             assertNotNull(in);
-
             final ContentletJsonAPI impl = APILocator.getContentletJsonAPI();
             final String json = impl.toJson(in);
             assertNotNull(json);
-            System.out.println(json);
-
-
             final Contentlet out = impl.mapContentletFieldsFromJson(json);
-            assertNotNull(out);
-            assertTrue(areEqual(in.getMap(),out.getMap()));
+            compareContentletMaps(in.getMap(),out.getMap());
 
         } finally {
             Config.setProperty(SAVE_CONTENTLET_AS_JSON, defaultValue);
         }
     }
 
-    private boolean areEqual(final Map<String, Object> first, final Map<String, Object> second) {
-        if (first.size() != second.size()) {
-            return false;
-        }
-        return first.entrySet().stream()
-                .allMatch(e -> e.getValue().equals(second.get(e.getKey())));
+    private void compareContentletMaps(final Map<String, Object> in, final Map<String, Object> out) {
+        assertEquals(((Date)in.get("modDate")).toInstant(),((Date)out.get("modDate")).toInstant());
+        assertEquals(in.get("title"),out.get("title"));
+        assertEquals(in.get("hostFolder"),out.get("hostFolder"));
+        assertEquals(in.get("folder"),out.get("folder"));
+        assertEquals(in.get("textFieldNumeric"),out.get("textFieldNumeric"));
+        assertEquals(in.get("textFieldFloat"),out.get("textFieldFloat"));
+        assertEquals(((Date)in.get("dateField")).toInstant(),((Date)out.get("dateField")).toInstant());
+        assertEquals(in.get("textField"),out.get("textField"));
+        assertEquals(in.get("binaryField"),out.get("binaryField"));
+        assertEquals(in.get("textAreaField"),out.get("textAreaField"));
+        assertEquals(in.get("modUser"),out.get("modUser"));
+        assertEquals(in.get("inode"),out.get("inode"));
+        assertEquals(in.get("identifier"),out.get("identifier"));
+        assertEquals(in.get("stInode"),out.get("stInode"));
+        assertEquals(in.get("host"),out.get("host"));
+        assertEquals(in.get("languageId"),out.get("languageId"));
+        assertEquals(in.get("owner"),out.get("owner"));
+        assertEquals(in.get("tagField"),out.get("tagField"));
+
     }
+
+    
 
 }

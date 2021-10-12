@@ -3,9 +3,9 @@ package com.dotcms.contenttype.model.field;
 import static com.dotcms.util.CollectionsUtils.list;
 
 import com.dotcms.content.model.FieldValue;
-import com.dotcms.content.model.type.FloatType;
-import com.dotcms.content.model.type.LongType;
-import com.dotcms.content.model.type.TextType;
+import com.dotcms.content.model.type.text.FloatTextFieldType;
+import com.dotcms.content.model.type.text.LongTextFieldType;
+import com.dotcms.content.model.type.text.TextFieldType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -49,16 +49,19 @@ public abstract class TextField extends Field {
 				ContentTypeFieldProperties.UNIQUE);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public Optional<FieldValue<?>> fieldValue(final Object value) {
 		if (value instanceof String) {
-			return Optional.of(TextType.of((String) value));
+			return Optional.of(TextFieldType.of((String) value));
 		}
 		if (value instanceof Float) {
-			return Optional.of(FloatType.of((Float) value));
+			return Optional.of(FloatTextFieldType.of((Float) value));
 		}
 		if (value instanceof Long) {
-			return Optional.of(LongType.of((Long) value));
+			return Optional.of(LongTextFieldType.of((Long) value));
 		}
 		return Optional.empty();
 	}

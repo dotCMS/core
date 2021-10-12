@@ -1,10 +1,10 @@
 package com.dotcms.contenttype.model.field;
 
 import com.dotcms.content.model.FieldValue;
-import com.dotcms.content.model.type.BoolType;
-import com.dotcms.content.model.type.FloatType;
-import com.dotcms.content.model.type.LongType;
-import com.dotcms.content.model.type.TextType;
+import com.dotcms.content.model.type.radio.BoolRadioFieldType;
+import com.dotcms.content.model.type.radio.FloatRadioFieldType;
+import com.dotcms.content.model.type.radio.LongRadioFieldType;
+import com.dotcms.content.model.type.radio.RadioFieldType;
 import java.util.Collection;
 import java.util.List;
 
@@ -56,23 +56,26 @@ public abstract class RadioField extends SelectableValuesField {
 				ContentTypeFieldProperties.LISTED, ContentTypeFieldProperties.DATA_TYPE);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public Optional<FieldValue<?>> fieldValue(final Object value){
 
 		if (value instanceof String) {
-			return Optional.of(TextType.of((String) value));
+			return Optional.of(RadioFieldType.of((String) value));
 		}
 
 		if (value instanceof Boolean) {
-			return Optional.of(BoolType.of((Boolean) value));
+			return Optional.of(BoolRadioFieldType.of((Boolean) value));
 		}
 
 		if (value instanceof Long) {
-			return Optional.of(LongType.of((Long) value));
+			return Optional.of(LongRadioFieldType.of((Long) value));
 		}
 
 		if (value instanceof Float) {
-			return Optional.of(FloatType.of((Float) value));
+			return Optional.of(FloatRadioFieldType.of((Float) value));
 		}
 
 		return Optional.empty();

@@ -306,7 +306,7 @@ public class TaskLocatorUtil {
 		.add(Task210816DeInodeRelationship.class)
 		.add(Task210901UpdateDateTimezones.class)
 		.add(Task210908AddCompanyDefaultLanguage.class)
-
+        .add(Task211008AddContentletAsJsonColumn.class)
         .build();
         
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());

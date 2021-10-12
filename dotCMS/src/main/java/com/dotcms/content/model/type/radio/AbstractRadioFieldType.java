@@ -1,4 +1,4 @@
-package com.dotcms.content.model.type;
+package com.dotcms.content.model.type.radio;
 
 import com.dotcms.content.model.FieldValue;
 import com.dotcms.content.model.annotation.ValueTypeStyle;
@@ -8,21 +8,30 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Parameter;
 
+/**
+ * Text Radio Field json representation
+ */
 @ValueTypeStyle
 @Immutable
-@JsonDeserialize(as = BoolType.class)
-@JsonTypeName(value = AbstractBoolType.TYPENAME)
-public interface AbstractBoolType extends FieldValue<Boolean> {
+@JsonDeserialize(as = RadioFieldType.class)
+@JsonTypeName(value = AbstractRadioFieldType.TYPENAME)
+public interface AbstractRadioFieldType extends FieldValue<String> {
 
-    String TYPENAME = "Bool";
+    String TYPENAME = "Radio";
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     default String type() {
         return TYPENAME;
     };
 
+    /**
+     * {@inheritDoc}
+     */
     @JsonProperty("value")
     @Parameter
-    Boolean value();
+    String value();
 
 }

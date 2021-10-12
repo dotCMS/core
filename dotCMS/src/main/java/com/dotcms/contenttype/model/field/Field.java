@@ -289,13 +289,17 @@ public abstract class Field implements FieldIf, Serializable {
   }
 
   /**
-   *
-   * @param value
-   * @return
+   * This method and any specific descendant implementation should examine the type value of the
+   * passed on the param and decide what Builder must be used to create a FieldValue to represent
+   * the Field as json properly
    */
-  public Optional<FieldValue<?>> fieldValue(final Object value){
-     Logger.warn(Field.class, ()->String.format(" Empty impl called from field with name `%s` and variable `%s`. ",this.name(), variable())  );
-     return Optional.empty();
-  };
+  public Optional<FieldValue<?>> fieldValue(final Object value) {
+    Logger.debug(Field.class, () -> String
+            .format(" No field Specific Impl found for field with name `%s` and variable `%s`. ",
+                    this.name(), variable()));
+    return Optional.empty();
+  }
+
+  ;
 
 }
