@@ -683,6 +683,8 @@
           }//http://jira.dotmarketing.net/browse/DOTCMS-3232
           else if(type=='host or folder'){
                   // Below code is used to fix the "widget already registered error".
+                  let folderHostSelectorField = dijit.byId('FolderHostSelector');
+                  let folderHostSelectorCurrentValue = folderHostSelectorField ? folderHostSelectorField.value : null;
 
                   if(dojo.byId('FolderHostSelector-hostFoldersTreeWrapper')){
                           dojo.byId('FolderHostSelector-hostFoldersTreeWrapper').remove();
@@ -702,7 +704,7 @@
                   <%}else if(UtilMethods.isSet(crumbtrailSelectedHostId)){ %>
                         hostId = '<%= conHostValue %>';
                   <%} %>
-                  var fieldValue = hostId;
+                  var fieldValue = folderHostSelectorCurrentValue || hostId;
                   <% if(UtilMethods.isSet(conFolderValue)){%>
                         fieldValue = '<%= conFolderValue %>';
                   <%}%>
