@@ -239,3 +239,5 @@ This maintenance release includes the following code fixes:
 117. https://github.com/dotCMS/core/issues/18301 : SASS not working with multiple independent SCSS files. Causes hanging on front-end
 
 118. https://github.com/dotCMS/core/issues/20801 : Warning log message incomplete for not allowed categories when retrieving content
+
+119. https://github.com/dotCMS/core/issues/20597 : Generating resource link for File Asset with Legacy Identifier is failing
