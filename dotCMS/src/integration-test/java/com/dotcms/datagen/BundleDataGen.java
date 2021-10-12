@@ -44,6 +44,7 @@ public class BundleDataGen extends AbstractDataGen<Bundle> {
     private boolean downloading = true;
     private Operation operation = Operation.PUBLISH;
     private boolean forcePush = false;
+    private boolean savePublishQueueElements = false;
 
     static{
         howAddInBundle = new AssignableFromMap<>();
@@ -126,6 +127,10 @@ public class BundleDataGen extends AbstractDataGen<Bundle> {
         );
     }
 
+    public BundleDataGen setSavePublishQueueElements(boolean savePublishQueueElements) {
+        this.savePublishQueueElements = savePublishQueueElements;
+        return this;
+    }
 
     public BundleDataGen forcePush(final boolean forcePush) {
         this.forcePush = forcePush;
@@ -205,7 +210,10 @@ public class BundleDataGen extends AbstractDataGen<Bundle> {
         try {
             APILocator.getBundleAPI().saveBundle(bundle);
             final Bundle bundleFromDataBase = APILocator.getBundleAPI().getBundleByName(bundle.getName());
-            savePublishQueueElements(bundle);
+
+            if (savePublishQueueElements) {
+                savePublishQueueElements(bundle);
+            }
 
             if (config != null) {
                 config.setAssets(getPublishQueueElements(bundleFromDataBase));

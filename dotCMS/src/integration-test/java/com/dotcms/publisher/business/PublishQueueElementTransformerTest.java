@@ -47,6 +47,7 @@ public class PublishQueueElementTransformerTest {
         final ContentType contentType = new ContentTypeDataGen().nextPersisted();
 
         final Bundle bundle = new BundleDataGen()
+                .setSavePublishQueueElements(true)
                 .addAssets(list(contentlet, language, contentType))
                 .nextPersisted();
 
