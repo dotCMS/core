@@ -196,7 +196,6 @@ describe('DotThemeSelectorComponent', () => {
             component.siteChange(mockSites[0]);
             fixture.detectChanges();
             const themeImages = de.queryAll(By.css('[data-testId="themeImage"]'));
-            console.log(themeImages[0]);
             expect(themeImages[0].nativeElement.src).toContain(
                 `/dA/${mockDotThemes[2].themeThumbnail}/130w/130h/thumbnail.png`
             );

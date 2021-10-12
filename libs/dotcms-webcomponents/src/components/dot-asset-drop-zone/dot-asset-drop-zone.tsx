@@ -231,7 +231,7 @@ export class DotAssetDropZone {
     }
 
     private isMaxsizeError(error: string): boolean {
-        return error.includes('The maximum file size for this field is');
+        return error?.includes('The maximum file size for this field is');
     }
 
     private formatErrorMessage(errors: DotHttpErrorResponse[]) {

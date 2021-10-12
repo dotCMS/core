@@ -8,7 +8,13 @@
                 type="text"
                 [placeholder]="('apps.search.placeholder' | dm) || ''"
             />
-            <div>
+            <div class="dot-apps__header-actions">
+                <div class="dot-apps__header-info">
+                    <dot-icon name="help" size="18"></dot-icon>
+                    <a href="https://dotcms.com/docs/latest/apps-integrations" target="_blank"
+                        >{{ 'apps.link.info' | dm }}</a
+                    >
+                </div>
                 <button
                     pButton
                     link

@@ -112,7 +112,9 @@ describe('DotAppsImportExportDialogComponent', () => {
             });
             await hostFixture.whenStable();
             const dialog = de.query(By.css('dot-dialog'));
-            const inputPassword = de.query(By.css('input'));
+            const inputPassword = de.query(By.css('input.dot-apps-import-dialog__password'));
+            const inputFile = de.query(By.css('input[type="file"]'));
+            expect(inputFile.attributes.dotAutofocus).toBeDefined();
             expect(dialog.componentInstance.header).toBe(
                 messageServiceMock.get('apps.confirmation.import.header')
             );
@@ -224,6 +226,23 @@ describe('DotAppsImportExportDialogComponent', () => {
             await hostFixture.whenStable();
             expect(dotAppsService.exportConfiguration).toHaveBeenCalledWith(expectedConfiguration);
             expect(comp.closeExportDialog).toHaveBeenCalledTimes(1);
+        });
+
+        it(`should send configuration to export all apps and not close dialog on Error`, async () => {
+            hostFixture.detectChanges();
+            spyOn(dotAppsService, 'exportConfiguration').and.returnValue(Promise.resolve('error'));
+            spyOn(comp, 'closeExportDialog').and.callThrough();
+
+            await hostFixture.whenStable();
+            comp.form.setValue({
+                password: 'test'
+            });
+
+            hostFixture.detectChanges();
+            const acceptBtn = de.queryAll(By.css('footer button'))[1];
+            acceptBtn.nativeElement.click();
+            await hostFixture.whenStable();
+            expect(comp.closeExportDialog).not.toHaveBeenCalled();
         });
 
         it(`should send configuration to export all sites from a single app and close dialog`, async () => {

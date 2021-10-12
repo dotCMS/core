@@ -6,6 +6,7 @@ export const EDIT_PAGE_JS = `
     let currentModel;
     var executeScroll = 1;
 
+function initDragAndDrop () {
     function getContainers() {
         var containers = [];
         var containersNodeList = document.querySelectorAll('[data-dot-object="container"]');
@@ -452,6 +453,26 @@ export const EDIT_PAGE_JS = `
     }
 
     // D&D Img - End
+}
+
+    /*
+        This setInterval is required because this script is running
+        before the web component finishes rendering. Currently,
+        we do not have a way to listen to the web component event,
+        so this setInterval is used.
+    */
+
+    let attempts = 0;
+    const initScript = setInterval(function() {
+        const isContainer = document.querySelector('[data-dot-object="container"]');
+        attempts++;
+        if(isContainer) {
+            clearInterval(initScript);
+            initDragAndDrop();
+        } else if( attempts === 10) {
+            clearInterval(initScript);
+        }
+    }, 500);
 
 })();
 

@@ -79,10 +79,12 @@ export const getEditPageCss = (timestampId: string): string => {
 
     ${timestampId} [data-dot-object="container"] {
         border: solid 1px #53c2f9 !important;
-        margin-bottom: 40px !important;
+        margin-bottom: 35px !important;
         min-height: 120px !important;
         display: flex !important;
         flex-direction: column !important;
+        padding-bottom: 5px !important;
+        padding-top: 5px !important;
         width: 100% !important;
     }
 
@@ -107,7 +109,7 @@ export const getEditPageCss = (timestampId: string): string => {
     }
 
     ${timestampId} [data-dot-object="contentlet"]:first-child {
-        margin-top: 40px !important;
+        margin-top: 35px !important;
     }
 
     ${timestampId} [data-dot-object="container"].inline-editing [data-dot-object="contentlet"] .dotedit-contentlet__toolbar {
@@ -144,10 +146,13 @@ export const getEditPageCss = (timestampId: string): string => {
         padding: 0px !important;
         margin: 0px !important;
         height: 10px;
-        margin: 0 16px !important;
+        margin: -5px 16px -5px !important;
         z-index: 100 !important;
     }
 
+    ${timestampId} [data-dot-object="contentlet"].gu-transit:not(.gu-mirror):first-child {
+        margin-bottom: 14px !important;
+    }
 
     /* Hide all the elements inside the contentlet while were relocating */
     ${timestampId} [data-dot-object="contentlet"].gu-transit:not(.gu-mirror) * {

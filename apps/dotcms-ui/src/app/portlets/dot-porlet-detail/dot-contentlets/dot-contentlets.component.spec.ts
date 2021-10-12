@@ -40,6 +40,7 @@ import { DotGlobalMessageService } from '@components/_common/dot-global-message/
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { DotGenerateSecurePasswordService } from '@services/dot-generate-secure-password/dot-generate-secure-password.service';
 
 @Injectable()
 class MockDotContentletEditorService {
@@ -109,6 +110,7 @@ describe('DotContentletsComponent', () => {
                 DotEventsService,
                 DotIframeService,
                 LoginService,
+                DotGenerateSecurePasswordService,
                 DotDownloadBundleDialogService
             ]
         });

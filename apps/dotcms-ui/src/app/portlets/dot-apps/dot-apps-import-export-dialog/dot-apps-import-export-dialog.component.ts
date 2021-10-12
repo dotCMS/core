@@ -168,8 +168,8 @@ export class DotAppsImportExportDialogComponent implements OnChanges, OnDestroy 
                         .subscribe((status: string) => {
                             if (status !== '400') {
                                 this.resolved.emit(true);
+                                this.closeExportDialog();
                             }
-                            this.closeExportDialog();
                         });
                 },
                 label: this.dotMessageService.get('dot.common.dialog.accept'),

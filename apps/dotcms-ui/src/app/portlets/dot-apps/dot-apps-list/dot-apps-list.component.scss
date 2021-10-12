@@ -24,6 +24,24 @@
     }
 }
 
+.dot-apps__header-actions {
+    display: flex;
+}
+
+.dot-apps__header-info {
+    align-self: center;
+    display: flex;
+    margin-right: $spacing-4;
+
+    dot-icon {
+        margin-right: $spacing-1;
+    }
+}
+
+.dot-apps-configuration__action_import_button {
+    margin-right: $spacing-1;
+}
+
 .dot-apps__body {
     display: grid;
     grid-gap: $spacing-4;

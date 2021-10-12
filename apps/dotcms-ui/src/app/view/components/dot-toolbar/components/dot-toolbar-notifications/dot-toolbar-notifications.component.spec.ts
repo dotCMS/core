@@ -31,6 +31,12 @@ class MockDotNotificationsListComponent {
     notifications: INotification;
 }
 
+@Component({
+    selector: 'dot-icon-button',
+    template: ''
+})
+class MockDotIconButtonComponent {}
+
 @Injectable()
 class MockIframeOverlayService {}
 
@@ -85,7 +91,8 @@ describe('DotToolbarNotificationsComponent', () => {
                 declarations: [
                     DotToolbarNotificationsComponent,
                     MockDotDropDownComponent,
-                    MockDotNotificationsListComponent
+                    MockDotNotificationsListComponent,
+                    MockDotIconButtonComponent
                 ],
                 imports: [DotPipesModule, ButtonModule],
                 providers: [

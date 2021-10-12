@@ -34,6 +34,12 @@ export class DotPortletToolbarMockComponent {
 }
 
 @Component({
+    selector: 'dot-global-message',
+    template: ''
+})
+class MockDotGlobalMessageComponent {}
+
+@Component({
     selector: 'dot-container-selector',
     template: ''
 })
@@ -98,7 +104,8 @@ describe('DotTemplateAdvancedComponent', () => {
                 DotPortletBaseMockComponent,
                 DotPortletToolbarMockComponent,
                 DotContainerSelectorMockComponent,
-                DotTextareaContentMockComponent
+                DotTextareaContentMockComponent,
+                MockDotGlobalMessageComponent
             ],
             imports: [FormsModule, ReactiveFormsModule],
             providers: [

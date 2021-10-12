@@ -123,7 +123,7 @@ export class DotUploadService {
         try {
             message = response.message || fallbackErrorMessages[status];
         } catch (e) {
-            message = fallbackErrorMessages[status | 500];
+            message = fallbackErrorMessages[status || 500];
         }
         return {
             message: message,

@@ -10,6 +10,7 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { NotLicensedModule } from '@components/not-licensed/not-licensed.module';
 import { ButtonModule } from 'primeng/button';
 import { DotAppsImportExportDialogModule } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.module';
+import { DotIconModule } from '@dotcms/ui';
 
 @NgModule({
     imports: [
@@ -19,7 +20,8 @@ import { DotAppsImportExportDialogModule } from '../dot-apps-import-export-dialo
         DotAppsCardModule,
         DotPipesModule,
         DotAppsImportExportDialogModule,
-        NotLicensedModule
+        NotLicensedModule,
+        DotIconModule
     ],
     declarations: [DotAppsListComponent],
     exports: [DotAppsListComponent],

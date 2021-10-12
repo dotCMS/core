@@ -8,7 +8,7 @@ import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DebugElement } from '@angular/core';
+import { Component, DebugElement } from '@angular/core';
 import { DotContainerSelectorLayoutComponent } from './dot-container-selector-layout.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotTemplateContainersCacheService } from '@services/dot-template-containers-cache/dot-template-containers-cache.service';
@@ -28,6 +28,12 @@ import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotContainerSelectorModule } from '@components/dot-container-selector/dot-container-selector.module';
 
+@Component({
+    selector: 'dot-icon-button',
+    template: ''
+})
+class MockDotIconButtonComponent {}
+
 describe('ContainerSelectorComponent', () => {
     let comp: DotContainerSelectorLayoutComponent;
     let fixture: ComponentFixture<DotContainerSelectorLayoutComponent>;
@@ -41,7 +47,7 @@ describe('ContainerSelectorComponent', () => {
         });
 
         TestBed.configureTestingModule({
-            declarations: [DotContainerSelectorLayoutComponent],
+            declarations: [DotContainerSelectorLayoutComponent, MockDotIconButtonComponent],
             imports: [
                 SearchableDropDownModule,
                 BrowserAnimationsModule,
