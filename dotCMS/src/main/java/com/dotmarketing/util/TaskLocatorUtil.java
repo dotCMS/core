@@ -305,6 +305,7 @@ public class TaskLocatorUtil {
         .add(Task210805DropUserProxyTable.class)
 		.add(Task210816DeInodeRelationship.class)
 		.add(Task210901UpdateDateTimezones.class)
+		.add(Task211007RemoveNotNullConstraintFromCompanyMXColumn.class)
 		.add(Task211012AddCompanyDefaultLanguage.class)
 
         .build();
