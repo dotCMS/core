@@ -122,7 +122,7 @@ import com.dotmarketing.startup.runonce.Task210719CleanUpTitleFieldTest;
 import com.dotmarketing.startup.runonce.Task210802UpdateStructureTableTest;
 import com.dotmarketing.startup.runonce.Task210805DropUserProxyTableTest;
 import com.dotmarketing.startup.runonce.Task210816DeInodeRelationshipTest;
-import com.dotmarketing.startup.runonce.Task210908AddCompanyDefaultLanguageTest;
+import com.dotmarketing.startup.runonce.Task211012AddCompanyDefaultLanguageTest;
 import com.dotmarketing.startup.runonce.Task210901UpdateDateTimezonesTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
@@ -472,7 +472,7 @@ import org.junit.runners.Suite.SuiteClasses;
         LettuceCacheTest.class,
         RedisPubSubImplTest.class,
         ManifestReaderFactoryTest.class,
-        Task210908AddCompanyDefaultLanguageTest.class
+        Task211012AddCompanyDefaultLanguageTest.class
 })
 public class MainSuite {
 

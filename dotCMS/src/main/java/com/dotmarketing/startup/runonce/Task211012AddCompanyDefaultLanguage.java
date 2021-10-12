@@ -1,28 +1,22 @@
 package com.dotmarketing.startup.runonce;
 
 import static com.dotcms.util.ConversionUtils.toLong;
-import static com.dotmarketing.portlets.languagesmanager.business.LanguageFactoryImpl.DEFAULT_LANGUAGE_CODE;
-import static com.dotmarketing.portlets.languagesmanager.business.LanguageFactoryImpl.DEFAULT_LANGUAGE_COUNTRY_CODE;
 import static com.dotmarketing.util.ConfigUtils.*;
 
-import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.sql.SQLException;
 import java.util.Map;
 
-public class Task210908AddCompanyDefaultLanguage implements StartupTask {
+public class Task211012AddCompanyDefaultLanguage implements StartupTask {
 
     static final String POSTGRES_SCRIPT = "ALTER TABLE company ADD COLUMN default_language_id int8 null;";
     static final String MYSQL_SCRIPT = "ALTER TABLE company ADD default_language_id bigint null;";
@@ -82,7 +76,7 @@ public class Task210908AddCompanyDefaultLanguage implements StartupTask {
         final String defaultLanguageId = dotConnect.setSQL(SELECT).addParam(DEFAULT_COMPANY_ID)
                 .getString("default_language_id");
         if (UtilMethods.isSet(defaultLanguageId)) {
-            Logger.info(Task210908AddCompanyDefaultLanguage.class, String.format("Company already had a default language [%s] set.", defaultLanguageId));
+            Logger.info(Task211012AddCompanyDefaultLanguage.class, String.format("Company already had a default language [%s] set.", defaultLanguageId));
         } else {
 
             final Tuple2<String, String> defaultLanguageDeclaration = getDeclaredDefaultLanguage();
@@ -91,7 +85,7 @@ public class Task210908AddCompanyDefaultLanguage implements StartupTask {
             final String countryCode = defaultLanguageDeclaration._2;
 
             if (UtilMethods.isNotSet(langCode) || UtilMethods.isNotSet(countryCode)) {
-                Logger.warn(Task210908AddCompanyDefaultLanguage.class,
+                Logger.warn(Task211012AddCompanyDefaultLanguage.class,
                         "Unable to find a default Language specification in the properties file. No default Language will be written into te company table.");
                 return;
             }

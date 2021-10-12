@@ -17,7 +17,6 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageDataGen;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import io.vavr.Tuple2;
 import java.sql.SQLException;
@@ -27,7 +26,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class Task210908AddCompanyDefaultLanguageTest {
+public class Task211012AddCompanyDefaultLanguageTest {
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -44,7 +43,7 @@ public class Task210908AddCompanyDefaultLanguageTest {
             final String dropColumnSQL = "ALTER TABLE company DROP COLUMN default_language_id";
             dotConnect.executeStatement(dropColumnSQL);
         } catch (SQLException e) {
-            Logger.warn(Task210908AddCompanyDefaultLanguageTest.class, e.getMessage(), e);
+            Logger.warn(Task211012AddCompanyDefaultLanguageTest.class, e.getMessage(), e);
         }
     }
 
@@ -58,12 +57,13 @@ public class Task210908AddCompanyDefaultLanguageTest {
 
         final DotConnect dotConnect = new DotConnect();
         dropColumn(dotConnect);
-        final Task210908AddCompanyDefaultLanguage task = new Task210908AddCompanyDefaultLanguage();
+        final Task211012AddCompanyDefaultLanguage task = new Task211012AddCompanyDefaultLanguage();
         assertTrue(task.forceRun());
         task.executeUpgrade();
 
         dotConnect.setSQL("SELECT default_language_id FROM company WHERE companyId = ?");
-        final List<Map<String, Object>> maps = dotConnect.addParam(Task210908AddCompanyDefaultLanguage.DEFAULT_COMPANY_ID).loadObjectResults();
+        final List<Map<String, Object>> maps = dotConnect.addParam(
+                Task211012AddCompanyDefaultLanguage.DEFAULT_COMPANY_ID).loadObjectResults();
         assertEquals("There can only be 1.", 1, maps.size());
         final Map<String, Object> map = maps.get(0);
         Assert.assertNotNull(map.get("default_language_id"));
@@ -80,7 +80,7 @@ public class Task210908AddCompanyDefaultLanguageTest {
         final LanguageAPI languageAPI = APILocator.getLanguageAPI();
         final Language defaultLang = languageAPI.getDefaultLanguage();
         final Language language = new LanguageDataGen().nextPersisted();
-        final Task210908AddCompanyDefaultLanguage task = new Task210908AddCompanyDefaultLanguage();
+        final Task211012AddCompanyDefaultLanguage task = new Task211012AddCompanyDefaultLanguage();
         final Tuple2<String, String> defaultLanguageDeclaration = getDeclaredDefaultLanguage();
 
         try {
@@ -92,7 +92,8 @@ public class Task210908AddCompanyDefaultLanguageTest {
             dropColumn(dotConnect);
             task.executeUpgrade();
             dotConnect.setSQL("SELECT default_language_id FROM company WHERE companyId = ?");
-            final List<Map<String, Object>> maps = dotConnect.addParam(Task210908AddCompanyDefaultLanguage.DEFAULT_COMPANY_ID).loadObjectResults();
+            final List<Map<String, Object>> maps = dotConnect.addParam(
+                    Task211012AddCompanyDefaultLanguage.DEFAULT_COMPANY_ID).loadObjectResults();
             assertEquals("There can only be 1.", 1, maps.size());
             final Map<String, Object> map = maps.get(0);
             Assert.assertEquals(language.getId(),((Number)map.get("default_language_id")).longValue());
@@ -115,7 +116,7 @@ public class Task210908AddCompanyDefaultLanguageTest {
         final DotConnect dotConnect = new DotConnect();
         dropColumn(dotConnect);
 
-        final Task210908AddCompanyDefaultLanguage task = new Task210908AddCompanyDefaultLanguage();
+        final Task211012AddCompanyDefaultLanguage task = new Task211012AddCompanyDefaultLanguage();
         final Tuple2<String, String> defaultLanguageDeclaration = getDeclaredDefaultLanguage();
 
         try {
