@@ -11,11 +11,12 @@ import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
 @Value.Immutable
-@JsonInclude(Include.NON_EMPTY)
+@JsonInclude(Include.NON_NULL)
 @JsonSerialize(as = ImmutableContentlet.class)
 @JsonDeserialize(as = ImmutableContentlet.class)
 public interface Contentlet {
 
+    @Nullable
     String title();
     String inode();
     String identifier();

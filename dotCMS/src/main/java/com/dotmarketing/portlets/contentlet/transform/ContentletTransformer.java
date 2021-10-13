@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
 import com.dotcms.content.business.ContentletJsonAPI;
+import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
@@ -70,14 +71,26 @@ public class ContentletTransformer implements DBTransformer {
         final String contentTypeId = (String) map.get(STRUCTURE_INODE);
 
         if(UtilMethods.isSet(map.get(ContentletJsonAPI.CONTENTLET_AS_JSON))){
-            final String json = map.get(ContentletJsonAPI.CONTENTLET_AS_JSON).toString();
-            contentlet = Try.of(()->
-                    APILocator.getContentletJsonAPI().mapContentletFieldsFromJson(json)
-            ).getOrNull();
+            try {
+                final String json = map.get(ContentletJsonAPI.CONTENTLET_AS_JSON).toString();
+                contentlet = APILocator.getContentletJsonAPI().mapContentletFieldsFromJson(json);
+            }catch (Exception e){
+                final String error = String
+                        .format("Error converting from json to contentlet with id %s and inode %s", contentletId, inode);
+                Logger.error(ESContentletAPIImpl.class, error, e);
+            }
         }
 
         if(contentlet != null){
-              return contentlet;
+            // Since at some point the json could have been saved without inode nor identifier
+            // Make sure the returned contentlet comes back with the respective ids
+            if(UtilMethods.isNotSet(contentlet.getInode())){
+                 contentlet.setInode(inode);
+            }
+            if(UtilMethods.isNotSet(contentlet.getIdentifier())){
+                contentlet.setIdentifier(contentletId);
+            }
+            return contentlet;
         }
 
         contentlet = new Contentlet();

@@ -38,6 +38,7 @@ import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.portlets.personas.model.Persona;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -8554,12 +8555,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final Map<String, Object> combined = Stream
                     .concat(contentlet.getMap().entrySet().stream(),
                             raw.getMap().entrySet().stream())
-                    .collect(Collectors.toMap(Entry::getKey, Entry::getValue, (o, o2) -> o));
+                    .collect(Collectors.toMap(Entry::getKey, Entry::getValue, (o, o2) -> {
+                        //Always prefer the first argument
+                        return o;
+                    }));
 
-            json =
-                    Try.of(
-                            () -> APILocator.getContentletJsonAPI().toJson(new Contentlet(combined))
-                    ).getOrNull();
+            try {
+                json = APILocator.getContentletJsonAPI().toJson(new Contentlet(combined));
+            } catch (DotDataException | JsonProcessingException e) {
+                final String error = String.format("Error converting from json to contentlet with id: %s and inode: %s ", contentlet.getIdentifier(), contentlet.getInode());
+                Logger.error(ESContentletAPIImpl.class, error, e);
+                throw new DotRuntimeException(error, e);
+            }
         }
         Logger.debug(ESContentletAPIImpl.class, json);
         contentlet.setStringProperty(Contentlet.CONTENTLET_AS_JSON, json);

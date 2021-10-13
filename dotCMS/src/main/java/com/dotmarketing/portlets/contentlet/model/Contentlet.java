@@ -72,6 +72,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang3.BooleanUtils;
 
 /**
  * Represents a content unit in the system. Ideally, every single domain object
@@ -705,10 +706,16 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @throws DotRuntimeException
 	 */
 	public boolean getBoolProperty(String fieldVarName) throws DotRuntimeException {
-		try{
-			return map.get(fieldVarName)!=null?(Boolean)map.get(fieldVarName):false;
-		}catch (Exception e) {
-			 throw new DotRuntimeException("Unable to retrieve field value", e);
+		try {
+			if (map.get(fieldVarName) instanceof String) {
+				return BooleanUtils.toBoolean(map.get(fieldVarName).toString());
+			}
+			if (map.get(fieldVarName) instanceof Boolean) {
+				return (Boolean) map.get(fieldVarName);
+			}
+			return false;
+		} catch (Exception e) {
+			throw new DotRuntimeException("Unable to retrieve field value", e);
 		}
 	}
 

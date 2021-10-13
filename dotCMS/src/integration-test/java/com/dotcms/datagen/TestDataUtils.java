@@ -4,6 +4,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.CheckboxField;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.CustomField;
 import com.dotcms.contenttype.model.field.DataTypes;
@@ -13,11 +14,13 @@ import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.LineDividerField;
+import com.dotcms.contenttype.model.field.MultiSelectField;
 import com.dotcms.contenttype.model.field.RadioField;
 import com.dotcms.contenttype.model.field.SelectField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -2166,6 +2169,15 @@ public class TestDataUtils {
 
                 fields.add(
                         new FieldDataGen()
+                                .name("timeField")
+                                .velocityVarName("timeField")
+                                .defaultValue(null)
+                                .type(TimeField.class)
+                                .next()
+                );
+
+                fields.add(
+                        new FieldDataGen()
                                 .name("tagField")
                                 .velocityVarName("tagField")
                                 .defaultValue(null)
@@ -2187,6 +2199,57 @@ public class TestDataUtils {
                                 .velocityVarName("keyValueField")
                                 .type(KeyValueField.class)
                                 .next()
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("imageField")
+                                .velocityVarName("imageField")
+                                .type(ImageField.class)
+                                .next()
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("checkboxField")
+                                .velocityVarName("checkboxField")
+                                .type(CheckboxField.class)
+                                .next()
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("selectField")
+                                .velocityVarName("selectField")
+                                .type(SelectField.class)
+                                .next()
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("multiSelectField")
+                                .velocityVarName("multiSelectField")
+                                .type(MultiSelectField.class)
+                                .next()
+
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("radioField")
+                                .velocityVarName("radioField")
+                                .type(RadioField.class)
+                                .next()
+
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("wysiwygField")
+                                .velocityVarName("wysiwygField")
+                                .type(WysiwygField.class)
+                                .next()
+
                 );
 
                 //Category field

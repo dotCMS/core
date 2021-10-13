@@ -25,6 +25,7 @@ import com.dotcms.contenttype.model.field.ColumnField;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.HiddenField;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.LineDividerField;
@@ -45,6 +46,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -52,6 +54,7 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.annotations.VisibleForTesting;
+import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.io.File;
@@ -140,7 +143,10 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
         final Builder builder = ImmutableContentlet.builder();
         builder.baseType(contentlet.getBaseType().orElseGet(() -> BaseContentType.ANY).toString());
         builder.contentType(contentlet.getContentType().id());
-        builder.title(contentlet.getTitle());
+        // Don't use the title getter method here.
+        // Title is a nullable field and the getter is meant to always calculate something.
+        // it's ok if it's null sometimes. We need to mirror the old columns behavior.
+        builder.title((String)contentlet.get("title"));
         builder.languageId(contentlet.getLanguageId());
         builder.friendlyName(contentlet.getStringProperty("friendlyName"));
         builder.showOnMenu(contentlet.getBoolProperty("showOnMenu"));
@@ -149,10 +155,15 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
         builder.disabledWysiwyg(contentlet.getDisabledWysiwyg());
         builder.modUser(contentlet.getModUser());
         builder.modDate(Try.of(() -> contentlet.getModDate().toInstant()).getOrNull());
-        builder.identifier(contentlet.getIdentifier());
-        builder.inode(contentlet.getInode());
         builder.host(contentlet.getHost());
         builder.folder(contentlet.getFolder());
+
+        //These two are definitively mandatory but..
+        //intenralCheckIn calls save twice and the first time it is called these two aren't already set
+        //At that moment we have to fake it to make it. Second save should provide the actual identifiers.
+        //We'll have to use empty strings to prevent breaking the execution.
+        builder.identifier(UtilMethods.isNotSet(contentlet.getIdentifier()) ? StringPool.BLANK : contentlet.getIdentifier() );
+        builder.inode( UtilMethods.isNotSet(contentlet.getInode()) ? StringPool.BLANK : contentlet.getInode() );
 
         final List<Field> fields = contentlet.getContentType().fields();
         for (final Field field : fields) {
@@ -163,7 +174,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
             if (null != value) {
                 final Optional<FieldValue<?>> fieldValue = getFieldValue(value, field);
                 if (!fieldValue.isPresent()) {
-                    Logger.warn(ContentletJsonAPIImpl.class,
+                    Logger.error(ContentletJsonAPIImpl.class,
                             String.format("Unable to set field `%s` with the given value %s.",
                                     field.name(), value));
                 } else {
@@ -271,19 +282,25 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
      * @return
      */
     private boolean isSettable(final Field field) {
-        return !(field instanceof LineDividerField
-                 || field instanceof TabDividerField || field instanceof ColumnField
-                 || field instanceof CategoryField || field instanceof PermissionTabField
-                 || field instanceof RelationshipsTabField);
+        return !(
+                field instanceof LineDividerField ||
+                        field instanceof TabDividerField ||
+                        field instanceof ColumnField ||
+                        field instanceof CategoryField ||
+                        field instanceof PermissionTabField ||
+                        field instanceof RelationshipsTabField
+        );
     }
 
     /**
-     * Used to determine if we're looking at a system field excluding BinaryFields which must make it into the json.
+     * Used to determine if we're looking at a system field excluding BinaryFields, HiddenField which must make it into the json.
      * @param field
      * @return
      */
-    private boolean isSystemField(final Field field) {
-        return (field.dataType() == DataTypes.SYSTEM && !(field instanceof BinaryField));
+    private boolean isNoneMappableSystemField(final Field field) {
+        return (field.dataType() == DataTypes.SYSTEM &&
+                  !(field instanceof BinaryField) && !(field instanceof HiddenField)
+        );
     }
 
     /**
@@ -302,7 +319,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
      */
     private boolean isNotMappable(final Field field) {
         return (!isSettable(field) || (field instanceof HostFolderField)
-                || (field instanceof TagField) || isSystemField(field) || isMetadataField(field)
+                || (field instanceof TagField) || isNoneMappableSystemField(field) || isMetadataField(field)
         );
     }
 

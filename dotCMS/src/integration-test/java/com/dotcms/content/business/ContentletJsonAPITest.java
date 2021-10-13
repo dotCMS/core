@@ -35,7 +35,7 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
     }
 
     @Test
-    public void Simple_Json_Test() throws Exception {
+    public void Simple_Json_Serialize_Test() throws Exception {
 
         final boolean defaultValue = Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
         Config.setProperty(SAVE_CONTENTLET_AS_JSON, false);
@@ -98,6 +98,11 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
 
     }
 
-    
+    @Test
+    public void Contentlet_As_Json_Integrity_Test() throws Exception {
+
+    }
+
+
 
 }

@@ -4,12 +4,15 @@ package com.dotcms.content.model;
 import com.dotcms.content.model.annotation.ValueTypeStyle;
 import com.dotcms.content.model.type.AbstractBinaryType;
 import com.dotcms.content.model.type.AbstractCheckBoxFieldType;
+import com.dotcms.content.model.type.AbstractCustomFieldType;
+import com.dotcms.content.model.type.AbstractHiddenFieldType;
 import com.dotcms.content.model.type.AbstractImageType;
 import com.dotcms.content.model.type.AbstractTextAreaType;
 import com.dotcms.content.model.type.AbstractWysiwygType;
 import com.dotcms.content.model.type.date.AbstractDateFieldType;
 import com.dotcms.content.model.type.date.AbstractDateTimeFieldType;
 import com.dotcms.content.model.type.date.AbstractTimeFieldType;
+import com.dotcms.content.model.type.radio.AbstractBoolRadioFieldType;
 import com.dotcms.content.model.type.radio.AbstractFloatRadioFieldType;
 import com.dotcms.content.model.type.radio.AbstractLongRadioFieldType;
 import com.dotcms.content.model.type.radio.AbstractRadioFieldType;
@@ -33,7 +36,7 @@ import org.immutables.value.Value.Parameter;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = As.EXISTING_PROPERTY, property = "type")
 
 /**
- * This is base class to Map all Field types that a contetlet could have
+ * This is base class to Map all Field types that a contentlet could have
  * It has been instructed via annotations how to deal with it's descendants when translating to json
  * Adds coupling to register subtypes here.  Can be changed to scan annotations
  * to register subtypes on initialization of ObjectMapper;
@@ -56,11 +59,13 @@ import org.immutables.value.Value.Parameter;
 
         //Radios
         @JsonSubTypes.Type(name = AbstractRadioFieldType.TYPENAME, value = AbstractRadioFieldType.class),
+        @JsonSubTypes.Type(name = AbstractBoolRadioFieldType.TYPENAME, value = AbstractBoolRadioFieldType.class),
         @JsonSubTypes.Type(name = AbstractFloatRadioFieldType.TYPENAME, value = AbstractFloatRadioFieldType.class),
         @JsonSubTypes.Type(name = AbstractLongRadioFieldType.TYPENAME, value = AbstractLongRadioFieldType.class),
 
-        //Selects
+        //Multi-Select
         @JsonSubTypes.Type(name = AbstractMultiSelectFieldType.TYPENAME, value = AbstractMultiSelectFieldType.class),
+        //Single-Select
         @JsonSubTypes.Type(name = AbstractSelectFieldType.TYPENAME, value = AbstractSelectFieldType.class),
         @JsonSubTypes.Type(name = AbstractBoolSelectFieldType.TYPENAME, value = AbstractBoolSelectFieldType.class),
         @JsonSubTypes.Type(name = AbstractLongSelectFieldType.TYPENAME, value = AbstractLongSelectFieldType.class),
@@ -78,6 +83,12 @@ import org.immutables.value.Value.Parameter;
 
         //TextArea
         @JsonSubTypes.Type(name = AbstractTextAreaType.TYPENAME, value = AbstractTextAreaType.class),
+
+        //CustomField
+        @JsonSubTypes.Type(name = AbstractCustomFieldType.TYPENAME, value = AbstractCustomFieldType.class),
+
+        //HiddenField
+        @JsonSubTypes.Type(name = AbstractHiddenFieldType.TYPENAME, value = AbstractHiddenFieldType.class),
 
 })
 @ValueTypeStyle
