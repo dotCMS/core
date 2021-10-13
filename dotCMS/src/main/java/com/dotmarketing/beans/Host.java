@@ -65,6 +65,9 @@ public class Host extends Contentlet implements Permissionable,Treeable,Parentab
 		return super.getInode();
 	}
 
+	
+	
+	
 	@Override
 	public String getName() {
 		return getTitle();
@@ -75,10 +78,10 @@ public class Host extends Contentlet implements Permissionable,Treeable,Parentab
 		return true;
 	}
 
-	@Override
-	public List<Treeable> getChildren(User user, boolean live, boolean working, boolean archived, boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
-		return APILocator.getTreeableAPI().loadAssetsUnderHost(this,user,live,working, archived, respectFrontEndPermissions);
-	}
+    @Override
+    public String getParentId() {
+        return getIdentifier();
+    }
 
 	public String getVersionType() {
 		return new String("host");

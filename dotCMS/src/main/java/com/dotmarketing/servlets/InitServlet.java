@@ -191,12 +191,7 @@ public class InitServlet extends HttpServlet {
             throw new ServletException("Unable to initialize system host", e);
         }
 
-        try {
-            APILocator.getFolderAPI().findSystemFolder();
-        } catch (DotDataException e1) {
-            Logger.error(InitServlet.class, e1.getMessage(), e1);
-            throw new ServletException("Unable to initialize system folder", e1);
-        }
+
 
         // Create the GeoIP2 database reader on startup since it takes around 2
         // seconds to load the file. If the prop is not set, just move on

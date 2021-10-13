@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
 import com.dotcms.exception.ExceptionUtil;
@@ -24,6 +25,9 @@ import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
+import com.dotcms.api.tree.Parentable;
+import com.dotcms.browser.BrowserAPI;
+import com.dotcms.browser.BrowserQuery;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -544,27 +548,53 @@ public class FileAssetAPIImpl implements FileAssetAPI {
     public List<FileAsset> findFileAssetsByFolder(Folder parentFolder,
 			String sortBy, boolean live, User user, boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
-		List<FileAsset> assets;
-		try {
-			final StringBuffer query = new StringBuffer();
-			query.append("+baseType:" + BaseContentType.FILEASSET.getType())
-					.append(" +conFolder:" + parentFolder.getInode())
-					.append(" +conHost:" + parentFolder.getHostId())
-					.append(live?" +live:true":"");
-			assets = fromContentlets(this.perAPI.filterCollection(this.contAPI.search(query.toString(), -1, 0, sortBy , user, respectFrontendRoles),
-					PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
-		} catch (Exception e) {
-            final String errorMsg = getFilesByFolderErrorMsg(parentFolder, e);
-            Logger.error(this.getClass(), errorMsg, e);
-            throw new DotRuntimeException(errorMsg, e);
-		}
-		return assets;
+
+        return findFileAssetsByParentable(parentFolder,sortBy,live,user,respectFrontendRoles);
+        
 	}
+    @Override
+    @CloseDBIfOpened
+    public List<FileAsset> findFileAssetsByParentable(Parentable parentFolder,
+            String sortBy, boolean live, User user, boolean respectFrontendRoles){
+
+        if(parentFolder==null) { 
+            throw new DotRuntimeException("folder is null :" + parentFolder);
+        }
+        
+        if(parentFolder instanceof Folder && ((Folder)parentFolder).isSystemFolder()) {
+            throw new DotRuntimeException("folder is null or ambigious - you must pass a host for the system folder:" + parentFolder);
+        }
+        
+        
+        BrowserQuery query = BrowserQuery.builder()
+                        .inHostOrFolder(parentFolder)
+                        .withUser(user)
+                        .showFiles(true)
+                        .showWorking(!live)
+                        .sortBy(sortBy)
+                        .build();
+
+
+        List<Contentlet> contentlets = APILocator.getBrowserAPI().getContentUnderParentDB(query);
+
+        return contentlets.stream().map(c -> fromContentlet(c)).collect(Collectors.toList());
+        
+        
+        
+    }
+    
+    
 
 	@CloseDBIfOpened
 	public List<FileAsset> findFileAssetsByFolder(Folder parentFolder,
 			String sortBy, boolean live, boolean working, User user, boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
+	    
+        if(parentFolder==null || parentFolder.isSystemFolder()) {
+            throw new DotRuntimeException("folder is null or ambigious - you must pass a host for the system folder:" + parentFolder);
+        }
+	    
+	    
 		List<FileAsset> assets;
 		try {
 			assets = fromContentlets(this.perAPI.filterCollection(this.contAPI.search("+structureType:" + Structure.STRUCTURE_TYPE_FILEASSET+" +conFolder:" + parentFolder.getInode() + (live?" +live:true":"") + (working? " +working:true":""), -1, 0, sortBy , user, respectFrontendRoles),

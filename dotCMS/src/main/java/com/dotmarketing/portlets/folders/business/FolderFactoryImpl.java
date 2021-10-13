@@ -5,7 +5,7 @@ import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER
 import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_ASSET_NAME;
 import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_ID;
 import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_PARENT_PATH;
-
+import com.dotcms.browser.BrowserQuery;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.transform.DBTransformer;
 import com.dotcms.util.transform.TransformerLocator;
@@ -354,83 +354,43 @@ public class FolderFactoryImpl extends FolderFactory {
 
 	@SuppressWarnings("unchecked")
 	protected java.util.List getMenuItems(Folder folder, int orderDirection) throws  DotDataException{
-		List<Folder> folders = new ArrayList<Folder>();
-		folders.add(folder);
-		return getMenuItems(folders, orderDirection);
+
+		Host host = Try.of(()-> APILocator.getHostAPI().find(folder.getHostId(), APILocator.systemUser(), true)).getOrElseThrow(DotDataException::new);
+		return getMenuItems(host, folder, orderDirection);
 	}
 
 	@SuppressWarnings("unchecked")
 	protected java.util.List getMenuItems(Host host, int orderDirection) throws DotDataException, DotSecurityException {
 		List<Folder> subFolders = APILocator.getFolderAPI().findSubFolders(host, APILocator.getUserAPI().getSystemUser(), false);
-		return getMenuItems(subFolders, orderDirection);
+		List menuItems = new ArrayList<>();
+		subFolders.forEach(f->menuItems.addAll( getMenuItems(host, f, orderDirection)));
+		
+		
+		
+		return subFolders;
 	}
 
 	@SuppressWarnings("unchecked")
-	private List getMenuItems(List<Folder> folders, int orderDirection) throws DotDataException {
+	private List getMenuItems(Host host, Folder folder, int orderDirection)  {
 
-		List menuList = new ArrayList();
+	    
+	    BrowserQuery browserQuery = BrowserQuery.builder()
+	                    .inHostOrFolder(host)
 
-		for (Folder folder : folders) {
-		    ChildrenCondition cond = new ChildrenCondition();
-		    cond.showOnMenu=true;
-
-			// gets all subfolders
-			List subFolders = getChildrenClass(folder, Folder.class, cond);
-
-			cond.deleted=false;
-			cond.live=true;
-
-			// gets all links for this folder
-			List linksListSubChildren = getChildrenClass(folder, Link.class, cond);
-
-			// gets all files for this folder
-			List filesListSubChildren = new ArrayList();
-
-
-			List<FileAsset> fileAssets = null;
-			try {
-				fileAssets = APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, "",true,APILocator.getUserAPI().getSystemUser(), false);
-				for(FileAsset fileAsset : fileAssets) {
-
-					if(fileAsset.isShowOnMenu() && !fileAsset.isDeleted()){
-
-						filesListSubChildren.add(fileAsset);
-					}
-				}
-			} catch (DotSecurityException e) {}
-			
-			try {
-                for(IHTMLPage page : APILocator.getHTMLPageAssetAPI().getHTMLPages(folder, true, false, APILocator.getUserAPI().getSystemUser(), false)) {
-                    if(page.isShowOnMenu()) {
-                        filesListSubChildren.add(page);
-                    }
-                }
-                
-            } catch (DotSecurityException e) {}
-
-			// gets all subitems
-			menuList.addAll(subFolders);
-			menuList.addAll(linksListSubChildren);
-			menuList.addAll(filesListSubChildren);
-
-			Comparator comparator = new AssetsComparator(orderDirection);
-			java.util.Collections.sort(menuList, comparator);
-		}
-
-		return menuList;
+	                    .showOnlyMenuItems(true)
+	                    .showFolders(true)
+	                    .showFiles(true)
+	                    .showLinks(true)
+	                    .showPages(true)
+	                    .build();
+	    
+	    return Try.of(()->APILocator.getBrowserAPI().getFolderContents(browserQuery)).getOrElseThrow(DotRuntimeException::new);
+	    
+	    
 	}
 
-	@SuppressWarnings("unchecked")
-	protected java.util.List getAllMenuItems(Inode inode) throws DotStateException, DotDataException {
-		return getAllMenuItems(inode, 1);
-	}
 
-	@SuppressWarnings("unchecked")
-	protected java.util.List getAllMenuItems(Inode inode, int orderDirection) throws DotStateException, DotDataException {
-	    List<Folder> dummy=new ArrayList<Folder>();
-	    dummy.add((Folder)inode);
-	    return getMenuItems(dummy, orderDirection);
-	}
+
 
 	protected Folder createFolders(String path, Host host) throws DotDataException {
 

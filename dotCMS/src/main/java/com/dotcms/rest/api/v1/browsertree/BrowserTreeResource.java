@@ -1,26 +1,8 @@
 package com.dotcms.rest.api.v1.browsertree;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.rest.WebResource;
-import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.api.v1.browser.BrowserQueryForm;
-import com.dotcms.rest.exception.ForbiddenException;
-import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotcms.util.I18NUtil;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.Logger;
-import com.liferay.portal.model.User;
-import com.liferay.util.LocaleUtil;
 import java.io.Serializable;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
@@ -31,6 +13,13 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.glassfish.jersey.server.JSONP;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.browser.BrowserQueryForm;
+import com.dotcms.util.I18NUtil;
+import com.liferay.portal.model.User;
 
 /**
  * Created by jasontesser on 9/28/16.
@@ -82,34 +71,9 @@ public class BrowserTreeResource implements Serializable {
         final User user = initData.getUser();
         final List<Map<String, Object>> assetResults;
 
-        try {
-            Locale locale = LocaleUtil.getLocale(user, httpRequest);
 
-            assetResults = browserTreeHelper.getTreeablesUnder(sitename,user,"/")
-                    .stream()
-                    .map(treeable -> {
-                        try {
-                            return treeable.getMap();
-                        } catch (Exception e) {
-                            Logger.error(this,"Data Exception while converting to map", e);
-                            throw new DotRuntimeException("Data Exception while converting to map",e);
-                        }
-                    })
-                    .collect(Collectors.toList());;
 
-            response = Response.ok(new ResponseEntityView
-                    (map(   "result",         assetResults
-                    ),
-                            this.i18NUtil.getMessagesMap(locale, "Invalid-option-selected",
-                                    "cancel", "Change-Host"))
-            ).build(); // 200
-        } catch (DotSecurityException e) {
-            throw new ForbiddenException(e);
-        } catch (Exception e) { // this is an unknown error, so we report as a 500.
-            Logger.error(this,"Error handling loadAssetsUnder Get Request", e);
-            response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-        }
-        return response;
+        return Response.ok().build(); // 200
     }
 
     /**
@@ -138,34 +102,7 @@ public class BrowserTreeResource implements Serializable {
         final User user = initData.getUser();
         final List<Map<String, Object>> assetResults;
 
-        try {
-            final Locale locale = LocaleUtil.getLocale(user, httpRequest);
-
-            assetResults = browserTreeHelper.getTreeablesUnder(sitename,user,uri)
-                    .stream()
-                    .map(treeable -> {
-                        try {
-                            return treeable.getMap();
-                        } catch (Exception e) {
-                            Logger.error(this,"Data Exception while converting to map", e);
-                            throw new DotRuntimeException("Data Exception while converting to map",e);
-                        }
-                    })
-                    .collect(Collectors.toList());
-
-            response = Response.ok(new ResponseEntityView
-                    (map(   "result",         assetResults
-                    ),
-                            this.i18NUtil.getMessagesMap(locale, "Invalid-option-selected",
-                                    "cancel", "Change-Host"))
-            ).build(); // 200
-        } catch (DotSecurityException e) {
-            throw new ForbiddenException(e);
-        } catch (Exception e) { // this is an unknown error, so we report as a 500.
-            Logger.error(this,"Error handling loadAssetsUnder Get Request", e);
-            response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-        }
-        return response;
+        return Response.ok().build(); // 200
     }
 
 }

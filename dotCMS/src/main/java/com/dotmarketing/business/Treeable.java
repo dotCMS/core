@@ -1,12 +1,9 @@
 package com.dotmarketing.business;
 
+import java.util.Date;
+import java.util.Map;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.liferay.portal.model.User;
-
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
 
 public interface Treeable extends Permissionable{
 
@@ -19,6 +16,10 @@ public interface Treeable extends Permissionable{
 	public Date getModDate();
 
 	public String getName();
+	
+	public default int getMenuOrder() {
+	    return -1;
+	}
 
 	public Map<String, Object> getMap() throws DotStateException, DotDataException, DotSecurityException;
 

@@ -1,20 +1,27 @@
 package com.dotmarketing.portlets.folders.model;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotcms.api.tree.Parentable;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
-import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
-import com.dotcms.repackage.net.sf.hibernate.sql.Template;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionSummary;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.Ruleable;
+import com.dotmarketing.business.Treeable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.struts.FolderForm;
 import com.dotmarketing.util.InodeUtils;
@@ -23,13 +30,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
-import org.apache.commons.lang.builder.ToStringBuilder;
-
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
 
 /** @author Hibernate CodeGenerator */
 public class Folder extends Inode implements Serializable, Permissionable, Treeable, Ruleable,
@@ -73,6 +73,11 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
         return Try.of(()->FolderAPI.SYSTEM_FOLDER.equals(inode)).getOrElse(false);
     }
     
+    @Override
+    public String getParentId() {
+        return getInode();
+    }
+    
     
     
     
@@ -98,15 +103,7 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 		return name;
 	}
 
-	@Override
-	public boolean isParent() {
-		return true;
-	}
 
-	@Override
-	public List<Treeable> getChildren(User user, boolean live, boolean working, boolean archived, boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
-		return APILocator.getTreeableAPI().loadAssetsUnderFolder(this,user,live,working, archived, respectFrontEndPermissions);
-	}
 
 
 	/**
@@ -374,5 +371,7 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 			.folder(parent)
 			.build();
 	}
+
+
 
 }

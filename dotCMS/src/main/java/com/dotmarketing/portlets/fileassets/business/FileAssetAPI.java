@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.fileassets.business;
 
+import com.dotcms.api.tree.Parentable;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.rendering.velocity.viewtools.content.FileAssetMap;
 import java.io.File;
@@ -397,5 +398,8 @@ public interface FileAssetAPI {
      * @return
      */
     List<FileAsset> findFileAssetsByDB(FileAssetSearcher searcher);
+
+    List<FileAsset> findFileAssetsByParentable(Parentable parentFolder, String sortBy, boolean live, User user,
+                    boolean respectFrontendRoles);
     
 }

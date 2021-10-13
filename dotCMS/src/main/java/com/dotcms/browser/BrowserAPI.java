@@ -1,11 +1,15 @@
 package com.dotcms.browser;
 
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.liferay.portal.model.User;
-
 import java.util.List;
 import java.util.Map;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.Treeable;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.liferay.portal.model.User;
+import io.vavr.Tuple2;
 
 /**
  * Encapsulates the logic to interact with the Browser App
@@ -223,5 +227,12 @@ public interface BrowserAPI {
      * @throws DotDataException
      */
     public Map<String, Object> getFolderContent(final BrowserQuery browserQuery) throws DotSecurityException, DotDataException;
+
+    List<Contentlet> getContentUnderParentDB(BrowserQuery browserQuery);
+
+    List<Treeable> getFolderContents(BrowserQuery browserQuery) throws DotSecurityException, DotDataException;
+    
+    
+    
 }
 

@@ -73,5 +73,17 @@ public class TreeableAPI {
         assets.addAll(fileAssetAPI.findFileAssetsByFolder(folder,null,live,working,user,respectFrontEndPermissions));
         return assets;
     }
+    
+
+   public List<Treeable> loadContentUnderFolder(Folder folder, User user,boolean live, boolean working, boolean archived, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
+       List<Treeable> assets = new ArrayList<Treeable>();
+       assets.addAll(folderAPI.findSubFolders(folder,user,respectFrontEndPermissions));
+       assets.addAll(fileAssetAPI.findFileAssetsByFolder(folder,null,live,working,user,respectFrontEndPermissions));
+       return assets;
+   }
+    
+    
+    
+    
 
 }
