@@ -126,9 +126,9 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
     }
 
     public static Object renderFieldValue(final HttpServletRequest request,
-            final HttpServletResponse response, final String incomingFieldValue,
+            final HttpServletResponse response, final String fieldValue,
             final Contentlet contentlet, final String fieldVar) {
-        if(!UtilMethods.isSet(incomingFieldValue)) return null;
+        if(!UtilMethods.isSet(fieldValue)) return null;
 
         final org.apache.velocity.context.Context context = (request!=null && response!=null)
                 ? VelocityUtil.getInstance().getContext(request, response)
@@ -137,11 +137,6 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
         context.put("content", contentlet);
         context.put("contentlet", contentlet);
         context.put("dotJSON", new DotJSON());
-
-        final boolean returnAsJSON = incomingFieldValue.contains("dotJSON");
-
-        final String fieldValue = returnAsJSON ? prepareJSON(incomingFieldValue)
-                : incomingFieldValue;
 
         final StringWriter evalResult = new StringWriter();
 
@@ -153,33 +148,6 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
         );
 
         return UtilMethods.isSet(evalResult.toString()) ? evalResult.toString() : fieldValue;
-    }
-
-    private static String prepareJSON(final String incomingFieldValue) {
-        final String valueWithOnlyVelocity = removeNonVelocityLines(incomingFieldValue);
-
-        return valueWithOnlyVelocity + System.lineSeparator()
-                + "#set($resultDotJSON = $json.generate($dotJSON.map))"
-                + System.lineSeparator()
-                + "$resultDotJSON";
-    }
-
-    private static String removeNonVelocityLines(final String incomingFieldValue) {
-        StringBuilder returnValue = new StringBuilder();
-
-        try(final Scanner scanner = new Scanner(incomingFieldValue)) {
-            while (scanner.hasNextLine()) {
-                final String line = scanner.nextLine().trim();
-                if (line.trim().startsWith("$") || line.trim().startsWith("#")) {
-                    returnValue.append(line);
-
-                    if(scanner.hasNextLine()) {
-                        returnValue.append(System.lineSeparator());
-                    }
-                }
-            }
-        }
-        return returnValue.toString();
     }
 
 }
