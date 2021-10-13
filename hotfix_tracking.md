@@ -241,3 +241,5 @@ This maintenance release includes the following code fixes:
 118. https://github.com/dotCMS/core/issues/20801 : Warning log message incomplete for not allowed categories when retrieving content
 
 119. https://github.com/dotCMS/core/issues/20597 : Generating resource link for File Asset with Legacy Identifier is failing
+
+120. https://github.com/dotCMS/core/issues/20616 : Button for Navigation Reorder is not working correctly

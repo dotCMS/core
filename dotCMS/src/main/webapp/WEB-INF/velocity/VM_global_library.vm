@@ -108,9 +108,7 @@
 
 #macro(orderMenu)
     #if ($EDIT_MODE && $PUBLISH_HTMLPAGE_PERMISSION)
-        #set($_formId="dot_form_menu_$date.date.time")
-        #set ($folder = $folderAPI.findCurrentFolder($startFromPath, $host))
-        #set ($menuId = $folder.inode)
+        #set($menuLevel = $VTLSERVLET_URI.split('/').size() - 1)
 
         <a href="#" onclick="openReorderDialog(event)" class="btn btn-primary btn-xs normaltip" data-original-title="Reorder Menu">
             <i class="fa fa-arrow-up"></i>
@@ -119,7 +117,7 @@
         <script>
             function openReorderDialog(event) {
                 event.preventDefault();
-                var reorderUrl = "${directorURL}&startLevel=1&depth=2&pagePath=${VTLSERVLET_URI}&hostId=${host.identifier}";
+                var reorderUrl = "${directorURL}&startLevel=${menuLevel}&depth=2&pagePath=${VTLSERVLET_URI}&hostId=${host.identifier}";
                 var customEvent = window.top.document.createEvent("CustomEvent");
                 customEvent.initCustomEvent("ng-event", false, false,  {
                     name: "reorder-menu",
