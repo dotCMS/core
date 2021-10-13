@@ -198,10 +198,10 @@
 		}
 
         function printData(data, headers) {
-            fillResultsTable(headers, data);
             const list = getListEl();
-
+            
             if (state.view === 'list') {
+                fillResultsTable(headers, data);   
                 const card = getViewCardEl();
                 card ? card.style.display = 'none' : false;
                 list.style.display = ''
@@ -220,13 +220,18 @@
             var begin = counters["begin"];
             var end = counters["end"];
             var totalPages = counters["totalPages"];
+            const cardEl = getViewCardEl();
+
             headers = data[1];
 
             for (var i = 3; i < data.length; i++) {
                 data[i - 3] = data[i];
             }
             data.length = data.length - 3;
-
+                
+            if (cardEl) {
+                cardEl.items = [];
+            }
             dwr.util.removeAllRows("results_table");
 
             var funcs = new Array ();
@@ -1803,7 +1808,7 @@
           } else {
 
             // After append the dot-card-view we have to wait to get the HTML node
-            if (!card) {
+            if (!card || !card.items.length) {
                 fillCardView(state.data)
                 setTimeout(() => {
                     card = getViewCardEl();
