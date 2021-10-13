@@ -9,7 +9,6 @@ import static graphql.Scalars.GraphQLInt;
 import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLList.list;
-import static graphql.schema.GraphQLNonNull.nonNull;
 
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -60,6 +59,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -199,17 +199,28 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
             }
         });
 
-        // TODO crear widgetCodeJSON si no existe
+        final boolean alreadyExists = fieldDefinitions.stream()
+                .anyMatch((def)->def.getName().equals(WIDGET_CODE_JSON_FIELD_VAR));
 
-        fieldDefinitions.add(newFieldDefinition()
-                .name(WIDGET_CODE_JSON_FIELD_VAR)
-                .argument(GraphQLArgument.newArgument()
-                        .name("render")
-                        .type(GraphQLBoolean)
-                        .defaultValue(null)
-                        .build())
-                .type(ExtendedScalars.Json)
-                .dataFetcher(new DotJSONDataFetcher()).build());
+//        if(!alreadyExists) {
+            fieldDefinitions.add(newFieldDefinition()
+                    .name(WIDGET_CODE_JSON_FIELD_VAR)
+                    .argument(GraphQLArgument.newArgument()
+                            .name("render")
+                            .type(GraphQLBoolean)
+                            .defaultValue(null)
+                            .build())
+                    .type(ExtendedScalars.Json)
+                    .dataFetcher(new DotJSONDataFetcher()).build());
+//        }
+//        else {
+//            final Optional<GraphQLFieldDefinition> existingDefinition = fieldDefinitions.stream()
+//                    .filter((def)->def.getName().equals(WIDGET_CODE_JSON_FIELD_VAR)).findAny();
+//.
+//            if(existingDefinition.isPresent()) {
+//
+//            }
+//        }
 
         // add CONTENT interface fields
         fieldDefinitions.addAll(TypeUtil

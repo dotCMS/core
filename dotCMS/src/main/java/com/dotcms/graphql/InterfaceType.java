@@ -104,10 +104,6 @@ public enum InterfaceType {
         addBaseTypeFields(widgetFields, ImmutableWidgetContentType.builder().name("dummy")
                 .build().requiredFields());
 
-        // add widgetCodeJSON field
-//        widgetFields.put("widgetCodeJSON",
-//                new TypeFetcher(ExtendedScalars.Json, new DotJSONDataFetcher()));
-
         interfaceTypes.put("WIDGET", createInterfaceType(WIDGET_INTERFACE_NAME, widgetFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> vanityUrlFields = new HashMap<>(contentFields);

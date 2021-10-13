@@ -28,14 +28,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * {@link DataFetcher} that fetches the data when the special <code>_map<code/> GraphQL Field is requested.
+ * {@link DataFetcher} that fetches the data when the special <code>widgetCodeJSON<code/> GraphQL Field is requested.
  * <p>
  * The field takes the follow arguments:
  * <ul>
- * <li>key: {@link Scalars#GraphQLString} that represents the variable name of a field of the contentlet. Using this argument makes the field to return the value of only that specific field from the
- * contentlet's map. If not specified it will return all the properties in the contentlet's map
- * <li>depth: {@link Scalars#GraphQLInt} value that specifies how to return the related content. Has the same behavior as the `depth` argument in the Content REST API for related content
- * <li>render: {@link Scalars#GraphQLBoolean} that indicates whether to velocity-render the rederable fields.
+  * <li>render: {@link Scalars#GraphQLBoolean} that indicates whether to velocity-render the rederable fields.
  * </ul>
  */
 
@@ -45,7 +42,8 @@ public class DotJSONDataFetcher implements DataFetcher<Object> {
     public Object get(final DataFetchingEnvironment environment) throws Exception {
         try {
             final Contentlet contentlet = environment.getSource();
-            final Boolean render = environment.getArgument("render");
+            final boolean render = environment.getArgument("render") == null
+                    || (Boolean) environment.getArgument("render");
 
             final HttpServletRequest request = ((DotGraphQLContext) environment.getContext())
                     .getHttpServletRequest();
@@ -55,10 +53,16 @@ public class DotJSONDataFetcher implements DataFetcher<Object> {
 
             final String fieldValue = (String) contentlet.get(WIDGET_CODE_FIELD_VAR);
 
-            final String renderedValue = (String) parseAsJSON(request, response, fieldValue,
-                    contentlet, WIDGET_CODE_FIELD_VAR);
+            if(render) {
+                final Object renderedValue = parseAsJSON(request, response, fieldValue,
+                        contentlet, WIDGET_CODE_FIELD_VAR);
 
-            return new ObjectMapper().readValue(renderedValue, HashMap.class);
+                return UtilMethods.isSet(renderedValue)
+                        ? renderedValue
+                        : new HashMap<>();
+            } else {
+                return fieldValue;
+            }
 
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);

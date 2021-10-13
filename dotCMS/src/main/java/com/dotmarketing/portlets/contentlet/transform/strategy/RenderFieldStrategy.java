@@ -96,9 +96,9 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
     }
 
     public static Object parseAsJSON(final HttpServletRequest request,
-            final HttpServletResponse response, final String incomingFieldValue,
+            final HttpServletResponse response, final String fieldValue,
             final Contentlet contentlet, final String fieldVar) {
-        if(!UtilMethods.isSet(incomingFieldValue)) return null;
+        if(!UtilMethods.isSet(fieldValue)) return null;
 
         final org.apache.velocity.context.Context context = (request!=null && response!=null)
                 ? VelocityUtil.getInstance().getContext(request, response)
@@ -107,8 +107,6 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
         context.put("content", contentlet);
         context.put("contentlet", contentlet);
         context.put("dotJSON", new DotJSON());
-
-        final String fieldValue = prepareJSON(incomingFieldValue);
 
         final StringWriter evalResult = new StringWriter();
 
@@ -119,7 +117,12 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
                         + fieldVar, error)
         );
 
-        return UtilMethods.isSet(evalResult.toString()) ? evalResult.toString() : fieldValue;
+        final DotJSON dotJSON = (DotJSON) context.get("dotJSON");
+
+        return UtilMethods.isSet(evalResult.toString())
+                ? dotJSON.size() > 0
+                    ? dotJSON.getMap() : evalResult.toString()
+                : fieldValue;
     }
 
     public static Object renderFieldValue(final HttpServletRequest request,
