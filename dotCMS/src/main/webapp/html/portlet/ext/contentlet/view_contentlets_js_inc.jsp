@@ -198,10 +198,10 @@
 		}
 
         function printData(data, headers) {
-            fillResultsTable(headers, data);
             const list = getListEl();
-
+            
             if (state.view === 'list') {
+                fillResultsTable(headers, data);   
                 const card = getViewCardEl();
                 card ? card.style.display = 'none' : false;
                 list.style.display = ''
@@ -220,13 +220,18 @@
             var begin = counters["begin"];
             var end = counters["end"];
             var totalPages = counters["totalPages"];
+            const cardEl = getViewCardEl();
+
             headers = data[1];
 
             for (var i = 3; i < data.length; i++) {
                 data[i - 3] = data[i];
             }
             data.length = data.length - 3;
-
+                
+            if (cardEl) {
+                cardEl.items = [];
+            }
             dwr.util.removeAllRows("results_table");
 
             var funcs = new Array ();
@@ -683,7 +688,10 @@
           }//http://jira.dotmarketing.net/browse/DOTCMS-3232
           else if(type=='host or folder'){
                   // Below code is used to fix the "widget already registered error".
-
+                  const folderHostSelectorField = dijit.byId('FolderHostSelector');
+                  const folderHostSelectorCurrentValue = folderHostSelectorField ? folderHostSelectorField.value : null;
+                  const oldTree = dijit.byId('FolderHostSelector-tree');
+                  
                   if(dojo.byId('FolderHostSelector-hostFoldersTreeWrapper')){
                           dojo.byId('FolderHostSelector-hostFoldersTreeWrapper').remove();
                   }
@@ -702,7 +710,7 @@
                   <%}else if(UtilMethods.isSet(crumbtrailSelectedHostId)){ %>
                         hostId = '<%= conHostValue %>';
                   <%} %>
-                  var fieldValue = hostId;
+                  var fieldValue = folderHostSelectorCurrentValue || hostId;
                   <% if(UtilMethods.isSet(conFolderValue)){%>
                         fieldValue = '<%= conFolderValue %>';
                   <%}%>
@@ -710,10 +718,18 @@
                   var result = "<div onchange=\"doSearch(null, '<%=orderBy%>')\" id=\"FolderHostSelector\" style='width270px' dojoType=\"dotcms.dijit.form.HostFolderFilteringSelect\" includeAll=\"true\" onClick=\"resetHostValue();\" onChange=\"getHostValue();\" "
                                                 +" hostId=\"" + hostId + "\" value = \"" + fieldValue + "\"" + "></div>";
 
-          hasHostFolderField = true;
+                 hasHostFolderField = true;
 
+                 // Set the previous selected value of the tree. 
+                 setTimeout(()=> {
+                        const newTree = dijit.byId('FolderHostSelector-tree');
+                        if (oldTree) {
+                                newTree.set('path', oldTree.path);
+                                newTree.set('selectedItem', oldTree.selectedItem );
+                        } 
+                 },1000);
 
-           return result;
+                return result;
           }else if(type=='category' || type=='hidden'){
 
              return "";
@@ -1792,7 +1808,7 @@
           } else {
 
             // After append the dot-card-view we have to wait to get the HTML node
-            if (!card) {
+            if (!card || !card.items.length) {
                 fillCardView(state.data)
                 setTimeout(() => {
                     card = getViewCardEl();

@@ -27,7 +27,7 @@
     PublishAuditStatus.Status status = null;
     int statusCode = 0;
     if ( null != bundleId ) {
-        PublishAuditStatus publishAuditStatus = PublishAuditAPI.getInstance().getPublishAuditStatus( bundleId );
+        PublishAuditStatus publishAuditStatus = PublishAuditAPI.getInstance().getPublishAuditStatus( bundleId , 1);
 
         if (UtilMethods.isSet(publishAuditStatus) && UtilMethods.isSet(publishAuditStatus.getStatusPojo())) {
             String pojo_string = publishAuditStatus.getStatusPojo().getSerialized();
