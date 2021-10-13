@@ -3,11 +3,14 @@ package com.dotmarketing.business;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.StructureDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.common.reindex.ReindexQueueFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -18,6 +21,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 
+import java.util.Random;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -225,6 +229,51 @@ public class VersionableAPITest {
 		}finally {
         	StructureDataGen.remove(structure);
 		}
+	}
+
+	/**
+	 * Method to test: {@link VersionableAPI#isWorking(Versionable)}
+	 * Test Case: Invoking {@link VersionableAPI#isWorking(Versionable)} using a host with an invalid language
+	 * Expected Results: It should return the host because the language should be ignored
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@Test
+	public void testIsWorkingHost() throws DotDataException, DotSecurityException {
+		final Host host = new SiteDataGen().nextPersisted();
+		host.setLanguageId(new Random().nextLong());
+		assertTrue(APILocator.getVersionableAPI().isWorking(host));
+	}
+
+	/**
+	 * Method to test: {@link VersionableAPI#isLive(Versionable)}
+	 * Test Case: Invoking {@link VersionableAPI#isLive(Versionable)} using a host with an invalid language
+	 * Expected Results: It should return the host because the language should be ignored
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@Test
+	public void testIsLiveHost() throws DotDataException, DotSecurityException {
+		final Host host = new SiteDataGen().nextPersisted();
+		host.setLanguageId(new Random().nextLong());
+		assertTrue(APILocator.getVersionableAPI().isLive(host));
+	}
+
+	/**
+	 * Methods to test: {@link VersionableAPI#isLocked(Versionable)} and {@link VersionableAPI#setLocked(Versionable, boolean, User)}
+	 * Test Case: Invoking {@link VersionableAPI#isLive(Versionable)} and {@link VersionableAPI#setLocked(Versionable, boolean, User)}
+	 * using a host with an invalid language
+	 * Expected Results: They should return the host because the language should be ignored
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@Test
+	public void testSetLockedHost() throws DotDataException, DotSecurityException {
+		final Host host = new SiteDataGen().nextPersisted();
+		host.setLanguageId(new Random().nextLong());
+		assertFalse(APILocator.getVersionableAPI().isLocked(host));
+		APILocator.getVersionableAPI().setLocked(host, true, user);
+		assertTrue(APILocator.getVersionableAPI().isLocked(host));
 	}
 
 }
