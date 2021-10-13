@@ -49,5 +49,3 @@ import { MarkdownModule } from 'ngx-markdown';
 })
 export class AppModule {}
 
-
-

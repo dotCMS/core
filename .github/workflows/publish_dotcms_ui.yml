@@ -47,7 +47,9 @@ jobs:
             - name: Checkout core-web
               run: |
                   git clone https://victoralfaro-dotcms:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/dotcms/core-web
+                  cd core-web
                   git pull
+                  cd ..
             - name: Configuring Node.js
               uses: actions/setup-node@v2-beta
               with:
