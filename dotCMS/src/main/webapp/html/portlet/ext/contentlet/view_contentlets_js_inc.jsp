@@ -683,7 +683,10 @@
           }//http://jira.dotmarketing.net/browse/DOTCMS-3232
           else if(type=='host or folder'){
                   // Below code is used to fix the "widget already registered error".
-
+                  const folderHostSelectorField = dijit.byId('FolderHostSelector');
+                  const folderHostSelectorCurrentValue = folderHostSelectorField ? folderHostSelectorField.value : null;
+                  const oldTree = dijit.byId('FolderHostSelector-tree');
+                  
                   if(dojo.byId('FolderHostSelector-hostFoldersTreeWrapper')){
                           dojo.byId('FolderHostSelector-hostFoldersTreeWrapper').remove();
                   }
@@ -702,7 +705,7 @@
                   <%}else if(UtilMethods.isSet(crumbtrailSelectedHostId)){ %>
                         hostId = '<%= conHostValue %>';
                   <%} %>
-                  var fieldValue = hostId;
+                  var fieldValue = folderHostSelectorCurrentValue || hostId;
                   <% if(UtilMethods.isSet(conFolderValue)){%>
                         fieldValue = '<%= conFolderValue %>';
                   <%}%>
@@ -710,10 +713,18 @@
                   var result = "<div onchange=\"doSearch(null, '<%=orderBy%>')\" id=\"FolderHostSelector\" style='width270px' dojoType=\"dotcms.dijit.form.HostFolderFilteringSelect\" includeAll=\"true\" onClick=\"resetHostValue();\" onChange=\"getHostValue();\" "
                                                 +" hostId=\"" + hostId + "\" value = \"" + fieldValue + "\"" + "></div>";
 
-          hasHostFolderField = true;
+                 hasHostFolderField = true;
 
+                 // Set the previous selected value of the tree. 
+                 setTimeout(()=> {
+                        const newTree = dijit.byId('FolderHostSelector-tree');
+                        if (oldTree) {
+                                newTree.set('path', oldTree.path);
+                                newTree.set('selectedItem', oldTree.selectedItem );
+                        } 
+                 },1000);
 
-           return result;
+                return result;
           }else if(type=='category' || type=='hidden'){
 
              return "";
