@@ -46,7 +46,8 @@ jobs:
         steps:
             - name: Checkout core-web
               run: |
-                  git clone --no-single-branch --depth 1 https://victoralfaro-dotcms:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/dotcms/core-web
+                  git clone https://victoralfaro-dotcms:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/dotcms/core-web
+                  git pull
             - name: Configuring Node.js
               uses: actions/setup-node@v2-beta
               with:
@@ -59,10 +60,13 @@ jobs:
                   else
                     branchName=$(basename "${{ github.ref }}")
                   fi
-                  
+
                   echo "******brach name: " $branchName
                   cd core-web
-                  git checkout $branchName
+
+                  if [[ "$branchName" != 'master' ]]; then
+                    git checkout -b $branchName --track origin/$branchName
+                  fi
 
                   npm install
             - name: Version Bump - dotcms-ui - if it's Master/Release Branch
