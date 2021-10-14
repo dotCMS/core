@@ -39,7 +39,7 @@ export class DotFormatDateService {
             try {
                 localeLang = await import(`date-fns/locale/${langCode}/index.js`);
             } catch (error) {
-                localeLang = await import(`date-fns/locale/en-US/index.js`);
+                localeLang = await import(`date-fns/locale/en-US`);
             }
         }
         
