@@ -34,6 +34,11 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
         IntegrationTestInitService.getInstance().init();
     }
 
+    /**
+     * Basic scenario we turn off the  SAVE_CONTENTLET_AS_JSON flag then we create some entries
+     * then we serialize it and compare it against the original map build out of the columns
+     * @throws Exception
+     */
     @Test
     public void Simple_Json_Serialize_Test() throws Exception {
 
@@ -97,12 +102,6 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
         assertEquals(in.get("tagField"),out.get("tagField"));
 
     }
-
-    @Test
-    public void Contentlet_As_Json_Integrity_Test() throws Exception {
-
-    }
-
 
 
 }

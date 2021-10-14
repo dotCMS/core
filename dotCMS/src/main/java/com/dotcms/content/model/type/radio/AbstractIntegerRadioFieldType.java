@@ -1,4 +1,4 @@
-package com.dotcms.content.model.type;
+package com.dotcms.content.model.type.radio;
 
 import com.dotcms.content.model.FieldValue;
 import com.dotcms.content.model.annotation.ValueTypeStyle;
@@ -9,15 +9,15 @@ import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Parameter;
 
 /**
- * Custom Field json representation
+ * Float Radio Field json representation
  */
 @ValueTypeStyle
 @Immutable
-@JsonDeserialize(as = HiddenFieldType.class)
-@JsonTypeName(value = AbstractHiddenFieldType.TYPENAME)
-public interface AbstractHiddenFieldType extends FieldValue<String> {
+@JsonDeserialize(as = IntegerRadioFieldType.class)
+@JsonTypeName(value = AbstractIntegerRadioFieldType.TYPENAME)
+public interface AbstractIntegerRadioFieldType extends FieldValue<Integer> {
 
-    String TYPENAME = "Hidden";
+    String TYPENAME = "Integer-Radio";
 
     /**
      * {@inheritDoc}
@@ -25,12 +25,15 @@ public interface AbstractHiddenFieldType extends FieldValue<String> {
     @Override
     default String type() {
         return TYPENAME;
-    };
+    }
+
+    ;
 
     /**
      * {@inheritDoc}
      */
     @JsonProperty("value")
     @Parameter
-    String value();
+    Integer value();
+
 }

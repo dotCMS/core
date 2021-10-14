@@ -2,7 +2,6 @@ package com.dotcms.content.model.type.select;
 
 import com.dotcms.content.model.FieldValue;
 import com.dotcms.content.model.annotation.ValueTypeStyle;
-import com.dotcms.content.model.type.BinaryType;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -18,7 +17,7 @@ import org.immutables.value.Value.Parameter;
 @JsonTypeName(value = AbstractMultiSelectFieldType.TYPENAME)
 public interface AbstractMultiSelectFieldType extends FieldValue<String> {
 
-    String TYPENAME = "MultiSelect";
+    String TYPENAME = "Multi-Select";
 
     /**
      * {@inheritDoc}

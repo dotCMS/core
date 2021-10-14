@@ -17,7 +17,7 @@ import org.immutables.value.Value.Parameter;
 @JsonTypeName(value = AbstractLongRadioFieldType.TYPENAME)
 public interface AbstractLongRadioFieldType extends FieldValue<Long> {
 
-    String TYPENAME = "LongRadio";
+    String TYPENAME = "Long-Radio";
 
     /**
      * {@inheritDoc}

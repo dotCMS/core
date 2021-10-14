@@ -1,21 +1,14 @@
 package com.dotcms.contenttype.model.field;
 
-import com.dotcms.content.model.FieldValue;
-import com.dotcms.content.model.type.BinaryType;
-import java.io.File;
-import java.nio.file.Path;
-import java.util.Collection;
-import java.util.List;
+import static com.dotcms.util.CollectionsUtils.list;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.util.Optional;
-import org.immutables.value.Value;
-
-import com.google.common.collect.ImmutableList;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
-import static com.dotcms.util.CollectionsUtils.list;
+import com.google.common.collect.ImmutableList;
+import java.util.Collection;
+import java.util.List;
+import org.immutables.value.Value;
 
 @JsonSerialize(as = ImmutableBinaryField.class)
 @JsonDeserialize(as = ImmutableBinaryField.class)
@@ -76,20 +69,6 @@ public abstract class BinaryField extends Field {
 	return list(ContentTypeFieldProperties.REQUIRED, ContentTypeFieldProperties.NAME,
 			    ContentTypeFieldProperties.SEARCHABLE, ContentTypeFieldProperties.INDEXED,
 				ContentTypeFieldProperties.HINT, ContentTypeFieldProperties.LISTED);
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public Optional<FieldValue<?>> fieldValue(final Object value){
-		if (value instanceof File) {
-			return Optional.of(BinaryType.of(((File) value).getName()));
-		}
-		if (value instanceof String) {
-			return Optional.of(BinaryType.of((String) value));
-		}
-		return Optional.empty();
 	}
 
 }

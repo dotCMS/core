@@ -1,8 +1,18 @@
 package com.dotcms.contenttype.model.field;
 
+import com.dotcms.content.model.FieldValue;
+import com.dotcms.content.model.type.hidden.BoolHiddenFieldType;
+import com.dotcms.content.model.type.hidden.DateHiddenFieldType;
+import com.dotcms.content.model.type.hidden.FloatHiddenFieldType;
+import com.dotcms.content.model.type.hidden.HiddenFieldType;
+import com.dotcms.content.model.type.ImageType;
+import com.dotcms.content.model.type.hidden.IntegerHiddenFieldType;
+import com.dotcms.content.model.type.hidden.LongHiddenFieldType;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 
+import java.util.Optional;
 import org.immutables.value.Value;
 
 import com.google.common.collect.ImmutableList;
@@ -49,4 +59,32 @@ public abstract class HiddenField extends Field {
 	public String getContentTypeFieldLabelKey(){
 		return "Hidden-Field";
 	}
+
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public Optional<FieldValue<?>> fieldValue(final Object value){
+		if (value instanceof String) {
+			return Optional.of(HiddenFieldType.of((String) value));
+		}
+		if (value instanceof Boolean) {
+			return Optional.of(BoolHiddenFieldType.of((Boolean) value));
+		}
+		if (value instanceof Date) {
+			return Optional.of(DateHiddenFieldType.of((Date) value));
+		}
+		if (value instanceof Float) {
+			return Optional.of(FloatHiddenFieldType.of((Float) value));
+		}
+		if (value instanceof Integer) {
+			return Optional.of(IntegerHiddenFieldType.of((Integer) value));
+		}
+		if (value instanceof Long) {
+			return Optional.of(LongHiddenFieldType.of((Long) value));
+		}
+		return Optional.empty();
+	}
+
 }

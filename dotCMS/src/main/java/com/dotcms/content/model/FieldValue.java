@@ -2,28 +2,35 @@ package com.dotcms.content.model;
 
 
 import com.dotcms.content.model.annotation.ValueTypeStyle;
-import com.dotcms.content.model.type.AbstractBinaryType;
 import com.dotcms.content.model.type.AbstractCheckBoxFieldType;
 import com.dotcms.content.model.type.AbstractCustomFieldType;
-import com.dotcms.content.model.type.AbstractHiddenFieldType;
+import com.dotcms.content.model.type.hidden.AbstractBoolHiddenFieldType;
+import com.dotcms.content.model.type.hidden.AbstractDateHiddenFieldType;
+import com.dotcms.content.model.type.hidden.AbstractFloatHiddenFieldType;
+import com.dotcms.content.model.type.hidden.AbstractHiddenFieldType;
 import com.dotcms.content.model.type.AbstractImageType;
 import com.dotcms.content.model.type.AbstractTextAreaType;
 import com.dotcms.content.model.type.AbstractWysiwygType;
 import com.dotcms.content.model.type.date.AbstractDateFieldType;
 import com.dotcms.content.model.type.date.AbstractDateTimeFieldType;
 import com.dotcms.content.model.type.date.AbstractTimeFieldType;
+import com.dotcms.content.model.type.hidden.AbstractIntegerHiddenFieldType;
+import com.dotcms.content.model.type.hidden.AbstractLongHiddenFieldType;
 import com.dotcms.content.model.type.radio.AbstractBoolRadioFieldType;
 import com.dotcms.content.model.type.radio.AbstractFloatRadioFieldType;
+import com.dotcms.content.model.type.radio.AbstractIntegerRadioFieldType;
 import com.dotcms.content.model.type.radio.AbstractLongRadioFieldType;
 import com.dotcms.content.model.type.radio.AbstractRadioFieldType;
 import com.dotcms.content.model.type.select.AbstractBoolSelectFieldType;
 import com.dotcms.content.model.type.select.AbstractFloatSelectFieldType;
+import com.dotcms.content.model.type.select.AbstractIntegerSelectFieldType;
 import com.dotcms.content.model.type.select.AbstractLongSelectFieldType;
 import com.dotcms.content.model.type.select.AbstractMultiSelectFieldType;
 import com.dotcms.content.model.type.select.AbstractSelectFieldType;
 import com.dotcms.content.model.type.text.AbstractFloatTextFieldType;
 import com.dotcms.content.model.type.AbstractKeyValueType;
 import com.dotcms.content.model.type.AbstractListType;
+import com.dotcms.content.model.type.text.AbstractIntegerTextFieldType;
 import com.dotcms.content.model.type.text.AbstractLongTextFieldType;
 import com.dotcms.content.model.type.text.AbstractTextFieldType;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -43,8 +50,7 @@ import org.immutables.value.Value.Parameter;
  */
 @JsonSubTypes({
 
-        //Image/Binary
-        @JsonSubTypes.Type(name = AbstractBinaryType.TYPENAME, value = AbstractBinaryType.class),
+        //Image
         @JsonSubTypes.Type(name = AbstractImageType.TYPENAME, value = AbstractImageType.class),
 
         //Dates
@@ -56,12 +62,14 @@ import org.immutables.value.Value.Parameter;
         @JsonSubTypes.Type(name = AbstractTextFieldType.TYPENAME, value = AbstractTextFieldType.class),
         @JsonSubTypes.Type(name = AbstractFloatTextFieldType.TYPENAME, value = AbstractFloatTextFieldType.class),
         @JsonSubTypes.Type(name = AbstractLongTextFieldType.TYPENAME, value = AbstractLongTextFieldType.class),
+        @JsonSubTypes.Type(name = AbstractIntegerTextFieldType.TYPENAME, value = AbstractIntegerTextFieldType.class),
 
         //Radios
         @JsonSubTypes.Type(name = AbstractRadioFieldType.TYPENAME, value = AbstractRadioFieldType.class),
         @JsonSubTypes.Type(name = AbstractBoolRadioFieldType.TYPENAME, value = AbstractBoolRadioFieldType.class),
         @JsonSubTypes.Type(name = AbstractFloatRadioFieldType.TYPENAME, value = AbstractFloatRadioFieldType.class),
         @JsonSubTypes.Type(name = AbstractLongRadioFieldType.TYPENAME, value = AbstractLongRadioFieldType.class),
+        @JsonSubTypes.Type(name = AbstractIntegerRadioFieldType.TYPENAME, value = AbstractIntegerRadioFieldType.class),
 
         //Multi-Select
         @JsonSubTypes.Type(name = AbstractMultiSelectFieldType.TYPENAME, value = AbstractMultiSelectFieldType.class),
@@ -70,6 +78,7 @@ import org.immutables.value.Value.Parameter;
         @JsonSubTypes.Type(name = AbstractBoolSelectFieldType.TYPENAME, value = AbstractBoolSelectFieldType.class),
         @JsonSubTypes.Type(name = AbstractLongSelectFieldType.TYPENAME, value = AbstractLongSelectFieldType.class),
         @JsonSubTypes.Type(name = AbstractFloatSelectFieldType.TYPENAME, value = AbstractFloatSelectFieldType.class),
+        @JsonSubTypes.Type(name = AbstractIntegerSelectFieldType.TYPENAME, value = AbstractIntegerSelectFieldType.class),
 
         //Checkbox
         @JsonSubTypes.Type(name = AbstractCheckBoxFieldType.TYPENAME, value = AbstractCheckBoxFieldType.class),
@@ -89,6 +98,11 @@ import org.immutables.value.Value.Parameter;
 
         //HiddenField
         @JsonSubTypes.Type(name = AbstractHiddenFieldType.TYPENAME, value = AbstractHiddenFieldType.class),
+        @JsonSubTypes.Type(name = AbstractBoolHiddenFieldType.TYPENAME, value = AbstractBoolHiddenFieldType.class),
+        @JsonSubTypes.Type(name = AbstractFloatHiddenFieldType.TYPENAME, value = AbstractFloatHiddenFieldType.class),
+        @JsonSubTypes.Type(name = AbstractLongHiddenFieldType.TYPENAME, value = AbstractLongHiddenFieldType.class),
+        @JsonSubTypes.Type(name = AbstractDateHiddenFieldType.TYPENAME, value = AbstractDateHiddenFieldType.class),
+        @JsonSubTypes.Type(name = AbstractIntegerHiddenFieldType.TYPENAME, value = AbstractIntegerHiddenFieldType.class),
 
 })
 @ValueTypeStyle

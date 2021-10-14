@@ -8562,13 +8562,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             try {
                 json = APILocator.getContentletJsonAPI().toJson(new Contentlet(combined));
+                if(UtilMethods.isSet(combined.get("identifier"))){
+                    Logger.info(ESContentletAPIImpl.class, json);
+                }
             } catch (DotDataException | JsonProcessingException e) {
                 final String error = String.format("Error converting from json to contentlet with id: %s and inode: %s ", contentlet.getIdentifier(), contentlet.getInode());
                 Logger.error(ESContentletAPIImpl.class, error, e);
                 throw new DotRuntimeException(error, e);
             }
         }
-        Logger.debug(ESContentletAPIImpl.class, json);
         contentlet.setStringProperty(Contentlet.CONTENTLET_AS_JSON, json);
         return contentlet;
     }

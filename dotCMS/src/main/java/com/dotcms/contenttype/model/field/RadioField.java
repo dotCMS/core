@@ -3,6 +3,7 @@ package com.dotcms.contenttype.model.field;
 import com.dotcms.content.model.FieldValue;
 import com.dotcms.content.model.type.radio.BoolRadioFieldType;
 import com.dotcms.content.model.type.radio.FloatRadioFieldType;
+import com.dotcms.content.model.type.radio.IntegerRadioFieldType;
 import com.dotcms.content.model.type.radio.LongRadioFieldType;
 import com.dotcms.content.model.type.radio.RadioFieldType;
 import java.util.Collection;
@@ -72,6 +73,10 @@ public abstract class RadioField extends SelectableValuesField {
 
 		if (value instanceof Long) {
 			return Optional.of(LongRadioFieldType.of((Long) value));
+		}
+
+		if (value instanceof Integer) {
+			return Optional.of(IntegerRadioFieldType.of((Integer) value));
 		}
 
 		if (value instanceof Float) {

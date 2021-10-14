@@ -236,11 +236,11 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
         final Map<String, Field> fieldsByVarName = contentType.fields().stream()
                 .collect(Collectors.toMap(Field::variable, Function.identity()));
 
-        final Map<String, FieldValue<?>> fields = immutableContentlet.fields();
+        final Map<String, FieldValue<?>> contentletFields = immutableContentlet.fields();
 
-        for (final Entry<String, FieldValue<?>> entry : fields.entrySet()) {
+        for (final Entry<String, Field> entry : fieldsByVarName.entrySet()) {
 
-            final Field field = fieldsByVarName.get(entry.getKey());
+            final Field field = entry.getValue();
             if (isNotMappable(field)) {
                 continue;
             }
@@ -255,7 +255,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
                     if (field instanceof BinaryField) {
                         value = getBinary(field, inode).orElse(null);
                     } else {
-                        value = getValue(fields, field);
+                        value = getValue(contentletFields, field);
                     }
                 }
             }

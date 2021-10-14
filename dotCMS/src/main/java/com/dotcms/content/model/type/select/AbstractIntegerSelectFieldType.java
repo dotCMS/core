@@ -9,15 +9,15 @@ import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Parameter;
 
 /**
- * Long Single-Select Field json representation
+ * Long Integer-Select Field json representation
  */
 @ValueTypeStyle
 @Immutable
-@JsonDeserialize(as = LongSelectFieldType.class)
-@JsonTypeName(value = AbstractLongSelectFieldType.TYPENAME)
-public interface AbstractLongSelectFieldType extends FieldValue<Long> {
+@JsonDeserialize(as = IntegerSelectFieldType.class)
+@JsonTypeName(value = AbstractIntegerSelectFieldType.TYPENAME)
+public interface AbstractIntegerSelectFieldType extends FieldValue<Integer> {
 
-    String TYPENAME = "Long-Select";
+    String TYPENAME = "Integer-Select";
 
     /**
      * {@inheritDoc}
@@ -32,6 +32,6 @@ public interface AbstractLongSelectFieldType extends FieldValue<Long> {
      */
     @JsonProperty("value")
     @Parameter
-    Long value();
+    Integer value();
 
 }

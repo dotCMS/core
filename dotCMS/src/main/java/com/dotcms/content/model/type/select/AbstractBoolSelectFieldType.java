@@ -17,7 +17,7 @@ import org.immutables.value.Value.Parameter;
 @JsonTypeName(value = AbstractBoolSelectFieldType.TYPENAME)
 public interface AbstractBoolSelectFieldType extends FieldValue<Boolean> {
 
-    String TYPENAME = "BoolSelect";
+    String TYPENAME = "Bool-Select";
 
     /**
      * {@inheritDoc}

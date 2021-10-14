@@ -17,7 +17,7 @@ import org.immutables.value.Value.Parameter;
 @JsonTypeName(value = AbstractBoolRadioFieldType.TYPENAME)
 public interface AbstractBoolRadioFieldType extends FieldValue<Boolean> {
 
-    String TYPENAME = "BoolRadio";
+    String TYPENAME = "Bool-Radio";
 
     /**
      * {@inheritDoc}

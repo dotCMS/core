@@ -17,7 +17,7 @@ import org.immutables.value.Value.Parameter;
 @JsonTypeName(value = AbstractRadioFieldType.TYPENAME)
 public interface AbstractRadioFieldType extends FieldValue<String> {
 
-    String TYPENAME = "Radio";
+    String TYPENAME = "Text-Radio";
 
     /**
      * {@inheritDoc}

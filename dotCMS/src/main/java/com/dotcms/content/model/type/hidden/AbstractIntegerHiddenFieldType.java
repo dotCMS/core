@@ -1,4 +1,4 @@
-package com.dotcms.content.model.type;
+package com.dotcms.content.model.type.hidden;
 
 import com.dotcms.content.model.FieldValue;
 import com.dotcms.content.model.annotation.ValueTypeStyle;
@@ -9,15 +9,15 @@ import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Parameter;
 
 /**
- * Binary Field json representation
+ * Custom Field json representation
  */
 @ValueTypeStyle
 @Immutable
-@JsonDeserialize(as = BinaryType.class)
-@JsonTypeName(value = AbstractBinaryType.TYPENAME)
-public interface AbstractBinaryType extends FieldValue<String> {
+@JsonDeserialize(as = IntegerHiddenFieldType.class)
+@JsonTypeName(value = AbstractIntegerHiddenFieldType.TYPENAME)
+public interface AbstractIntegerHiddenFieldType extends FieldValue<Integer> {
 
-    String TYPENAME = "Binary";
+    String TYPENAME = "Integer-Hidden";
 
     /**
      * {@inheritDoc}
@@ -32,6 +32,6 @@ public interface AbstractBinaryType extends FieldValue<String> {
      */
     @JsonProperty("value")
     @Parameter
-    String value();
+    Integer value();
 
 }

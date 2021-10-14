@@ -1,4 +1,4 @@
-package com.dotcms.content.model.type.select;
+package com.dotcms.content.model.type.hidden;
 
 import com.dotcms.content.model.FieldValue;
 import com.dotcms.content.model.annotation.ValueTypeStyle;
@@ -9,15 +9,15 @@ import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Parameter;
 
 /**
- * Long Single-Select Field json representation
+ * Custom Field json representation
  */
 @ValueTypeStyle
 @Immutable
-@JsonDeserialize(as = LongSelectFieldType.class)
-@JsonTypeName(value = AbstractLongSelectFieldType.TYPENAME)
-public interface AbstractLongSelectFieldType extends FieldValue<Long> {
+@JsonDeserialize(as = HiddenFieldType.class)
+@JsonTypeName(value = AbstractHiddenFieldType.TYPENAME)
+public interface AbstractHiddenFieldType extends FieldValue<String> {
 
-    String TYPENAME = "Long-Select";
+    String TYPENAME = "Text-Hidden";
 
     /**
      * {@inheritDoc}
@@ -32,6 +32,5 @@ public interface AbstractLongSelectFieldType extends FieldValue<Long> {
      */
     @JsonProperty("value")
     @Parameter
-    Long value();
-
+    String value();
 }

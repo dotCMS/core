@@ -17,7 +17,7 @@ import org.immutables.value.Value.Parameter;
 @JsonTypeName(value = AbstractFloatSelectFieldType.TYPENAME)
 public interface AbstractFloatSelectFieldType extends FieldValue<Float> {
 
-    String TYPENAME = "FloatSelect";
+    String TYPENAME = "Float-Select";
 
     /**
      * {@inheritDoc}

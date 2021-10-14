@@ -17,7 +17,7 @@ import org.immutables.value.Value.Parameter;
 @JsonTypeName(value = AbstractFloatRadioFieldType.TYPENAME)
 public interface AbstractFloatRadioFieldType extends FieldValue<Float> {
 
-    String TYPENAME = "FloatRadio";
+    String TYPENAME = "Float-Radio";
 
     /**
      *

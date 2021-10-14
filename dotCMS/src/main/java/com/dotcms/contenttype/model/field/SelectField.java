@@ -3,6 +3,7 @@ package com.dotcms.contenttype.model.field;
 import com.dotcms.content.model.FieldValue;
 import com.dotcms.content.model.type.select.BoolSelectFieldType;
 import com.dotcms.content.model.type.select.FloatSelectFieldType;
+import com.dotcms.content.model.type.select.IntegerSelectFieldType;
 import com.dotcms.content.model.type.select.LongSelectFieldType;
 import com.dotcms.content.model.type.select.SelectFieldType;
 import java.util.Collection;
@@ -71,6 +72,9 @@ public abstract class SelectField extends SelectableValuesField {
 		}
 		if (value instanceof Long) {
 			return Optional.of(LongSelectFieldType.of((Long) value));
+		}
+		if (value instanceof Integer) {
+			return Optional.of(IntegerSelectFieldType.of((Integer) value));
 		}
 		return Optional.empty();
 	}
