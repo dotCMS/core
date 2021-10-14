@@ -35,6 +35,7 @@ import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleAPITest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
+import com.dotcms.publisher.business.PublishQueueElementTransformerTest;
 import com.dotcms.publisher.receiver.BundlePublisherTest;
 import com.dotcms.publisher.util.DependencyManagerTest;
 import com.dotcms.publisher.util.DependencyModDateUtilTest;
@@ -122,9 +123,13 @@ import com.dotmarketing.startup.runonce.Task210719CleanUpTitleFieldTest;
 import com.dotmarketing.startup.runonce.Task210802UpdateStructureTableTest;
 import com.dotmarketing.startup.runonce.Task210805DropUserProxyTableTest;
 import com.dotmarketing.startup.runonce.Task210816DeInodeRelationshipTest;
-import com.dotmarketing.startup.runonce.Task210908AddCompanyDefaultLanguageTest;
+import com.dotmarketing.startup.runonce.Task211012AddCompanyDefaultLanguageTest;
 import com.dotmarketing.startup.runonce.Task210901UpdateDateTimezonesTest;
+<<<<<<< HEAD
 import com.dotmarketing.startup.runonce.Task211008AddContentletAsJsonColumnTest;
+=======
+import com.dotmarketing.startup.runonce.Task211007RemoveNotNullConstraintFromCompanyMXColumnTest;
+>>>>>>> master
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -466,6 +471,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task210816DeInodeRelationshipTest.class,
         WorkflowEmailUtilTest.class,
         ConfigurationHelperTest.class,
+        PublishQueueElementTransformerTest.class,
         CSVManifestReaderTest.class,
         Task210901UpdateDateTimezonesTest.class,
         DotObjectCodecTest.class,
@@ -473,8 +479,11 @@ import org.junit.runners.Suite.SuiteClasses;
         LettuceCacheTest.class,
         RedisPubSubImplTest.class,
         ManifestReaderFactoryTest.class,
-        Task210908AddCompanyDefaultLanguageTest.class,
+        Task211007RemoveNotNullConstraintFromCompanyMXColumnTest.class,
+        ManifestReaderFactoryTest.class,
+        Task211012AddCompanyDefaultLanguageTest.class,
         Task211008AddContentletAsJsonColumnTest.class
+
 })
 public class MainSuite {
 

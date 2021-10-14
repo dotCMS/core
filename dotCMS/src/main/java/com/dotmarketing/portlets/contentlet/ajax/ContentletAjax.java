@@ -11,7 +11,6 @@ import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.enterprise.FormAJAXProxy;
 import com.dotcms.keyvalue.model.KeyValue;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
-import com.dotcms.rest.api.v1.workflow.ActionInputView;
 import com.dotcms.util.LogTime;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -19,7 +18,6 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PublishStateException;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -96,7 +94,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -861,7 +858,21 @@ public class ContentletAjax {
 							}
 						}
 						else if( fieldbcontentname.startsWith("date") ){
-							luceneQuery.append("+" + st.getVelocityVarName() +"."+ fieldVelocityVarName + ":" + fieldValue + " ");
+							if (!(fieldValue.contains(StringPool.OPEN_BRACKET)
+									&& fieldValue.toLowerCase().contains("to")
+									&& fieldValue.contains(StringPool.CLOSE_BRACKET))) {
+								final StringBuilder dateRange = new StringBuilder();
+								dateRange.append(StringPool.OPEN_BRACKET).append(fieldValue)
+										.append(" TO ").append(fieldValue)
+										.append(StringPool.CLOSE_BRACKET);
+
+								luceneQuery.append(
+										"+" + st.getVelocityVarName() + "." + fieldVelocityVarName
+												+ ":" + dateRange + " ");
+							} else{
+								luceneQuery.append("+" + st.getVelocityVarName() +"."+ fieldVelocityVarName + ":" + fieldValue + " ");
+							}
+
 						} else {
 							if(!isStructField){
 							    String fieldValueStr =  fieldValue.toString();

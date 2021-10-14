@@ -1,22 +1,33 @@
 package com.dotcms.publisher.business;
 
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.BundleDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
+import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -198,5 +209,180 @@ public class PublishAuditAPITest {
         for(final String bundleId : listOfIds){
             APILocator.getBundleAPI().deleteBundleAndDependencies(bundleId,adminUser);
         }
+    }
+
+    /**
+     * Method to test: {@link PublishAuditAPI#getPublishAuditStatus(String, int)}
+     * When: Create a {@link PublishAuditStatus} with 5 assets and call the methods with assetsLimit equals to -1
+     * Should: return all the assets
+     *
+     * @throws DotPublisherException
+     */
+    @Test
+    public void maxAsssetLimits() throws DotPublisherException {
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_3 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_4 = new ContentletDataGen(contentType).nextPersisted();
+
+        final Bundle bundle = new BundleDataGen()
+                .addAssets(
+                        list(contentType, contentlet_1, contentlet_2, contentlet_3, contentlet_4))
+                .nextPersisted();
+
+        final PublishAuditStatus publishAuditStatus = new PublishAuditStatus(bundle.getId());
+
+        final PublishAuditHistory publishAuditHistory = new PublishAuditHistory();
+        publishAuditHistory.setAssets(map(
+                contentType.id(), PusheableAsset.CONTENT_TYPE.toString(),
+                contentlet_1.getIdentifier(), PusheableAsset.CONTENTLET.toString(),
+                contentlet_2.getIdentifier(), PusheableAsset.CONTENTLET.toString(),
+                contentlet_3.getIdentifier(), PusheableAsset.CONTENTLET.toString(),
+                contentlet_4.getIdentifier(), PusheableAsset.CONTENTLET.toString()
+        ));
+        publishAuditStatus.setStatusPojo(publishAuditHistory);
+        publishAuditAPI.insertPublishAuditStatus(publishAuditStatus);
+
+        PublishAuditStatus publishAuditStatusFromDB = publishAuditAPI.getPublishAuditStatus(bundle.getId(), -1);
+        final PublishAuditHistory statusPojo = publishAuditStatusFromDB.getStatusPojo();
+        assertEquals(5, statusPojo.getAssets().size());
+
+        final Set<String> assetsIds = statusPojo.getAssets().keySet();
+        assertTrue(assetsIds.contains(contentType.id()));
+        assertTrue(assetsIds.contains(contentlet_1.getIdentifier()));
+        assertTrue(assetsIds.contains(contentlet_2.getIdentifier()));
+        assertTrue(assetsIds.contains(contentlet_3.getIdentifier()));
+        assertTrue(assetsIds.contains(contentlet_4.getIdentifier()));
+    }
+
+    /**
+     * Method to test: {@link PublishAuditAPI#getPublishAuditStatus(String, int)}
+     * When: Create a {@link PublishAuditStatus} with 4 assets and call the methods with assetsLimit equals to 3
+     * Should: return just three assets
+     *
+     * @throws DotPublisherException
+     */
+    @Test
+    public void maxAsssetLimitsEqualsTo3() throws DotPublisherException {
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_3 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_4 = new ContentletDataGen(contentType).nextPersisted();
+
+        final List assets = list(contentlet_1, contentlet_2,
+                contentlet_3, contentlet_4);
+
+        final Bundle bundle = new BundleDataGen()
+                .addAssets(assets)
+                .nextPersisted();
+
+        final PublishAuditStatus publishAuditStatus = new PublishAuditStatus(bundle.getId());
+
+        final PublishAuditHistory publishAuditHistory = new PublishAuditHistory();
+        publishAuditHistory.setAssets(map(
+                contentlet_1.getIdentifier(), PusheableAsset.CONTENTLET.toString(),
+                contentlet_2.getIdentifier(), PusheableAsset.CONTENTLET.toString(),
+                contentlet_3.getIdentifier(), PusheableAsset.CONTENTLET.toString(),
+                contentlet_4.getIdentifier(), PusheableAsset.CONTENTLET.toString()
+        ));
+        publishAuditStatus.setStatusPojo(publishAuditHistory);
+        publishAuditAPI.insertPublishAuditStatus(publishAuditStatus);
+
+        PublishAuditStatus publishAuditStatusFromDB = publishAuditAPI.getPublishAuditStatus(bundle.getId(), 3);
+        final PublishAuditHistory statusPojo = publishAuditStatusFromDB.getStatusPojo();
+        assertEquals(3, statusPojo.getAssets().size());
+
+        final Set<String> assetsIds = statusPojo.getAssets().keySet();
+        int count = 0;
+
+        for (Object asset : assets) {
+            final Contentlet contentlet = Contentlet.class.cast(asset);
+
+            if (assetsIds.contains(contentlet.getIdentifier())){
+                count++;
+            }
+        }
+
+        assertEquals(3, count);
+    }
+
+    /**
+     * Method to test: {@link PublishAuditAPI#getPublishAuditStatus(String, int)}
+     * When: Create a {@link PublishAuditStatus} with 5 assets and call the methods with assetsLimit equals to 0
+     * Should: return a empty collections
+     *
+     * @throws DotPublisherException
+     */
+    @Test
+    public void notAssets() throws DotPublisherException {
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_3 = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet contentlet_4 = new ContentletDataGen(contentType).nextPersisted();
+
+        final Bundle bundle = new BundleDataGen()
+                .addAssets(
+                        list(contentType, contentlet_1, contentlet_2, contentlet_3, contentlet_4))
+                .nextPersisted();
+
+        final PublishAuditStatus publishAuditStatus = new PublishAuditStatus(bundle.getId());
+
+        final PublishAuditHistory publishAuditHistory = new PublishAuditHistory();
+        publishAuditHistory.setAssets(map(
+                contentType.id(), PusheableAsset.CONTENT_TYPE.toString(),
+                contentlet_1.getIdentifier(), PusheableAsset.CONTENTLET.toString(),
+                contentlet_2.getIdentifier(), PusheableAsset.CONTENTLET.toString(),
+                contentlet_3.getIdentifier(), PusheableAsset.CONTENTLET.toString(),
+                contentlet_4.getIdentifier(), PusheableAsset.CONTENTLET.toString()
+        ));
+        publishAuditStatus.setStatusPojo(publishAuditHistory);
+        publishAuditAPI.insertPublishAuditStatus(publishAuditStatus);
+
+        PublishAuditStatus publishAuditStatusFromDB = publishAuditAPI.getPublishAuditStatus(bundle.getId(), 0);
+        final PublishAuditHistory statusPojo = publishAuditStatusFromDB.getStatusPojo();
+        assertTrue(statusPojo.getAssets().isEmpty());
+    }
+
+    /**
+     * Method to test: {@link PublishAuditAPI#getAllPublishAuditStatus(int, int, int)}
+     * When: Call the methods with limitAssets equals to 1
+     * Should: Return just one assets foe each {@link PublishAuditHistory}
+     *
+     * @throws DotPublisherException
+     */
+    @Test
+    public void allThePublishAuditHistoryWithOneAssets() throws DotPublisherException {
+        final List<PublishAuditStatus> allPublishAuditStatus = publishAuditAPI
+                .getAllPublishAuditStatus(-1, 0, -1);
+
+        final List<String> emptyBundles = allPublishAuditStatus.stream()
+                .filter(publishAuditStatus -> publishAuditStatus.getStatusPojo().getAssets()
+                        .isEmpty())
+                .map(publishAuditStatus -> publishAuditStatus.getBundleId())
+                .collect(Collectors.toList());
+
+        final List<String> justOneAssets = allPublishAuditStatus.stream()
+                .filter(publishAuditStatus -> publishAuditStatus.getStatusPojo().getAssets().size() == 1)
+                .map(publishAuditStatus -> publishAuditStatus.getBundleId())
+                .collect(Collectors.toList());
+
+        final List<PublishAuditStatus> allPublishAuditStatusWithAssetsLimit = publishAuditAPI
+                .getAllPublishAuditStatus(-1, 0, 2);
+
+        assertFalse(allPublishAuditStatusWithAssetsLimit.isEmpty());
+
+        allPublishAuditStatusWithAssetsLimit
+                .forEach(publishAuditStatus -> {
+                    if (emptyBundles.contains(publishAuditStatus.getBundleId())) {
+                        assertTrue(publishAuditStatus.getStatusPojo().getAssets().isEmpty());
+                    } else if (justOneAssets.contains(publishAuditStatus.getBundleId())) {
+                        assertEquals(1, publishAuditStatus.getStatusPojo().getAssets().size());
+                    } else {
+                        assertEquals(2, publishAuditStatus.getStatusPojo().getAssets().size());
+                    }
+                });
     }
 }

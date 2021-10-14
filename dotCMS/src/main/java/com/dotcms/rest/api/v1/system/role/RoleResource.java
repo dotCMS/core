@@ -294,4 +294,90 @@ public class RoleResource implements Serializable {
 						.startsWith(roleNameToFilterClean)).collect(Collectors.toList()):
 				roleList;
 	}
+
+
+	/**
+	 * Load role based on the role id.
+	 *
+	 * @param roleId id of the role to search for.
+	 * @param loadChildrenRoles true - will add the data of all children roles of the requested role.
+	 * 							false - will only show the data of the requested role.
+	 * @return {@link RoleView} role requested.
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@GET
+	@Path("/{roleid}")
+	@Produces("application/json")
+	public Response loadRoleByRoleId(@Context final HttpServletRequest request,
+			@Context final HttpServletResponse response,
+			@PathParam   ("roleid") final String roleId,
+			@DefaultValue("true") @QueryParam("loadChildrenRoles") final boolean loadChildrenRoles)
+			throws DotDataException, DotSecurityException {
+
+		new WebResource.InitBuilder(this.webResource).requiredBackendUser(true)
+				.requiredFrontendUser(false).requestAndResponse(request, response)
+				.rejectWhenNoUser(true).init();
+
+		final Role role = this.roleAPI.loadRoleById(roleId);
+
+		if (null == role || !UtilMethods.isSet(role.getId())) {
+
+			throw new DoesNotExistException("The role: " + roleId + " does not exists");
+		}
+
+		final List<RoleView> childrenRoles = new ArrayList<>();
+		if(loadChildrenRoles){
+			final List<String> roleChildrenIdList = null!=role.getRoleChildren() ? role.getRoleChildren() : new ArrayList<>();
+			for(final String childRoleId : roleChildrenIdList){
+				childrenRoles.add(new RoleView(this.roleAPI.loadRoleById(childRoleId),new ArrayList<>()));
+			}
+		}
+
+		return Response.ok(new ResponseEntityView(new RoleView(role,childrenRoles))).build();
+
+	}
+
+	/**
+	 * Loads the root roles.
+	 *
+	 * @param loadChildrenRoles true - will add the data of all children roles of the requested role.
+	 * 							false - will only show the data of the requested role.
+	 * @return list of {@link RoleView}
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@GET
+	@Produces("application/json")
+	public Response loadRootRoles(@Context final HttpServletRequest request,
+			@Context final HttpServletResponse response,
+			@DefaultValue("true") @QueryParam("loadChildrenRoles") final boolean loadChildrenRoles)
+			throws DotDataException, DotSecurityException {
+
+		new WebResource.InitBuilder(this.webResource).requiredBackendUser(true)
+				.requiredFrontendUser(false).requestAndResponse(request, response)
+				.rejectWhenNoUser(true).init();
+
+		final List<RoleView> rootRolesView = new ArrayList<>();
+		final List<Role> rootRoles = this.roleAPI.findRootRoles();
+
+		if(loadChildrenRoles){
+			for(final Role role : rootRoles) {
+				final List<RoleView> childrenRoles = new ArrayList<>();
+				final List<String> roleChildrenIdList =
+						null != role.getRoleChildren() ? role.getRoleChildren() : new ArrayList<>();
+				for (final String childRoleId : roleChildrenIdList) {
+					childrenRoles.add(new RoleView(this.roleAPI.loadRoleById(childRoleId),
+							new ArrayList<>()));
+				}
+				rootRolesView.add(new RoleView(role,childrenRoles));
+			}
+		} else {
+			rootRoles.stream()
+					.forEach(role -> rootRolesView.add(new RoleView(role, new ArrayList<>())));
+		}
+
+		return Response.ok(new ResponseEntityView(rootRolesView)).build();
+
+	}
 }

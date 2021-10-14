@@ -3068,8 +3068,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         this.archiveFileAsset(contentlet, user, respectFrontendRoles);
 
         new ContentletLoader().invalidate(contentlet);
-        this.publishRelatedHtmlPages(contentlet);
 
+        this.publishRelatedHtmlPages(contentlet);
+        CacheLocator.getContentletCache().remove(contentlet.getInode());
         if (contentlet.isHTMLPage()) {
 
             CacheLocator.getHTMLPageCache().remove(contentlet.getInode());
@@ -3668,6 +3669,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         new ContentletLoader().invalidate(contentlet);
+        CacheLocator.getContentletCache().remove(contentlet.getInode());
         publishRelatedHtmlPages(contentlet);
 
         HibernateUtil.addCommitListener(() -> this.sendUnArchiveContentSystemEvent(contentlet), 1000);

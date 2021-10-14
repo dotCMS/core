@@ -33,7 +33,7 @@ create table Company (
 	key_ text null,
 	portalURL varchar(100) not null,
 	homeURL varchar(100) not null,
-	mx varchar(100) not null,
+	mx varchar(100) default 'dotcms.com',
 	name varchar(100) not null,
 	shortName varchar(100) not null,
 	type_ varchar(100) null,

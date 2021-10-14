@@ -260,7 +260,7 @@ public class ContentTypeResource implements Serializable {
 		this.workflowHelper.saveSchemesByContentType(contentTypeSaved.id(), user, workflowsIds);
 
 		if (!isNew) {
-			this.handleFields(contentTypeSaved, user, contentTypeAPI);
+			this.handleFields(contentType, user, contentTypeAPI);
 		}
 
 		if (UtilMethods.isSet(systemActionMappings)) {
@@ -310,7 +310,7 @@ public class ContentTypeResource implements Serializable {
 	@WrapInTransaction
 	private void handleFields(final ContentType newContentType, final User user, final ContentTypeAPI contentTypeAPI) throws DotDataException, DotSecurityException {
 
-		final ContentType currentContentType = contentTypeAPI.find(newContentType.variable());
+		final ContentType currentContentType = contentTypeAPI.find(newContentType.id());
 
 		final DiffResult<FieldDiffItemsKey, Field> diffResult = new FieldDiffCommand().applyDiff(currentContentType.fieldMap(), newContentType.fieldMap());
 
