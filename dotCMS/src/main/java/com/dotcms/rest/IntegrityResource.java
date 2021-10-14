@@ -837,14 +837,6 @@ public class IntegrityResource {
         return response( jsonResponse.toString(), false );
     }
 
-    private String getRemoteIP(@Context HttpServletRequest request) {
-        String remoteIP = request.getRemoteHost();
-        if (!UtilMethods.isSet(remoteIP)) {
-            remoteIP = request.getRemoteAddr();
-        }
-        return remoteIP;
-    }
-
     /**
      * Fixes the data conflicts between the local and remote servers. If the
      * request parameter called <code>whereToFix</code> equals
@@ -1154,8 +1146,8 @@ public class IntegrityResource {
 
                     IntegrityUtil integrityUtil = new IntegrityUtil();
                     try {
-                        integrityUtil.completeDiscardConflicts(endpoint.getId());
-                        conflictPresent = integrityUtil.completeCheckIntegrity(endpoint.getId());
+                        IntegrityUtil.completeDiscardConflicts(endpoint.getId());
+                        conflictPresent = IntegrityUtil.completeCheckIntegrity(endpoint.getId());
                     } catch (Exception e) {
                         Logger.error(IntegrityResource.class, "Error checking integrity", e);
 

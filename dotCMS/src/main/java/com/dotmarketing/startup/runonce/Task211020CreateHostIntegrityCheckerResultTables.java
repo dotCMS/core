@@ -1,13 +1,16 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotmarketing.common.db.DotDatabaseMetaData;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 
+import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 
-public class Task210913CreateHostIntegrityCheckerResultTables extends AbstractJDBCStartupTask {
+public class Task211020CreateHostIntegrityCheckerResultTables extends AbstractJDBCStartupTask {
 
-    private final String script = "CREATE TABLE hosts_ir(" +
+    private static final String CREATE_HOSTS_IR_TABLE_SCRIPT = "CREATE TABLE hosts_ir(" +
             " local_identifier VARCHAR(36)," +
             " remote_identifier VARCHAR(36)," +
             " endpoint_id VARCHAR(40)," +
@@ -22,29 +25,33 @@ public class Task210913CreateHostIntegrityCheckerResultTables extends AbstractJD
 
     @Override
     public boolean forceRun() {
-        return true;
+        try {
+            return !(new DotDatabaseMetaData().tableExists(DbConnectionFactory.getConnection(), "hosts_ir"));
+        } catch (SQLException e) {
+            return Boolean.FALSE;
+        }
     }
 
     @Override
     public String getPostgresScript() {
-        return script;
+        return CREATE_HOSTS_IR_TABLE_SCRIPT;
     }
 
     @Override
     public String getMySQLScript() {
-        return script.replaceAll("INT8", "BIGINT");
+        return CREATE_HOSTS_IR_TABLE_SCRIPT.replaceAll("INT8", "BIGINT");
     }
 
     @Override
     public String getOracleScript() {
-        return script
+        return CREATE_HOSTS_IR_TABLE_SCRIPT
                 .replaceAll("INT8", "NUMBER(19,0)")
                 .replaceAll("VARCHAR", "VARCHAR2");
     }
 
     @Override
     public String getMSSQLScript() {
-        return script.replaceAll("INT8", "NUMERIC(19,0)");
+        return CREATE_HOSTS_IR_TABLE_SCRIPT.replaceAll("INT8", "NUMERIC(19,0)");
     }
 
     @Override
