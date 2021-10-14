@@ -245,5 +245,8 @@ public enum SystemEventType {
 	/**
 	 * When deletes a bundle.
 	 */
-	DELETE_BUNDLE
+	DELETE_BUNDLE,
+
+	// Osgi restart
+	OSGI_FRAMEWORK_RESTART
 }
