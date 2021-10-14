@@ -125,11 +125,8 @@ import com.dotmarketing.startup.runonce.Task210805DropUserProxyTableTest;
 import com.dotmarketing.startup.runonce.Task210816DeInodeRelationshipTest;
 import com.dotmarketing.startup.runonce.Task211012AddCompanyDefaultLanguageTest;
 import com.dotmarketing.startup.runonce.Task210901UpdateDateTimezonesTest;
-<<<<<<< HEAD
 import com.dotmarketing.startup.runonce.Task211008AddContentletAsJsonColumnTest;
-=======
 import com.dotmarketing.startup.runonce.Task211007RemoveNotNullConstraintFromCompanyMXColumnTest;
->>>>>>> master
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;

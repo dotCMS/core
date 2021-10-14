@@ -6290,6 +6290,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // Validate Field Type
             if(fieldValue != null){
                 if(isFieldTypeString(field)){
+
+                    if(fieldValue instanceof Map && FieldType.KEY_VALUE.toString().equals(field.getFieldType())){
+                        //That's fine we're handling now keyValues directly as maps
+                        continue;
+                    }
+
                     if(!(fieldValue instanceof String)){
                         cve.addBadTypeField(field);
                         Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type String");
@@ -6341,7 +6347,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             // validate required
             if (field.isRequired()) {
-                if(fieldValue instanceof String){
+
+                if(fieldValue instanceof Map){
+                    final Map map = (Map)fieldValue;
+                    if(field.getFieldType().equals(Field.FieldType.KEY_VALUE.toString()) && map.isEmpty()) {
+                        cve.addRequiredField(field);
+                        hasError = true;
+                        Logger.warn(this, "String Field [" + field.getVelocityVarName() + "] is required");
+                        continue;
+                    }
+                }
+                else if(fieldValue instanceof String){
                     String s1 = (String)fieldValue;
                     if(!UtilMethods.isSet(s1.trim()) || (field.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())) && s1.equals("{}")) {
                         cve.addRequiredField(field);
