@@ -232,7 +232,7 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
     public GraphQLOutputType getGraphqlTypeForFieldClass(final Class<? extends Field> fieldClass,
             final Field field) {
 
-        if(field.variable().equals(WIDGET_CODE_JSON_FIELD_VAR)) {
+        if(UtilMethods.isSet(field.variable()) && field.variable().equals(WIDGET_CODE_JSON_FIELD_VAR)) {
             return ExtendedScalars.Json;
         }
 
