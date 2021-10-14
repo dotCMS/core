@@ -24,7 +24,7 @@
 	const dotAssetDropZone = document.querySelector('dot-asset-drop-zone');
 	dotAssetDropZone.addEventListener('uploadComplete', function(){ getBundlesData() });
 
-	const uploadPlugin = ({files, onSuccess, updateProgress, showDialog}) => {
+	const uploadPlugin = ({files, onSuccess, updateProgress, onError}) => {
         // Check if we get an array of files otherwise create array.
         const data = Array.isArray(files) ? files : [files];
         
@@ -51,10 +51,10 @@
             }
 
             xhr.send(formData);
+
         }).then(async (request) => {
             if (request.status === 200) {
                 onSuccess();
-                console.log(JSON.parse(request.response));
                 return JSON.parse(request.response);
             } else {
                 throw request;
@@ -63,7 +63,7 @@
         .catch((request) => {
             const response = JSON.parse(request.response);
             const errors = response.errors;
-            showDialog(headerError, errors[0].message);
+            onError(headerError, errors[0].message);
             throw errors;
         });
     }
