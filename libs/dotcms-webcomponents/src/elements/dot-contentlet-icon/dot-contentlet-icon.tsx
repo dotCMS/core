@@ -128,15 +128,20 @@ export class DotContentletIcon {
     private ext: string;
 
     componentWillRender() {
-        this.ext = this.icon.replace('Icon', '');
+        /*
+            If it doesn't contain "Icon" (with uppercase) we're assuming that is coming to a material icon name,
+            which is the only way we have to differentiate between new and legacy icons without passing an extra attribute.
+        */
+        this.ext = this.icon.match('Icon') ? this.icon.replace('Icon', '') : '';
     }
 
     render() {
-        const { icon, color } = this.getIconName();
+        const { icon, color } = this.ext ? this.getIconName() : { icon: this.icon, color: '' };
 
         return (
             <Host>
-                {icon === 'insert_drive_file' ? <span>{this.ext}</span> : null}
+                {/* Icon's size in Card View is 96, lower than that the label won't be displayed  */}
+                {icon === 'insert_drive_file' && parseInt(this.size.replace('px', ''), 10) >= 96 ? <span>{this.ext}</span> : null}
                 <mwc-icon style={{ '--mdc-icon-size': this.size, color: color || '#444' }}>
                     {icon}
                 </mwc-icon>
