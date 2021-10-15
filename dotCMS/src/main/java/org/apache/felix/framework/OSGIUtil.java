@@ -366,6 +366,9 @@ public class OSGIUtil {
                     final File bundleDestination = new File(deployDirectory, bundle.getName());
                     if (FileUtil.move(bundle, bundleDestination)) {
 
+                        Try.run(()->APILocator.getSystemEventsAPI()					    // CLUSTER WIDE
+                                .push(SystemEventType.OSGI_BUNDLES_LOADED, new Payload(pathnames)))
+                                .onFailure(e -> Logger.error(OSGIUtil.this, e.getMessage()));
                         Logger.debug(this, "Moved the bundle: " + bundle + " to " + deployDirectory);
                     } else {
                         Logger.debug(this, "Could not move the bundle: " + bundle + " to " + deployDirectory);
