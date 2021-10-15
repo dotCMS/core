@@ -248,5 +248,8 @@ public enum SystemEventType {
 	DELETE_BUNDLE,
 
 	// Osgi restart
-	OSGI_FRAMEWORK_RESTART
+	OSGI_FRAMEWORK_RESTART,
+
+	// Osgi bundles push on the load folder
+	OSGI_BUNDLES_LOADED,
 }
