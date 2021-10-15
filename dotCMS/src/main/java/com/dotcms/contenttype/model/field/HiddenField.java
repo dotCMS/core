@@ -5,8 +5,6 @@ import com.dotcms.content.model.type.hidden.BoolHiddenFieldType;
 import com.dotcms.content.model.type.hidden.DateHiddenFieldType;
 import com.dotcms.content.model.type.hidden.FloatHiddenFieldType;
 import com.dotcms.content.model.type.hidden.HiddenFieldType;
-import com.dotcms.content.model.type.ImageType;
-import com.dotcms.content.model.type.hidden.IntegerHiddenFieldType;
 import com.dotcms.content.model.type.hidden.LongHiddenFieldType;
 import java.util.Collection;
 import java.util.Date;
@@ -78,11 +76,11 @@ public abstract class HiddenField extends Field {
 		if (value instanceof Float) {
 			return Optional.of(FloatHiddenFieldType.of((Float) value));
 		}
-		if (value instanceof Integer) {
-			return Optional.of(IntegerHiddenFieldType.of((Integer) value));
-		}
 		if (value instanceof Long) {
 			return Optional.of(LongHiddenFieldType.of((Long) value));
+		}
+		if (value instanceof Integer) {
+			return Optional.of(LongHiddenFieldType.of(((Integer) value).longValue()));
 		}
 		return Optional.empty();
 	}

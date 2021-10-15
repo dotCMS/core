@@ -4,7 +4,6 @@ import static com.dotcms.util.CollectionsUtils.list;
 
 import com.dotcms.content.model.FieldValue;
 import com.dotcms.content.model.type.text.FloatTextFieldType;
-import com.dotcms.content.model.type.text.IntegerTextFieldType;
 import com.dotcms.content.model.type.text.LongTextFieldType;
 import com.dotcms.content.model.type.text.TextFieldType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -65,7 +64,7 @@ public abstract class TextField extends Field {
 			return Optional.of(LongTextFieldType.of((Long) value));
 		}
 		if (value instanceof Integer) {
-			return Optional.of(IntegerTextFieldType.of((Integer) value));
+			return Optional.of(LongTextFieldType.of(((Integer) value).longValue()));
 		}
 		return Optional.empty();
 	}
