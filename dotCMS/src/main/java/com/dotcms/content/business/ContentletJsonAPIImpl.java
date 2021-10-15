@@ -332,24 +332,24 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
     private Optional<File> getBinary(final Field field, final String inode) {
         // This validation is here to prevent an exception.
         // Cause the json gets saved twice by internalCheckin and the first time it does it no inode is set yet
-        if (UtilMethods.isSet(inode)) {
-            final java.io.File binaryFileFolder = new java.io.File(
-                    fileAssetAPI.getRealAssetsRootPath()
-                            + java.io.File.separator
-                            + inode.charAt(0)
-                            + java.io.File.separator
-                            + inode.charAt(1)
-                            + java.io.File.separator
-                            + inode
-                            + java.io.File.separator
-                            + field.variable());
-            if (binaryFileFolder.exists()) {
-                final java.io.File[] files = binaryFileFolder.listFiles(binaryFileFilter);
-                if (files != null && files.length > 0) {
-                    return Optional.of(files[0]);
-                }
+
+        final java.io.File binaryFileFolder = new java.io.File(
+                fileAssetAPI.getRealAssetsRootPath()
+                        + java.io.File.separator
+                        + inode.charAt(0)
+                        + java.io.File.separator
+                        + inode.charAt(1)
+                        + java.io.File.separator
+                        + inode
+                        + java.io.File.separator
+                        + field.variable());
+        if (binaryFileFolder.exists()) {
+            final java.io.File[] files = binaryFileFolder.listFiles(binaryFileFilter);
+            if (files != null && files.length > 0) {
+                return Optional.of(files[0]);
             }
         }
+
         return Optional.empty();
     }
 

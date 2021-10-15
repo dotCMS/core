@@ -82,14 +82,15 @@ public class ContentletTransformer implements DBTransformer {
         }
 
         if(contentlet != null){
-            // Since at some point the json could have been saved without inode nor identifier
-            // Make sure the returned contentlet comes back with the respective ids
+
             if(UtilMethods.isNotSet(contentlet.getInode())){
                  contentlet.setInode(inode);
             }
             if(UtilMethods.isNotSet(contentlet.getIdentifier())){
                 contentlet.setIdentifier(contentletId);
             }
+            //This column is override from outside to force inclusion in pp
+            contentlet.setModDate((Date) map.get("mod_date"));
             return contentlet;
         }
 

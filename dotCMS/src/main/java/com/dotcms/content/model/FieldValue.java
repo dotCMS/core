@@ -4,6 +4,7 @@ package com.dotcms.content.model;
 import com.dotcms.content.model.annotation.ValueTypeStyle;
 import com.dotcms.content.model.type.AbstractCheckBoxFieldType;
 import com.dotcms.content.model.type.AbstractCustomFieldType;
+import com.dotcms.content.model.type.AbstractFileFieldType;
 import com.dotcms.content.model.type.hidden.AbstractBoolHiddenFieldType;
 import com.dotcms.content.model.type.hidden.AbstractDateHiddenFieldType;
 import com.dotcms.content.model.type.hidden.AbstractFloatHiddenFieldType;
@@ -49,6 +50,8 @@ import org.immutables.value.Value.Parameter;
 
         //Image
         @JsonSubTypes.Type(name = AbstractImageType.TYPENAME, value = AbstractImageType.class),
+        //File
+        @JsonSubTypes.Type(name = AbstractFileFieldType.TYPENAME, value = AbstractFileFieldType.class),
 
         //Dates
         @JsonSubTypes.Type(name = AbstractTimeFieldType.TYPENAME, value = AbstractTimeFieldType.class),
