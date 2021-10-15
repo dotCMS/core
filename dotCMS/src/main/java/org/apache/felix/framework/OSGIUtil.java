@@ -1,5 +1,7 @@
 package org.apache.felix.framework;
 
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.concurrent.Debouncer;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotmarketing.business.APILocator;
@@ -15,6 +17,7 @@ import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableList;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.apache.felix.framework.util.FelixConstants;
@@ -333,6 +336,10 @@ public class OSGIUtil {
 
             //Now we need to initialize it
             this.initializeFramework();
+
+            Try.run(()->APILocator.getSystemEventsAPI()					    // CLUSTER WIDE
+                    .push(SystemEventType.OSGI_FRAMEWORK_RESTART, new Payload(pathnames)))
+                    .onFailure(e -> Logger.error(OSGIUtil.this, e.getMessage()));
         }
     }
 
