@@ -2,6 +2,9 @@ package org.apache.felix.framework;
 
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.concurrent.Debouncer;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotmarketing.business.APILocator;
@@ -15,6 +18,8 @@ import com.dotmarketing.util.ResourceCollectorUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableList;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.language.LanguageWrapper;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
@@ -30,6 +35,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.launch.Framework;
 
+import javax.print.attribute.standard.Severity;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -369,11 +375,19 @@ public class OSGIUtil {
                         Try.run(()->APILocator.getSystemEventsAPI()					    // CLUSTER WIDE
                                 .push(SystemEventType.OSGI_BUNDLES_LOADED, new Payload(pathnames)))
                                 .onFailure(e -> Logger.error(OSGIUtil.this, e.getMessage()));
+
                         Logger.debug(this, "Moved the bundle: " + bundle + " to " + deployDirectory);
                     } else {
                         Logger.debug(this, "Could not move the bundle: " + bundle + " to " + deployDirectory);
                     }
                 }
+
+                final String messageKey      = pathnames.length > 1? "new-osgi-plugins-installed":"new-osgi-plugin-installed";
+                final String successMessage  = Try.of(()->LanguageUtil.get(APILocator.getCompanyAPI()
+                        .getDefaultCompany().getLocale(), messageKey)).getOrElse(()-> "New OSGi Plugin(s) have been installed");
+                SystemMessageEventUtil.getInstance().pushMessage("OSGI_BUNDLES_LOADED",new SystemMessageBuilder().setMessage(successMessage)
+                        .setLife(DateUtil.FIVE_SECOND_MILLIS)
+                        .setSeverity(MessageSeverity.SUCCESS).create(), null);
             } else {
 
                 Logger.warn(this, "The directory: " + this.getFelixDeployPath()
