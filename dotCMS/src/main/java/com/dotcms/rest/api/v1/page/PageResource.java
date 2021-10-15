@@ -19,6 +19,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import org.apache.commons.collections.keyvalue.MultiKey;
 import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -421,7 +422,7 @@ public class PageResource {
             APILocator.getPermissionAPI().checkPermission(page, PermissionLevel.EDIT, user);
 
             final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
-            pageResourceHelper.saveContent(pageId, pageContainerForm.getContainerEntries(), language);
+            pageResourceHelper.saveContent(pageId, this.reduce(pageContainerForm.getContainerEntries()), language);
 
             return Response.ok(new ResponseEntityView("ok")).build();
         } catch(HTMLPageAssetNotFoundException e) {
@@ -430,6 +431,29 @@ public class PageResource {
             Logger.error(this, errorMsg, e);
             return ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
         }
+    }
+
+    /**
+     * If a container is being sent dupe, the entries will be reduce to one and the non repeated contentlets will be combined.
+     * @param containerEntries List
+     * @return List
+     */
+    private List<PageContainerForm.ContainerEntry> reduce(final List<PageContainerForm.ContainerEntry> containerEntries) {
+
+        final Map<MultiKey, Set<String>> containerEntryMap = new HashMap<>();
+
+        for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
+
+            final Set<String> contentletIdList = containerEntryMap.computeIfAbsent(new MultiKey(containerEntry.getPersonaTag(),
+                    containerEntry.getContainerId(), containerEntry.getContainerId()), k -> new HashSet<>());
+
+            contentletIdList.addAll(containerEntry.getContentIds());
+        }
+
+        return containerEntryMap.entrySet().stream()
+                .map(entry -> new PageContainerForm.ContainerEntry((String)entry.getKey().getKeys()[0],
+                        (String)entry.getKey().getKeys()[1], (String)entry.getKey().getKeys()[2], new ArrayList<>(entry.getValue())))
+                .collect(Collectors.toList());
     }
 
     /**
