@@ -1950,24 +1950,25 @@ public class ESContentFactoryImpl extends ContentletFactory {
         if (!Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true)) {
             return;
         }
-        try {
-            final Map<String, Object> map = (Map) contentlet.get(Contentlet.CONTENTLET_AS_JSON);
+        final Map<String, Object> map = (Map) contentlet.get(Contentlet.CONTENTLET_AS_JSON);
+        if(null != map) {
+            try {
 
-            if (UtilMethods.isNotSet((String) map.get("inode")) && UtilMethods.isSet(inode)) {
-                map.put("inode", inode);
+                if (UtilMethods.isNotSet((String) map.get("inode")) && UtilMethods.isSet(inode)) {
+                    map.put("inode", inode);
+                }
+
+                final String asJson = APILocator.getContentletJsonAPI().toJson(new Contentlet(map));
+                Logger.info(ESContentletAPIImpl.class, asJson);
+                contentlet.setProperty(Contentlet.CONTENTLET_AS_JSON, asJson);
+            } catch (DotDataException | JsonProcessingException e) {
+                final String error = String
+                        .format("Error converting from json to contentlet with id: %s and inode: %s ",
+                                contentlet.getIdentifier(), contentlet.getInode());
+                Logger.error(ESContentletAPIImpl.class, error, e);
+                throw new DotRuntimeException(error, e);
             }
-
-            final String asJson = APILocator.getContentletJsonAPI().toJson(new Contentlet(map));
-            Logger.info(ESContentletAPIImpl.class, asJson);
-            contentlet.setProperty(Contentlet.CONTENTLET_AS_JSON, asJson);
-        } catch (DotDataException | JsonProcessingException e) {
-            final String error = String
-                    .format("Error converting from json to contentlet with id: %s and inode: %s ",
-                            contentlet.getIdentifier(), contentlet.getInode());
-            Logger.error(ESContentletAPIImpl.class, error, e);
-            throw new DotRuntimeException(error, e);
         }
-
     }
 
     private void upsertContentlet(final Contentlet contentlet, final String inode) throws DotDataException {
