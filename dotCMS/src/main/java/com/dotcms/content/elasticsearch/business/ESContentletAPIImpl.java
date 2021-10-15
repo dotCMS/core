@@ -38,7 +38,6 @@ import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.portlets.personas.model.Persona;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -4844,7 +4843,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final IndexPolicy indexPolicy             = contentlet.getIndexPolicy();
             final IndexPolicy indexPolicyDependencies = contentlet.getIndexPolicyDependencies();
             contentlet = applyNullProperties(contentlet);
-            contentlet = addContentletAsJson(contentlet);
+            contentlet = prepContentletAsJson(contentlet);
             if(saveWithExistingID) {
                 contentlet = contentFactory.save(contentlet, existingInode);
             } else {
@@ -4877,7 +4876,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 contentlet.setIdentifier(identifier.getId() );
                 contentlet = applyNullProperties(contentlet);
-                contentlet = addContentletAsJson(contentlet, contentletRaw);
+                contentlet = prepContentletAsJson(contentlet, contentletRaw);
                 contentlet = contentFactory.save(contentlet);
                 contentlet.setIndexPolicy(indexPolicy);
                 contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
@@ -6280,8 +6279,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             this.validateHtmlPage(contentlet, contentIdentifier, contentType);
         }
         boolean hasError = false;
-        final DotContentletValidationException cve = new DotContentletValidationException("Contentlet [" +
-                contentIdentifier + "] has invalid / missing field(s).");
+        final DotContentletValidationException cve = new DotContentletValidationException(
+                String.format("Contentlet with id:`%s` and title:`%s` has invalid / missing field(s).", contentIdentifier, contentlet.getTitle())
+        );
         final List<Field> fields = FieldsCache.getFieldsByStructureInode(contentTypeId);
         final Map<String, Object> contentletMap = contentlet.getMap();
         final Set<String> nullValueProperties = contentlet.getNullProperties();
@@ -6432,10 +6432,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 continue;
                             }
                         }
-                    } catch (DotDataException e) {
-                        Logger.warn(this, "Unable to validate a category field [" + field.getVelocityVarName() + "]", e);
-                        throw new DotContentletValidationException("Unable to validate a category field: " + field.getVelocityVarName(), e);
-                    } catch (DotSecurityException e) {
+                    } catch (DotDataException | DotSecurityException e) {
                         Logger.warn(this, "Unable to validate a category field [" + field.getVelocityVarName() + "]", e);
                         throw new DotContentletValidationException("Unable to validate a category field: " + field.getVelocityVarName(), e);
                     }
@@ -6550,9 +6547,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             }
                         }
                     }
-                } catch (DotDataException e) {
-                    Logger.warn(this,"Unable to get contentlets for Content Type: " + contentlet.getStructure().getName(), e);
-                } catch (DotSecurityException e) {
+                } catch (DotDataException | DotSecurityException e) {
                     Logger.warn(this,"Unable to get contentlets for Content Type: " + contentlet.getStructure().getName(), e);
                 }
             }
@@ -8555,41 +8550,31 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param contentlet
      * @return
      */
-    private Contentlet addContentletAsJson(final Contentlet contentlet) {
-        return addContentletAsJson(contentlet, new Contentlet());
+    private Contentlet prepContentletAsJson(final Contentlet contentlet) {
+        return prepContentletAsJson(contentlet, new Contentlet());
     }
 
     /**
-     * This takes two contentlets and merge them into one that gets passed to the json generator then the result gets attached to the first contentlets passed
-     * The reason we do this is that the first contentlet is expected to have info like the identifier and inode
-     * The second contentlet is expected to have info such as files and fields that arent necesserily attached to the first contentlet which is often recovered from the db and therefore comes back lacking that info
+     * This takes two contentlets and merge them into one that gets passed to persistence layer to generate the json
+     * The seedMap is passed down to the persistence layer because inode isnt always available it get set down below at the persistence layer.
+     * The second contentlet is expected to have info such as files and fields that arent necessarily attached to the first contentlet
+     * which is often recovered from the db and therefore comes back lacking that info
      * @param contentlet has to have identifier and inode
      * @param raw has to have the fields originally sent from the front-end
      * @return
      */
-    private Contentlet addContentletAsJson(final Contentlet contentlet, final Contentlet raw ) {
-        String json = null;
+    private Contentlet prepContentletAsJson(final Contentlet contentlet, final Contentlet raw ) {
         if(Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true)) {
-            final Map<String, Object> combined = Stream
+            final Map<String, Object> seedMap = Stream
                     .concat(contentlet.getMap().entrySet().stream(),
                             raw.getMap().entrySet().stream())
                     .collect(Collectors.toMap(Entry::getKey, Entry::getValue, (o, o2) -> {
                         //Always prefer the first argument
                         return o;
                     }));
-
-            try {
-                json = APILocator.getContentletJsonAPI().toJson(new Contentlet(combined));
-                if(UtilMethods.isSet(combined.get("identifier"))){
-                    Logger.info(ESContentletAPIImpl.class, json);
-                }
-            } catch (DotDataException | JsonProcessingException e) {
-                final String error = String.format("Error converting from json to contentlet with id: %s and inode: %s ", contentlet.getIdentifier(), contentlet.getInode());
-                Logger.error(ESContentletAPIImpl.class, error, e);
-                throw new DotRuntimeException(error, e);
-            }
+            //Attach the seed map so it becomes available down from the persistence layer
+            contentlet.setProperty(Contentlet.CONTENTLET_AS_JSON, seedMap);
         }
-        contentlet.setStringProperty(Contentlet.CONTENTLET_AS_JSON, json);
         return contentlet;
     }
 

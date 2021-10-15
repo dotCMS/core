@@ -1,5 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.content.business.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.AUTO_ASSIGN_WORKFLOW;
@@ -1928,6 +1929,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             throws DotDataException, DotStateException, DotSecurityException {
 
         final String inode = getInode(existingInode, contentlet);
+        setUpContentletAsJson(contentlet, inode);
         upsertContentlet(contentlet, inode);
         contentlet.setInode(inode);
         final Contentlet toReturn = findInDb(inode).orElseThrow(()->
@@ -1942,6 +1944,30 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         contentletCache.remove(inode);
         return toReturn;
+    }
+
+    private void setUpContentletAsJson(final Contentlet contentlet, final String inode) {
+        if (!Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true)) {
+            return;
+        }
+        try {
+            final Map<String, Object> map = (Map) contentlet.get(Contentlet.CONTENTLET_AS_JSON);
+
+            if (UtilMethods.isNotSet((String) map.get("inode")) && UtilMethods.isSet(inode)) {
+                map.put("inode", inode);
+            }
+
+            final String asJson = APILocator.getContentletJsonAPI().toJson(new Contentlet(map));
+            Logger.info(ESContentletAPIImpl.class, asJson);
+            contentlet.setProperty(Contentlet.CONTENTLET_AS_JSON, asJson);
+        } catch (DotDataException | JsonProcessingException e) {
+            final String error = String
+                    .format("Error converting from json to contentlet with id: %s and inode: %s ",
+                            contentlet.getIdentifier(), contentlet.getInode());
+            Logger.error(ESContentletAPIImpl.class, error, e);
+            throw new DotRuntimeException(error, e);
+        }
+
     }
 
     private void upsertContentlet(final Contentlet contentlet, final String inode) throws DotDataException {
@@ -2002,8 +2028,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	private List<Object> getParamsToSaveUpdateContent(final Contentlet contentlet)
             throws DotDataException {
 
-        final String json = contentlet.getStringProperty(Contentlet.CONTENTLET_AS_JSON);
-        Logger.info(ESContentFactoryImpl.class, json);
+        final String asJson = contentlet.getStringProperty(Contentlet.CONTENTLET_AS_JSON);
 
         final List<Object> upsertValues = new ArrayList<>();
 
@@ -2034,7 +2059,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         upsertValues.add(UtilMethods.isSet(contentlet.getIdentifier())?contentlet.getIdentifier():null);
         upsertValues.add(contentlet.getLanguageId());
-        upsertValues.add(json);
+        upsertValues.add(asJson);
 
         final Map<String, Object> fieldsMap = getFieldsMap(contentlet);
 
