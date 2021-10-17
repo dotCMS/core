@@ -65,40 +65,29 @@ public class ContentletTransformer implements DBTransformer {
     @NotNull
     private static Contentlet transform(final Map<String, Object> map)  {
 
-        Contentlet contentlet = null;
         final String inode = (String) map.get("inode");
         final String contentletId = (String) map.get(IDENTIFIER);
         final String contentTypeId = (String) map.get(STRUCTURE_INODE);
 
-        if(UtilMethods.isSet(map.get(ContentletJsonAPI.CONTENTLET_AS_JSON))){
-            try {
-                final String json = map.get(ContentletJsonAPI.CONTENTLET_AS_JSON).toString();
-                contentlet = APILocator.getContentletJsonAPI().mapContentletFieldsFromJson(json);
-            }catch (Exception e){
-                final String error = String
-                        .format("Error converting from json to contentlet with id %s and inode %s", contentletId, inode);
-                Logger.error(ESContentletAPIImpl.class, error, e);
-            }
-        }
-
-        if(contentlet != null){
-
-            if(UtilMethods.isNotSet(contentlet.getInode())){
-                 contentlet.setInode(inode);
-            }
-            if(UtilMethods.isNotSet(contentlet.getIdentifier())){
-                contentlet.setIdentifier(contentletId);
-            }
-            //This column is override from outside to force inclusion in pp
-            contentlet.setModDate((Date) map.get("mod_date"));
-            return contentlet;
-        }
-
-        contentlet = new Contentlet();
-
         if (!UtilMethods.isSet(contentTypeId)) {
             throw new DotRuntimeException("Contentlet must have a content type.");
         }
+
+        final Contentlet contentlet;
+        final boolean hasJsonFields = UtilMethods.isSet(map.get(ContentletJsonAPI.CONTENTLET_AS_JSON));
+        if(hasJsonFields){
+          try {
+              final String json = map.get(ContentletJsonAPI.CONTENTLET_AS_JSON).toString();
+              contentlet = APILocator.getContentletJsonAPI().mapContentletFieldsFromJson(json);
+          }catch (Exception e){
+              final String errorMsg = String.format("Unable to populate contentlet from json for ID='%s', Inode='%s', Content-Type '%s': %s", contentletId, inode, contentTypeId, e.getMessage());
+              Logger.error(ContentletTransformer.class, errorMsg, e);
+              throw new DotRuntimeException(errorMsg, e);
+          }
+        } else {
+            contentlet = new Contentlet();
+        }
+
         contentlet.setInode(inode);
         contentlet.setIdentifier(contentletId);
         contentlet.setContentTypeId(contentTypeId);
@@ -111,12 +100,14 @@ public class ContentletTransformer implements DBTransformer {
         contentlet.setLanguageId(ConversionUtils.toLong(map.get("language_id"), 0L));
 
         try {
-            populateFields(contentlet, map);
+           if(!hasJsonFields) {
+               populateFields(contentlet, map);
+               populateWysiwyg(map, contentlet);
+           }
             populateFolderAndHost(contentlet, contentletId, contentTypeId);
-            populateWysiwyg(map, contentlet);
         } catch (final Exception e) {
             final String errorMsg = String
-                    .format("Unable to populate contentlet with ID='%s', Inode='%s', Content Type '%s': %s", contentletId, inode,
+                    .format("Unable to populate contentlet from table columns for ID='%s', Inode='%s', Content-Type '%s': %s", contentletId, inode,
                             contentTypeId, e
                                     .getMessage());
             Logger.error(ContentletTransformer.class, errorMsg, e);

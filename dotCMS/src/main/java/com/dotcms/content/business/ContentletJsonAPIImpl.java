@@ -159,7 +159,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
         builder.folder(contentlet.getFolder());
 
         //These two are definitively mandatory but..
-        //intenralCheckIn calls save twice and the first time it is called these two aren't already set
+        //intenralCheckIn calls "save" twice and the first time it is called these two aren't already set
         //At that moment we have to fake it to make it. Second save should provide the actual identifiers.
         //We'll have to use empty strings to prevent breaking the execution.
         builder.identifier(UtilMethods.isNotSet(contentlet.getIdentifier()) ? StringPool.BLANK : contentlet.getIdentifier() );
