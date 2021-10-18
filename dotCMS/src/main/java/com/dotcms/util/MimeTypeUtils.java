@@ -21,6 +21,9 @@ public class MimeTypeUtils {
 
     public static final String ACCEPT_ALL = "*/*";
 
+    private static final String ZERO_SIZE_MIME_TYPE = "application/x-zerosize";
+
+
     /**
      * Gets the mime type of a file.
      * @param binary {@link File}
@@ -31,13 +34,13 @@ public class MimeTypeUtils {
             return FileAsset.UNKNOWN_MIME_TYPE;
         }
         final Path path = binary.toPath();
-        //String mimeType = Sneaky.sneak(() -> Files.probeContentType(path));
-        String mimeType = new String();
-        if  (!UtilMethods.isSet(mimeType)) {
+        String mimeType = Sneaky.sneak(() -> Files.probeContentType(path));
+
+        if  (UtilMethods.isEmpty(mimeType) || ZERO_SIZE_MIME_TYPE.equalsIgnoreCase(mimeType)) {
 
             mimeType    = Config.CONTEXT.getMimeType(binary.getAbsolutePath());
 
-            if( !UtilMethods.isSet(mimeType)){
+            if( UtilMethods.isEmpty(mimeType) || ZERO_SIZE_MIME_TYPE.equalsIgnoreCase(mimeType)) {
                 try {
                     mimeType = new TikaUtils().detect(binary);
                 } catch(Exception e) {

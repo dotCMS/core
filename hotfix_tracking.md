@@ -243,3 +243,5 @@ This maintenance release includes the following code fixes:
 119. https://github.com/dotCMS/core/issues/20597 : Generating resource link for File Asset with Legacy Identifier is failing
 
 120. https://github.com/dotCMS/core/issues/20616 : Button for Navigation Reorder is not working correctly
+
+121. https://github.com/dotCMS/core/issues/21173 : Ignore application/x-zerosize mime type #21173
