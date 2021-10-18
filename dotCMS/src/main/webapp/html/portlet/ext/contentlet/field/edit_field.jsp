@@ -95,7 +95,7 @@
                 boolean isHostNameField = field.getVelocityVarName().equals("siteKey");
 
 
-                String regex = (isNumber) ? "[0-9]*" : (isFloat) ? "[+-]?([0-9]*[.])?[0-9]+" : "";
+                String regex = (isNumber) ? "[0-9]*" : (isFloat) ? "[+-]?([0-9]*[.])?[0-9]+" : (isHostNameField) ? "^(?!-)[A-Za-z0-9-]{1,63}$" : "";
 
                 if (isHostNameField && textValue != "") {
                     isReadOnly = true;
@@ -104,7 +104,8 @@
         %>
         <%---  Renders the field it self --%>
         <input type="text" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"
-                <%=(isFloat || isNumber) ? "dojoType='dijit.form.ValidationTextBox' data-dojo-props=\"regExp:'"+regex+"', invalidMessage:'Invalid data.'\" style='width:120px;'" : "dojoType='dijit.form.TextBox'" %>
+                <%=(isFloat || isNumber || isHostNameField) ? "dojoType='dijit.form.ValidationTextBox' data-dojo-props=\"regExp:'"+regex+"', invalidMessage:'Invalid data.'\" " : "dojoType='dijit.form.TextBox'" %>
+                <%=(isFloat || isNumber) ? " style='width:120px;' " : "" %>
                value="<%= UtilMethods.htmlifyString(textValue) %>" <%= isReadOnly?"readonly=\"readonly\"":"" %> />
 
         <%
