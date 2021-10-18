@@ -31,7 +31,7 @@ public class MimeTypeUtils {
             return FileAsset.UNKNOWN_MIME_TYPE;
         }
         final Path path = binary.toPath();
-        String mimeType = Sneaky.sneak(() -> Files.probeContentType(path));
+        String mimeType = new String();
 
         if  (!UtilMethods.isSet(mimeType)) {
 
