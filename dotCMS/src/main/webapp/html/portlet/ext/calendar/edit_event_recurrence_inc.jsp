@@ -410,8 +410,8 @@
 				var endDate 	= dojo.byId('<%=endDateField.getVelocityVarName()%>');
 				var endDateDate = dijit.byId('<%=endDateField.getVelocityVarName()%>Date');
                 var endDateTime = dijit.byId('<%=endDateField.getVelocityVarName()%>Time');
-				var startDateD = dojo.date.locale.parse(startDate.value, { datePattern: 'yyyy-MM-dd HH:mm', selector: "date" });
-				var endDateD = dojo.date.locale.parse(endDate.value, { datePattern: 'yyyy-MM-dd HH:mm', selector: "date" });
+				var startDateD = dojo.date.locale.parse(startDate.value, { datePattern: 'yyyy-MM-dd HH:mm ZZZZ', selector: "date" });
+				var endDateD = dojo.date.locale.parse(endDate.value, { datePattern: 'yyyy-MM-dd HH:mm ZZZZ', selector: "date" });
 				shownRecurrenceMessage = false;
 
 				startDateD.setHours(0);

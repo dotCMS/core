@@ -1,8 +1,12 @@
 package com.dotcms.util;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * Encapsulates utils method to extend the Java Functions API
@@ -102,6 +106,19 @@ public class FunctionUtils {
         return returnValue;
     } // getValueOrDefault.
 
+    /**
+     * Apply a <code>transformer</code> function for each item in a {@link Collection}, and return
+     * a new collection with all the items transformed.
+     *
+     * @param items Original {@link Collection}
+     * @param transformer Function to transform each item in the original collection
+     * @param <T> Original collection type
+     * @param <R> Return collection type
+     * @return new Collection with all the items transformed
+     */
+    public static <T, R> List<R> map(final Collection<T> items, final Function<T, R> transformer){
+        return items.stream().map(asset -> transformer.apply(asset)).collect(Collectors.toList());
+    }
 
     /**
      * Just encapsulates a single callback

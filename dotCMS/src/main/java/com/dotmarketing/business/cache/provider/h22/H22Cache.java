@@ -49,7 +49,7 @@ public class H22Cache extends CacheProvider {
     final boolean shouldAsync=Config.getBooleanProperty("cache_h22_async", true);
 
 
-    final ThreadFactory namedThreadFactory =  new ThreadFactoryBuilder().setNameFormat("H22-ASYNC-COMMIT-%d").build();
+    final ThreadFactory namedThreadFactory =  new ThreadFactoryBuilder().setDaemon(true).setNameFormat("H22-ASYNC-COMMIT-%d").build();
     final private LinkedBlockingQueue<Runnable> asyncTaskQueue = new LinkedBlockingQueue<>();
     final private ExecutorService executorService = new ThreadPoolExecutor(numberOfAsyncThreads, numberOfAsyncThreads, 10, TimeUnit.SECONDS, asyncTaskQueue ,namedThreadFactory);
 

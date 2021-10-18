@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v2.languages;
 
 import static com.dotcms.rest.ResponseEntityView.OK;
 import static com.dotmarketing.util.UtilMethods.isNotSet;
+import static com.dotmarketing.util.WebKeys.*;
 
 import com.dotcms.keyvalue.model.KeyValue;
 import com.dotcms.rendering.velocity.viewtools.util.ConversionUtils;
@@ -421,6 +422,10 @@ public class LanguagesResource {
             DefaultLanguageTransferAssetJob
                     .triggerDefaultLanguageTransferAssetJob(oldDefaultLanguage.getId(), newDefault.getId());
         }
+
+        httpServletRequest.getSession().removeAttribute(LANGUAGE_SEARCHED);
+        httpServletRequest.getSession().removeAttribute(HTMLPAGE_LANGUAGE);
+        httpServletRequest.getSession().removeAttribute(CONTENT_SELECTED_LANGUAGE);
         return Response.ok(new ResponseEntityView(newDefault)).build(); // 200
     }
 }

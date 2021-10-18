@@ -17,6 +17,10 @@ import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
+import com.dotcms.publisher.business.PublishQueueElement;
+import com.dotcms.publisher.business.PublishQueueElementTransformer;
+import com.dotcms.publisher.business.PublisherAPI;
+import com.dotcms.publisher.business.PublisherAPIImpl;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig;
@@ -25,6 +29,8 @@ import com.dotcms.publishing.manifest.ManifestUtil;
 import com.dotcms.publishing.output.TarGzipBundleOutput;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.rest.param.ISODateParam;
 import com.dotmarketing.business.APILocator;
@@ -54,7 +60,10 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.Reader;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.StreamingOutput;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
@@ -92,6 +101,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+import static com.dotcms.publisher.business.PublishAuditAPIImpl.NO_LIMIT_ASSETS;
 import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_BUNDLE;
 import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_PUBLISH;
 import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_SEND_TO_ALL_GROUPS;
@@ -107,6 +117,63 @@ public class BundleResource {
     private final WebResource            webResource            = new WebResource();
     private final BundleAPI              bundleAPI              = APILocator.getBundleAPI();
     private final SystemMessageEventUtil systemMessageEventUtil = SystemMessageEventUtil.getInstance();
+
+    private final PublishQueueElementTransformer publishQueueElementTransformer =
+            new PublishQueueElementTransformer();
+
+    /**
+     * Return the assets from a bundleId
+     *
+     * @param bundleId
+     * @param request
+     * @param response
+     * @return
+     */
+    @Path("/{bundleId}/assets")
+    @GET
+    @Produces({MediaType.APPLICATION_JSON})
+    public Response getPublishQueueElements(@PathParam("bundleId") final String bundleId,
+            @QueryParam("limit") final Integer limitParam,
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response) throws DotDataException {
+
+        new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        try {
+            final int limit = UtilMethods.isSet(limitParam) ? limitParam : NO_LIMIT_ASSETS;
+            final Bundle bundleById = APILocator.getBundleAPI().getBundleById(bundleId);
+
+            if (bundleById == null) {
+                throw new NotFoundException(String.format("Bundle %s not exists", bundleId));
+            }
+
+            final List<PublishQueueElement> queueElements = PublisherAPIImpl.getInstance()
+                    .getQueueElementsByBundleId(bundleId);
+
+            final List<Map<String, Object>> detailedAssets;
+
+            if (UtilMethods.isSet(queueElements)) {
+                detailedAssets = publishQueueElementTransformer.transform(queueElements);
+            } else {
+                final PublishAuditStatus publishAuditStatus = PublishAuditAPI.getInstance()
+                        .getPublishAuditStatus(bundleId, limit);
+
+                final Map<String, String> assets = publishAuditStatus.getStatusPojo().getAssets();
+                detailedAssets = assets.entrySet().stream()
+                        .map(entry -> publishQueueElementTransformer.getMap(entry.getKey(), entry.getValue()))
+                        .collect(Collectors.toList());
+            }
+
+            return Response.ok(detailedAssets).build();
+        } catch (DotPublisherException e) {
+            throw new BadRequestException(e, bundleId, e.getMessage());
+        }
+    }
 
     /**
      * Returns a list of un-send bundles (haven't been sent to any Environment) filtered by owner and name
