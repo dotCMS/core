@@ -152,7 +152,6 @@
 
         //Displays the loading dialog
         try {dijit.byId('savingOSGIDialog').show();} catch (e) {}
-        document.getElementById("bundlesTable-body").innerHTML="";
         dojo.byId("loading-row").show();
         
         
@@ -160,6 +159,7 @@
             url: "/api/osgi/getInstalledBundles/ignoreSystemBundles/true/type/json",
             handleAs: "json",
             load: function (data) {
+                document.getElementById("bundlesTable-body").innerHTML="";
                 const showSystem=document.getElementById("ignoresystembundles").checked
                 if (data.length > 0) {
 

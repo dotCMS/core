@@ -22,7 +22,6 @@
     const headerError = 'Error on upload plugin';
 	// Refresh the list After upload a plugin
 	const dotAssetDropZone = document.querySelector('dot-asset-drop-zone');
-	dotAssetDropZone.addEventListener('uploadComplete', function(){ getBundlesData() });
 
 	const uploadPlugin = ({files, onSuccess, updateProgress, onError}) => {
         // Check if we get an array of files otherwise create array.
@@ -32,10 +31,7 @@
         const formData = new FormData();
         data.forEach((file) => formData.append('file', file));
         formData.append('json', '{}');
-        
-        console.log(formData);
-        console.log(files, data);
-        
+
 		return new Promise((res, rej) => {
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/osgi');
@@ -55,6 +51,7 @@
         }).then(async (request) => {
             if (request.status === 200) {
                 onSuccess();
+                dijit.byId('savingOSGIDialog').show();
                 return JSON.parse(request.response);
             } else {
                 throw request;
