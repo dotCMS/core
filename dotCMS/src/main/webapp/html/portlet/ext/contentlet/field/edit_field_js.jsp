@@ -75,6 +75,19 @@
 </script>
 
 <script type="text/javascript">
+
+function confirmEditSite(dialogId) {
+    dijit.byId(dialogId).show();
+}
+
+function enableSiteKeyUpdate(dialogId, siteKeyInputId) {
+    dijit.byId(dialogId).hide();
+    dojo.removeAttr(siteKeyInputId, 'readonly');
+    setTimeout(() => {
+        dijit.byId(siteKeyInputId).focus();
+    }, 500); 
+}
+
 var cmsfile=null;
 	//Hints
 	function showHint(jsevent) {

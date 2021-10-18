@@ -78,7 +78,7 @@
 		<% } %>
     </div>
 
-    <div class="fieldValue field__<%=field.getFieldType()%>" id="<%=field.getVelocityVarName()%>_field">
+    <div class="fieldValue field__<%=field.getFieldType()%>" style="display:flex" id="<%=field.getVelocityVarName()%>_field">
         <%
             //TEXT kind of field rendering
             if (field.getFieldType().equals(Field.FieldType.TEXT.toString())) {
@@ -92,14 +92,46 @@
 
                 boolean isNumber = field.getFieldContentlet().startsWith(Field.DataType.INTEGER.toString());
                 boolean isFloat = field.getFieldContentlet().startsWith(Field.DataType.FLOAT.toString());
+                boolean isHostNameField = field.getVelocityVarName().equals("siteKey");
+
 
                 String regex = (isNumber) ? "[0-9]*" : (isFloat) ? "[+-]?([0-9]*[.])?[0-9]+" : "";
+
+                if (isHostNameField && textValue != "") {
+                    isReadOnly = true;
+                }
+
         %>
         <%---  Renders the field it self --%>
         <input type="text" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"
                 <%=(isFloat || isNumber) ? "dojoType='dijit.form.ValidationTextBox' data-dojo-props=\"regExp:'"+regex+"', invalidMessage:'Invalid data.'\" style='width:120px;'" : "dojoType='dijit.form.TextBox'" %>
                value="<%= UtilMethods.htmlifyString(textValue) %>" <%= isReadOnly?"readonly=\"readonly\"":"" %> />
+
         <%
+            if (isHostNameField && textValue != "") {
+        %>
+            <%---  Renders EDIT button and dialog for "HostName" field --%>
+            <button dojoType="dijit.form.Button" style="margin-left: 8px;" class="dijitButton" onClick="confirmEditSite('siteKeyChangeDialog_<%=field.getInode()%>')">
+                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Edit")) %>
+            </button>
+
+            <div id="siteKeyChangeDialog_<%=field.getInode()%>" dojoType="dijit.Dialog" style="width:380px;vertical-align: middle; " draggable="true" title="<%= LanguageUtil.get(pageContext, "Change-site-key") %>">
+                <span class="ui-confirmdialog-message" style="text-align:center">
+                     <%=LanguageUtil.get(pageContext, "Change-site-key-confirm-message") %>
+                </span>
+                <div style="display: flex; justify-content: center; margin-top: 16px;">
+                    <button dojoType="dijit.form.Button" class="dijitButton" onClick="javascript:dijit.byId('siteKeyChangeDialog_<%=field.getInode()%>').hide();">
+                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
+                    </button>
+                    <button style="margin-left: 8px;" dojoType="dijit.form.Button" class="dijitButton" onClick="enableSiteKeyUpdate('siteKeyChangeDialog_<%=field.getInode()%>', <%=field.getVelocityVarName()%>)">
+                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ok")) %>
+                    </button>
+                </div>
+            </div>
+        <%
+            }
+
+
         }
         //END of TEXT field
 
