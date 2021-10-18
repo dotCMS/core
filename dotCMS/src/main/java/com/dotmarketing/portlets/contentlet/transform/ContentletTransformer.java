@@ -102,8 +102,8 @@ public class ContentletTransformer implements DBTransformer {
         try {
            if(!hasJsonFields) {
                populateFields(contentlet, map);
-               populateWysiwyg(map, contentlet);
            }
+            populateWysiwyg(map, contentlet);
             populateFolderAndHost(contentlet, contentletId, contentTypeId);
         } catch (final Exception e) {
             final String errorMsg = String

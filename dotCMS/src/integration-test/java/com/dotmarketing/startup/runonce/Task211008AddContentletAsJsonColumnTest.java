@@ -26,7 +26,6 @@ public class Task211008AddContentletAsJsonColumnTest {
             throw new DotDataException(e.getMessage(), e);
         }
 
-        //Certain db engines store unique constraints as indices
         final DotConnect dotConnect = new DotConnect();
         try {
             dotConnect.setSQL("alter table contentlet drop column contentlet_as_json");
