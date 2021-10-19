@@ -6482,7 +6482,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 final boolean isDataTypeNumber = field.getDataType().contains(DataTypes.INTEGER.toString())
                         || field.getDataType().contains(DataTypes.FLOAT.toString());
                 try{
-                    StringBuilder buffy = new StringBuilder(UUIDGenerator.generateUuid());
+                    final StringBuilder buffy = new StringBuilder(UUIDGenerator.generateUuid());
                     buffy.append(" +structureInode:" + contentlet.getStructureInode());
                     if(UtilMethods.isSet(contentlet.getIdentifier())){
                         buffy.append(" -(identifier:" + contentlet.getIdentifier() + ")");
@@ -6497,24 +6497,30 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                     + StringPool.PERIOD + field.getVelocityVarName(), fieldValue,
                             contentlet.getLanguageId()));
 
-                    List<ContentletSearch> contentlets = new ArrayList<>();
+                    final List<ContentletSearch> contentlets = new ArrayList<>();
                     try {
                         contentlets.addAll(searchIndex(buffy.toString() + " +working:true", -1, 0, "inode", APILocator.getUserAPI().getSystemUser(), false));
                         contentlets.addAll(searchIndex(buffy.toString() + " +live:true", -1, 0, "inode", APILocator.getUserAPI().getSystemUser(), false));
-                    } catch (Exception e) {
-                    	final String errorMsg = "Unique field [" + field.getVelocityVarName() + "] could not be validated: " + e.getMessage();
+                    } catch (final Exception e) {
+                        final String errorMsg = "Unique field [" + field.getVelocityVarName() + "] with value '" +
+                                fieldValue + "' could not be validated: " + e.getMessage();
                         Logger.warn(this, errorMsg, e);
                         throw new DotContentletValidationException(errorMsg, e);
                     }
                     int size = contentlets.size();
                     if(size > 0 && !hasError){
-
                         Boolean unique = true;
-                        for (ContentletSearch contentletSearch : contentlets) {
-                            Contentlet c = contentFactory.find(contentletSearch.getInode());
-                            Map<String, Object> cMap = c.getMap();
-                            Object obj = cMap.get(field.getVelocityVarName());
-
+                        for (final ContentletSearch contentletSearch : contentlets) {
+                            final Contentlet uniqueContent = contentFactory.find(contentletSearch.getInode());
+                            if (null == uniqueContent) {
+                                final String errorMsg = String.format("Unique field [%s] could not be validated, as " +
+                                                "unique content Inode '%s' was not found. ES Index might need to be reindexed.",
+                                        field.getVelocityVarName(), contentletSearch.getInode());
+                                Logger.warn(this, errorMsg);
+                                throw new DotContentletValidationException(errorMsg);
+                            }
+                            final Map<String, Object> uniqueContentMap = uniqueContent.getMap();
+                            final Object obj = uniqueContentMap.get(field.getVelocityVarName());
                             if ( ( isDataTypeNumber && fieldValue.equals(obj) ) ||
                                     ( !isDataTypeNumber && ((String) obj).equalsIgnoreCase(((String) fieldValue)) ) )  {
                                 unique = false;
@@ -6531,21 +6537,23 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                     {
                                         cve.addUniqueField(field);
                                         hasError = true;
-                                        Logger.warn(this, "Field [" + field.getVelocityVarName() + "] must be unique");
+                                        Logger.warn(this, "Field [" + field.getVelocityVarName() + "] with value '" +
+                                                fieldValue + "'must be unique");
                                         break;
                                     }
                                 }
                             }else{
                                 cve.addUniqueField(field);
                                 hasError = true;
-                                Logger.warn(this, "Field [" + field.getVelocityVarName() + "] must be unique");
+                                Logger.warn(this, "Field [" + field.getVelocityVarName() + "] with value '" +
+                                        fieldValue + "'must be unique");
                                 break;
                             }
                         }
                     }
-                } catch (DotDataException e) {
+                } catch (final DotDataException e) {
                     Logger.warn(this,"Unable to get contentlets for Content Type: " + contentlet.getStructure().getName(), e);
-                } catch (DotSecurityException e) {
+                } catch (final DotSecurityException e) {
                     Logger.warn(this,"Unable to get contentlets for Content Type: " + contentlet.getStructure().getName(), e);
                 }
             }

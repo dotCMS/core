@@ -113,9 +113,8 @@
 	}
 
 	function submitForm () {
-		var button = document.getElementById("goToPreviewButton");
-		button.value='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Generating-Preview-Info-Please-be-patient")) %>';
-		button.disabled = true;
+		dijit.byId('goToPreviewButton').setAttribute("disabled", true);
+		dijit.byId('goToPreviewButton').set("label", '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Generating-Preview-Info-Please-be-patient")) %>');
 		var href =  '<portlet:actionURL>';
 			href +=		'<portlet:param name="struts_action" value="/ext/contentlet/import_contentlets" />';
 			href +=		'<portlet:param name="cmd" value="preview" />';
