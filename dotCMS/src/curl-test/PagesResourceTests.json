@@ -1521,7 +1521,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "[{\"identifier\":\"5a07f889-4536-4956-aa6e-e7967969ec3f\",\"uuid\":\"1\",\"contentletsId\":[\"d4ed1990-b151-42ca-9bca-0725b07260de\"]}]"
+							"raw": "[{\"identifier\":\"5a07f889-4536-4956-aa6e-e7967969ec3f\",\"uuid\":\"1\",\"contentletsId\":[\"d4ed1990-b151-42ca-9bca-0725b07260de\"]},{\"identifier\":\"//demo.dotcms.com/application/containers/default/\",\"uuid\":\"1\",\"contentletsId\":[\"f827c41a-5689-4733-b4d7-916d3a31c9c6\"]}]"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/page/bec7b960-a8bf-4f14-a22b-0d94caf217f0/content",
@@ -1580,7 +1580,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "[{\"identifier\":\"a050073a-a31e-4aab-9307-86bfb248096a\",\"uuid\":\"1\",\"contentletsId\":[\"767509b1-2392-4661-a16b-e0e31ce27719\"]},{\"identifier\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\",\"contentletsId\":[\"2efc77b4-a54f-479b-8a81-a133b9e6da04\",\"5aef0c62-b7d6-4805-9e7c-77a67f4822f3\",\"66d47ebf-7b11-4076-85b0-b6c8c373d000\"]}]"
+							"raw": "[{\"identifier\":\"5a07f889-4536-4956-aa6e-e7967969ec3f\",\"uuid\":\"1\",\"contentletsId\":[\"f827c41a-5689-4733-b4d7-916d3a31c9c6\"]}]"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/page/bec7b960-a8bf-4f14-a22b-0d94caf217f0/content",

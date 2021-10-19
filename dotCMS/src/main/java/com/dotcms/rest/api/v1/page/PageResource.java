@@ -116,7 +116,7 @@ public class PageResource {
      * @param modeParam {@link PageMode}
      * @param personaId {@link com.dotmarketing.portlets.personas.model.Persona}'s identifier to render the page
      * @param languageId {@link com.dotmarketing.portlets.languagesmanager.model.Language}'s Id to render the page
-     * @param deviceInode {@link org.apache.batik.svggen.font.table.Device}'s inode to render the page
+     * @param deviceInode {@link }'s inode to render the page
      * @return All the objects on an associated HTML Page.
      */
     @NoCache
@@ -468,7 +468,8 @@ public class PageResource {
     private Set<String> getContainerContentTypes (final String containerId) {
 
         try {
-            final Container container = APILocator.getContainerAPI().getWorkingContainerById(containerId, APILocator.systemUser(), false);
+            final Container container = APILocator.getContainerAPI().findContainer(containerId,APILocator.systemUser(),false,false)
+                    .orElseThrow(() -> new DoesNotExistException("Container with ID :" + containerId + " not found"));
             final List<ContentType> contentTypes = APILocator.getContainerAPI().getContentTypesInContainer(container);
             return null != contentTypes? contentTypes.stream().map(ContentType::variable).collect(Collectors.toSet()) : Collections.emptySet();
         } catch (DotDataException | DotSecurityException e) {
