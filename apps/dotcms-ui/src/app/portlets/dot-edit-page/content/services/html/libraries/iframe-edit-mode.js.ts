@@ -110,7 +110,7 @@ function initDragAndDrop () {
         if (JSON.stringify(updatedModel) !== JSON.stringify(currentModel)) {
             window.${MODEL_VAR_NAME}.next({
                 model: getDotNgModel(),
-                type: 3,
+                type: 'MOVE_CONTENT',
             });
         }
 
