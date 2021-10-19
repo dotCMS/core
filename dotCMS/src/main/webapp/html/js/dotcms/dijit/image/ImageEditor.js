@@ -61,7 +61,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
 
         this.thumbnailImage = dojo.create("img" , {
-            style:"max-width:100%;"},this.thumbnailDiv);
+            style:{ "max-width":"100%", "max-height":"100%" }},this.thumbnailDiv);
 
 
 

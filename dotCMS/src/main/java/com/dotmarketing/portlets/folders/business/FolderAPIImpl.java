@@ -948,7 +948,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	public List<String> getEntriesTree(Folder mainFolder, String openNodes,String view, String content, String structureInode,User user)
 			throws DotStateException, DotDataException, DotSecurityException {
 		Locale locale = user.getLocale();
-		TimeZone timeZone = user.getTimeZone();
+		TimeZone timeZone = APILocator.systemTimeZone();
 		Role[] roles = (Role[])APILocator.getRoleAPI().loadRolesForUser(user.getUserId()).toArray(new Role[0]);
 		boolean isAdminUser = APILocator.getUserAPI().isCMSAdmin(user);
 		return folderFactory.getEntriesTree(mainFolder, openNodes, view, content, structureInode, locale, timeZone, roles, isAdminUser, user);
@@ -960,8 +960,8 @@ public class FolderAPIImpl implements FolderAPI  {
 			String content, String structureInode,User user)
 			throws DotStateException, DotDataException, DotSecurityException {
 		Locale locale = user.getLocale();
-		TimeZone timeZone = user.getTimeZone();
-		Role[] roles = (Role[])APILocator.getRoleAPI().loadRolesForUser(user.getUserId()).toArray(new Role[0]);
+		TimeZone timeZone = APILocator.systemTimeZone();
+		Role[] roles = APILocator.getRoleAPI().loadRolesForUser(user.getUserId()).toArray(new Role[0]);
 		boolean isAdminUser = APILocator.getUserAPI().isCMSAdmin(user);
 		return folderFactory.getFolderTree(openNodes, view, content, structureInode, locale, timeZone, roles, isAdminUser, user);
 	}

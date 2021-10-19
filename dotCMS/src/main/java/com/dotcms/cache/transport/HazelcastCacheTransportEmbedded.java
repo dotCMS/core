@@ -8,4 +8,10 @@ public class HazelcastCacheTransportEmbedded extends AbstractHazelcastCacheTrans
     protected HazelcastInstanceType getHazelcastInstanceType() {
     	return HazelcastInstanceType.EMBEDDED;
     }
+	
+    @Override
+    public boolean requiresAutowiring() {
+       
+        return true;
+    }
 }

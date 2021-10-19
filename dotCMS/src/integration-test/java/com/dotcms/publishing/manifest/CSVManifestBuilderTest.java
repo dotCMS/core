@@ -39,6 +39,7 @@ import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -179,8 +180,8 @@ public class CSVManifestBuilderTest {
 
     private static TestCase getCategoryTestCase() {
         final Category category = new CategoryDataGen().nextPersisted();
-        final String line = list(PusheableAsset.CATEGORY.getType(), category.getIdentifier(),
-                category.getInode(), category.getTitle(), "", "")
+        final String line = list(PusheableAsset.CATEGORY.getType(), category.getInode(), StringPool.BLANK,
+                 category.getTitle(), "", "")
                 .stream().collect(Collectors.joining(","));
         return new TestCase(category, line);
     }
@@ -330,4 +331,80 @@ public class CSVManifestBuilderTest {
         }
     }
 
+    /**
+     * Method to test: {@link CSVManifestBuilder#addMetadata(String, String)}
+     * When: Add two headers to a Manifest
+     * Should: create two comment line before the headers
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     */
+    @Test
+    public void addHeader() throws DotDataException, DotSecurityException, IOException {
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final String includeReason = "Include testing";
+        final TestCase testCase = getContentTypeTestCase();
+
+        File manifestFile = null;
+
+        try(final CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
+            manifestBuilder.addMetadata("header_1", "first test header");
+            manifestBuilder.addMetadata("header_2", "second test header");
+            manifestBuilder.include(testCase.asset, includeReason);
+            manifestFile = manifestBuilder.getManifestFile();
+        }
+
+        final String contentTypeLineExpected = "INCLUDED," + testCase.lineExpected + ",," + includeReason;
+
+        final List<String> lines = getFileLines(manifestFile);
+
+        assertEquals(4, lines.size());
+
+        assertEquals("#header_1:first test header", lines.get(0));
+        assertEquals("#header_2:second test header", lines.get(1));
+        assertEquals(headers, lines.get(2));
+        assertEquals(contentTypeLineExpected, lines.get(3));
+
+    }
+
+    /**
+     * Method to test: {@link CSVManifestBuilder#addMetadata(String, String)}
+     * When: Add a header after include a asset in the manifest
+     * Should: throw a {@link IllegalStateException}
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     */
+    @Test(expected = IllegalStateException.class)
+    public void callAddHeaderAfterInclude(){
+        final String includeReason = "Include testing";
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        try(final CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
+            manifestBuilder.include(contentType, includeReason);
+            manifestBuilder.addMetadata("header_1", "first test header");
+        }
+    }
+
+    /**
+     * Method to test: {@link CSVManifestBuilder#addMetadata(String, String)}
+     * When: Add a header after exclude a asset in the manifest
+     * Should: throw a {@link IllegalStateException}
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     */
+    @Test(expected = IllegalStateException.class)
+    public void callAddHeaderAfterExclude(){
+        final String excludedReason = "exclude testing";
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        try(final CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
+            manifestBuilder.exclude(contentType, excludedReason);
+            manifestBuilder.addMetadata("header_1", "first test header");
+        }
+    }
 }

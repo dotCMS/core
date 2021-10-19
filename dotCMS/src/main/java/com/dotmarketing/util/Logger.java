@@ -249,8 +249,7 @@ public class Logger {
         final Long expireWhen = logMap.get().get(hash);
 
         if (expireWhen == null || expireWhen < System.currentTimeMillis()) {
-            logMap.get().put(hash, System.currentTimeMillis() + warnEveryMillis, warnEveryMillis,
-                            TimeUnit.MILLISECONDS);
+            logMap.get().put(hash, System.currentTimeMillis() + warnEveryMillis, true);
             logger.warn(message + " (every " + warnEveryMillis + " millis)");
 
         }
@@ -273,12 +272,9 @@ public class Logger {
 
         final Long hash = new Long(Objects.hashCode(cl, message.substring(0, Math.min(message.length(), 10)), cl));
         final Long expireWhen = logMap.get().get(hash);
-
         if (expireWhen == null || expireWhen < System.currentTimeMillis()) {
-            logMap.get().put(hash, System.currentTimeMillis() + warnEveryMillis, warnEveryMillis,
-                            TimeUnit.MILLISECONDS);
+            logMap.get().put(hash, System.currentTimeMillis() + warnEveryMillis, true);
             logger.info(message + " (every " + warnEveryMillis + " millis)");
-
         }
         logger.debug(() -> message);
     }
@@ -383,6 +379,10 @@ public class Logger {
         if (isWarnEnabled(clazz)) {
             warn(clazz, message.get());
         }
+    }
+
+    public static void warn(Class clazz, final Supplier<String> message, Throwable ex) {
+        warn(clazz, message.get(), ex);
     }
 
     public static void warn(Object ob, String message) {

@@ -172,10 +172,8 @@
 		session.setAttribute(com.dotcms.repackage.org.apache.struts.Globals.LOCALE_KEY, locale);
 	}
 
-	TimeZone timeZone = user.getTimeZone();
-	if (timeZone == null) {
-		timeZone = company.getTimeZone();
-	}
+	TimeZone timeZone = company.getTimeZone();
+
 
 	Layout layout = (Layout) request.getAttribute(WebKeys.LAYOUT);
 	Layout[] layouts = (Layout[]) request.getAttribute(WebKeys.LAYOUTS);

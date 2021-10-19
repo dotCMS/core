@@ -27,7 +27,7 @@
     PublishAuditStatus.Status status = null;
     int statusCode = 0;
     if ( null != bundleId ) {
-        PublishAuditStatus publishAuditStatus = PublishAuditAPI.getInstance().getPublishAuditStatus( bundleId );
+        PublishAuditStatus publishAuditStatus = PublishAuditAPI.getInstance().getPublishAuditStatus( bundleId , 1);
 
         if (UtilMethods.isSet(publishAuditStatus) && UtilMethods.isSet(publishAuditStatus.getStatusPojo())) {
             String pojo_string = publishAuditStatus.getStatusPojo().getSerialized();
@@ -92,8 +92,10 @@
             <option value="1">All End-points</option>
             <option value="2">Failed End-points Only</option>
         </select> &nbsp;&nbsp;
-        &nbsp;&nbsp;
-        <button id="retryButton" dojoType="dijit.form.Button" onClick="retryBundles('<%=bundleId%>')" iconClass="repeatIcon"><%= LanguageUtil.get(pageContext, "publisher_retry") %></button>
+
+        <%if (BundlerUtil.isRetryable(bundle.getId())){%>&nbsp;&nbsp;
+            <button id="retryButton" dojoType="dijit.form.Button" onClick="retryBundles('<%=bundleId%>')" iconClass="repeatIcon"><%= LanguageUtil.get(pageContext, "publisher_retry") %></button>
+        <%}%>
     </div>
 </div>
 

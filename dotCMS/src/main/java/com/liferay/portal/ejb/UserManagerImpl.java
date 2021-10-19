@@ -113,12 +113,14 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
                 middleName, lastName, nickName, male, birthday, emailAddress, locale);
     }
 
+    @CloseDBIfOpened
     @Override
     public int authenticateByEmailAddress(String companyId, String emailAddress, String password) throws PortalException, SystemException {
 
         return _authenticate(companyId, emailAddress, password, true);
     }
 
+    @CloseDBIfOpened
     @Override
     public int authenticateByUserId(String companyId, String userId, String password) throws PortalException, SystemException {
 

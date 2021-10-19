@@ -2000,7 +2000,10 @@ public class WorkflowHelper {
      * @return Transformed Map
      */
     public Map<String, Object> contentletToMap(final Contentlet contentlet) {
-
+        //In case the contentlet is null because it was destroyed/deleted.
+        if(null == contentlet){
+           return Collections.emptyMap();
+        }
         final DotContentletTransformer transformer = new DotTransformerBuilder().defaultOptions().content(contentlet).build();
         return transformer.toMaps().stream().findFirst().orElse(Collections.emptyMap());
     }

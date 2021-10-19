@@ -55,13 +55,14 @@ jobs:
           GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
           REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
           REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           FROM_BRANCH: ${{ github.event.inputs.from_branch }}
           NODE_VERSION: ${{ github.event.inputs.node_version }}
       - name: Discover docker tags
         id: discover-docker-tags
         uses: dotcms/discover-docker-tags-action@main
         with:
-          version: ${{ ENV.RELEASE_VERSION }}
+          version: ${{ env.RELEASE_VERSION }}
           hash: ${{ env.BUILD_HASH }}
           label: prerelease
           update_stable: single
@@ -69,7 +70,7 @@ jobs:
         id: publish-docker-image
         uses: dotcms/publish-docker-image-action@main
         with:
-          dot_cicd_branch: master
+          dot_cicd_branch: ${{ env.DOT_CICD_BRANCH }}
           build_id: release-${{ env.RELEASE_VERSION }}
           tags: ${{ steps.discover-docker-tags.outputs.discovered_tags }}
           github_user_token: ${{ secrets.CICD_GITHUB_TOKEN }}

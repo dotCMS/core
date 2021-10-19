@@ -48,6 +48,7 @@ public class ServerAPIImpl implements ServerAPI {
         return serverFactory.getServer(serverId);
     }
 
+    @CloseDBIfOpened
     @Override
     public Server getOrCreateMyServer() throws DotDataException {
         final Server tryServer = getServer(readServerId());
@@ -55,12 +56,12 @@ public class ServerAPIImpl implements ServerAPI {
         if (tryServer == null || tryServer.getServerId() == null) {
 
             createMyServer();
-
         }
 
         return getServer(readServerId());
     }
 
+    @WrapInTransaction
     private void createMyServer() throws DotDataException {
 
         Server.Builder serverBuilder = Server.builder().withServerId(readServerId());
@@ -240,13 +241,14 @@ public class ServerAPIImpl implements ServerAPI {
         serverFactory.removeServerFromClusterTable(serverId);
     }
 
-    @WrapInTransaction
+    @CloseDBIfOpened
     @Override
     public List<Server> getInactiveServers() throws DotDataException {
+
+        Logger.debug(this, ()->"Getting the inactiver servers");
         return serverFactory.getInactiveServers();
     }
 
-    @WrapInTransaction
     @Override
     public Server getCurrentServer() throws DotDataException {
 

@@ -2,6 +2,9 @@ package com.dotcms;
 
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
+import com.dotcms.cache.lettuce.DotObjectCodecTest;
+import com.dotcms.cache.lettuce.LettuceCacheTest;
+import com.dotcms.cache.lettuce.RedisClientTest;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
@@ -9,6 +12,7 @@ import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.dotpubsub.PostgresPubSubImplTest;
+import com.dotcms.dotpubsub.RedisPubSubImplTest;
 import com.dotcms.ema.EMAWebInterceptorTest;
 import com.dotcms.enterprise.HTMLDiffUtilTest;
 import com.dotcms.enterprise.cluster.ClusterFactoryTest;
@@ -31,15 +35,17 @@ import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleAPITest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
+import com.dotcms.publisher.business.PublishQueueElementTransformerTest;
 import com.dotcms.publisher.receiver.BundlePublisherTest;
 import com.dotcms.publisher.util.DependencyManagerTest;
 import com.dotcms.publisher.util.DependencyModDateUtilTest;
-import com.dotcms.publishing.BundlerUtilIntegrationTest;
 import com.dotcms.publishing.PublisherAPIImplTest;
 import com.dotcms.publishing.PublisherFilterImplTest;
 import com.dotcms.publishing.PushPublishFiltersInitializerTest;
 import com.dotcms.publishing.job.SiteSearchJobImplTest;
 import com.dotcms.publishing.manifest.CSVManifestBuilderTest;
+import com.dotcms.publishing.manifest.CSVManifestReaderTest;
+import com.dotcms.publishing.manifest.ManifestReaderFactoryTest;
 import com.dotcms.rendering.velocity.directive.DotParseTest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateToolTest;
@@ -117,6 +123,9 @@ import com.dotmarketing.startup.runonce.Task210719CleanUpTitleFieldTest;
 import com.dotmarketing.startup.runonce.Task210802UpdateStructureTableTest;
 import com.dotmarketing.startup.runonce.Task210805DropUserProxyTableTest;
 import com.dotmarketing.startup.runonce.Task210816DeInodeRelationshipTest;
+import com.dotmarketing.startup.runonce.Task211012AddCompanyDefaultLanguageTest;
+import com.dotmarketing.startup.runonce.Task210901UpdateDateTimezonesTest;
+import com.dotmarketing.startup.runonce.Task211007RemoveNotNullConstraintFromCompanyMXColumnTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -437,7 +446,6 @@ import org.junit.runners.Suite.SuiteClasses;
         FileAssetTemplateUtilTest.class,
         SiteSearchJobImplTest.class,
         Task210506UpdateStorageTableTest.class,
-        StaticPushPublishBundleGeneratorTest.class,
         Task210520UpdateAnonymousEmailTest.class,
         Task210510UpdateStorageTableDropMetadataColumnTest.class,
         StaticPushPublishBundleGeneratorTest.class,
@@ -457,10 +465,19 @@ import org.junit.runners.Suite.SuiteClasses;
         CategoryFactoryTest.class,
         Task210805DropUserProxyTableTest.class,
         Task210816DeInodeRelationshipTest.class,
-        BundlerUtilIntegrationTest.class,
-        Task210816DeInodeRelationshipTest.class,
         WorkflowEmailUtilTest.class,
-        ConfigurationHelperTest.class
+        ConfigurationHelperTest.class,
+        PublishQueueElementTransformerTest.class,
+        CSVManifestReaderTest.class,
+        Task210901UpdateDateTimezonesTest.class,
+        DotObjectCodecTest.class,
+        RedisClientTest.class,
+        LettuceCacheTest.class,
+        RedisPubSubImplTest.class,
+        ManifestReaderFactoryTest.class,
+        Task211007RemoveNotNullConstraintFromCompanyMXColumnTest.class,
+        ManifestReaderFactoryTest.class,
+        Task211012AddCompanyDefaultLanguageTest.class
 })
 public class MainSuite {
 

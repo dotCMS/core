@@ -6,6 +6,14 @@ import com.dotmarketing.util.Logger;
 
 public interface DotPubSubTopic extends EventSubscriber<DotPubSubEvent>, KeyFilterable {
 
+    default String getInstanceId () {
+        return "-1";
+    }
+
+    default void setInstanceId (String instanceId) {
+
+    }
+
     default long messagesSent() {
         return -1;
     }
@@ -14,6 +22,10 @@ public interface DotPubSubTopic extends EventSubscriber<DotPubSubEvent>, KeyFilt
         return -1;
     }
 
+    default String getTopic() {
+        return String.valueOf(this.getKey());
+    }
+    
     default long messagesReceived() {
         return -1;
     }
@@ -47,7 +59,6 @@ public interface DotPubSubTopic extends EventSubscriber<DotPubSubEvent>, KeyFilt
     default void notify(DotPubSubEvent event) {
         incrementReceivedCounters(event);
         Logger.info(this.getClass(), "got event:" + event);
-
     }
 
 }

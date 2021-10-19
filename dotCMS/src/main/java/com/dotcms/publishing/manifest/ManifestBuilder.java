@@ -37,4 +37,11 @@ public interface ManifestBuilder extends Closeable {
      * @return
      */
     File getManifestFile();
+
+    /**
+     * Add a metadata header to the manifest file
+     * @param name
+     * @param value
+     */
+    void addMetadata(final String name, final String value);
 }

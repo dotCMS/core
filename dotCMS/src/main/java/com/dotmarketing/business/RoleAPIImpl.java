@@ -218,7 +218,7 @@ public class RoleAPIImpl implements RoleAPI {
 		}
 	}
 
-    @WrapInTransaction
+    @CloseDBIfOpened
 	@Override
 	public boolean roleExistsByName(final String roleName, final Role parent) throws DotDataException {
 		Role r = roleFactory.findRoleByName(roleName, parent);
@@ -477,21 +477,53 @@ public class RoleAPIImpl implements RoleAPI {
 		return roleFactory.loadRoleByKey(key);
 	}
 
-	@WrapInTransaction
+	@CloseDBIfOpened
 	@Override
 	public Role getUserRole(final User user) throws DotDataException {
 
 		Role role = loadRoleByKey(user.getUserId());
 		if(role == null) {
-			role = roleFactory.addUserRole(user);
-		} else if(!role.getName().equals(user.getFullName()) && !role.getName().equalsIgnoreCase("System")) {
+
+			role = this.addUserRole(user);
+		} else if(!role.getName().equals(user.getFullName()) &&
+				!"System".equalsIgnoreCase(role.getName())) {
+
 			role.setName(user.getFullName());
-			roleFactory.save(role);
+			this.updateRole(role);
 		}
-		if(!APILocator.getRoleAPI().doesUserHaveRole(user, role)){
-			roleFactory.addRoleToUser(role, user);
+
+		if(!this.doesUserHaveRole(user, role)) {
+
+			this.addRoleToUserWithoutEditUserValidation(role, user);
 		}
+
+		// since we have update methods that may change the role, we have to update the reference on cache.
+		final RoleCache roleCache = CacheLocator.getCmsRoleCache();
+		roleCache.add(role);
+
 		return role;
+	}
+
+	@WrapInTransaction
+	private void addRoleToUserWithoutEditUserValidation(final Role role, final User user) throws DotDataException, DotStateException {
+
+		SecurityLogger.logInfo(this.getClass(), "Adding role:'" + role.getName() + "' to user:" +
+				user.getUserId() + " email:" + user.getEmailAddress());
+		roleFactory.addRoleToUser(role, user);
+	}
+
+
+	// we split the functionality to use transaction only when need
+	// and avoid skipping the cache
+	@WrapInTransaction
+	private void updateRole(final Role role) throws DotDataException {
+		roleFactory.save(role);
+	}
+
+	@WrapInTransaction
+	private Role addUserRole (final User user) throws DotDataException {
+
+		return roleFactory.addUserRole(user);
 	}
 
 	public boolean doesUserHaveRoles(final String userId, final List<String> roleIds) {

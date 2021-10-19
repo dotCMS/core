@@ -294,20 +294,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	@Override
-	protected void cleanIdentifierHostField(String structureInode) throws DotDataException, DotMappingException, DotStateException, DotSecurityException {
-	    StringBuffer sql = new StringBuffer("update identifier set parent_path='/', host_inode=? ");
-        sql.append(" where id in (select identifier from contentlet where structure_inode = ?)");
-        DotConnect dc = new DotConnect();
-        dc.setSQL(sql.toString());
-        dc.addParam(APILocator.getHostAPI().findSystemHost().getIdentifier());
-        dc.addParam(structureInode);
-        dc.loadResults();
-        //we could do a select here to figure out exactly which guys to evict
-        contentletCache.clearCache();
-        CacheLocator.getIdentifierCache().clearCache();
-	}
-
-	@Override
 	protected long contentletCount() throws DotDataException {
 	    DotConnect dc = new DotConnect();
         dc.setSQL("select count(*) as count from contentlet");
@@ -1475,6 +1461,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
         final int trackTotalHits = Config.getIntProperty(ES_TRACK_TOTAL_HITS, ES_TRACK_TOTAL_HITS_DEFAULT);
         searchSourceBuilder.trackTotalHitsUpTo(trackTotalHits);
     }
+     /**
+      * We return total hits of -1 when an error occurs
+      */
+     private final static SearchHits ERROR_HIT = new SearchHits(new SearchHit[] {}, new TotalHits(0, Relation.EQUAL_TO), 0);
+     
+     final static SearchHits EMPTY_HIT = new SearchHits(new SearchHit[] {}, new TotalHits(0, Relation.EQUAL_TO), 0);
 
     /**
      * if enabled SearchRequests are executed and then cached
@@ -1497,11 +1489,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
         } catch (final ElasticsearchStatusException | IndexNotFoundException | SearchPhaseExecutionException e) {
             final String exceptionMsg = (null != e.getCause() ? e.getCause().getMessage() : e.getMessage());
             Logger.warn(this.getClass(), "----------------------------------------------");
-            Logger.warn(this.getClass(), String.format("Elasticsearch error in index '%s'", (searchRequest.indices()!=null) ? String.join(",", searchRequest.indices()): "unknown"));
+            Logger.warn(this.getClass(), String.format("Elasticsearch SEARCH error in index '%s'", (searchRequest.indices()!=null) ? String.join(",", searchRequest.indices()): "unknown"));
+            Logger.warn(this.getClass(), String.format("Thread: %s", Thread.currentThread().getName() ));
             Logger.warn(this.getClass(), String.format("ES Query: %s", String.valueOf(searchRequest.source()) ));
             Logger.warn(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), exceptionMsg));
             Logger.warn(this.getClass(), "----------------------------------------------");
-            return new SearchHits(new SearchHit[] {}, new TotalHits(0, Relation.EQUAL_TO), 0);
+            if(shouldQueryCache(exceptionMsg)) {
+                queryCache.put(searchRequest, ERROR_HIT);
+            }
+            return ERROR_HIT;
         } catch(final IllegalStateException e) {
             rebuildRestHighLevelClientIfNeeded(e);
             Logger.warnAndDebug(ESContentFactoryImpl.class, e);
@@ -1515,8 +1511,16 @@ public class ESContentFactoryImpl extends ContentletFactory {
             Logger.warnAndDebug(ESContentFactoryImpl.class, errorMsg, e);
             throw new DotRuntimeException(errorMsg, e);
         }
+    }
             
         
+    private boolean shouldQueryCache(final String exceptionMsg) {
+        if(!shouldQueryCache() || null == exceptionMsg) {
+            return false;
+        }
+        final String exception = exceptionMsg.toLowerCase();
+        return exception.contains("parse_exception") || 
+               exception.contains("search_phase_execution_exception");
         
     }
 
@@ -1546,6 +1550,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
             Logger.warn(this.getClass(), String.format("ES Query: %s", String.valueOf(countRequest.source()) ));
             Logger.warn(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), exceptionMsg));
             Logger.warn(this.getClass(), "----------------------------------------------");
+            if(shouldQueryCache(exceptionMsg)) {
+                queryCache.put(countRequest, -1L);
+            }
             return -1L;
         } catch(final IllegalStateException e) {
             rebuildRestHighLevelClientIfNeeded(e);
@@ -1920,11 +1927,18 @@ public class ESContentFactoryImpl extends ContentletFactory {
         final String inode = getInode(existingInode, contentlet);
         upsertContentlet(contentlet, inode);
         contentlet.setInode(inode);
+        final Contentlet toReturn = findInDb(inode).orElseThrow(()->
+                new DotStateException(String.format("Contentlet with inode '%s' not found in DB", inode)));
 
-        REMOVABLE_KEY_SET.forEach(key -> contentlet.getMap().remove(key));
+        if(UtilMethods.isNotSet(contentlet.getIdentifier())) {
+            toReturn.setFolder(contentlet.getFolder());
+            toReturn.setHost(contentlet.getHost());
+        }
+
+        REMOVABLE_KEY_SET.forEach(key -> toReturn.getMap().remove(key));
 
         contentletCache.remove(inode);
-        return contentlet;
+        return toReturn;
     }
 
     private void upsertContentlet(final Contentlet contentlet, final String inode) throws DotDataException {

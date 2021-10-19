@@ -145,7 +145,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
                 if (null == scheduledThreadPoolExecutor) {
                     final int corePoolSize = Config.getIntProperty(SCHEDULER_COREPOOLSIZE, 5);
-                    scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor( corePoolSize,new ThreadFactoryBuilder().setNameFormat("dot-ScheduledPool-%d").build(),new ThreadPoolExecutor.CallerRunsPolicy() );
+                    scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor( corePoolSize,new ThreadFactoryBuilder().setDaemon(true).setNameFormat("dot-ScheduledPool-%d").build(),new ThreadPoolExecutor.CallerRunsPolicy() );
                 }
             }
         }
@@ -157,7 +157,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     final static ThreadFactory buildDefaultThreadFactory(final String executorName) {
 
         if (UtilMethods.isEmpty(executorName)) {
-            new ThreadFactoryBuilder().setNameFormat("dotCMS-%d").build();
+            new ThreadFactoryBuilder().setDaemon(true).setNameFormat("dotCMS-%d").build();
         }
 
         final String className = Config.getStringProperty(executorName + DOTCMS_CONCURRENT_THREADFACTORYCLASS, null);
@@ -169,7 +169,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         }
 
 
-        return new ThreadFactoryBuilder().setNameFormat("dot-" + executorName + "-%d").build();
+        return new ThreadFactoryBuilder().setDaemon(true).setNameFormat("dot-" + executorName + "-%d").build();
 
     }
 
@@ -205,6 +205,10 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
                         "threadPool",  DotConcurrentImpl.class.cast(dotConcurrent).getThreadPoolExecutor().toString(),
                         "maxPoolSize", DotConcurrentImpl.class.cast(dotConcurrent).getThreadPoolExecutor().getMaximumPoolSize(),
                         "keepAlive",   DotConcurrentImpl.class.cast(dotConcurrent).getThreadPoolExecutor().getKeepAliveTime(TimeUnit.MILLISECONDS),
+                        "queue-length",DotConcurrentImpl.class.cast(dotConcurrent).getThreadPoolExecutor().getQueue().size(),
+                        "activeCount", DotConcurrentImpl.class.cast(dotConcurrent).getThreadPoolExecutor().getActiveCount(),
+                        "completedTaskCount", DotConcurrentImpl.class.cast(dotConcurrent).getThreadPoolExecutor().getCompletedTaskCount(),
+                        "TaskCount", DotConcurrentImpl.class.cast(dotConcurrent).getThreadPoolExecutor().getTaskCount(),
                         "queue",       toString(DotConcurrentImpl.class.cast(dotConcurrent).getThreadPoolExecutor().getQueue()),
                         "isShutdown",  DotConcurrentImpl.class.cast(dotConcurrent).shutdown
                         ):
@@ -213,6 +217,10 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
                                 "threadPool",  "noInfo",
                                 "maxPoolSize", dotConcurrent.getMaxPoolSize(),
                                 "keepAlive",   -1,
+                                "queue-length","noInfo",
+                                "activeCount", "noInfo",
+                                "completedTaskCount", "noInfo",
+                                "TaskCount", "noInfo",
                                 "queue",       "noInfo",
                                 "isShutdown",  dotConcurrent.isAborting()
                         )
@@ -221,6 +229,10 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
                         "threadPool",  "noInfo",
                         "maxPoolSize", -1,
                         "keepAlive",   -1,
+                        "queue-length","noInfo",
+                        "activeCount", "noInfo",
+                        "completedTaskCount", "noInfo",
+                        "TaskCount", "noInfo",
                         "queue",       "noInfo",
                         "isShutdown",  false
                 );

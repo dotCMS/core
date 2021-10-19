@@ -138,7 +138,7 @@
 			<!-- }  -->
 
 			<!-- Timezone
-			<%= Calendar.getInstance().getTimeZone().getID() %>
+			<%= APILocator.systemTimeZone().getID() %>
 			-->
 			<td nowrap="nowrap" style="text-align:center;"><%= UtilMethods.dateToHTMLDate(modDate) %> - <%= UtilMethods.dateToHTMLTime(modDate) %></td>
 			<td nowrap="nowrap"><%= vinode %></td>

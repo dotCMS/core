@@ -39,6 +39,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
@@ -309,14 +310,63 @@ public class TemplateResource {
                 this.fillAndSaveTemplate(templateForm, user, host, pageMode, newVersionTemplate), user))).build();
     }
 
+    /**
+     * Saves a new draft version of an existing template. The templateForm must contain the identifier of the template.
+     *
+     * @param request       {@link HttpServletRequest}
+     * @param response      {@link HttpServletResponse}
+     * @param templateForm  {@link TemplateForm}
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @PUT
+    @Path("/draft")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response saveDraft(@Context final HttpServletRequest  request,
+                               @Context final HttpServletResponse response,
+                               final TemplateForm templateForm) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final User user         = initData.getUser();
+        final Host host         = this.hostWebAPI.getCurrentHostNoThrow(request);
+        final PageMode pageMode = PageMode.get(request);
+        final Template currentTemplate = this.templateAPI.findWorkingTemplate(templateForm.getIdentifier(),
+                user, pageMode.respectAnonPerms);
+
+        if (null == currentTemplate) {
+            throw new DoesNotExistException("Template with Id: " + templateForm.getIdentifier() + " does not exist");
+        }
+
+        final Template newVersionTemplate = new Template();
+        newVersionTemplate.setIdentifier(currentTemplate.getIdentifier());
+
+        return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(
+                this.fillAndSaveTemplate(templateForm, user, host, pageMode, newVersionTemplate, true), user))).build();
+    }
+
+    @WrapInTransaction
+    private Template fillAndSaveTemplate(final TemplateForm templateForm,
+                                         final User user,
+                                         final Host host,
+                                         final PageMode pageMode,
+                                         final Template template) throws DotSecurityException, DotDataException {
+
+
+        return fillAndSaveTemplate(templateForm, user, host, pageMode, template, false);
+    }
     @WrapInTransaction
     private Template fillAndSaveTemplate(final TemplateForm templateForm,
             final User user,
             final Host host,
             final PageMode pageMode,
-            final Template template) throws DotSecurityException, DotDataException {
+            final Template template,
+            final boolean draft) throws DotSecurityException, DotDataException {
 
-        template.setInode("");
+        template.setInode(draft?templateForm.getInode(): StringPool.BLANK);
         template.setTheme(templateForm.getTheme());
         template.setBody(templateForm.getBody());
         template.setCountContainers(templateForm.getCountAddContainer());
@@ -349,7 +399,13 @@ public class TemplateResource {
                     themePath, templateForm.isHeaderCheck(), templateForm.isFooterCheck());
             template.setBody(endBody.toString());
         }
-        this.templateAPI.saveTemplate(template, host, user, pageMode.respectAnonPerms);
+
+        if (draft) {
+
+            this.templateAPI.saveDraftTemplate(template, host, user, pageMode.respectAnonPerms);
+        } else {
+            this.templateAPI.saveTemplate(template, host, user, pageMode.respectAnonPerms);
+        }
 
         ActivityLogger.logInfo(this.getClass(), "Saved Template", "User " + user.getPrimaryKey()
                 + "Template: " + template.getTitle(), host.getTitle() != null? host.getTitle():"default");
