@@ -26,13 +26,17 @@
 	const uploadPlugin = ({files, onSuccess, updateProgress, onError}) => {
         // Check if we get an array of files otherwise create array.
         const data = Array.isArray(files) ? files : [files];
-        
+
         // Create Form Data
         const formData = new FormData();
         data.forEach((file) => formData.append('file', file));
         formData.append('json', '{}');
+        
+        return new Promise((res, rej) => {
+            if(!isJarFile(files)) {
+                // TODO: Throw Error
+            };
 
-		return new Promise((res, rej) => {
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/osgi');
             xhr.onload = () => res(xhr);
@@ -49,20 +53,30 @@
             xhr.send(formData);
 
         }).then(async (request) => {
-            if (request.status === 200) {
-                onSuccess();
-                dijit.byId('savingOSGIDialog').show();
-                return JSON.parse(request.response);
-            } else {
+            if (request.status !== 200) {
                 throw request;
             }
+            onSuccess();
+            dijit.byId('savingOSGIDialog').show();
+            return JSON.parse(request.response);
         })
         .catch((request) => {
             const response = JSON.parse(request.response);
-            const errors = response.errors;
-            onError(headerError, errors[0].message);
-            throw errors;
+            const errorMesage = response.errors[0].message;
+            onError(headerError, errorMesage);
+            throw response;
         });
+    }
+
+    const isJarFile = (files) => {
+        let isValid = true;
+        for (let i = 0; i < files.length; i++) {
+            if (!files[i].name.endsWith('.jar')) {
+                isValid = false;
+                break;
+            }
+        }
+        return isValid;
     }
 
     dotAssetDropZone.customUploadFiles = uploadPlugin;

@@ -80,7 +80,7 @@
 			<button dojoType="dijit.form.Button" type="submit" onclick="javascript:bundles.deploy()"><%=LanguageUtil.get(pageContext, "OSGI-Load-Bundle")%></button>
 		</div>
 		<div class="portlet-toolbar__info">
-                  <input type="checkbox" id="ignoresystembundles" value="true" checked="true" onclick="new function(e){getBundlesData()}"> <label for="ignoresystembundles"> &nbsp; Show system bundles</label>
+                  <input type="checkbox" id="ignoresystembundles" value="false" onclick="new function(e){getBundlesData()}"> <label for="ignoresystembundles"> &nbsp; Show system bundles</label>
 		</div>
     	<div class="portlet-toolbar__actions-secondary">
 
