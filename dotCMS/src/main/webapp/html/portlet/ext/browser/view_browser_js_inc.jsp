@@ -273,9 +273,6 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         var inode = getInodeFromID(Event.element(e).id);
         showDebugMessage('contentDIVClicked: inode = ' + inode +
             ', selectedContent = ' + selectedContent);
-        if(inode == selectedContent && changingNameTo != inode) {
-            setTimeout('enableChangeContentName ("' + inode + '")', 500);
-        }
         return false;
     }
 
@@ -831,7 +828,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                 Event.observe(asset.inode + '-DIV', 'mouseup', contentNameDIVClicked);
                 Event.observe(asset.inode + '-ShowOnMenuSPAN', 'click', contentShowOnMenuClicked);
                 Event.observe(asset.inode + '-TR', 'mouseup', contentTRMouseUp);
-                Event.observe(asset.inode + '-TR', 'dblclick', contentTRDoubleClicked);
+                // Event.observe(asset.inode + '-TR', 'dblclick', contentTRDoubleClicked);
                 Event.observe(asset.inode + '-TR', 'mouseout', mouseOutContent);
                 Event.observe(asset.inode + '-TR', 'mouseover', mouseOverContent);
 
@@ -1136,47 +1133,6 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
             executeChangeName();
         }
         return false;
-    }
-
-    function enableChangeContentName (inode) {
-        if (changingNameTo != inode && !dragging && !doubleClicked) {
-            showDebugMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Enabling-name-edit-on")) %>: ' + changingNameTo);
-            executeChangeName (changingNameTo);
-
-            if (inodes[inode].type != 'links')
-                var currentName = $(inode + '-NameSPAN').innerHTML.replace(/&nbsp;/g,'').replace(/\s/g,'_');
-            else
-                var currentName = $(inode + '-NameSPAN').innerHTML;
-
-            if(inodes[inode].type == 'htmlpage') {
-                var currentName = inodes[inode].pageUrl;
-            } else if(inodes[inode].type == 'folder') {
-                var currentName = inodes[inode].name;
-            } else if (inodes[inode].type == 'file_asset') {
-                var currentName = inodes[inode].fileName;
-            } else if (inodes[inode].type == 'links') {
-                var currentName = inodes[inode].title;
-            }
-
-
-            if (currentName.lastIndexOf('.') != -1 && inodes[inode].type != 'htmlpage') {
-                changingNameExt = currentName.substring((currentName.lastIndexOf('.') + 1), currentName.length);
-                currentName = currentName.substring(0, currentName.lastIndexOf('.'));
-                lastName = currentName;
-            } else {
-                changingNameExt = "";
-                lastName = currentName;
-            }
-
-            $(inode + '-NameSPAN').innerHTML = '<input type="text" id="' + inode + '-NameText" ' +
-                'value="'+currentName+'" class="nameChangeText"/>';
-            $(inode + '-NameText').focus();
-            $(inode + '-NameText').select();
-            Event.observe(inode + '-NameText', 'keypress', nameChangeKeyHandler);
-            Event.observe(inode + '-NameText', 'blur', blurChangeNameTextField);
-        }
-        if(!dragging && !doubleClicked)
-            changingNameTo = inode;
     }
 
     function executeChangeName () {
