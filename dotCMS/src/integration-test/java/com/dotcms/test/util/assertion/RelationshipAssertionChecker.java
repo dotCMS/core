@@ -46,7 +46,8 @@ public class RelationshipAssertionChecker implements AssertionChecker<Relationsh
     @Override
     public Collection<String> getRegExToRemove(File file) {
         return list(
-                "<iDate>.*</iDate>"
+                "<iDate>.*</iDate>",
+                "<relationship>.*</relationship>"
         );
     }
 }
