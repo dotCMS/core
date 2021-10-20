@@ -19,6 +19,8 @@
 </dot-asset-drop-zone">
 
 <script type="application/javascript">
+    const headerError = '<%=LanguageUtil.get(pageContext, "OSGI-Header-Error")%>';
+    const dotAssetDropZone = document.querySelector('dot-asset-drop-zone');
 
 	const uploadPlugin = ({files, onSuccess, updateProgress, onError}) => {
         // Check if we get an array of files otherwise create array.
@@ -30,10 +32,6 @@
         formData.append('json', '{}');
         
         return new Promise((res, rej) => {
-            if(!isJarFile(files)) {
-                rej(extensionError);
-            };
-
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/osgi');
             xhr.onload = () => res(xhr);
@@ -65,26 +63,8 @@
         });
     }
 
-    const isJarFile = (files) => {
-        let isValid = true;
-        for (let i = 0; i < files.length; i++) {
-            if (!files[i].name.endsWith('.jar')) {
-                isValid = false;
-                break;
-            }
-        }
-        return isValid;
-    }
-
-    const headerError = '<%=LanguageUtil.get(pageContext, "OSGI-Header-Error")%>';
-    const extensionError = {
-        response: {
-            errors: [
-                { message: '<%=LanguageUtil.get(pageContext, "OSGI-Invalid-Extension-File")%>' }
-            ]
-        }
-    }
-    
-	const dotAssetDropZone = document.querySelector('dot-asset-drop-zone');
+    // Custom Props
     dotAssetDropZone.customUploadFiles = uploadPlugin;
+    dotAssetDropZone.acceptTypes = ['.jar'];
+    dotAssetDropZone.typesErrorLabel = '<%=LanguageUtil.get(pageContext, "OSGI-Invalid-Extension-File")%>';
 </script>
