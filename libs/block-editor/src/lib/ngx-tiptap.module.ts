@@ -17,6 +17,7 @@ import { ActionButtonComponent } from './extensions/components/action-button/act
 import { SuggestionsListItemComponent } from './extensions/components/suggestions-list-item/suggestions-list-item.component';
 import { LoggerService } from '@dotcms/dotcms-js';
 import { StringUtils } from '@dotcms/dotcms-js';
+import { DragHandlerComponent } from './extensions/components/drag-handler/drag-handler.component';
 
 @NgModule({
     imports: [CommonModule, CardModule, MenuModule],
@@ -29,7 +30,8 @@ import { StringUtils } from '@dotcms/dotcms-js';
         SuggestionListComponent,
         SuggestionsListItemComponent,
         ContentletBlockComponent,
-        ActionButtonComponent
+        ActionButtonComponent,
+        DragHandlerComponent
     ],
     providers: [SuggestionsService, LoggerService, StringUtils],
     exports: [
