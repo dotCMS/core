@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.page;
 
 
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.exception.DoesNotExistException;
 import javax.servlet.http.HttpSession;
@@ -453,7 +454,7 @@ public class PageResource {
                         throw new BadRequestException("The contentlet: " + contentletId + " does not exists!");
                     }
 
-                    if (!contentTypeSet.contains(contentlet.getContentType().variable())) {
+                    if (contentlet.getBaseType().get().equals(BaseContentType.CONTENT) && !contentTypeSet.contains(contentlet.getContentType().variable())) {
 
                         throw new BadRequestException("The content type: " + contentlet.getContentType().variable() + " is not valid for the container");
                     }
