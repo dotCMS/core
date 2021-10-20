@@ -3,6 +3,8 @@ package com.dotcms.rest.api.v1.page;
 
 
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.exception.DoesNotExistException;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.*;
@@ -14,6 +16,7 @@ import com.dotcms.rest.api.v1.personalization.PersonalizationPersonaPageViewPagi
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
@@ -78,10 +81,10 @@ public class PageResource {
      */
     public PageResource() {
         this(
-            PageResourceHelper.getInstance(),
-            new WebResource(),
-            APILocator.getHTMLPageAssetRenderedAPI(),
-            APILocator.getContentletAPI()
+                PageResourceHelper.getInstance(),
+                new WebResource(),
+                APILocator.getHTMLPageAssetRenderedAPI(),
+                APILocator.getContentletAPI()
         );
     }
 
@@ -100,7 +103,7 @@ public class PageResource {
 
     /**
      * Returns the metadata in JSON format of the objects that make up an HTML Page in the system.
-     * 
+     *
      * <pre>
      * Format:
      * http://localhost:8080/api/v1/page/json/{page-url}
@@ -115,7 +118,7 @@ public class PageResource {
      * @param modeParam {@link PageMode}
      * @param personaId {@link com.dotmarketing.portlets.personas.model.Persona}'s identifier to render the page
      * @param languageId {@link com.dotmarketing.portlets.languagesmanager.model.Language}'s Id to render the page
-     * @param deviceInode {@link org.apache.batik.svggen.font.table.Device}'s inode to render the page
+     * @param deviceInode {@link }'s inode to render the page
      * @return All the objects on an associated HTML Page.
      */
     @NoCache
@@ -150,7 +153,7 @@ public class PageResource {
             }
 
             final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageMetadata(
-                      PageContextBuilder.builder()
+                    PageContextBuilder.builder()
                             .setUser(user)
                             .setPageUri(uri)
                             .setPageMode(mode)
@@ -201,7 +204,7 @@ public class PageResource {
      * @param modeParam {@link PageMode}
      * @param personaId {@link com.dotmarketing.portlets.personas.model.Persona}'s identifier to render the page
      * @param languageId {@link com.dotmarketing.portlets.languagesmanager.model.Language}'s Id to render the page
-     * @param deviceInode {@link org.apache.batik.svggen.font.table.Device}'s inode to render the page
+     * @param deviceInode {@link java.lang.String}'s inode to render the page
      * @return
      */
     @NoCache
@@ -209,12 +212,12 @@ public class PageResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/render/{uri: .*}")
     public Response render(@Context final HttpServletRequest originalRequest,
-                                   @Context final HttpServletResponse response,
-                                   @PathParam("uri") final String uri,
-                                   @QueryParam(WebKeys.PAGE_MODE_PARAMETER) final String modeParam,
-                                   @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
-                                   @QueryParam(WebKeys.LANGUAGE_ID_PARAMETER) final String languageId,
-                                   @QueryParam("device_inode") final String deviceInode) throws DotSecurityException, DotDataException {
+            @Context final HttpServletResponse response,
+            @PathParam("uri") final String uri,
+            @QueryParam(WebKeys.PAGE_MODE_PARAMETER) final String modeParam,
+            @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
+            @QueryParam(WebKeys.LANGUAGE_ID_PARAMETER) final String languageId,
+            @QueryParam("device_inode") final String deviceInode) throws DotSecurityException, DotDataException {
 
         Logger.debug(this, ()->String.format(
                 "Rendering page: uri -> %s mode-> %s language -> persona -> %s device_inode -> %s live -> %b",
@@ -281,9 +284,9 @@ public class PageResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/{pageId}/layout")
     public Response saveLayout(@Context final HttpServletRequest request,
-                               @Context final HttpServletResponse response,
-                               @PathParam("pageId") final String pageId,
-                               final PageForm form) throws DotSecurityException {
+            @Context final HttpServletResponse response,
+            @PathParam("pageId") final String pageId,
+            final PageForm form) throws DotSecurityException {
 
         Logger.debug(this, String.format("Saving layout: pageId -> %s layout-> %s", pageId,
                 form != null ? form.getLayout() : null));
@@ -400,9 +403,9 @@ public class PageResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("{pageId}/content")
     public final Response addContent(@Context final HttpServletRequest request,
-                                     @Context final HttpServletResponse response,
-                                     @PathParam("pageId") final String pageId,
-                                     final PageContainerForm pageContainerForm)
+            @Context final HttpServletResponse response,
+            @PathParam("pageId") final String pageId,
+            final PageContainerForm pageContainerForm)
             throws DotSecurityException, DotDataException {
 
         Logger.debug(this, ()->String.format("Saving page's content: %s",
@@ -422,6 +425,8 @@ public class PageResource {
             APILocator.getPermissionAPI().checkPermission(page, PermissionLevel.EDIT, user);
 
             final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
+            this.validateContainerEntries(pageContainerForm.getContainerEntries());
+
             pageResourceHelper.saveContent(pageId, this.reduce(pageContainerForm.getContainerEntries()), language);
 
             return Response.ok(new ResponseEntityView("ok")).build();
@@ -430,6 +435,48 @@ public class PageResource {
                     pageId);
             Logger.error(this, errorMsg, e);
             return ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+        }
+    }
+
+    protected void validateContainerEntries(final List<PageContainerForm.ContainerEntry> containerEntries) {
+
+        final Map<String, Set<String>> containerContentTypesMap = new HashMap<>();
+        for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
+
+            final String containerId = containerEntry.getContainerId();
+            final Set<String> contentTypeSet    = containerContentTypesMap.computeIfAbsent(containerId,  key -> this.getContainerContentTypes(containerId));
+            final List<String> contentletIdList = containerEntry.getContentIds();
+            for (final String contentletId : contentletIdList) {
+                final Contentlet contentlet;
+                try {
+                    contentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(contentletId);
+                    if (null == contentlet) {
+
+                        throw new BadRequestException("The contentlet: " + contentletId + " does not exists!");
+                    }
+
+                    if (contentlet.getBaseType().get().equals(BaseContentType.CONTENT) && !contentTypeSet.contains(contentlet.getContentType().variable())) {
+
+                        throw new BadRequestException("The content type: " + contentlet.getContentType().variable() + " is not valid for the container");
+                    }
+                } catch (DotDataException e) {
+
+                    throw new BadRequestException(e, e.getMessage());
+                }
+            }
+        }
+    }
+
+    private Set<String> getContainerContentTypes (final String containerId) {
+
+        try {
+            final Container container = APILocator.getContainerAPI().findContainer(containerId,APILocator.systemUser(),false,false)
+                    .orElseThrow(() -> new DoesNotExistException("Container with ID :" + containerId + " not found"));
+            final List<ContentType> contentTypes = APILocator.getContainerAPI().getContentTypesInContainer(container);
+            return null != contentTypes? contentTypes.stream().map(ContentType::variable).collect(Collectors.toSet()) : Collections.emptySet();
+        } catch (DotDataException | DotSecurityException e) {
+
+            throw new BadRequestException(e, e.getMessage());
         }
     }
 
@@ -455,7 +502,6 @@ public class PageResource {
                         (String)entry.getKey().getKeys()[1], (String)entry.getKey().getKeys()[2], new ArrayList<>(entry.getValue())))
                 .collect(Collectors.toList());
     }
-
     /**
      *
      * @param request
@@ -469,9 +515,9 @@ public class PageResource {
     @Produces({"application/html", "application/javascript"})
     @Path("/renderHTML/{uri: .*}")
     public Response renderHTMLOnly(@Context final HttpServletRequest request,
-                                   @Context final HttpServletResponse response,
-                                   @PathParam("uri") final String uri,
-                                   @QueryParam("mode") @DefaultValue("LIVE_ADMIN") final String modeStr)
+            @Context final HttpServletResponse response,
+            @PathParam("uri") final String uri,
+            @QueryParam("mode") @DefaultValue("LIVE_ADMIN") final String modeStr)
             throws DotDataException, DotSecurityException {
 
         Logger.debug(this, String.format("Rendering page: uri -> %s mode-> %s", uri, modeStr));
@@ -524,11 +570,11 @@ public class PageResource {
     @Produces({"application/html", "application/javascript"})
     @Path("search")
     public Response searchPage(
-                @Context final HttpServletRequest request,
-                @Context final HttpServletResponse response,
-                @QueryParam("path") final String path,
-                @QueryParam("live") final Boolean liveQueryParam,
-                @QueryParam("onlyLiveSites") final boolean onlyLiveSites)
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @QueryParam("path") final String path,
+            @QueryParam("live") final Boolean liveQueryParam,
+            @QueryParam("onlyLiveSites") final boolean onlyLiveSites)
             throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = webResource.init(null,  request, response,
@@ -571,15 +617,15 @@ public class PageResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response getPersonalizedPersonasOnPage (@Context final HttpServletRequest  request,
-                                                   @Context final HttpServletResponse response,
-                                                   @QueryParam(PaginationUtil.FILTER)   final String filter,
-                                                   @QueryParam(PaginationUtil.PAGE)     final int page,
-                                                   @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
-                                                   @DefaultValue("title") @QueryParam(PaginationUtil.ORDER_BY) final String orderbyParam,
-                                                   @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION)  final String direction,
-                                                   @QueryParam("hostId") final String  hostId,
-                                                   @PathParam("pageId")  final String  pageId,
-                                                   @QueryParam("respectFrontEndRoles") Boolean respectFrontEndRolesParams) throws SystemException, PortalException, DotDataException, DotSecurityException {
+            @Context final HttpServletResponse response,
+            @QueryParam(PaginationUtil.FILTER)   final String filter,
+            @QueryParam(PaginationUtil.PAGE)     final int page,
+            @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+            @DefaultValue("title") @QueryParam(PaginationUtil.ORDER_BY) final String orderbyParam,
+            @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION)  final String direction,
+            @QueryParam("hostId") final String  hostId,
+            @PathParam("pageId")  final String  pageId,
+            @QueryParam("respectFrontEndRoles") Boolean respectFrontEndRolesParams) throws SystemException, PortalException, DotDataException, DotSecurityException {
 
         final User user = this.webResource.init(request, response, true).getUser();
         final boolean respectFrontEndRoles = respectFrontEndRolesParams != null ? respectFrontEndRolesParams : PageMode.get(request).respectAnonPerms;
@@ -615,12 +661,12 @@ public class PageResource {
         path = path.replace("/", "\\\\/");
 
         return String.format("{"
-            + "query: {"
+                + "query: {"
                 + "query_string: {"
-                    + "query: \"+basetype:5 +path:*%s* %s languageid:1^10\""
+                + "query: \"+basetype:5 +path:*%s* %s languageid:1^10\""
                 + "}"
-            + "}"
-        + "}", path, hostFilter);
+                + "}"
+                + "}", path, hostFilter);
     }
 
     private Collection<Contentlet> applyFilters(

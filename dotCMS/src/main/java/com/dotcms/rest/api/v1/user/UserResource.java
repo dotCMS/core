@@ -25,6 +25,7 @@ import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -436,6 +437,7 @@ public class UserResource implements Serializable {
 		session.setAttribute(WebKeys.USER_ID, userToImpersonate);
 		PrincipalThreadLocal.setName(userToImpersonate);
 		session.setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST, site);
+		session.setAttribute("com.dotcms.repackage.org.apache.struts.action.LOCALE", WebAPILocator.getUserWebAPI().getUser(request).getLocale());
 	}
 
 	/**
