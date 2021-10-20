@@ -28,6 +28,7 @@ import com.dotcms.enterprise.publishing.remote.bundler.RuleBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.TemplateBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.WorkflowBundlerTest;
 import com.dotcms.enterprise.publishing.remote.handler.ContentHandlerTest;
+import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
 import com.dotcms.junit.MainBaseSuite;
@@ -477,7 +478,8 @@ import org.junit.runners.Suite.SuiteClasses;
         ManifestReaderFactoryTest.class,
         Task211007RemoveNotNullConstraintFromCompanyMXColumnTest.class,
         ManifestReaderFactoryTest.class,
-        Task211012AddCompanyDefaultLanguageTest.class
+        Task211012AddCompanyDefaultLanguageTest.class,
+        StaticPublisherIntegrationTest.class
 })
 public class MainSuite {
 
