@@ -478,6 +478,8 @@ function doCreateSiteSearch(alias,number) {
 		return;
 	}
 
+    alias = alias.trim();
+
 	let aliasTestResult = /^(?=.{3,60}$)^(?![-_])[a-zA-Z0-9_-]+$/.test(alias);
 	if(!aliasTestResult) {
 		showDotCMSErrorMessage("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Invalid-Index-Alias")) %>");
@@ -568,7 +570,7 @@ function submitSchedule() {
 
 	//Based on the error invalid_alias_name_exception returned by the ES
 	//Alias must not contain the following characters [ , \", *, \\, <, |, ,, >, /, ?]"}]
-	let indexAlias = dojo.byId("indexAlias").value;
+	let indexAlias = dojo.byId("indexAlias").value.trim();
 
 	let aliasTestResult = /^(?=.{3,60}$)^(?![-_])[a-zA-Z0-9_-]+$/.test(indexAlias);
 

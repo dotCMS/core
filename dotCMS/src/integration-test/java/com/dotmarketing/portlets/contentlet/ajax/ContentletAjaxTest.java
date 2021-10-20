@@ -4,6 +4,7 @@ import static com.dotcms.integrationtestutil.content.ContentUtils.createTestKeyV
 import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentlets;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -16,6 +17,7 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
@@ -32,6 +34,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.collect.ImmutableList;
@@ -43,6 +46,7 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpSession;
@@ -156,7 +160,7 @@ public class ContentletAjaxTest {
 		Map<String,Object> result = (Map<String,Object>)results.get(0);
 		Assert.assertEquals((Long)result.get("total"), new Long(1));
 		result = (Map<String,Object>)results.get(3);
-		Assert.assertTrue(Long.parseLong(String.valueOf(result.get("languageId")))==defaultLang.getId());
+		assertTrue(Long.parseLong(String.valueOf(result.get("languageId")))==defaultLang.getId());
 		contentlet = contentletAPI.find(String.valueOf(result.get("inode")),systemUser,false);
 		contentletAPI.archive(contentlet,systemUser,false);
 		contentletAPI.delete(contentlet,systemUser,false);
@@ -176,7 +180,7 @@ public class ContentletAjaxTest {
 		result = (Map<String,Object>)results.get(0);
 		Assert.assertEquals(new Long(1L), (Long)result.get("total"));
 		result = (Map<String,Object>)results.get(3);
-		Assert.assertTrue(Long.parseLong(String.valueOf(result.get("languageId")))==language.getId());
+		assertTrue(Long.parseLong(String.valueOf(result.get("languageId")))==language.getId());
 		contentlet = contentletAPI.find(String.valueOf(result.get("inode")),systemUser,false);
 		contentletAPI.destroy(contentlet, systemUser, false);
 	}
@@ -315,5 +319,49 @@ public class ContentletAjaxTest {
         assertEquals(1, Integer.parseInt(((Map) results.get(0)).get("total").toString()));
         assertEquals(parentContentlet.getIdentifier(), ((Map) results.get(3)).get("identifier"));
     }
+
+	/**
+	 * <b>Method to Test:</b> {@link ContentletAjax#searchContentletsByUser(List, String, List, List,
+	 * boolean, boolean, boolean, boolean, int, String, int, User, HttpSession, String, String)}<p>
+	 * <b>When:</b> filtering by specific dates or a date range<p>
+	 * <b>Should:</b> Return results
+	 */
+	@Test
+	public void test_searchContentletsByUser_filteringByDates_returns_validResults()
+			throws DotDataException, DotSecurityException {
+		final ContentletAjax contentletAjax = new ContentletAjax();
+		final ContentType eventContentType = contentTypeAPI.find("calendarEvent");
+		final Date currentDate = new Date();
+		final String formattedDate = DateUtil.format(currentDate, "MM/dd/yyyy");
+		final Contentlet event = new ContentletDataGen(eventContentType.id())
+				.setProperty("title", "MyEvent" + System.currentTimeMillis())
+				.setProperty("startDate", currentDate).setProperty("endDate", currentDate).nextPersisted();
+
+		//Filtering by specific dates
+		List results = contentletAjax.searchContentletsByUser(ImmutableList.of(BaseContentType.ANY),
+				eventContentType.inode(),
+				CollectionsUtils.list("identifier", event.getIdentifier(), "calendarEvent.startDate",
+						formattedDate),
+				Collections.emptyList(), false, false, false,
+				false, 0, "moddate", 0, systemUser, null, null, null);
+
+		assertTrue(UtilMethods.isSet(results));
+		assertEquals(1L, ((HashMap) results.get(0)).get("total"));
+		assertEquals(event.getInode(), ((HashMap) results.get(3)).get("inode"));
+
+		//Filtering by date range
+		final StringBuilder dateRange = new StringBuilder();
+		dateRange.append(StringPool.OPEN_BRACKET).append(formattedDate).append(" TO ").append(formattedDate).append(StringPool.CLOSE_BRACKET);
+		results = contentletAjax.searchContentletsByUser(ImmutableList.of(BaseContentType.ANY),
+				eventContentType.inode(),
+				CollectionsUtils.list("identifier", event.getIdentifier(), "calendarEvent.startDate",
+						dateRange.toString()),
+				Collections.emptyList(), false, false, false,
+				false, 0, "moddate", 0, systemUser, null, null, null);
+
+		assertTrue(UtilMethods.isSet(results));
+		assertEquals(1L, ((HashMap) results.get(0)).get("total"));
+		assertEquals(event.getInode(), ((HashMap) results.get(3)).get("inode"));
+	}
 
 }

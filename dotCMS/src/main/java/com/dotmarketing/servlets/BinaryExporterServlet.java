@@ -113,6 +113,11 @@ public class BinaryExporterServlet extends HttpServlet {
 
 	private long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
+	
+	private final boolean ASSETS_USE_WEAK_ETAGS = Config.getBooleanProperty("ASSETS_USE_WEAK_ETAGS", true);
+	
+	
+	
 	@SuppressWarnings("unchecked")
 	@Override
 	public void init() throws ServletException {
@@ -484,7 +489,7 @@ public class BinaryExporterServlet extends HttpServlet {
 					Date _lastModifiedDate = new java.util.Date(_lastModified);
 
 					
-					String _eTag = "dot:" + assetInode + ":" + _lastModified + ":" + _fileLength;
+					String _eTag = (ASSETS_USE_WEAK_ETAGS ? "W/" : "") + "dot:" + assetInode + ":" + _lastModified + ":" + _fileLength;
 
 					SimpleDateFormat httpDate = new SimpleDateFormat(Constants.RFC2822_FORMAT);
 					httpDate.setTimeZone(TimeZone.getTimeZone("GMT"));

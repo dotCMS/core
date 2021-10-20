@@ -26,6 +26,10 @@ public class DownloadUtil {
     
     public static final ThreadLocalHTTPDate httpDate = new DownloadUtil.ThreadLocalHTTPDate();
     
+    private final static boolean ASSETS_USE_WEAK_ETAGS = Config.getBooleanProperty("ASSETS_USE_WEAK_ETAGS", true);
+    
+    
+    
     public static boolean isModifiedEtag(HttpServletRequest request, HttpServletResponse response,String assetId, long _lastModified, long fileSize) {
         int _daysCache = Config.getIntProperty("asset.cache.control.max.days", 30);
         GregorianCalendar expiration = new GregorianCalendar();
@@ -40,7 +44,7 @@ public class DownloadUtil {
         _lastModified = _lastModified * 1000;
         Date _lastModifiedDate = new java.util.Date(_lastModified);
 
-        String _eTag = "dot:" + assetId + ":" + _lastModified + ":" + fileSize;
+        String _eTag = (ASSETS_USE_WEAK_ETAGS ? "W/" : "") + "dot:" + assetId + ":" + _lastModified + ":" + fileSize;
 
         /* Setting cache friendly headers */
         if (!response.containsHeader(EXPIRES)) {

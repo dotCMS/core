@@ -164,6 +164,11 @@ ext {
     if (project.hasProperty('password')) {
         repositoryPassword = "$password"
     }
+
+    gitSubModuleCheckout = "detached"
+    if (project.hasProperty('subModuleCheckout')) {
+        gitSubModuleCheckout = "$subModuleCheckout"
+    }
 }
 
 //We will only apply the dependencies for the dotcms_version.jar, adding these dependencies affects the creation of the pom file for this artifact
@@ -273,8 +278,11 @@ uploadAntTooling.finalizedBy "generateArtifact"
 task generateArtifact(type: GradleBuild) {
 
     //Get the latest changes from the branch for each submodule
-    project.exec{
-        commandLine "git", "submodule", "update", "--remote"
+
+    if ("detached".equals(gitSubModuleCheckout)) {
+        project.exec {
+            commandLine "git", "submodule", "update", "--remote"
+        }
     }
 
     buildFile = "$submodulePath/build.gradle"
