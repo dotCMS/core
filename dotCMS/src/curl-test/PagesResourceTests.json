@@ -1521,7 +1521,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "[{\"identifier\":\"5a07f889-4536-4956-aa6e-e7967969ec3f\",\"uuid\":\"1\",\"contentletsId\":[\"d4ed1990-b151-42ca-9bca-0725b07260de\"]},{\"identifier\":\"//demo.dotcms.com/application/containers/default/\",\"uuid\":\"1\",\"contentletsId\":[\"f827c41a-5689-4733-b4d7-916d3a31c9c6\"]}]"
+							"raw": "[{\"identifier\":\"5a07f889-4536-4956-aa6e-e7967969ec3f\",\"uuid\":\"1\",\"contentletsId\":[\"d4ed1990-b151-42ca-9bca-0725b07260de\"]},{\"identifier\":\"//demo.dotcms.com/application/containers/default/\",\"uuid\":\"1\",\"contentletsId\":[\"f827c41a-5689-4733-b4d7-916d3a31c9c6\",\"7c9cb3a7-bb68-4fd0-b21d-03ec4be491a7\"]}]"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/page/bec7b960-a8bf-4f14-a22b-0d94caf217f0/content",
@@ -1536,7 +1536,7 @@
 								"content"
 							]
 						},
-						"description": "@Path(\"{pageId}/content\")"
+						"description": "Adds Content to a Page, the container, template, page and contentlets are imported.\n\n7c9cb3a7-bb68-4fd0-b21d-03ec4be491a7 = container Banner\n7c9cb3a7-bb68-4fd0-b21d-03ec4be491a7e = Banner contentlet\n7c9cb3a7-bb68-4fd0-b21d-03ec4be491a7 = Container as File Default\nf827c41a-5689-4733-b4d7-916d3a31c9c6 = Rich Text Contentlet\n7c9cb3a7-bb68-4fd0-b21d-03ec4be491a7 = Widget Contentlet"
 					},
 					"response": []
 				},
