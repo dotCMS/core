@@ -740,7 +740,7 @@ public class PublisherAPIImplTest {
                 filesExpectedPath, filePaths);
 
         assertEquals(String.format(
-                "Expected %d but get %d in %s\nExpected %s\nExisting %s\ndifference %s\n ",
+                "Expected %d but get %d in %s\nExpected %s\nExisting %s\ndifference %s\n",
                 numberFilesExpected, numberFiles, bundleRoot, filesExpectedPath, filePaths,
                 differences),
                 numberFilesExpected, numberFiles);

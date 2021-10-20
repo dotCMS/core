@@ -101,8 +101,7 @@ public class ContainerAssertionChecker implements AssertionChecker<Container> {
                 "<csList/>",
                 " class=\"com.google.common.collect.RegularImmutableList\" resolves-to=\"com.google.common.collect.ImmutableList$SerializedForm\"",
                 "<elements>",
-                "</elements>",
-                "<csList>.*</csList>"
+                "</elements>"
         );
     }
 }
