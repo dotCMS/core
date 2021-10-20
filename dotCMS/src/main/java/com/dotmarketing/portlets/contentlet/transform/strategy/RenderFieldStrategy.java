@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.contentlet.transform.strategy;
 import com.dotcms.api.APIProvider;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
+import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.CustomField;
 import com.dotcms.contenttype.model.field.Field;
@@ -89,7 +90,7 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
     public static boolean isFieldRenderable(final Field field) {
         return field instanceof WysiwygField || field instanceof TextField ||
                 field instanceof TextAreaField || field instanceof CustomField
-                || field instanceof ConstantField;
+                || field instanceof ConstantField || field instanceof StoryBlockField;
     }
 
     public static Object renderFieldValue(final HttpServletRequest request,

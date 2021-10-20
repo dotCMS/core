@@ -31,7 +31,8 @@ import org.immutables.value.Value.Derived;
 	property = "clazz"
 )
 @JsonSubTypes({
-	@Type(value = BinaryField.class),
+	@Type(value = StoryBlockField.class),
+    @Type(value = BinaryField.class),
 	@Type(value = CategoryField.class),
 	@Type(value = CheckboxField.class),
 	@Type(value = ConstantField.class),
