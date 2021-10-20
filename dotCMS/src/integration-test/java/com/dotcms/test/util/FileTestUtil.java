@@ -289,7 +289,8 @@ public class FileTestUtil {
 
         final Collection<String> toRemove = new ArrayList<>();
         toRemove.addAll(toRemoveParams);
-
+        toRemove.add("<.*></.*>");
+        
         String result = content;
 
         for (String regex : toRemove) {
