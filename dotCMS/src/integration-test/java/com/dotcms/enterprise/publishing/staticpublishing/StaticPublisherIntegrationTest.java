@@ -1,5 +1,6 @@
 package com.dotcms.enterprise.publishing.staticpublishing;
 
+import static com.dotcms.enterprise.publishing.bundlers.HTMLPageAsContentBundler.HTMLPAGE_ASSET_EXTENSION;
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getContentTypeWithURlMap;
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getDeletedContentWithURlMap;
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getFolderWithLiveFileAssetAndPage;
@@ -202,7 +203,10 @@ public class StaticPublisherIntegrationTest {
                 if (String.class.isInstance(fileExpected.content)) {
                     String fileContent = FileTestUtil.removeSpace(
                             FileTestUtil.getFileContent(file));
-                    fileContent = FileTestUtil.removeContent(fileContent, getXMLFileToRemove());
+
+                    if (file.getAbsolutePath().endsWith(HTMLPAGE_ASSET_EXTENSION)) {
+                        fileContent = FileTestUtil.removeContent(fileContent, getXMLFileToRemove());
+                    }
 
                     Assert.assertEquals(fileExpected.content, fileContent);
                 } else {
