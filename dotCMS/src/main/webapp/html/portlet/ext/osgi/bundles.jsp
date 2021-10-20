@@ -82,15 +82,17 @@
 		<div class="portlet-toolbar__info">
                   <input type="checkbox" id="ignoresystembundles" value="false" onclick="new function(e){getBundlesData()}"> <label for="ignoresystembundles"> &nbsp; Show system bundles</label>
 		</div>
-    	<div class="portlet-toolbar__actions-secondary">
-
-    		<!-- START Actions -->			
-			<button dojoType="dijit.form.Button" onClick="javascript:dijit.byId('uploadOSGIDialog').show()" iconClass="plusIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-Upload-Bundle")%></button>
-			<button dojoType="dijit.form.Button" onClick="bundles.reboot(true);" iconClass="resetIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-restart-framework")%></button>
-			<button dojoType="dijit.form.Button" onClick="bundles.extraPackages();" iconClass="editIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-extra-packages")%></button>
-			<button dojoType="dijit.form.Button" onClick="getBundlesData" iconClass="resetIcon" type="button"><%=LanguageUtil.get(pageContext, "Refresh")%></button>
-			<!-- END Actions -->
-    	</div>
+        <div>
+            <div class="portlet-toolbar__actions-secondary">
+                <!-- START Actions -->			
+                <button dojoType="dijit.form.Button" onClick="javascript:dijit.byId('uploadOSGIDialog').show()" iconClass="plusIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-Upload-Bundle")%></button>
+                <button dojoType="dijit.form.Button" onClick="bundles.reboot(true);" iconClass="resetIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-restart-framework")%></button>
+                <button dojoType="dijit.form.Button" onClick="bundles.extraPackages();" iconClass="editIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-extra-packages")%></button>
+                <button dojoType="dijit.form.Button" onClick="getBundlesData" iconClass="resetIcon" type="button"><%=LanguageUtil.get(pageContext, "Refresh")%></button>
+                <!-- END Actions -->
+            </div>
+            <span style="text-align: center; margin-top: 4px;"><%=LanguageUtil.get(pageContext, "OSGI-Drag-And-Drop-Allow")%></span>
+        </div>
    </div>
    <!-- END Toolbar -->
 	

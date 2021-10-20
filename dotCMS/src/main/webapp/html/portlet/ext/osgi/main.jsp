@@ -19,9 +19,6 @@
 </dot-asset-drop-zone">
 
 <script type="application/javascript">
-    const headerError = 'Error on upload plugin';
-	// Refresh the list After upload a plugin
-	const dotAssetDropZone = document.querySelector('dot-asset-drop-zone');
 
 	const uploadPlugin = ({files, onSuccess, updateProgress, onError}) => {
         // Check if we get an array of files otherwise create array.
@@ -34,7 +31,7 @@
         
         return new Promise((res, rej) => {
             if(!isJarFile(files)) {
-                // TODO: Throw Error
+                rej(extensionError);
             };
 
             const xhr = new XMLHttpRequest();
@@ -61,7 +58,7 @@
             return JSON.parse(request.response);
         })
         .catch((request) => {
-            const response = JSON.parse(request.response);
+            const response = typeof (request.response) === 'string' ? JSON.parse(request.response) : request.response;
             const errorMesage = response.errors[0].message;
             onError(headerError, errorMesage);
             throw response;
@@ -79,5 +76,15 @@
         return isValid;
     }
 
+    const headerError = '<%=LanguageUtil.get(pageContext, "OSGI-Header-Error")%>';
+    const extensionError = {
+        response: {
+            errors: [
+                { message: '<%=LanguageUtil.get(pageContext, "OSGI-Invalid-Extension-File")%>' }
+            ]
+        }
+    }
+    
+	const dotAssetDropZone = document.querySelector('dot-asset-drop-zone');
     dotAssetDropZone.customUploadFiles = uploadPlugin;
 </script>
