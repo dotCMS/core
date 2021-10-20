@@ -828,7 +828,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                 Event.observe(asset.inode + '-DIV', 'mouseup', contentNameDIVClicked);
                 Event.observe(asset.inode + '-ShowOnMenuSPAN', 'click', contentShowOnMenuClicked);
                 Event.observe(asset.inode + '-TR', 'mouseup', contentTRMouseUp);
-                // Event.observe(asset.inode + '-TR', 'dblclick', contentTRDoubleClicked);
+                Event.observe(asset.inode + '-TR', 'dblclick', contentTRDoubleClicked);
                 Event.observe(asset.inode + '-TR', 'mouseout', mouseOutContent);
                 Event.observe(asset.inode + '-TR', 'mouseover', mouseOverContent);
 
