@@ -7,10 +7,6 @@ import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.util.CollectionsUtils;
-import com.dotmarketing.portlets.containers.model.ContainerView;
-import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
-import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.google.common.collect.Maps;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
@@ -60,9 +56,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -343,6 +337,7 @@ public class ContainerResource implements Serializable {
                 .build();
 
     }
+
 
     private String getHTML(final HttpServletRequest req,
                            final HttpServletResponse res,
