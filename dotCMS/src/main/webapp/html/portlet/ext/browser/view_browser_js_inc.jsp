@@ -38,11 +38,6 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     var lastShowOnMenuClicked;
 
     //Change name variables
-    var changingNameTo;
-    var lastName;
-    var changingNameExt;
-
-    //Change name variables
     var changingShowOnMenuTo;
     var lastShowOnMenu;
 
@@ -109,17 +104,6 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
             var element = draggable.element;
             var handle = draggable.handle;
             dragging = true;
-            if (changingNameTo != null) {
-                var ext = '';
-                if (changingNameExt != null && changingNameExt != '')
-                    ext = '.' + changingNameExt;
-                var elems = handle.getElementsByTagName("span");
-                if (elems.length > 0) {
-                    elems[0].innerHTML = lastName + ext;
-                }
-                $(changingNameTo + '-NameSPAN').innerHTML = lastName + ext;
-                changingNameTo = null;
-            }
         },
 
         onEnd: function(eventName, draggable, e) {
@@ -239,21 +223,6 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         }
     }
 
-
-    //Content Section Event Handlers
-    function nameChangeKeyHandler(e) {
-        var inode = getInodeFromID(Event.element(e).id);
-        if (document.layers)
-            Key = e.which;
-        else
-            Key = e.keyCode;
-        showDebugMessage('nameChangeKeyHandler: inode = ' + inode + ', key = ' + Key);
-        if (Key == 13)
-            executeChangeName ();
-        if (Key == 27)
-            cancelChangeName ();
-    }
-
     function showOnMenuKeyHandler(e) {
         var inode = getInodeFromID(Event.element(e).id);
         if (document.layers)
@@ -283,7 +252,6 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
             ', selectedContent = ' + selectedContent);
         if(inode == selectedContent) {
             enableChangeContentShowOnMenu (inode);
-            executeChangeName ();
         }
         if (changingShowOnMenuTo != inode) {
             showDebugMessage('contentShowOnMenuClicked: executing executeChangeShowOnMenu,  ' +
@@ -325,11 +293,6 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                 addClass(tr, 'contentRowSelected');
                 selectedContent = inode;
             }
-            if (changingNameTo != inode) {
-                showDebugMessage("contentTRMouseUp: <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "calling")) %>executeChangeName inode = " + inode +
-                    ", changingNameTo = " + changingNameTo);
-                executeChangeName();
-            }
             if (changingShowOnMenuTo != inode) {
                 showDebugMessage('contentTRMouseUp: inode = ' + inode +
                     ', changingShowOnMenuTo = ' + changingShowOnMenuTo);
@@ -346,7 +309,6 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         var inode = getInodeFromID(Event.element(e).id);
 
         showDebugMessage('contentTRDoubleClicked: <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Double-click-over")) %>: ' + inode);
-        executeChangeName();
         executeChangeShowOnMenu();
         if (inodes[inode].type == 'folder') {
             showDebugMessage(DWRUtil.toDescriptiveString(inodes[inode], 2));
@@ -1120,131 +1082,6 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
             BrowserAjax.openFolderContent (selectedFolder, sortField, showArchived, selectedLang, selectFolderContentCallBack);
         }
-    }
-
-    function blurChangeNameTextField(e) {
-        var target = Event.element (e);
-        if (e.explicitOriginalTarget)
-            target = e.explicitOriginalTarget;
-
-        var inode = getInodeFromID(target.id);
-        showDebugMessage("blurChangeNameTextField: inode = " + inode + ", changingNameTo = " + changingNameTo);
-        if (inode != changingNameTo) {
-            executeChangeName();
-        }
-        return false;
-    }
-
-    function executeChangeName () {
-        showDebugMessage('executeChangeName: ' + changingNameTo);
-        if (changingNameTo != null) {
-
-            if (changingNameExt == "")
-                ext = "";
-            else
-                ext = "." + changingNameExt;
-
-            if (inodes[changingNameTo].type != 'links')
-                var newName = $(changingNameTo + '-NameText').value.replace(/&nbsp;/g,'').replace(/\s/g,'_');
-            else
-                var newName = $(changingNameTo + '-NameText').value;
-
-            if (lastName != newName && !dragging) {
-                showDebugMessage('Change name on: ' + changingNameTo + ', to: ' + $(changingNameTo + '-NameText').value);
-                var asset = inodes[changingNameTo];
-                if (asset.type == 'folder') {
-                    inodes[changingNameTo].name = newName;
-                    BrowserAjax.renameFolder (changingNameTo, newName, executeChangeNameCallBack);
-                }
-                if (asset.type == 'file_asset') {
-                    inodes[changingNameTo].fileName = newName + ext;
-                    BrowserAjax.renameFile (changingNameTo, newName, executeChangeNameCallBack);
-                }
-                if (asset.type == 'links') {
-                    inodes[changingNameTo].title = newName;
-                    BrowserAjax.renameLink (changingNameTo, newName, executeChangeNameCallBack);
-                }
-                if (asset.type == 'htmlpage') {
-                    inodes[changingNameTo].pageUrl = newName + ext;
-                    BrowserAjax.renameHTMLPage (changingNameTo, newName, executeChangeNameCallBack);
-                }
-            } else {
-                showDebugMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Change-name-on")) %>: ' + changingNameTo + ' <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "hasnt-changed-or-dragging")) %>');
-            }
-
-            $(changingNameTo + '-NameSPAN').innerHTML = shortenString(newName, 30) + ext;
-
-            changingNameTo = null;
-        }
-    }
-
-    function cancelChangeName () {
-        var fullName = "";
-        if (changingNameExt == null || changingNameExt == "")
-            fullName = shortenString(lastName, 30) + "";
-        else
-            fullName = shortenString(lastName, 30) + "." + changingNameExt;
-
-        if ($(changingNameTo + '-NameSPAN') != null)
-            Element.update(changingNameTo + '-NameSPAN', fullName);
-        if ($(changingNameTo + '-TreeFolderName') != null)
-            Element.update(changingNameTo + '-TreeFolderName', fullName);
-
-        changingNameTo = null;
-    }
-
-    function executeChangeNameCallBack (data) {
-
-        var inode = data.inode;
-        var lastName = data.lastName;
-        var newName = data.newName;
-        var ext = data.extension;
-
-        var fullName = "";
-
-        showDebugMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "result")) %>: ' + data.result);
-
-        if (data.result == 0) {
-            if (ext == null || ext == "")
-                fullName = shortenString(newName, 30) + "";
-            else
-                fullName = shortenString(newName, 30) + "." + ext;
-            showDotCMSSystemMessage("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Name-changed")) %>");
-
-            //Emptying the assets rigth hand side listing
-            cleanContentSide();
-
-            //Showing the loading message
-            Element.show('loadingContentListing');
-
-            setTimeout('reloadContent()',1000);
-            if(data.assetType == "folder"){
-                setTimeout(function(){
-                    BrowserAjax.getTree(null, initializeTree);
-                },1000);
-            }
-        } else {
-            var asset = inodes[inode];
-            if (asset.type == 'folder') {
-                inodes[inode].name = lastName;
-            }
-            if (asset.type == 'file_asset') {
-                inodes[inode].fileName = lastName + "." + ext;
-            }
-            if (asset.type == 'links') {
-                inodes[inode].title = lastName;
-            }
-            if (asset.type == 'htmlpage') {
-                inodes[inode].pageUrl = lastName + "." + ext;
-            }
-            if (ext == null || ext == "")
-                fullName = shortenString(lastName, 30) + "";
-            else
-                fullName = shortenString(lastName, 30) + "." + ext;
-            showDotCMSErrorMessage("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Name-change-failed")) %> " + data.errorReason);
-        }
-
-
     }
 
     function enableChangeContentShowOnMenu (inode) {
