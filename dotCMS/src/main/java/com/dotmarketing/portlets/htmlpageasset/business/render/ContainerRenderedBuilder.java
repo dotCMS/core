@@ -13,7 +13,6 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.VelocityUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
-import io.vavr.control.Try;
 import org.apache.velocity.context.Context;
 
 import java.util.Collection;
@@ -77,8 +76,7 @@ public class ContainerRenderedBuilder {
                 final String renderedContainer = VelocityUtil.getInstance()
                         .mergeTemplate(key.path, velocityContext);
                 final DotJSON dotJSON = (DotJSON) velocityContext.get("dotJSON");
-                final boolean parseJSON = Try.of(()->(boolean) velocityContext.get("parseJSON"))
-                        .getOrElse(false);
+                final boolean parseJSON = (boolean) velocityContext.get("parseJSON");
 
                 if(dotJSON.size()>0 && parseJSON) {
                     rendered.put(uuid, dotJSON.getMap());
