@@ -452,6 +452,15 @@ function initDragAndDrop () {
         window.removeEventListener("mousemove", clearScroll, false );
     }
 
+    function disableDraggableHtmlElements() {
+        var containerAnchorsList = document.querySelectorAll('[data-dot-object="container"] a, [data-dot-object="container"] a img');
+        for (var i = 0; i < containerAnchorsList.length; i++) {
+            containerAnchorsList[i].setAttribute("draggable", "false")
+        };
+    }
+
+    disableDraggableHtmlElements();
+
     // D&D Img - End
 }
 
