@@ -22,7 +22,7 @@ public class ContainerRendered extends ContainerRaw {
     private static final long serialVersionUID = 1572918359580445566L;
 
 
-    private final Map<String, Object> rendered;
+    private final Map<String, String> rendered;
 
 
     /**
@@ -33,7 +33,7 @@ public class ContainerRendered extends ContainerRaw {
      *                           the browser.
      */
     public ContainerRendered(final Container container, final List<ContainerStructure> containerStructures,
-                             final Map<String, Object> rendered, final Map<String,List<Contentlet>> contentlets) {
+                             final Map<String, String> rendered, final Map<String,List<Contentlet>> contentlets) {
         super(container, containerStructures, contentlets);
 
         this.rendered = rendered;
@@ -47,7 +47,7 @@ public class ContainerRendered extends ContainerRaw {
      * @param containerStructures The list of {@link ContainerStructure} relationships.
      *                           the browser.
      */
-    public ContainerRendered(final ContainerRaw containerRaw, final Map<String, Object> rendered) {
+    public ContainerRendered(final ContainerRaw containerRaw, final Map<String, String> rendered) {
         this(containerRaw.getContainer(), containerRaw.getContainerStructures(), rendered, containerRaw.getContentlets());
 
     }
@@ -57,7 +57,7 @@ public class ContainerRendered extends ContainerRaw {
      *
      * @return The HTML representation of the container.
      */
-    public Map<String, Object> getRendered() {
+    public Map<String, String> getRendered() {
         return rendered;
     }
 

@@ -21,10 +21,12 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRendered;
@@ -792,13 +794,13 @@ public class PageResourceTest {
         assertTrue(containers.size() > 0);
 
         for (ContainerRendered container : containers) {
-            final Map<String, Object> rendered = container.getRendered();
-            final Collection<Object> codes = rendered.values();
+            final Map<String, String> rendered = container.getRendered();
+            final Collection<String> codes = rendered.values();
             assertTrue(codes.size() > 0);
 
-            for (final Object code : codes) {
-                assertTrue(code.toString().indexOf("data-dot-object=\"container\"") != -1);
-                assertTrue(code.toString().indexOf("data-dot-object=\"contentlet\"") != -1);
+            for (final String code : codes) {
+                assertTrue(code.indexOf("data-dot-object=\"container\"") != -1);
+                assertTrue(code.indexOf("data-dot-object=\"contentlet\"") != -1);
             }
         }
         assertNull(pageView.getViewAs().getPersona());

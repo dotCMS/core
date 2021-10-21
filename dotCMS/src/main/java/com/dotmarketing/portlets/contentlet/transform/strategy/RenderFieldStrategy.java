@@ -95,12 +95,7 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
                 || field instanceof ConstantField;
     }
 
-    /**
-     * Tries to render as velocity unless there's a put in the $dotJSON object, which will make it
-     * being parsed as JSON
-     */
-
-    public static Object renderFieldValue(final HttpServletRequest request,
+    public static Object parseAsJSON(final HttpServletRequest request,
             final HttpServletResponse response, final String fieldValue,
             final Contentlet contentlet, final String fieldVar) {
         if(!UtilMethods.isSet(fieldValue)) return null;
@@ -129,4 +124,30 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
                     ? dotJSON.getMap() : evalResult.toString()
                 : fieldValue;
     }
+
+    public static Object renderFieldValue(final HttpServletRequest request,
+            final HttpServletResponse response, final String fieldValue,
+            final Contentlet contentlet, final String fieldVar) {
+        if(!UtilMethods.isSet(fieldValue)) return null;
+
+        final org.apache.velocity.context.Context context = (request!=null && response!=null)
+                ? VelocityUtil.getInstance().getContext(request, response)
+                : VelocityUtil.getBasicContext();
+
+        context.put("content", contentlet);
+        context.put("contentlet", contentlet);
+        context.put("dotJSON", new DotJSON());
+
+        final StringWriter evalResult = new StringWriter();
+
+        Try.runRunnable(()-> com.dotmarketing.util.VelocityUtil
+                .getEngine()
+                .evaluate(context, evalResult, "", fieldValue)).onFailure((error)->
+                Logger.warnAndDebug(RenderFieldStrategy.class, "Unable to render velocity in field: "
+                        + fieldVar, error)
+        );
+
+        return UtilMethods.isSet(evalResult.toString()) ? evalResult.toString() : fieldValue;
+    }
+
 }
