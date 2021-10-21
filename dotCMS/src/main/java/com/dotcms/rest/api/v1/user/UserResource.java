@@ -437,7 +437,6 @@ public class UserResource implements Serializable {
 		session.setAttribute(WebKeys.USER_ID, userToImpersonate);
 		PrincipalThreadLocal.setName(userToImpersonate);
 		session.setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST, site);
-		session.setAttribute("com.dotcms.repackage.org.apache.struts.action.LOCALE", WebAPILocator.getUserWebAPI().getUser(request).getLocale());
 	}
 
 	/**
