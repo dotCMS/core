@@ -199,15 +199,28 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
             }
         });
 
-        fieldDefinitions.add(newFieldDefinition()
-                .name(WIDGET_CODE_JSON_FIELD_VAR)
-                .argument(GraphQLArgument.newArgument()
-                        .name("render")
-                        .type(GraphQLBoolean)
-                        .defaultValue(null)
-                        .build())
-                .type(ExtendedScalars.Json)
-                .dataFetcher(new DotJSONDataFetcher()).build());
+        final boolean alreadyExists = fieldDefinitions.stream()
+                .anyMatch((def)->def.getName().equals(WIDGET_CODE_JSON_FIELD_VAR));
+
+//        if(!alreadyExists) {
+            fieldDefinitions.add(newFieldDefinition()
+                    .name(WIDGET_CODE_JSON_FIELD_VAR)
+                    .argument(GraphQLArgument.newArgument()
+                            .name("render")
+                            .type(GraphQLBoolean)
+                            .defaultValue(null)
+                            .build())
+                    .type(ExtendedScalars.Json)
+                    .dataFetcher(new DotJSONDataFetcher()).build());
+//        }
+//        else {
+//            final Optional<GraphQLFieldDefinition> existingDefinition = fieldDefinitions.stream()
+//                    .filter((def)->def.getName().equals(WIDGET_CODE_JSON_FIELD_VAR)).findAny();
+//.
+//            if(existingDefinition.isPresent()) {
+//
+//            }
+//        }
 
         // add CONTENT interface fields
         fieldDefinitions.addAll(TypeUtil
