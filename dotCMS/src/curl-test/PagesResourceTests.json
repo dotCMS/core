@@ -1802,6 +1802,82 @@
 						"description": "@Path(\"{pageId}/content\")"
 					},
 					"response": []
+				},
+				{
+					"name": "Save Content Upsert Duplicated Containers Body",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Response body contains\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"ok\");",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\n    {\n        \"identifier\":\"//demo.dotcms.com/application/containers/default/\",\n        \"uuid\":\"1\",\n        \"contentletsId\":[\"7c9cb3a7-bb68-4fd0-b21d-03ec4be491a7\"]\n    },\n    {\n        \"identifier\":\"//demo.dotcms.com/application/containers/default/\",\n        \"uuid\":\"1\",\n        \"contentletsId\":[\"f827c41a-5689-4733-b4d7-916d3a31c9c6\"]\n    },\n        {\n        \"identifier\":\"//demo.dotcms.com/application/containers/default/\",\n        \"uuid\":\"1\",\n        \"contentletsId\":[\"7c9cb3a7-bb68-4fd0-b21d-03ec4be491a7\"]\n    }\n]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/bec7b960-a8bf-4f14-a22b-0d94caf217f0/content",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"bec7b960-a8bf-4f14-a22b-0d94caf217f0",
+								"content"
+							]
+						},
+						"description": "This test is for when users make a request sending at the Body the same container and uuid diff times.\nThis will merge all those contentlets and save the page successfully."
+					},
+					"response": []
 				}
 			],
 			"description": " @Path(\"{pageId}/content\")",
