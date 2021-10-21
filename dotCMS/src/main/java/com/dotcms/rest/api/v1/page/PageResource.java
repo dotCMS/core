@@ -492,7 +492,7 @@ public class PageResource {
         for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
 
             final Set<String> contentletIdList = containerEntryMap.computeIfAbsent(new MultiKey(containerEntry.getPersonaTag(),
-                    containerEntry.getContainerId(), containerEntry.getContainerId()), k -> new HashSet<>());
+                    containerEntry.getContainerId(), containerEntry.getContainerUUID()), k -> new HashSet<>());
 
             contentletIdList.addAll(containerEntry.getContentIds());
         }

@@ -234,50 +234,6 @@ public class ContainerResource implements Serializable {
         }
     }
 
-    @GET
-    @JSONP
-    @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Path("/{containerId}/page/{pageId}")
-    public final Response getPageContainerContent(@Context final HttpServletRequest req,
-                                           @Context final HttpServletResponse res,
-                                           @PathParam("containerId")  final String containerId,
-                                           @PathParam("pageId") final String pageId)
-            throws DotDataException, DotSecurityException {
-
-        final InitDataObject initData = this.webResource.init(req, res, true);
-        final User user               = initData.getUser();
-
-        PageMode.setPageMode(req, PageMode.EDIT_MODE);
-
-        final ShortyId pageShorty = this.shortyAPI
-                .getShorty(pageId)
-                .orElseGet(() -> {
-                    throw new ResourceNotFoundException("Can't find contentlet:" + pageId);
-                });
-
-        try {
-
-            final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(pageShorty.longId, containerId);
-            final Map<String, Object> response = new HashMap<>();
-            for (final MultiTree multiTree : multiTrees) {
-
-                final Contentlet contentlet = this.contentletAPI.findContentletByIdentifierAnyLanguage(multiTree.getContentlet());
-                final String html = this.getHTML(req, res, containerId, user, contentlet);
-
-                final DotContentletTransformer transformer = new DotTransformerBuilder().defaultOptions().content(contentlet).build();
-                final Map<String, Object> contentletMap    = transformer.toMaps().stream().findFirst().orElse(Collections.emptyMap());
-                final Map<String, Object> contentletResult = CollectionsUtils.map("content", contentletMap, "render", html);
-                response.put(contentlet.getIdentifier(), contentletResult);
-            }
-
-            return Response.ok(new ResponseEntityView(response)).build();
-        } catch (DotSecurityException e) {
-            throw new ForbiddenException(e);
-        }
-    }
-
     /**
      * This method is pretty much the same of {@link #containerContent(HttpServletRequest, HttpServletResponse, String, String)}
      * But there is a limitation on the vanity url for the rest call since the container id path parameter is a path itself
@@ -387,40 +343,6 @@ public class ContainerResource implements Serializable {
                 .build();
 
     }
-
-    /**
-     * Return a container by id (could be a path or id)
-     * it is by post b/c the path can not be on the get
-     *
-     * @param req
-     * @param res
-     * @param containerId
-     * @param containerId
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    @POST
-    @JSONP
-    @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Path("/_findby")
-    public final Response finContainerBy(@Context final HttpServletRequest req,
-                                        @Context final HttpServletResponse res,
-                                        final FindContainerByForm findContainerByForm)
-            throws DotDataException, DotSecurityException {
-
-        final InitDataObject initData = webResource.init(req, res, true);
-        final User user = initData.getUser();
-        final String containerId = findContainerByForm.getContainerId();
-
-        PageMode.setPageMode(req, PageMode.EDIT_MODE);
-        final Container container = getContainer(containerId, user, WebAPILocator.getHostWebAPI().getHost(req));
-
-        return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
-    }
-
 
     private String getHTML(final HttpServletRequest req,
                            final HttpServletResponse res,
