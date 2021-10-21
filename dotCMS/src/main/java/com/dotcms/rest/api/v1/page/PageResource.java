@@ -148,17 +148,15 @@ public class PageResource {
                 request.getSession().setAttribute(WebKeys.CURRENT_DEVICE, deviceInode);
             }
 
-            final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(
+            final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageMetadata(
                       PageContextBuilder.builder()
                             .setUser(user)
                             .setPageUri(uri)
                             .setPageMode(mode)
-                            .setParseJSON(true)
                             .build(),
                     request,
                     response
             );
-
             final Response.ResponseBuilder responseBuilder = Response.ok(new ResponseEntityView(pageRendered));
 
 

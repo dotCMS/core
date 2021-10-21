@@ -122,7 +122,6 @@ public interface HTMLPageAssetRenderedAPI {
             final HttpServletResponse response)
             throws DotDataException, DotSecurityException;
 
-
     /**
      * Return the Page's html string
      * @param request The {@link HttpServletRequest} object.

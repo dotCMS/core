@@ -14,7 +14,6 @@ public class PageContext {
     private final PageMode pageMode;
     private final HTMLPageAsset page;
     private final boolean graphQL;
-    private final boolean parseJSON;
 
     public PageContext(
             final User user,
@@ -32,23 +31,11 @@ public class PageContext {
             final HTMLPageAsset page,
             final boolean graphQL) {
 
-        this(user, pageUri, pageMode, page, graphQL, false);
-    }
-
-    public PageContext(
-            final User user,
-            final String pageUri,
-            final PageMode pageMode,
-            final HTMLPageAsset page,
-            final boolean graphQL,
-            final boolean parseJSON) {
-
         this.user = user;
         this.pageUri = pageUri;
         this.pageMode = pageMode;
         this.page = page;
         this.graphQL = graphQL;
-        this.parseJSON = parseJSON;
     }
 
 
@@ -70,9 +57,5 @@ public class PageContext {
 
     public boolean isGraphQL() {
         return graphQL;
-    }
-
-    public boolean isParseJSON() {
-        return parseJSON;
     }
 }

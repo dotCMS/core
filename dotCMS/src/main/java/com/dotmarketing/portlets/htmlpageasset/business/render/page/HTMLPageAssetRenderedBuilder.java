@@ -65,7 +65,6 @@ public class HTMLPageAssetRenderedBuilder {
     private final HTMLPageAssetRenderedAPI htmlPageAssetRenderedAPI;
     private String pageUrlMapper;
     private boolean live;
-    private boolean parseJSON;
 
     public HTMLPageAssetRenderedBuilder() {
 
@@ -113,11 +112,6 @@ public class HTMLPageAssetRenderedBuilder {
         return this;
     }
 
-    public HTMLPageAssetRenderedBuilder setParseJSON(final boolean parseJSON) {
-        this.parseJSON = parseJSON;
-        return this;
-    }
-
     @CloseDBIfOpened
     public PageView build(final boolean rendered, final PageMode mode) throws DotDataException, DotSecurityException {
         final Template template = getTemplate(mode);
@@ -160,10 +154,8 @@ public class HTMLPageAssetRenderedBuilder {
 
             final Context velocityContext  = pageRenderUtil
                     .addAll(VelocityUtil.getInstance().getContext(request, response));
-            velocityContext.put("parseJSON", parseJSON);
             final Collection<? extends ContainerRaw> containers = new ContainerRenderedBuilder(
-                    pageRenderUtil.getContainersRaw(), velocityContext, mode)
-                    .build();
+                    pageRenderUtil.getContainersRaw(), velocityContext, mode).build();
             final String pageHTML = this.getPageHTML();
 
             final HTMLPageAssetRendered.RenderedBuilder pageViewBuilder = new HTMLPageAssetRendered.RenderedBuilder().html(pageHTML);

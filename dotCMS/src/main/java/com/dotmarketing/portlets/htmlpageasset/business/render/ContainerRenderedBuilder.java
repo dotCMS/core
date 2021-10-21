@@ -76,9 +76,8 @@ public class ContainerRenderedBuilder {
                 final String renderedContainer = VelocityUtil.getInstance()
                         .mergeTemplate(key.path, velocityContext);
                 final DotJSON dotJSON = (DotJSON) velocityContext.get("dotJSON");
-                final boolean parseJSON = (boolean) velocityContext.get("parseJSON");
 
-                if(dotJSON.size()>0 && parseJSON) {
+                if(dotJSON.size()>0) {
                     rendered.put(uuid, dotJSON.getMap());
                 } else {
                     rendered.put(uuid, renderedContainer);
