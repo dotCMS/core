@@ -75,11 +75,11 @@ public class CMSFilter implements Filter {
         
         
         // Get the URI and query string from the request
-        final String uri = urlUtil.getURIFromRequest(request);
+        String uri = urlUtil.getURIFromRequest(request);
         String queryString = urlUtil.getURLQueryStringFromRequest(request);
 
 
-        Logger.debug(this.getClass(), ()->"CMS Filter URI = " + uri);
+        Logger.debug(this.getClass(), "CMS Filter URI = " + uri);
 
         /*
          * If someone is trying to go right to an asset without going through the cms, give them a
@@ -98,6 +98,12 @@ public class CMSFilter implements Filter {
             response.setHeader("Location", UtilMethods.isSet(queryString) ? uri + "/?" + queryString : uri + "/");
             Try.run(()->response.setStatus(301));
             return;
+        }
+
+        // if I am a Page with a slash
+        if (iAm == IAm.PAGE && uri.endsWith("/")) {
+           uri = uri + CMS_INDEX_PAGE;
+
         }
         
 

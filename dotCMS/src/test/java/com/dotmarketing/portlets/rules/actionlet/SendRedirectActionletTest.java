@@ -33,7 +33,7 @@ public class SendRedirectActionletTest extends UnitTestBase {
     public void testGeneralConfiguration() throws Exception {
         SendRedirectActionlet actionlet = new SendRedirectActionlet();
         assertThat(actionlet.getI18nKey(), is("api.system.ruleengine.actionlet.send_redirect"));
-        assertThat("There is only one parameter.", actionlet.getParameterDefinitions().size(), is(1));
+        assertThat("There is only one parameter.", actionlet.getParameterDefinitions().size(), is(2));
         assertThat(actionlet.getId(), is("SendRedirectActionlet"));
     }
 
