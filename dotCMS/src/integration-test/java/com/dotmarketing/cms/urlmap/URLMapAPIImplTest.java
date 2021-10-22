@@ -31,6 +31,7 @@ import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class URLMapAPIImplTest {
@@ -216,7 +217,7 @@ public class URLMapAPIImplTest {
      * Given Scenario: Process a URL Map url when both the Content Type and Content exists
      * ExpectedResult: Should return a {@link URLMapInfo} with the right content ans detail page
      */
-    //@Test
+    @Test
     public void shouldReturnContentletWhenTheContentExists()
             throws DotDataException, DotSecurityException {
         final String newsPatternPrefix =
@@ -240,7 +241,7 @@ public class URLMapAPIImplTest {
      * Given Scenario: Process a URL Map url with a field that doesn't exist
      * ExpectedResult: Should return an empty {@link URLMapInfo}
      */
-    //@Test
+    @Test
     public void processURLMapMethodShouldNotFailWithInvalidFields()
             throws DotDataException, DotSecurityException {
         final String patternPrefix = TEST_PATTERN + System.currentTimeMillis() + "/";
@@ -270,7 +271,7 @@ public class URLMapAPIImplTest {
      * On this test both the Content Type and Content exists.
      * ExpectedResult: Should return a {@link URLMapInfo} with the right content and detail pages
      */
-    //@Test
+    @Test
     public void test_multiple_content_types_using_same_pattern()
             throws DotDataException, DotSecurityException {
 
@@ -313,7 +314,7 @@ public class URLMapAPIImplTest {
      * the URLMap pattern is at the root of the URI: /{urlTitle}
      * ExpectedResult: Should return a {@link URLMapInfo} wit the right content and detail page
      */
-    //@Test
+    @Test
     public void test_url_map_pattern_at_root()
             throws DotDataException, DotSecurityException {
 
@@ -339,7 +340,7 @@ public class URLMapAPIImplTest {
      * the URLMap pattern is at the root of the URI: /{urlTitle} and the url title has slashes on it.
      * ExpectedResult: Should return a {@link URLMapInfo} wit the right content and detail page
      */
-    //@Test
+    @Test
     public void test_url_map_pattern_at_root_with_slash_in_url_title()
             throws DotDataException, DotSecurityException {
 
@@ -365,7 +366,7 @@ public class URLMapAPIImplTest {
      * the url title has slashes on it.
      * ExpectedResult: Should return a {@link URLMapInfo} wit the right content and detail page
      */
-    //@Test
+    @Test
     public void test_url_map_pattern_with_slash_in_url_title()
             throws DotDataException, DotSecurityException {
         final String newsPatternPrefix =
@@ -392,7 +393,7 @@ public class URLMapAPIImplTest {
      * This test uses a more complex pattern /something/{urlTitle-with-slashes}/{title-with-spaces-on-it}
      * ExpectedResult: Should return a {@link URLMapInfo} wit the right content and detail page
      */
-    //@Test
+    @Test
     public void test_url_map_pattern_with_slash_in_url_title_complex_rul_map_pattern()
             throws DotDataException, DotSecurityException {
 
@@ -420,7 +421,7 @@ public class URLMapAPIImplTest {
      * Given Scenario: Process a URL Map url when the Content Type exists but the content nos exists
      * ExpectedResult: Should return a {@link Optional#empty()}
      */
-    //@Test
+    @Test
     public void shouldReturnNullWhenTheContentNotExists()
             throws DotDataException, DotSecurityException {
 
@@ -441,7 +442,7 @@ public class URLMapAPIImplTest {
      * Given Scenario: Request a URL with the api prefix
      * ExpectedResult: Should return false, even when the Content Type and the Content exists
      */
-    //@Test
+    @Test
     public void shouldNotMatchUrlStaringWithAPI()
             throws DotDataException, DotSecurityException {
         final String newsPatternPrefix =
@@ -459,7 +460,7 @@ public class URLMapAPIImplTest {
      * Given Scenario: Request a not detail page's URL
      * ExpectedResult: Should return false
      */
-    //@Test
+    @Test
     public void shouldReturnNullWhenThePageUriIsNotDetailPage()
             throws DotDataException, DotSecurityException {
 
@@ -481,7 +482,7 @@ public class URLMapAPIImplTest {
      * Given Scenario: Request a detail page's URL, but with limited user who not have READ permission to the content
      * ExpectedResult: Should throw a {@link DotSecurityException}
      */
-    //@Test(expected = DotSecurityException.class)
+    @Test(expected = DotSecurityException.class)
     public void shouldThrowDotSecurityExceptionWhenUserDontHavePermission()
             throws DotDataException, DotSecurityException {
         final String newsPatternPrefix =
@@ -501,7 +502,8 @@ public class URLMapAPIImplTest {
      * Given Scenario: Process dotAdmin URL when not any URL Mapper exists
      * ExpectedResult: Should return a {@link Optional#empty()}
      */
-    //@Test
+    @Test
+    @Ignore
     public void processURLMapWithoutUrlMap() throws DotDataException, DotSecurityException {
         deleteAllUrlMapperContentType();
         final UrlMapContext context = getUrlMapContext(systemUser, host, "/dotAdmin");
@@ -528,7 +530,7 @@ public class URLMapAPIImplTest {
      * the content is in the future and the mode requested is {@link PageMode#LIVE}
      * ExpectedResult: Should return a {@link Optional#empty()}
      */
-    //@Test
+    @Test
     public void shouldReturnEmptyOptionalWhenContentExistsInFuture()
             throws DotDataException, DotSecurityException {
         final String newsPatternPrefix =
@@ -553,7 +555,7 @@ public class URLMapAPIImplTest {
      * the content is in the future, but the time machine is set to a day after the publish date
      * ExpectedResult: Should return a {@link URLMapInfo} wit the right content ans detail page
      */
-    //@Test
+    @Test
     public void shouldReturnURLInfoWhenContentExistsInFutureButTimeMachineIsSet()
             throws DotDataException, DotSecurityException {
 
@@ -587,7 +589,7 @@ public class URLMapAPIImplTest {
      * the content is in the future, and the mode requested is {@link PageMode#PREVIEW_MODE}
      * ExpectedResult: Should return a {@link URLMapInfo} wit the right content ans detail page
      */
-    //@Test
+    @Test
     public void shouldReturnInPREVIEW_MODEWhenContentExistsInFuture()
             throws DotDataException, DotSecurityException {
         final String newsPatternPrefix =
@@ -693,7 +695,7 @@ public class URLMapAPIImplTest {
      * {@link com.dotcms.contenttype.model.field.DataTypes#INTEGER}
      * ExpectedResult: Should return a {@link URLMapInfo} wit the right content ans detail page
      */
-    //@Test
+    @Test
     public void shouldReturnContentletWhenTheContentExistsAndUseAIntegerFIeld()
             throws DotDataException, DotSecurityException {
         final String newsPatternPrefix =
@@ -732,7 +734,7 @@ public class URLMapAPIImplTest {
      * {@link com.dotcms.contenttype.model.field.DataTypes#FLOAT}
      * ExpectedResult: Should return a {@link URLMapInfo} wit the right content ans detail page
      */
-    //@Test
+    @Test
     public void shouldReturnContentletWhenTheContentExistsAndUseAFloatField()
             throws DotDataException, DotSecurityException {
         final String newsPatternPrefix =
