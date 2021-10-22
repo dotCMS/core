@@ -225,10 +225,7 @@ public class ImportUtil {
                         }
                         lineNumber++;
                         if (lineNumber % loggingPoint == 0) {
-                            String action = "previewed.";
-                            if (!preview) {
-                                action = "imported.";
-                            }
+                            final String action = preview ? "previewed." : "imported.";
                             Logger.info(ImportUtil.class, String.format("-> %d entries have been %s", lineNumber, action));
                         }
                         csvLine = csvreader.getValues();
@@ -338,14 +335,9 @@ public class ImportUtil {
                 }
             }
         }
-        String action = "Content preview";
-        if (!preview) {
-            action = "Content import";
-        }
+        final String action = preview ? "Content preview" : "Content import";
         String statusMsg = String.format("%s has finished, %d lines were read correctly.", action, lines);
-        if (errors > 0) {
-            statusMsg += String.format(" However, %d errors were found.", errors);
-        }
+        statusMsg = errors > 0 ? statusMsg + String.format(" However, %d errors were found.", errors) : StringPool.BLANK;
         Logger.info(ImportUtil.class, statusMsg);
         return results;
     }
