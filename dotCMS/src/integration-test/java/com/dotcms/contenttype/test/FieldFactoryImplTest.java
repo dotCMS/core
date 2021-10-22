@@ -535,6 +535,13 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 		contentTypeApi.delete(struct);
 	}
 
+	/**
+	 * Method to test: {@link com.dotcms.contenttype.business.FieldFactoryImpl#delete(Field)}
+	 * When: Call the delete methos with several fields
+	 * Should: delete all of them
+	 * 
+	 * @throws Exception
+	 */
 	@Test
 	public void testDeletingFields() throws Exception {
 
