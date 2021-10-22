@@ -65,4 +65,4 @@ jobs:
           MSG_MINIMAL: true
           SLACK_FOOTER: ""
           SLACK_ICON: https://avatars.githubusercontent.com/u/1005263?s=200&v=4
-          SLACK_MESSAGE: "<!channel> This automated script is happy to announce that a new docker image has been built for *${{ env.DOTCMS_VERSION }}* with tag: `${{ steps.discover-docker-tags.outputs.discovered_tags }}` :docker:"
+          SLACK_MESSAGE: "<!channel> This automated script is happy to announce that a new docker image has been built for *${{ env.DOTCMS_VERSION }}* with tag: ${{ steps.discover-docker-tags.outputs.discovered_tags }} :docker:"

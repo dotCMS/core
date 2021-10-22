@@ -1109,6 +1109,8 @@ public class ContentletAjax {
 				ContentType type = con.getContentType();
 				searchResult.put("typeVariable", type.variable());
 				searchResult.put("baseType",type.baseType().name());
+				searchResult.put("contentTypeIcon",type.icon());
+
 				for (final String fieldContentlet : fieldsMapping.keySet()) {
 					String fieldValue = null;
 					if (con.getMap() != null && con.getMap().get(fieldContentlet) != null) {
