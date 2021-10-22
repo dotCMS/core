@@ -4,7 +4,6 @@ import static com.dotcms.content.business.ContentletJsonAPI.SAVE_CONTENTLET_AS_J
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -15,7 +14,6 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TagDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestDataUtils.TestFile;
-import com.dotcms.security.apps.AppsAPIImpl;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -24,12 +22,8 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
-import com.liferay.portal.model.User;
 import java.io.File;
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.file.Paths;
-import java.security.Key;
 import java.util.Date;
 import java.util.Map;
 import org.junit.BeforeClass;

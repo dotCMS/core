@@ -1,6 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.content.business.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.AUTO_ASSIGN_WORKFLOW;
@@ -45,6 +44,7 @@ import com.dotmarketing.business.query.SimpleCriteria;
 import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.common.db.Params;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -79,6 +79,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Ints;
 import com.liferay.portal.model.User;
@@ -1947,26 +1948,28 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
     private void setUpContentletAsJson(final Contentlet contentlet, final String inode) {
-        if (!Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true)) {
-            return;
-        }
-        final Map<String, Object> map = (Map) contentlet.get(Contentlet.CONTENTLET_AS_JSON);
-        if(null != map) {
-            try {
+        final ContentletJsonAPI contentletJsonAPI = APILocator.getContentletJsonAPI();
+        if (contentletJsonAPI.isPersistContentAsJson()) {
+            //json contentlet is currently supported only for postgres
+            final Map<String, Object> map = (Map) contentlet.get(Contentlet.CONTENTLET_AS_JSON);
+            if (null != map) {
+                try {
 
-                if (UtilMethods.isNotSet((String) map.get("inode")) && UtilMethods.isSet(inode)) {
-                    map.put("inode", inode);
+                    if (UtilMethods.isNotSet((String) map.get("inode")) && UtilMethods
+                            .isSet(inode)) {
+                        map.put("inode", inode);
+                    }
+
+                    final String asJson = contentletJsonAPI.toJson(new Contentlet(map));
+                    Logger.info(ESContentletAPIImpl.class, asJson);
+                    contentlet.setProperty(Contentlet.CONTENTLET_AS_JSON, asJson);
+                } catch (DotDataException | JsonProcessingException e) {
+                    final String error = String
+                            .format("Error converting from json to contentlet with id: %s and inode: %s ",
+                                    contentlet.getIdentifier(), contentlet.getInode());
+                    Logger.error(ESContentletAPIImpl.class, error, e);
+                    throw new DotRuntimeException(error, e);
                 }
-
-                final String asJson = APILocator.getContentletJsonAPI().toJson(new Contentlet(map));
-                Logger.info(ESContentletAPIImpl.class, asJson);
-                contentlet.setProperty(Contentlet.CONTENTLET_AS_JSON, asJson);
-            } catch (DotDataException | JsonProcessingException e) {
-                final String error = String
-                        .format("Error converting from json to contentlet with id: %s and inode: %s ",
-                                contentlet.getIdentifier(), contentlet.getInode());
-                Logger.error(ESContentletAPIImpl.class, error, e);
-                throw new DotRuntimeException(error, e);
             }
         }
     }
@@ -2029,7 +2032,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	private List<Object> getParamsToSaveUpdateContent(final Contentlet contentlet)
             throws DotDataException {
 
-        final String asJson = contentlet.getStringProperty(Contentlet.CONTENTLET_AS_JSON);
+        final String jsonContentlet = contentlet.getStringProperty(Contentlet.CONTENTLET_AS_JSON);
 
         final List<Object> upsertValues = new ArrayList<>();
 
@@ -2060,21 +2063,28 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         upsertValues.add(UtilMethods.isSet(contentlet.getIdentifier())?contentlet.getIdentifier():null);
         upsertValues.add(contentlet.getLanguageId());
-        upsertValues.add(asJson);
+        upsertValues.add(jsonContentlet);
 
-        final Map<String, Object> fieldsMap = getFieldsMap(contentlet);
-
-        try {
-            addDynamicFields(upsertValues, fieldsMap,"date");
-            addDynamicFields(upsertValues, fieldsMap,"text");
-            addDynamicFields(upsertValues, fieldsMap,"text_area");
-            addDynamicFields(upsertValues, fieldsMap,"integer");
-            addDynamicFields(upsertValues, fieldsMap,"float");
-            addDynamicFields(upsertValues, fieldsMap,"bool");
-        } catch (JsonProcessingException e) {
-            throw new DotDataException(e);
+        if(APILocator.getContentletJsonAPI().isPersistContentletInColumns()) {
+            final Map<String, Object> fieldsMap = getFieldsMap(contentlet);
+            try {
+                addDynamicFields(upsertValues, fieldsMap, "date");
+                addDynamicFields(upsertValues, fieldsMap, "text");
+                addDynamicFields(upsertValues, fieldsMap, "text_area");
+                addDynamicFields(upsertValues, fieldsMap, "integer");
+                addDynamicFields(upsertValues, fieldsMap, "float");
+                addDynamicFields(upsertValues, fieldsMap, "bool");
+            } catch (JsonProcessingException e) {
+                throw new DotDataException(e);
+            }
+        } else {
+            emptyDynamicFields(upsertValues, "date");
+            emptyDynamicFields(upsertValues, "text");
+            emptyDynamicFields(upsertValues, "text_area");
+            emptyDynamicFields(upsertValues, "integer");
+            emptyDynamicFields(upsertValues, "float");
+            emptyDynamicFields(upsertValues, "bool");
         }
-
         return upsertValues;
     }
 
@@ -2112,7 +2122,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         for (int i = 1; i <= MAX_FIELDS_ALLOWED; i++) {
             if (fieldsMap.containsKey(prefix + i)) {
-
                 if (prefix.equals("date") && UtilMethods.isSet(fieldsMap.get(prefix + i))){
                     upsertValues.add(new Timestamp(((Date) fieldsMap.get(prefix + i)).getTime()));
                 } else{
@@ -2127,6 +2136,20 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 upsertValues.add(defaultValue);
             }
         }
+    }
+
+    private void emptyDynamicFields(final List<Object> upsertValues,  final String prefix){
+        Object defaultValue = null;
+        if (prefix.equals("integer") || prefix.equals("float")){
+            defaultValue = 0;
+        } else if (prefix.equals("bool")){
+            defaultValue = Boolean.FALSE;
+        }
+
+        for (int i = 1; i <= MAX_FIELDS_ALLOWED; i++) {
+            upsertValues.add(defaultValue);
+        }
+
     }
 
     private Map<String, Object> getFieldsMap(final Contentlet contentlet) throws DotDataException {
@@ -2576,30 +2599,53 @@ public class ESContentFactoryImpl extends ContentletFactory {
         if(field.getFieldContentlet() == null  || ! (field.getFieldContentlet().matches("^.*\\d+$"))){
           return;
         }
-        Queries queries = getQueries(field, maxDate);
-        List<String> inodesToFlush = new ArrayList<>();
+        final Connection conn = DbConnectionFactory.getConnection();
 
-        Connection conn = DbConnectionFactory.getConnection();
-        
-        try(PreparedStatement ps = conn.prepareStatement(queries.getSelect())) {
-            ps.setObject(1, structureInode);
+        final Queries queries = getQueries(field, maxDate);
+        final Queries jsonFieldQueries = getJsonFieldQueries(field, maxDate);
+
+        final ImmutableSet.Builder<String> builder = ImmutableSet.builder();
+
+        builder.addAll(applyQueries(queries, structureInode, field, conn));
+        builder.addAll(applyQueries(jsonFieldQueries, structureInode, field, conn));
+
+        builder.build().forEach(contentletCache::remove);
+    }
+
+    /**
+     * Given a connection and a Queries object this method executes the select collect the target inodes and then applies the update over them
+     * @param queries queries
+     * @param structureInode content-type
+     * @param field field
+     * @param conn dotConnect
+     * @return a set with the affected inodes
+     * @throws DotDataException
+     */
+    private Set<String> applyQueries(final Queries queries, final String structureInode, final Field field, final Connection conn) throws DotDataException {
+        //NullQueries is the object sent when we're running on a db that does not support json Fields
+        if(queries instanceof NullQueries){
+            return ImmutableSet.of();
+        }
+        final ImmutableSet.Builder<String> builder = ImmutableSet.builder();
+        try(PreparedStatement selectStatement = conn.prepareStatement(queries.getSelect())) {
+            selectStatement.setObject(1, structureInode);
             final int BATCH_SIZE = 200;
 
-            try(ResultSet rs = ps.executeQuery())
+            try(ResultSet rs = selectStatement.executeQuery())
             {
-            	PreparedStatement ps2 = conn.prepareStatement(queries.getUpdate());
+            	final PreparedStatement updateStatement = conn.prepareStatement(queries.getUpdate());
                 for (int i = 1; rs.next(); i++) {
                     String contentInode = rs.getString("inode");
-                    inodesToFlush.add(contentInode);
-                    ps2.setString(1, contentInode);
-                    ps2.addBatch();
+                    builder.add(contentInode);
+                    updateStatement.setString(1, contentInode);
+                    updateStatement.addBatch();
 
                     if (i % BATCH_SIZE == 0) {
-                        ps2.executeBatch();
+                        updateStatement.executeBatch();
                     }
                 }
 
-                ps2.executeBatch(); // insert remaining records
+                updateStatement.executeBatch(); // insert remaining records
             } catch (SQLException e) {
                 Logger.error(this, String.format("Error clearing field '%s' for Content Type with ID: %s",
                         field.getVelocityVarName(), structureInode), e);
@@ -2612,10 +2658,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     field.getVelocityVarName(), structureInode), e);
 
         }
-
-        for (String inodeToFlush : inodesToFlush) {
-            contentletCache.remove(inodeToFlush);
-        }
+        return builder.build();
     }
 
     protected void clearField(String structureInode, Field field) throws DotDataException {
@@ -2631,12 +2674,19 @@ public class ESContentFactoryImpl extends ContentletFactory {
     public Queries getQueries(Field field) {
         return getQueries(field, null);
     }
+
     /**
-     *
+     * These Queries restore the field columns to their default state prior to saving content values for each type of field
+     * A Float field will be set back to its default value 0.0, a text field will be set back to an empty string a bool filed will be set to the default value false and a date is set to the current time
      * @param field
      * @return
      */
     public Queries getQueries(final Field field, final Date maxDate) {
+
+        if(! Try.of(()->new DotDatabaseMetaData().hasColumn("contentlet",field.getFieldContentlet())).getOrElseThrow(DotRuntimeException::new)) {
+            Logger.info(ESContentletAPIImpl.class, ()-> String.format("Column named `%s` does not exist no need to perform clean up. ",field.getFieldContentlet()));
+            return new NullQueries();
+        }
 
         StringBuilder select = new StringBuilder("SELECT inode FROM contentlet ");
         StringBuilder update = new StringBuilder("UPDATE contentlet SET ");
@@ -2736,7 +2786,34 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     }
 
-    public final class Queries {
+    /**
+     * Here the story is a bit different
+     * These queries are here to take care of cleaning up all the fields referenced from within the contentlet_As_json field
+     * There's no need to revert anything to a prior state. Just a removal will do.
+     * @param field
+     * @param maxDate
+     * @return
+     */
+    public Queries getJsonFieldQueries(final Field field, final Date maxDate) {
+        final ContentletJsonAPI contentletJsonAPI = APILocator.getContentletJsonAPI();
+        if (!contentletJsonAPI.isPersistContentAsJson()) {
+            return new NullQueries();
+        }
+        //If we have got this far it means we are a running postgres instance that obviously supports json.
+        final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        final String select = String
+                .format("SELECT inode FROM contentlet WHERE structure_inode = ? AND mod_date<='%s' AND contentlet_as_json @> '{\"fields\" : {\"%s\":{}}}'",
+                        format.format(maxDate),
+                        field.getVelocityVarName());
+        //This basically removes from the json structure the particular entry for the field
+        final String update = String
+                .format("UPDATE contentlet SET contentlet_as_json = contentlet_as_json #- '{fields,%s}' WHERE inode = ?",
+                        field.getVelocityVarName());
+        return new Queries().setSelect(select).setUpdate(update);
+    }
+
+
+    public static class Queries {
         private String select;
         private String update;
 
@@ -2757,8 +2834,25 @@ public class ESContentFactoryImpl extends ContentletFactory {
         public String getUpdate() {
             return update;
         }
+
+        @Override
+        public String toString() {
+            return "Queries{" +
+                    "select='" + select + '\'' +
+                    ", update='" + update + '\'' +
+                    '}';
+        }
     }
 
+    private static class NullQueries extends Queries {
+        public String getSelect() {
+            throw new UnsupportedOperationException();
+        }
+
+        public String getUpdate() {
+            throw new UnsupportedOperationException();
+        }
+    }
 
     /**
      * Basically this method updates the mod_date on a piece of content, given the respective inodes

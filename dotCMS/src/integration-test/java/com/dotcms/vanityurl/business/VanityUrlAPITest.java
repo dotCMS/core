@@ -19,7 +19,6 @@ import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -47,7 +46,6 @@ import java.util.stream.Collectors;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * This class test the {@link VanityUrlAPI} methods
@@ -931,8 +929,9 @@ public class VanityUrlAPITest {
     public void Test_Vanity_URI_Missing_URI_Expect_Validation_Exception()
             throws DotSecurityException, DotDataException {
 
-        final boolean defaultValue = Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
-        Config.setProperty(SAVE_CONTENTLET_AS_JSON, false);
+         final boolean defaultValue = APILocator.getContentletJsonAPI().isPersistContentAsJson();
+         Config.setProperty(SAVE_CONTENTLET_AS_JSON, false);
+
         try {
             //Load the VanityUrl structure  contentlet fields
             final DotConnect dotConnect = new DotConnect();

@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
 import com.dotcms.content.business.ContentletJsonAPI;
-import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
@@ -23,7 +22,6 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
-import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -73,12 +71,14 @@ public class ContentletTransformer implements DBTransformer {
             throw new DotRuntimeException("Contentlet must have a content type.");
         }
 
+        final ContentletJsonAPI contentletJsonAPI = APILocator.getContentletJsonAPI();
+
         final Contentlet contentlet;
-        final boolean hasJsonFields = UtilMethods.isSet(map.get(ContentletJsonAPI.CONTENTLET_AS_JSON));
+        final boolean hasJsonFields = (contentletJsonAPI.isPersistContentAsJson() && UtilMethods.isSet(map.get(ContentletJsonAPI.CONTENTLET_AS_JSON)));
         if(hasJsonFields){
           try {
               final String json = map.get(ContentletJsonAPI.CONTENTLET_AS_JSON).toString();
-              contentlet = APILocator.getContentletJsonAPI().mapContentletFieldsFromJson(json);
+              contentlet = contentletJsonAPI.mapContentletFieldsFromJson(json);
           }catch (Exception e){
               final String errorMsg = String.format("Unable to populate contentlet from json for ID='%s', Inode='%s', Content-Type '%s': %s", contentletId, inode, contentTypeId, e.getMessage());
               Logger.error(ContentletTransformer.class, errorMsg, e);

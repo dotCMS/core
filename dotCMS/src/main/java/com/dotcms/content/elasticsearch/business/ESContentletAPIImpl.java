@@ -8564,7 +8564,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @return
      */
     private Contentlet prepContentletAsJson(final Contentlet contentlet, final Contentlet raw ) {
-        if(Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true)) {
             final Map<String, Object> seedMap = Stream
                     .concat(contentlet.getMap().entrySet().stream(),
                             raw.getMap().entrySet().stream())
@@ -8574,7 +8573,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }));
             //Attach the seed map so it becomes available down from the persistence layer
             contentlet.setProperty(Contentlet.CONTENTLET_AS_JSON, seedMap);
-        }
         return contentlet;
     }
 
