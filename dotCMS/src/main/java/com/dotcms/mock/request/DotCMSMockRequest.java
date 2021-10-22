@@ -1,9 +1,9 @@
 package com.dotcms.mock.request;
 
-import com.dotcms.api.vtl.model.DotJSON;
-import com.dotcms.repackage.org.directwebremoting.util.FakeHttpServletRequest;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.security.Principal;
 import java.util.Collection;
@@ -14,6 +14,7 @@ import java.util.Locale;
 import java.util.Map;
 import javax.servlet.AsyncContext;
 import javax.servlet.DispatcherType;
+import javax.servlet.ReadListener;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -36,9 +37,10 @@ public class DotCMSMockRequest implements HttpServletRequest {
     private String remoteHost;
     private String queryString;
     private Map<String, String[]> paramMap = new HashMap<>();
-    private Map<String, String> headers = new HashMap<>();
+    final private Map<String, String> headers = new HashMap<>();
     private String servletPath;
-    private Map<String, Object> attributes = new HashMap<>();
+    final private Map<String, Object> attributes = new HashMap<>();
+    protected byte[] content;
 
     @Override
     public String getRequestURI() {
@@ -62,7 +64,7 @@ public class DotCMSMockRequest implements HttpServletRequest {
 
     @Override
     public BufferedReader getReader() throws IOException {
-        return null;
+        return new BufferedReader(new InputStreamReader(this.getInputStream()));
     }
 
     @Override
@@ -293,9 +295,64 @@ public class DotCMSMockRequest implements HttpServletRequest {
         return null;
     }
 
-    @Override
     public ServletInputStream getInputStream() throws IOException {
-        return null;
+        return new ServletInputStream() {
+            private final ByteArrayInputStream proxy;
+
+            {
+                this.proxy = new ByteArrayInputStream(DotCMSMockRequest.this.content);
+            }
+
+            public int read() {
+                return this.proxy.read();
+            }
+
+            public int available() {
+                return this.proxy.available();
+            }
+
+            public synchronized void mark(int readlimit) {
+                this.proxy.mark(readlimit);
+            }
+
+            public boolean markSupported() {
+                return this.proxy.markSupported();
+            }
+
+            public int read(byte[] b, int off, int len) {
+                return this.proxy.read(b, off, len);
+            }
+
+            public void close() throws IOException {
+                this.proxy.close();
+            }
+
+            public int read(byte[] b) throws IOException {
+                return this.proxy.read(b);
+            }
+
+            public synchronized void reset() {
+                this.proxy.reset();
+            }
+
+            public long skip(long n) {
+                return this.proxy.skip(n);
+            }
+
+            public boolean isFinished() {
+                return false;
+            }
+
+            @Override
+            public boolean isReady() {
+                return false;
+            }
+
+            @Override
+            public void setReadListener(ReadListener readListener) {
+                //Not implemented
+            }
+        };
     }
 
     public void setAttribute(String name, Object value) {
@@ -422,5 +479,13 @@ public class DotCMSMockRequest implements HttpServletRequest {
 
     public void setServletPath(String servletPath) {
         this.servletPath = servletPath;
+    }
+
+    public void setContent(byte[] content) {
+        this.content = content;
+    }
+
+    public void setContent(String content) {
+        this.content = content.getBytes();
     }
 }

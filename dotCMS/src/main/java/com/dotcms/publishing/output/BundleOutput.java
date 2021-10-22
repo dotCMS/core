@@ -11,7 +11,7 @@ import java.io.*;
 import java.util.Collection;
 
 /**
- * Output for a bundle generate by {@link com.dotcms.publishing.PublisherAPI#publish(PublisherConfig, BundleOutput)}
+ * Output for a bundle generate by {@link com.dotcms.publishing.PublisherAPI#publish(PublisherConfig)}
  * method
  */
 public abstract class BundleOutput implements Closeable {
@@ -20,6 +20,8 @@ public abstract class BundleOutput implements Closeable {
     public BundleOutput(final PublisherConfig publisherConfig){
         this.publisherConfig = publisherConfig;
     }
+
+    public abstract void create() throws IOException;
 
     /**
      * Add a new file into the output
@@ -127,4 +129,13 @@ public abstract class BundleOutput implements Closeable {
     public abstract void setLastModified(String myFile, long timeInMillis);
 
     public abstract void mkdirs(String path);
+
+    /**
+     * Return true if the Bundle File already exists
+     * @return
+     */
+    public boolean bundleFileExists(){
+        final File bundleFile = getFile();
+        return bundleFile != null && bundleFile.exists();
+    }
 }

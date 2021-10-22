@@ -3,6 +3,8 @@ package com.dotcms.rest.api.v1.page;
 
 
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.exception.DoesNotExistException;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.*;
@@ -14,6 +16,7 @@ import com.dotcms.rest.api.v1.personalization.PersonalizationPersonaPageViewPagi
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
@@ -114,7 +117,7 @@ public class PageResource {
      * @param modeParam {@link PageMode}
      * @param personaId {@link com.dotmarketing.portlets.personas.model.Persona}'s identifier to render the page
      * @param languageId {@link com.dotmarketing.portlets.languagesmanager.model.Language}'s Id to render the page
-     * @param deviceInode {@link org.apache.batik.svggen.font.table.Device}'s inode to render the page
+     * @param deviceInode {@link }'s inode to render the page
      * @return All the objects on an associated HTML Page.
      */
     @NoCache
@@ -200,7 +203,7 @@ public class PageResource {
      * @param modeParam {@link PageMode}
      * @param personaId {@link com.dotmarketing.portlets.personas.model.Persona}'s identifier to render the page
      * @param languageId {@link com.dotmarketing.portlets.languagesmanager.model.Language}'s Id to render the page
-     * @param deviceInode {@link org.apache.batik.svggen.font.table.Device}'s inode to render the page
+     * @param deviceInode {@link java.lang.String}'s inode to render the page
      * @return
      */
     @NoCache
@@ -421,6 +424,8 @@ public class PageResource {
             APILocator.getPermissionAPI().checkPermission(page, PermissionLevel.EDIT, user);
 
             final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
+            this.validateContainerEntries(pageContainerForm.getContainerEntries());
+
             pageResourceHelper.saveContent(pageId, pageContainerForm.getContainerEntries(), language);
 
             return Response.ok(new ResponseEntityView("ok")).build();
@@ -432,6 +437,47 @@ public class PageResource {
         }
     }
 
+    protected void validateContainerEntries(final List<PageContainerForm.ContainerEntry> containerEntries) {
+
+        final Map<String, Set<String>> containerContentTypesMap = new HashMap<>();
+        for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
+
+            final String containerId = containerEntry.getContainerId();
+            final Set<String> contentTypeSet    = containerContentTypesMap.computeIfAbsent(containerId,  key -> this.getContainerContentTypes(containerId));
+            final List<String> contentletIdList = containerEntry.getContentIds();
+            for (final String contentletId : contentletIdList) {
+                final Contentlet contentlet;
+                try {
+                    contentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(contentletId);
+                    if (null == contentlet) {
+
+                        throw new BadRequestException("The contentlet: " + contentletId + " does not exists!");
+                    }
+
+                    if (contentlet.getBaseType().get().equals(BaseContentType.CONTENT) && !contentTypeSet.contains(contentlet.getContentType().variable())) {
+
+                        throw new BadRequestException("The content type: " + contentlet.getContentType().variable() + " is not valid for the container");
+                    }
+                } catch (DotDataException e) {
+
+                    throw new BadRequestException(e, e.getMessage());
+                }
+            }
+        }
+    }
+
+    private Set<String> getContainerContentTypes (final String containerId) {
+
+        try {
+            final Container container = APILocator.getContainerAPI().findContainer(containerId,APILocator.systemUser(),false,false)
+                    .orElseThrow(() -> new DoesNotExistException("Container with ID :" + containerId + " not found"));
+            final List<ContentType> contentTypes = APILocator.getContainerAPI().getContentTypesInContainer(container);
+            return null != contentTypes? contentTypes.stream().map(ContentType::variable).collect(Collectors.toSet()) : Collections.emptySet();
+        } catch (DotDataException | DotSecurityException e) {
+
+            throw new BadRequestException(e, e.getMessage());
+        }
+    }
     /**
      *
      * @param request

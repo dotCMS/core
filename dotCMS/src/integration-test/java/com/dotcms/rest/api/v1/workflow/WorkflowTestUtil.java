@@ -1,6 +1,8 @@
 package com.dotcms.rest.api.v1.workflow;
 
 
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.business.Role.ADMINISTRATOR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -8,7 +10,13 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.WorkflowActionDataGen;
+import com.dotcms.datagen.WorkflowDataGen;
+import com.dotcms.datagen.WorkflowStepDataGen;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.workflow.form.WorkflowActionForm;
@@ -377,14 +385,43 @@ public abstract class WorkflowTestUtil {
     }
 
     static Map<WorkflowScheme,Map<ContentType, List<Contentlet>>> collectSampleContent(final int limit) throws Exception{
-        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
-        final Map<WorkflowScheme,Map<ContentType, List<Contentlet>>> contentByWorkflowAndType = new HashMap<>();
-        final List<WorkflowScheme> workflowSchemes = workflowAPI.findSchemes(false);
-        for(final WorkflowScheme scheme:workflowSchemes){
-            final List<ContentType> contentTypes = workflowAPI.findContentTypesForScheme(scheme);
-            contentByWorkflowAndType.put(scheme, findContentSamplesByType(contentTypes, scheme, limit));
-        }
-        return contentByWorkflowAndType;
+
+        final WorkflowScheme workflowScheme_1 = new WorkflowDataGen().nextPersisted();
+        final WorkflowStep workflowStep_1 = new WorkflowStepDataGen(workflowScheme_1.getId()).nextPersisted();
+        final WorkflowAction workflowAction_1 = new WorkflowActionDataGen(workflowScheme_1.getId(), workflowStep_1.getId())
+                .nextPersisted();
+
+        final ContentType contentType_1 = new ContentTypeDataGen()
+            .field(new FieldDataGen()
+                .name("title")
+                .velocityVarName("title").next()
+            )
+           .workflowId(workflowScheme_1.getId()).nextPersisted();
+
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType_1.id())
+                .setProperty("title", "content_1")
+                .nextPersisted();
+
+        final WorkflowScheme workflowScheme_2 = new WorkflowDataGen().nextPersisted();
+        final WorkflowStep workflowStep_2 = new WorkflowStepDataGen(workflowScheme_2.getId()).nextPersisted();
+        final WorkflowAction workflowAction_2 = new WorkflowActionDataGen(workflowScheme_2.getId(), workflowStep_2.getId())
+                .nextPersisted();
+
+        final ContentType contentType_2 = new ContentTypeDataGen()
+                .field(new FieldDataGen()
+                        .name("title")
+                        .velocityVarName("title").next()
+                )
+                .workflowId(workflowScheme_2.getId()).nextPersisted();
+
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType_2.id())
+                .setProperty("title", "content_2")
+                .nextPersisted();
+
+        return map(
+                workflowScheme_1, map(contentType_1, list(contentlet_1)),
+                workflowScheme_2, map(contentType_2, list(contentlet_2))
+        );
     }
 
     static List<WorkflowAction> getAllWorkflowActions(final BulkWorkflowSchemeView workflowScheme) {

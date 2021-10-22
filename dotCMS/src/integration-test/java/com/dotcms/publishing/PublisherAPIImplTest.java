@@ -111,9 +111,11 @@ import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
 public class PublisherAPIImplTest {
+
     private static String MANIFEST_HEADERS = "INCLUDED/EXCLUDED,object type, Id, inode, title, site, folder, excluded by, included by";
     private static Contentlet languageVariableCreated;
 
+    private static List<String> manifestMetadataLines = list("#Bundle ID:", "#Operation", "#Filter:");
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
@@ -334,7 +336,9 @@ public class PublisherAPIImplTest {
                     list(host, parentFolder, contentlet, folderContentType, link, subFolder, contentType),
                     contentlet, list(language, fileAssetContentType),
                     contentlet_2, list(language, fileAssetContentType),
-                    subFolder, list(contentlet_2)
+                    subFolder, list(contentlet_2),
+                    contentType, list(APILocator.getWorkflowAPI().findSystemWorkflowScheme()),
+                    folderContentType, list(APILocator.getWorkflowAPI().findSystemWorkflowScheme())
                 ),
                 "/bundlers-test/folder/folder.folder.xml");
     }
@@ -544,6 +548,11 @@ public class PublisherAPIImplTest {
 
     public static void assertManifestFile(final File manifestFile,
             final ManifestItemsMapTest manifestItems) throws IOException {
+        assertManifestFile(manifestFile, manifestItems, manifestMetadataLines);
+    }
+
+    public static void assertManifestFile(final File manifestFile,
+        final ManifestItemsMapTest manifestItems, final List<String> manifestMetadataLines) throws IOException {
 
         assertTrue(manifestFile.exists());
 
@@ -559,7 +568,9 @@ public class PublisherAPIImplTest {
                 System.out.println("line = " + line);
                 buffer.append(line + "\n");
 
-                if (nLines == 0) {
+                if (nLines < manifestMetadataLines.size()) {
+                    assertTrue("Wrong Metadata " + nLines + " " + line, line.startsWith(manifestMetadataLines.get(nLines)));
+                } else if (nLines == manifestMetadataLines.size()) {
                     assertEquals("Wrong headers", MANIFEST_HEADERS, line);
                 } else {
                     final boolean contains = manifestItems.contains(line);
@@ -570,7 +581,7 @@ public class PublisherAPIImplTest {
             }
 
             assertEquals("manifestItems\n" + manifestItems + "\nManifest content\n" + buffer,
-                    manifestItems.size(), nLines - 1 );
+                    manifestItems.size(), nLines - (manifestMetadataLines.size() + 1) );
         }
     }
 
@@ -716,8 +727,8 @@ public class PublisherAPIImplTest {
                 .filter(file -> !file.getParentFile().getAbsolutePath().equals(messagesPath))
                 .collect(Collectors.toList());
 
-        //All the dependencies plus, the asset and the bundle xml and manifest
-        int numberFilesExpected = filesExpected.size() + 2;
+        //All the assets plus the manifest file
+        int numberFilesExpected = filesExpected.size() + 1;
         final int numberFiles = files.size();
 
         final List<String> filesExpectedPath = filesExpected.stream()

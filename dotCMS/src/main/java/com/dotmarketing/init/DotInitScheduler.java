@@ -15,6 +15,7 @@ import org.quartz.Job;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.enterprise.linkchecker.LinkCheckerJob;
 import com.dotcms.job.system.event.DeleteOldSystemEventsJob;
 import com.dotcms.job.system.event.SystemEventsJob;
@@ -33,6 +34,7 @@ import com.dotmarketing.quartz.job.WebDavCleanupJob;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.vavr.control.Try;
 
 /**
@@ -46,31 +48,10 @@ import io.vavr.control.Try;
 public class DotInitScheduler {
 
 	private static final String DOTCMS_JOB_GROUP_NAME = "dotcms_jobs";
-	public static final String SCHEDULER_COREPOOLSIZE = "SCHEDULER_CORE_POOL_SIZE";
+
 	public static final String CRON_EXPRESSION_EVERY_5_MINUTES = "0 */5 * ? * *";
 
-	private static ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = null;
 
-	/**
-	 * Returns the {@link ScheduledThreadPoolExecutor}
-	 * @return ScheduledThreadPoolExecutor
-	 */
-	public static ScheduledThreadPoolExecutor getScheduledThreadPoolExecutor() {
-
-		if (null == scheduledThreadPoolExecutor) {
-
-			synchronized (DotInitScheduler.class) {
-
-				if (null == scheduledThreadPoolExecutor) {
-
-					final int corePoolSize = Config.getIntProperty(SCHEDULER_COREPOOLSIZE, 10);
-					scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(corePoolSize);
-				}
-			}
-		}
-
-		return scheduledThreadPoolExecutor;
-	}
 
 	/**
 	 * Configures and initializes every system Job to run on dotCMS.
@@ -529,7 +510,7 @@ public class DotInitScheduler {
 
 				final int initialDelay = Config.getIntProperty("SYSTEM_EVENTS_INITIAL_DELAY", 0);
 				final int delaySeconds = Config.getIntProperty("SYSTEM_EVENTS_DELAY_SECONDS", 5); // runs every 5 seconds.
-				getScheduledThreadPoolExecutor().scheduleWithFixedDelay(new SystemEventsJob(), initialDelay, delaySeconds, TimeUnit.SECONDS);
+				DotConcurrentFactory.getScheduledThreadPoolExecutor().scheduleWithFixedDelay(new SystemEventsJob(), initialDelay, delaySeconds, TimeUnit.SECONDS);
 			} catch (Exception e) {
 
 				Logger.info(DotInitScheduler.class, e.toString());
@@ -602,7 +583,7 @@ public class DotInitScheduler {
        final int initialDelay = Config.getIntProperty("SERVER_HEARTBEAT_INITIAL_DELAY_SECONDS", 60);
        final int delaySeconds = Config.getIntProperty("SERVER_HEARTBEAT_RUN_EVERY_SECONDS", 60); // runs every 5 seconds.
        
-       DotInitScheduler.getScheduledThreadPoolExecutor().scheduleAtFixedRate(() -> {
+       DotConcurrentFactory.getScheduledThreadPoolExecutor().scheduleAtFixedRate(() -> {
            Try.run(() -> new ServerHeartbeatJob().execute(null)).onFailure(e->Logger.warnAndDebug(DotInitScheduler.class, e));
        }, initialDelay, delaySeconds, TimeUnit.SECONDS);
     } 

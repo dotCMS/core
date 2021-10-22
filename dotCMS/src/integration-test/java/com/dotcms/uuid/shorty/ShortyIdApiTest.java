@@ -79,7 +79,8 @@ public class ShortyIdApiTest {
 	final String GET_ID_LINKS = "SELECT identifier FROM links";
 	final String GET_ID_TEMPLATES = "SELECT identifier FROM template";
 	final String GET_ID_FOLDERS = "SELECT identifier FROM folder";
-    
+	final String GET_ID_RELATIONSHIPS = "SELECT inode FROM relationship";
+
     @Before
     public void setUp() throws Exception {
     	getExpectedIds();
@@ -176,7 +177,7 @@ public class ShortyIdApiTest {
 
         new RelationshipDataGen(true).nextPersisted();
         new RelationshipDataGen(true).nextPersisted();
-		dc.setSQL(GET_INODE, 2);
+		dc.setSQL(GET_ID_RELATIONSHIPS, 2);
 		dc.addParam("relationship");
 		res = dc.loadObjectResults();
 		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "relationship" });

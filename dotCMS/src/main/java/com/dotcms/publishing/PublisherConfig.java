@@ -636,10 +636,4 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 			return Optional.empty();
 		}
 	}
-
-	public Map<String, Object> getMap() {
-		final Map<String, Object> clone = new HashMap<>();
-		clone.putAll(this);
-		return clone;
-	}
 }

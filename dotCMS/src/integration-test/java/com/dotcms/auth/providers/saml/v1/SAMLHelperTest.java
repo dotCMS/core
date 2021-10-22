@@ -12,8 +12,13 @@ import com.dotcms.saml.SamlName;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -24,6 +29,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -220,4 +226,62 @@ public class SAMLHelperTest extends IntegrationTestBase {
         Assert.assertNotEquals(nativeUser.getFirstName(),  recoveredNativeUser.getFirstName());
         Assert.assertEquals (nativeUser.getLastName(),     recoveredNativeUser.getLastName());
     }
+
+    /**
+     * Method to test: {@link SAMLHelper#getRoleKeySubstitution(String)}  {@link SAMLHelper#processReplacement(String, Optional)}
+     * Given Scenario: sending an null pattern should be doing nothing
+     * ExpectedResult: The role does not change
+     *
+     */
+    @Test()
+    public void test_getRoleKeySubstitution_processReplacement_doing_null_substitution() throws DotDataException, DotSecurityException, IOException {
+
+        final SamlAuthenticationService samlAuthenticationService         = new MockSamlAuthenticationService();
+        final CompanyAPI companyAPI                                       = mock(CompanyAPI.class);
+        final Company    company                                          = new Company();
+        final SAMLHelper           		samlHelper                        = new SAMLHelper(samlAuthenticationService, companyAPI);
+
+        company.setAuthType(Company.AUTH_TYPE_EA);
+        when(companyAPI.getDefaultCompany()).thenReturn(company);
+
+        final String pattern      = null;
+        final Optional<Tuple2<String, String>> substitutionTokenOpt = samlHelper.getRoleKeySubstitution(pattern);
+
+        Assert.assertFalse(substitutionTokenOpt.isPresent());
+        final String expected     = "CMS Administrator";
+
+        final String roleResult   = samlHelper.processReplacement(expected, substitutionTokenOpt);
+
+        Assert.assertEquals(expected, roleResult);
+    }
+
+    /**
+     * Method to test: {@link SAMLHelper#getRoleKeySubstitution(String)}  {@link SAMLHelper#processReplacement(String, Optional)}
+     * Given Scenario: sending an substitution pattern should be doing the replacement
+     * ExpectedResult: The role will be clean up
+     *
+     */
+    @Test()
+    public void test_getRoleKeySubstitution_processReplacement_doing_substitution() throws DotDataException, DotSecurityException, IOException {
+
+        final SamlAuthenticationService samlAuthenticationService         = new MockSamlAuthenticationService();
+        final CompanyAPI companyAPI                                       = mock(CompanyAPI.class);
+        final Company    company                                          = new Company();
+        final SAMLHelper           		samlHelper                        = new SAMLHelper(samlAuthenticationService, companyAPI);
+
+        company.setAuthType(Company.AUTH_TYPE_EA);
+        when(companyAPI.getDefaultCompany()).thenReturn(company);
+
+        final String pattern      = "/_sepsep_/ /";
+        final Optional<Tuple2<String, String>> substitutionTokenOpt = samlHelper.getRoleKeySubstitution(pattern);
+
+        Assert.assertTrue(substitutionTokenOpt.isPresent());
+        final String tokenRole    = "CMS_sepsep_Administrator";
+        final String expected     = "CMS Administrator";
+
+        final String roleResult   = samlHelper.processReplacement(tokenRole, substitutionTokenOpt);
+
+        Assert.assertEquals(expected, roleResult);
+    }
+
 }

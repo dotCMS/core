@@ -20,6 +20,7 @@ public class FolderSearchResultView {
         return path;
     }
 
+
     public String getHostName() {
         return hostName;
     }

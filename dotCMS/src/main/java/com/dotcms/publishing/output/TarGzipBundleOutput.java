@@ -5,6 +5,7 @@ import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.UtilMethods;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 
@@ -27,6 +28,10 @@ public class TarGzipBundleOutput extends BundleOutput {
         super(publisherConfig);
 
         tarGzipFile = getBundleTarGzipFile(publisherConfig.getId());
+    }
+
+    @Override
+    public void create() throws IOException {
         final OutputStream outputStream = Files.newOutputStream(tarGzipFile.toPath());
 
         tarArchiveOutputStream = new TarArchiveOutputStream(new GZIPOutputStream(outputStream, GZIP_OUTPUT_STREAM_BUFFER_SIZE));
@@ -66,7 +71,9 @@ public class TarGzipBundleOutput extends BundleOutput {
 
     @Override
     public void close() throws IOException {
-        tarArchiveOutputStream.close();
+        if (UtilMethods.isSet(tarArchiveOutputStream)) {
+            tarArchiveOutputStream.close();
+        }
     }
 
     public long lastModified(String filePath){

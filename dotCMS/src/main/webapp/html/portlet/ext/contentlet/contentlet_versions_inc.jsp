@@ -108,7 +108,7 @@
 		<!-- }  -->
 
 		<!-- Timezone
-		<%= Calendar.getInstance().getTimeZone().getID() %>
+		<%= APILocator.systemTimeZone().getID() %>
 		 -->
 		 <%if(isImage){ %>
 			 <td align="center">

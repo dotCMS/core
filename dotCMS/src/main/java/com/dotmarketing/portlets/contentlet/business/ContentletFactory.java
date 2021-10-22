@@ -218,7 +218,7 @@ public abstract class ContentletFactory {
 	 * @param contentlet
 	 * @param relationshipType
 	 * @return
-	 * @throws DotDataExceptionW
+	 * @throws DotDataException
 	 */
 	protected abstract Identifier getRelatedIdentifier(Contentlet contentlet, String relationshipType) throws DotDataException;
 	
@@ -313,17 +313,6 @@ public abstract class ContentletFactory {
 	 * @throws DotStateException 
 	 */
 	protected abstract void cleanField(String structureInode, Field field) throws DotDataException, DotStateException, DotSecurityException;
-	
-	/**
-	 * Set the system host in the identifier of all the contents of the specified structure. 
-	 * 
-	 * @param structureInode
-	 * @throws DotDataException
-	 * @throws DotMappingException 
-	 * @throws DotSecurityException 
-	 * @throws DotStateException 
-	 */ 
-	protected abstract void cleanIdentifierHostField(String structureInode) throws DotDataException, DotMappingException, DotStateException, DotSecurityException;
 	
 	/**
 	 * 

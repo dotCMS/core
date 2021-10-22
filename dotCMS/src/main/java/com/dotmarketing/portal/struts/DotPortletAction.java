@@ -758,10 +758,28 @@ public class DotPortletAction extends PortletAction {
 			Logger.error(this, e.getMessage(), e);
 		}
 		req.setAttribute(PageContext.EXCEPTION, e);
-		
+
 		//This is a fix for the <%@ page isErrorPage="true" %> directive in Glassfish
 		req.setAttribute("javax.servlet.error.status_code", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-		
+
+		setForward(req, Constants.COMMON_ERROR);
+	}
+
+	/**
+	 * Method to handle an exception.
+	 * No need to rollback since the class no longer uses Hibernate.
+	 */
+	protected void _handleExceptionNoHibernate(Exception e, ActionRequest req, boolean showStackTrace) {
+		if (!showStackTrace) {
+			Logger.error(this, e.toString());
+		} else {
+			Logger.error(this, e.toString(), e);
+		}
+		req.setAttribute(PageContext.EXCEPTION, e);
+
+		//This is a fix for the <%@ page isErrorPage="true" %> directive in Glassfish
+		req.setAttribute("javax.servlet.error.status_code", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+
 		setForward(req, Constants.COMMON_ERROR);
 	}
 

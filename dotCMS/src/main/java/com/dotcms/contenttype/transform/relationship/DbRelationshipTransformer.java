@@ -5,6 +5,7 @@ import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -47,6 +48,7 @@ public class DbRelationshipTransformer implements RelationshipTransformer{
 		var.setParentRequired(DbConnectionFactory.isDBTrue(map.get("parent_required").toString()));
 		var.setChildRequired(DbConnectionFactory.isDBTrue(map.get("child_required").toString()));
 		var.setCardinality(ConversionUtils.toInt(map.get("cardinality"), 0));
+		var.setModDate((Date) map.get("mod_date"));
 
 		return var;
 

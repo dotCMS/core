@@ -4,6 +4,7 @@ import static com.dotcms.rest.ResponseEntityView.OK;
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.DotLambdas.not;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
@@ -13,6 +14,8 @@ import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.mock.request.DotCMSMockRequest;
+import com.dotcms.mock.request.DotCMSMockRequestWithSession;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
@@ -95,6 +98,7 @@ import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.WebKeys;
 import com.liferay.util.HttpHeaders;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
@@ -1685,12 +1689,14 @@ public class WorkflowResource {
                 new DotConcurrentFactory.SubmitterConfigBuilder().poolSize(2).maxPoolSize(5).queueCapacity(CONTENTLETS_LIMIT).build());
         final CompletionService<Map<String, Object>> completionService = new ExecutorCompletionService<>(dotSubmitter);
         final List<Future<Map<String, Object>>> futures = new ArrayList<>();
+        final HttpServletRequest statelessRequest = this.createStatelessRequest(request);
 
         for (final Map<String, Object> contentMap : contentletsToSaveList) {
 
             // this triggers the save
             final Future<Map<String, Object>> future = completionService.submit(() -> {
 
+                HttpServletRequestThreadLocal.INSTANCE.setRequest(statelessRequest);
                 final Map<String, Object> resultMap = new HashMap<>();
                 final String inode      = (String) contentMap.get("inode");
                 final String identifier = (String) contentMap.get("identifier");
@@ -1705,10 +1711,7 @@ public class WorkflowResource {
                 final IndexPolicy indexPolicy = MapToContentletPopulator.recoverIndexPolicy(
                         singleFireActionForm.getContentletFormData(),
                         IndexPolicyProvider.getInstance().forSingleContent(), request);
-                final Contentlet contentlet = this.getContentlet
-                        (inode, identifier, languageId,
-                                ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
-                                singleFireActionForm, initDataObject, mode);
+
 
                 try {
 
@@ -1716,7 +1719,11 @@ public class WorkflowResource {
                             initDataObject, resultMap, inode, identifier, languageId, user, indexPolicy);
                 } catch (Exception e) {
 
-                    final String id = UtilMethods.isSet(identifier)?identifier:inode;
+                    final String id = UtilMethods.isSet(identifier) ? identifier :
+                            (UtilMethods.isSet(inode) ? inode:
+                                    null != singleFireActionForm && null != singleFireActionForm.getContentletFormData() ?
+                                            singleFireActionForm.getContentletFormData().toString() :
+                                            "unknown contentlet" + System.currentTimeMillis());
                     Logger.error(this, "Error in contentlet: " + id + ", msg: " + e.getMessage()
                             + ", running the action: " + systemAction, e);
                     resultMap.put(id, UtilMethods.isSet(identifier)?
@@ -1730,6 +1737,26 @@ public class WorkflowResource {
         }
 
         printResponseEntityViewResult(outputStream, objectMapper, completionService, futures);
+    }
+
+    private HttpServletRequest createStatelessRequest(final HttpServletRequest request) {
+
+        final DotCMSMockRequest statelessRequest =
+                new DotCMSMockRequestWithSession(request.getSession(false), request.isSecure());
+
+        statelessRequest.setAttribute(WebKeys.USER, request.getAttribute(WebKeys.USER));
+        statelessRequest.setAttribute(WebKeys.USER_ID, request.getAttribute(WebKeys.USER_ID));
+        statelessRequest.addHeader("User-Agent", request.getHeader("User-Agent"));
+        statelessRequest.addHeader("Host", request.getHeader("Host"));
+        statelessRequest.addHeader("Accept-Language", request.getHeader("Accept-Language"));
+        statelessRequest.addHeader("Accept-Encoding", request.getHeader("Accept-Encoding"));
+        statelessRequest.addHeader("X-Forwarded-For", request.getHeader("X-Forwarded-For"));
+        statelessRequest.addHeader("Origin", request.getHeader("Origin"));
+        statelessRequest.addHeader("referer", request.getHeader("referer"));
+        statelessRequest.setRemoteAddr(request.getRemoteAddr());
+        statelessRequest.setRemoteHost(request.getRemoteHost());
+
+        return statelessRequest;
     }
 
     ////////////////////////////

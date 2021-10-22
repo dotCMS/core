@@ -30,8 +30,10 @@ import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import com.dotmarketing.business.APILocator;
 import com.liferay.util.SimpleCachePool;
 import com.liferay.util.Validator;
+import io.vavr.control.Try;
 
 /**
  * <a href="CalendarUtil.java.html"><b><i>View Source</i></b></a>
@@ -341,7 +343,7 @@ public class CalendarUtil {
 
 	public static boolean isFuture(int month, int year) {
 		return isFuture(
-			month, year, TimeZone.getDefault(), Locale.getDefault());
+			month, year, APILocator.systemTimeZone(), Locale.getDefault());
 	}
 
 	public static boolean isFuture(int month, int year, TimeZone timeZone,
@@ -359,7 +361,7 @@ public class CalendarUtil {
 
 	public static boolean isFuture(int month, int day, int year) {
 		return isFuture(
-			month, day, year, TimeZone.getDefault(), Locale.getDefault());
+			month, day, year, APILocator.systemTimeZone(), Locale.getDefault());
 	}
 
 	public static boolean isFuture(int month, int day, int year,
@@ -379,7 +381,7 @@ public class CalendarUtil {
 								   int minute, int amPm) {
 
 		return isFuture(
-			month, day, year, hour, minute, amPm, TimeZone.getDefault(),
+			month, day, year, hour, minute, amPm, APILocator.systemTimeZone(),
 			Locale.getDefault());
 	}
 

@@ -153,6 +153,7 @@ import io.vavr.Lazy;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Queue;
+import java.util.TimeZone;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
@@ -922,6 +923,14 @@ public class APILocator extends Locator<APIIndex>{
       catch(Exception e){
         throw new DotStateException(e);
       }
+	}
+
+	/**
+	 * Returns the default user's time zone that is the default company's time zone
+	 * @return The system {@link TimeZone}
+	 */
+	public static TimeZone systemTimeZone(){
+		return getCompanyAPI().getDefaultCompany().getTimeZone();
 	}
 
     /**

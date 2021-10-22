@@ -349,7 +349,14 @@ public enum SamlName {
 	/**
 	 * In case the session wants to be renew, should be true by default.
 	 */
-	DOT_RENEW_SESSION("renew.session");
+	DOT_RENEW_SESSION("renew.session"),
+
+	/**
+	 * In case want do a substitution on all roles:
+	 * role.key.substitution=/_sepsep_/ /
+	 * That substitution expression will replace the string _sepsep_ with white space before matching role name from IdP against role key from dotCMS.
+	 */
+	DOT_SAML_ROLE_KEY_SUBSTITUTION("role.key.substitution");
 
 	private final String propertyName;
 

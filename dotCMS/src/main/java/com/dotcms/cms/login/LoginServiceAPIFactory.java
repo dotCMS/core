@@ -304,7 +304,7 @@ public class LoginServiceAPIFactory implements Serializable {
             return authenticated;
         }
 
-        @WrapInTransaction
+        @CloseDBIfOpened
         private void doAuthentication(final String userId, final boolean rememberMe,
                                       final HttpServletRequest  request,
                                       final HttpServletResponse response) throws PortalException, SystemException, DotDataException, DotSecurityException {

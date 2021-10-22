@@ -3,6 +3,7 @@ package com.dotcms.vanityurl.filters;
 import static com.dotmarketing.filters.Constants.VANITY_URL_OBJECT;
 
 import com.dotcms.http.CircuitBreakerUrl;
+import com.dotcms.vanityurl.cache.VanityUrlCache;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
@@ -85,10 +86,14 @@ public class VanityURLFilter implements Filter {
           final Language language = this.languageWebAPI.getLanguage(request);
           final Optional<CachedVanityUrl> cachedVanity = vanityApi.resolveVanityUrl(uri, host, language);
           
-          if (cachedVanity.isPresent() &&
+          if (null != cachedVanity
+                  && cachedVanity.isPresent()
+                  && null != cachedVanity.get()
+                  // if it is not 404
+                 // && !VanityUrlCache.NOT_FOUND404.vanityUrlId.equals(cachedVanity.get().vanityUrlId)
                   // checks if the current destiny is not exactly the forward of the vanity
                   // we do this to avoid infinite loop
-                  this.forwardToIsnotTheSameOfUri(cachedVanity.get(), uri)) {
+                 && this.forwardToIsnotTheSameOfUri(cachedVanity.get(), uri)) {
 
               request.setAttribute(VANITY_URL_OBJECT, cachedVanity.get());
               if(addVanityHeader) {

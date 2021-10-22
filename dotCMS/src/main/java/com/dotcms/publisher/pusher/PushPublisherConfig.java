@@ -4,6 +4,7 @@ package com.dotcms.publisher.pusher;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publisher.util.dependencies.DependencyManager;
 import com.dotcms.publisher.util.dependencies.DependencyProcessor;
+import com.dotcms.publishing.manifest.ManifestBuilder;
 import com.dotcms.publishing.manifest.ManifestItem;
 
 import com.dotmarketing.util.UtilMethods;
@@ -289,5 +290,9 @@ public class PushPublisherConfig extends PublisherConfig {
 
 	public void waitUntilResolveAllDependencies() throws ExecutionException {
 		this.dependencyProcessor.waitUntilResolveAllDependencies();
+	}
+
+	public ManifestBuilder getManifestBuilder() {
+		return manifestBuilder;
 	}
 }

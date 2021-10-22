@@ -40,6 +40,12 @@ dojo.declare("dotcms.dijit.AddToBundleDialog", null, {
             dojo.connect(dijit.byId("addToBundleSaveButton"), "onClick", function(){
                 container.addToBundle();
             });
+
+            document.querySelector('#bundleSelect').addEventListener('keypress', function (e) {
+                if (e.keyCode == 13) {
+                    container.addToBundle();
+                }
+            });
         });
 
         dojo.connect(dia, "onDownloadEnd", function () {

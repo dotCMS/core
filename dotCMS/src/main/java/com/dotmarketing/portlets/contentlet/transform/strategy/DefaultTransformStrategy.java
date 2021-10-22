@@ -217,9 +217,9 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
                    try {
                        final Metadata metadata = contentlet.getBinaryMetadata(FILE_ASSET);
                        putBinaryLinks(FILE_ASSET, metadata.getName(), contentlet, map);
-                   }catch (Exception e){
-                       Logger.warn(this,
-                               "Unable to get Binary Metadata from FileAsset ");
+                   }catch (final Exception e){
+                       Logger.warn(this, String.format("An error occurred when retrieving the Binary Metadata from " +
+                               "FileAsset in Contentlet with ID '%s': %s", contentlet.getIdentifier(), e.getMessage()));
                    }
                 }
             } else {
@@ -232,12 +232,15 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
                             if (null != metadata) {
                                 putBinaryLinks(velocityVarName, metadata.getName(), contentlet, map);
                             } else {
-                                Logger.warn(FileAssetViewStrategy.class, " Binary isn't present.");
+                                Logger.warn(FileAssetViewStrategy.class, String.format("Binary file from field '%s' " +
+                                        "in Contentlet with ID '%s' is not present", velocityVarName, contentlet
+                                        .getIdentifier()));
                             }
                         }
-                    } catch (Exception e) {
-                        Logger.warn(this,
-                                "Unable to get Binary Metadata from field with var " + field.variable());
+                    } catch (final Exception e) {
+                        Logger.warn(this, String.format("An error occurred when retrieving the Binary file from field" +
+                                " '%s' in Contentlet with ID '%s': %s", field.variable(), contentlet.getIdentifier(),
+                                e.getMessage()));
                     }
                 }
             }
@@ -307,9 +310,9 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
                     }
                 }
 
-            } catch (DotDataException | DotSecurityException e) {
-                Logger.warn(DefaultTransformStrategy.class,
-                        "Unable to get categories from content with id ");
+            } catch (final DotDataException | DotSecurityException e) {
+                Logger.warn(DefaultTransformStrategy.class, String.format("An error occurred when adding Categories " +
+                        "to Contentlet with ID '%s': %s", contentlet.getIdentifier(), e.getMessage()));
             }
         }
     }
@@ -323,9 +326,9 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         if (includeTags) {
             try {
                 contentlet.setTags();
-            } catch (DotDataException e) {
-                Logger.warn(DefaultTransformStrategy.class,
-                        "Unable to get tags from content with id: " + contentlet.getIdentifier());
+            } catch (final DotDataException e) {
+                Logger.warn(DefaultTransformStrategy.class, String.format("An error occurred when adding Tags to " +
+                        "Contentlet with ID '%s': %s", contentlet.getIdentifier(), e.getMessage()));
             }
         }
     }
@@ -350,9 +353,12 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
             map.put("isLocked", contentlet.isLocked());
         }
         map.put("hasLiveVersion", toolBox.versionableAPI.hasLiveVersion(contentlet));
-
-        map.put("publishDate", Try.of(contentlet::getModDate).getOrNull());
-
+        final Object publishDate = contentlet.get("publishDate");
+        if (null != publishDate) {
+            map.put("publishDate", publishDate);
+        } else {
+            map.put("publishDate", Try.of(contentlet::getModDate).getOrNull());
+        }
     }
 
 }

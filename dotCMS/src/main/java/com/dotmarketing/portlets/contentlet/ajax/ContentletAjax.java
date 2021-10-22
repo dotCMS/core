@@ -11,7 +11,6 @@ import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.enterprise.FormAJAXProxy;
 import com.dotcms.keyvalue.model.KeyValue;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
-import com.dotcms.rest.api.v1.workflow.ActionInputView;
 import com.dotcms.util.LogTime;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -19,7 +18,6 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PublishStateException;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -96,7 +94,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -861,7 +858,21 @@ public class ContentletAjax {
 							}
 						}
 						else if( fieldbcontentname.startsWith("date") ){
-							luceneQuery.append("+" + st.getVelocityVarName() +"."+ fieldVelocityVarName + ":" + fieldValue + " ");
+							if (!(fieldValue.contains(StringPool.OPEN_BRACKET)
+									&& fieldValue.toLowerCase().contains("to")
+									&& fieldValue.contains(StringPool.CLOSE_BRACKET))) {
+								final StringBuilder dateRange = new StringBuilder();
+								dateRange.append(StringPool.OPEN_BRACKET).append(fieldValue)
+										.append(" TO ").append(fieldValue)
+										.append(StringPool.CLOSE_BRACKET);
+
+								luceneQuery.append(
+										"+" + st.getVelocityVarName() + "." + fieldVelocityVarName
+												+ ":" + dateRange + " ");
+							} else{
+								luceneQuery.append("+" + st.getVelocityVarName() +"."+ fieldVelocityVarName + ":" + fieldValue + " ");
+							}
+
 						} else {
 							if(!isStructField){
 							    String fieldValueStr =  fieldValue.toString();
@@ -1098,6 +1109,8 @@ public class ContentletAjax {
 				ContentType type = con.getContentType();
 				searchResult.put("typeVariable", type.variable());
 				searchResult.put("baseType",type.baseType().name());
+				searchResult.put("contentTypeIcon",type.icon());
+
 				for (final String fieldContentlet : fieldsMapping.keySet()) {
 					String fieldValue = null;
 					if (con.getMap() != null && con.getMap().get(fieldContentlet) != null) {
@@ -1109,14 +1122,15 @@ public class ContentletAjax {
 							UtilMethods.isSet(fieldValue) && field.getFieldType().equals(FieldType.TIME.toString()) ||
 							UtilMethods.isSet(fieldValue) && field.getFieldType().equals(FieldType.DATE_TIME.toString())) {
 						try {
-							Date date = DateUtil.convertDate(fieldValue, new String[]{"yyyy-MM-dd HH:mm:ss", "E MMM dd HH:mm:ss z yyyy"});
+						    
+							Date date = con.getDateProperty(fieldContentlet);
 							if (field.getFieldType().equals(FieldType.DATE.toString()))
 								fieldValue = UtilMethods.dateToHTMLDate(date);
 							if (field.getFieldType().equals(FieldType.TIME.toString()))
 								fieldValue = UtilMethods.dateToHTMLTime(date);
 							if (field.getFieldType().equals(FieldType.DATE_TIME.toString()))
 								fieldValue = UtilMethods.dateToHTMLDate(date) + " " + UtilMethods.dateToHTMLTime(date);
-						} catch (java.text.ParseException e) {
+						} catch (Exception e) {
 							Logger.error(ContentletAjax.class, e.getMessage(), e);
 							throw new DotRuntimeException(e.getMessage(), e);
 						}
@@ -1404,12 +1418,19 @@ public class ContentletAjax {
             final String fieldName) {
 
         if (st != null) {
-            final Field field = st.getFieldVar(
-                    fieldName.split("\\.").length > 1 ? fieldName.split("\\.")[1] : fieldName);
+            final String fieldVar =
+                    fieldName.split("\\.").length > 1 ? fieldName.split("\\.")[1] : fieldName;
+            final Field field = st.getFieldVar(fieldVar);
 
             if (field != null && field.getFieldType().equals(FieldType.RELATIONSHIP.toString())) {
                 Relationship relationship = APILocator.getRelationshipAPI()
                         .byTypeValue(field.getFieldRelationType());
+
+                //Considers Many to One relationships where the fieldName might not contain the relation type value
+                if (null == relationship && !field.getFieldRelationType().contains(".")) {
+                    relationship = APILocator.getRelationshipAPI()
+                            .byTypeValue(st.getVelocityVarName() + StringPool.PERIOD + fieldVar);
+                }
                 return relationship != null?Optional.of(relationship):Optional.empty();
             }
         }

@@ -646,16 +646,6 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
                 return;
             }
 
-            // Host dependency
-            tryToAddSilently(PusheableAsset.SITE,
-                    pushPublishigDependencyProvider.getHostById(identifier.getHostId()),
-                    ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(pageId));
-
-            // Folder dependencies
-            tryToAddSilently(PusheableAsset.FOLDER,
-                    pushPublishigDependencyProvider.getFolderByParentIdentifier(identifier),
-                    ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(pageId));
-
             // looking for working version (must exists)
             final IHTMLPage workingPage = Try.of(
                     ()->APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(
@@ -666,9 +656,19 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
                             false)
             ).onFailure(e->Logger.warnAndDebug(DependencyManager.class, e)).getOrNull();
 
-            if(workingPage==null) {
+            if(workingPage == null) {
                 return;
             }
+
+            // Host dependency
+            tryToAddSilently(PusheableAsset.SITE,
+                    pushPublishigDependencyProvider.getHostById(identifier.getHostId()),
+                    ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(workingPage));
+
+            // Folder dependencies
+            tryToAddSilently(PusheableAsset.FOLDER,
+                    pushPublishigDependencyProvider.getFolderByParentIdentifier(identifier),
+                    ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(workingPage));
 
             final IHTMLPage livePage = workingPage.isLive()
                     ? workingPage
@@ -707,13 +707,13 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
             // Contents dependencies
             tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET,
                     pushPublishigDependencyProvider.getContentletsByPage(workingPage),
-                    ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(pageId));
+                    ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(workingPage));
 
 
             // Rule dependencies
             tryToAddAllAndProcessDependencies(PusheableAsset.RULE,
                     pushPublishigDependencyProvider.getRuleByPage(workingPage),
-                    ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(pageId));
+                    ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(workingPage));
         } catch (DotSecurityException | DotDataException e) {
             Logger.error(this, e.getMessage(),e);
         }

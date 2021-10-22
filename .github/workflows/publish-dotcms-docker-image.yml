@@ -31,7 +31,6 @@ jobs:
         uses: actions/checkout@v2
       - name: Set Common Vars
         run: |
-          pwd && ls -las
           BUILD_ID=$(basename "${{ github.ref }}")
           BUILD_HASH=$(git log -1 --pretty=%h)
           eval $(cat dotCMS/gradle.properties| grep dotcmsReleaseVersion)

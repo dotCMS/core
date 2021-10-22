@@ -1,6 +1,6 @@
 package com.dotcms.rest.api.v1.system.monitor;
 
-import com.dotcms.business.CloseDBIfOpened;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -8,11 +8,11 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
+import org.glassfish.jersey.server.JSONP;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.util.StringPool;
-import javax.servlet.http.HttpServletRequest;
-import org.glassfish.jersey.server.JSONP;
 
 
 @Path("/v1/system-status")
@@ -72,4 +72,32 @@ public class MonitorResource {
 
         return builder.build();
     }
+    
+    /**
+     * This resource tests a very simple case of querying data that should be in cache and returns
+     * either success or failure result code.  This is a valid liveness check as the request already runs
+     * through the CMSFilter (url resolution, rules firing) before reaching here.
+     * 
+     * @param request
+     * @return
+     * @throws Throwable
+     */
+    @GET
+    @Path("/alive")
+    @CloseDBIfOpened
+    public Response aliveCheck(final @Context HttpServletRequest request) throws Throwable {
+        // Cannot require authentication as we cannot assume db or other subsystems are functioning
+
+        final MonitorHelper helper = new MonitorHelper(request);
+        if(!helper.accessGranted) {
+            return Response.status(FORBIDDEN).build();
+        }
+        
+        
+        return Response.status(200).build();
+        
+    }
+    
+    
+    
 }

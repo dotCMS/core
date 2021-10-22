@@ -6,7 +6,7 @@ import java.util.TimeZone;
 
 import org.apache.velocity.tools.generic.DateTool;
 import org.apache.velocity.tools.view.tools.ViewTool;
-
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.DateUtil;
 
 /**
@@ -42,8 +42,7 @@ public class DateViewWebAPI extends DateTool implements ViewTool {
 	
 	public static int getOffSet(Date date)
 	{
-		GregorianCalendar gc = new GregorianCalendar();		
- 		TimeZone tz = TimeZone.getDefault();
+ 		TimeZone tz = APILocator.systemTimeZone();
 	 	int offset = tz.getOffset((date).getTime());
 	 	return offset;	 	
 	}

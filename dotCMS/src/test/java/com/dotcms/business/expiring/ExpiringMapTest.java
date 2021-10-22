@@ -149,4 +149,23 @@ public class ExpiringMapTest extends UnitTestBase {
     }
 
 
+    @Test
+    public void Put_Using_Cache_TTL_No_Expiring_Strategy() {
+
+        // put a message with 10 seconds, for more messages repeat
+        final ExpiringMap<String, String> map = new ExpiringMapBuilder<>()
+                .size(10).ttl(DateUtil.FIVE_SECOND_MILLIS).build();
+
+        final String one = ONE;
+        try {
+            map.put(one, one, true);
+            IntStream.of(1, 2, 3).forEach(i -> Assert.assertTrue(map.containsKey(one)));
+            DateUtil.sleep(DateUtil.FIVE_SECOND_MILLIS);
+            IntStream.of(1, 2, 3).forEach(i -> Assert.assertFalse(map.containsKey(one)));
+        } finally {
+            map.remove(one);
+        }
+    }
+
+
 }

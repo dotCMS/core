@@ -36,6 +36,7 @@ import redis.clients.jedis.Protocol;
  * @author Jonathan Gamba
  *         Date: 10/9/15
  */
+@Deprecated
 public class RedisProvider extends CacheProvider {
 
     private static final long serialVersionUID = -855583393078878276L;

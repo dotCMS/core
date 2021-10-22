@@ -13,6 +13,7 @@
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.business.DotStateException"%>
 <%@ page import="com.dotcms.publishing.BundlerUtil" %>
+<%@ page import="com.dotcms.publishing.manifest.ManifestUtil" %>
 
 <%
     String bundleId = request.getParameter("bundle");
@@ -26,7 +27,7 @@
     PublishAuditStatus.Status status = null;
     int statusCode = 0;
     if ( null != bundleId ) {
-        PublishAuditStatus publishAuditStatus = PublishAuditAPI.getInstance().getPublishAuditStatus( bundleId );
+        PublishAuditStatus publishAuditStatus = PublishAuditAPI.getInstance().getPublishAuditStatus( bundleId , 1);
 
         if (UtilMethods.isSet(publishAuditStatus) && UtilMethods.isSet(publishAuditStatus.getStatusPojo())) {
             String pojo_string = publishAuditStatus.getStatusPojo().getSerialized();
@@ -76,7 +77,7 @@
 
     <button dojoType="dijit.form.Button" onClick="window.location='/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadBundle/bid/<%=bundleId%>';" iconClass="downloadIcon"><%= LanguageUtil.get(pageContext, "download") %></button>
 
-    <%if (BundlerUtil.tarGzipExists(bundleId)){%>
+    <%if (ManifestUtil.manifestExists(bundleId)){%>
         <button dojoType="dijit.form.Button" onClick="window.location='/api/bundle/<%=bundleId%>/manifest'" iconClass="downloadIcon"><%= LanguageUtil.get(pageContext, "manifest") %></button>
     <%}%>
 
@@ -91,8 +92,10 @@
             <option value="1">All End-points</option>
             <option value="2">Failed End-points Only</option>
         </select> &nbsp;&nbsp;
-        &nbsp;&nbsp;
-        <button id="retryButton" dojoType="dijit.form.Button" onClick="retryBundles('<%=bundleId%>')" iconClass="repeatIcon"><%= LanguageUtil.get(pageContext, "publisher_retry") %></button>
+
+        <%if (BundlerUtil.isRetryable(bundle.getId())){%>&nbsp;&nbsp;
+            <button id="retryButton" dojoType="dijit.form.Button" onClick="retryBundles('<%=bundleId%>')" iconClass="repeatIcon"><%= LanguageUtil.get(pageContext, "publisher_retry") %></button>
+        <%}%>
     </div>
 </div>
 

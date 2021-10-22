@@ -1,19 +1,14 @@
 package com.dotcms.dotpubsub;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotConcurrentFactory.SubmitterConfig;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
-import io.vavr.control.Try;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 
 /**
  * This class wraps a pub/sub mechanism and de-dupes the messages sent through it. Once a second,
@@ -24,52 +19,52 @@ import io.vavr.control.Try;
  */
 public class QueuingPubSubWrapper implements DotPubSubProvider {
 
-    private ScheduledExecutorService executorService;
     private final DotPubSubProvider wrappedProvider;
-    private final Collection<DotPubSubEvent> outgoingMessages;
-    private final Map<String, Tuple2<DotPubSubTopic, LinkedBlockingQueue<DotPubSubEvent>>> topicQueues =
-                    new ConcurrentHashMap<>();
 
-    final boolean logDedupes;
+    private final Cache<Integer, Boolean> recentEvents ;
+    
+    private final DotSubmitter submitter;
+    
+
 
     public QueuingPubSubWrapper(DotPubSubProvider providerIn) {
-        this.wrappedProvider =
-                        providerIn instanceof QueuingPubSubWrapper 
+        this.wrappedProvider = providerIn instanceof QueuingPubSubWrapper 
                         ? ((QueuingPubSubWrapper) providerIn).wrappedProvider
                         : providerIn;
 
-        this.executorService = Executors.newSingleThreadScheduledExecutor();
+        
+        final SubmitterConfig config = new DotConcurrentFactory.SubmitterConfigBuilder()
+                        .poolSize(1)
+                        .maxPoolSize(Config.getIntProperty("PUBSUB_QUEUE_DEDUPE_THREADS", 10))
+                        .keepAliveMillis(1000)
+                        .queueCapacity(Config.getIntProperty("PUBSUB_QUEUE_SIZE", 10000))
+                        .rejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy())
+                        .build();
+        
+        this.submitter = DotConcurrentFactory.getInstance().getSubmitter("QueuingPubSubWrapperSubmitter", config);
 
-        this.logDedupes = Config.getBooleanProperty("DOT_PUBSUB_QUEUE_DEDUPE_LOG", false);
-
-        outgoingMessages = Config.getBooleanProperty("DOT_PUBSUB_QUEUE_DEDUPE", true) 
-                        ? new LinkedHashSet<>()
-                        : new ArrayList<>();
-
+        this.recentEvents = Caffeine.newBuilder()
+                        .initialCapacity(10000)
+                        .expireAfterWrite(Config.getIntProperty("PUBSUB_QUEUE_DEDUPE_TTL_MILLIS", 1500), TimeUnit.MILLISECONDS)
+                        .maximumSize(50000)
+                        .build();
+        
+        
     }
 
     public QueuingPubSubWrapper() {
         this(DotPubSubProviderLocator.provider.get());
     }
 
-    private final ScheduledExecutorService executorService() {
-        if (this.executorService == null || this.executorService.isShutdown() || this.executorService.isTerminated()) {
-            executorService = Executors.newSingleThreadScheduledExecutor();
-            executorService.scheduleAtFixedRate(this::publishQueue, 5, 1, TimeUnit.SECONDS);
-        }
-        return executorService;
-
-    }
 
     @Override
     public DotPubSubProvider subscribe(final DotPubSubTopic topic) {
-        topicQueues.putIfAbsent(topic.getKey().toString(), Tuple.of(topic, new LinkedBlockingQueue<DotPubSubEvent>()));
         return this.wrappedProvider.subscribe(topic);
     }
 
     @Override
     public DotPubSubProvider start() {
-        executorService().scheduleAtFixedRate(this::publishQueue, 5, 1, TimeUnit.SECONDS);
+
         this.wrappedProvider.start();
         return this;
     }
@@ -77,57 +72,40 @@ public class QueuingPubSubWrapper implements DotPubSubProvider {
     @Override
     public void stop() {
         this.wrappedProvider.stop();
-        this.executorService.shutdown();
     }
+    long skipped=0;
+    long sent=0;
 
     /**
-     * this method is run every second in a loop. It takes the entries in the topic queues and drains
-     * them into a set to de-dupe them. It then publishes all the outgoing messages in the set
-     * 
-     * @return
-     */
-    private boolean publishQueue() {
-        Logger.debug(this.getClass(), () -> "Running QueuingPubSubWrapper.publishQueue");
-        for (Map.Entry<String, Tuple2<DotPubSubTopic, LinkedBlockingQueue<DotPubSubEvent>>> topicTuple : topicQueues
-                        .entrySet()) {
-            final DotPubSubTopic topic = topicTuple.getValue()._1;
-            final LinkedBlockingQueue<DotPubSubEvent> topicQueue = topicTuple.getValue()._2;
-
-            final int drainedMessages = topicQueue.drainTo(outgoingMessages);
-
-            if (this.logDedupes && drainedMessages > 0) {
-                final int dedupedMessages = outgoingMessages.size();
-                if (drainedMessages > dedupedMessages) {
-                    Logger.info(this.getClass(), () -> "Topic: " + topic.getKey() + " = " + drainedMessages
-                                    + " total / " + dedupedMessages + " unique sent");
-                }
-            }
-
-            for (DotPubSubEvent event : outgoingMessages) {
-                this.wrappedProvider.publish(event);
-            }
-            outgoingMessages.clear();
-        }
-
-        return true;
-    }
-
-    /**
-     * Publishing an event only adds the DotPubSubEvent to the queue, which will be processed async once
-     * every seccond
+     * This publishes an event only if the same event has not been published within the last 
+     * DOT_PUBSUB_QUEUE_DEDUPE_TTL_MILLIS milliseconds, e.g. 1500ms
      */
     @Override
     public boolean publish(final DotPubSubEvent event) {
 
-        LinkedBlockingQueue<DotPubSubEvent> topicQueue = topicQueues.get(event.getTopic())._2;
-        Try.run(() -> topicQueue.add(event)).onFailure(e -> Logger.warn(QueuingPubSubWrapper.class, e.getMessage(), e));
+        // if the same event has already been published in the last 1.5 seconds, skip it
+        if(recentEvents.getIfPresent(event.hashCode())!=null){
+            skipped++;
+            Logger.debug(this.getClass(), ()->"Skipping:" + event);
+            return true;
+        }
+        sent++;
+
+        recentEvents.put(event.hashCode(), true);
+        submitter.submit(()->this.wrappedProvider.publish(event));
+        
+        
+        Logger.debug(this.getClass(), ()->"sent/skipped: " + sent + "/" + skipped);
+        Logger.debug(this.getClass(), ()->"active count:" + submitter.getActiveCount());
+        
+
         return true;
 
     }
 
     @Override
     public DotPubSubProvider unsubscribe(DotPubSubTopic topic) {
-        topicQueues.remove(topic);
+
         return this.wrappedProvider.unsubscribe(topic);
     }
 

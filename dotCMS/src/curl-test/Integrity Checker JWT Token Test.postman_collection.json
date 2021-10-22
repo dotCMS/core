@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "aa2685ce-73db-4505-af17-dbaf2c46491f",
+		"_postman_id": "715ececa-9725-4a67-8448-ec7b26abf20c",
 		"name": "Integrity Checker JWT Token Test",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -17,7 +17,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "3b6fad29-65b5-4086-8ab8-d94ac110864b",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -80,7 +79,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "a7081ff1-eb57-4144-805a-8e8eae337795",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -113,7 +111,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "c1c1e34b-7836-4f4c-bc04-4ca06ffb2947",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -163,7 +160,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "3074a9ea-729c-4ad8-a879-c7b0d2ebdf54",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -199,7 +195,7 @@
 									}
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/integrity/{{transactionId}}/status",
+									"raw": "{{serverURL}}/api/integrity/{{transactionId}}/integrityData",
 									"host": [
 										"{{serverURL}}"
 									],
@@ -213,9 +209,7 @@
 							},
 							"response": []
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "using_basic_authentication_instead_JWT_token",
@@ -226,7 +220,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "56351728-6cc5-4534-8d20-34ed18fa53f3",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(401);",
@@ -269,9 +262,6 @@
 									"mode": "file",
 									"file": {
 										"src": "resources/Push_publish/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
-									},
-									"options": {
-										"file": {}
 									}
 								},
 								"url": {
@@ -288,9 +278,7 @@
 							},
 							"response": []
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "fail_not_token_sent",
@@ -301,7 +289,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "af8e3f70-4aac-48f3-b82b-b06faaa1380a",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(401);",
@@ -354,9 +341,7 @@
 							},
 							"response": []
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				},
 				{
 					"name": "fail_not_valid_token",
@@ -367,7 +352,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "4c5c8833-e552-4a09-a194-f1c0d573cdea",
 										"exec": [
 											"pm.test(\"Status code is 401\", function () {",
 											"    pm.response.to.have.status(401);",
@@ -427,12 +411,9 @@
 							},
 							"response": []
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "Fix conflicts",
@@ -446,7 +427,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "1484478a-01e1-470b-b5a9-9715f5101cc3",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -500,10 +480,7 @@
 											"type": "file",
 											"src": "resources/Push_publish/folder_integrity_test_demo.tar.gz"
 										}
-									],
-									"options": {
-										"formdata": {}
-									}
+									]
 								},
 								"url": {
 									"raw": "{{serverURL}}/api/bundle/sync",
@@ -526,7 +503,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "b8e60a1f-3836-4c2f-bdf0-4e52ffdb4dc5",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -589,7 +565,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "33283402-c4e1-4108-a8b5-0c9385d7027c",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -667,7 +642,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "5656c97e-1477-4c2b-94b4-6e9b0c8f05dc",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -732,7 +706,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "60920dd4-5498-44b5-955b-e548c17d92ea",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -865,7 +838,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "755c8934-3479-4836-a487-fb246894aa71",
 										"exec": [
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -919,10 +891,7 @@
 											"type": "file",
 											"src": "resources/Push_publish/folder_integrity_test_demo.tar.gz"
 										}
-									],
-									"options": {
-										"formdata": {}
-									}
+									]
 								},
 								"url": {
 									"raw": "{{serverURL}}/api/bundle/sync",
@@ -945,7 +914,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "941c0f23-cc7a-4294-a9e5-7f99284040cf",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -1010,7 +978,6 @@
 								{
 									"listen": "test",
 									"script": {
-										"id": "603592d5-0ea2-42b4-b59a-812b1090147e",
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
@@ -1059,19 +1026,15 @@
 							},
 							"response": []
 						}
-					],
-					"protocolProfileBehavior": {},
-					"_postman_isSubFolder": true
+					]
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		}
 	],
 	"event": [
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "2e6b89ca-835e-441e-8d20-8f69a2486a56",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -1081,7 +1044,6 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "7aef68af-5cae-4dbf-a733-33377caef2bd",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -1091,25 +1053,20 @@
 	],
 	"variable": [
 		{
-			"id": "5b4948d2-12b3-4e06-b207-56296ab79e92",
 			"key": "serverURL",
 			"value": "http://localhost:8080"
 		},
 		{
-			"id": "975334c6-db15-4b59-9e23-0030230c5ef7",
 			"key": "token",
 			"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGk2NTdmY2ZhMy02YWRlLTQ3NWMtOGY5OS03YzM2NDg0Y2E2YWEiLCJ4bW9kIjoxNjA0NDE3NzA3MDAwLCJuYmYiOjE2MDQ0MTc3MDcsImlzcyI6IjhlNTFiMGFiOGUiLCJsYWJlbCI6InRlc3RpbmciLCJleHAiOjE2OTg5ODkwNzIsImlhdCI6MTYwNDQxNzcwNywianRpIjoiN2VjZDE1ODEtMDc2OS00YWZkLWIxYWUtODlhOTQ3M2M1ZjRiIn0.ZIr7ZJSv5UJSPFB0QGxy3Ye2tyA8LK_tqDx6987OP34"
 		},
 		{
-			"id": "1d5a2e52-f063-430f-b0ad-0c79bc3c349e",
 			"key": "bundle_id",
 			"value": "bundle_1598948729120"
 		},
 		{
-			"id": "6ba6721d-8932-4429-84f7-b5a282bf270b",
 			"key": "transactionId",
 			"value": "48db03da-d303-47cc-af29-9be490e99648"
 		}
-	],
-	"protocolProfileBehavior": {}
+	]
 }

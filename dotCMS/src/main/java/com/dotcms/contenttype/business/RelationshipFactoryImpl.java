@@ -30,6 +30,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -467,18 +468,16 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 
     @Override
     public void save(final Relationship relationship) throws DotDataException {
+        relationship.setModDate(new Date());
 
         if(UtilMethods.isSet(relationship.getInode())){
             if(relationshipExists(relationship.getInode())){
-                insertInodeInDB(relationship);
-                insertRelationshipInDB(relationship);
-            } else {
-                updateInodeInDB(relationship);
                 updateRelationshipInDB(relationship);
+            } else {
+                insertRelationshipInDB(relationship);
             }
         } else{
             relationship.setInode(UUIDGenerator.generateUuid());
-            insertInodeInDB(relationship);
             insertRelationshipInDB(relationship);
         }
 
@@ -497,16 +496,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
                 .setSQL(sql.FIND_BY_INODE)
                 .addParam(inode)
                 .loadObjectResults();
-        return results.isEmpty();
-    }
-
-    private void insertInodeInDB(final Relationship relationship) throws DotDataException{
-	    DotConnect dc = new DotConnect();
-	    dc.setSQL(sql.INSERT_INODE);
-	    dc.addParam(relationship.getInode());
-	    dc.addParam(relationship.getiDate());
-	    dc.addParam(relationship.getOwner());
-	    dc.loadResult();
+        return UtilMethods.isSet(results);
     }
 
     private void insertRelationshipInDB(final Relationship relationship) throws DotDataException{
@@ -522,16 +512,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         dc.addParam(relationship.isParentRequired());
         dc.addParam(relationship.isChildRequired());
         dc.addParam(relationship.isFixed());
-        dc.loadResult();
-    }
-
-    private void updateInodeInDB(final Relationship relationship) throws DotDataException{
-	    DotConnect dc = new DotConnect();
-	    dc.setSQL(sql.UPDATE_INODE);
-	    dc.addParam(relationship.getInode());
-	    dc.addParam(relationship.getiDate());
-        dc.addParam(relationship.getOwner());
-        dc.addParam(relationship.getInode());
+        dc.addParam(relationship.getModDate());
         dc.loadResult();
     }
 
@@ -547,6 +528,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         dc.addParam(relationship.isParentRequired());
         dc.addParam(relationship.isChildRequired());
         dc.addParam(relationship.isFixed());
+        dc.addParam(relationship.getModDate());
         dc.addParam(relationship.getInode());
         dc.loadResult();
     }
@@ -569,7 +551,6 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     private void delete(final Relationship relationship, final Boolean keepTreeRecords) throws DotDataException {
 
 	    deleteRelationshipInDB(relationship.getInode());
-	    deleteInodeInDB(relationship.getInode());
 
         if ( !keepTreeRecords ) {
             TreeFactory.deleteTreesByRelationType(relationship.getRelationTypeValue());
@@ -588,13 +569,6 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     private void deleteRelationshipInDB(final String inode) throws DotDataException{
         DotConnect dc = new DotConnect();
         dc.setSQL(sql.DELETE_RELATIONSHIP_BY_INODE);
-        dc.addParam(inode);
-        dc.loadResult();
-    }
-
-    private void deleteInodeInDB(final String inode) throws DotDataException{
-        DotConnect dc = new DotConnect();
-        dc.setSQL(sql.DELETE_INODE);
         dc.addParam(inode);
         dc.loadResult();
     }

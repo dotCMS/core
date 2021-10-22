@@ -355,6 +355,7 @@ public class ContainerResource implements Serializable {
         context.put("contentletList" + container.getIdentifier() + Container.LEGACY_RELATION_TYPE,
                 Lists.newArrayList(contentlet.getIdentifier()));
         context.put(mode.name(), Boolean.TRUE);
+        context.put("dotPageContent",Boolean.TRUE);
 
         final VelocityResourceKey key = new VelocityResourceKey(container, Container.LEGACY_RELATION_TYPE, mode);
 

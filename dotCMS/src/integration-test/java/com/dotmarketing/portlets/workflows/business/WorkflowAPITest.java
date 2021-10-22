@@ -4029,39 +4029,26 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
         assertNotNull(taskByContentlet);
         assertNotNull(taskByContentlet.getId());
-        assertEquals(taskByContentlet.getTitle(), title);
-        assertEquals(taskByContentlet.getDescription(), description);
+        assertEquals("Auto assign to the step: New", taskByContentlet.getTitle());
+        assertEquals(String.format("The content titled \"%s\" has been moved automatically to the step New", contentlet.getTitle()),
+                taskByContentlet.getDescription());
 
         final WorkflowStep newWorkflowStep = workflowAPI.findStep(SystemWorkflowConstants.WORKFLOW_NEW_STEP_ID);
         assertEquals(taskByContentlet.getStatus(), newWorkflowStep.getId());
 
-        final WorkflowStep publishWorkflowStep = workflowAPI.findStep(SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID);
-        task.setStatus(publishWorkflowStep.getId());
+        final List<WorkflowStep> steps = workflowAPI
+                .findSteps(workflowAPI.findSystemWorkflowScheme());
+
+        final Optional<WorkflowStep> notNewWorkflowStep = steps.stream()
+                .filter(step -> step.getId() != taskByContentlet.getStatus())
+                .findAny();
+        task.setStatus(notNewWorkflowStep.get().getId());
         workflowAPI.saveWorkflowTask(task);
 
         assertNotNull(taskByContentlet);
         assertNotNull(taskByContentlet.getId());
-        assertEquals(taskByContentlet.getStatus(), publishWorkflowStep.getId());
+        assertEquals(taskByContentlet.getStatus(), notNewWorkflowStep.get().getId());
 
     }
-    
-    public WorkflowTask createWorkflowTask(final Contentlet contentlet, final User user,
-            final WorkflowStep workflowStep, final String title, String description) throws DotDataException {
 
-        final WorkflowTask task = new WorkflowTask();
-        final Date now          = new Date();
-
-        task.setTitle(title);
-        task.setDescription(description);
-        task.setAssignedTo(APILocator.getRoleAPI().getUserRole(user).getId());
-        task.setModDate(now);
-        task.setCreationDate(now);
-        task.setCreatedBy(user.getUserId());
-        task.setStatus(workflowStep.getId());
-        task.setDueDate(null);
-        task.setWebasset(contentlet.getIdentifier());
-        task.setLanguageId(contentlet.getLanguageId());
-
-        return task;
-    }
 }

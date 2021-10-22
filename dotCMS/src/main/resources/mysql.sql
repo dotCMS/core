@@ -33,7 +33,7 @@ create table Company (
 	key_ longtext null,
 	portalURL varchar(100) not null,
 	homeURL varchar(100) not null,
-	mx varchar(100) not null,
+	mx varchar(100) default 'dotcms.com',
 	name varchar(100) not null,
 	shortName varchar(100) not null,
 	type_ varchar(100) null,
@@ -47,7 +47,8 @@ create table Company (
 	emailAddress varchar(100) null,
 	authType varchar(100) null,
 	autoLogin tinyint,
-	strangers tinyint
+	strangers tinyint,
+    default_language_id bigint null
 );
 
 create table Counter (
@@ -1342,6 +1343,7 @@ create table relationship (
    parent_required tinyint(1),
    child_required tinyint(1),
    fixed tinyint(1),
+   mod_date datetime,
    primary key (inode),
    unique (relation_type_value)
 );
@@ -1565,7 +1567,6 @@ create index idx_field_1 on field (structure_inode);
 alter table field add index fk5cea0fa5fb51eb (inode), add constraint fk5cea0fa5fb51eb foreign key (inode) references inode (inode);
 create index idx_relationship_1 on relationship (parent_structure_inode);
 create index idx_relationship_2 on relationship (child_structure_inode);
-alter table relationship add index fkf06476385fb51eb (inode), add constraint fkf06476385fb51eb foreign key (inode) references inode (inode);
 create index idx_folder_1 on folder (name);
 alter table folder add index fkb45d1c6e5fb51eb (inode), add constraint fkb45d1c6e5fb51eb foreign key (inode) references inode (inode);
 create index idx_user_clickstream_404_2 on clickstream_404 (user_id);
@@ -1956,6 +1957,8 @@ alter table workflow_comment add constraint workflowtask_id_comment_FK foreign k
 alter table workflow_history add constraint workflowtask_id_history_FK foreign key (workflowtask_id) references workflow_task(id);
 
 alter table contentlet add constraint fk_contentlet_lang foreign key (language_id) references language(id);
+
+alter table company add constraint fk_default_lang_id foreign key (default_language_id) references language(id);
 
 create table workflow_scheme(
     id varchar(36) primary key,
