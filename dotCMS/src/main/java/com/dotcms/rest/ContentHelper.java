@@ -13,11 +13,13 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.struts.ContentletForm;
 import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.io.File;
@@ -131,6 +133,10 @@ public class ContentHelper {
                 Logger.debug(this, ()-> "For the base type: " + baseType + " resolved the content type: "
                         + contentTypeOpt.get().variable());
                 contentletMap.put(Contentlet.CONTENT_TYPE_KEY, contentTypeOpt.get().variable());
+            } else{
+                final String errorMsg = Try.of(() -> LanguageUtil.get(user.getLocale(),
+                        "contentType.not.resolved.baseType", user.getUserId(), baseType)).getOrElse("Content-Type could not be resolved based on base type");
+                throw new DotContentletValidationException(errorMsg);
             }
         }
     }

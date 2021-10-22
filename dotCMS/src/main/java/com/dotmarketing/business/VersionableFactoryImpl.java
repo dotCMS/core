@@ -355,25 +355,43 @@ public class VersionableFactoryImpl extends VersionableFactory {
 				.addParam(identifier)
 				.addParam(lang);
 
-		List<ContentletVersionInfo> versionInfos = TransformerLocator
+		final List<ContentletVersionInfo> versionInfos = TransformerLocator
 				.createContentletVersionInfoTransformer(dotConnect.loadObjectResults()).asList();
 
 		return !versionInfos.isEmpty() ? Optional.of(versionInfos.get(0)) : Optional.empty();
     }
-    @Override
-    protected List<ContentletVersionInfo> findAllContentletVersionInfos(final String identifier)throws DotDataException, DotStateException {
-        final DotConnect dotConnect = new DotConnect()
-                .setSQL("SELECT * FROM contentlet_version_info WHERE identifier=?")
-                .addParam(identifier);
 
-        List<ContentletVersionInfo> versionInfos = TransformerLocator
-                .createContentletVersionInfoTransformer(dotConnect.loadObjectResults()).asList();
+	@Override
+	public Optional<ContentletVersionInfo> findAnyContentletVersionInfo(final String identifier)
+			throws DotDataException {
+		final List<ContentletVersionInfo> result = findContentletVersionInfos(identifier, 1);
+		return !result.isEmpty() ? Optional.of(result.get(0)) : Optional.empty();
+	}
 
-		return versionInfos==null || versionInfos.isEmpty()
+	private List<ContentletVersionInfo> findContentletVersionInfos(final String identifier,
+			final int maxResults) throws DotDataException, DotStateException {
+		final DotConnect dotConnect = new DotConnect()
+				.setSQL("SELECT * FROM contentlet_version_info WHERE identifier=?")
+				.addParam(identifier);
+
+		if (maxResults > 0) {
+			dotConnect.setMaxRows(maxResults);
+		}
+
+		final List<ContentletVersionInfo> versionInfos = TransformerLocator
+				.createContentletVersionInfoTransformer(dotConnect.loadObjectResults()).asList();
+
+		return versionInfos == null || versionInfos.isEmpty()
 				? Collections.emptyList()
 				: versionInfos;
+	}
 
-    }
+	@Override
+	protected List<ContentletVersionInfo> findAllContentletVersionInfos(final String identifier)
+			throws DotDataException, DotStateException {
+		return findContentletVersionInfos(identifier, -1);
+	}
+
     @Override
     protected void saveContentletVersionInfo(ContentletVersionInfo cvInfo, boolean updateVersionTS) throws DotDataException, DotStateException {
 		boolean isNew = true;

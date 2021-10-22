@@ -276,7 +276,6 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
     },
 
     _info: function () {
-    debugger;
         const host = location.protocol + '//' + location.host;
         let fileInfo = {};
         fileInfo['fileName'] = this.fileName;

@@ -1,29 +1,16 @@
 package com.dotcms.graphql.datafetcher;
 
 import static com.dotcms.contenttype.model.type.WidgetContentType.WIDGET_CODE_FIELD_VAR;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.RenderFieldStrategy.isFieldRenderable;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.RenderFieldStrategy.parseAsJSON;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.RenderFieldStrategy.renderFieldValue;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.RENDER_FIELDS;
 
-import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.graphql.DotGraphQLContext;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
-import com.dotcms.rest.ContentResource;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
-import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.liferay.portal.model.User;
 import graphql.Scalars;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
-import io.vavr.control.Try;
 import java.util.HashMap;
-import java.util.Map;
-import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -57,9 +44,7 @@ public class DotJSONDataFetcher implements DataFetcher<Object> {
                 final Object renderedValue = parseAsJSON(request, response, fieldValue,
                         contentlet, WIDGET_CODE_FIELD_VAR);
 
-                return UtilMethods.isSet(renderedValue)
-                        ? renderedValue
-                        : new HashMap<>();
+                return UtilMethods.isSet(renderedValue) ? renderedValue : new HashMap<>();
             } else {
                 return fieldValue;
             }

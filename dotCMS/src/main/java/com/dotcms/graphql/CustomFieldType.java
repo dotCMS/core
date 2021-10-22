@@ -21,6 +21,7 @@ import com.dotcms.graphql.datafetcher.MapFieldPropertiesDataFetcher;
 import com.dotcms.graphql.datafetcher.MultiValueFieldDataFetcher;
 import com.dotcms.graphql.util.TypeUtil;
 import com.dotcms.graphql.util.TypeUtil.TypeFetcher;
+import graphql.scalars.ExtendedScalars;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
@@ -39,7 +40,8 @@ public enum CustomFieldType {
     KEY_VALUE("DotKeyValue"),
     LANGUAGE("DotLanguage"),
     USER("DotUser"),
-    FILEASSET("DotFileasset");
+    FILEASSET("DotFileasset"),
+    STORY_BLOCK("DotStoryBlock");
 
     CustomFieldType(String typeName) {
         this.typeName = typeName;
@@ -121,6 +123,11 @@ public enum CustomFieldType {
         languageTypeFields.put("language", GraphQLString);
         languageTypeFields.put("country", GraphQLString);
         customFieldTypes.put("LANGUAGE", TypeUtil.createObjectType(LANGUAGE.getTypeName(), languageTypeFields, null));
+
+        final Map<String, GraphQLOutputType> storyBlockTypeFields = new HashMap<>();
+        storyBlockTypeFields.put("render", GraphQLString);
+        storyBlockTypeFields.put("json", ExtendedScalars.Json);
+        customFieldTypes.put("STORY_BLOCK", TypeUtil.createObjectType(STORY_BLOCK.getTypeName(), storyBlockTypeFields, null));
 
         final Map<String, GraphQLOutputType> userTypeFields = new HashMap<>();
         userTypeFields.put("userId", GraphQLID);

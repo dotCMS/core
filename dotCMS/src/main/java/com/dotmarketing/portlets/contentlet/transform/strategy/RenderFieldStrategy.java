@@ -7,6 +7,7 @@ import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.CustomField;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.field.WysiwygField;
@@ -97,7 +98,7 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
     public static boolean isFieldRenderable(final Field field) {
         return field instanceof WysiwygField || field instanceof TextField ||
                 field instanceof TextAreaField || field instanceof CustomField
-                || field instanceof ConstantField;
+                || field instanceof ConstantField || field instanceof StoryBlockField;
     }
 
     public static Object parseAsJSON(HttpServletRequest request,
@@ -161,7 +162,11 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
                         + fieldVar, error)
         );
 
-        return UtilMethods.isSet(evalResult.toString()) ? evalResult.toString() : fieldValue;
-    }
+        final DotJSON dotJSON = (DotJSON) context.get("dotJSON");
 
+        return UtilMethods.isSet(evalResult.toString())
+                ? dotJSON.size() > 0
+                    ? dotJSON.getMap() : evalResult.toString()
+                : fieldValue;
+    }
 }

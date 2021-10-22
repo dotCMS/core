@@ -145,7 +145,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
                 if (null == scheduledThreadPoolExecutor) {
                     final int corePoolSize = Config.getIntProperty(SCHEDULER_COREPOOLSIZE, 5);
-                    scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor( corePoolSize,new ThreadFactoryBuilder().setNameFormat("dot-ScheduledPool-%d").build(),new ThreadPoolExecutor.CallerRunsPolicy() );
+                    scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor( corePoolSize,new ThreadFactoryBuilder().setDaemon(true).setNameFormat("dot-ScheduledPool-%d").build(),new ThreadPoolExecutor.CallerRunsPolicy() );
                 }
             }
         }
@@ -157,7 +157,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     final static ThreadFactory buildDefaultThreadFactory(final String executorName) {
 
         if (UtilMethods.isEmpty(executorName)) {
-            new ThreadFactoryBuilder().setNameFormat("dotCMS-%d").build();
+            new ThreadFactoryBuilder().setDaemon(true).setNameFormat("dotCMS-%d").build();
         }
 
         final String className = Config.getStringProperty(executorName + DOTCMS_CONCURRENT_THREADFACTORYCLASS, null);
@@ -169,7 +169,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         }
 
 
-        return new ThreadFactoryBuilder().setNameFormat("dot-" + executorName + "-%d").build();
+        return new ThreadFactoryBuilder().setDaemon(true).setNameFormat("dot-" + executorName + "-%d").build();
 
     }
 

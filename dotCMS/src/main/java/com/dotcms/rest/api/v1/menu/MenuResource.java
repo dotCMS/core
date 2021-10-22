@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.menu;
 
+import com.dotcms.api.web.WebSessionContext;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -78,32 +79,33 @@ public class MenuResource implements Serializable {
 	@AccessControlAllowOrigin
 	@InitRequestRequired
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public Response getMenus(@Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse) throws LanguageException, ClassNotFoundException
-	{
-
+	public Response getMenus(@Context final HttpServletRequest httpServletRequest,
+							 @Context final HttpServletResponse httpServletResponse) {
 
 		Response res;
 		final Collection<Menu> menus = new ArrayList<Menu>();
 
-
 		try {
 
-	    final User user = new WebResource.InitBuilder(this.webResource)
-	    .requestAndResponse(httpServletRequest, httpServletResponse)
-	    .requiredBackendUser(true)
-	    .rejectWhenNoUser(true)
-	    .init().getUser();
-	    
-			final List<Layout> layouts = this.layoutAPI.loadLayoutsForUser(user);
+			final User user = new WebResource.InitBuilder(this.webResource)
+			.requestAndResponse(httpServletRequest, httpServletResponse)
+			.requiredBackendUser(true)
+			.rejectWhenNoUser(true)
+			.init().getUser();
+
+			final User principalUser = APILocator.getLoginAsAPI().getPrincipalUser(WebSessionContext.getInstance(httpServletRequest));
+			final User mainUser      = null != principalUser? principalUser: user;
+
+			final List<Layout> layouts    = this.layoutAPI.loadLayoutsForUser(user);
 			final MenuContext menuContext = new MenuContext(httpServletRequest, user);
 
 			for (int layoutIndex = 0; layoutIndex < layouts.size(); layoutIndex++) {
 
-				Layout layout = layouts.get(layoutIndex);
-				String tabName = LanguageUtil.get(user, layout.getName());
-				String tabIcon = StringEscapeUtils.escapeHtml(StringEscapeUtils
-						.escapeJavaScript(LanguageUtil.get(user, layout.getDescription())));
-				List<String> portletIds = layout.getPortletIds();
+				final Layout layout  = layouts.get(layoutIndex);
+				final String tabName = LanguageUtil.get(mainUser, layout.getName());
+				final String tabIcon = StringEscapeUtils.escapeHtml(StringEscapeUtils
+						.escapeJavaScript(LanguageUtil.get(mainUser, layout.getDescription())));
+				final List<String> portletIds = layout.getPortletIds();
 
 				if (null != portletIds && portletIds.size() > 0) {
 
@@ -122,14 +124,13 @@ public class MenuResource implements Serializable {
 			}
 
 			res = Response.ok(new ResponseEntityView(menus)).build(); // 200
-
-		} catch (DotDataException | NoSuchUserException e) {
+	    } catch (DotDataException | NoSuchUserException e) {
 
 			res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-    } catch (Exception e) {
-      res = ExceptionMapperUtil.createResponse(new ForbiddenException(e), Response.Status.INTERNAL_SERVER_ERROR);
+        } catch (Exception e) {
 
-    }
+            res = ExceptionMapperUtil.createResponse(new ForbiddenException(e), Response.Status.INTERNAL_SERVER_ERROR);
+        }
 
 		return res; //menus;
 	} // getMenus.
