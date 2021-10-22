@@ -11,18 +11,23 @@ import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRenderedBuilder;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.io.StringWriter;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -95,34 +100,43 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
                 || field instanceof ConstantField;
     }
 
-    public static Object parseAsJSON(final HttpServletRequest request,
-            final HttpServletResponse response, final String fieldValue,
+    public static Object parseAsJSON(HttpServletRequest request,
+            HttpServletResponse response, final String fieldValue,
             final Contentlet contentlet, final String fieldVar) {
         if(!UtilMethods.isSet(fieldValue)) return null;
+
+        request = request == null ? HttpServletRequestThreadLocal.INSTANCE.getRequest()
+                : request;
+
+        response = response == null ? HttpServletResponseThreadLocal.INSTANCE.getResponse()
+                : response;
 
         final org.apache.velocity.context.Context context = (request!=null && response!=null)
                 ? VelocityUtil.getInstance().getContext(request, response)
                 : VelocityUtil.getBasicContext();
 
+        final Language lang = WebAPILocator.getLanguageWebAPI().getLanguage(request);
+        final PageMode pageMode = PageMode.get(request);
+
         context.put("content", contentlet);
         context.put("contentlet", contentlet);
         context.put("dotJSON", new DotJSON());
 
-        final StringWriter evalResult = new StringWriter();
+        final VelocityResourceKey key = new VelocityResourceKey(contentlet, pageMode, lang.getId());
+        try {
+            VelocityUtil.mergeTemplate(key.path, context);
+        } catch (Exception e) {
+            Logger.warn(ContainerRenderedBuilder.class, e.getMessage());
+        }
 
-        Try.runRunnable(()-> com.dotmarketing.util.VelocityUtil
-                .getEngine()
-                .evaluate(context, evalResult, "", fieldValue)).onFailure((error)->
-                Logger.warnAndDebug(RenderFieldStrategy.class, "Unable to render velocity in field: "
-                        + fieldVar, error)
-        );
+        final String code = (String) context.get(fieldVar);
 
         final DotJSON dotJSON = (DotJSON) context.get("dotJSON");
 
-        return UtilMethods.isSet(evalResult.toString())
+        return UtilMethods.isSet(code)
                 ? dotJSON.size() > 0
-                    ? dotJSON.getMap() : evalResult.toString()
-                : fieldValue;
+                    ? dotJSON.getMap() : Collections.emptyMap()
+                : Collections.emptyMap();
     }
 
     public static Object renderFieldValue(final HttpServletRequest request,
