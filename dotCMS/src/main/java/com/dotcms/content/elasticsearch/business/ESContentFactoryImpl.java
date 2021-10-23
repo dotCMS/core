@@ -1971,6 +1971,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     throw new DotRuntimeException(error, e);
                 }
             }
+        } else {
+            contentlet.getMap().remove(Contentlet.CONTENTLET_AS_JSON);
         }
     }
 
