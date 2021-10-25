@@ -1,5 +1,8 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
+import com.dotcms.repackage.com.google.common.base.Preconditions;
+import com.dotmarketing.portlets.rules.exception.InvalidActionInstanceException;
+import java.net.URI;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -67,7 +70,7 @@ public class SendRedirectActionlet extends RuleActionlet<SendRedirectActionlet.I
     }
 
     @Override
-    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
+    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {//debug manual a ver si veo que  es lo que deberia  hacer el test
         final String myURL = CMSUrlUtil.getInstance().getURIFromRequest(request);
         final Optional<Pattern> patternOpt = Optional.ofNullable(
                         (Pattern) request.getAttribute(VisitorsCurrentUrlConditionlet.CURRENT_URL_CONDITIONLET_MATCHER));
@@ -98,6 +101,17 @@ public class SendRedirectActionlet extends RuleActionlet<SendRedirectActionlet.I
             this.redirectToUrl = parameters.getOrDefault(INPUT_URL_KEY, new ParameterModel()).getValue();
             this.responseCode = Try.of(() -> REDIRECT_METHOD.getResponse(parameters.get(INPUT_REDIRECT_METHOD).getValue()))
                             .getOrElse(301);
+
+            try {
+                //noinspection unused
+                URI uri = URI.create(this.redirectToUrl);
+            } catch (IllegalStateException | NullPointerException e) {
+                /* It isn't necessary to wrap and re-throw exceptions, but doing so can help provide more readable stack traces. */
+                throw new InvalidActionInstanceException(e, "SendRedirectActionlet: '%s' is not a valid URI", redirectToUrl);
+            }
+            /* A blank URI is a legitimate URI, but as far as redirects go it tends to generate infinite loops. */
+            /* While '.' might be valid, we probably shouldn't accept it as a redirect target either. */
+            Preconditions.checkArgument(!".".equals(this.redirectToUrl), "URL parameter cannot refer to self for SendRedirectActionlet.");
 
 
         }

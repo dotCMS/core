@@ -1,12 +1,15 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
 import com.dotcms.UnitTestBase;
+import com.dotmarketing.filters.CMSUrlUtil;
+import com.dotmarketing.portlets.rules.actionlet.SendRedirectActionlet.REDIRECT_METHOD;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 
+import javax.servlet.http.HttpServletRequest;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -18,16 +21,19 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletResponse;
 
+import static com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(DataProviderRunner.class)
 public class SendRedirectActionletTest extends UnitTestBase {
 
     private static final String URL_KEY = "URL";
+    private static final String INPUT_REDIRECT_METHOD = "REDIRECT_METHOD";
 
     @Test
     public void testGeneralConfiguration() throws Exception {
@@ -41,9 +47,11 @@ public class SendRedirectActionletTest extends UnitTestBase {
     @UseDataProvider("urlCases")
     public void testValidateParameters(SimpleUrlCase theCase) throws Exception {
         SendRedirectActionlet actionlet = new SendRedirectActionlet();
-        ParameterModel param = new ParameterModel(URL_KEY, theCase.url);
+        ParameterModel paramURL = new ParameterModel(URL_KEY, theCase.url);
+        ParameterModel paramRedirectMethod = new ParameterModel(INPUT_REDIRECT_METHOD, REDIRECT_METHOD.MOVED_PERM.name());
         List<ParameterModel> list = new ArrayList<>();
-        list.add(param);
+        list.add(paramURL);
+        list.add(paramRedirectMethod);
         RuleAction actionInstance = new RuleAction();
         actionInstance.setParameters(list);
         Exception exception = null;
@@ -61,15 +69,19 @@ public class SendRedirectActionletTest extends UnitTestBase {
     @Test
     public void testExecuteAction() throws Exception {
         HttpServletResponse response = mock(HttpServletResponse.class);
+        HttpServletRequest request = mock(HttpServletRequest.class);
 
+        when(request.getAttribute(CMS_FILTER_URI_OVERRIDE)).thenReturn("/index");
         String url = "//foo";
-        ParameterModel param = new ParameterModel(URL_KEY, url);
+        ParameterModel paramURL = new ParameterModel(URL_KEY, url);
+        ParameterModel paramRedirectMethod = new ParameterModel(INPUT_REDIRECT_METHOD, REDIRECT_METHOD.MOVED_PERM.name());
         Map<String, ParameterModel> params = new HashMap<>();
-        params.put(URL_KEY, param);
+        params.put(URL_KEY, paramURL);
+        params.put(INPUT_REDIRECT_METHOD, paramRedirectMethod);
 
         SendRedirectActionlet actionlet = new SendRedirectActionlet();
         SendRedirectActionlet.Instance instance = actionlet.instanceFrom(params);
-        actionlet.evaluate(null, response, instance);
+        actionlet.evaluate(request, response, instance);
 
         Mockito.verify(response).setStatus(301);
         Mockito.verify(response).setHeader("Location",url);
