@@ -45,7 +45,7 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
             final Contentlet contentlet = environment.getSource();
             final String key = environment.getArgument("key");
             final int depth = environment.getArgument("depth");
-            final Boolean render = environment.getArgument("render");
+            Boolean render = environment.getArgument("render");
 
             final HttpServletRequest request = ((DotGraphQLContext) environment.getContext())
                     .getHttpServletRequest();
@@ -55,7 +55,7 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
 
             if(UtilMethods.isSet(key)) {
                 Object fieldValue;
-                if(render) {
+                if(UtilMethods.isSet(render) && render) {
                     fieldValue = getRenderedFieldValue(request, response, contentlet, key);
                 } else {
                     fieldValue = contentlet.get(key);
@@ -67,9 +67,10 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
 
             final DotTransformerBuilder transformerBuilder = new DotTransformerBuilder();
 
-            if(render) {
+            if(UtilMethods.isSet(render) && render) {
                 transformerBuilder.hydratedContentMapTransformer(RENDER_FIELDS);
             } else {
+                render = false;
                 transformerBuilder.hydratedContentMapTransformer();
             }
 
@@ -107,6 +108,6 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
             return contentlet.get(key);
         }
 
-        return renderFieldValue(request, response, contentlet.get(key), contentlet, field);
+        return renderFieldValue(request, response, (String) contentlet.get(key), contentlet, field.variable());
     }
 }

@@ -31,6 +31,7 @@ import com.dotcms.enterprise.publishing.remote.handler.ContentHandlerTest;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
+import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleAPITest;
@@ -479,7 +480,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task211007RemoveNotNullConstraintFromCompanyMXColumnTest.class,
         ManifestReaderFactoryTest.class,
         Task211012AddCompanyDefaultLanguageTest.class,
-        StaticPublisherIntegrationTest.class
+        StaticPublisherIntegrationTest.class,
+        HostIntegrityCheckerTest.class
 })
 public class MainSuite {
 

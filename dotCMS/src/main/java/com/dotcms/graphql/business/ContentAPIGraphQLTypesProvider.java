@@ -1,10 +1,13 @@
 package com.dotcms.graphql.business;
 
+import static com.dotcms.contenttype.model.type.WidgetContentType.WIDGET_CODE_JSON_FIELD_VAR;
 import static com.dotcms.graphql.CustomFieldType.isCustomFieldType;
 import static com.dotcms.graphql.business.GraphqlAPI.TYPES_AND_FIELDS_VALID_NAME_REGEX;
+import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLFloat;
 import static graphql.Scalars.GraphQLInt;
 import static graphql.Scalars.GraphQLString;
+import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLList.list;
 
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -20,6 +23,7 @@ import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.MultiSelectField;
 import com.dotcms.contenttype.model.field.RelationshipsTabField;
 import com.dotcms.contenttype.model.field.RowField;
+import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -28,11 +32,13 @@ import com.dotcms.graphql.CustomFieldType;
 import com.dotcms.graphql.InterfaceType;
 import com.dotcms.graphql.datafetcher.BinaryFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.CategoryFieldDataFetcher;
+import com.dotcms.graphql.datafetcher.DotJSONDataFetcher;
 import com.dotcms.graphql.datafetcher.FieldDataFetcher;
 import com.dotcms.graphql.datafetcher.FileFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.KeyValueFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.MultiValueFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.SiteOrFolderFieldDataFetcher;
+import com.dotcms.graphql.datafetcher.StoryBlockFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.TagsFieldDataFetcher;
 import com.dotcms.graphql.exception.FieldGenerationException;
 import com.dotcms.graphql.util.TypeUtil;
@@ -42,7 +48,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
+import graphql.scalars.ExtendedScalars;
 import graphql.schema.DataFetcher;
+import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
@@ -53,6 +61,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -84,6 +93,7 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         this.fieldClassGraphqlTypeMap.put(TagField.class, list(GraphQLString));
         this.fieldClassGraphqlTypeMap
                 .put(HostFolderField.class, CustomFieldType.SITE_OR_FOLDER.getType());
+        this.fieldClassGraphqlTypeMap.put(StoryBlockField.class,CustomFieldType.STORY_BLOCK.getType());
 
         // custom data fetchers
         this.fieldClassGraphqlDataFetcher.put(BinaryField.class, new BinaryFieldDataFetcher());
@@ -98,6 +108,7 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         this.fieldClassGraphqlDataFetcher.put(TagField.class, new TagsFieldDataFetcher());
         this.fieldClassGraphqlDataFetcher
                 .put(HostFolderField.class, new SiteOrFolderFieldDataFetcher());
+        this.fieldClassGraphqlDataFetcher.put(StoryBlockField.class,new StoryBlockFieldDataFetcher());
     }
 
     @Override
@@ -192,6 +203,16 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
             }
         });
 
+        fieldDefinitions.add(newFieldDefinition()
+                .name(WIDGET_CODE_JSON_FIELD_VAR)
+                .argument(GraphQLArgument.newArgument()
+                        .name("render")
+                        .type(GraphQLBoolean)
+                        .defaultValue(null)
+                        .build())
+                .type(ExtendedScalars.Json)
+                .dataFetcher(new DotJSONDataFetcher()).build());
+
         // add CONTENT interface fields
         fieldDefinitions.addAll(TypeUtil
                 .getGraphQLFieldDefinitionsFromMap(ContentFields.getContentFields()));
@@ -201,6 +222,11 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
 
     public GraphQLOutputType getGraphqlTypeForFieldClass(final Class<? extends Field> fieldClass,
             final Field field) {
+
+        if(UtilMethods.isSet(field.variable()) && field.variable().equals(WIDGET_CODE_JSON_FIELD_VAR)) {
+            return ExtendedScalars.Json;
+        }
+
         return fieldClassGraphqlTypeMap.get(fieldClass) != null
                 ? fieldClassGraphqlTypeMap.get(fieldClass)
                 : fieldClass.equals(TextField.class) && field.dataType().equals(DataTypes.INTEGER)
