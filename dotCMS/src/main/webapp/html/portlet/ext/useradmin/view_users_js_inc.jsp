@@ -5,7 +5,6 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 
-<script type="text/javascript" src="/html/js/generate-password/bundle.js"></script>
 <script type="text/javascript" src="/dwr/interface/UserAjax.js"></script>
 <script type="text/javascript" src="/dwr/interface/RoleAjax.js"></script>
 <script type="text/javascript" src="/dwr/interface/TagAjax.js"></script>
@@ -90,6 +89,50 @@
 		dojo.byId('userProfileTabs').style.display = 'none';
 		dwr.util.useLoadingMessage("<%=LanguageUtil.get(pageContext, "Loading")%>....");
 	});
+
+    // Random Password Generator Fn
+    var PasswordGenerator = {
+
+        // Based on https://www.grc.com/ppp.htm
+        _pattern: /[!#%+23456789:=?@ABCDEFGHJKLMNPRSTUVWXYZabcdefghijkmnopqrstuvwxyz]/,
+
+        _getRandomByte: function() {
+        if(window.crypto && window.crypto.getRandomValues) 
+        {
+            var result = new Uint8Array(1);
+            window.crypto.getRandomValues(result);
+            return result[0];
+        }
+        else if(window.msCrypto && window.msCrypto.getRandomValues) 
+        {
+            var result = new Uint8Array(1);
+            window.msCrypto.getRandomValues(result);
+            return result[0];
+        }
+        else
+        {
+            return Math.floor(Math.random() * 256);
+        }
+        },
+
+        get: function(length) {
+        return Array.apply(null, {'length': length})
+            .map(function()
+            {
+            var result;
+            while(true) 
+            {
+                result = String.fromCharCode(this._getRandomByte());
+                if(this._pattern.test(result))
+                {
+                return result;
+                }
+            }        
+            }, this)
+            .join('');  
+        }
+
+    };
 
 
 	//Users list functions
@@ -495,14 +538,12 @@
 		passwordChanged = true;
 	}
 
+    
+
     //Sends custom NG event to display modal with secure password
     function generateSecurePasswordModal() {
         const data = {
-			password: window.passwordGenerator.generate({
-                length: 16,
-                numbers: true,
-                symbols: true
-            })
+			password: PasswordGenerator.get(16)
 		};
 		const customEvent = document.createEvent("CustomEvent");
 		customEvent.initCustomEvent("ng-event", false, false,  {
