@@ -22,6 +22,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import org.apache.commons.collections.keyvalue.MultiKey;
 import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -80,10 +81,10 @@ public class PageResource {
      */
     public PageResource() {
         this(
-            PageResourceHelper.getInstance(),
-            new WebResource(),
-            APILocator.getHTMLPageAssetRenderedAPI(),
-            APILocator.getContentletAPI()
+                PageResourceHelper.getInstance(),
+                new WebResource(),
+                APILocator.getHTMLPageAssetRenderedAPI(),
+                APILocator.getContentletAPI()
         );
     }
 
@@ -102,7 +103,7 @@ public class PageResource {
 
     /**
      * Returns the metadata in JSON format of the objects that make up an HTML Page in the system.
-     * 
+     *
      * <pre>
      * Format:
      * http://localhost:8080/api/v1/page/json/{page-url}
@@ -152,7 +153,7 @@ public class PageResource {
             }
 
             final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageMetadata(
-                      PageContextBuilder.builder()
+                    PageContextBuilder.builder()
                             .setUser(user)
                             .setPageUri(uri)
                             .setPageMode(mode)
@@ -211,12 +212,12 @@ public class PageResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/render/{uri: .*}")
     public Response render(@Context final HttpServletRequest originalRequest,
-                                   @Context final HttpServletResponse response,
-                                   @PathParam("uri") final String uri,
-                                   @QueryParam(WebKeys.PAGE_MODE_PARAMETER) final String modeParam,
-                                   @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
-                                   @QueryParam(WebKeys.LANGUAGE_ID_PARAMETER) final String languageId,
-                                   @QueryParam("device_inode") final String deviceInode) throws DotSecurityException, DotDataException {
+            @Context final HttpServletResponse response,
+            @PathParam("uri") final String uri,
+            @QueryParam(WebKeys.PAGE_MODE_PARAMETER) final String modeParam,
+            @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
+            @QueryParam(WebKeys.LANGUAGE_ID_PARAMETER) final String languageId,
+            @QueryParam("device_inode") final String deviceInode) throws DotSecurityException, DotDataException {
 
         Logger.debug(this, ()->String.format(
                 "Rendering page: uri -> %s mode-> %s language -> persona -> %s device_inode -> %s live -> %b",
@@ -283,9 +284,9 @@ public class PageResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/{pageId}/layout")
     public Response saveLayout(@Context final HttpServletRequest request,
-                               @Context final HttpServletResponse response,
-                               @PathParam("pageId") final String pageId,
-                               final PageForm form) throws DotSecurityException {
+            @Context final HttpServletResponse response,
+            @PathParam("pageId") final String pageId,
+            final PageForm form) throws DotSecurityException {
 
         Logger.debug(this, String.format("Saving layout: pageId -> %s layout-> %s", pageId,
                 form != null ? form.getLayout() : null));
@@ -402,9 +403,9 @@ public class PageResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("{pageId}/content")
     public final Response addContent(@Context final HttpServletRequest request,
-                                     @Context final HttpServletResponse response,
-                                     @PathParam("pageId") final String pageId,
-                                     final PageContainerForm pageContainerForm)
+            @Context final HttpServletResponse response,
+            @PathParam("pageId") final String pageId,
+            final PageContainerForm pageContainerForm)
             throws DotSecurityException, DotDataException {
 
         Logger.debug(this, ()->String.format("Saving page's content: %s",
@@ -426,7 +427,7 @@ public class PageResource {
             final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
             this.validateContainerEntries(pageContainerForm.getContainerEntries());
 
-            pageResourceHelper.saveContent(pageId, pageContainerForm.getContainerEntries(), language);
+            pageResourceHelper.saveContent(pageId, this.reduce(pageContainerForm.getContainerEntries()), language);
 
             return Response.ok(new ResponseEntityView("ok")).build();
         } catch(HTMLPageAssetNotFoundException e) {
@@ -478,6 +479,29 @@ public class PageResource {
             throw new BadRequestException(e, e.getMessage());
         }
     }
+
+    /**
+     * If a container is being sent dupe, the entries will be reduce to one and the non repeated contentlets will be combined.
+     * @param containerEntries List
+     * @return List
+     */
+    private List<PageContainerForm.ContainerEntry> reduce(final List<PageContainerForm.ContainerEntry> containerEntries) {
+
+        final Map<MultiKey, Set<String>> containerEntryMap = new HashMap<>();
+
+        for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
+
+            final Set<String> contentletIdList = containerEntryMap.computeIfAbsent(new MultiKey(containerEntry.getPersonaTag(),
+                    containerEntry.getContainerId(), containerEntry.getContainerUUID()), k -> new HashSet<>());
+
+            contentletIdList.addAll(containerEntry.getContentIds());
+        }
+
+        return containerEntryMap.entrySet().stream()
+                .map(entry -> new PageContainerForm.ContainerEntry((String)entry.getKey().getKeys()[0],
+                        (String)entry.getKey().getKeys()[1], (String)entry.getKey().getKeys()[2], new ArrayList<>(entry.getValue())))
+                .collect(Collectors.toList());
+    }
     /**
      *
      * @param request
@@ -491,9 +515,9 @@ public class PageResource {
     @Produces({"application/html", "application/javascript"})
     @Path("/renderHTML/{uri: .*}")
     public Response renderHTMLOnly(@Context final HttpServletRequest request,
-                                   @Context final HttpServletResponse response,
-                                   @PathParam("uri") final String uri,
-                                   @QueryParam("mode") @DefaultValue("LIVE_ADMIN") final String modeStr)
+            @Context final HttpServletResponse response,
+            @PathParam("uri") final String uri,
+            @QueryParam("mode") @DefaultValue("LIVE_ADMIN") final String modeStr)
             throws DotDataException, DotSecurityException {
 
         Logger.debug(this, String.format("Rendering page: uri -> %s mode-> %s", uri, modeStr));
@@ -546,11 +570,11 @@ public class PageResource {
     @Produces({"application/html", "application/javascript"})
     @Path("search")
     public Response searchPage(
-                @Context final HttpServletRequest request,
-                @Context final HttpServletResponse response,
-                @QueryParam("path") final String path,
-                @QueryParam("live") final Boolean liveQueryParam,
-                @QueryParam("onlyLiveSites") final boolean onlyLiveSites)
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @QueryParam("path") final String path,
+            @QueryParam("live") final Boolean liveQueryParam,
+            @QueryParam("onlyLiveSites") final boolean onlyLiveSites)
             throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = webResource.init(null,  request, response,
@@ -593,15 +617,15 @@ public class PageResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response getPersonalizedPersonasOnPage (@Context final HttpServletRequest  request,
-                                                   @Context final HttpServletResponse response,
-                                                   @QueryParam(PaginationUtil.FILTER)   final String filter,
-                                                   @QueryParam(PaginationUtil.PAGE)     final int page,
-                                                   @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
-                                                   @DefaultValue("title") @QueryParam(PaginationUtil.ORDER_BY) final String orderbyParam,
-                                                   @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION)  final String direction,
-                                                   @QueryParam("hostId") final String  hostId,
-                                                   @PathParam("pageId")  final String  pageId,
-                                                   @QueryParam("respectFrontEndRoles") Boolean respectFrontEndRolesParams) throws SystemException, PortalException, DotDataException, DotSecurityException {
+            @Context final HttpServletResponse response,
+            @QueryParam(PaginationUtil.FILTER)   final String filter,
+            @QueryParam(PaginationUtil.PAGE)     final int page,
+            @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+            @DefaultValue("title") @QueryParam(PaginationUtil.ORDER_BY) final String orderbyParam,
+            @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION)  final String direction,
+            @QueryParam("hostId") final String  hostId,
+            @PathParam("pageId")  final String  pageId,
+            @QueryParam("respectFrontEndRoles") Boolean respectFrontEndRolesParams) throws SystemException, PortalException, DotDataException, DotSecurityException {
 
         final User user = this.webResource.init(request, response, true).getUser();
         final boolean respectFrontEndRoles = respectFrontEndRolesParams != null ? respectFrontEndRolesParams : PageMode.get(request).respectAnonPerms;
@@ -637,12 +661,12 @@ public class PageResource {
         path = path.replace("/", "\\\\/");
 
         return String.format("{"
-            + "query: {"
+                + "query: {"
                 + "query_string: {"
-                    + "query: \"+basetype:5 +path:*%s* %s languageid:1^10\""
+                + "query: \"+basetype:5 +path:*%s* %s languageid:1^10\""
                 + "}"
-            + "}"
-        + "}", path, hostFilter);
+                + "}"
+                + "}", path, hostFilter);
     }
 
     private Collection<Contentlet> applyFilters(

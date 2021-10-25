@@ -187,14 +187,14 @@ public class PageResourceTest {
         final HTMLPageAsset pagetest = pageRenderTest.getPage();
         final Container container = pageRenderTest.getFirstContainer();
 
-        final Persona persona    = new PersonaDataGen().keyTag("persona"+System.currentTimeMillis()).hostFolder(host.getIdentifier()).nextPersisted();
-        persona.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        APILocator.getContentletAPI().publish(persona, user, false);
+        final ContentType bannerLikeContentType = TestDataUtils.getBannerLikeContentType();
+        final Contentlet contentlet = TestDataUtils.getBannerLikeContent(true, 1, bannerLikeContentType.id(),
+                host);
         final List<PageContainerForm.ContainerEntry> entries = new ArrayList<>();
         final String requestJson = null;
         final PageContainerForm.ContainerEntry containerEntry =
             new PageContainerForm.ContainerEntry(null, container.getIdentifier(), "1");
-        containerEntry.addContentId(persona.getIdentifier());
+        containerEntry.addContentId(contentlet.getIdentifier());
         entries.add(containerEntry);
         final PageContainerForm pageContainerForm = new PageContainerForm(entries, requestJson);
         this.pageResource.addContent(request, response, pagetest.getIdentifier(), pageContainerForm);
