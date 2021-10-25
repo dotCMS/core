@@ -21,7 +21,6 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
 import java.math.BigDecimal;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Connection;
@@ -92,6 +91,7 @@ public class IntegrityUtil {
             switch(type) {
             	case HTMLPAGES:
             	case FILEASSETS:
+                case HOSTS:
             		sbSelectTempTable.append("select ").append(type.getFirstDisplayColumnLabel()).append(
             			", remote_working_inode, local_working_inode, remote_live_inode, local_live_inode, remote_identifier, local_identifier, language_id from "
             		);
@@ -101,7 +101,7 @@ public class IntegrityUtil {
             			"select folder, remote_inode, local_inode, remote_identifier, local_identifier from "
             		);
             		break;
-            	case CMS_ROLES:
+                case CMS_ROLES:
             		sbSelectTempTable.append(
             			"select name, role_key, remote_role_id, local_role_id, local_role_fqn, remote_role_fqn from "
                 	);
@@ -128,7 +128,9 @@ public class IntegrityUtil {
                         writer.write(rs.getString("remote_role_fqn"));
                         writer.write(rs.getString("local_role_fqn"));
 
-                	} else if (type == IntegrityType.HTMLPAGES || type == IntegrityType.FILEASSETS) {
+                	} else if (type == IntegrityType.HTMLPAGES
+                            || type == IntegrityType.FILEASSETS
+                            || type == IntegrityType.HOSTS) {
                         writer.write(rs.getString("remote_working_inode"));
                         writer.write(rs.getString("local_working_inode"));
                         writer.write(rs.getString("remote_live_inode"));
@@ -629,6 +631,7 @@ public class IntegrityUtil {
             switch(type) {
 	        	case HTMLPAGES:
 	        	case FILEASSETS:
+                case HOSTS:
 	                sbInsertTempTable.append(
 	                	" (local_working_inode, remote_working_inode, local_live_inode, remote_live_inode, local_identifier, remote_identifier, "
 	                ).append(type.getFirstDisplayColumnLabel()).append(", endpoint_id, language_id) values(?,?,?,?,?,?,?,?,?)");
@@ -661,22 +664,26 @@ public class IntegrityUtil {
 	                dc.addParam(csvFile.get(0)); // localWorkingInode
 	                dc.addParam(csvFile.get(1)); // remoteWorkingInode
 
-	                if (type == IntegrityType.HTMLPAGES || type == IntegrityType.FILEASSETS) {
+	                if (type == IntegrityType.HTMLPAGES
+                            || type == IntegrityType.FILEASSETS
+                            || type == IntegrityType.HOSTS) {
 	                    dc.addParam(csvFile.get(2)); // localLiveInode
 	                    dc.addParam(csvFile.get(3)); // remoteLiveInode
 	                    dc.addParam(csvFile.get(4)); // localIdentifier
 	                    dc.addParam(csvFile.get(5)); // remoteIdentifier
-	                    dc.addParam(csvFile.get(6)); // contentletAssetName
+	                    dc.addParam(csvFile.get(6)); // contentletAssetName OR hostname
 	                } else if (type == IntegrityType.FOLDERS) {
 	                    dc.addParam(csvFile.get(2)); // localIdentifier
 	                    dc.addParam(csvFile.get(3)); // remoteIdentifier
-                        dc.addParam(csvFile.get(4)); // folder
+                        dc.addParam(csvFile.get(4)); // folder or host
 	                }
                 }
 
                 dc.addParam(key);
 
-                if (type == IntegrityType.HTMLPAGES || type == IntegrityType.FILEASSETS) {
+                if (type == IntegrityType.HTMLPAGES
+                        || type == IntegrityType.FILEASSETS
+                        || type == IntegrityType.HOSTS) {
                     dc.addParam(new Long(csvFile.get(7))); // languageId
                 }
 
