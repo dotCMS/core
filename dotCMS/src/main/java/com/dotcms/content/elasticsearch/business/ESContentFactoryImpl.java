@@ -2065,28 +2065,20 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         upsertValues.add(UtilMethods.isSet(contentlet.getIdentifier())?contentlet.getIdentifier():null);
         upsertValues.add(contentlet.getLanguageId());
-        upsertValues.add(jsonContentlet);
 
-        if(APILocator.getContentletJsonAPI().isPersistContentletInColumns()) {
-            final Map<String, Object> fieldsMap = getFieldsMap(contentlet);
-            try {
-                addDynamicFields(upsertValues, fieldsMap, "date");
-                addDynamicFields(upsertValues, fieldsMap, "text");
-                addDynamicFields(upsertValues, fieldsMap, "text_area");
-                addDynamicFields(upsertValues, fieldsMap, "integer");
-                addDynamicFields(upsertValues, fieldsMap, "float");
-                addDynamicFields(upsertValues, fieldsMap, "bool");
-            } catch (JsonProcessingException e) {
-                throw new DotDataException(e);
-            }
-        } else {
-            emptyDynamicFields(upsertValues, "date");
-            emptyDynamicFields(upsertValues, "text");
-            emptyDynamicFields(upsertValues, "text_area");
-            emptyDynamicFields(upsertValues, "integer");
-            emptyDynamicFields(upsertValues, "float");
-            emptyDynamicFields(upsertValues, "bool");
+        final Map<String, Object> fieldsMap = getFieldsMap(contentlet);
+
+        try {
+            addDynamicFields(upsertValues, fieldsMap,"date");
+            addDynamicFields(upsertValues, fieldsMap,"text");
+            addDynamicFields(upsertValues, fieldsMap,"text_area");
+            addDynamicFields(upsertValues, fieldsMap,"integer");
+            addDynamicFields(upsertValues, fieldsMap,"float");
+            addDynamicFields(upsertValues, fieldsMap,"bool");
+        } catch (JsonProcessingException e) {
+            throw new DotDataException(e);
         }
+
         return upsertValues;
     }
 
