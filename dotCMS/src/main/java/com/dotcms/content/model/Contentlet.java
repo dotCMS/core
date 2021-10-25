@@ -10,6 +10,11 @@ import java.util.Map;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
+/**
+ *  Represents a content unit in the system. Ideally, every single domain object
+ *  in dotCMS will be represented as a Contentlet.
+ *  This is an interface to generate an immutable and more structured version of Contentlet
+ */
 @Value.Immutable
 @JsonInclude(Include.NON_NULL)
 @JsonSerialize(as = ImmutableContentlet.class)
