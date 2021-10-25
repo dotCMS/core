@@ -2065,6 +2065,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         upsertValues.add(UtilMethods.isSet(contentlet.getIdentifier())?contentlet.getIdentifier():null);
         upsertValues.add(contentlet.getLanguageId());
+        upsertValues.add(jsonContentlet);
 
         final Map<String, Object> fieldsMap = getFieldsMap(contentlet);
 
