@@ -101,6 +101,10 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
                 || field instanceof ConstantField || field instanceof StoryBlockField;
     }
 
+    /**
+     * Evaluates the fieldValue as velocity and then parses the result as JSON, only if
+     * a $dotJSON.put was found. Otherwise returns empty map
+     */
     public static Object parseAsJSON(HttpServletRequest request,
             HttpServletResponse response, final String fieldValue,
             final Contentlet contentlet, final String fieldVar) {
