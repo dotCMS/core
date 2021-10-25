@@ -175,7 +175,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     private static final String[] UPSERT_EXTRA_COLUMNS_ORACLE = {"show_on_menu", "title", "mod_date", "mod_user",
             "sort_order", "friendly_name", "structure_inode", "disabled_wysiwyg", "identifier",
-            "language_id", "date1", "date2", "date3", "date4", "date5", "date6", "date7", "date8",
+            "language_id", "contentlet_as_json",
+            "date1", "date2", "date3", "date4", "date5", "date6", "date7", "date8",
             "date9", "date10", "date11", "date12", "date13", "date14", "date15", "date16", "date17",
             "date18", "date19", "date20", "date21", "date22", "date23", "date24", "date25", "text1",
             "text2", "text3", "text4", "text5", "text6", "text7", "text8", "text9", "text10",
@@ -200,7 +201,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     private static final String[] UPSERT_EXTRA_COLUMNS_MYSQL = {"show_on_menu", "title", "mod_date", "mod_user",
             "sort_order", "friendly_name", "structure_inode", "disabled_wysiwyg", "identifier",
-            "language_id", "date1", "date2", "date3", "date4", "date5", "date6", "date7", "date8",
+            "language_id", "contentlet_as_json",
+            "date1", "date2", "date3", "date4", "date5", "date6", "date7", "date8",
             "date9", "date10", "date11", "date12", "date13", "date14", "date15", "date16", "date17",
             "date18", "date19", "date20", "date21", "date22", "date23", "date24", "date25", "text1",
             "text2", "text3", "text4", "text5", "text6", "text7", "text8", "text9", "text10",
@@ -221,6 +223,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             "bool7", "bool8", "bool9", "bool10", "bool11", "bool12", "bool13", "bool14", "bool15",
             "bool16", "bool17", "bool18", "bool19", "bool20", "bool21", "bool22", "bool23",
             "bool24", "bool25"};
+
     private static final int MAX_FIELDS_ALLOWED = 25;
 
     private final ContentletCache contentletCache;

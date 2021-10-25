@@ -5,6 +5,7 @@ import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
 import com.dotcms.cache.lettuce.DotObjectCodecTest;
 import com.dotcms.cache.lettuce.LettuceCacheTest;
 import com.dotcms.cache.lettuce.RedisClientTest;
+import com.dotcms.content.business.ContentletJsonAPITest;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
@@ -479,8 +480,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task211007RemoveNotNullConstraintFromCompanyMXColumnTest.class,
         ManifestReaderFactoryTest.class,
         Task211012AddCompanyDefaultLanguageTest.class,
-        Task211008AddContentletAsJsonColumnTest.class
-
+        Task211008AddContentletAsJsonColumnTest.class,
+        ContentletJsonAPITest.class
 })
 public class MainSuite {
 
