@@ -70,7 +70,7 @@ public class SendRedirectActionlet extends RuleActionlet<SendRedirectActionlet.I
     }
 
     @Override
-    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {//debug manual a ver si veo que  es lo que deberia  hacer el test
+    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
         final String myURL = CMSUrlUtil.getInstance().getURIFromRequest(request);
         final Optional<Pattern> patternOpt = Optional.ofNullable(
                         (Pattern) request.getAttribute(VisitorsCurrentUrlConditionlet.CURRENT_URL_CONDITIONLET_MATCHER));
