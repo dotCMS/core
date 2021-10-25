@@ -18,6 +18,8 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.google.common.collect.ImmutableList;
 import com.liferay.util.FileUtil;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -97,7 +99,7 @@ public class FileTestUtil {
         return removeSpace(getFormattedContent(file, arguments));
     }
 
-    private static String removeSpace(final String message){
+    public static String removeSpace(final String message){
         return message.replaceAll("\n[ \\t\\r\\n\\v\\f]*", "");
     }
 
@@ -281,14 +283,14 @@ public class FileTestUtil {
         return index != -1 ? fileName.substring(index) : fileName;
     }
 
-    private static String removeContent(
+    public static String removeContent(
             final String content,
             final Collection<String> toRemoveParams) {
 
         final Collection<String> toRemove = new ArrayList<>();
         toRemove.addAll(toRemoveParams);
         toRemove.add("<.*></.*>");
-
+        
         String result = content;
 
         for (String regex : toRemove) {
@@ -297,4 +299,19 @@ public class FileTestUtil {
         return result;
     }
 
+    public static void compare(final File expected, final File content) throws IOException {
+
+        assertEquals(expected.length(), content.length());
+
+        try(final FileInputStream expectedInputStream = new FileInputStream(expected);
+            final FileInputStream contentInputStream = new FileInputStream(expected)) {
+
+            int byteExpected = 0;
+
+            while ((byteExpected = expectedInputStream.read()) != -1) {
+                int byteRead = contentInputStream.read();
+                assertEquals(byteExpected, byteRead);
+            }
+        }
+    }
 }
