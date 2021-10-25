@@ -91,7 +91,7 @@
                 <button dojoType="dijit.form.Button" onClick="getBundlesData" iconClass="resetIcon" type="button"><%=LanguageUtil.get(pageContext, "Refresh")%></button>
                 <!-- END Actions -->
             </div>
-            <span style="text-align: center; margin-top: 4px;"><%=LanguageUtil.get(pageContext, "OSGI-Drag-And-Drop-Allow")%></span>
+            <div style="text-align: center; margin-top: 4px;"><span><%=LanguageUtil.get(pageContext, "OSGI-Drag-And-Drop-Allow")%></span></div>
         </div>
    </div>
    <!-- END Toolbar -->
