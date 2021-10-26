@@ -50,6 +50,7 @@ export class DotGenerateSecurePasswordComponent implements OnInit, OnDestroy {
     close(): void {
         this.dialogShow = false;
         this.typeInput = 'password';
+        this.revealBtnLabel = this.dotMessageService.get('generate.secure.password.reveal');
         this.value = '';
     }
 

@@ -94,6 +94,18 @@ describe('DotGenerateSecurePasswordComponent', () => {
             expect(comp.typeInput).toBe('text');
             expect(revealButton.nativeElement.text).toBe('hide');
         });
+
+        it('should reset on close', () => {
+            const revealButton = fixture.debugElement.query(
+                By.css('.dot-generate-secure-password__reveal-link')
+            );
+            dialog.close();
+            fixture.detectChanges();
+            expect(comp.typeInput).toBe('password');
+            expect(comp.value).toBe('');
+            expect(comp.dialogShow).toBe(false);
+            expect(revealButton.nativeElement.text).toBe('Reveal');
+        });
     });
 
     afterEach(() => {
