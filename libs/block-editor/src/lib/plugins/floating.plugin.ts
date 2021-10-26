@@ -72,6 +72,10 @@ export class FloatingActionsView {
         this.element = element;
         this.view = view;
         this.element.addEventListener('mousedown', this.mousedownHandler, { capture: true });
+        this.editor.on('focus', () => {
+            this.tippy.unmount();
+            this.update(this.editor.view);
+        });
         this.element.style.visibility = 'visible';
         this.render = render;
         this.command = command;
@@ -121,7 +125,7 @@ export class FloatingActionsView {
      * @return {*}  {void}
      * @memberof FloatingActionsView
      */
-    update(view: EditorView, prevState: EditorState): void {
+    update(view: EditorView, prevState?: EditorState): void {
         const { selection } = view.state;
         const { $anchor, empty, from, to } = selection;
         const isRootDepth = $anchor.depth === 1;
@@ -134,7 +138,6 @@ export class FloatingActionsView {
 
             return;
         }
-
         this.tippy.setProps({
             getReferenceClientRect: () => posToDOMRect(view, from, to)
         });
@@ -142,7 +145,7 @@ export class FloatingActionsView {
         this.show();
 
         const next = this.key?.getState(view.state);
-        const prev = this.key?.getState(prevState);
+        const prev = prevState ? this.key?.getState(prevState) : null;
 
         if (next.open) {
             const { from, to } = this.editor.state.selection;
@@ -154,7 +157,7 @@ export class FloatingActionsView {
                 editor: this.editor,
                 command: this.command
             });
-        } else if (prev.open) {
+        } else if (prev && prev.open) {
             this.render().onExit(null);
         }
     }
