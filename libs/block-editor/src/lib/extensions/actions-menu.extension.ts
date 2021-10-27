@@ -161,8 +161,8 @@ export const ActionsMenu = (injector: Injector, resolver: ComponentFactoryResolv
             pluginKey: 'actionsMenu',
             element: null,
             suggestion: {
-                char: '/c',
-                allowSpaces: true,
+                char: '/',
+                allowSpaces: false,
                 startOfLine: true,
                 render: () => {
                     return {
