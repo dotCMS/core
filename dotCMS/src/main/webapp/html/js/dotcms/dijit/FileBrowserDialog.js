@@ -116,6 +116,7 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 	sortByDesc: true,
 	_browserFolderTree: null,
 	includeDotAssets:true,
+	selectFolder: ['root', 'SYSTEM_HOST'],
 	postCreate: function () {
 
 
@@ -205,11 +206,11 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 		}
 
         this.dialog.show();
-        this.tree.set('path', ['root', 'SYSTEM_HOST'])
-        this._selectFolder({
-            id: "SYSTEM_HOST",
-            identifier: "SYSTEM_HOST"
-        })
+		this.tree.set('path',this.selectFolder);
+		this._selectFolder({
+			id: this.selectFolder[this.selectFolder.length - 1],
+			identifier: "SYSTEM_HOST"
+		})
 	},
 
 	uninitialize : function (event) {
@@ -421,8 +422,13 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 	},
 
 	_assetSelected: function (asset) {
-	   
 		this.onFileSelected(asset);
+
+		fetch('/api/v1/folder/select?id=' + asset.folder, {method: 'PUT'})
+			.then(function (response) {
+				console.log('success!', response);
+			});
+
 		this.dialog.hide();
 	},
 

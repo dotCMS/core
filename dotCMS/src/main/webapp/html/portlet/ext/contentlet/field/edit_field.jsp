@@ -27,6 +27,8 @@
 <%@page import="com.dotmarketing.util.VelocityUtil"%>
 <%@ page import="com.dotcms.contenttype.model.type.ContentType" %>
 <%@ page import="com.dotcms.contenttype.model.type.BaseContentType" %>
+<%@ page import="com.dotmarketing.portlets.browser.BrowserUtil" %>
+<%@ page import="com.dotmarketing.portlets.folders.model.Folder" %>
 
 
 <%
@@ -414,18 +416,27 @@
 
         //IMAGE kind of field rendering
         else if (field.getFieldType().equals(
-                Field.FieldType.IMAGE.toString())) {%>
+                Field.FieldType.IMAGE.toString())) {
+            final List<String> defaultPathFolderPathIds = BrowserUtil.getDefaultPathFolderPathIds(
+                    contentlet, field,
+                    user);
+            defaultPathFolderPathIds.add(0, "root");
+        %>
         <input type="text" name="<%=field.getFieldContentlet()%>" dojoType="dotcms.dijit.form.FileSelector" fileBrowserView="thumbnails" contentLanguage="<%=contentLanguage%>"
-               value="<%= UtilMethods.isSet(value)?value:"" %>" mimeTypes="image" onlyFiles="true" showThumbnail="true" id="<%=field.getVelocityVarName()%>" onChange="emmitFieldDataChange(true)"/>
+               value="<%= UtilMethods.isSet(value)?value:"" %>" mimeTypes="image" onlyFiles="true" showThumbnail="true" id="<%=field.getVelocityVarName()%>" selectFolder="<%=String.join(", ", defaultPathFolderPathIds)%>" onChange="emmitFieldDataChange(true)"/>
 
         <%
             //END IMAGE Field
 
             //FILE kind of field rendering
         } else if (field.getFieldType().equals(Field.FieldType.FILE.toString())) {
+                final List<String> defaultPathFolderPathIds = BrowserUtil.getDefaultPathFolderPathIds(
+                        contentlet, field,
+                        user);
+                defaultPathFolderPathIds.add(0, "root");
         %>
         <input type="text" name="<%=field.getFieldContentlet()%>" dojoType="dotcms.dijit.form.FileSelector" fileBrowserView="details" contentLanguage="<%=contentLanguage%>"
-               value="<%= value %>" onlyFiles="true" showThumbnail="false" id="<%=field.getVelocityVarName()%>"  onChange="emmitFieldDataChange(true)"/>
+               value="<%= value %>" onlyFiles="true" showThumbnail="false" id="<%=field.getVelocityVarName()%>" selectFolder="<%=String.join(", ", defaultPathFolderPathIds)%>" onChange="emmitFieldDataChange(true)"/>
 
         <%
             //END FILE Field
