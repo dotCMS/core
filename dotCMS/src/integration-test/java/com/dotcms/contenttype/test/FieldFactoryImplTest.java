@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.test;
 
+import static com.dotcms.util.CollectionsUtils.list;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -534,10 +535,36 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 		contentTypeApi.delete(struct);
 	}
 
+	/**
+	 * Method to test: {@link com.dotcms.contenttype.business.FieldFactoryImpl#delete(Field)}
+	 * When: Call the delete methos with several fields
+	 * Should: delete all of them
+	 * 
+	 * @throws Exception
+	 */
 	@Test
-	public void testDeleteingFields() throws Exception {
-		for (ContentType type : APILocator.getContentTypeAPI(APILocator.getUserAPI().getSystemUser(), true)
-				.findAll()) {
+	public void testDeletingFields() throws Exception {
+
+		final long currentTime = System.currentTimeMillis();
+		final ContentType contentType_1 = new ContentTypeDataGen()
+				.field(new FieldDataGen().velocityVarName("varContentType1Field1" + currentTime).next())
+				.field(new FieldDataGen().velocityVarName("varContentType1Field2" + currentTime).next())
+				.field(new FieldDataGen().velocityVarName("varContentType1Field3" + currentTime).next())
+				.field(new FieldDataGen().velocityVarName("varContentType1Field4" + currentTime).next())
+				.nextPersisted();
+
+		final ContentType contentType_2 = new ContentTypeDataGen()
+				.field(new FieldDataGen().velocityVarName("varContentType2Field1" + currentTime).next())
+				.field(new FieldDataGen().velocityVarName("varContentType2Field2" + currentTime).next())
+				.nextPersisted();
+
+		final ContentType contentType_3 = new ContentTypeDataGen()
+				.field(new FieldDataGen().velocityVarName("varContentType1Field1" + currentTime).next())
+				.field(new FieldDataGen().velocityVarName("varContentType1Field2" + currentTime).next())
+				.field(new FieldDataGen().velocityVarName("varContentType1Field3" + currentTime).next())
+				.nextPersisted();
+
+		for (ContentType type : list(contentType_1, contentType_2, contentType_3)) {
 			for (Field field : fieldFactory.byContentType(type)) {
 				if (field.variable().startsWith(TEST_VAR_PREFIX)) {
 					deleteFields(ImmutableList.of(field));

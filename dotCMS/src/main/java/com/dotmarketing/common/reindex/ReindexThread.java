@@ -109,7 +109,7 @@ public class ReindexThread {
     private ThreadState STATE = ThreadState.RUNNING;
     private Future<?> threadRunning;
     private final ExecutorService executor = Executors
-                    .newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("reindex-thread-%d").build());
+                    .newSingleThreadExecutor(new ThreadFactoryBuilder().setDaemon(true).setNameFormat("reindex-thread-%d").build());
 
     private final static String REINDEX_THREAD_PAUSED = "REINDEX_THREAD_PAUSED";
     private final static Lazy<SystemCache> cache = Lazy.of(() -> CacheLocator.getSystemCache());

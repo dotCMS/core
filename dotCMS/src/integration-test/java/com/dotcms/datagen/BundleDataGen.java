@@ -3,16 +3,19 @@ package com.dotcms.datagen;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.publishing.remote.bundler.AssignableFromMap;
 import com.dotcms.publisher.bundle.bean.Bundle;
+import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishQueueElement;
+import com.dotcms.publisher.business.PublisherAPIImpl;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.FilterDescriptor;
-import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.Operation;
+import com.dotcms.util.FunctionUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -26,6 +29,7 @@ import com.google.common.collect.Lists;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.jgroups.util.Util.assertTrue;
 
@@ -40,6 +44,7 @@ public class BundleDataGen extends AbstractDataGen<Bundle> {
     private boolean downloading = true;
     private Operation operation = Operation.PUBLISH;
     private boolean forcePush = false;
+    private boolean savePublishQueueElements = false;
 
     static{
         howAddInBundle = new AssignableFromMap<>();
@@ -122,6 +127,10 @@ public class BundleDataGen extends AbstractDataGen<Bundle> {
         );
     }
 
+    public BundleDataGen setSavePublishQueueElements(boolean savePublishQueueElements) {
+        this.savePublishQueueElements = savePublishQueueElements;
+        return this;
+    }
 
     public BundleDataGen forcePush(final boolean forcePush) {
         this.forcePush = forcePush;
@@ -182,11 +191,29 @@ public class BundleDataGen extends AbstractDataGen<Bundle> {
         return publishQueueElements;
     }
 
+    private void savePublishQueueElements(final Bundle bundle) {
+        try {
+            final List<AssetsItem> assetWithoutWorkflow = assets.stream()
+                    .filter(asset -> !asset.pusheableAsset.getType()
+                            .equals(PusheableAsset.WORKFLOW.getType()))
+                    .collect(Collectors.toList());
+
+            final List<String> ids = FunctionUtils.map(assetWithoutWorkflow, asset -> asset.inode);
+            PublisherAPIImpl.getInstance().saveBundleAssets( ids, bundle.getId(), APILocator.systemUser() );
+        } catch (DotPublisherException e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
     @Override
     public Bundle persist(Bundle bundle) {
         try {
             APILocator.getBundleAPI().saveBundle(bundle);
             final Bundle bundleFromDataBase = APILocator.getBundleAPI().getBundleByName(bundle.getName());
+
+            if (savePublishQueueElements) {
+                savePublishQueueElements(bundle);
+            }
 
             if (config != null) {
                 config.setAssets(getPublishQueueElements(bundleFromDataBase));

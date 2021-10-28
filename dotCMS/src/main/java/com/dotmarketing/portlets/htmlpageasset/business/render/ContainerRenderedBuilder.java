@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render;
 
 
+import com.dotcms.api.vtl.model.DotJSON;
 import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotmarketing.business.APILocator;
@@ -10,7 +11,9 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.VelocityUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
+import io.vavr.control.Try;
 import org.apache.velocity.context.Context;
 
 import java.util.Collection;
@@ -50,7 +53,7 @@ public class ContainerRenderedBuilder {
 
         return this.containerRaws.stream().map(containerRaw -> {
             try {
-                final Map<String, String> uuidsRendered = render(velocityContext, mode, containerRaw);
+                final Map<String, Object> uuidsRendered = render(velocityContext, mode, containerRaw);
                 return new ContainerRendered(containerRaw, uuidsRendered);
             } catch (Exception e) {
                 // if the container does not exists or is not valid for the mode, returns null to be filtrated
@@ -63,13 +66,26 @@ public class ContainerRenderedBuilder {
     }
 
 
-    public static Map<String, String> render(final Context velocityContext, final PageMode mode, final ContainerRaw containerRaw) {
+    public static Map<String, Object> render(final Context velocityContext, final PageMode mode, final ContainerRaw containerRaw) {
 
-        final Map<String, String> rendered = Maps.newHashMap();
+        final Map<String, Object> rendered = Maps.newHashMap();
         for (final String uuid : containerRaw.getContentlets().keySet()) {
-            final VelocityResourceKey key = new VelocityResourceKey(containerRaw.getContainer(), uuid.replace("uuid-", ""), mode);
+            final VelocityResourceKey key = new VelocityResourceKey(containerRaw.getContainer(),
+                    uuid.replace("uuid-", ""), mode);
             try {
-                rendered.put(uuid, VelocityUtil.getInstance().mergeTemplate(key.path, velocityContext));
+                velocityContext.put("dotJSON", new DotJSON());
+                final String renderedContainer = VelocityUtil.getInstance()
+                        .mergeTemplate(key.path, velocityContext);
+                final DotJSON dotJSON = (DotJSON) velocityContext.get("dotJSON");
+                final boolean parseJSON = Try.of(()->(boolean) velocityContext.get("parseJSON"))
+                        .getOrElse(false);
+
+                if(dotJSON.size()>0 && parseJSON) {
+                    rendered.put(uuid, dotJSON.getMap());
+                } else {
+                    rendered.put(uuid, renderedContainer);
+                }
+
             } catch (Exception e) {
                 Logger.warn(ContainerRenderedBuilder.class, e.getMessage());
             }

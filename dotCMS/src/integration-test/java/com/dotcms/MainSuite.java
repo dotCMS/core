@@ -28,13 +28,16 @@ import com.dotcms.enterprise.publishing.remote.bundler.RuleBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.TemplateBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.WorkflowBundlerTest;
 import com.dotcms.enterprise.publishing.remote.handler.ContentHandlerTest;
+import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
+import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleAPITest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
+import com.dotcms.publisher.business.PublishQueueElementTransformerTest;
 import com.dotcms.publisher.receiver.BundlePublisherTest;
 import com.dotcms.publisher.util.DependencyManagerTest;
 import com.dotcms.publisher.util.DependencyModDateUtilTest;
@@ -466,6 +469,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task210816DeInodeRelationshipTest.class,
         WorkflowEmailUtilTest.class,
         ConfigurationHelperTest.class,
+        PublishQueueElementTransformerTest.class,
         CSVManifestReaderTest.class,
         Task210901UpdateDateTimezonesTest.class,
         DotObjectCodecTest.class,
@@ -473,9 +477,11 @@ import org.junit.runners.Suite.SuiteClasses;
         LettuceCacheTest.class,
         RedisPubSubImplTest.class,
         ManifestReaderFactoryTest.class,
-        Task211007RemoveNotNullConstraintFromCompanyMXColumnTest.class
+        Task211007RemoveNotNullConstraintFromCompanyMXColumnTest.class,
         ManifestReaderFactoryTest.class,
-        Task211012AddCompanyDefaultLanguageTest.class
+        Task211012AddCompanyDefaultLanguageTest.class,
+        StaticPublisherIntegrationTest.class,
+        HostIntegrityCheckerTest.class
 })
 public class MainSuite {
 

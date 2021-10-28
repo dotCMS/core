@@ -307,6 +307,7 @@ public class TaskLocatorUtil {
 		.add(Task210901UpdateDateTimezones.class)
 		.add(Task211007RemoveNotNullConstraintFromCompanyMXColumn.class)
 		.add(Task211012AddCompanyDefaultLanguage.class)
+		.add(Task211020CreateHostIntegrityCheckerResultTables.class)
 
         .build();
         

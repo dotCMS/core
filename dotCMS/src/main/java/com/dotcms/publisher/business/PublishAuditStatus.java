@@ -13,6 +13,14 @@ import java.util.Date;
 public class PublishAuditStatus implements Serializable {
 	private static final long serialVersionUID = 1L;
 
+	public int getTotalNumberOfAssets() {
+		return totalNumberOfAssets;
+	}
+
+	public void setTotalNumberOfAssets(int totalNumberOfAssets) {
+		this.totalNumberOfAssets = totalNumberOfAssets;
+	}
+
 	public static enum Status {
 		BUNDLE_REQUESTED(1),
 		BUNDLING(2),
@@ -53,6 +61,7 @@ public class PublishAuditStatus implements Serializable {
 	private PublishAuditHistory statusPojo;
 	private Date statusUpdated;
 	private Date createDate;
+	private int totalNumberOfAssets;
 
 	public PublishAuditStatus() {}
 

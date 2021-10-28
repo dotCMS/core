@@ -198,10 +198,10 @@
 		}
 
         function printData(data, headers) {
-            fillResultsTable(headers, data);
             const list = getListEl();
-
+            
             if (state.view === 'list') {
+                fillResultsTable(headers, data);   
                 const card = getViewCardEl();
                 card ? card.style.display = 'none' : false;
                 list.style.display = ''
@@ -220,13 +220,18 @@
             var begin = counters["begin"];
             var end = counters["end"];
             var totalPages = counters["totalPages"];
+            const cardEl = getViewCardEl();
+
             headers = data[1];
 
             for (var i = 3; i < data.length; i++) {
                 data[i - 3] = data[i];
             }
             data.length = data.length - 3;
-
+                
+            if (cardEl) {
+                cardEl.items = [];
+            }
             dwr.util.removeAllRows("results_table");
 
             var funcs = new Array ();
@@ -683,7 +688,10 @@
           }//http://jira.dotmarketing.net/browse/DOTCMS-3232
           else if(type=='host or folder'){
                   // Below code is used to fix the "widget already registered error".
-
+                  const folderHostSelectorField = dijit.byId('FolderHostSelector');
+                  const folderHostSelectorCurrentValue = folderHostSelectorField ? folderHostSelectorField.value : null;
+                  const oldTree = dijit.byId('FolderHostSelector-tree');
+                  
                   if(dojo.byId('FolderHostSelector-hostFoldersTreeWrapper')){
                           dojo.byId('FolderHostSelector-hostFoldersTreeWrapper').remove();
                   }
@@ -702,7 +710,7 @@
                   <%}else if(UtilMethods.isSet(crumbtrailSelectedHostId)){ %>
                         hostId = '<%= conHostValue %>';
                   <%} %>
-                  var fieldValue = hostId;
+                  var fieldValue = folderHostSelectorCurrentValue || hostId;
                   <% if(UtilMethods.isSet(conFolderValue)){%>
                         fieldValue = '<%= conFolderValue %>';
                   <%}%>
@@ -710,10 +718,18 @@
                   var result = "<div onchange=\"doSearch(null, '<%=orderBy%>')\" id=\"FolderHostSelector\" style='width270px' dojoType=\"dotcms.dijit.form.HostFolderFilteringSelect\" includeAll=\"true\" onClick=\"resetHostValue();\" onChange=\"getHostValue();\" "
                                                 +" hostId=\"" + hostId + "\" value = \"" + fieldValue + "\"" + "></div>";
 
-          hasHostFolderField = true;
+                 hasHostFolderField = true;
 
+                 // Set the previous selected value of the tree. 
+                 setTimeout(()=> {
+                        const newTree = dijit.byId('FolderHostSelector-tree');
+                        if (oldTree) {
+                                newTree.set('path', oldTree.path);
+                                newTree.set('selectedItem', oldTree.selectedItem );
+                        } 
+                 },1000);
 
-           return result;
+                return result;
           }else if(type=='category' || type=='hidden'){
 
              return "";
@@ -1410,7 +1426,6 @@
 
         function doSearch1 (page, sortBy) {
 
-
                 if (page == undefined || page == null ) {
                     //Unless we are using pagination we don't need to keep the All selection across searches
                     if(dijit.byId('checkAll')!= undefined)
@@ -1510,7 +1525,7 @@
 
                                             }
                                           }
-
+                                
                                 }else {
                                         fieldsValues[fieldsValues.length] = selectedStruct+"."+field["fieldVelocityVarName"];
                                         fieldsValues[fieldsValues.length] = formField.value;
@@ -1792,7 +1807,7 @@
           } else {
 
             // After append the dot-card-view we have to wait to get the HTML node
-            if (!card) {
+            if (!card || !card.items.length) {
                 fillCardView(state.data)
                 setTimeout(() => {
                     card = getViewCardEl();
@@ -1924,16 +1939,9 @@
                 var row = table.insertRow(table.rows.length);
 
                 var th = document.createElement('th');
-                th.setAttribute("width","5%");
+                th.setAttribute("width","64px");
                 th.innerHTML = '&nbsp;';
                 row.appendChild(th);
-
-				if(languages.length>1) {
-	                th = document.createElement('th');
-	                th.setAttribute("style","width:70px;");
-	                th.innerHTML = '&nbsp;';
-	                row.appendChild(th);
-                }
 
                 for (var i = 0; i < headers.length; i++) {
                         var header = headers[i];
@@ -1948,6 +1956,26 @@
                                 th.setAttribute("nowrap","true");
                                 th.innerHTML = '<input type="checkbox" dojoType="dijit.form.CheckBox" name="checkAll" id="checkAll" onclick="checkUncheckAll()">&nbsp;&nbsp;' + getHeader(header);
                                 row.appendChild(th);
+
+                                th = document.createElement('th');
+                                th.style.width="32px";
+                                th.innerHTML = '&nbsp;';
+                                th.setAttribute("nowrap","true");
+                                row.appendChild(th);
+
+                                th = document.createElement('th');
+                                th.style.width="54px";
+                                th.innerHTML = '&nbsp;';
+                                th.setAttribute("nowrap","true");
+                                row.appendChild(th);
+
+                                th = document.createElement('th');
+                                th.style.width="32px";
+                                th.innerHTML = '&nbsp;';
+                                th.setAttribute("nowrap","true");
+                                row.appendChild(th);
+
+
                         } else {
                         th.innHTML =
                                 th.innerHTML = getHeader(header);
@@ -1970,6 +1998,10 @@
                 th = document.createElement('th');
                 row.appendChild(th);
 
+                th = document.createElement('th');
+                row.appendChild(th);
+
+
                 var languageId;
                 var locale;
 
@@ -1989,166 +2021,173 @@
                 var structure_id;
                 var contentStructureType;
 
+                cbContentInodeList = data;
+
                 //Filling data
                 for (var i = 0; i < data.length; i++) {
-                        var popupMenuItems = "";
-                        var row = table.insertRow(table.rows.length);
+                    var popupMenuItems = "";
+                    var row = table.insertRow(table.rows.length);
 
-                        var cellData = data[i];
-                        row.setAttribute("id","tr" + cellData.inode);
+                    var cellData = data[i];
+                    row.setAttribute("id","tr" + cellData.inode);
 
+                    var cell = row.insertCell (row.cells.length);
 
+                    var iconName = cellData.baseType !== 'FILEASSET' ?
+                        cellData.contentTypeIcon : getIconName(cellData['__type__']);
+                    var hasTitleImage = (cellData.hasTitleImage ==='true');
 
+                    cell.innerHTML = (hasTitleImage) 
+                        ? '<img draggable="false" style="width:64px;height: 64px;object-fit: contain;" class="listingTitleImg" onError="replaceWithIcon(this.parentElement, \'' + iconName + '\')" src="/dA/' + cellData.inode + '/titleImage/256w" alt="' + cellData['__title__'].replace(/[^A-Za-z0-9_]/g, ' ') + '" >' 
+                        : '<dot-contentlet-icon icon="' + iconName +'" size="48px" />';
+                    
+                    cell.setAttribute("style","height: 85px; text-align: center;");
+
+                    for (var j = 0; j < headers.length; j++) {
+                        var header = headers[j];
                         var cell = row.insertCell (row.cells.length);
-                        cell.style.whiteSpace="nowrap";
+                        cell.setAttribute("align","left");
 
-                        cell.innerHTML = statusDataCell(cellData, i);
-                        for (var j = 0; j < headers.length; j++) {
-                                var header = headers[j];
-                                var cell = row.insertCell (row.cells.length);
-                                cell.setAttribute("align","left");
-                                if (j == 0 ) {
+                        if (j == 0 ) {
 
-                                	if(languages.length>1){
-                                		cell.setAttribute("nowrap","true");
-                                        languageId = cellData["languageId"];
-                                        locale = "";
+                            let fieldVarName  = header["fieldVelocityVarName"];
+                            let fieldVarTitle = cellData[fieldVarName + "_title_"];
+                            fieldVarTitle     = fieldVarTitle || cellData[fieldVarName]
+                            var value         = titleCell(cellData,fieldVarTitle, i);
+                            
+                            if (value != null){
+                                cell.innerHTML = value;
+                            }
 
-                                        for (var n = 0; n < languages.length; ++n) {
-                                            if (languages[n][0] == languageId) {
-                                            	displayLang = languages[n][1];
-                                            	if(languages[n][2]){
-                                            		displayLang += "_" + languages[n][2];
-                                            	}
-	                                            locale = "<img src='/html/images/languages/" + languages[n][5] + ".gif' style='margin-top:5px;display:inline-block;margin-right:5px;width:16px;height:11px;' />(" + displayLang + ")";
-	                                            break;
-                                        	}
-                                        }
+                            var cell = row.insertCell (row.cells.length);
+                            cell.setAttribute("align", "center");
+                            cell.innerHTML = '<dot-state-icon />';
+                            var stateIcon = document.querySelector("#tr" + cellData.inode + " dot-state-icon");
+                            stateIcon.state = cellData;
+                            stateIcon.size = '16px';
 
-                                        if (locale == ""){
-                                        	locale = "&nbsp;";
-										}
-                                        cell.innerHTML = locale;
-                                        cell = row.insertCell (row.cells.length);
-                                        cell.setAttribute("align","left");
-									}
 
-                                    let fieldVarName  = header["fieldVelocityVarName"];
-                                    let fieldVarTitle = cellData[fieldVarName + "_title_"];
-                                    fieldVarTitle     = fieldVarTitle || cellData[fieldVarName]
-                                    var value         = titleCell(cellData,fieldVarTitle, i);
-                                }
-                                else{
+                            var cell = row.insertCell (row.cells.length);
+                            cell.setAttribute("align", "center");
+                            cell.innerHTML = '<dot-badge style="white-space: nowrap" bordered="true">' + cellData.language + '</dot-badge>';
 
-                                    let fieldVarName  = header["fieldVelocityVarName"];
-                                    let fieldVarTitle = cellData[fieldVarName + "_title_"];
-                                    fieldVarTitle     = fieldVarTitle || cellData[fieldVarName]
-                                    var value         = fieldVarTitle;
-                                }
-                                if (value != null){
-                                	cell.innerHTML = value;
-                                }
+                            var cell = row.insertCell (row.cells.length);
+                            cell.setAttribute("align", "center");
+                            cell.innerHTML = '<dot-contentlet-lock-icon locked="' + cellData.locked + '" />';
+
+                        } else {
+
+                            let fieldVarName  = header["fieldVelocityVarName"];
+                            let fieldVarTitle = cellData[fieldVarName + "_title_"];
+                            fieldVarTitle     = fieldVarTitle || cellData[fieldVarName]
+                            var value         = fieldVarTitle;
+                        
+                            if (value != null){
+                                cell.innerHTML = value;
+                            }
                         }
-                        var cell = row.insertCell (row.cells.length);
-                        cell.innerHTML = cellData["modUser"];
-                        cell.style.whiteSpace="nowrap";
+                    }
 
-                        var cell = row.insertCell (row.cells.length);
-                        cell.setAttribute("nowrap","true");
-                        cell.style.textAlign="right";
-                        cell.style.whiteSpace="nowrap";
-                        cell.innerHTML = cellData["modDate"];
+                    var cell = row.insertCell (row.cells.length);
+                    cell.innerHTML = cellData["modUser"];
+                    cell.style.whiteSpace="nowrap";
 
-                        var cell = row.insertCell (row.cells.length);
-                        cell.innerHTML = '<span class=\"dijitIcon actionIcon content-search__action-item\" id=\"touchAction' + i + '\"></span>';
+                    var cell = row.insertCell (row.cells.length);
+                    cell.setAttribute("nowrap","true");
+                    cell.style.textAlign="right";
+                    cell.style.whiteSpace="nowrap";
+                    cell.innerHTML = cellData["modDate"];
 
-                        live = cellData["live"] == "true"?true:false;
-                        working = cellData["working"] == "true"?true:false;
-                        deleted = cellData["deleted"] == "true"?true:false;
-                        locked = cellData["locked"] == "true"?true:false;
-                        liveSt = live?"1":"0";
-                        workingSt = working?"1":"0";
-                        permissions = cellData["permissions"];
-                        read = userHasReadPermission (cellData, userId)?"1":"0";
-                        write = userHasWritePermission (cellData, userId)?"1":"0";
-                        publish = userHasPublishPermission (cellData, userId)?"1":"0";
-                        contentStructureType = cellData["contentStructureType"];
-                        structure_id = cellData["structureInode"];
-                        hasLiveVersion = cellData["hasLiveVersion"];
+                    var cell = row.insertCell (row.cells.length);
+                    cell.innerHTML = '<span class=\"dijitIcon actionIcon content-search__action-item\" id=\"touchAction' + i + '\"></span>';
 
-                        contentAdmin = new dotcms.dijit.contentlet.ContentAdmin(cellData.identifier,cellData.inode,cellData.languageId);
+                    live = cellData["live"] == "true"?true:false;
+                    working = cellData["working"] == "true"?true:false;
+                    deleted = cellData["deleted"] == "true"?true:false;
+                    locked = cellData["locked"] == "true"?true:false;
+                    liveSt = live?"1":"0";
+                    workingSt = working?"1":"0";
+                    permissions = cellData["permissions"];
+                    read = userHasReadPermission (cellData, userId)?"1":"0";
+                    write = userHasWritePermission (cellData, userId)?"1":"0";
+                    publish = userHasPublishPermission (cellData, userId)?"1":"0";
+                    contentStructureType = cellData["contentStructureType"];
+                    structure_id = cellData["structureInode"];
+                    hasLiveVersion = cellData["hasLiveVersion"];
 
-                        wfActionMapList = JSON.parse(cellData["wfActionMapList"]);
+                    contentAdmin = new dotcms.dijit.contentlet.ContentAdmin(cellData.identifier,cellData.inode,cellData.languageId);
 
-                        dijit.registry.remove("popupTr"+i);
+                    wfActionMapList = JSON.parse(cellData["wfActionMapList"]);
 
-                		if(dijit.byId("popupTr"+i)){
-                            dijit.byId("popupTr"+i).destroy();
-                        }
+                    dijit.registry.remove("popupTr"+i);
 
-                        dijit.registry.remove("popup2Tr"+i);
+                    if(dijit.byId("popupTr"+i)){
+                        dijit.byId("popupTr"+i).destroy();
+                    }
 
-                        if(dijit.byId("popup2Tr"+i)){
-                            dijit.byId("popup2Tr"+i).destroy();
-                        }
+                    dijit.registry.remove("popup2Tr"+i);
+
+                    if(dijit.byId("popup2Tr"+i)){
+                        dijit.byId("popup2Tr"+i).destroy();
+                    }
 
 
-                        popupMenu += "<div dojoType=\"dijit.Menu\" class=\"dotContextMenu\" id=\"popupTr" + i + "\" contextMenuForWindow=\"false\" style=\"display: none;\" targetNodeIds=\"tr" + cellData.inode + "\">";
-                        popupMenu2 += "<div dojoType=\"dijit.Menu\" class=\"dotContextMenu\" id=\"popup2Tr" + i + "\" leftClickToOpen=\"true\" contextMenuForWindow=\"false\" style=\"display: none;\" targetNodeIds=\"touchAction" + i + "\">";
+                    popupMenu += "<div dojoType=\"dijit.Menu\" class=\"dotContextMenu\" id=\"popupTr" + i + "\" contextMenuForWindow=\"false\" style=\"display: none;\" targetNodeIds=\"tr" + cellData.inode + "\">";
+                    popupMenu2 += "<div dojoType=\"dijit.Menu\" class=\"dotContextMenu\" id=\"popup2Tr" + i + "\" leftClickToOpen=\"true\" contextMenuForWindow=\"false\" style=\"display: none;\" targetNodeIds=\"touchAction" + i + "\">";
 
-                        // NEW CONTEXT MENU
+                    // NEW CONTEXT MENU
 
-                        if ((live || working) && (read=="1") && (!deleted)) {
-                                if(structure_id == '<%=calendarEventSt.getInode() %>'){
-                                  if (write=="1"){
-                                    popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"editIcon\" onClick=\"editEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Edit") %></div>";
-                                  }else{
-                                    popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"editIcon\" onClick=\"editEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "View") %></div>";
-                                  }
+                    if ((live || working) && (read=="1") && (!deleted)) {
+                            if(structure_id == '<%=calendarEventSt.getInode() %>'){
+                                if (write=="1"){
+                                popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"editIcon\" onClick=\"editEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Edit") %></div>";
                                 }else{
-                                  if (write=="1"){
-                                    popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"editIcon\" onClick=\"editContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Edit") %></div>";
-                                  }else{
-                                    popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"editIcon\" onClick=\"editContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "View") %></div>";
-                                  }
+                                popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"editIcon\" onClick=\"editEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "View") %></div>";
                                 }
+                            }else{
+                                if (write=="1"){
+                                popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"editIcon\" onClick=\"editContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Edit") %></div>";
+                                }else{
+                                popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"editIcon\" onClick=\"editContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "View") %></div>";
+                                }
+                            }
+                    }
+
+
+                    for (var k = 0; k < wfActionMapList.length; k++) {
+                        var name = wfActionMapList[k].name;
+                        var id = wfActionMapList[k].id;
+                        var assignable = wfActionMapList[k].assignable;
+                        var commentable = wfActionMapList[k].commentable;
+                        var moveable = wfActionMapList[k].moveable;
+                        var icon = wfActionMapList[k].icon;
+                        var requiresCheckout = wfActionMapList[k].requiresCheckout;
+                        var wfActionNameStr = wfActionMapList[k].wfActionNameStr;
+                        var hasPushPublishActionlet = wfActionMapList[k].hasPushPublishActionlet;
+
+                        popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\""+icon+"\" onClick=\"contentAdmin.executeWfAction('" + id + "', '" + assignable + "', '" + commentable + "', '" + hasPushPublishActionlet + "', '" + cellData.inode + "', '" + moveable + "');\">"+wfActionNameStr+"</div>";
+
+                    }
+
+                    if(enterprise && sendingEndpoints ) {
+                            popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"sServerIcon\" onClick=\"remotePublish('" + cellData.inode + "','<%= referer %>', " + deleted + ");\"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>";
+
+                            popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"bundleIcon\" onClick=\"addToBundle('" + cellData.inode + "','<%= referer %>');\"><%=LanguageUtil.get(pageContext, "Add-To-Bundle") %></div>";
+                    }
+
+
+                    // END NEW CONTEXT
+
+                    if (locked && (write=="1")){
+                        if(structure_id == '<%=calendarEventSt.getInode() %>'){
+                            popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unlockIcon\" onClick=\"unlockEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Unlock") %></div>";
+                        }else{
+                            popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unlockIcon\" onClick=\"_unlockAsset('" + cellData.inode + "');\"><%=LanguageUtil.get(pageContext, "Unlock") %></div>";
                         }
+                    }
 
-
-                        for (var k = 0; k < wfActionMapList.length; k++) {
-							var name = wfActionMapList[k].name;
-							var id = wfActionMapList[k].id;
-							var assignable = wfActionMapList[k].assignable;
-							var commentable = wfActionMapList[k].commentable;
-                            var moveable = wfActionMapList[k].moveable;
-							var icon = wfActionMapList[k].icon;
-							var requiresCheckout = wfActionMapList[k].requiresCheckout;
-							var wfActionNameStr = wfActionMapList[k].wfActionNameStr;
-							var hasPushPublishActionlet = wfActionMapList[k].hasPushPublishActionlet;
-
-							popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\""+icon+"\" onClick=\"contentAdmin.executeWfAction('" + id + "', '" + assignable + "', '" + commentable + "', '" + hasPushPublishActionlet + "', '" + cellData.inode + "', '" + moveable + "');\">"+wfActionNameStr+"</div>";
-
-						}
-
-                        if(enterprise && sendingEndpoints ) {
-                                popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"sServerIcon\" onClick=\"remotePublish('" + cellData.inode + "','<%= referer %>', " + deleted + ");\"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>";
-
-                                popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"bundleIcon\" onClick=\"addToBundle('" + cellData.inode + "','<%= referer %>');\"><%=LanguageUtil.get(pageContext, "Add-To-Bundle") %></div>";
-						}
-
-
-						// END NEW CONTEXT
-
-                        if (locked && (write=="1")){
-                          if(structure_id == '<%=calendarEventSt.getInode() %>'){
-                                popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unlockIcon\" onClick=\"unlockEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Unlock") %></div>";
-                          }else{
-                                popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unlockIcon\" onClick=\"_unlockAsset('" + cellData.inode + "');\"><%=LanguageUtil.get(pageContext, "Unlock") %></div>";
-                          }
-                        }
-
-                        popupMenu += popupMenuItems + "</div>";
-                        popupMenu2 += popupMenuItems + "</div>";
+                    popupMenu += popupMenuItems + "</div>";
+                    popupMenu2 += popupMenuItems + "</div>";
                 }
                 popupMenusDiv.innerHTML = popupMenu + popupMenu2;
 
@@ -2156,6 +2195,16 @@
                 dojo.parser.parse(dojo.byId("results_table_popup_menus"));
                 dojo.parser.parse(dojo.byId("results_table"));
 
+        }
+
+        function getIconName(iconCode) {
+            var startIndex = iconCode.indexOf('<span class') + 13;
+            var endIndex = iconCode.indexOf('</span>') - 2;
+            return iconCode.substring(startIndex, endIndex);
+        }
+
+        function replaceWithIcon(parentElement, iconName) {
+            parentElement.innerHTML = '<dot-contentlet-icon icon="' + iconName +'" size="48px" />'
         }
 
         function clearSearch () {

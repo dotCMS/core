@@ -324,15 +324,21 @@ public class BundlerUtil {
      * @return A deserialized object
      */
     public static Object xmlToObject(File f){
-    	XStream xstream = new XStream(new DomDriver("UTF-8"));
-
-        try (InputStream input = new BufferedInputStream(Files.newInputStream(f.toPath()))) {
-            return xstream.fromXML(input);
+        try (InputStream input = Files.newInputStream(f.toPath())) {
+            return xmlToObject(input);
 		} catch (Exception e) {
 			Logger.warnAndDebug(BundlerUtil.class,e.getMessage(),e);
 			return xmlToObjectWithPrologue(f);
 		}
 	}
+
+    public static Object xmlToObject(final InputStream inputStream) throws IOException {
+        XStream xstream = new XStream(new DomDriver("UTF-8"));
+
+        try (InputStream input = new BufferedInputStream(inputStream)) {
+            return xstream.fromXML(input);
+        }
+    }
 
     /**
      * Adds a XML 1.1 Prologue before trying to deserialize
