@@ -17,8 +17,9 @@ import java.util.List;
  */
 public class Task210816DeInodeRelationship extends AbstractJDBCStartupTask {
 
-    private final DotDatabaseMetaData dotDatabaseMetaData = new DotDatabaseMetaData();//TODO: compilar de nuevo y probar upgrade en mysql, verificar resultados de tests,probar upgrade en mssql, oracle y postgres como nota corri el sql en mysql y parece funcionar
-    private final String COPY_RELATIONSHIP_MOD_DATE_FROM_INODE = "UPDATE relationship r, inode i SET r.mod_date = i.idate WHERE r.inode = i.inode;";
+    private final DotDatabaseMetaData dotDatabaseMetaData = new DotDatabaseMetaData();
+    private final String COPY_RELATIONSHIP_MOD_DATE_FROM_INODE = "UPDATE relationship SET mod_date = i.idate FROM inode i WHERE relationship.inode = i.inode;";//mssql, postgtres
+    private final String COPY_RELATIONSHIP_MOD_DATE_FROM_INODE_MYSQL = "UPDATE relationship r, inode i SET r.mod_date = i.idate WHERE r.inode = i.inode;";
     private final String DELETE_RELATIONSHIPS_FROM_INODE_BY_TYPE = "DELETE FROM inode WHERE type = 'relationship';";
     private final String DELETE_RELATIONSHIPS_FROM_INODE_BY_JOIN = "DELETE FROM inode where exists(select 1 from relationship r where r.inode = inode.inode);";
     private final Lazy<com.dotmarketing.common.db.ForeignKey> FK = Lazy.of(this::findRelationshipInodeFK);
@@ -52,7 +53,7 @@ public class Task210816DeInodeRelationship extends AbstractJDBCStartupTask {
     @Override
     public String getMySQLScript() {
         return  getAddModDateSQL()
-                + COPY_RELATIONSHIP_MOD_DATE_FROM_INODE
+                + COPY_RELATIONSHIP_MOD_DATE_FROM_INODE_MYSQL
                 + getRemoveFKSQL()
                 + DELETE_RELATIONSHIPS_FROM_INODE_BY_TYPE
                 + DELETE_RELATIONSHIPS_FROM_INODE_BY_JOIN;
@@ -80,7 +81,7 @@ public class Task210816DeInodeRelationship extends AbstractJDBCStartupTask {
     @Override
     public String getMSSQLScript() {
         return  getAddModDateSQL()
-                + COPY_RELATIONSHIP_MOD_DATE_FROM_INODE
+                + COPY_RELATIONSHIP_MOD_DATE_FROM_INODE_MYSQL
                 + getRemoveFKSQL()
                 + DELETE_RELATIONSHIPS_FROM_INODE_BY_TYPE
                 + DELETE_RELATIONSHIPS_FROM_INODE_BY_JOIN;
