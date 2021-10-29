@@ -74,8 +74,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
             writer = new CsvWriter(new FileWriter(csvFile, true), '|');
 
             final String hostField = resolveHostField();
-            final Connection conn = DbConnectionFactory.getConnection();
-            try (final PreparedStatement statement = getCsvQuery(conn, hostField)) {
+            try (final PreparedStatement statement = getCsvQuery(hostField)) {
                 try (final ResultSet rs = statement.executeQuery()) {
                     int count = 0;
 
@@ -292,12 +291,12 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
     /**
      * Prepares duplicates detection query to run prior to creating CSV file.
      *
-     * @param conn database connection to be reused
      * @param hostField column name used to retrieved the host name
      * @return a ready to use {@link PreparedStatement}
      * @throws SQLException
      */
-    private PreparedStatement getCsvQuery(final Connection conn, final String hostField) throws SQLException {
+    private PreparedStatement getCsvQuery(final String hostField) throws SQLException {
+        final Connection conn = DbConnectionFactory.getConnection();
         final String sql =
                 "SELECT c.inode, c.identifier, cvi.working_inode, cvi.live_inode, c.language_id, " + hostField +
                         " FROM contentlet c" +
