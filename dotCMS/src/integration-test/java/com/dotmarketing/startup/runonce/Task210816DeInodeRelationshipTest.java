@@ -61,7 +61,7 @@ public class Task210816DeInodeRelationshipTest {
         // Create FK if does not exist
         if (upgradeTask.findRelationshipInodeFK()==null) {
             dotConnect.executeStatement("alter table relationship add constraint "
-                    + "fkf06476385fb51eb foreign key (inode) references inode\n");
+                    + "fkf06476385fb51eb foreign key (inode) references inode(inode)\n");
         }
 
 

@@ -108,7 +108,8 @@ public class Task210816DeInodeRelationship extends AbstractJDBCStartupTask {
         String removeFK = "";
 
         if(FK.get()!=null) {
-            removeFK = "ALTER TABLE relationship DROP CONSTRAINT " + FK.get().fkName() + ";";
+            removeFK = DbConnectionFactory.isMySql() ? "ALTER TABLE relationship DROP FOREIGN KEY " + FK.get().fkName() + ";"
+                    : "ALTER TABLE relationship DROP CONSTRAINT " + FK.get().fkName() + ";";
         }
         return removeFK;
     }
