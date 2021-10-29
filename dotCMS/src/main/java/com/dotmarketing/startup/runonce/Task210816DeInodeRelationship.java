@@ -82,7 +82,7 @@ public class Task210816DeInodeRelationship extends AbstractJDBCStartupTask {
     @Override
     public String getMSSQLScript() {
         return  getAddModDateSQL()
-                + COPY_RELATIONSHIP_MOD_DATE_FROM_INODE_MYSQL
+                + COPY_RELATIONSHIP_MOD_DATE_FROM_INODE
                 + getRemoveFKSQL()
                 + DELETE_RELATIONSHIPS_FROM_INODE_BY_TYPE
                 + DELETE_RELATIONSHIPS_FROM_INODE_BY_JOIN;
