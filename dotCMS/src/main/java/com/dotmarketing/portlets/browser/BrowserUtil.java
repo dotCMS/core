@@ -5,6 +5,7 @@ import static com.dotmarketing.util.StringUtils.builder;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -78,8 +79,7 @@ public class BrowserUtil {
 
         final List<com.dotcms.contenttype.model.field.Field> fields = contentlet.getContentType()
                 .fields().stream()
-                .filter(field -> FieldType.HOST_OR_FOLDER.toString()
-                        .equalsIgnoreCase(field.typeName()))
+                .filter(field -> HostFolderField.class.getName().equalsIgnoreCase(field.typeName()))
                 .limit(1)
                 .collect(Collectors.toList());
 
