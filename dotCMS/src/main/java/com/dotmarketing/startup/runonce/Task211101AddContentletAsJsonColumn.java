@@ -10,7 +10,7 @@ import com.dotmarketing.util.Logger;
 import java.sql.SQLException;
 import java.util.Optional;
 
-public class Task211008AddContentletAsJsonColumn implements StartupTask {
+public class Task211101AddContentletAsJsonColumn implements StartupTask {
 
     private final static String POSTGRES_COLUMN_TYPE = "JSONB";
     private final static String MYSQL_COLUMN_TYPE = "TEXT";

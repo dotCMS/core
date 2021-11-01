@@ -1,19 +1,4 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
-import com.dotmarketing.factories.MultiTreeAPI;
-import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.language.LanguageUtil;
-import io.vavr.control.Try;
-import java.util.*;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import com.dotmarketing.portlets.personas.model.Persona;
-import com.liferay.util.StringPool;
-import org.apache.velocity.context.Context;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.enterprise.license.LicenseManager;
@@ -21,30 +6,39 @@ import com.dotcms.rendering.velocity.directive.RenderParams;
 import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
-import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.LayoutAPI;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionLevel;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRenderedBuilder;
+import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.personas.model.IPersona;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 import java.util.Collection;
 import java.util.Optional;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.velocity.context.Context;
 
 /**
  * Builder of {@link HTMLPageAssetRendered}

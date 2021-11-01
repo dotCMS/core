@@ -1,7 +1,7 @@
 package com.dotcms.graphql.datafetcher;
 
 import static com.dotcms.contenttype.model.type.WidgetContentType.WIDGET_CODE_FIELD_VAR;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.RenderFieldStrategy.renderFieldValue;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.RenderFieldStrategy.parseAsJSON;
 
 import com.dotcms.graphql.DotGraphQLContext;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -41,7 +41,7 @@ public class DotJSONDataFetcher implements DataFetcher<Object> {
             final String fieldValue = (String) contentlet.get(WIDGET_CODE_FIELD_VAR);
 
             if(render) {
-                final Object renderedValue = renderFieldValue(request, response, fieldValue,
+                final Object renderedValue = parseAsJSON(request, response, fieldValue,
                         contentlet, WIDGET_CODE_FIELD_VAR);
 
                 return UtilMethods.isSet(renderedValue) ? renderedValue : new HashMap<>();

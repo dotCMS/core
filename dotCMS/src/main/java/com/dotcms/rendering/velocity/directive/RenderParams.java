@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.directive;
 
+import io.vavr.control.Try;
 import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.rendering.velocity.directive.RenderParams;
@@ -19,7 +20,8 @@ public class RenderParams {
 
 
   public RenderParams(HttpServletRequest request) {
-    this(request, (RenderParams) request.getAttribute(RENDER_PARAMS_ATTRIBUTE));
+    this(request, Try.of(()->
+            (RenderParams) request.getAttribute(RENDER_PARAMS_ATTRIBUTE)).getOrNull());
 
   }
 

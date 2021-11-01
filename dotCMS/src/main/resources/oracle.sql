@@ -2431,6 +2431,7 @@ alter table container_structures add constraint FK_cs_inode foreign key (contain
 create table sitelic(id varchar(36) primary key, serverid varchar(100), license nclob not null, lastping date not null, startup_time number(19,0));
 
 create table folders_ir(folder varchar2(255), local_inode varchar2(36), remote_inode varchar2(36), local_identifier varchar2(36), remote_identifier varchar2(36), endpoint_id varchar2(40), PRIMARY KEY (local_inode, endpoint_id));
+create table hosts_ir(local_identifier varchar2(36), remote_identifier varchar2(36), endpoint_id varchar2(40), local_working_inode varchar2(36), local_live_inode varchar2(36), remote_working_inode varchar2(36), remote_live_inode varchar2(36), language_id number(19,0), host varchar2(255), PRIMARY KEY (local_working_inode, language_id, endpoint_id));
 create table structures_ir(velocity_name varchar2(255), local_inode varchar2(36), remote_inode varchar2(36), endpoint_id varchar2(40), PRIMARY KEY (local_inode, endpoint_id));
 create table schemes_ir(name varchar2(255), local_inode varchar2(36), remote_inode varchar2(36), endpoint_id varchar2(40), PRIMARY KEY (local_inode, endpoint_id));
 create table htmlpages_ir(html_page varchar2(255), local_working_inode varchar2(36), local_live_inode varchar2(36), remote_working_inode varchar2(36), remote_live_inode varchar2(36),local_identifier varchar2(36), remote_identifier varchar2(36), endpoint_id varchar2(40), language_id number(19,0), PRIMARY KEY (local_working_inode, language_id, endpoint_id));

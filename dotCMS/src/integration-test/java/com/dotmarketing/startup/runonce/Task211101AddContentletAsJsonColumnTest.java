@@ -11,7 +11,7 @@ import java.sql.SQLException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class Task211008AddContentletAsJsonColumnTest {
+public class Task211101AddContentletAsJsonColumnTest {
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -38,7 +38,7 @@ public class Task211008AddContentletAsJsonColumnTest {
     @Test
     public void Test_Upgrade_Task() throws DotDataException {
         removeConstraintIfAny();
-        final Task211008AddContentletAsJsonColumn task = new Task211008AddContentletAsJsonColumn();
+        final Task211101AddContentletAsJsonColumn task = new Task211101AddContentletAsJsonColumn();
         assertTrue(task.forceRun());
 
         task.executeUpgrade();

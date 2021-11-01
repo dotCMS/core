@@ -29,8 +29,10 @@ import com.dotcms.enterprise.publishing.remote.bundler.RuleBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.TemplateBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.WorkflowBundlerTest;
 import com.dotcms.enterprise.publishing.remote.handler.ContentHandlerTest;
+import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
+import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleAPITest;
@@ -126,7 +128,7 @@ import com.dotmarketing.startup.runonce.Task210805DropUserProxyTableTest;
 import com.dotmarketing.startup.runonce.Task210816DeInodeRelationshipTest;
 import com.dotmarketing.startup.runonce.Task211012AddCompanyDefaultLanguageTest;
 import com.dotmarketing.startup.runonce.Task210901UpdateDateTimezonesTest;
-import com.dotmarketing.startup.runonce.Task211008AddContentletAsJsonColumnTest;
+import com.dotmarketing.startup.runonce.Task211101AddContentletAsJsonColumnTest;
 import com.dotmarketing.startup.runonce.Task211007RemoveNotNullConstraintFromCompanyMXColumnTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
@@ -480,8 +482,11 @@ import org.junit.runners.Suite.SuiteClasses;
         Task211007RemoveNotNullConstraintFromCompanyMXColumnTest.class,
         ManifestReaderFactoryTest.class,
         Task211012AddCompanyDefaultLanguageTest.class,
-        Task211008AddContentletAsJsonColumnTest.class,
+        StaticPublisherIntegrationTest.class,
+        HostIntegrityCheckerTest.class,
+        Task211101AddContentletAsJsonColumnTest.class,
         ContentletJsonAPITest.class
+
 })
 public class MainSuite {
 

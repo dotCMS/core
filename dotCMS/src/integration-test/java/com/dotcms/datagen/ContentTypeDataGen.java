@@ -2,7 +2,9 @@ package com.dotcms.datagen;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.ImmutableConstantField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -24,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
 
@@ -308,6 +311,12 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
         } catch (DotSecurityException | DotDataException e) {
             throw new DotRuntimeException(e);
         }
+    }
+
+    public static ContentTypeDataGen createWidgetContentType (final String code){
+        return new WidgetContentTypeDataGen()
+                .code(code)
+                .baseContentType(BaseContentType.WIDGET);
     }
 
 }
