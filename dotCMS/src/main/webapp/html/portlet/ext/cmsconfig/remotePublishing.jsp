@@ -10,7 +10,7 @@
 <%@ page import="com.dotcms.publisher.environment.business.EnvironmentAPI"%>
 <%@ page import="com.dotcms.publisher.environment.bean.Environment"%>
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
-<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
+<%@ page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@ page import="com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher" %>
 <%@ page import="com.dotcms.publisher.pusher.AuthCredentialPushPublishUtil" %>
 
@@ -360,6 +360,10 @@ function getIntegrityResult(identifier) {
             //Getting the structures data
             var structuresData = data.structures;
             populateTabContent(structuresData, "structures");
+
+            //Getting the folders data
+            var hostsData = data.hosts;
+            populateTabContent(hostsData, "hosts");
 
             //Getting the folders data
             var foldersData = data.folders;
@@ -949,9 +953,6 @@ function deleteEnvPushHistory(envId) {
                 <br>
             <i></span><%=endpoint.getAddress()%></i>
             </td>
-
-
-
         </tr>
         <%}%>
 
@@ -974,7 +975,7 @@ function deleteEnvPushHistory(envId) {
 <%--INTEGRITY RESULTS DIALOG--%>
 <%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
 <style type="text/css">
-    #structuresTab,#foldersTab,#htmlPagesTab,#fileAssetsTab,#cms_rolesTab {
+    #structuresTab,#hostsTab,#foldersTab,#htmlPagesTab,#fileAssetsTab,#cms_rolesTab {
         height:100%;
         min-height:250px;
     }
@@ -991,6 +992,19 @@ function deleteEnvPushHistory(envId) {
                         "push_publish_integrity_fix_conflicts")%></button>
                 <button dojoType="dijit.form.Button" id="structuresDiscardButton"
                         onClick="discardConflicts(selectedEndpointId, 'structures')" class="dijitButtonDanger" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
+                        "push_publish_integrity_discard_conflicts")%></button>
+                <button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="closeIntegrityResultsDialog(selectedEndpointId)"><%= LanguageUtil.get(pageContext, "close") %></button>
+            </div>
+        </div>
+
+        <div id="hostsTab" style="width: 1120px" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "hosts") %>" >
+            <div id="hostsTabContentDiv" style="height:280px">No Results</div>
+            <div class="buttonRow">
+                <button dojoType="dijit.form.Button" id="hostsFixButton"
+                        onClick="fixConflicts(selectedEndpointId, 'hosts')"><%=LanguageUtil.get(pageContext,
+                        "push_publish_integrity_fix_conflicts")%></button>
+                <button dojoType="dijit.form.Button" id="hostsDiscardButton"
+                        onClick="discardConflicts(selectedEndpointId, 'hosts')" class="dijitButtonDanger" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
                         "push_publish_integrity_discard_conflicts")%></button>
                 <button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="closeIntegrityResultsDialog(selectedEndpointId)"><%= LanguageUtil.get(pageContext, "close") %></button>
             </div>

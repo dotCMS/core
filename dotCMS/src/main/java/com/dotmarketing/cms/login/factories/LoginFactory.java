@@ -194,6 +194,7 @@ public class LoginFactory {
 	            if (match) {
 
 	            	user.setLastLoginDate(new java.util.Date());
+					user.setLastLoginIP(request.getRemoteAddr());
 	            	APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
 
 	            } else {

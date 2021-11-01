@@ -132,6 +132,14 @@ public class ContentletLoader implements DotLoader {
             String contFieldValue = null;
             Object contFieldValueObject = null;
 
+            if(field instanceof StoryBlockField) {
+                contFieldValueObject = conAPI.getFieldValue(content, field);
+                sb.append("#set($")
+                        .append(field.variable())
+                        .append("= $json.generate(" + contFieldValueObject + "))");
+                continue;
+            }
+
             if (field instanceof HiddenField || field instanceof ConstantField) {
               String velPath = new VelocityResourceKey(field, Optional.empty(), mode).path ;
                 if (field.variable().equals("widgetPreexecute")) {

@@ -11,6 +11,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
@@ -20,6 +21,8 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import io.vavr.control.Try;
+import java.io.File;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -27,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import org.apache.commons.io.FileUtils;
 
 /**
  * Class used to create {@link Contentlet} objects for test purposes
@@ -411,5 +415,11 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
     public ContentletDataGen modeDate(final Date modDate) {
         this.modDate = modDate;
         return this;
+    }
+
+    public Contentlet nextPersistedAndPublish() {
+        final Contentlet contentlet = nextPersisted();
+        publish(contentlet);
+        return contentlet;
     }
 }

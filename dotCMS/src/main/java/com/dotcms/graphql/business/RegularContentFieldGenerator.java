@@ -24,7 +24,7 @@ class RegularContentFieldGenerator implements GraphQLFieldGenerator {
                 .argument(GraphQLArgument.newArgument()
                         .name("render")
                         .type(GraphQLBoolean)
-                        .defaultValue(false)
+                        .defaultValue(null)
                         .build())
                 .type(field.required()
                         ? nonNull(typesProvider.getGraphqlTypeForFieldClass(field.type(), field))

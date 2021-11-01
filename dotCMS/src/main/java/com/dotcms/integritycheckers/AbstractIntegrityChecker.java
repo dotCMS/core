@@ -382,7 +382,7 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
      *
      * @return The database-dependent keyword to represent the language ID.
      */
-    private String getIntegerKeyword() {
+    protected static String getIntegerKeyword() {
         String keyword = null;
         if (DbConnectionFactory.isPostgres()) {
             keyword = "int8";
@@ -422,5 +422,15 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
 		}
 		return value;
 	}
+
+    /**
+     * Common method which resolves the output file path used for each integrity checker.
+     *
+     * @param outputPath base output path
+     * @return Strin representation of the resolved path
+     */
+    protected String getOutputFilePath(final String outputPath) {
+        return outputPath + File.separator + getIntegrityType().getDataToCheckCSVName();
+    }
 
 }

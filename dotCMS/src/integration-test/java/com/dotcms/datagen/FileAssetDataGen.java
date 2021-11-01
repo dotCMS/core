@@ -4,6 +4,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -11,6 +12,9 @@ import com.liferay.util.FileUtil;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
+import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
 
 public class FileAssetDataGen extends ContentletDataGen {
 
@@ -23,6 +27,11 @@ public class FileAssetDataGen extends ContentletDataGen {
             throws DotSecurityException, DotDataException {
         this(file);
         this.folder = folder;
+    }
+
+    public FileAssetDataGen(final Folder folder, final String content)
+            throws DotSecurityException, DotDataException, IOException {
+        this(folder, getFile("FileAssetDataGen_" + System.currentTimeMillis(), "", content));
     }
 
     public FileAssetDataGen(final File file) throws DotDataException, DotSecurityException {
@@ -51,9 +60,24 @@ public class FileAssetDataGen extends ContentletDataGen {
             final String suffix,
             final String content)
             throws IOException, DotSecurityException, DotDataException {
-        final java.io.File file = java.io.File.createTempFile(fileName, suffix);
-        FileUtil.write(file, content);
+        final File file = getFile(fileName, suffix, content);
 
         return  new FileAssetDataGen(folder, file).nextPersisted();
+    }
+
+    @NotNull
+    private static File getFile(String fileName, String suffix, String content) throws IOException {
+        final File file = File.createTempFile(fileName, suffix);
+        FileUtil.write(file, content);
+        return file;
+    }
+
+    public static FileAssetDataGen createImageFileAssetDataGen(final File imageFile)
+            throws IOException, DotDataException, DotSecurityException {
+
+        final File tempFile = File.createTempFile("getPageWithImage", ".jpg");
+        FileUtils.copyFile(imageFile, tempFile);
+
+        return new FileAssetDataGen(tempFile);
     }
 }
