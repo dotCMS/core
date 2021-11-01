@@ -1001,9 +1001,9 @@
         java.util.Map<String, Object> keyValueMap = null;
 
         if(value instanceof Map){
-            keyValueMap = new HashMap<>((Map)value);
+            keyValueMap = new LinkedHashMap<>((Map)value);
         } else {
-            keyValueMap = new HashMap();
+            keyValueMap = new LinkedHashMap();
         }
 
         if("metaData".equals(field.getVelocityVarName())){

@@ -361,11 +361,16 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
      */
     private Object getValue(final Map<String, FieldValue<?>> fields, final Field field){
        final Object value = Try.of(()->fields.get(field.variable()).value()).getOrNull();
+       if(field instanceof KeyValueField){
+         List<com.dotcms.content.model.type.keyvalue.Entry<?>> asList = (List<com.dotcms.content.model.type.keyvalue.Entry<?>>)value;
+         return KeyValueField.asMap(asList);
+       }
        return value instanceof Instant ? Date.from((Instant)value) : value;
     }
 
     /**
-     * Given the value extracted from the contentlet map and the respective field it maps to
+     * This is a pretty straight forward method that simply takes a field an transform its value into the respective FieldValue Representation
+     * Meaning this converts the field to a json representation
      * @param value
      * @param field
      * @return

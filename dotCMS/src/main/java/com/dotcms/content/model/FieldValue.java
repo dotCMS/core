@@ -26,7 +26,7 @@ import com.dotcms.content.model.type.select.AbstractLongSelectFieldType;
 import com.dotcms.content.model.type.select.AbstractMultiSelectFieldType;
 import com.dotcms.content.model.type.select.AbstractSelectFieldType;
 import com.dotcms.content.model.type.text.AbstractFloatTextFieldType;
-import com.dotcms.content.model.type.AbstractKeyValueType;
+import com.dotcms.content.model.type.keyvalue.AbstractKeyValueType;
 import com.dotcms.content.model.type.AbstractListType;
 import com.dotcms.content.model.type.text.AbstractLongTextFieldType;
 import com.dotcms.content.model.type.text.AbstractTextFieldType;
