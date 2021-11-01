@@ -119,6 +119,10 @@ public class BrowserUtil {
                     final Host host = APILocator.getHostAPI()
                             .findByName(hostName, user, false);
 
+                    if (UtilMethods.isSet(host)) {
+                        return Optional.empty();
+                    }
+
                     final String folderPath = fieldVariableValue.substring(
                             HOST_INDICATOR.length() + hostName.length());
 
@@ -254,7 +258,7 @@ public class BrowserUtil {
             return folderPathIds.getIds();
 
         } catch (DotDataException | DotSecurityException e) {
-            return list(APILocator.systemHost().getHostname());
+            return list(APILocator.systemHost().getIdentifier());
         }
 
     }

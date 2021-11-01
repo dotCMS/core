@@ -239,7 +239,14 @@
         %>
         <div class="wysiwyg-wrapper">
             <div id="<%=field.getVelocityVarName()%>aceEditor" class="classAce aceTall" style="display: none"></div>
-                <div class="wysiwyg-container">
+
+            <%
+                final List<String> defaultPathFolderPathIds = BrowserUtil.getDefaultPathFolderPathIds(
+                        contentlet, field,
+                        user);
+                defaultPathFolderPathIds.add(0, "root");
+            %>
+                <div class="wysiwyg-container" data-select-folder="<%=String.join(", ", defaultPathFolderPathIds)%>" >
                   <dot-asset-drop-zone id="dot-asset-drop-zone-<%=field.getVelocityVarName()%>" class="wysiwyg__dot-asset-drop-zone"></dot-asset-drop-zone>
                   <textarea <%= isReadOnly?"readonly=\"readonly\"":"" %>
                       class="editWYSIWYGField aceText aceTall"
