@@ -19,17 +19,18 @@
 							"var jsonData = pm.response.json();",
 							"",
 							"var symbolicName = null;",
-							"for (let i = 0; i < jsonData.length; i++) {",
-							"  ",
-							"  let bundle = jsonData[i];",
-							"  if (bundle.symbolicName === 'com.dotcms.samlbundle') {",
-							"      symbolicName = bundle.symbolicName ;",
-							"  }",
-							"}",
-							"pm.test(\"SymbolicName check\", function () {",
-							"    pm.expect(symbolicName).to.eql('com.dotcms.samlbundle');",
-							"});",
-							""
+							"if (jsonData.length) {",
+							"    for (let i = 0; i < jsonData.length; i++) {",
+							"    ",
+							"    let bundle = jsonData[i];",
+							"    if (bundle.symbolicName === 'com.dotcms.samlbundle') {",
+							"        symbolicName = bundle.symbolicName ;",
+							"    }",
+							"    }",
+							"    pm.test(\"SymbolicName check\", function () {",
+							"        pm.expect(symbolicName).to.eql('com.dotcms.samlbundle');",
+							"    });",
+							"}"
 						],
 						"type": "text/javascript"
 					}
@@ -91,6 +92,21 @@
 				}
 			],
 			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
 				"method": "POST",
 				"header": [],
 				"body": {
