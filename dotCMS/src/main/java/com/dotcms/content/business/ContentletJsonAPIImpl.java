@@ -363,7 +363,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
        final Object value = Try.of(()->fields.get(field.variable()).value()).getOrNull();
        if(null == value){
           //defined in the CT but not present on the instance
-          return null; 
+          return null;
        }
        if(field instanceof KeyValueField){
          //KeyValues are stored as List to preserve the order of their elements so some additional logic is required here
