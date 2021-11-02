@@ -45,6 +45,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.thoughtworks.xstream.XStream;
@@ -838,6 +839,9 @@ public class ContentResource {
             }
         }
 
+        m.put("__icon__", UtilHTML.getIconClass(contentlet));
+        m.put("contentTypeIcon", type.icon());
+
         return m;
     }
 
@@ -1346,58 +1350,59 @@ public class ContentResource {
         return contentletToJSON(con, request, response, render, user, allCategoriesInfo, false);
     }
 
-    public static JSONObject contentletToJSON(Contentlet con, HttpServletRequest request,
-            HttpServletResponse response, String render, User user, final boolean allCategoriesInfo,
-            final boolean hydrateRelated)
+    public static JSONObject contentletToJSON(Contentlet contentlet, final HttpServletRequest request,
+            final HttpServletResponse response, final String render, final User user,
+            final boolean allCategoriesInfo, final boolean hydrateRelated)
             throws JSONException, IOException, DotDataException, DotSecurityException {
-        JSONObject jo = new JSONObject();
-        ContentType type = con.getContentType();
-
+        final JSONObject jsonObject = new JSONObject();
+        final ContentType type = contentlet.getContentType();
 
         if(hydrateRelated) {
             final DotContentletTransformer myTransformer = new DotTransformerBuilder()
-                    .hydratedContentMapTransformer().content(con).build();
-            con = myTransformer.hydrate().get(0);
+                    .hydratedContentMapTransformer().content(contentlet).build();
+            contentlet = myTransformer.hydrate().get(0);
         }
 
-        Map<String, Object> map = ContentletUtil.getContentPrintableMap(user, con, allCategoriesInfo);
+        final Map<String, Object> map = ContentletUtil.getContentPrintableMap(user, contentlet, allCategoriesInfo);
 
-        Set<String> jsonFields = getJSONFields(type);
+        final Set<String> jsonFields = getJSONFields(type);
 
-        for (String key : map.keySet()) {
+        for (final String key : map.keySet()) {
             if (Arrays.binarySearch(ignoreFields, key) < 0) {
                 if (jsonFields.contains(key)) {
                     Logger.debug(ContentResource.class,
                             key + " is a json field: " + map.get(key).toString());
-                    jo.put(key, new JSONObject(con.getKeyValueProperty(key)));
+                    jsonObject.put(key, new JSONObject(contentlet.getKeyValueProperty(key)));
                 } else if (isCategoryField(type, key) && map.get(key) instanceof Collection) {
                     final Collection<?> categoryList = (Collection<?>) map.get(key);
-                    jo.put(key, new JSONArray(categoryList.stream()
+                    jsonObject.put(key, new JSONArray(categoryList.stream()
                             .map(value -> new JSONObject((Map<?,?>) value))
                             .collect(Collectors.toList())));
                   // this might be coming from transformers views, so let's try to make them JSONObjects
                 } else if(hydrateRelated) {
                     if(map.get(key) instanceof Map) {
-                        jo.put(key, new JSONObject((Map) map.get(key)));
+                        jsonObject.put(key, new JSONObject((Map) map.get(key)));
                     } else {
-                        jo.put(key, map.get(key));
+                        jsonObject.put(key, map.get(key));
                     }
                 } else {
-                    jo.put(key, map.get(key));
+                    jsonObject.put(key, map.get(key));
                 }
             }
         }
 
         if (BaseContentType.WIDGET.equals(type.baseType()) && Boolean.toString(true)
                 .equalsIgnoreCase(render)) {
-            jo.put("parsedCode", WidgetResource.parseWidget(request, response, con));
+            jsonObject.put("parsedCode", WidgetResource.parseWidget(request, response, contentlet));
         }
 
         if (BaseContentType.HTMLPAGE.equals(type.baseType())) {
-            jo.put(HTMLPageAssetAPI.URL_FIELD, ContentHelper.getInstance().getUrl(con));
+            jsonObject.put(HTMLPageAssetAPI.URL_FIELD, ContentHelper.getInstance().getUrl(contentlet));
         }
 
-        return jo;
+        jsonObject.put("__icon__", UtilHTML.getIconClass(contentlet));
+        jsonObject.put("contentTypeIcon", type.icon());
+        return jsonObject;
     }
 
     private static boolean isCategoryField(final ContentType type, final String key) {

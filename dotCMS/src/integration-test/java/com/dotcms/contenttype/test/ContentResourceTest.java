@@ -30,6 +30,7 @@ import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.TestWorkflowUtils;
 import com.dotcms.datagen.UserDataGen;
@@ -741,6 +742,54 @@ public class ContentResourceTest extends IntegrationTestBase {
                     .list(parentContentType, childContentType1, childContentType2));
         }
 
+    }
+
+    /**
+     * <b>Method to test:</b> {@link ContentResource#getContent(HttpServletRequest, HttpServletResponse, String)}
+     * <b><br></br>Given scenario:</b> The method is invoked for any piece of content</br>
+     * <b><br></br>Expected result:</b> The response should include the attributes `__icon__` and `contentTypeIcon`
+     */
+    @Test
+    public void testGetContentShouldReturnIconDetails() throws Exception {
+
+        final Contentlet contentlet = TestDataUtils.getDotAssetLikeContentlet();
+        
+        // Build request and response
+        final HttpServletRequest request = createHttpRequest(null, null);
+        final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+
+        // Send request
+        final ContentResource contentResource = new ContentResource();
+        Response endpointResponse = contentResource.getContent(request, response,
+                "/query/+identifier:" + contentlet.getIdentifier() + "/type/json");
+
+        // Verify result
+        assertEquals(Status.OK.getStatusCode(), endpointResponse.getStatus());
+        
+        // Verify JSON result
+        final JSONObject json = new JSONObject(endpointResponse.getEntity().toString());
+        final JSONArray contentlets = json.getJSONArray("contentlets");
+        assertEquals(1, contentlets.length());
+        assertNotNull(((JSONObject) contentlets.get(0)).get("__icon__"));
+        assertNotNull(((JSONObject) contentlets.get(0)).get("contentTypeIcon"));
+        
+        endpointResponse = contentResource.getContent(request, response,
+                "/query/+identifier:" + contentlet.getIdentifier() + "/type/xml");
+
+        // Verify XML result
+        final DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+        final DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+
+        final InputSource inputSource = new InputSource();
+        inputSource.setCharacterStream(
+                new StringReader(endpointResponse.getEntity().toString().replaceAll("\\n", "")));
+        final Document doc = dBuilder.parse(inputSource);
+        doc.getDocumentElement().normalize();
+
+        final DeferredElementImpl contentletFromXML = (DeferredElementImpl) doc.getFirstChild().getFirstChild();
+        
+        assertNotNull(contentletFromXML.getElementsByTagName("__icon__"));
+        assertNotNull(contentletFromXML.getElementsByTagName("contentTypeIcon"));
     }
 
     @Test
