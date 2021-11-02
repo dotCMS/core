@@ -128,6 +128,7 @@ import com.dotmarketing.startup.runonce.Task210816DeInodeRelationshipTest;
 import com.dotmarketing.startup.runonce.Task211012AddCompanyDefaultLanguageTest;
 import com.dotmarketing.startup.runonce.Task210901UpdateDateTimezonesTest;
 import com.dotmarketing.startup.runonce.Task211007RemoveNotNullConstraintFromCompanyMXColumnTest;
+import com.dotmarketing.startup.runonce.Task211101RenameHostNameLabel;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -481,7 +482,8 @@ import org.junit.runners.Suite.SuiteClasses;
         ManifestReaderFactoryTest.class,
         Task211012AddCompanyDefaultLanguageTest.class,
         StaticPublisherIntegrationTest.class,
-        HostIntegrityCheckerTest.class
+        HostIntegrityCheckerTest.class,
+        Task211101RenameHostNameLabel.class
 })
 public class MainSuite {
 
