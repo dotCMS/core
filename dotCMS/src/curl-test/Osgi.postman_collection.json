@@ -114,15 +114,15 @@
 					"formdata": [
 						{
 							"key": "file",
-							"contentType": "application/jar",
+							"contentType": "",
 							"type": "file",
-							"src": "osgi-bundle/com.dotcms.actionlet.fragment-0.2.jar"
+							"src": "resources/osgi-bundle/com.dotcms.actionlet.fragment-0.2.jar"
 						},
 						{
 							"key": "file",
-							"contentType": "application/jar",
+							"contentType": "",
 							"type": "file",
-							"src": "osgi-bundle/com.dotcms.actionlet-0.2.jar"
+							"src": "resources/osgi-bundle/com.dotcms.actionlet-0.2.jar"
 						},
 						{
 							"key": "json",
