@@ -19,7 +19,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageUtil;
-import com.liferay.portal.language.LanguageWrapper;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
@@ -35,7 +34,6 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.launch.Framework;
 
-import javax.print.attribute.standard.Severity;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
