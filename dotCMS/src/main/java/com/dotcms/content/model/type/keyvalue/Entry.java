@@ -17,7 +17,7 @@ public class Entry<T> implements Serializable {
     }
 
     @JsonCreator
-    public static Entry <?> of(@JsonProperty("value") final String key,  @JsonProperty("key") final Object value) {
+    public static Entry <?> of(@JsonProperty("key") final String key,  @JsonProperty("value") final Object value) {
         return new Entry<>(key, value);
     }
 
