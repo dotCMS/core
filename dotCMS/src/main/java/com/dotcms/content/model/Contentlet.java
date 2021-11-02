@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
+import com.github.jonpeterson.jackson.module.versioning.JsonVersionedModel;
 
 /**
  *  Represents a content unit in the system. Ideally, every single domain object
@@ -19,6 +20,7 @@ import org.immutables.value.Value;
 @JsonInclude(Include.NON_NULL)
 @JsonSerialize(as = ImmutableContentlet.class)
 @JsonDeserialize(as = ImmutableContentlet.class)
+@JsonVersionedModel(currentVersion = "1")
 public interface Contentlet {
 
     @Nullable
