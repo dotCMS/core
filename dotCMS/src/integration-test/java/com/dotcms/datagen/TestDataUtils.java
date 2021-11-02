@@ -61,7 +61,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.commons.lang3.RandomStringUtils;
 
 /**
  * @author Jonathan Gamba 2019-04-16
@@ -2081,13 +2080,13 @@ public class TestDataUtils {
     }
 
 
-    public static ContentType getContentTypeWithAllAvailableFieldTypes() {
+    public static ContentType newContentTypeFieldTypesGalore() {
         final String contentTypeName = String.format("WithAllAvailableFieldTypes%s",System.nanoTime());
-        return getContentTypeWithAllAvailableFieldTypes(contentTypeName,null);
+        return newContentTypeFieldTypesGalore(contentTypeName,null);
     }
 
     @WrapInTransaction
-    public static ContentType getContentTypeWithAllAvailableFieldTypes(final String contentTypeName, Set<String> workflowIds) {
+    public static ContentType newContentTypeFieldTypesGalore(final String contentTypeName, Set<String> workflowIds) {
 
         ContentType contentType = null;
         try {
@@ -2186,14 +2185,6 @@ public class TestDataUtils {
                                 .type(TagField.class)
                                 .next()
                 );
-                fields.add(
-                        new FieldDataGen()
-                                .name("categoryField")
-                                .velocityVarName("categoryField")
-                                .type(CategoryField.class)
-                                .next()
-                );
-
 
                 fields.add(
                         new FieldDataGen()

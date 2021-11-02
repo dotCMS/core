@@ -54,7 +54,7 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
             final Host site = new SiteDataGen().name(hostName).nextPersisted(true);
             final Folder folder = new FolderDataGen().site(site).nextPersisted();
             final ContentType contentType = TestDataUtils
-                    .getContentTypeWithAllAvailableFieldTypes();
+                    .newContentTypeFieldTypesGalore();
 
             new TagDataGen().name("tag1").nextPersisted();
 
@@ -120,7 +120,7 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
         final Host site = new SiteDataGen().name(hostName).nextPersisted(true);
         final Folder folder = new FolderDataGen().site(site).nextPersisted();
         final ContentType contentType = TestDataUtils
-                .getContentTypeWithAllAvailableFieldTypes();
+                .newContentTypeFieldTypesGalore();
 
         final File file = TestDataUtils.nextBinaryFile(TestFile.JPG);
 
