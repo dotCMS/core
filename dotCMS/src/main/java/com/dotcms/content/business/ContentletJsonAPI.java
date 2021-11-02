@@ -7,7 +7,12 @@ import com.dotmarketing.util.Config;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
- *
+ * This is class takes care of translating a contentlet from it's regular mutable representation
+ * given by @see com.dotmarketing.portlets.contentlet.model.Contentlet to json For that purpose we
+ * use an intermediate representation generated via Immutables @see com.dotcms.content.model.Contentlet
+ * This is based on the original logic located in @See com.dotmarketing.portlets.contentlet.transform.ContentletTransformer
+ * which reads the contentlet from the columns located in the contentlet table.
+ * This is meant to deal with a json representation of contentlet stored in only one column.
  */
 public interface ContentletJsonAPI {
 

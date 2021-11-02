@@ -1964,7 +1964,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     }
 
                     final String asJson = contentletJsonAPI.toJson(new Contentlet(map));
-                    Logger.info(ESContentletAPIImpl.class, asJson);
+                    Logger.debug(ESContentletAPIImpl.class, asJson);
                     contentlet.setProperty(Contentlet.CONTENTLET_AS_JSON, asJson);
                 } catch (DotDataException | JsonProcessingException e) {
                     final String error = String
@@ -2134,20 +2134,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 upsertValues.add(defaultValue);
             }
         }
-    }
-
-    private void emptyDynamicFields(final List<Object> upsertValues,  final String prefix){
-        Object defaultValue = null;
-        if (prefix.equals("integer") || prefix.equals("float")){
-            defaultValue = 0;
-        } else if (prefix.equals("bool")){
-            defaultValue = Boolean.FALSE;
-        }
-
-        for (int i = 1; i <= MAX_FIELDS_ALLOWED; i++) {
-            upsertValues.add(defaultValue);
-        }
-
     }
 
     private Map<String, Object> getFieldsMap(final Contentlet contentlet) throws DotDataException {
