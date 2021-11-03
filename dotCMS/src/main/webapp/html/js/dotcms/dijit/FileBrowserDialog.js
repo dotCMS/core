@@ -424,7 +424,7 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 	_assetSelected: function (asset) {
 		this.onFileSelected(asset);
 
-		fetch('/api/v1/folder/select?id=' + asset.folder, {method: 'PUT'})
+		fetch('/api/v1/folder/' + asset.folder + '/file-browser-selected', {method: 'PUT'})
 			.then(function (response) {
 				console.log('success!', response);
 			});

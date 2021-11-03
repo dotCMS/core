@@ -29,6 +29,7 @@
 <%@ page import="com.dotcms.contenttype.model.type.BaseContentType" %>
 <%@ page import="com.dotmarketing.portlets.browser.BrowserUtil" %>
 <%@ page import="com.dotmarketing.portlets.folders.model.Folder" %>
+<%@ page import="com.dotcms.contenttype.transform.field.LegacyFieldTransformer" %>
 
 
 <%
@@ -242,7 +243,7 @@
 
             <%
                 final List<String> defaultPathFolderPathIds = BrowserUtil.getDefaultPathFolderPathIds(
-                        contentlet, field,
+                        contentlet, LegacyFieldTransformer.from(field),
                         user);
                 defaultPathFolderPathIds.add(0, "root");
             %>
@@ -425,7 +426,7 @@
         else if (field.getFieldType().equals(
                 Field.FieldType.IMAGE.toString())) {
             final List<String> defaultPathFolderPathIds = BrowserUtil.getDefaultPathFolderPathIds(
-                    contentlet, field,
+                    contentlet, LegacyFieldTransformer.from(field),
                     user);
             defaultPathFolderPathIds.add(0, "root");
         %>
@@ -438,7 +439,7 @@
             //FILE kind of field rendering
         } else if (field.getFieldType().equals(Field.FieldType.FILE.toString())) {
                 final List<String> defaultPathFolderPathIds = BrowserUtil.getDefaultPathFolderPathIds(
-                        contentlet, field,
+                        contentlet, LegacyFieldTransformer.from(field),
                         user);
                 defaultPathFolderPathIds.add(0, "root");
         %>

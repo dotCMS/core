@@ -90,11 +90,12 @@ public class FolderResource implements Serializable {
     }
 
     @PUT
-    @Path("/select")
+    @Path("/{id}/file-browser-selected")
     @NoCache
-    public final Response createFolders(@Context final HttpServletRequest httpServletRequest,
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response selectFolder(@Context final HttpServletRequest httpServletRequest,
             @Context final HttpServletResponse httpServletResponse,
-            @QueryParam("id") final String folderId)
+            @PathParam("id") final String folderId)
             throws DotSecurityException, DotDataException {
 
         new WebResource.InitBuilder(webResource)

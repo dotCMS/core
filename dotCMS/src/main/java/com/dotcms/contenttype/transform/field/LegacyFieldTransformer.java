@@ -46,6 +46,11 @@ public class LegacyFieldTransformer implements FieldTransformer {
 		this.oldFields = ImmutableList.copyOf(olds);
 	}
 
+	public static Field from(com.dotmarketing.portlets.structure.model.Field oldField) {
+		final LegacyFieldTransformer legacyFieldTransformer = new LegacyFieldTransformer(oldField);
+		return legacyFieldTransformer.from();
+	}
+
 	public Field from() throws DotStateException {
 		if (this.newFields.size() == 0)
 			throw new DotStateException("0 results");

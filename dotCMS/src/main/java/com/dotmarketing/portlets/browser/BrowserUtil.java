@@ -5,12 +5,12 @@ import static com.dotmarketing.util.StringUtils.builder;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.FieldVariable;
 import com.dotmarketing.beans.Identifier;
@@ -20,6 +20,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
@@ -55,7 +56,7 @@ public class BrowserUtil {
             if (UtilMethods.isSet(attribute)){
                 final String lastSelectedFolderId = (String) attribute;
 
-                    return Optional.of(
+                    return Optional.ofNullable(
                             APILocator.getFolderAPI()
                                 .find(lastSelectedFolderId, APILocator.systemUser(), false)
                     );
@@ -85,7 +86,7 @@ public class BrowserUtil {
 
         if (UtilMethods.isSet(fields)) {
             final com.dotcms.contenttype.model.field.Field hostFolderField = fields.get(0);
-            final String hostFolderValue = contentlet.getStringProperty(hostFolderField.name());
+            final String hostFolderValue = contentlet.getStringProperty(hostFolderField.variable());
             try {
                 return Optional.of(
                     APILocator.getFolderAPI().find(hostFolderValue, user, false)
@@ -102,7 +103,7 @@ public class BrowserUtil {
 
         try {
             List<FieldVariable> fieldVariables = APILocator.getFieldAPI()
-                    .getFieldVariablesForField(field.getInode(), user, true);
+                    .getFieldVariablesForField(field.id(), user, true);
 
             final List<FieldVariable> defaulPathVariable = fieldVariables.stream()
                     .filter(fieldVariable -> "defaultPath".equals(fieldVariable.getKey()))
@@ -119,7 +120,7 @@ public class BrowserUtil {
                     final Host host = APILocator.getHostAPI()
                             .findByName(hostName, user, false);
 
-                    if (UtilMethods.isSet(host)) {
+                    if (!UtilMethods.isSet(host)) {
                         return Optional.empty();
                     }
 
@@ -129,7 +130,7 @@ public class BrowserUtil {
                     final Folder folderByPath = APILocator.getFolderAPI()
                             .findFolderByPath(folderPath, host.getIdentifier(),
                                     APILocator.systemUser(), false);
-                    return UtilMethods.isSet(folderByPath.getIdentifier()) ?
+                    return UtilMethods.isSet(folderByPath) ?
                             Optional.of(folderByPath) : Optional.empty();
                 } else {
                     final String currentHost = WebAPILocator.getHostWebAPI().getCurrentHost()
@@ -141,6 +142,7 @@ public class BrowserUtil {
                     );
                 }
             } else {
+                Logger.warn(BrowserUtil.class, () -> "defaultPath variable not exists for field " + field.name());
                 return Optional.empty();
             }
         } catch (DotSecurityException | DotDataException e) {
@@ -150,7 +152,7 @@ public class BrowserUtil {
 
     private static Optional<Folder> resolveWithCurrentValue(
             final Contentlet contentlet, final Field field) {
-        final String value = contentlet.getStringProperty(field.getFieldName());
+        final String value = contentlet.getStringProperty(field.variable());
 
         if (UtilMethods.isSet(value)) {
             final Identifier identifier;
@@ -187,6 +189,13 @@ public class BrowserUtil {
         ).toString();
     }
 
+    /**
+     * Return the current selected folder in the Edit contentlet File Browser
+     *
+     * @param httpServletRequest
+     * @param folderId
+     * @throws NotFoundInDbException
+     */
     public static void setSelectedLastFolder(
             HttpServletRequest httpServletRequest, String folderId) throws NotFoundInDbException {
 
@@ -210,6 +219,25 @@ public class BrowserUtil {
         Optional<Folder> resolve(final Contentlet contentlet, final Field field, final User user);
     }
 
+    /**
+     * Return the <pre>defaultPath</pre>.
+     *
+     * it is calculated by the follow steps
+     *
+     * - If {@code contentlet} has a value for {@code field} and it is a File or Image then this value
+     * is the defaultPath.
+     * - If {@code field} has defaultPath {@link FieldVariable} then the {@link FieldVariable}'s value is
+     * the defaultPath..
+     * - If {@code contentlet} has a site or folder field, the value of this field is the defaultPath value.
+     * - If nothing, then default to the last selected folder, {@link BrowserUtil#setSelectedLastFolder(HttpServletRequest, String)}.
+     * - If that is not set, then teh defaultPath is the current Host
+     *
+     * @param contentlet
+     * @param field
+     * @param user to check permission
+     *
+     * @return
+     */
     public static Optional<Folder> getDefaultPathFolder(
             final Contentlet contentlet, final Field field, final User user) {
 
@@ -224,7 +252,7 @@ public class BrowserUtil {
         return Optional.empty();
     }
 
-    public static FolderPath getFolderPathIds(final Folder folder){
+    private static FolderPath getFolderPathIds(final Folder folder){
         final List<Folder> folders = new ArrayList<>();
         final Host host = folder.getHost();
 
