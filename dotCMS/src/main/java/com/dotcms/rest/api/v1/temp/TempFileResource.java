@@ -1,19 +1,36 @@
 package com.dotcms.rest.api.v1.temp;
 
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
+import com.dotcms.mock.request.DotCMSMockRequest;
+import com.dotcms.mock.request.DotCMSMockRequestWithSession;
 import com.dotcms.rest.AnonymousAccess;
+import com.dotcms.rest.ErrorEntity;
+import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotcms.rest.api.v1.workflow.WorkflowResource;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.SecurityUtils;
+import com.dotcms.workflow.form.FireMultipleActionForm;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
+import com.liferay.portal.util.WebKeys;
+import com.liferay.util.HttpHeaders;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import org.apache.commons.lang.time.StopWatch;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
@@ -25,10 +42,19 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.Future;
 
 @Path("/v1/temp")
 public class TempFileResource {
@@ -52,59 +78,164 @@ public class TempFileResource {
     @POST
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces("application/octet-stream")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public final Response uploadTempResourceMulti(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response, 
             @DefaultValue("-1") @QueryParam(MAX_FILE_LENGTH_PARAM) final String maxFileLengthString, // this is being used later
             final FormDataMultiPart body) {
 
-        try {
+        verifyTempResourceEnabled();
 
-            verifyTempResourceEnabled();
+        final boolean allowAnonToUseTempFiles = Config
+                .getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
 
-            final boolean allowAnonToUseTempFiles = Config
-                    .getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
+        new WebResource.InitBuilder(request, response)
+          .requiredAnonAccess(AnonymousAccess.WRITE)
+          .rejectWhenNoUser(!allowAnonToUseTempFiles)
+          .init();
 
-            new WebResource.InitBuilder(request, response)
-              .requiredAnonAccess(AnonymousAccess.WRITE)
-              .rejectWhenNoUser(!allowAnonToUseTempFiles)
-              .init();
+        if (!new SecurityUtils().validateReferer(request)) {
 
-            if (!new SecurityUtils().validateReferer(request)) {
-                throw new BadRequestException("Invalid Origin or referer");
-            }
-
-            final List<DotTempFile> tempFiles = new ArrayList<DotTempFile>();
-
-            for (final BodyPart part : body.getBodyParts()) {
-
-                InputStream in = (part.getEntity() instanceof InputStream) ? InputStream.class
-                        .cast(part.getEntity())
-                        : Try.of(() -> part.getEntityAs(InputStream.class)).getOrNull();
-
-                if (in == null) {
-                    continue;
-                }
-                final ContentDisposition meta = part.getContentDisposition();
-                if (meta == null) {
-                    continue;
-                }
-                final String fileName = meta.getFileName();
-                if (fileName == null || fileName.startsWith(".") || fileName.contains("/.")) {
-                    continue;
-                }
-
-                tempFiles.add(this.tempApi.createTempFile(fileName, request, in));
-            }
-
-            return Response.ok(ImmutableMap.of("tempFiles", tempFiles)).build();
-
-        } catch (Exception e) {
-            Logger.warnAndDebug(this.getClass(), e);
-            return ResponseUtil.mapExceptionResponse(e);
+            throw new BadRequestException("Invalid Origin or referer");
         }
 
+        return Response.ok(new MultipleBinaryStreamingOutput(body, request))
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON).build();
+    }
+
+    private class MultipleBinaryStreamingOutput implements StreamingOutput {
+
+        private final FormDataMultiPart body;
+        private final HttpServletRequest request;
+
+        private MultipleBinaryStreamingOutput(final FormDataMultiPart body,
+                                                  final HttpServletRequest request) {
+
+            this.body    = body;
+            this.request = request;
+        }
+
+        @Override
+        public void write(final OutputStream output) throws IOException, WebApplicationException {
+
+            final ObjectMapper objectMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+            TempFileResource.this.saveMultipleBinary(body, request, output, objectMapper);
+        }
+    }
+
+    private void saveMultipleBinary(final FormDataMultiPart body, final HttpServletRequest request,
+                                    final OutputStream outputStream, final ObjectMapper objectMapper) {
+
+        final DotSubmitter dotSubmitter = DotConcurrentFactory.getInstance().getSubmitter("TEMP_API_SUBMITTER",
+                new DotConcurrentFactory.SubmitterConfigBuilder().poolSize(2).maxPoolSize(5).queueCapacity(100000).build());
+        final CompletionService<Object> completionService = new ExecutorCompletionService<>(dotSubmitter);
+        final List<Future<Object>> futures = new ArrayList<>();
+        final HttpServletRequest statelessRequest = this.createStatelessRequest(request);
+
+        int index = 1;
+        for (final BodyPart part : body.getBodyParts()) {
+
+            // this triggers the save
+            final int futureIndex = index;
+            final Future<Object> future = completionService.submit(() -> {
+
+                try {
+                    final InputStream in = (part.getEntity() instanceof InputStream) ?
+                            InputStream.class.cast(part.getEntity())
+                            : Try.of(() -> part.getEntityAs(InputStream.class)).getOrNull();
+
+                    if (in == null) {
+
+                        return new ErrorEntity(String.valueOf(HttpServletResponse.SC_BAD_REQUEST), "Invalid Binary Part, index: " + futureIndex,
+                                String.valueOf(futureIndex));
+                    }
+
+                    final ContentDisposition meta = part.getContentDisposition();
+                    if (meta == null) {
+
+                        return new ErrorEntity(String.valueOf(HttpServletResponse.SC_BAD_REQUEST), "Invalid Binary Part, index: " + futureIndex,
+                                String.valueOf(futureIndex));
+                    }
+
+                    final String fileName = meta.getFileName();
+                    if (fileName == null || fileName.startsWith(".") || fileName.contains("/.")) {
+
+                        return new ErrorEntity(String.valueOf(HttpServletResponse.SC_BAD_REQUEST),
+                                "Invalid Binary Part, Name: " + fileName + ", index: " + futureIndex,
+                                String.valueOf(futureIndex));
+                    }
+
+                    return this.tempApi.createTempFile(fileName, statelessRequest, in);
+                } catch (Exception e) {
+
+                    Logger.error(this, e.getMessage(), e);
+                    return new ErrorEntity(String.valueOf(HttpServletResponse.SC_BAD_REQUEST),
+                            "Invalid Binary Part, Message: " + e.getMessage() + ", index: " + futureIndex,
+                            String.valueOf(futureIndex));
+                }
+            });
+
+            ++index;
+            futures.add(future);
+        }
+
+        printResponseEntityViewResult(outputStream, objectMapper, completionService, futures);
+    }
+
+    private void printResponseEntityViewResult(final OutputStream outputStream,
+                                               final ObjectMapper objectMapper,
+                                               final CompletionService<Object> completionService,
+                                               final List<Future<Object>> futures) {
+
+        try {
+
+            outputStream.write(StringPool.OPEN_CURLY_BRACE.getBytes(StandardCharsets.UTF_8));
+            ResponseUtil.beginWrapProperty(outputStream, "tempFiles", false);
+            outputStream.write(StringPool.OPEN_BRACKET.getBytes(StandardCharsets.UTF_8));
+            // now recover the N results
+            for (int i = 0; i < futures.size(); i++) {
+
+                try {
+
+                    Logger.info(this, "Recovering the result " + (i + 1) + " of " + futures.size());
+                    objectMapper.writeValue(outputStream, completionService.take().get());
+
+                    if (i < futures.size()-1) {
+                        outputStream.write(StringPool.COMMA.getBytes(StandardCharsets.UTF_8));
+                    }
+                } catch (InterruptedException | ExecutionException | IOException e) {
+
+                    Logger.error(this, e.getMessage(), e);
+                }
+            }
+
+            outputStream.write(StringPool.CLOSE_BRACKET.getBytes(StandardCharsets.UTF_8));
+            ResponseUtil.endWrapProperty(outputStream);
+        } catch (IOException e) {
+
+            Logger.error(this, e.getMessage(), e);
+        }
+    }
+
+    private HttpServletRequest createStatelessRequest(final HttpServletRequest request) {
+
+        final DotCMSMockRequest statelessRequest =
+                new DotCMSMockRequestWithSession(request.getSession(false), request.isSecure());
+
+        statelessRequest.setAttribute(WebKeys.USER, request.getAttribute(WebKeys.USER));
+        statelessRequest.setAttribute(WebKeys.USER_ID, request.getAttribute(WebKeys.USER_ID));
+        statelessRequest.addHeader("User-Agent", request.getHeader("User-Agent"));
+        statelessRequest.addHeader("Host", request.getHeader("Host"));
+        statelessRequest.addHeader("Accept-Language", request.getHeader("Accept-Language"));
+        statelessRequest.addHeader("Accept-Encoding", request.getHeader("Accept-Encoding"));
+        statelessRequest.addHeader("X-Forwarded-For", request.getHeader("X-Forwarded-For"));
+        statelessRequest.addHeader("Origin", request.getHeader("Origin"));
+        statelessRequest.addHeader("referer", request.getHeader("referer"));
+        statelessRequest.setRemoteAddr(request.getRemoteAddr());
+        statelessRequest.setRemoteHost(request.getRemoteHost());
+
+        return statelessRequest;
     }
 
     @POST
