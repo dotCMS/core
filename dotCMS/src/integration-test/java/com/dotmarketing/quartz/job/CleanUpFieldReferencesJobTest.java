@@ -1,8 +1,10 @@
 package com.dotmarketing.quartz.job;
 
+import static com.dotcms.content.business.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 import static com.dotmarketing.quartz.DotStatefulJob.EXECUTION_DATA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -23,6 +25,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.util.Config;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
@@ -53,16 +56,29 @@ public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
 
     public static class TestCase {
 
-        String name;
-        Object fieldValue;
-        String values;
-        Class fieldType;
+        final String name;
+        final Object fieldValue;
+        final String values;
+        final Class fieldType;
+        final boolean isJsonFields;
 
-        public TestCase(final String name, final Object fieldValue, final String values, final Class fieldType) {
+        public TestCase(final String name, final Object fieldValue, final String values, final Class fieldType, final boolean isJsonFields) {
             this.name = name;
             this.fieldValue = fieldValue;
             this.values = values;
             this.fieldType = fieldType;
+            this.isJsonFields = isJsonFields;
+        }
+
+        @Override
+        public String toString() {
+            return "TestCase{" +
+                    "name='" + name + '\'' +
+                    ", fieldValue=" + fieldValue +
+                    ", values='" + values + '\'' +
+                    ", fieldType=" + fieldType +
+                    ", isJsonFields=" + isJsonFields +
+                    '}';
         }
     }
 
@@ -70,10 +86,14 @@ public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
     public static Object[] testCases() {
         return new TestCase[]{
                 new TestCase("checkboxFieldVarName", "CA",
-                        "Canada|CA\r\nMexico|MX\r\nUSA|US", CheckboxField.class),
+                        "Canada|CA\r\nMexico|MX\r\nUSA|US", CheckboxField.class, false),
                 new TestCase("dateTimeFieldVarName", new Date(System.currentTimeMillis()-24*60*60*1000),
-                        null, DateTimeField.class)
+                        null, DateTimeField.class, false),
 
+                new TestCase("checkboxFieldVarName", "CA",
+                        "Canada|CA\r\nMexico|MX\r\nUSA|US", CheckboxField.class, true),
+                new TestCase("dateTimeFieldVarName", null,
+                        null, DateTimeField.class, true)
         };
     }
 
@@ -81,6 +101,15 @@ public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
     @Test
     public void testCleanUpFieldJob(TestCase testCase)
             throws DotDataException, DotSecurityException {
+
+        if(!APILocator.getContentletJsonAPI().isPersistContentAsJson() && testCase.isJsonFields){
+            //if we're on a db different from Postgres and this test is marked for jsonFields Skip
+            //Json Fields are only supported on postgres for now.
+            return;
+        }
+
+        final boolean saveFieldsAsJson = Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON,true);
+        Config.setProperty(SAVE_CONTENTLET_AS_JSON, testCase.isJsonFields);
 
         final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
         final User systemUser = APILocator.getUserAPI().getSystemUser();
@@ -131,19 +160,28 @@ public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
 
             Object fieldValue = contentlet.get(field.variable());
 
-            if (fieldValue instanceof Date){
+            if(testCase.isJsonFields){
+                // For jsonField We're testing that the field was removed from the contentlet
+                assertNull(fieldValue);
+            } else {
+               // For the regular field-column implementation We test that the field was set to their default state before anything was saved on it
+                if (fieldValue instanceof Date){
 
-                Calendar cal1 = Calendar.getInstance();
-                Calendar cal2 = Calendar.getInstance();
-                cal1.setTime((Date) fieldValue);
-                cal2.setTime((Date) testCase.fieldValue);
+                    Calendar cal1 = Calendar.getInstance();
+                    Calendar cal2 = Calendar.getInstance();
+                    cal1.setTime((Date) fieldValue);
+                    cal2.setTime((Date) testCase.fieldValue);
 
-                assertNotEquals(cal1.get(Calendar.DAY_OF_YEAR), cal2.get(Calendar.DAY_OF_YEAR));
-            } else{
-                assertEquals(DbConnectionFactory.isOracle()?null:"" , fieldValue);
+                    assertNotEquals(cal1.get(Calendar.DAY_OF_YEAR), cal2.get(Calendar.DAY_OF_YEAR));
+                } else{
+                    assertEquals(DbConnectionFactory.isOracle()?null:"" , fieldValue);
+                }
             }
 
         } finally {
+
+            Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, saveFieldsAsJson);
+
             if (contentType != null) {
                 contentTypeAPI.delete(contentType);
             }
