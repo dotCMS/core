@@ -16,9 +16,19 @@ import { DotSelectButtonOption } from "./models/dotSelectButtonOption";
 export namespace Components {
     interface DotAssetDropZone {
         /**
+          * Allowed file extensions
+         */
+        "acceptTypes": string[];
+        /**
           * Legend to be shown when creating dotAssets
          */
         "createAssetsText": string;
+        "customUploadFiles": (props: {
+        files: File[],
+        onSuccess: () => void,
+        updateProgress: (progress: number) => void,
+        onError: (header: string, message: string) => void
+    }) => Promise<any>;
         /**
           * Labels to be shown in error dialog
          */
@@ -48,6 +58,10 @@ export namespace Components {
           * Error to be shown when try to upload a bigger size file than allowed
          */
         "singeMaxSizeErrorLabel": string;
+        /**
+          * Allowed file extensions
+         */
+        "typesErrorLabel": string;
         /**
           * Error to be shown when an error happened on the uploading process
          */
@@ -1341,9 +1355,19 @@ declare global {
 declare namespace LocalJSX {
     interface DotAssetDropZone {
         /**
+          * Allowed file extensions
+         */
+        "acceptTypes"?: string[];
+        /**
           * Legend to be shown when creating dotAssets
          */
         "createAssetsText"?: string;
+        "customUploadFiles"?: (props: {
+        files: File[],
+        onSuccess: () => void,
+        updateProgress: (progress: number) => void,
+        onError: (header: string, message: string) => void
+    }) => Promise<any>;
         /**
           * Labels to be shown in error dialog
          */
@@ -1372,11 +1396,15 @@ declare namespace LocalJSX {
         /**
           * Emit an array of Contentlets just created or array of errors
          */
-        "onUploadComplete"?: (event: CustomEvent<DotCMSContentlet[] | DotHttpErrorResponse[]>) => void;
+        "onUploadComplete"?: (event: CustomEvent<DotCMSContentlet[] | DotHttpErrorResponse[] | any>) => void;
         /**
           * Error to be shown when try to upload a bigger size file than allowed
          */
         "singeMaxSizeErrorLabel"?: string;
+        /**
+          * Allowed file extensions
+         */
+        "typesErrorLabel"?: string;
         /**
           * Error to be shown when an error happened on the uploading process
          */
