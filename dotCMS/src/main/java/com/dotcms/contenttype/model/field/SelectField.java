@@ -1,8 +1,14 @@
 package com.dotcms.contenttype.model.field;
 
+import com.dotcms.content.model.FieldValue;
+import com.dotcms.content.model.type.select.BoolSelectFieldType;
+import com.dotcms.content.model.type.select.FloatSelectFieldType;
+import com.dotcms.content.model.type.select.LongSelectFieldType;
+import com.dotcms.content.model.type.select.SelectFieldType;
 import java.util.Collection;
 import java.util.List;
 
+import java.util.Optional;
 import org.immutables.value.Value;
 
 import com.google.common.collect.ImmutableList;
@@ -48,4 +54,28 @@ public abstract class SelectField extends SelectableValuesField {
 				ContentTypeFieldProperties.LISTED, ContentTypeFieldProperties.DATA_TYPE,
 				ContentTypeFieldProperties.UNIQUE);
 	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public Optional<FieldValue<?>> fieldValue(Object value) {
+		if (value instanceof String) {
+			return Optional.of(SelectFieldType.of((String) value));
+		}
+		if (value instanceof Boolean) {
+			return Optional.of(BoolSelectFieldType.of((Boolean) value));
+		}
+		if (value instanceof Float) {
+			return Optional.of(FloatSelectFieldType.of((Float) value));
+		}
+		if (value instanceof Long) {
+			return Optional.of(LongSelectFieldType.of((Long) value));
+		}
+		if (value instanceof Integer) {
+			return Optional.of(LongSelectFieldType.of(((Integer) value).longValue()));
+		}
+		return Optional.empty();
+	}
+
 }

@@ -144,10 +144,11 @@ public class ContentletForm extends ValidatorForm {
     }
     
 	public String getDisabledWysiwyg() {
-		if((ArrayList<String>)map.get(DISABLED_WYSIWYG_KEY) == null)
+		if(map.get(DISABLED_WYSIWYG_KEY) == null)
 			return "";
-		else	
-			return UtilMethods.arrayToString((ArrayList<String>)map.get(DISABLED_WYSIWYG_KEY));		
+		else	{
+			return UtilMethods.arrayToString(new ArrayList((List<String>)map.get(DISABLED_WYSIWYG_KEY)));
+		}
 	}
 
 //	public void setDisabledWysiwyg(List<String> disabledFields) {
@@ -518,7 +519,7 @@ public class ContentletForm extends ValidatorForm {
 
 		   final Optional<Map<String, Serializable>> optionalMetadata = loadMetadata(velocityVariableName, getInode());
 		   if (optionalMetadata.isPresent()) {
-			   return ConversionUtils.toString(optionalMetadata.get());
+			   return optionalMetadata.get();
 		   }
 
 		   return value;

@@ -1,16 +1,17 @@
 package com.dotcms.contenttype.model.field;
 
-import java.util.Collection;
-import java.util.List;
+import static com.dotcms.util.CollectionsUtils.list;
 
-import org.immutables.value.Value;
-
-import com.google.common.collect.ImmutableList;
+import com.dotcms.content.model.FieldValue;
+import com.dotcms.content.model.type.WysiwygType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
-import static com.dotcms.util.CollectionsUtils.list;
+import com.google.common.collect.ImmutableList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import org.immutables.value.Value;
 
 @JsonSerialize(as = ImmutableWysiwygField.class)
 @JsonDeserialize(as = ImmutableWysiwygField.class)
@@ -54,4 +55,16 @@ public abstract class WysiwygField extends Field {
 	public String getContentTypeFieldLabelKey(){
 		return "WYSIWYG";
 	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public Optional<FieldValue<?>> fieldValue(final Object value) {
+		if (value instanceof String) {
+			return Optional.of(WysiwygType.of((String) value));
+		}
+		return Optional.empty();
+	}
+
 }

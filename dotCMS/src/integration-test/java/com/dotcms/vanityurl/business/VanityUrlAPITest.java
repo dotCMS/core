@@ -1,6 +1,7 @@
 package com.dotcms.vanityurl.business;
 
 
+import static com.dotcms.content.business.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -18,7 +19,6 @@ import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -28,6 +28,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
@@ -45,7 +46,6 @@ import java.util.stream.Collectors;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * This class test the {@link VanityUrlAPI} methods
@@ -929,64 +929,78 @@ public class VanityUrlAPITest {
     public void Test_Vanity_URI_Missing_URI_Expect_Validation_Exception()
             throws DotSecurityException, DotDataException {
 
-        //Load the VanityUrl structure  contentlet fields
-        final DotConnect dotConnect = new DotConnect();
-        dotConnect.setSQL(
-          "select f.velocity_var_name, f.field_contentlet from structure s join field f on s.inode = f.structure_inode where s.velocity_var_name = ?"
-        ).addParam("Vanityurl");
-        final List<Map<String, Object>> maps = dotConnect.loadObjectResults();
-        final Map<String, Object> fieldsToColumns = new HashMap<>();
-        maps.forEach(map -> {
-            fieldsToColumns.put(map.get("velocity_var_name").toString(), map.get("field_contentlet").toString());
-        });
+         final boolean defaultValue = APILocator.getContentletJsonAPI().isPersistContentAsJson();
+         Config.setProperty(SAVE_CONTENTLET_AS_JSON, false);
 
-        final Language altLang = new LanguageDataGen().nextPersisted();
+        try {
+            //Load the VanityUrl structure  contentlet fields
+            final DotConnect dotConnect = new DotConnect();
+            dotConnect.setSQL(
+                    "select f.velocity_var_name, f.field_contentlet from structure s join field f on s.inode = f.structure_inode where s.velocity_var_name = ?"
+            ).addParam("Vanityurl");
+            final List<Map<String, Object>> maps = dotConnect.loadObjectResults();
+            final Map<String, Object> fieldsToColumns = new HashMap<>();
+            maps.forEach(map -> {
+                fieldsToColumns.put(map.get("velocity_var_name").toString(),
+                        map.get("field_contentlet").toString());
+            });
 
-        final List<Contentlet> vanityUrls = new ArrayList<>();
+            final Language altLang = new LanguageDataGen().nextPersisted();
 
-        //To simplify the logic lets use a separate site for each vanity
-        vanityUrls.add(createVanity(new SiteDataGen().nextPersisted(), altLang));
-        vanityUrls.add(createVanity(new SiteDataGen().nextPersisted(), altLang));
-        vanityUrls.add(createVanity(new SiteDataGen().nextPersisted(), altLang));
+            final List<Contentlet> vanityUrls = new ArrayList<>();
 
-        final List<Tuple2<String,String>> mandatoryFields = new ArrayList<>();
+            //To simplify the logic lets use a separate site for each vanity
+            vanityUrls.add(createVanity(new SiteDataGen().nextPersisted(), altLang));
+            vanityUrls.add(createVanity(new SiteDataGen().nextPersisted(), altLang));
+            vanityUrls.add(createVanity(new SiteDataGen().nextPersisted(), altLang));
 
-        mandatoryFields.add( Tuple.of(fieldsToColumns.get("uri").toString(),"uri"));
-        mandatoryFields.add( Tuple.of(fieldsToColumns.get("forwardTo").toString(),"forwardTo"));
-        mandatoryFields.add( Tuple.of(fieldsToColumns.get("title").toString(),"title"));
+            final List<Tuple2<String, String>> mandatoryFields = new ArrayList<>();
 
-        final HostAPI hostAPI = APILocator.getHostAPI();
-        final VanityUrlCache vanityURLCache = CacheLocator.getVanityURLCache();
-        final User systemUser = APILocator.systemUser();
+            mandatoryFields.add(Tuple.of(fieldsToColumns.get("uri").toString(), "uri"));
+            mandatoryFields.add(Tuple.of(fieldsToColumns.get("forwardTo").toString(), "forwardTo"));
+            mandatoryFields.add(Tuple.of(fieldsToColumns.get("title").toString(), "title"));
 
-        //Now lets test with each and everyone of the fields. We should always get an empty list since we're creating them on a separate sites.
-        for(int i=0; i < mandatoryFields.size(); i++) {
-            //Set one of the mandatory fields as null in the db.
-            final String statement = String.format("UPDATE contentlet SET %s = null WHERE inode = ?", mandatoryFields.get(i)._1());
-            final Contentlet vanity = vanityUrls.get(i);
+            final HostAPI hostAPI = APILocator.getHostAPI();
+            final VanityUrlCache vanityURLCache = CacheLocator.getVanityURLCache();
+            final User systemUser = APILocator.systemUser();
+
+            //Now lets test with each and everyone of the fields. We should always get an empty list since we're creating them on a separate sites.
+            for (int i = 0; i < mandatoryFields.size(); i++) {
+                //Set one of the mandatory fields as null in the db.
+                final String statement = String
+                        .format("UPDATE contentlet SET %s = null WHERE inode = ?",
+                                mandatoryFields.get(i)._1());
+                final Contentlet vanity = vanityUrls.get(i);
+                dotConnect.setSQL(statement).addParam(vanity.getInode()).loadResult();
+                //Then find it via db. This only works if cache has been cleared.
+                vanityURLCache.remove(vanity);
+                final Host site = hostAPI.find(vanity, systemUser, false);
+                List<CachedVanityUrl> inDb = vanityUrlAPI.findInDb(site, altLang);
+                assertTrue(
+                        "The collection should have returned empty since it only had one entry and the Vanity had errors.",
+                        inDb.isEmpty());
+            }
+
+            vanityUrls.clear();
+
+            //Now test that even if one Vanity comes with errors we will still get the others.
+            final Host site = new SiteDataGen().nextPersisted();
+            vanityUrls.add(createVanity(site, altLang));
+            vanityUrls.add(createVanity(site, altLang));
+            vanityUrls.add(createVanity(site, altLang));
+
+            final int mandatoryField = ThreadLocalRandom.current()
+                    .nextInt(0, mandatoryFields.size());
+            final Contentlet vanity = vanityUrls.get(0);
+            final String statement = String
+                    .format("UPDATE contentlet SET %s = null WHERE inode = ?",
+                            mandatoryFields.get(mandatoryField)._1());
             dotConnect.setSQL(statement).addParam(vanity.getInode()).loadResult();
-            //Then find it via db. This only works if cache has been cleared.
-            vanityURLCache.remove(vanity);
-            final Host site = hostAPI.find(vanity, systemUser, false);
-            List<CachedVanityUrl> inDb = vanityUrlAPI.findInDb(site, altLang);
-            assertTrue("The collection should have returned empty since it only had one entry and the Vanity had errors.", inDb.isEmpty());
+            final List<CachedVanityUrl> inDb = vanityUrlAPI.findInDb(site, altLang);
+            assertEquals(2, inDb.size());
+        }finally {
+            Config.setProperty(SAVE_CONTENTLET_AS_JSON, defaultValue);
         }
-
-        vanityUrls.clear();
-
-        //Now test that even if one Vanity comes with errors we will still get the others.
-        final Host site = new SiteDataGen().nextPersisted();
-        vanityUrls.add(createVanity(site, altLang));
-        vanityUrls.add(createVanity(site, altLang));
-        vanityUrls.add(createVanity(site, altLang));
-
-        final int mandatoryField = ThreadLocalRandom.current().nextInt(0, mandatoryFields.size());
-        final Contentlet vanity = vanityUrls.get(0);
-        final String statement = String.format("UPDATE contentlet SET %s = null WHERE inode = ?", mandatoryFields.get(mandatoryField)._1());
-        dotConnect.setSQL(statement).addParam(vanity.getInode()).loadResult();
-        final List<CachedVanityUrl> inDb = vanityUrlAPI.findInDb(site, altLang);
-        assertEquals(2, inDb.size());
-
     }
 
 

@@ -2,20 +2,24 @@ package com.dotmarketing.portlets.contentlet.business.web;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.util.DotPreconditions;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.quartz.DotStatefulJob;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
+import io.vavr.Tuple;
+import io.vavr.Tuple3;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
@@ -41,6 +45,9 @@ public class UpdatePageTemplatePathJob extends DotStatefulJob {
         final String oldHostName = jobDataMap.get("oldHostName").toString();
         final String newHostName = jobDataMap.get("newHostName").toString();
 
+        final String velocityVarName = "template";
+        final String mappedFieldType = "Custom";
+
         try {
             final List<Map<String, Object>> fields = new DotConnect()
                     .setSQL(GET_FIELDS_TO_UPDATE)
@@ -53,6 +60,7 @@ public class UpdatePageTemplatePathJob extends DotStatefulJob {
                         .setSQL(String.format(GET_CONTENTLETS_TO_UPDATE,field_contentlet))
                         .addParam("//"+oldHostName+ Constants.TEMPLATE_FOLDER_PATH+"%")
                         .loadObjectResults();
+
 
                 //UPDATE Fields
                 final DotConnect dc = new DotConnect().setSQL(String.format(UPDATE_QUERY,field_contentlet,field_contentlet,field_contentlet));
@@ -67,6 +75,28 @@ public class UpdatePageTemplatePathJob extends DotStatefulJob {
                     final String contentletId = String.class.cast(inode.get("identifier"));
                     CacheLocator.getContentletCache().remove(contentletInode);
                     CacheLocator.getHTMLPageCache().remove(contentletId);
+                }
+               //The following blocks take care of the json fields
+                if(APILocator.getContentletJsonAPI().isPersistContentAsJson()) {
+                    final Set<Tuple3<String, String, String>> found = findPageContentletToUpdate(
+                            velocityVarName, mappedFieldType,
+                            "//" + oldHostName + Constants.TEMPLATE_FOLDER_PATH, dc);
+
+                    final Set<String> templates = found.stream().map(Tuple3::_3)
+                            .collect(Collectors.toSet());
+                    //This loop is expected to iterate just once
+                    for (final String existingTemplate : templates) {
+                        try {
+                            updateTemplate(velocityVarName, mappedFieldType,
+                                    existingTemplate.replaceAll(oldHostName,newHostName) ,existingTemplate, dc);
+                        } catch (Exception e) {
+                            Logger.error(UpdatePageTemplatePathJob.class, "", e);
+                        }
+                    }
+                    found.forEach(tuple -> {
+                        CacheLocator.getContentletCache().remove(tuple._1);
+                        CacheLocator.getHTMLPageCache().remove(tuple._2);
+                    });
                 }
             }
             CacheLocator.getTemplateCache().clearCache();
@@ -83,6 +113,39 @@ public class UpdatePageTemplatePathJob extends DotStatefulJob {
                 Logger.error(UpdatePageTemplatePathJob.class, e.getMessage());
             }
         }
+    }
+
+    private Set<Tuple3<String, String, String>> findPageContentletToUpdate(
+            final String velocityVarName,
+            final String mappedFieldType, final String templateName, final DotConnect dotConnect)
+            throws DotDataException {
+
+        final String select = String
+                .format("SELECT identifier, inode, contentlet_as_json->'fields'->'template'->>'value' as template FROM contentlet WHERE contentlet_as_json @> '{\"fields\":{\"%s\":{\"type\":\"%s\"}}}' and contentlet_as_json-> 'fields' ->'template'->>'value' LIKE '%s' ",
+                        velocityVarName, mappedFieldType, templateName + "%");
+
+        dotConnect.setSQL(select);
+        return dotConnect.loadObjectResults().stream().map(map ->
+                Tuple.of(map.get("inode").toString(),
+                        map.get("identifier").toString(),
+                        map.get("template").toString()
+                )
+        ).collect(Collectors.toSet());
+    }
+
+    private void updateTemplate(final String velocityVarName, final String mappedFieldType,
+            final String newTemplateName, final String oldTemplateName, final DotConnect dotConnect)
+            throws DotDataException {
+
+        final String update = String
+                .format("UPDATE contentlet SET contentlet_as_json = jsonb_set(contentlet_as_json,'{fields,%s}', jsonb '{\"type\":\"%s\", \"value\":\"%s\" }') WHERE contentlet_as_json @> '{\"fields\":{\"%s\":{\"type\":\"%s\"}}}' and contentlet_as_json-> 'fields' ->'template'->>'value' = '%s' ",
+                        velocityVarName, mappedFieldType, newTemplateName,
+                        velocityVarName, mappedFieldType, oldTemplateName);
+
+        Logger.debug(UpdatePageTemplatePathJob.class, update);
+
+        dotConnect.setSQL(update);
+        dotConnect.loadResult();
     }
 
     public static void triggerUpdatePageTemplatePathJob(final String oldHostName, final String newHostName) {
