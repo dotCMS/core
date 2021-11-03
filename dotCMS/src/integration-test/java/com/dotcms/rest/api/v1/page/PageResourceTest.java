@@ -56,6 +56,7 @@ import org.mockito.invocation.InvocationOnMock;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.*;
@@ -173,7 +174,31 @@ public class PageResourceTest {
         container1 = APILocator.getContainerAPI().save(container1, list(cs), host, APILocator.systemUser(), false);
     }
 
+    /**
+     * Method to test: PageResource#addContent
+     * Given Scenario: Add invalid contentlet (by invalid content type)
+     * ExpectedResult: Since the contentlet has a content type that is not part of the types allowed on the container, expected the Bad request
+     *
+     */
+    @Test (expected = com.dotcms.rest.exception.BadRequestException.class)
+    public void test_addContent_invalid_content_type() throws Exception {
 
+        final PageRenderTestUtil.PageRenderTest pageRenderTest = PageRenderTestUtil.createPage(1, host);
+        final HTMLPageAsset pagetest = pageRenderTest.getPage();
+        final Container container = pageRenderTest.getFirstContainer();
+
+        final ContentType bannerLikeContentType = TestDataUtils.getBannerLikeContentType();
+        final Contentlet contentlet = TestDataUtils.getBannerLikeContent(true, 1, bannerLikeContentType.id(),
+                host);
+        final List<PageContainerForm.ContainerEntry> entries = new ArrayList<>();
+        final String requestJson = null;
+        final PageContainerForm.ContainerEntry containerEntry =
+            new PageContainerForm.ContainerEntry(null, container.getIdentifier(), "1");
+        containerEntry.addContentId(contentlet.getIdentifier());
+        entries.add(containerEntry);
+        final PageContainerForm pageContainerForm = new PageContainerForm(entries, requestJson);
+        this.pageResource.addContent(request, response, pagetest.getIdentifier(), pageContainerForm);
+    }
 
     /**
      * Should return at least one persona personalized
