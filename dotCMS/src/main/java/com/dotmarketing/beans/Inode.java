@@ -23,6 +23,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -95,10 +96,12 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
 		return Calendar.getInstance().getTime();
 	}
 
+	@JsonIgnore
 	public String getModUser() {
 		return "";
 	}
-	
+
+	@JsonIgnore
 	public String getCategoryId() {
 		return getInode();
 	}
@@ -541,6 +544,7 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
 		return inode.hashCode();
 	}
 
+	@JsonIgnore
 	public java.util.Date getiDate() {
 		return iDate;
 	}
@@ -549,6 +553,7 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
 		this.iDate = iDate;
 	}
 
+	@JsonIgnore
 	public boolean isNew() {
 		return (!InodeUtils.isSet(this.inode));
 	}
@@ -575,6 +580,7 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
 		return (inode.getiDate().compareTo(this.getiDate()));
 	}
 
+	@JsonIgnore
 	public String getPermissionId() {
 		return getInode();
 	}
@@ -592,6 +598,7 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
 		return null;
 	}
 
+	@JsonIgnore
 	public String getPermissionType() {
 		return this.getClass().getCanonicalName();
 	}
@@ -599,24 +606,38 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
 	public boolean isParentPermissionable() {
 		return false;
 	}
+
+	@JsonIgnore
 	public String getTitle() {
 		return "";
 	}
+
+	@JsonIgnore
 	public String getVersionId() {
 		return getIdentifier();
 	}
+
+	@JsonIgnore
 	public String getVersionType() {
 		return getType();
 	}
+
+	@JsonIgnore
 	public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException {
 		return false;
 	}
+
+	@JsonIgnore
 	public boolean isLive() throws DotStateException, DotDataException, DotSecurityException {
 		return false;
 	}
+
+	@JsonIgnore
 	public boolean isLocked() throws DotStateException, DotDataException, DotSecurityException {
 		return false;
 	}
+
+	@JsonIgnore
 	public boolean isWorking() throws DotStateException, DotDataException, DotSecurityException {
 		return false;
 	}

@@ -188,6 +188,7 @@ public class Permission implements Serializable {
 	 * Checks if it is an individual permission, that only applies to the asset itself
 	 * @return
 	 */
+	@JsonIgnore
 	public boolean isIndividualPermission() {
 		return type.equals(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE);
 	}

@@ -98,6 +98,7 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 		return name;
 	}
 
+	@JsonIgnore
 	@Override
 	public boolean isParent() {
 		return true;
@@ -240,6 +241,7 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 		this.modDate = modDate;
 	}
 
+	@JsonIgnore
 	public Map<String, Object> getMap() throws DotStateException, DotDataException, DotSecurityException {
         Map<String, Object> retMap = super.getMap();
         retMap.put("filesMasks", this.filesMasks);
@@ -271,6 +273,7 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 		return true;
 	}
 
+	@JsonIgnore
 	@Override
 	public Permissionable getParentPermissionable() throws DotDataException {
 
@@ -295,6 +298,7 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 		}
 	}
 
+	@JsonIgnore
 	public String getPath() {
 
 		Identifier id = null;

@@ -200,6 +200,7 @@ public class UserModel extends BaseModel {
 		_deleteDate = deleteDate;
 	}
 
+	@JsonIgnore
 	public String getPrimaryKey() {
 		return _userId;
 	}

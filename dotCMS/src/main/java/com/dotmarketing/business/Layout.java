@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
@@ -43,6 +44,8 @@ public class Layout implements Serializable{
 	public void setDescription(String description) {
 		this.description = description;
 	}
+
+	@JsonIgnore
 	public List<String> getPortletIds() {
 		return portletIds==null ? Collections.emptyList() : portletIds;
 	}

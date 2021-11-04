@@ -26,6 +26,7 @@ import static com.dotmarketing.util.UtilMethods.isSet;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.hash.Hashing;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.Base64;
@@ -103,6 +104,7 @@ public class Company extends CompanyModel {
 		super.setKey(Base64.objectToString(keyObj));
 	}
 
+	@JsonIgnore
 	public String getKeyDigest() {
 	    final String key = getKey();
 		if (isSet(key)) {
@@ -115,6 +117,7 @@ public class Company extends CompanyModel {
 		return null;
 	}
 
+	@JsonIgnore
 	public User getDefaultUser() {
 		User defaultUser = null;
 
@@ -127,18 +130,22 @@ public class Company extends CompanyModel {
 		return defaultUser;
 	}
 
+	@JsonIgnore
 	public Locale getLocale() {
 		return getDefaultUser().getLocale();
 	}
 
+	@JsonIgnore
 	public TimeZone getTimeZone() {
 		return getDefaultUser().getTimeZone();
 	}
 
+	@JsonIgnore
 	public String getAdminName() {
 		return getShortName() + " Administrator";
 	}
 
+	@JsonIgnore
 	public BaseModel getProtected() {
 		if (_company == null) {
 			protect();
@@ -147,14 +154,18 @@ public class Company extends CompanyModel {
 		return _company;
 	}
 
+	@JsonIgnore
 	public String getBackgroundColor() {
 	  return _company.getSize();
 	}
-	
-	 public String getPrimaryColor() {
+
+	@JsonIgnore
+	public String getPrimaryColor() {
 	    return _company.getType();
 	  }
-	  public String getSecondaryColor() {
+
+	@JsonIgnore
+	public String getSecondaryColor() {
       return _company.getStreet();
     }
 	

@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
@@ -151,6 +152,8 @@ public class Role implements Serializable,Comparable<Role> {
 	public boolean isLocked() {
 		return locked;
 	}
+
+	@JsonIgnore
 	public boolean isUser() {
 		return (this.getFQN() != null && this.getFQN().startsWith("User"));
 	}

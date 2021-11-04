@@ -13,6 +13,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.liferay.util.StringPool;
 import java.io.Serializable;
 import java.util.Date;
@@ -63,6 +64,7 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
      * @deprecated As of 2016-05-16, replaced by {@link #getId()}
      */
     @Deprecated
+	@JsonIgnore
 	public String getInode() {
 	   return getId();	
 	}
@@ -124,6 +126,7 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
 	 * 
 	 * @return String
 	 */
+	@JsonIgnore
 	public String getURI() {
 		if(UtilMethods.isSet(parentPath))
 			return getParentPath()+ getAssetName();
@@ -184,10 +187,12 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
 		return null;
 	}
 
+	@JsonIgnore
 	public String getPermissionId() {
 		return getInode();
 	}
 
+	@JsonIgnore
 	public String getPermissionType() {
 		return this.getClass().getCanonicalName();
 	}
@@ -205,6 +210,7 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
 	    this.owner = owner;
 	}
 
+	@JsonIgnore
 	public String getCategoryId() {
 	   return getInode();
 	}
@@ -218,6 +224,7 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
      * @return String
      * @see getURI
      */
+	@JsonIgnore
 	public String getPath(){
 	    if((SYSTEM_FOLDER_ASSET_NAME).equals(getAssetName()) && (SYSTEM_FOLDER_PARENT_PATH).equals(getParentPath())){
 	        return "/";

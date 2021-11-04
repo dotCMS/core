@@ -1,5 +1,6 @@
 package com.dotmarketing.beans;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -49,6 +50,8 @@ public class VersionInfo implements Serializable {
     public void setLockedOn(Date lockedOn) {
         this.lockedOn = lockedOn;
     }
+
+	@JsonIgnore
     public boolean isLocked() {
         return lockedBy!=null;
     }

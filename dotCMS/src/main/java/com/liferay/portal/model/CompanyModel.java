@@ -22,6 +22,7 @@
 
 package com.liferay.portal.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.GetterUtil;
 import com.liferay.util.Xss;
@@ -130,6 +131,7 @@ public class CompanyModel extends BaseModel {
 		_strangers = strangers;
 	}
 
+	@JsonIgnore
 	public String getPrimaryKey() {
 		return _companyId;
 	}

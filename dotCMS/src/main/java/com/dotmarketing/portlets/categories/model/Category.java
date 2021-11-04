@@ -21,6 +21,7 @@ import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.liferay.portal.model.User;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -158,6 +159,7 @@ public class Category extends Inode implements Serializable, ManifestItem {
 
 	}
 
+	@JsonIgnore
 	public Map<String, Object> getMap () {
         HashMap<String, Object> map = new HashMap<String, Object> ();
         map.put("categoryName", this.getCategoryName());
@@ -204,6 +206,7 @@ public class Category extends Inode implements Serializable, ManifestItem {
 		return accepted;
 	}
 
+	@JsonIgnore
 	@Override
 	public Permissionable getParentPermissionable() throws DotDataException {
 		CategoryAPI catAPI = APILocator.getCategoryAPI();

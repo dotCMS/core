@@ -147,8 +147,7 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 		}
 	}
 
-
-
+	@JsonIgnore
 	public boolean isPasswordExpired() {
 		if (getPasswordExpirationDate() != null &&
 			getPasswordExpirationDate().before(new Date())) {
@@ -160,6 +159,7 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 		}
 	}
 
+	@JsonIgnore
 	public String getFullName() {
 		String firstName = getFirstName();
 		firstName = (UtilMethods.isSet(firstName) ? firstName : "");
@@ -170,6 +170,7 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 		return getFullName(firstName,middleName,lastName);
 	}
 
+	@JsonIgnore
 	public boolean getFemale() {
 		return !getMale();
 	}
@@ -238,7 +239,7 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 		super.setRefreshRate(refreshRate);
 	}
 
-
+	@JsonIgnore
 	public BaseModel getProtected() {
 		if (_user == null) {
 			protect();
@@ -262,10 +263,12 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 		_user.setActive(false);
 	}
 
+	@JsonIgnore
 	public String getRecipientId() {
 		return getUserId();
 	}
 
+	@JsonIgnore
 	public String getRecipientName() {
 		return StringUtil.replace(
 			getFullName(),
@@ -277,14 +280,17 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 			});
 	}
 
+	@JsonIgnore
 	public String getRecipientAddress() {
 		return getEmailAddress();
 	}
 
+	@JsonIgnore
 	public String getRecipientInternetAddress() {
 		return getRecipientName() + " <" + getEmailAddress() + ">";
 	}
 
+	@JsonIgnore
 	public boolean isMultipleRecipients() {
 		return false;
 	}
@@ -296,6 +302,7 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 			user.getFullName().toLowerCase());
 	}
 
+	@JsonIgnore
     public Date getModificationDate() {
 
         return this.modificationDate;
@@ -307,7 +314,8 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
         setModified(true);
     }
 
-  public boolean isAnonymousUser(){
+	@JsonIgnore
+    public boolean isAnonymousUser(){
       return UserAPI.CMS_ANON_USER_ID.equals(this.getUserId());
   }
 
@@ -328,29 +336,28 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 
 	}
 
-  public boolean isBackendUser() {
+	@JsonIgnore
+	public boolean isBackendUser() {
+		return Try.of(() -> {
+		  if (isAnonymousUser()) {
+			return false;
+		  }
+		  return (APILocator.getRoleAPI().doesUserHaveRole(this, APILocator.getRoleAPI().loadBackEndUserRole()));
 
-    return Try.of(() -> {
-      if (isAnonymousUser()) {
-        return false;
-      }
-      return (APILocator.getRoleAPI().doesUserHaveRole(this, APILocator.getRoleAPI().loadBackEndUserRole()));
+		}).getOrElse(false);
+	}
 
-    }).getOrElse(false);
+	@JsonIgnore
+	public boolean isFrontendUser() {
+		return Try.of(() -> {
+			if (isAnonymousUser()) {
+				return true;
+			}
+			return (APILocator.getRoleAPI()
+					.doesUserHaveRole(this, APILocator.getRoleAPI().loadFrontEndUserRole()));
 
-  }
-
-  public boolean isFrontendUser() {
-
-    return Try.of(() -> {
-      if (isAnonymousUser()) {
-        return true;
-      }
-      return (APILocator.getRoleAPI().doesUserHaveRole(this, APILocator.getRoleAPI().loadFrontEndUserRole()));
-
-    }).getOrElse(false);
-
-  }
+		}).getOrElse(false);
+	}
 
 
   @JsonIgnore
