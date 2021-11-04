@@ -845,7 +845,7 @@
 						"method": "PUT",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/folder/not-exists/file-browser-selected",
+							"raw": "{{serverURL}}/api/v1/folder/{{folderId}}/file-browser-selected",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -853,7 +853,7 @@
 								"api",
 								"v1",
 								"folder",
-								"not-exists",
+								"{{folderId}}",
 								"file-browser-selected"
 							]
 						}
