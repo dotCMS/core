@@ -1,5 +1,6 @@
 package com.dotcms.http;
 
+import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.business.DotStateException;
@@ -16,11 +17,14 @@ import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletResponse;
 import net.jodah.failsafe.CircuitBreaker;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.FailsafeException;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
@@ -138,12 +142,6 @@ public class CircuitBreakerUrl {
 
     }
 
-    public void doOut(HttpServletResponse response) throws IOException {
-        try (OutputStream out = response.getOutputStream()) {
-            doOut(out);
-        }
-    }
-
     public String doString() throws IOException {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             doOut(out);
@@ -151,8 +149,33 @@ public class CircuitBreakerUrl {
         }
     }
 
-    public void doOut(OutputStream outer) throws IOException {
-        try (OutputStream out = outer) {
+    public void doOut(final OutputStream out ) throws IOException {
+        doOut(new EmptyHttpResponse() {
+            @Override
+            public ServletOutputStream getOutputStream() throws IOException {
+                return new ServletOutputStream(){
+
+                    @Override
+                    public void write(int b) throws IOException {
+                        out.write(b);
+                    }
+
+                    @Override
+                    public boolean isReady() {
+                        return false;
+                    }
+
+                    @Override
+                    public void setWriteListener(WriteListener writeListener) {
+
+                    }
+                };
+            }
+        });
+    }
+
+    public void doOut(final HttpServletResponse response) throws IOException {
+        try (final OutputStream out = response.getOutputStream()) {
             if(verbose) {
                 Logger.info(this.getClass(), "Circuitbreaker to " + request + " is " + circuitBreaker.getState());
             }
@@ -167,10 +190,17 @@ public class CircuitBreakerUrl {
                                 .setConnectionRequestTimeout(Math.toIntExact(this.timeoutMs))
                                 .setSocketTimeout(Math.toIntExact(this.timeoutMs)).build();
                         try (CloseableHttpClient httpclient = HttpClientBuilder.create().setDefaultRequestConfig(config).build()) {
-                            HttpResponse response = httpclient.execute(this.request);
-                            this.response = response.getStatusLine().getStatusCode();
+                            HttpResponse innerResponse = httpclient.execute(this.request);
+
+                            final Header[] allHeaders = innerResponse.getAllHeaders();
+
+                            for (final Header header : allHeaders) {
+                                response.setHeader(header.getName(), header.getValue());
+                            }
+
+                            this.response = innerResponse.getStatusLine().getStatusCode();
                             
-                            IOUtils.copy(response.getEntity().getContent(), out);
+                            IOUtils.copy(innerResponse.getEntity().getContent(), out);
                             
                             // throw an error if the request is bad
                             if(this.response<200 || this.response>299){
