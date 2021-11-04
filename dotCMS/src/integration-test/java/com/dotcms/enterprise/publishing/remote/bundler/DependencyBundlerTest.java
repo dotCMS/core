@@ -87,7 +87,6 @@ public class DependencyBundlerTest {
     private static FilterDescriptor filterDescriptorNotDependenciesRelationship;
 
     public static void prepare() throws Exception {
-
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
 
