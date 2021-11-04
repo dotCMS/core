@@ -10,12 +10,14 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.rest.api.v1.authentication.RequestUtil;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.api.v1.workflow.WorkflowResource;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.SecurityUtils;
 import com.dotcms.workflow.form.FireMultipleActionForm;
+import com.dotmarketing.beans.Request;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -131,7 +133,7 @@ public class TempFileResource {
                 new DotConcurrentFactory.SubmitterConfigBuilder().poolSize(2).maxPoolSize(5).queueCapacity(100000).build());
         final CompletionService<Object> completionService = new ExecutorCompletionService<>(dotSubmitter);
         final List<Future<Object>> futures = new ArrayList<>();
-        final HttpServletRequest statelessRequest = this.createStatelessRequest(request);
+        final HttpServletRequest statelessRequest = RequestUtil.INSTANCE.createStatelessRequest(request);
 
         int index = 1;
         for (final BodyPart part : body.getBodyParts()) {
@@ -218,25 +220,7 @@ public class TempFileResource {
         }
     }
 
-    private HttpServletRequest createStatelessRequest(final HttpServletRequest request) {
 
-        final DotCMSMockRequest statelessRequest =
-                new DotCMSMockRequestWithSession(request.getSession(false), request.isSecure());
-
-        statelessRequest.setAttribute(WebKeys.USER, request.getAttribute(WebKeys.USER));
-        statelessRequest.setAttribute(WebKeys.USER_ID, request.getAttribute(WebKeys.USER_ID));
-        statelessRequest.addHeader("User-Agent", request.getHeader("User-Agent"));
-        statelessRequest.addHeader("Host", request.getHeader("Host"));
-        statelessRequest.addHeader("Accept-Language", request.getHeader("Accept-Language"));
-        statelessRequest.addHeader("Accept-Encoding", request.getHeader("Accept-Encoding"));
-        statelessRequest.addHeader("X-Forwarded-For", request.getHeader("X-Forwarded-For"));
-        statelessRequest.addHeader("Origin", request.getHeader("Origin"));
-        statelessRequest.addHeader("referer", request.getHeader("referer"));
-        statelessRequest.setRemoteAddr(request.getRemoteAddr());
-        statelessRequest.setRemoteHost(request.getRemoteHost());
-
-        return statelessRequest;
-    }
 
     @POST
     @Path("/byUrl")
