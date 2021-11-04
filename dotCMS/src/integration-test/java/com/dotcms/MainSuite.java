@@ -80,6 +80,7 @@ import com.dotmarketing.filters.AutoLoginFilterTest;
 import com.dotmarketing.image.filter.ImageFilterAPIImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.osgi.GenericBundleActivatorTest;
+import com.dotmarketing.portlets.browser.BrowserUtilTest;
 import com.dotmarketing.portlets.categories.business.CategoryFactoryTest;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
 import com.dotmarketing.portlets.containers.business.ContainerFactoryImplTest;
@@ -481,7 +482,8 @@ import org.junit.runners.Suite.SuiteClasses;
         ManifestReaderFactoryTest.class,
         Task211012AddCompanyDefaultLanguageTest.class,
         StaticPublisherIntegrationTest.class,
-        HostIntegrityCheckerTest.class
+        HostIntegrityCheckerTest.class,
+        BrowserUtilTest.class
 })
 public class MainSuite {
 
