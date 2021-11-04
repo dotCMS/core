@@ -80,17 +80,19 @@
 			<button dojoType="dijit.form.Button" type="submit" onclick="javascript:bundles.deploy()"><%=LanguageUtil.get(pageContext, "OSGI-Load-Bundle")%></button>
 		</div>
 		<div class="portlet-toolbar__info">
-                  <input type="checkbox" id="ignoresystembundles" value="true" checked="true" onclick="new function(e){getBundlesData()}"> <label for="ignoresystembundles"> &nbsp; Show system bundles</label>
+                  <input type="checkbox" id="ignoresystembundles" value="false" onclick="new function(e){getBundlesData()}"> <label for="ignoresystembundles"> &nbsp; Show system bundles</label>
 		</div>
-    	<div class="portlet-toolbar__actions-secondary">
-
-    		<!-- START Actions -->			
-			<button dojoType="dijit.form.Button" onClick="javascript:dijit.byId('uploadOSGIDialog').show()" iconClass="plusIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-Upload-Bundle")%></button>
-			<button dojoType="dijit.form.Button" onClick="bundles.reboot(true);" iconClass="resetIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-restart-framework")%></button>
-			<button dojoType="dijit.form.Button" onClick="bundles.extraPackages();" iconClass="editIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-extra-packages")%></button>
-			<button dojoType="dijit.form.Button" onClick="getBundlesData" iconClass="resetIcon" type="button"><%=LanguageUtil.get(pageContext, "Refresh")%></button>
-			<!-- END Actions -->
-    	</div>
+        <div>
+            <div class="portlet-toolbar__actions-secondary">
+                <!-- START Actions -->			
+                <button dojoType="dijit.form.Button" onClick="javascript:dijit.byId('uploadOSGIDialog').show()" iconClass="plusIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-Upload-Bundle")%></button>
+                <button dojoType="dijit.form.Button" onClick="bundles.reboot(true);" iconClass="resetIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-restart-framework")%></button>
+                <button dojoType="dijit.form.Button" onClick="bundles.extraPackages();" iconClass="editIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-extra-packages")%></button>
+                <button dojoType="dijit.form.Button" onClick="getBundlesData" iconClass="resetIcon" type="button"><%=LanguageUtil.get(pageContext, "Refresh")%></button>
+                <!-- END Actions -->
+            </div>
+            <div style="text-align: center; margin-top: 4px;"><span><%=LanguageUtil.get(pageContext, "OSGI-Drag-And-Drop-Allow")%></span></div>
+        </div>
    </div>
    <!-- END Toolbar -->
 	
@@ -152,7 +154,6 @@
 
         //Displays the loading dialog
         try {dijit.byId('savingOSGIDialog').show();} catch (e) {}
-        document.getElementById("bundlesTable-body").innerHTML="";
         dojo.byId("loading-row").show();
         
         
@@ -160,6 +161,7 @@
             url: "/api/osgi/getInstalledBundles/ignoreSystemBundles/true/type/json",
             handleAs: "json",
             load: function (data) {
+                document.getElementById("bundlesTable-body").innerHTML="";
                 const showSystem=document.getElementById("ignoresystembundles").checked
                 if (data.length > 0) {
 
