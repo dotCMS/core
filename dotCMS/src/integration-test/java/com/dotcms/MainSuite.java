@@ -130,7 +130,7 @@ import com.dotmarketing.startup.runonce.Task211012AddCompanyDefaultLanguageTest;
 import com.dotmarketing.startup.runonce.Task210901UpdateDateTimezonesTest;
 import com.dotmarketing.startup.runonce.Task211101AddContentletAsJsonColumnTest;
 import com.dotmarketing.startup.runonce.Task211007RemoveNotNullConstraintFromCompanyMXColumnTest;
-import com.dotmarketing.startup.runonce.Task211103RenameHostNameLabel;
+import com.dotmarketing.startup.runonce.Task211103RenameHostNameLabelTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -489,7 +489,7 @@ import org.junit.runners.Suite.SuiteClasses;
         HostIntegrityCheckerTest.class,
         Task211101AddContentletAsJsonColumnTest.class,
         ContentletJsonAPITest.class,
-        Task211103RenameHostNameLabel.class
+        Task211103RenameHostNameLabelTest.class
 })
 public class MainSuite {
 
