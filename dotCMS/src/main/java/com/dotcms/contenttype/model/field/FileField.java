@@ -1,17 +1,18 @@
 package com.dotcms.contenttype.model.field;
 
+import static com.dotcms.util.CollectionsUtils.list;
+
 import com.dotcms.business.Unexportable;
-import java.util.Collection;
-import java.util.List;
-
-import org.immutables.value.Value;
-
-import com.google.common.collect.ImmutableList;
+import com.dotcms.content.model.FieldValue;
+import com.dotcms.content.model.type.FileFieldType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
-import static com.dotcms.util.CollectionsUtils.list;
+import com.google.common.collect.ImmutableList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import org.immutables.value.Value;
 
 @JsonSerialize(as = ImmutableFileField.class)
 @JsonDeserialize(as = ImmutableFileField.class)
@@ -43,5 +44,16 @@ public abstract class FileField extends Field {
 	public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties(){
 		return list(ContentTypeFieldProperties.NAME, ContentTypeFieldProperties.REQUIRED,
 				ContentTypeFieldProperties.HINT);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public Optional<FieldValue<?>> fieldValue(final Object value){
+		if (value instanceof String) {
+			return Optional.of(FileFieldType.of((String) value));
+		}
+		return Optional.empty();
 	}
 }

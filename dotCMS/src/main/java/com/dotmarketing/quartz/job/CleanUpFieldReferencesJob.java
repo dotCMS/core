@@ -68,7 +68,6 @@ public class CleanUpFieldReferencesJob extends DotStatefulJob {
 
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
-        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
         final UserAPI userAPI = APILocator.getUserAPI();
 
         try {
