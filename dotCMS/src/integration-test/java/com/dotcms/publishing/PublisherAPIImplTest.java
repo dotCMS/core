@@ -112,6 +112,7 @@ import org.junit.runner.RunWith;
 @RunWith(DataProviderRunner.class)
 public class PublisherAPIImplTest {
 
+    public static final String DEPENDENCY_FROM_TEMPLATE = "Dependency from: ID: %s Title: %s";
     private static String MANIFEST_HEADERS = "INCLUDED/EXCLUDED,object type, Id, inode, title, site, folder, excluded by, included by";
     private static Contentlet languageVariableCreated;
 
@@ -518,11 +519,18 @@ public class PublisherAPIImplTest {
 
             dependenciesFrom.stream().forEach(
                     dependency -> manifestLines.add((ManifestItem) dependency,
-                            String.format("Dependency from: ID: %s Title: %s", languageVariable.getIdentifier(), languageVariable.getTitle())
+                            String.format(DEPENDENCY_FROM_TEMPLATE, languageVariable.getIdentifier(), languageVariable.getTitle())
             ));
 
+            final long languageId = languageVariable.getLanguageId();
+            final Language language = APILocator.getLanguageAPI().getLanguage(languageId);
+
             manifestLines.add(languageVariablesContentType,
-                    String.format("Dependency from: ID: %s Title: %s", languageVariable.getIdentifier(), languageVariable.getTitle()));
+                    list(
+                        String.format(DEPENDENCY_FROM_TEMPLATE, languageVariable.getIdentifier(), languageVariable.getTitle()),
+                        String.format(DEPENDENCY_FROM_TEMPLATE, language.getId(), language.getLanguage())
+                    )
+            );
         }
 
         if (!languageVariablesAddInBundle.isEmpty()) {
@@ -530,7 +538,7 @@ public class PublisherAPIImplTest {
             final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI()
                     .findSystemWorkflowScheme();
             manifestLines.add(systemWorkflowScheme,
-                    String.format("Dependency from: ID: %s Title: %s", languageVariablesContentType.id(), languageVariablesContentType.name()));
+                    String.format(DEPENDENCY_FROM_TEMPLATE, languageVariablesContentType.id(), languageVariablesContentType.name()));
 
             final Host systemHost = APILocator.getHostAPI().findSystemHost();
             manifestLines.addExclude(systemHost, "Excluded System Folder/Host");
