@@ -32,6 +32,9 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+/**
+ * Provide util method to with folder and files path
+ */
 public class BrowserUtil {
 
     private static final String LAST_SELECTED_FOLDER_ID = "LAST_SELECTED_FOLDER_ID";
@@ -173,14 +176,46 @@ public class BrowserUtil {
 
     private BrowserUtil(){}
 
+    /**
+     * Return tru if a Psth is absolute.
+     * 
+     * A absolute path has the follow sintax:
+     * 
+     * <code>//{host_name}/parent_folder_1/parent_folder_2/.../</code>
+     *
+     * for example:
+     *
+     * <code>
+     * //demo.dotcms.com/folder_1/folder_2 //absolute path
+     * /folder_1/folder_2 //relative path is should be resolve using the current host
+     * </code>
+     * 
+     * @param path
+     * @return
+     */
     public static boolean isFullPath(final String path) {
         return path != null && path.startsWith(HOST_INDICATOR);
     }
 
-    public static String getFullPath(final String hostName, final String containerPath) {
-        return builder(hostName, HOST_INDICATOR, containerPath).toString();
+    /**
+     * Return a full path from a Host name and a relative path
+     * 
+     * @param hostName
+     * @param relativePath
+     * @return
+     */
+    public static String getFullPath(final String hostName, final String relativePath) {
+        return builder(hostName, HOST_INDICATOR, relativePath).toString();
     }
 
+    /**
+     * Return the folder's absolute path
+     * 
+     * @param folder
+     * @return
+     * 
+     * @see {@link BrowserUtil#isFullPath(String)}
+     */
     public static String getFullPath(final Folder folder) {
         return builder(
                 folder.getHost().getHostname(),
