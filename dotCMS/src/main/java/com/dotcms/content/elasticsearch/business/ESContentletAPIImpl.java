@@ -205,7 +205,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.dotcms.content.business.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
 import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
@@ -6278,6 +6277,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (BaseContentType.HTMLPAGE.getType() == contentType.baseType().getType()) {
             this.validateHtmlPage(contentlet, contentIdentifier, contentType);
         }
+        if(contentlet.isHost()){
+            this.validateSite(contentlet);
+        }
         boolean hasError = false;
         final DotContentletValidationException cve = new DotContentletValidationException(
                 String.format("Contentlet with id:`%s` and title:`%s` has invalid / missing field(s).", contentIdentifier, contentlet.getTitle())
@@ -6792,6 +6794,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    final static Pattern dnsPattern = Pattern.compile(
+            "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$");
+
+    /**
+     * Host validation method shared by HostResource and ContentletWebAPI
+     * @param contentlet
+     */
+    private void validateSite(Contentlet contentlet){
+        final String siteKey = (String)contentlet.get(Host.HOST_NAME_KEY);
+        if(!UtilMethods.isSet(siteKey) || !dnsPattern.matcher(siteKey).find() ){
+            throw new DotContentletValidationException(String.format("Site key %s doesn't match a valid dns format.",siteKey));
+        }
+    }
+
     @CloseDBIfOpened
     @Override
     public void validateContentlet(Contentlet contentlet,Map<Relationship, List<Contentlet>> contentRelationships,List<Category> cats)throws DotContentletValidationException {
@@ -6826,7 +6842,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if (BaseContentType.PERSONA.getType() == contentlet.getContentType().baseType().getType()) {
                 APILocator.getPersonaAPI().validatePersona(contentlet);
             }
-            if (null != contentlet && contentlet.isVanityUrl()) {
+            if (contentlet.isVanityUrl()) {
                 APILocator.getVanityUrlAPI().validateVanityUrl(contentlet);
             }
         } catch (final DotContentletValidationException ve) {
