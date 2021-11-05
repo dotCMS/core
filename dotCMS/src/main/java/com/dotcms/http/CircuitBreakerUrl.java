@@ -7,6 +7,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
@@ -63,6 +64,8 @@ public class CircuitBreakerUrl {
     private final boolean verbose;
     private final String rawData;
     private int response=-1;
+    private Header[] responseHeaders;
+
     /**
      * 
      * @param proxyUrl
@@ -192,11 +195,9 @@ public class CircuitBreakerUrl {
                         try (CloseableHttpClient httpclient = HttpClientBuilder.create().setDefaultRequestConfig(config).build()) {
                             HttpResponse innerResponse = httpclient.execute(this.request);
 
-                            final Header[] allHeaders = innerResponse.getAllHeaders();
+                            this.responseHeaders = innerResponse.getAllHeaders();
 
-                            for (final Header header : allHeaders) {
-                                response.setHeader(header.getName(), header.getValue());
-                            }
+                            copyHeaders(innerResponse, response);
 
                             this.response = innerResponse.getStatusLine().getStatusCode();
                             
@@ -210,6 +211,20 @@ public class CircuitBreakerUrl {
                     });
         } catch (FailsafeException ee) {
             Logger.debug(this.getClass(), ee.getMessage() + " " + toString());
+        }
+    }
+
+    private void copyHeaders(final HttpResponse innerResponse, final HttpServletResponse response) {
+        final Header contentTypeHeader = innerResponse.getFirstHeader("Content-Type");
+
+        if (UtilMethods.isSet(contentTypeHeader)) {
+            response.setHeader(contentTypeHeader.getName(), contentTypeHeader.getValue());
+        }
+
+        final Header contentLengthHeader = innerResponse.getFirstHeader("Content-Length");
+
+        if (UtilMethods.isSet(contentLengthHeader)) {
+            response.setHeader(contentLengthHeader.getName(), contentLengthHeader.getValue());
         }
     }
 
@@ -233,7 +248,11 @@ public class CircuitBreakerUrl {
     public Map<String,Object> doMap() {
         return (Map<String,Object>) Try.of(()-> DotObjectMapperProvider.getInstance().getDefaultObjectMapper().readValue(doString(), typeRef)).onFailure(e->Logger.warnAndDebug(CircuitBreakerUrl.class,  e)).getOrElse(HashMap::new);
     }
-    
+
+    public Header[] getResponseHeaders() {
+        return responseHeaders;
+    }
+
     public enum Method {
         GET, POST, PUT, DELETE, PATCH;
 
