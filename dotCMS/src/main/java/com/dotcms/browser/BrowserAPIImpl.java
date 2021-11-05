@@ -61,30 +61,28 @@ public class BrowserAPIImpl implements BrowserAPI {
     private final FolderAPI folderAPI = APILocator.getFolderAPI();
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
-
-
-
-
     @Override
     @CloseDBIfOpened
     public List<Contentlet> getContentUnderParentDB(final BrowserQuery browserQuery) {
 
-
         final Tuple2<String, List<Object>> sqlQuery = this.selectQuery(browserQuery);
 
 
-        DotConnect db = new DotConnect().setSQL(sqlQuery._1).setStartRow(browserQuery.offset).setMaxRows(browserQuery.maxResults)
+        final DotConnect dc = new DotConnect().setSQL(sqlQuery._1).setStartRow(browserQuery.offset).setMaxRows(browserQuery.maxResults)
                         .setStartRow(browserQuery.offset);
 
-        sqlQuery._2.forEach(o -> db.addObject(o));
+        sqlQuery._2.forEach(o -> dc.addParam(o));
 
         try {
-            List listMap =  db.loadResults();
-            
-            List<String> inodes = new ArrayList<>();
-                           // ((<Map<String,Object>>)listMap).stream().map(m -> String.valueOf(m.get("inode"))).collect(Collectors.toList());
+            final List<Map<String,String>> inodesMapList =  dc.loadResults();
 
-            List<Contentlet> cons  = APILocator.getContentletAPI().findContentlets(inodes);
+            final List<String> inodes = new ArrayList<>();
+            for (final Map<String, String> versionInfoMap : inodesMapList) {
+                final String inode = versionInfoMap.get("inode");
+                inodes.add(inode);
+            }
+
+            final List<Contentlet> cons  = APILocator.getContentletAPI().findContentlets(inodes);
 
             return permissionAPI.filterCollection(cons,
                             PermissionAPI.PERMISSION_READ, true, browserQuery.user);
@@ -93,93 +91,63 @@ public class BrowserAPIImpl implements BrowserAPI {
             Logger.warnAndDebug(getClass(), "Unable to load browser" + e.getMessage(), e);
             throw new DotRuntimeException(e);
         }
-
     }
 
 
     @Override
     @CloseDBIfOpened
-    public List<Treeable> getFolderContents(final BrowserQuery browserQuery) throws DotSecurityException, DotDataException {
+    public List<Treeable> getFolderContentList(final BrowserQuery browserQuery) throws DotSecurityException, DotDataException {
 
-
-        Parentable parent = browserQuery.directParent;
+        final Parentable parent = browserQuery.directParent;
         final List<Treeable> returnList = new ArrayList<>();
 
         getContentUnderParentDB(browserQuery).forEach(f -> returnList.add(f));
 
-
-
         if (browserQuery.showFolders) {
             List<Folder> folders = folderAPI.findSubFoldersByParent(parent, userAPI.getSystemUser(), false);
             folders.removeIf(f->!f.isShowOnMenu());
-            
             folders.forEach(f -> returnList.add(f));
         }
 
         if (browserQuery.showLinks) {
-
             this.getLinks(browserQuery).forEach(f -> returnList.add(f));
-
         }
 
         return returnList;
-
-
     }
 
 
     @Override
     @CloseDBIfOpened
     public Map<String, Object> getFolderContent(final BrowserQuery browserQuery) throws DotSecurityException, DotDataException {
-
-
-
-        final List<Contentlet> contentlets = getContentUnderParentDB(browserQuery);
-
-
-        final MutableInt countItems = new MutableInt(0);
         List<Map<String, Object>> returnList = new ArrayList<>();
         final Role[] roles = APILocator.getRoleAPI().loadRolesForUser(browserQuery.user.getUserId()).toArray(new Role[0]);
 
-
         if (browserQuery.showFolders) {
-
             returnList.addAll(this.includeFolders(browserQuery,  roles));
         }
 
         if (browserQuery.showLinks) {
-
             returnList.addAll(this.includeLinks(browserQuery));
         }
 
-        final String esSortBy = ("name".equals(browserQuery.sortBy) ? "title" : browserQuery.sortBy)
-                        + (browserQuery.sortByDesc ? " desc" : StringPool.BLANK);
-
-
+        //Get Content
+        final List<Contentlet> contentlets = getContentUnderParentDB(browserQuery);
 
         for (final Contentlet contentlet : contentlets) {
 
             Map<String, Object> contentMap = null;
             if (contentlet.getBaseType().get() == BaseContentType.FILEASSET) {
-
                 final FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
                 contentMap = fileAssetMap(fileAsset, browserQuery.user, browserQuery.showArchived);
-            }
-
-            else if (contentlet.getBaseType().get() == BaseContentType.DOTASSET) {
-
+            } else if (contentlet.getBaseType().get() == BaseContentType.DOTASSET) {
                 contentMap = dotAssetMap(contentlet, browserQuery.user, browserQuery.showArchived);
-            }
-
-            else if (contentlet.getBaseType().get() == BaseContentType.HTMLPAGE) {
-
+            } else if (contentlet.getBaseType().get() == BaseContentType.HTMLPAGE) {
                 final HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
                 contentMap = htmlPageMap(page, browserQuery.user, browserQuery.showArchived, browserQuery.languageId);
             } else {
                 contentMap = dotContentMap(contentlet, browserQuery.user, browserQuery.showArchived);
-
             }
-
 
             final List<Integer> permissions = permissionAPI.getPermissionIdsFromRoles(contentlet, roles, browserQuery.user);
             final WfData wfdata = new WfData(contentlet, permissions, browserQuery.user, browserQuery.showArchived);
@@ -190,8 +158,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
 
         // Filtering
-        final int sizeBeforeFiltering = returnList.size();
-        returnList = this.filterReturnList(browserQuery, returnList);
+        returnList = this.filterReturnList(returnList);
 
         // Sorting
         Collections.sort(returnList, new WebAssetMapComparator(browserQuery.sortBy, browserQuery.sortByDesc));
@@ -200,21 +167,16 @@ public class BrowserAPIImpl implements BrowserAPI {
         int maxResults = browserQuery.maxResults;
         // Offsetting
         if (offset < 0) {
-
             offset = 0;
         }
 
         if (maxResults <= 0) {
-
             maxResults = returnList.size() - offset;
         }
 
         if (maxResults + offset > returnList.size()) {
-
             maxResults = returnList.size() - offset;
         }
-
-
 
         final Map<String, Object> returnMap = new HashMap<>();
         returnMap.put("total", returnList.size());
@@ -223,14 +185,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         return returnMap;
     }
 
-    private boolean hasFilters(final BrowserQuery browserQuery) {
-
-        return !browserQuery.luceneQuery.isEmpty();
-    }
-
-
-    private List<Map<String, Object>> filterReturnList(final BrowserQuery browserQuery,
-                    final List<Map<String, Object>> returnList) {
+    private List<Map<String, Object>> filterReturnList(final List<Map<String, Object>> returnList) {
 
         final List<Map<String, Object>> filteredList = new ArrayList<Map<String, Object>>();
         for (final Map<String, Object> asset : returnList) {
@@ -244,8 +199,6 @@ public class BrowserAPIImpl implements BrowserAPI {
             String mimeType = (String) asset.get("mimeType");
             mimeType = mimeType == null ? StringPool.BLANK : mimeType;
 
-
-
             filteredList.add(asset);
         }
 
@@ -254,9 +207,6 @@ public class BrowserAPIImpl implements BrowserAPI {
 
     private Tuple2<String, List<Object>> selectQuery(final BrowserQuery browserQuery) {
 
-
-
-
         final String workingLiveInode = browserQuery.showWorking || browserQuery.showArchived ? "working_inode" : "live_inode";
 
         final boolean showAllBaseTypes = browserQuery.baseTypes.contains(BaseContentType.ANY);
@@ -264,10 +214,8 @@ public class BrowserAPIImpl implements BrowserAPI {
 
         final StringBuilder sqlQuery = new StringBuilder("select cvi." + workingLiveInode + " as inode "
                         + " from contentlet_version_info cvi, identifier id, structure struc, contentlet c "
-                        + " where cvi.identifier = id.id and " + " struc.velocity_var_name = id.asset_subtype and  "
+                        + " where cvi.identifier = id.id and struc.velocity_var_name = id.asset_subtype and  "
                         + " c.inode = cvi." + workingLiveInode);
-
-
 
         if (!showAllBaseTypes) {
             List<String> baseTypes =
@@ -300,11 +248,9 @@ public class BrowserAPIImpl implements BrowserAPI {
             
         }
         
-        
         if (!browserQuery.showArchived) {
             sqlQuery.append(" and cvi.deleted=false");
         }
-
 
         return Tuple.of(sqlQuery.toString(), parameters);
     }
@@ -341,40 +287,20 @@ public class BrowserAPIImpl implements BrowserAPI {
 
 
     private List<Link> getLinks(final BrowserQuery browserQuery) throws DotDataException, DotSecurityException {
-        // Getting the links directly under the parent folder or host
-        List<Link> links = new ArrayList<>();
-
         if (browserQuery.directParent instanceof Host) {
-            if (browserQuery.showWorking) {
-                links.addAll(folderAPI.getLinks((Host) browserQuery.directParent, true, browserQuery.showArchived, browserQuery.user,
-                                false));
-                if (browserQuery.showArchived) {
-                    links.addAll(folderAPI.getLinks((Host) browserQuery.directParent, true, browserQuery.showArchived,
-                                    browserQuery.user, false));
-                }
-            } else {
-                links.addAll(folderAPI.getLinks((Host) browserQuery.directParent, false, browserQuery.showArchived, browserQuery.user,
-                                false));
-            }
+            return folderAPI.getLinks((Host) browserQuery.directParent,
+                    browserQuery.showWorking, browserQuery.showArchived, browserQuery.user,
+                    false);
         }
 
         if (browserQuery.directParent instanceof Folder) {
-            if (browserQuery.showWorking) {
-                links.addAll(folderAPI.getLinks((Folder) browserQuery.directParent, true, browserQuery.showArchived, browserQuery.user,
-                                false));
-                if (browserQuery.showArchived) {
-                    links.addAll(folderAPI.getLinks((Folder) browserQuery.directParent, true, browserQuery.showArchived,
-                                    browserQuery.user, false));
-                }
-            } else {
-                links.addAll(folderAPI.getLinks((Folder) browserQuery.directParent, false, browserQuery.showArchived, browserQuery.user,
-                                false));
-            }
+            return folderAPI
+                    .getLinks((Folder) browserQuery.directParent, false, browserQuery.showArchived,
+                            browserQuery.user,
+                            false);
         }
-
-
-        return links;
-    } // includeLinks.
+        return Collections.emptyList();
+    }
 
 
 
@@ -385,14 +311,9 @@ public class BrowserAPIImpl implements BrowserAPI {
             List<Folder> folders = Collections.emptyList();
             try {
 
-                if(browserQuery.directParent instanceof Folder) {
-                folders = folderAPI.findSubFolders((Folder) browserQuery.directParent, userAPI.getSystemUser(), false).stream()
-                                .sorted(Comparator.comparing(Folder::getName)).collect(Collectors.toList());
-                }
-                else {
-                    folders = folderAPI.findSubFolders((Host) browserQuery.directParent, userAPI.getSystemUser(), false).stream()
-                                    .sorted(Comparator.comparing(Folder::getName)).collect(Collectors.toList());
-                }
+                folders = folderAPI.findSubFoldersByParent(browserQuery.directParent, userAPI.getSystemUser(),false).stream()
+                        .sorted(Comparator.comparing(Folder::getName)).collect(Collectors.toList());
+
             } catch (Exception e1) {
 
                 Logger.error(this, "Could not load folders : ", e1);

@@ -355,7 +355,7 @@ public class FolderFactoryImpl extends FolderFactory {
 	@SuppressWarnings("unchecked")
 	protected java.util.List getMenuItems(Folder folder, int orderDirection) throws  DotDataException{
 
-		Host host = Try.of(()-> APILocator.getHostAPI().find(folder.getHostId(), APILocator.systemUser(), true)).getOrElseThrow(DotDataException::new);
+		final Host host = Try.of(()-> APILocator.getHostAPI().find(folder.getHostId(), APILocator.systemUser(), true)).getOrNull();
 		return getMenuItems(host, folder, orderDirection);
 	}
 
@@ -376,7 +376,6 @@ public class FolderFactoryImpl extends FolderFactory {
 	    
 	    BrowserQuery browserQuery = BrowserQuery.builder()
 	                    .inHostOrFolder(host)
-
 	                    .showOnlyMenuItems(true)
 	                    .showFolders(true)
 	                    .showFiles(true)
@@ -384,9 +383,8 @@ public class FolderFactoryImpl extends FolderFactory {
 	                    .showPages(true)
 	                    .build();
 	    
-	    return Try.of(()->APILocator.getBrowserAPI().getFolderContents(browserQuery)).getOrElseThrow(DotRuntimeException::new);
-	    
-	    
+	    return Try.of(()->APILocator.getBrowserAPI().getFolderContentList(browserQuery)).getOrElseThrow(DotRuntimeException::new);
+
 	}
 
 

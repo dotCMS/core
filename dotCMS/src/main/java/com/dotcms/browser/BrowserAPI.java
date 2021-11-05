@@ -228,9 +228,21 @@ public interface BrowserAPI {
      */
     public Map<String, Object> getFolderContent(final BrowserQuery browserQuery) throws DotSecurityException, DotDataException;
 
-    List<Contentlet> getContentUnderParentDB(BrowserQuery browserQuery);
+	/**
+	 * Returns a collection of contentlets that live inside the parent(browserQuery.directParent)
+	 * @param browserQuery {@link BrowserQuery}
+	 * @return list of contentlets
+	 */
+	List<Contentlet> getContentUnderParentDB(BrowserQuery browserQuery);
 
-    List<Treeable> getFolderContents(BrowserQuery browserQuery) throws DotSecurityException, DotDataException;
+	/**
+	 * Returns a collection of contentlets, folders, links that live inside the parent(browserQuery.directParent)
+	 * @param browserQuery {@link BrowserQuery}
+	 * @return list of treeable (folders, content, links)
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+    List<Treeable> getFolderContentList(BrowserQuery browserQuery) throws DotSecurityException, DotDataException;
     
     
     

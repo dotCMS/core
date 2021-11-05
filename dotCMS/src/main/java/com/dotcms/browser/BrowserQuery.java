@@ -89,7 +89,7 @@ public class BrowserQuery {
                         .orElse(APILocator.getFolderAPI().findSystemFolder());
 
 
-        Host host = folder.isSystemFolder()
+        final Host host = folder.isSystemFolder()
             ? Try.of(() -> APILocator.getHostAPI().find(parentId, user, respectFrontEndPermissions)).getOrNull()
             : Try.of(() -> APILocator.getHostAPI().find(folder.getHostId(), user, respectFrontEndPermissions)).getOrNull();
 
