@@ -981,6 +981,25 @@ public class CollectionsUtils implements Serializable {
 	    return new ImmutableListCollector<>();
     }
 
+    /**
+     * Returns true if all elements on setA are contained on setB
+     * @param setA Set
+     * @param setB Set
+     * @return boolean
+     */
+    public static <T> boolean containsAllElements(final Set<T> setA,
+                                           final Set<T> setB) {
+
+	    for (final T element : setA) {
+
+	        if (!setB.contains(element)) {
+	            return false;
+            }
+        }
+
+	    return true;
+    }
+
     private static class ImmutableListCollector<T> implements Collector<T, ImmutableList.Builder<T>, ImmutableList<T>> {
         @Override
         public Supplier<ImmutableList.Builder<T>> supplier() {

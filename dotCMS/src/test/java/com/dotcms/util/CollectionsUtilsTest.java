@@ -10,6 +10,7 @@ import org.junit.Test;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.dotcms.util.CollectionsUtils.*;
 import static org.junit.Assert.*;
@@ -19,6 +20,33 @@ import static org.junit.Assert.*;
  * @author jsanca
  */
 public class CollectionsUtilsTest extends UnitTestBase {
+
+    @Test
+    public void containsAllElements_contains_all() {
+
+        final Set<Integer> setA = Stream.of(1,2,3,4,5,6).collect(Collectors.toSet());
+        final Set<Integer> setB = Stream.of(1,2,3,4,5,6).collect(Collectors.toSet());
+
+        Assert.assertTrue(CollectionsUtils.containsAllElements(setA, setB));
+    }
+
+    @Test
+    public void containsAllElements_contains_all_subset() {
+
+        final Set<Integer> setA = Stream.of(1,2,3,4).collect(Collectors.toSet());
+        final Set<Integer> setB = Stream.of(1,2,3,4,5,6).collect(Collectors.toSet());
+
+        Assert.assertTrue(CollectionsUtils.containsAllElements(setA, setB));
+    }
+
+    @Test
+    public void containsAllElements_contains_some() {
+
+        final Set<Integer> setA = Stream.of(1,2,3,4,5,6).collect(Collectors.toSet());
+        final Set<Integer> setB = Stream.of(1,2,3,4).collect(Collectors.toSet());
+
+        Assert.assertFalse(CollectionsUtils.containsAllElements(setA, setB));
+    }
 
     @Test
     public void join_null() {

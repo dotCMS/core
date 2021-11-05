@@ -7,6 +7,7 @@ import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.concurrent.Debouncer;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.osgi.OSGIProxyServlet;
@@ -172,10 +173,15 @@ public class OSGIUtil {
         Properties felixProps = loadConfig();
 
         // fetch the 'felix.base.dir' property and check if exists. On the props file the prop needs to
-        for (String key : FELIX_DIRECTORIES) {
-            if (new File(felixProps.getProperty(key)).mkdirs()) {
+        for (final String felixDirectory : FELIX_DIRECTORIES) {
+
+            try {
+                Files.createDirectories(new File(felixProps.getProperty(felixDirectory)).toPath());
                 Logger.info(this.getClass(),
-                        () -> "Building Directory:" + felixProps.getProperty(key));
+                        () -> "Building Directory:" + felixProps.getProperty(felixDirectory));
+            } catch (IOException e) {
+                Logger.error(this, "Error Building Directory:" +
+                        felixProps.getProperty(felixDirectory) + ": " + e.getMessage(), e);
             }
         }
 
@@ -539,22 +545,43 @@ public class OSGIUtil {
 
         final File extraPackagesFile = new File(FELIX_EXTRA_PACKAGES_FILE);
 
-        StringWriter stringWriter;
-        if (extraPackagesFile.exists()) {
-            stringWriter = readExtraPackagesFiles(extraPackagesFile);
-        } else {
+        StringWriter stringWriter = null;
+        if (!extraPackagesFile.exists()) {
+
             if (extraPackagesFile.getParentFile().mkdirs()) {
                 this.createNewExtraPackageFile (extraPackagesFile);
             }
-            stringWriter = new StringWriter();
+        } else {
+
+            mergeInternalAndExternalOsgiExtraPackagesFile(extraPackagesFile);
         }
 
+        // and merge with the one on the external directory
+        stringWriter = readExtraPackagesFiles(extraPackagesFile);
         this.exportedPackagesSet.addAll(Stream.of(stringWriter.toString()
                 .split(StringPool.COMMA)).filter(UtilMethods::isSet).collect(Collectors.toList()));
 
         //Clean up the properties, it is better to keep it simple and in a standard format
         return stringWriter.toString().replaceAll("\\\n", "").
                 replaceAll("\\\r", "").replaceAll("\\\\", "");
+    }
+
+    // if the osgi on the classpath has any addition which is not on the file system, we merge it.
+    private void mergeInternalAndExternalOsgiExtraPackagesFile(final File extraPackagesFile) throws IOException {
+
+        // read always the original
+        final TreeSet<String> internalExportedPackagesSet = new TreeSet<>();
+        final TreeSet<String> externalExportedPackagesSet = new TreeSet<>();
+        internalExportedPackagesSet.addAll(Stream.of(this.readInternalOsgiExtraPackageFile().toString()
+                .split(StringPool.COMMA)).filter(UtilMethods::isSet).collect(Collectors.toList()));
+        externalExportedPackagesSet.addAll(Stream.of(readExtraPackagesFiles(extraPackagesFile).toString()
+                .split(StringPool.COMMA)).filter(UtilMethods::isSet).collect(Collectors.toList()));
+
+        if(!CollectionsUtils.containsAllElements(internalExportedPackagesSet, externalExportedPackagesSet)) {
+
+            internalExportedPackagesSet.addAll(externalExportedPackagesSet);
+            this.writeExtraPackagesFiles(FELIX_EXTRA_PACKAGES_FILE, internalExportedPackagesSet);
+        }
     }
 
     private void createNewExtraPackageFile(final File extraPackagesFile) throws IOException {
@@ -572,6 +599,21 @@ public class OSGIUtil {
 
             writer.flush();
         }
+    }
+
+    private StringWriter readInternalOsgiExtraPackageFile() throws IOException {
+
+        final StringWriter writer = new StringWriter();
+        try (InputStream initialStream = OSGIUtil.class.getResourceAsStream("/osgi/osgi-extra.conf")) {
+
+            final byte[] buffer = new byte[1024];
+            int bytesRead = -1;
+            while ((bytesRead = initialStream.read(buffer)) != -1) {
+                writer.write(new String(buffer, UTF_8), 0, bytesRead);
+            }
+        }
+
+        return writer;
     }
 
     private StringWriter readExtraPackagesFiles(final File extraPackagesFile)
