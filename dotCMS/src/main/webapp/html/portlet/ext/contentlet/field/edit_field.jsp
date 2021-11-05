@@ -103,6 +103,13 @@
         }
         //END of TEXT field
 
+        // STORY BLOCK
+        else if (field.getFieldType().equals(Field.FieldType.STORY_BLOCK_FIELD.toString())) { %>
+            <script src="/html/dotcms-block-editor.js"></script>
+            <dotcms-block-editor style="width: 100%; height: 500px; display: block;"></dotcms-block-editor>
+        <% }
+
+
         //TEXTAREA kind of field rendering
         else if (field.getFieldType().equals(
                 Field.FieldType.TEXT_AREA.toString())) {
