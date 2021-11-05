@@ -18,6 +18,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
@@ -116,16 +117,12 @@ public class LegacyShortyIdApiTest {
         builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "contentlet" });
 
         //Create 2 Folders, and save the inode and the identifier of them
-        new FolderDataGen().nextPersisted();
-        new FolderDataGen().nextPersisted();
-		dc.setSQL(GET_ID_FOLDERS, 2);
-		res = dc.loadObjectResults();
-        builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "folder" });
-
-        dc.setSQL(GET_INODE, 2);
-        dc.addParam("folder");
-        res = dc.loadObjectResults();
-        builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "folder" });
+        final Folder folder1 = new FolderDataGen().nextPersisted();
+        final Folder folder2 = new FolderDataGen().nextPersisted();
+        builder.add(new String[] { folder1.getIdentifier(), "identifier", "folder" });
+        builder.add(new String[] { folder1.getInode(), "inode", "folder" });
+        builder.add(new String[] { folder2.getIdentifier(), "identifier", "folder" });
+        builder.add(new String[] { folder2.getInode(), "inode", "folder" });
 
         //Create 2 Links, and save the inode and the identifier of them
         new LinkDataGen().nextPersisted();
@@ -168,13 +165,6 @@ public class LegacyShortyIdApiTest {
 		res = dc.loadObjectResults();
 		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "field" });
 
-        //Create 2 Relationships, and save the inode of them
-        new RelationshipDataGen(true).nextPersisted();
-        new RelationshipDataGen(true).nextPersisted();
-		dc.setSQL(GET_INODE, 2);
-		dc.addParam("relationship");
-		res = dc.loadObjectResults();
-		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "relationship" });
 		expectedIds = builder.build();
 	}
 

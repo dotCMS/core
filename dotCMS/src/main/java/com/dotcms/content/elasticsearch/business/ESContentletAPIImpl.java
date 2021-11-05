@@ -7,7 +7,6 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
-import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.event.ContentletArchiveEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
@@ -48,8 +47,6 @@ import org.apache.commons.io.FileUtils;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
-import com.dotcms.storage.FileMetadataAPI;
-import com.dotcms.storage.model.Metadata;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.util.CollectionsUtils;
@@ -61,7 +58,6 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.Tree;
-import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
@@ -84,7 +80,6 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
-import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -157,11 +152,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
@@ -174,7 +164,6 @@ import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
@@ -182,7 +171,6 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.junit.Test;
 import org.springframework.beans.BeanUtils;
 
 import javax.activation.MimeType;
@@ -213,11 +201,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.dotcms.content.business.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
 import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
@@ -4855,6 +4843,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final IndexPolicy indexPolicy             = contentlet.getIndexPolicy();
             final IndexPolicy indexPolicyDependencies = contentlet.getIndexPolicyDependencies();
             contentlet = applyNullProperties(contentlet);
+            contentlet = prepContentletAsJson(contentlet);
             if(saveWithExistingID) {
                 contentlet = contentFactory.save(contentlet, existingInode);
             } else {
@@ -4887,6 +4876,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 contentlet.setIdentifier(identifier.getId() );
                 contentlet = applyNullProperties(contentlet);
+                contentlet = prepContentletAsJson(contentlet, contentletRaw);
                 contentlet = contentFactory.save(contentlet);
                 contentlet.setIndexPolicy(indexPolicy);
                 contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
@@ -6289,8 +6279,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             this.validateHtmlPage(contentlet, contentIdentifier, contentType);
         }
         boolean hasError = false;
-        final DotContentletValidationException cve = new DotContentletValidationException("Contentlet [" +
-                contentIdentifier + "] has invalid / missing field(s).");
+        final DotContentletValidationException cve = new DotContentletValidationException(
+                String.format("Contentlet with id:`%s` and title:`%s` has invalid / missing field(s).", contentIdentifier, contentlet.getTitle())
+        );
         final List<Field> fields = FieldsCache.getFieldsByStructureInode(contentTypeId);
         final Map<String, Object> contentletMap = contentlet.getMap();
         final Set<String> nullValueProperties = contentlet.getNullProperties();
@@ -6299,6 +6290,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // Validate Field Type
             if(fieldValue != null){
                 if(isFieldTypeString(field)){
+
+                    if(fieldValue instanceof Map && FieldType.KEY_VALUE.toString().equals(field.getFieldType())){
+                        //That's fine we're handling now keyValues directly as maps
+                        continue;
+                    }
+
                     if(!(fieldValue instanceof String)){
                         cve.addBadTypeField(field);
                         Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type String");
@@ -6350,7 +6347,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             // validate required
             if (field.isRequired()) {
-                if(fieldValue instanceof String){
+
+                if(fieldValue instanceof Map){
+                    final Map map = (Map)fieldValue;
+                    if(field.getFieldType().equals(Field.FieldType.KEY_VALUE.toString()) && map.isEmpty()) {
+                        cve.addRequiredField(field);
+                        hasError = true;
+                        Logger.warn(this, "String Field [" + field.getVelocityVarName() + "] is required");
+                        continue;
+                    }
+                }
+                else if(fieldValue instanceof String){
                     String s1 = (String)fieldValue;
                     if(!UtilMethods.isSet(s1.trim()) || (field.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())) && s1.equals("{}")) {
                         cve.addRequiredField(field);
@@ -6425,10 +6432,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 continue;
                             }
                         }
-                    } catch (DotDataException e) {
-                        Logger.warn(this, "Unable to validate a category field [" + field.getVelocityVarName() + "]", e);
-                        throw new DotContentletValidationException("Unable to validate a category field: " + field.getVelocityVarName(), e);
-                    } catch (DotSecurityException e) {
+                    } catch (DotDataException | DotSecurityException e) {
                         Logger.warn(this, "Unable to validate a category field [" + field.getVelocityVarName() + "]", e);
                         throw new DotContentletValidationException("Unable to validate a category field: " + field.getVelocityVarName(), e);
                     }
@@ -6543,9 +6547,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             }
                         }
                     }
-                } catch (DotDataException e) {
-                    Logger.warn(this,"Unable to get contentlets for Content Type: " + contentlet.getStructure().getName(), e);
-                } catch (DotSecurityException e) {
+                } catch (DotDataException | DotSecurityException e) {
                     Logger.warn(this,"Unable to get contentlets for Content Type: " + contentlet.getStructure().getName(), e);
                 }
             }
@@ -8539,6 +8541,38 @@ public class ESContentletAPIImpl implements ContentletAPI {
         contentlet.getNullProperties().forEach(s -> {
             contentlet.getMap().put(s, null);
         });
+        return contentlet;
+    }
+
+    /**
+     * This takes the incoming contentlet and generates a json representation of itself
+     * which gets attached to the inner map so it can be used from within the persistence layer.
+     * @param contentlet
+     * @return
+     */
+    private Contentlet prepContentletAsJson(final Contentlet contentlet) {
+        return prepContentletAsJson(contentlet, new Contentlet());
+    }
+
+    /**
+     * This takes two contentlets and merge them into one that gets passed to persistence layer to generate the json
+     * The seedMap is passed down to the persistence layer because inode isnt always available it get set down below at the persistence layer.
+     * The second contentlet is expected to have info such as files and fields that arent necessarily attached to the first contentlet
+     * which is often recovered from the db and therefore comes back lacking that info
+     * @param contentlet has to have identifier and inode
+     * @param raw has to have the fields originally sent from the front-end
+     * @return
+     */
+    private Contentlet prepContentletAsJson(final Contentlet contentlet, final Contentlet raw ) {
+            final Map<String, Object> seedMap = Stream
+                    .concat(contentlet.getMap().entrySet().stream(),
+                            raw.getMap().entrySet().stream())
+                    .collect(Collectors.toMap(Entry::getKey, Entry::getValue, (o, o2) -> {
+                        //Always prefer the first argument
+                        return o;
+                    }));
+            //Attach the seed map so it becomes available down from the persistence layer
+            contentlet.setProperty(Contentlet.CONTENTLET_AS_JSON, seedMap);
         return contentlet;
     }
 
