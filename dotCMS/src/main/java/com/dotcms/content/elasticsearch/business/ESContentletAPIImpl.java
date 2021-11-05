@@ -6801,10 +6801,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * Host validation method shared by HostResource and ContentletWebAPI
      * @param contentlet
      */
-    private void validateSite(Contentlet contentlet){
-        final String siteKey = (String)contentlet.get(Host.HOST_NAME_KEY);
-        if(!UtilMethods.isSet(siteKey) || !dnsPattern.matcher(siteKey).find() ){
-            throw new DotContentletValidationException(String.format("Site key %s doesn't match a valid dns format.",siteKey));
+    private void validateSite(Contentlet contentlet) {
+        if (Config.getBooleanProperty("site.key.dns.validation", false)) {
+            final String siteKey = (String) contentlet.get(Host.HOST_NAME_KEY);
+            if (!UtilMethods.isSet(siteKey) || !dnsPattern.matcher(siteKey).find()) {
+                throw new DotContentletValidationException(
+                        String.format("Site key %s doesn't match a valid dns format.", siteKey));
+            }
         }
     }
 
