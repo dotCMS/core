@@ -33,11 +33,9 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
-import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
@@ -49,7 +47,6 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
@@ -933,33 +930,4 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         parentCheckout.setProperty(relationship.getChildRelationName(), Arrays.asList(contentletChilds));
         return  ContentletDataGen.checkin(parentCheckout);
     }
-
-
-    @Test(expected = RuntimeException.class)
-    public void Test_SiteKey_InValid_DNS_Format_Expect_Failure()  {
-        final String propName = "site.key.dns.validation";
-        final boolean propValue = Config.getBooleanProperty(propName, false);
-        Config.setProperty(propName, true);
-      try {
-          final String testHost = "test_host_" + System.currentTimeMillis() + ".dotcms.com";
-          new SiteDataGen().name(testHost).nextPersisted();
-      }finally {
-          Config.setProperty(propName, propValue);
-      }
-    }
-
-    @Test
-    public void Test_SiteKey_Valid_DNS_Format_No_Failure_Expected()  {
-        final String propName = "site.key.dns.validation";
-        final boolean propValue = Config.getBooleanProperty(propName, false);
-        Config.setProperty(propName, true);
-        try {
-            final String testHost = "test-host-" + System.currentTimeMillis() + ".dotcms.com";
-            final Host site = new SiteDataGen().name(testHost).nextPersisted();
-            assertNotNull(site);
-        }finally {
-            Config.setProperty(propName, propValue);
-        }
-    }
-
 }
