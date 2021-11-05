@@ -249,6 +249,11 @@ public class BrowserUtil {
         }
     }
 
+    /**
+     * Function to resolve the Contentlet's defaultPath
+     * 
+     * @see {@link BrowserUtil#getDefaultPathFolder(Contentlet, Field, User)}
+     */
     @FunctionalInterface
     interface DefaultPathResolver {
         Optional<Folder> resolve(final Contentlet contentlet, final Field field, final User user);
@@ -326,6 +331,9 @@ public class BrowserUtil {
 
     }
 
+    /**
+     * It contains all the {@link Folder} in a Folder's path
+     */
     private static class FolderPath {
         private List<Folder> pathFolders;
         private Host host;
@@ -335,6 +343,16 @@ public class BrowserUtil {
             this.host = host;
         }
 
+        /**
+         * Return a {@link List} with all the ids in a Folder's path starting in the host's id
+         * 
+         * For example:
+         * If we have the follow folder path: <pre>//default/folder_1/folder_2/folder_3</pre>
+         * then this method is going to return a list with:
+         * [default host id, folder_1's id, folder_2's id, folder_3's id]
+         * 
+         * @return
+         */
         public List<String> getIds(){
             final List<String> ids = pathFolders.stream()
                     .filter(folder -> !folder.isSystemFolder())
