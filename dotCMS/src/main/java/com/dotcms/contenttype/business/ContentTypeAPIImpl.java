@@ -178,12 +178,17 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     return search(condition).size();
   }
 
+  @Override
+  public int count(String condition, BaseContentType base) throws DotDataException {
+    return count(condition,base,null);
+  }
+
 
   @CloseDBIfOpened
   @Override
-  public int count(String condition, BaseContentType base) throws DotDataException {
+  public int count(final String condition, final BaseContentType base, final String hostId) throws DotDataException {
     try {
-      return perms.filterCollection(this.contentTypeFactory.search(condition, base, "mod_date", -1, 0), PermissionAPI.PERMISSION_READ,
+      return perms.filterCollection(this.contentTypeFactory.search(condition, base.getType(), "mod_date", -1, 0,hostId), PermissionAPI.PERMISSION_READ,
           respectFrontendRoles, user).size();
     } catch (DotSecurityException e) {
       throw new DotStateException(e);
@@ -366,16 +371,28 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       return this.search( condition, BaseContentType.ANY, orderBy,  limit,  offset);
   }
 
+  @CloseDBIfOpened
+  @Override
+  public List<ContentType> search(String condition, String orderBy, int limit, int offset,final String hostId) throws DotDataException {
+    return this.search( condition, BaseContentType.ANY, orderBy,  limit,  offset,hostId);
+  }
+
+  @CloseDBIfOpened
+  @Override
+  public List<ContentType> search(String condition, BaseContentType base, final String orderBy, final int limit, final int offset) throws DotDataException {
+    return this.search( condition, base, orderBy,  limit,  offset,null);
+  }
+
     @CloseDBIfOpened
     @Override
-    public List<ContentType> search(String condition, BaseContentType base, final String orderBy, final int limit, final int offset)
+    public List<ContentType> search(String condition, BaseContentType base, final String orderBy, final int limit, final int offset, final String hostId)
             throws DotDataException {
 
         final List<ContentType> returnTypes = new ArrayList<>();
         int rollingOffset = offset;
         try {
             while ((limit<0)||(returnTypes.size() < limit)) {
-                final List<ContentType> rawContentTypes = this.contentTypeFactory.search(condition, base, orderBy, limit, rollingOffset);
+                final List<ContentType> rawContentTypes = this.contentTypeFactory.search(condition, base.getType(), orderBy, limit, rollingOffset,hostId);
                 if (rawContentTypes.isEmpty()) {
                     break;
                 }

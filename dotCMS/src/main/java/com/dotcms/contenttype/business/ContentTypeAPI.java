@@ -148,6 +148,17 @@ public interface ContentTypeAPI {
    * 
    * @param condition Condition that the Content Type needs to met
    * @param base Base Content Type that wants to be search
+   * @param hostId hostId where the content type lives, pass null to bring from all sites.
+   * @return Amount of Content Types
+   * @throws DotDataException Error occurred when performing the action.
+   */
+  int count(String condition, BaseContentType base, String hostId) throws DotDataException;
+
+  /**
+   * Counts the amount of Content Types in the DB filtered by the given condition and the BaseContentType.
+   *
+   * @param condition Condition that the Content Type needs to met
+   * @param base Base Content Type that wants to be search
    * @return Amount of Content Types
    * @throws DotDataException Error occurred when performing the action.
    */
@@ -239,6 +250,19 @@ public interface ContentTypeAPI {
   List<ContentType> search(String condition, String orderBy, int limit, int offset) throws DotDataException;
 
   /**
+   * Returns a List of content types based on the given condition, organized by the given column.
+   *
+   * @param condition Condition that the Content Type needs to met
+   * @param orderBy Specifies an order criteria for the results
+   * @param limit Amount of results
+   * @param offset Start position of the resulting list
+   * @param hostId hostId where the contentType lives
+   * @return List of Content Types Objects
+   * @throws DotDataException Error occurred when performing the action.
+   */
+  List<ContentType> search(String condition, String orderBy, int limit, int offset,String hostId) throws DotDataException;
+
+  /**
    * Returns a List of content type based on the given condition and the Base Content Type, organized by the given column.
    * 
    * @param condition Condition that the Content Type needs to met
@@ -251,6 +275,21 @@ public interface ContentTypeAPI {
    */
   List<ContentType> search(String condition, BaseContentType base, String orderBy, int limit, int offset)
       throws DotDataException;
+
+  /**
+   * Returns a List of content type based on the given condition and the Base Content Type, organized by the given column.
+   *
+   * @param condition Condition that the Content Type needs to met
+   * @param base Base Content Type that wants to be search
+   * @param orderBy Specifies an order criteria for the results
+   * @param limit Amount of results
+   * @param offset Start position of the resulting list
+
+   * @return List of Content Types Objects
+   * @throws DotDataException Error occurred when performing the action.
+   */
+  List<ContentType> search(String condition, BaseContentType base, String orderBy, int limit, int offset, String hostId)
+          throws DotDataException;
 
 
   /**
