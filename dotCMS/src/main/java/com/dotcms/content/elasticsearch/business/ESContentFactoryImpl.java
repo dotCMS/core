@@ -269,6 +269,19 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	    return m.get(fieldContentlet);
 	}
 
+    @Override
+    protected Object loadJsonField(final String inode,
+            final com.dotcms.contenttype.model.field.Field field) throws DotDataException {
+           if(DbConnectionFactory.isPostgres()){
+               final String loadJsonFieldValueSQL = String.format("SELECT contentlet_as_json->'fields'->'template'->>'value' as value  FROM contentlet WHERE contentlet_as_json @> '{\"fields\":{\"%s\":{}}}' and inode = ? ",field.variable());
+               return new DotConnect().setSQL(loadJsonFieldValueSQL).addParam(inode).getString("value");
+           } else {
+               final String sql = "SELECT contentlet_as_json FROM contentlet WHERE inode=?";
+               //TODO::: Need a helper or something to load the json and extract the value for other non-postgres dbs
+           }
+           return loadField(inode,field.dbColumn());
+    }
+
 	@Override
 	protected void cleanField(String structureInode, Field field) throws DotDataException, DotStateException, DotSecurityException {
 	    StringBuffer sql = new StringBuffer("update contentlet set " );

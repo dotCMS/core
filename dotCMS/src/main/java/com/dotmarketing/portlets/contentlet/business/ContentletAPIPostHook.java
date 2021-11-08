@@ -1448,7 +1448,17 @@ public interface ContentletAPIPostHook {
 	 */
     public default void loadField(String inode, Field field, Object value){}
 
-    /**
+
+	/**
+	 *
+	 * @param inode
+	 * @param field
+	 * @throws DotDataException
+	 */
+	public default void loadField(String inode, com.dotcms.contenttype.model.field.Field field)
+			throws DotDataException{}
+
+	/**
      * 
      * @param luceneQuery
      * @param user

@@ -2567,7 +2567,28 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         return value;
     }
 
-    @Override
+	@Override
+	public Object loadField(String inode, com.dotcms.contenttype.model.field.Field field)
+			throws DotDataException {
+
+		for(ContentletAPIPreHook pre : preHooks){
+			boolean preResult = pre.loadField(inode, field);
+			if(!preResult){
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+
+		final Object value = conAPI.loadField(inode, field);
+
+		for(ContentletAPIPostHook post : postHooks){
+			post.loadField(inode, field);
+		}
+
+		return value;
+	}
+
+	@Override
     public long indexCount(String luceneQuery, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         for(ContentletAPIPreHook pre : preHooks){
             boolean preResult = pre.indexCount(luceneQuery,user,respectFrontendRoles);

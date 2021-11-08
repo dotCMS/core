@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.DotStateException;
@@ -22,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Consumer;
 
 /**
  * Provides utility methods to interact with {@link Contentlet} objects in
@@ -387,6 +385,9 @@ public abstract class ContentletFactory {
 	protected abstract void removeFolderReferences(Folder folder) throws DotDataException, DotSecurityException;
 
     protected abstract Object loadField(String inode, String fieldContentlet) throws DotDataException;
+
+	protected abstract Object loadJsonField(String inode,
+			com.dotcms.contenttype.model.field.Field field) throws DotDataException;
 
     protected abstract long indexCount(String query);
 
