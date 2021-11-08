@@ -104,9 +104,22 @@
         //END of TEXT field
 
         // STORY BLOCK
-        else if (field.getFieldType().equals(Field.FieldType.STORY_BLOCK_FIELD.toString())) { %>
+        else if (field.getFieldType().equals(Field.FieldType.STORY_BLOCK_FIELD.toString())) {
+            
+            String textValue = UtilMethods.isSet(value) ? value.toString() : (UtilMethods.isSet(defaultValue) ? defaultValue : "");
+            %>
             <script src="/html/dotcms-block-editor.js"></script>
             <dotcms-block-editor style="width: 100%; height: 500px; display: block;"></dotcms-block-editor>
+            <h1><%=textValue%></h1>
+            <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"/>
+
+            <script>
+                const block = document.querySelector('dotcms-block-editor .ProseMirror');
+                const field = document.querySelector('#<%=field.getVelocityVarName()%>')
+                block.editor.on('update', (e) => {
+                    field.value = JSON.stringify(e.editor.state.toJSON().doc);
+                })
+            </script>
         <% }
 
 
