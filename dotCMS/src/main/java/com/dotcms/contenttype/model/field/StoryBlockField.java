@@ -3,7 +3,7 @@ package com.dotcms.contenttype.model.field;
 import static com.dotcms.util.CollectionsUtils.list;
 
 import com.dotcms.content.model.FieldValue;
-import com.dotcms.content.model.type.TextAreaType;
+import com.dotcms.content.model.type.StoryBlockFieldType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -52,7 +52,7 @@ public abstract class StoryBlockField extends Field {
     @Override
     public Optional<FieldValue<?>> fieldValue(Object value) {
         if (value instanceof String) {
-            return Optional.of(TextAreaType.of((String) value));
+            return Optional.of(StoryBlockFieldType.of((String) value));
         }
         return Optional.empty();
     }
