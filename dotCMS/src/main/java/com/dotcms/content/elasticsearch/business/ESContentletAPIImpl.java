@@ -6794,8 +6794,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
-    final static Pattern dnsPattern = Pattern.compile(
-            "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$");
+    final static Pattern dnsPattern = Pattern.compile(dnsRegEx);
 
     /**
      * Host validation method shared by HostResource and ContentletWebAPI

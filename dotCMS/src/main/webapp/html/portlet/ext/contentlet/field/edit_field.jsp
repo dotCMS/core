@@ -27,6 +27,7 @@
 <%@page import="com.dotmarketing.util.VelocityUtil"%>
 <%@ page import="com.dotcms.contenttype.model.type.ContentType" %>
 <%@ page import="com.dotcms.contenttype.model.type.BaseContentType" %>
+<%@ page import="static com.dotmarketing.portlets.contentlet.business.ContentletAPI.dnsRegEx" %>
 
 
 <%
@@ -95,7 +96,7 @@
                 boolean isHostNameField = field.getVelocityVarName().equals("hostName");
 
 
-                String regex = (isNumber) ? "[0-9]*" : (isFloat) ? "[+-]?([0-9]*[.])?[0-9]+" : (isHostNameField) ? "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$" : "";
+                String regex = (isNumber) ? "[0-9]*" : (isFloat) ? "[+-]?([0-9]*[.])?[0-9]+" : (isHostNameField) ? dnsRegEx : "";
 
                 if (isHostNameField && textValue != "") {
                     isReadOnly = true;
