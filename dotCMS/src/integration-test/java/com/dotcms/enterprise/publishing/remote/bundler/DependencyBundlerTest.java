@@ -1412,7 +1412,7 @@ public class DependencyBundlerTest {
                 dependencies.add(contentletChild);
                 manifestLines.addDependencies(map(relationship, list(contentletChild)));
 
-                manifestLines.addDependencies(map(contentletChild, list(language)));
+                manifestLines.addDependencies(map(contentletChild, list(language, contentTypeChild)));
             } else if (modDateTestData.operation == Operation.PUBLISH) {
                 manifestLines.addExclude(contentletChild, "Excluded by mod_date");
 
