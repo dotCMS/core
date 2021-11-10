@@ -430,6 +430,8 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
                 final Map<Relationship, List<Contentlet>> contentRelationships = APILocator
                         .getContentletAPI().findContentRelationships(contentletVersion, user);
 
+                System.out.println("contentRelationships.size() = " + contentRelationships.size());
+
                 tryToAddAllAndProcessDependencies(PusheableAsset.RELATIONSHIP,
                         contentRelationships.keySet(), ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(contentlet));
 
