@@ -42,6 +42,7 @@ import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.google.common.collect.ImmutableSet;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -162,19 +163,25 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   @Override
   public List<ContentType> findUrlMapped() throws DotDataException {
-      return dbSearch(" url_map_pattern is not null ", BaseContentType.ANY.getType(), "mod_date", -1, 0);
+      return dbSearch(" url_map_pattern is not null ", BaseContentType.ANY.getType(), "mod_date", -1, 0, null);
   }
 
   @Override
   public List<ContentType> search(String search, int baseType, String orderBy, int limit, int offset)
       throws DotDataException {
-      return dbSearch(search, baseType, orderBy, limit, offset);
+      return search(search, baseType, orderBy, limit, offset, null);
   }
+
+    @Override
+    public List<ContentType> search(String search, int baseType, String orderBy, int limit, int offset,final String hostId)
+            throws DotDataException {
+        return dbSearch(search, baseType, orderBy, limit, offset,hostId);
+    }
 
   @Override
   public List<ContentType> search(String search, BaseContentType baseType, String orderBy, int limit, int offset)
       throws DotDataException {
-    return dbSearch(search, baseType.getType(), orderBy, limit, offset);
+    return search(search,baseType.getType(),orderBy,limit,offset);
   }
 
   @Override
@@ -621,7 +628,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   final boolean LOAD_FROM_CACHE=Config.getBooleanProperty("LOAD_CONTENTTYPE_DETAILS_FROM_CACHE", true);
 
-  private List<ContentType> dbSearch(String search, int baseType, String orderBy, int limit, int offset)
+  private List<ContentType> dbSearch(final String search, final int baseType, String orderBy, int limit, final int offset,final String hostId)
       throws DotDataException {
     final int bottom = (baseType == 0) ? 0 : baseType;
     final int top = (baseType == 0) ? 100000 : baseType;
@@ -631,11 +638,13 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
     // our legacy code passes in raw sql conditions and so we need to detect
     // and handle those
-    SearchCondition searchCondition = new SearchCondition(search);
+    final SearchCondition searchCondition = new SearchCondition(search);
     //check if order by is set, if not set it to mod_date
     if(SQLUtil.sanitizeSortBy(orderBy).isEmpty()){
     	orderBy = "mod_date";
     }
+
+    final String hostParam = UtilMethods.isSet(hostId) ? StringPool.PERCENT + hostId + StringPool.PERCENT : StringPool.PERCENT;
     DotConnect dc = new DotConnect();
 
     if(LOAD_FROM_CACHE) {
@@ -645,9 +654,10 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     }
     dc.setMaxRows(limit);
     dc.setStartRow(offset);
-    dc.addParam( searchCondition.search );
-    dc.addParam(searchCondition.search.toLowerCase());
-    dc.addParam( searchCondition.search );
+    dc.addParam( searchCondition.search );//inode like
+    dc.addParam(searchCondition.search.toLowerCase());//lower(name) like
+    dc.addParam( searchCondition.search );//velocity_var_name like
+    dc.addParam(hostParam);
     dc.addParam(bottom);
     dc.addParam(top);
 

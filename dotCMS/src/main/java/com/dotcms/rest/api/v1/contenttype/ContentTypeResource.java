@@ -30,6 +30,7 @@ import com.dotcms.util.diff.DiffItem;
 import com.dotcms.util.diff.DiffResult;
 import com.dotcms.util.pagination.ContentTypesPaginator;
 import com.dotcms.util.pagination.OrderDirection;
+import com.dotcms.util.pagination.TemplatePaginator;
 import com.dotcms.workflow.form.WorkflowSystemActionForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
@@ -541,7 +542,8 @@ public class ContentTypeResource implements Serializable {
 										  @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
 										  @DefaultValue("upper(name)") @QueryParam(PaginationUtil.ORDER_BY) String orderbyParam,
 										  @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) String direction,
-										  @QueryParam("type") String types) throws DotDataException {
+										  @QueryParam("type") String types,
+										  @QueryParam(ContentTypesPaginator.HOST_PARAMETER_ID) final String hostId) throws DotDataException {
 
 		final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true, null);
 
@@ -552,10 +554,16 @@ public class ContentTypeResource implements Serializable {
 
 		try {
 
-			final Map<String, Object> extraParams = types == null ? Collections.EMPTY_MAP :
-					ImmutableMap.<String, Object>builder()
-							.put(ContentTypesPaginator.TYPE_PARAMETER_NAME, Arrays.asList(types.split(",")))
-							.build();
+			final Map<String, Object> extraParams = new HashMap<>();
+			if(null!=types) {
+				extraParams.put(ContentTypesPaginator.TYPE_PARAMETER_NAME,
+						Arrays.asList(types.split(",")));
+			}
+
+			if(null!=hostId){
+				extraParams.put(ContentTypesPaginator.HOST_PARAMETER_ID,hostId);
+			}
+
 
 			final PaginationUtil paginationUtil = new PaginationUtil(new ContentTypesPaginator(APILocator.getContentTypeAPI(user)));
 

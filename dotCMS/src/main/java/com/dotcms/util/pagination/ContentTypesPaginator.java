@@ -34,6 +34,7 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
 
     private static final String N_ENTRIES_FIELD_NAME = "nEntries";
     public  static final String TYPE_PARAMETER_NAME  = "type";
+    public static final String HOST_PARAMETER_ID = "host";
 
     private final ContentTypeAPI contentTypeAPI;
     private final WorkflowAPI    workflowAPI;
@@ -53,8 +54,8 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
      * @param condition
      * @return
      */
-    private long getTotalRecords(final String condition, final BaseContentType type) {
-        return Sneaky.sneak(() ->this.contentTypeAPI.count(condition, type));
+    private long getTotalRecords(final String condition, final BaseContentType type, final String hostId) {
+        return Sneaky.sneak(() ->this.contentTypeAPI.count(condition, type, hostId));
     }
 
     @Override
@@ -63,6 +64,9 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
 
         final String typeName =  UtilMethods.isSet(extraParams) && extraParams.containsKey(TYPE_PARAMETER_NAME) ?
                 extraParams.get(TYPE_PARAMETER_NAME).toString().replaceAll("\\[","").replaceAll("\\]", "") : "ANY";
+
+        final String hostId = UtilMethods.isSet(extraParams) && extraParams.containsKey(HOST_PARAMETER_ID) ?
+                extraParams.get(HOST_PARAMETER_ID).toString() : null;
          
         String orderByString = UtilMethods.isSet(orderBy) ? orderBy : "mod_date desc";
         
@@ -75,8 +79,8 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
             final BaseContentType type = BaseContentType.getBaseContentType(typeName);
 
             final List<ContentType> contentTypes = type != null?
-                    this.contentTypeAPI.search(filter,type,  orderByString , limit, offset):
-                    this.contentTypeAPI.search(filter,  orderByString , limit, offset);
+                    this.contentTypeAPI.search(filter,type,  orderByString , limit, offset,hostId):
+                    this.contentTypeAPI.search(filter,  orderByString , limit, offset,hostId);
 
             final List<Map<String, Object>> contentTypesTransform = transformContentTypesToMap(contentTypes);
 
@@ -86,7 +90,7 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
 
             final PaginatedArrayList<Map<String, Object>> result = new PaginatedArrayList<>();
             result.addAll(contentTypesTransform);
-            result.setTotalResults(this.getTotalRecords(filter, type));
+            result.setTotalResults(this.getTotalRecords(filter, type,hostId));
 
             return result;
         } catch (DotDataException | DotSecurityException e) {

@@ -60,11 +60,13 @@ public abstract class ContentTypeSql {
 	public static String SELECT_QUERY_CONDITION = SELECT_ALL_STRUCTURE_FIELDS
         + " and (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) "  //search
         + " %s" //if we have a condition
+		+ " and host like ? "
         + " and structuretype>=? and structuretype<= ? order by %s";
 
     public static String SELECT_INODE_ONLY_QUERY_CONDITION = SELECT_ONLY_INODE_FIELD 
                     + " and (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) "  //search
                     + " %s" //if we have a condition
+					+ " and host like ? "
                     + " and structuretype>=? and structuretype<= ? order by %s";
 	
 	
