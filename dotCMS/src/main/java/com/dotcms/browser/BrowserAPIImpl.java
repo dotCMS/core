@@ -1,6 +1,8 @@
 package com.dotcms.browser;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+
+import com.dotmarketing.db.DbConnectionFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -243,13 +245,11 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
         
         if(browserQuery.showMenuItemsOnly) {
-            
-            sqlQuery.append(" and c.show_on_menu" );
-            
+            sqlQuery.append(" and c.show_on_menu = " + DbConnectionFactory.getDBTrue());
         }
         
         if (!browserQuery.showArchived) {
-            sqlQuery.append(" and cvi.deleted=false");
+            sqlQuery.append(" and cvi.deleted = " + DbConnectionFactory.getDBFalse());
         }
 
         return Tuple.of(sqlQuery.toString(), parameters);
