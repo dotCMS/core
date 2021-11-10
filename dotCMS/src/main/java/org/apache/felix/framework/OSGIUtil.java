@@ -577,7 +577,7 @@ public class OSGIUtil {
         externalExportedPackagesSet.addAll(Stream.of(readExtraPackagesFiles(extraPackagesFile).toString()
                 .split(StringPool.COMMA)).filter(UtilMethods::isSet).collect(Collectors.toList()));
 
-        if(!CollectionsUtils.containsAllElements(internalExportedPackagesSet, externalExportedPackagesSet)) {
+        if(!externalExportedPackagesSet.containsAll(internalExportedPackagesSet)) {
 
             internalExportedPackagesSet.addAll(externalExportedPackagesSet);
             this.writeExtraPackagesFiles(FELIX_EXTRA_PACKAGES_FILE, internalExportedPackagesSet);
