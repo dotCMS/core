@@ -56,4 +56,9 @@ public abstract class StoryBlockField extends Field {
         }
         return Optional.empty();
     }
+    
+    	@JsonIgnore
+	public String getContentTypeFieldLabelKey(){
+		return "Story-Block";
+	}
 }
