@@ -48,6 +48,8 @@ public interface ContentTypeFactory {
 	
 	List<ContentType> search(String search, BaseContentType type, String orderBy, int limit, int offset) throws DotDataException;
 
+	List<ContentType> search(String search, int type, String orderBy, int limit, int offset,String hostId) throws DotDataException;
+
 
 	int searchCount(String search, BaseContentType baseType) throws DotDataException;
 

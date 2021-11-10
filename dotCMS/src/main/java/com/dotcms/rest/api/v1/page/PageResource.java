@@ -148,7 +148,7 @@ public class PageResource {
                 request.getSession().setAttribute(WebKeys.CURRENT_DEVICE, deviceInode);
             }
 
-            final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(
+            final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageMetadata(
                       PageContextBuilder.builder()
                             .setUser(user)
                             .setPageUri(uri)
