@@ -322,7 +322,7 @@ public class ContentletLoader implements DotLoader {
                 sb.append("#set($")
                         .append(field.variable())
                         .append("SelectLabelsValues=\"")
-                        .append(field.values().replaceAll("\\r\\n", " ").replaceAll("\\n", " "))
+                        .append(UtilMethods.espaceForVelocity(field.values()).replaceAll("\\r\\n", " ").replaceAll("\\n", " "))
                         .append("\")");
             } else if (field instanceof RadioField) {
                 sb.append("#set($")
