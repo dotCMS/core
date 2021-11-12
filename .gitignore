@@ -65,6 +65,9 @@ dotCMS/src/main/webapp/WEB-INF/classes/
 dotCMS/src/main/webapp/WEB-INF/lib/
 dotCMS/src/main/webapp/WEB-INF/velocity/static/plugins/
 dotCMS/src/main/webapp/html/plugins/
+# License file
+server_id.dat
+
 
 # immutables.github.io generated folder#
 ###############################
@@ -78,3 +81,9 @@ docker/tests/integration/backup
 
 dot-cicd/
 tmp/
+# maven files
+###############################
+# https://github.com/takari/maven-wrapper#usage-without-binary-jar
+.mvn/wrapper/maven-wrapper.jar
+target
+dependency-reduced-pom.xml

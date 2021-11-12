@@ -1,49 +1,31 @@
 package com.dotcms.filters.interceptor.jwt;
 
-import static org.junit.Assert.fail;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.dotcms.UnitTestBase;
 import com.dotcms.auth.providers.jwt.beans.UserToken;
-import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
-import com.dotcms.auth.providers.jwt.factories.KeyFactoryUtils;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.enterprise.cluster.ClusterFactory;
-import com.dotcms.util.security.Encryptor;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
-import com.liferay.portal.ejb.CompanyLocalManager;
-import com.liferay.portal.model.User;
-import com.liferay.portal.util.CookieKeys;
 import com.liferay.portal.util.WebKeys;
-import com.liferay.util.EncryptorException;
-import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.TimeZone;
-import javax.servlet.ServletContext;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.IOException;
+import java.util.Date;
+
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * The goal of this unit test is to try some scenarios for the json web token interceptor.

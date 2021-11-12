@@ -1,0 +1,710 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+    xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.dotcms</groupId>
+    <artifactId>dotcms-parent</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+
+
+    <packaging>pom</packaging>
+
+    <properties>
+        <aspectj.version>1.9.7</aspectj.version>
+        <java.version>11</java.version>
+        <jvm.base.argLine>-Xmx512m -XX:MaxPermSize=256m --illegal-access=permit --add-opens
+            java.base/jdk.internal.misc=ALL-UNNAMED
+            -Djavax.xml.transform.TransformerFactory=com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl
+            -Djavax.xml.parsers.DocumentBuilderFactory=com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl
+            -Djavax.xml.parsers.SAXParserFactory=com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl
+        </jvm.base.argLine>
+
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <maven.compiler.release>${java.version}</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <servlet.version>4.0.2</servlet.version>
+        <powermock.version>2.0.9</powermock.version>
+
+        <dotcms.url>https://dotcms.com/</dotcms.url>
+        <dotcms.surefire.argLine>-Dfile.encoding=UTF-8 -Duser.language=en -Duser.region=US -showversion -Xmx1g -Xms1g
+            -Xlog:gc:stderr:time,level,tags
+        </dotcms.surefire.argLine>
+        <surefire.rerunFailingTestsCount>0</surefire.rerunFailingTestsCount>
+        <asm.version>9.2</asm.version>
+
+        <tomcat.version>9.0.41</tomcat.version>
+        <!--<felix.version>5.6.10</felix.version>-->
+        <felix.version>7.0.1</felix.version>
+        <log4j.version>2.11.1</log4j.version>
+        <npm.repositoryUrl>https://registry.npmjs.org</npm.repositoryUrl>
+        <powermock.version>2.0.9</powermock.version>
+
+
+        <javax.activation.version>1.2.2</javax.activation.version>
+        <jaxb.api.version>2.3.3</jaxb.api.version>
+        <jaxws.version>2.3.3</jaxws.version>
+        <mail.version>1.6.7</mail.version>
+        <!-- 4.0.2 first jakarta version-->
+
+        <jackson.version>2.11.4</jackson.version>
+        <jersey.version>2.25.1</jersey.version>
+        <!-- swagger version has jersey, jackson version dependency -->
+        <swagger.version>1.6.2</swagger.version>
+        <!--  <npm.username>service.account@......com</npm.username>
+        <npm.password>......</npm.password>-->
+        <httpclient.version>4.5.13</httpclient.version>
+        <aws.client.version>1.12.79</aws.client.version>
+
+        <elasticsearch.client.version>7.3.2</elasticsearch.client.version>
+        <!-- geoip2 has jackson dependency -->
+        <geoip2.version>2.15.0</geoip2.version>
+
+
+        <proguard.version>6.3.0beta1</proguard.version>
+        <glowroot.version>0.13.6</glowroot.version>
+
+        <jackson.version>2.11.4</jackson.version>
+        <log4j.version>2.11.1</log4j.version>
+        <!-- OSGI import-package -->
+        <osgi.slf4j.import.packages>org.slf4j;version="[1.7,3.0)", org.slf4j.event;version="[1.7,3.0)",
+            org.slf4j.helpers;version="[1.7,3.0)", org.slf4j.spi;version="[1.7,3.0)"
+        </osgi.slf4j.import.packages>
+
+        <!-- plugin versions -->
+        <maven.surefire.version>3.0.0-M5</maven.surefire.version>
+        <maven.failsafe.version>3.0.0-M5</maven.failsafe.version>
+        <maven.resources-plugin.version>3.2.0</maven.resources-plugin.version>
+        <maven.enforcer-plugin.version>3.0.0</maven.enforcer-plugin.version>
+        <maven.war-plugin.version>3.3.2</maven.war-plugin.version>
+        <maven.clean-plugin.version>3.1.0</maven.clean-plugin.version>
+        <maven.deploy-plugin.version>3.0.0-M1</maven.deploy-plugin.version>
+        <maven.install-plugin.version>3.0.0-M1</maven.install-plugin.version>
+        <maven.site-plugin.version>3.9.1</maven.site-plugin.version>
+        <maven.compiler-plugin.version>3.8.1</maven.compiler-plugin.version>
+        <proguard.plugin.version>2.4.0</proguard.plugin.version>
+        <build-helper.plugin.version>3.2.0</build-helper.plugin.version>
+        <aspectj.plugin.version>1.14.0</aspectj.plugin.version>
+        <maven-bundle-plugin.version>5.1.2</maven-bundle-plugin.version>
+        <maven-dependency-plugin.version>3.2.0</maven-dependency-plugin.version>
+        <maven-antrun-plugin.version>3.0.0</maven-antrun-plugin.version>
+        <maven-jar-plugin.version>3.2.0</maven-jar-plugin.version>
+        <docker-compose-maven-plugin.version>4.0.0</docker-compose-maven-plugin.version>
+        <cargo-maven3-plugin.version>1.9.7</cargo-maven3-plugin.version>
+        <maven-assembly-plugin.version>3.3.0</maven-assembly-plugin.version>
+
+        <skipITs>true</skipITs>
+        <skipDockerEnv>true</skipDockerEnv>
+        <docker.skip>true</docker.skip>
+    </properties>
+    <modules>
+        <module>core-web</module>
+        <!--<module>dotcms-dojo-theme</module>-->
+        <module>osgi-base</module>
+        <module>dotCMS</module>
+        <module>dotcms-packaging</module>
+        <module>dotcms-integration</module>
+    </modules>
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${maven.compiler-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <version>${maven.clean-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>${maven.deploy-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-install-plugin</artifactId>
+                    <version>${maven.install-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-site-plugin</artifactId>
+                    <version>${maven.site-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-war-plugin</artifactId>
+                    <version>${maven.war-plugin.version}</version>
+                </plugin>
+                <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>${maven.enforcer-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven.surefire.version}</version>
+                    <configuration>
+                        <trimStackTrace>false</trimStackTrace>
+                        <rerunFailingTestsCount>${surefire.rerunFailingTestsCount}</rerunFailingTestsCount>
+                        <forkedProcessTimeoutInSeconds>3600</forkedProcessTimeoutInSeconds>
+                     <!--   <argLine>
+                            @{argLine} ${dotcms.surefire.argLine}
+                        </argLine>-->
+                        <failIfNoTests>false</failIfNoTests>
+                        <forkCount>1</forkCount>
+                        <reuseForks>true</reuseForks> <!-- to work around crash at https://github.com/junit-team/junit5/issues/801 -->
+                        <!-- order can be different depending on os jvm so let's force it -->
+                        <runOrder>alphabetical</runOrder>
+                        <systemPropertyVariables>
+                            <java.io.tmpdir>${java.io.tmpdir}</java.io.tmpdir>
+                        </systemPropertyVariables>
+                        <!-- The LC_ALL env variable must have some UTF variant otherwise creating and/or reading files with non-ascii names doesn't work -->
+                        <environmentVariables>
+                            <LC_ALL>en_US.UTF-8</LC_ALL>
+                        </environmentVariables>
+                       <!-- <workingDirectory>${project.build.directory}/test-classes</workingDirectory>-->
+                    </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.ow2.asm</groupId>
+                            <artifactId>asm-commons</artifactId>
+                            <version>${asm.version}</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>${maven.failsafe.version}</version>
+                    <configuration>
+                        <systemPropertyVariables>
+                            <systemPropertyVariables>
+                                <java.io.tmpdir>${java.io.tmpdir}</java.io.tmpdir>
+                            </systemPropertyVariables>
+                        </systemPropertyVariables>
+                        <skipITs>${skipITs}</skipITs>
+                        <!--<workingDirectory>${project.build.directory}/test-run</workingDirectory>-->
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-report-plugin</artifactId>
+                    <version>3.0.0-M5</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-project-info-reports-plugin</artifactId>
+                    <version>3.1.2</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>${maven.resources-plugin.version}</version>
+                    <configuration>
+                        <nonFilteredFileExtensions>
+                            <nonFilteredFileExtension>pdf</nonFilteredFileExtension>
+                            <nonFilteredFileExtension>swf</nonFilteredFileExtension>
+                            <nonFilteredFileExtension>mmdb</nonFilteredFileExtension>
+                        </nonFilteredFileExtensions>
+                    </configuration>
+                </plugin>
+
+
+                <plugin>
+                    <groupId>org.apache.felix</groupId>
+                    <artifactId>maven-bundle-plugin</artifactId>
+                    <version>5.1.2</version>
+                    <extensions>true</extensions>
+                    <configuration>
+                        <supportedProjectTypes>
+                            <supportedProjectType>jar</supportedProjectType>
+                            <supportedProjectType>maven-plugin</supportedProjectType>
+                        </supportedProjectTypes>
+                        <instructions>
+                            <Bundle-SymbolicName>${bundle-symbolic-name}</Bundle-SymbolicName>
+                            <Bundle-Description>Jetty module for ${project.name}</Bundle-Description>
+                            <Bundle-RequiredExecutionEnvironment>JavaSE-11</Bundle-RequiredExecutionEnvironment>
+                            <Bundle-DocURL>${dotcms.url}</Bundle-DocURL>
+                            <Bundle-Vendor>DotCMS</Bundle-Vendor>
+                            <Bundle-Classpath>.</Bundle-Classpath>
+                            <Bundle-Copyright>Copyright (c) Todo</Bundle-Copyright>
+                            <Import-Package>
+                                ${osgi.slf4j.import.packages},
+                                *
+                            </Import-Package>
+                            <_provider-policy><![CDATA[$<range;[===,=+)>]]></_provider-policy>
+                            <_consumer-policy><![CDATA[$<range;[===,+)>]]></_consumer-policy>
+                            <_noee>true</_noee>
+                        </instructions>
+                    </configuration>
+                </plugin>
+
+                <plugin>
+                <groupId>com.github.wvengen</groupId>
+                <artifactId>proguard-maven-plugin</artifactId>
+
+                <version>${proguard.plugin.version}</version>
+                </plugin>
+
+                <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>${build-helper.plugin.version}</version>
+                </plugin>
+                <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>aspectj-maven-plugin</artifactId>
+                <version>${aspectj.plugin.version}</version>
+                </plugin>
+
+
+                <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>${maven-dependency-plugin.version}</version>
+                </plugin>
+                <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>${maven-antrun-plugin.version}</version>
+                </plugin>
+                <plugin>
+
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>${maven-jar-plugin.version}</version>
+                </plugin>
+
+                <plugin>
+                <groupId>com.dkanejs.maven.plugins</groupId>
+                <artifactId>docker-compose-maven-plugin</artifactId>
+                <version>${docker-compose-maven-plugin.version}</version>
+                </plugin>
+
+                <plugin>
+                <groupId>org.codehaus.cargo</groupId>
+                <artifactId>cargo-maven3-plugin</artifactId>
+                <version>${cargo-maven3-plugin.version}</version>
+                </plugin>
+
+                <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>${maven-assembly-plugin.version}</version>
+                </plugin>
+            </plugins>
+    </pluginManagement>
+
+    <plugins>
+	    <plugin>
+    <groupId>org.codehaus.mojo</groupId>
+    <artifactId>versions-maven-plugin</artifactId>
+    <version>2.8.1</version>
+    <configuration>
+        <generateBackupPoms>false</generateBackupPoms>
+    </configuration>
+</plugin>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-enforcer-plugin</artifactId>
+            <version>3.0.0-M3</version>
+            <executions>
+                <execution>
+                    <id>enforce-warn</id>
+                    <goals>
+                        <goal>enforce</goal>
+                    </goals>
+                    <configuration>
+                        <rules>
+                            <dependencyConvergence/>
+                            <banDuplicateClasses>
+                                <ignoreClasses>
+                                    <!-- should remove duplicate from com.dotcms.lib:dot.daisydiff -->
+                                    <!--<ignoreClass>org.w3c.dom.html.HTMLDOMImplementation
+                                    </ignoreClass>-->
+                                    <!-- <ignoreClass>org.w3c.dom.events.*
+                                     </ignoreClass>-->
+                                    <ignoreClass>org.apache.felix.*</ignoreClass>
+                                    <ignoreClass>org.osgi.service.*</ignoreClass>
+                                </ignoreClasses>
+                                <findAllDuplicates>true</findAllDuplicates>
+                                <ignoreWhenIdentical>false</ignoreWhenIdentical>
+                            </banDuplicateClasses>
+                            <requireEncoding>
+                                <encoding>UTF-8</encoding>
+                                <includes>src/main/resources/**,src/test/resources/**</includes>
+                            </requireEncoding>
+
+                        </rules>
+                        <fail>false</fail>
+                    </configuration>
+                </execution>
+                <execution>
+                    <id>enforce-maven</id>
+                    <goals>
+                        <goal>enforce</goal>
+                    </goals>
+                    <configuration>
+                        <rules>
+                            <requireMavenVersion>
+                                <version>3.6.0</version>
+                            </requireMavenVersion>
+                        </rules>
+                    </configuration>
+                </execution>
+                <execution>
+                    <id>enforce-fail</id>
+                    <configuration>
+                        <rules>
+
+
+                            <!-- Require Java 8 or higher for building (as bnd since version 4.0 is built with Java 8) -->
+                            <requireJavaVersion>
+
+                                <version>[11,)</version>
+                            </requireJavaVersion>
+
+                            <enforceBytecodeVersion>
+                                <maxJdkVersion>11</maxJdkVersion>
+                                <excludes>
+                                    <exclude>org.mindrot:jbcrypt</exclude>
+                                </excludes>
+                            </enforceBytecodeVersion>
+                            <!-- if you use com.sun.activation:jakarta.activation-->
+
+                            <bannedDependencies>
+                                <excludes>
+                                    <exclude>javax.activation:javax.activation-api</exclude>
+                                    <exclude>com.sun.activation:javax.activation</exclude>
+                                    <exclude>javax.activation:activation</exclude>
+                                    <!-- jakarta.activation:jakarta.activation-api only includes api
+                                    implementation from java 9 module is deprecated  com.sun.activation:jakarta.activation contains
+                                    api an implementation -->
+                                    <exclude>jakarta.activation:jakarta.activation-api</exclude>
+                                </excludes>
+                                <message>using com.sun.activation:jakarta.activation</message>
+                            </bannedDependencies>
+                            <bannedDependencies>
+                                <excludes>
+                                    <!-- use java system xml-apis -->
+                                    <exclude>xml-apis:xml-apis</exclude>
+
+                                    <!-- need to use patched xerces for java 9 + -->
+                                    <exclude>xerces:xercesImpl</exclude>
+                                    <exclude>xerces:xmlParserAPIs</exclude>
+                                    <exclude>xerces:xerces</exclude>
+                                </excludes>
+                                <message>Remove xml-apis and xerces and latest versions provided by Java core</message>
+                            </bannedDependencies>
+
+                            <bannedDependencies>
+                                <excludes>
+                                    <!-- <exclude>com.sun.xml.bind:jaxb-impl</exclude>-->
+
+                                    <exclude>com.sun.mail:javax.mail</exclude>
+
+                                    <!--
+                                    Use for Version 2.x  package changed from javax.mail to jakarta.mail
+                                    <exclude>com.sun.mail:jakarta.mail</exclude>-->
+                                    <exclude>javax.mail:mail</exclude>
+                                    <exclude>javax.mail:mailapi</exclude>
+                                    <exclude>javax.mail:javax.mail</exclude>
+                                    <exclude>com.sun.mail:mail</exclude>
+                                </excludes>
+                                <message>Remove apis not renamed to jakarta</message>
+                            </bannedDependencies>
+
+                            <bannedDependencies>
+                                <excludes>
+                                    <exclude>org.hamcrest:hamcrest-all</exclude>
+                                </excludes>
+                                <message>Do not include uber jars, use individual sub jars instead.  This will clash</message>
+                            </bannedDependencies>
+
+
+                            <bannedDependencies>
+                                <excludes>
+
+                                    <exclude>javax.servlet:javax.servlet-api</exclude>
+
+                                    <exclude>javax.enterprise:cdi-api</exclude>
+                                    <exclude>javax.inject:javax.inject</exclude>
+                                    <exclude>javax.json:javax.json-api</exclude>
+                                    <exclude>javax.json.bind:javax.json.bind-api</exclude>
+                                    <exclude>org.glassfish:javax.json</exclude>
+                                    <exclude>org.glassfish:javax.el</exclude>
+                                    <exclude>javax.persistence:javax.persistence-api</exclude>
+                                    <exclude>javax.persistence:persistence-api</exclude>
+                                    <exclude>
+                                        javax.security.enterprise:javax.security.enterprise-api
+                                    </exclude>
+                                    <exclude>javax.servlet:servlet-api:*:jar:compile</exclude>
+                                    <exclude>javax.servlet:servlet-api:*:jar:runtime</exclude>
+                                    <exclude>javax.servlet:servlet-api:*:jar:test</exclude>
+                                    <!-- only allow provided scope use container version -->
+
+                                    <exclude>javax.transaction:jta</exclude>
+                                    <exclude>javax.transaction:javax.transaction-api</exclude>
+
+                                    <!-- Use org.glassfish.jaxb:jaxb-runtime -->
+                                    <exclude>com.sun.xml.bind:jaxb-core</exclude>
+                                    <exclude>javax.xml.bind:jaxb-api:jar</exclude>
+
+
+
+                                    <exclude>javax.websocket:javax.websocket-api</exclude>
+
+                                    <!-- renamed to org.jvnet.mimepull:mimepull -->
+                                    <exclude>org.jvnet:mimepull</exclude>
+
+                                </excludes>
+                                <includes>
+                                    <!-- this is for REST Assured -->
+                                    <include>jakarta.xml.bind:jakarta.xml.bind-api:*:*:test
+                                    </include>
+                                </includes>
+                            </bannedDependencies>
+                        </rules>
+                    </configuration>
+                    <goals>
+                        <goal>enforce</goal>
+                    </goals>
+                </execution>
+            </executions>
+            <dependencies>
+                <dependency>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>extra-enforcer-rules</artifactId>
+                    <version>1.3</version>
+                </dependency>
+            </dependencies>
+        </plugin>
+
+    </plugins>
+    </build>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- logging dependencies based upon log4j2 base implementation
+                  must not include log4j-to-slf4j, or other slf4j implementations
+                  -->
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-api</artifactId>
+                <version>${log4j.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-core</artifactId>
+                <version>${log4j.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-1.2-api</artifactId>
+                <version>${log4j.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-jcl</artifactId>
+                <version>${log4j.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-web</artifactId>
+                <version>${log4j.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-slf4j-impl</artifactId>
+                <version>${log4j.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <!-- end logging -->
+            <!-- jackson -->
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>2.12.1</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${jackson.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${jackson.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
+                <scope>compile</scope>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>*</groupId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.jaxrs</groupId>
+                <artifactId>jackson-jaxrs-json-provider</artifactId>
+                <version>${jackson.version}</version>
+                <scope>compile</scope>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>*</groupId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.jaxrs</groupId>
+                <artifactId>jackson-jaxrs-base</artifactId>
+                <version>${jackson.version}</version>
+                <scope>compile</scope>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>*</groupId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jackson-module-jaxb-annotations</artifactId>
+                <version>${jackson.version}</version>
+                <scope>compile</scope>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>*</groupId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-guava</artifactId>
+                <version>${jackson.version}</version>
+                <scope>compile</scope>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>*</groupId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jdk8</artifactId>
+                <version>${jackson.version}</version>
+                <scope>compile</scope>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>*</groupId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <!-- end jackson -->
+
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>27.0.1-android</version>
+                <scope>compile</scope>
+            </dependency>
+
+
+            <dependency>
+                <groupId>org.glowroot</groupId>
+                <artifactId>glowroot-agent</artifactId>
+                <version>${glowroot.version}</version>
+                <type>zip</type>
+                <classifier>dist</classifier>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
+
+    <repositories>
+        <repository>
+            <id>dotcms-libs</id>
+            <url>https://repo.dotcms.com/artifactory/libs-release</url>
+        </repository>
+        <repository>
+            <id>dotcms-libs-snapshot</id>
+            <url>https://repo.dotcms.com/artifactory/libs-snapshot-local</url>
+        </repository>
+        <repository>
+            <id>jitpack</id>
+            <url>https://jitpack.io</url>
+        </repository>
+
+    </repositories>
+
+    <profiles>
+        <profile>
+            <id>run-it-tests</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <skipDockerEnv>false</skipDockerEnv>
+            </properties>
+        </profile>
+        <profile>
+            <id>enableDocker-linux</id>
+            <properties>
+                <docker.skip>false</docker.skip>
+            </properties>
+            <activation>
+                <!-- Activate on Linux systems. Assume presence of docker.pid file indicates Docker is available -->
+                <file>
+                    <exists>/var/run/docker.pid</exists>
+                </file>
+            </activation>
+        </profile>
+        <profile>
+            <id>enableDocker-win10</id>
+            <properties>
+                <docker.skip>false</docker.skip>
+            </properties>
+            <activation>
+                <!-- Activate on Windows 10 systems with native Docker. Check for docker.exe in default install directory -->
+                <file>
+                    <exists>C:\Program Files\Docker\Docker\resources\bin\docker.exe</exists>
+                </file>
+            </activation>
+        </profile>
+        <profile>
+            <id>enableDocker-toolbox</id>
+            <properties>
+                <docker.skip>false</docker.skip>
+            </properties>
+            <activation>
+                <!-- Activate on Windows (Docker Toolbox) systems. Assume presence of DOCKER_HOST indicates Docker is available -->
+                <property>
+                    <name>env.DOCKER_HOST</name>
+                </property>
+            </activation>
+        </profile>
+    </profiles>
+</project>
