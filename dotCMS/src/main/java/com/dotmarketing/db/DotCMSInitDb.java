@@ -53,7 +53,9 @@ public class DotCMSInitDb {
     
     @WrapInTransaction
     private static void loadStarterSiteData() throws Exception{
-        String starter = Config.getStringProperty("STARTER_DATA_LOAD", null);
+        Object systemProp = System.getProperties().get("STARTER_DATA_LOAD");
+        String starter = (systemProp!=null) ?  systemProp.toString() : Config.getStringProperty("STARTER_DATA_LOAD", null);
+
         File starterZip = null;
         
         if(UtilMethods.isSet(starter)){

@@ -12,9 +12,9 @@ public abstract class ContentletRelationshipRecords implements Serializable {
 
 
 	private static final long serialVersionUID = 1L;
-	Relationship relationship;
-	List<Contentlet> records;
-	boolean isHasParent;
+	abstract Relationship relationship();
+	abstract List<Contentlet> records();
+	abstract boolean isHasParent();
 
 	public void reorderRecords(String field) {
 		/*

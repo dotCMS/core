@@ -3,6 +3,7 @@ package com.dotcms.security.apps;
 import static com.dotcms.security.apps.ParamDescriptor.newParam;
 import static com.dotcms.security.apps.Secret.newSecret;
 import static com.google.common.collect.ImmutableMap.of;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -52,6 +53,8 @@ import io.vavr.Tuple;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.CopyOption;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.Key;
 import java.util.List;
@@ -60,6 +63,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -938,9 +942,8 @@ public class AppsAPIImplTest {
             //Move the file to the system folder
             final Path systemAppsDescriptorDirectory = AppDescriptorHelper
                     .getSystemAppsDescriptorDirectory();
-            final boolean result = file.renameTo(new File(
-                    systemAppsDescriptorDirectory.toString() + File.separator + file.getName()));
-            assertTrue(result);
+            // Files.renameFile does not work across FS. e.g. if temp is on different FS
+            Files.move(file.toPath(),systemAppsDescriptorDirectory.resolve(file.getName()), REPLACE_EXISTING);
 
             final User admin = TestUserUtils.getAdminUser();
             final AppsAPI api = APILocator.getAppsAPI();
@@ -994,9 +997,11 @@ public class AppsAPIImplTest {
             //Move the file to the system folder
             final Path systemAppsDescriptorDirectory = AppDescriptorHelper
                     .getSystemAppsDescriptorDirectory();
-            final boolean result = file.renameTo(new File(
-                    systemAppsDescriptorDirectory.toString() + File.separator + file.getName()));
-            assertTrue(result);
+            Files.createDirectories(systemAppsDescriptorDirectory.getParent());
+
+            // Files.renameFile does not work across FS. e.g. if temp is on different FS
+            Files.move(file.toPath(),systemAppsDescriptorDirectory.resolve(file.getName()), REPLACE_EXISTING);
+
             //Even though we just moved the file under apps-system-folder this should recreate the file again.
             //But before that.. lets make a small change so we can tell the difference between the tow files.
             dataGen.withDescription("user-app");
@@ -1058,10 +1063,9 @@ public class AppsAPIImplTest {
             //Move the file to the system folder and save it in upper case
             final Path systemAppsDescriptorDirectory = AppDescriptorHelper
                     .getSystemAppsDescriptorDirectory();
-            final boolean result = file.renameTo(new File(
-                    systemAppsDescriptorDirectory.toString() + File.separator + file.getName()
-                            .toUpperCase().replace("YML", "yml")));
-            assertTrue(result);
+
+            // Files.renameFile does not work across FS. e.g. if temp is on different FS
+            Files.move(file.toPath(),systemAppsDescriptorDirectory.resolve(file.getName().toUpperCase().replace("YML", "yml")), REPLACE_EXISTING);
             //Even though we just moved the file under apps-system-folder this should recreate the file again.
             //But before that.. lets make a small change so we can tell the difference between the two files.
             dataGen.withDescription("user-app");
@@ -1173,6 +1177,8 @@ public class AppsAPIImplTest {
 
     @DataProvider
     public static Object[] getTargetSitesTestCases() throws Exception {
+        // get test cases is run before @BeforeClass  need to init
+        IntegrationTestInitService.getInstance().init();
         return new Object[]{
                 new SiteDataGen().nextPersisted(),
                 APILocator.getHostAPI().findSystemHost()

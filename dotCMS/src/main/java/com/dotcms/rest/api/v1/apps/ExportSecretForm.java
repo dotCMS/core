@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.apps;
 
+import com.dotcms.repackage.javax.validation.constraints.Size;
 import com.dotcms.rest.api.Validated;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -15,8 +16,7 @@ import com.dotcms.repackage.javax.validation.constraints.NotNull;
 public class ExportSecretForm extends Validated {
 
     @NotNull
-    @Min(14)
-    @Max(32)
+    @Size(min = 14, max=32)
     private final String password;
 
     @NotNull

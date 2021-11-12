@@ -42,7 +42,7 @@ public class SimpleNodeTest {
         objectOut.close();
         out.close();
 
-        String path=Config.getStringProperty("VELOCITY_ROOT") + File.separator + "VM_global_library.vm";
+        File path = new File(Config.CONTEXT.getRealPath(Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity"))+ File.separator + "VM_global_library.vm");
         node=engine.getRuntimeServices().parse(new FileReader(path),"VM_global_library.vm");
         
         out=new ByteArrayOutputStream();

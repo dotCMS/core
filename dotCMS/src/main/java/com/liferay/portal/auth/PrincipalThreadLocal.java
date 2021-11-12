@@ -51,6 +51,6 @@ public class PrincipalThreadLocal {
 	private static final Log _log =
 		LogFactory.getLog(PrincipalThreadLocal.class);
 
-	private static ThreadLocal _threadLocal = new ThreadLocal();
+	private static final ThreadLocal _threadLocal = new ThreadLocal();
 
 }

@@ -52,6 +52,7 @@ import io.vavr.collection.Stream;
 import java.io.File;
 import java.io.Serializable;
 import java.net.URL;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
@@ -72,8 +73,8 @@ import static org.mockito.Mockito.mock;
 @RunWith(DataProviderRunner.class)
 public class DependencyBundlerTest {
 
-    private static  Map<String, List<ManifestItem>> excludeSystemFolder;
-    private static  Map<String, List<ManifestItem>> excludeSystemFolderAndSystemHost;
+    private static  Map<String, List<ManifestItem>> excludeSystemFolder = new ConcurrentHashMap<>();
+    private static  Map<String, List<ManifestItem>> excludeSystemFolderAndSystemHost = new ConcurrentHashMap<>();
 
     public static final String EXCLUDE_SYSTEM_FOLDER_HOST = "Excluded System Folder/Host";
     private static String FILTER_EXCLUDE_REASON = "Excluded by filter";
@@ -82,19 +83,19 @@ public class DependencyBundlerTest {
 
     private DependencyBundler bundler = null;
 
-    private static FilterDescriptor filterDescriptorAllDependencies;
-    private static FilterDescriptor filterDescriptorNotDependencies;
-    private static FilterDescriptor filterDescriptorNotRelationship;
-    private static FilterDescriptor filterDescriptorNotDependenciesRelationship;
+    private static volatile FilterDescriptor filterDescriptorAllDependencies;
+    private static volatile FilterDescriptor filterDescriptorNotDependencies;
+    private static volatile FilterDescriptor filterDescriptorNotRelationship;
+    private static volatile FilterDescriptor filterDescriptorNotDependenciesRelationship;
 
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
 
-        excludeSystemFolder = map(EXCLUDE_SYSTEM_FOLDER_HOST,
+        excludeSystemFolder.put(EXCLUDE_SYSTEM_FOLDER_HOST,
                 list(APILocator.getFolderAPI().findSystemFolder()));
 
-        excludeSystemFolderAndSystemHost = map(
+        excludeSystemFolderAndSystemHost.put(
                 EXCLUDE_SYSTEM_FOLDER_HOST, list(APILocator.getFolderAPI().findSystemFolder(),
                         APILocator.getHostAPI().findSystemHost()));
 
@@ -2225,7 +2226,7 @@ public class DependencyBundlerTest {
         ManifestItem assetsToAddInBundle;
         Map<ManifestItem, Collection<ManifestItem>> dependenciesToAssert;
         FilterDescriptor filterDescriptor;
-        Map<String, List<ManifestItem>> excludes;
+        final Map<String, List<ManifestItem>> excludes = new ConcurrentHashMap<>();
         String message;
 
         public TestData(
@@ -2245,7 +2246,8 @@ public class DependencyBundlerTest {
             this.assetsToAddInBundle = assetsToAddInBundle;
             this.filterDescriptor = filterDescriptor;
             this.dependenciesToAssert = dependenciesToAssert;
-            this.excludes = excludes;
+            if (excludes!=null)
+                this.excludes.putAll(excludes);
             this.message = message;
         }
 
@@ -2262,7 +2264,7 @@ public class DependencyBundlerTest {
 
             manifestItemsMap.addDependencies(dependenciesToAssert);
 
-            if (excludes != null) {
+            if (!excludes.isEmpty()) {
                 manifestItemsMap.addExcludes(excludes);
             }
 

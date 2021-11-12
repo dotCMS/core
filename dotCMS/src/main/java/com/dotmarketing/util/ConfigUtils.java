@@ -11,6 +11,9 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Optional;
 
 /**
  * Generic class to get return configuration parameters, and any logic required
@@ -134,17 +137,14 @@ public class ConfigUtils {
      * @return the root folder of where assets are stored
      */
     public static String getAbsoluteAssetsRootPath() {
-        String realPath = Config.getStringProperty("ASSET_REAL_PATH", null);
-        if (UtilMethods.isSet(realPath) && !realPath.endsWith(File.separator)) {
-            realPath = realPath + File.separator;
-        }
-        if (!UtilMethods.isSet(realPath)) {
+        Optional<Path> realPath = Config.getAbsolutePathProperty("ASSET_REAL_PATH");
+        if (realPath.isPresent()) {
             final String path = Try
                     .of(() -> Config.getStringProperty("ASSET_PATH", DEFAULT_RELATIVE_ASSET_PATH))
                     .getOrElse(DEFAULT_RELATIVE_ASSET_PATH);
             return FileUtil.getRealPath(path);
         } else {
-            return realPath;
+            return realPath.get().toString();
         }
     }
     

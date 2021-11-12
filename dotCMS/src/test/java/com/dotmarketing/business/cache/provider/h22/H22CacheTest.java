@@ -318,7 +318,7 @@ public class H22CacheTest {
 
 		try {
 			final String randomAlphanumeric = RandomStringUtils.randomAlphanumeric(10);
-			final Object object = new Object();
+			final Object object = RandomStringUtils.randomAlphanumeric(10);;
 
 			assertTrue(cache.shouldAsync);
 			int count = 0;

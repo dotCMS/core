@@ -73,6 +73,7 @@ public class BundleFactoryTest {
 
         //All bundles should be returned since the Admin can see all the bundles
         for(final String bundleId : bundleIdsAdmin){
+            // Fixme : steve work on retry
             assertTrue(bundlesSentIds.contains(bundleId));
         }
 

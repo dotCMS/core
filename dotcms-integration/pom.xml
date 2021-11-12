@@ -2,123 +2,273 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.dotcms</groupId>
         <artifactId>dotcms-parent</artifactId>
+        <groupId>com.dotcms</groupId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
+    <modelVersion>4.0.0</modelVersion>
 
     <artifactId>dotcms-integration</artifactId>
-
     <packaging>jar</packaging>
 
     <properties>
-        <cargo.version>1.9.6</cargo.version>
-        <cargo.version>1.9.6</cargo.version>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <assembly-directory>${basedir}/target/dotcms-home</assembly-directory>
-        <servlet.port>8080</servlet.port>
-        <it-database.port>5432</it-database.port>
-        <it-elasticsearch.port>9200</it-elasticsearch.port>
-        <skipITs>false</skipITs>
+        <integration-test-base>${project.basedir}/../dotCMS/src/integration-test</integration-test-base>
+        <integration-test-sources>${integration-test-base}/java</integration-test-sources>
+        <integration-test-resources>${integration-test-base}/resources</integration-test-resources>
+
+       <!-- <integration-test-classes>${project.build.directory}/integration-test-classes</integration-test-classes>
+-->
     </properties>
 
-    <dependencies>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.12</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.dotcms</groupId>
-            <artifactId>dotcms-core</artifactId>
-            <type>war</type>
-            <version>1.0.0-SNAPSHOT</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <version>42.2.23</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.zaxxer</groupId>
-            <artifactId>HikariCP</artifactId>
-            <version>3.4.2</version>
-            <scope>compile</scope>
-        </dependency>
-
-    </dependencies>
     <build>
+        <!-- TODO: Move with Maven conventions -->
+        <testResources><testResource>
+            <directory>${integration-test-resources}</directory></testResource>
+        <testResource><directory>${project.basedir}/src/main/resources</directory></testResource></testResources>
+        <testSourceDirectory>${integration-test-sources}</testSourceDirectory>
 
 
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+
+                    <skipMain>false</skipMain>
+
+                    <fork>true</fork>
+                    <release>${maven.compiler.release}</release>
+
+                    <useIncrementalCompilation>false</useIncrementalCompilation>
+
+                </configuration>
+
+                <executions>
+                    <execution>
+                        <id>default-compile</id>
+                        <phase>none</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>compile-processor-only</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/target/unwoven/classes</outputDirectory>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>compile-test-processor-only</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>testCompile</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/target/unwoven/test-classes</outputDirectory>
+                        </configuration>
+                    </execution>
+            </executions>
+        </plugin>
+
+        <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>aspectj-maven-plugin</artifactId>
+            <configuration>
+                <complianceLevel>${maven.compiler.source}</complianceLevel>
+                <source>${maven.compiler.source}</source>
+                <target>${maven.compiler.target}</target>
+                <encoding>UTF-8</encoding>
+                <verbose>true</verbose>
+                <forceAjcCompile>false</forceAjcCompile>
+                <aspectLibraries>
+                    <!-- aspects all contained currently in dotcms-core better to pull out
+                    aspects into independent module-->
+                    <aspectLibrary>
+                        <groupId>com.dotcms</groupId>
+                        <artifactId>dotcms-core</artifactId>
+                        <classifier>classes</classifier>
+                        <type>jar</type>
+                    </aspectLibrary>
+                </aspectLibraries>
+                <!-- If integration tests need to create their own aspects and process immutables
+                    we will need to follow compilation structure from dotcms-core to process annotations with
+                    regular maven-compiler-plugin first.  Preferably remove aspectj and replace with bytebuddy
+                    or use cdi framework.
+                -->
+            </configuration>
+            <executions>
+                <execution>
+                    <id>aspectj-compile</id>
+                    <goals>
+                        <goal>compile</goal>
+                    </goals>
+                    <configuration>
+                        <argumentFileName>argumentfile.txt</argumentFileName>
+                        <weaveDirectories>
+                            <weaveDirectory>${basedir}/target/unwoven/classes</weaveDirectory>
+                        </weaveDirectories>
+                        <proc>none</proc>
+                    </configuration>
+                </execution>
+                <execution>
+                    <id>aspectj-test-compile</id>
+                    <goals>
+                        <goal>test-compile</goal>
+                    </goals>
+                    <configuration>
+                        <argumentFileName>test-argumentfile.txt</argumentFileName>
+                        <weaveDirectories>
+                            <weaveDirectory>${basedir}/target/unwoven/test-classes</weaveDirectory>
+                        </weaveDirectories>
+                        <proc>none</proc>
+                    </configuration>
+                </execution>
+            </executions>
+
+
+        </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>generate-resources</phase>
+
+                        <configuration>
+                            <target>
+                                <mkdir dir="${project.build.directory}/testing/assets" />
+                                <copy todir="${project.build.directory}/testing/assets">
+                                    <fileset dir="${user.home}" includes="license.zip" />
+                                </copy>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+
+        <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-test</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <!-- currently no unit tests in this module, but want to run stage without
+                            picking up Integration Tests that currently do not use *IT.java convention-->
+                            <excludes>**/**</excludes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <plugin>
                 <!-- Failsafe plugin runs integration tests -->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
-                    <includes>
-                        <include>**/*IT.java</include>
-                    </includes>
-
+                    <forkCount>1</forkCount>
+                    <useSystemClassLoader>false</useSystemClassLoader>
+                    <workingDirectory>${project.build.directory}/war</workingDirectory>
+<!--https://www.orpiske.net/2021/04/test-woes-with-maven-failsafe-3-0-0-m5/-->
+                    <!-- run with classes and resources extracted from war.
+                    -->
+                  <!--  <classpathDependencyExcludes>
+                        <classpathDependencyExclude>com.dotcms:dotcms-core:jar:classes</classpathDependencyExclude>
+                    </classpathDependencyExcludes>-->
+                    <childDelegation>true</childDelegation>
+                    <classesDirectory>${project.build.directory}/war/WEB-INF/classes</classesDirectory>
+                    <additionalClasspathElements>
+                        <additionalClasspathElement>${project.build.directory}/war/WEB-INF/classes</additionalClasspathElement>
+                        <additionalClasspathElement>${project.build.directory}/test-classess</additionalClasspathElement>-
+                    </additionalClasspathElements>
+                    <argLine>
+                        ${jvm.base.argLine}  -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8000
+                    </argLine>
+                    <!-- override maven defaults,  need to change to *IT.java -->
+                   <includes>
+                       <include>com/dotcms/MainSuite.java</include>
+                   </includes>
                 </configuration>
                 <executions>
                     <execution>
-                        <id>perform-it</id>
                         <goals>
                             <goal>integration-test</goal>
-                        </goals>
-                        <configuration>
-                            <systemProperties>
-                                <property>
-                                    <name>servlet.port</name>
-                                    <value>${servlet.port}</value>
-                                </property>
-                            </systemProperties>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>verify-it</id>
-                        <goals>
                             <goal>verify</goal>
                         </goals>
                     </execution>
                 </executions>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
+                <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>copy-base-assembly-tree</id>
+                        <id>unpack</id>
                         <phase>generate-resources</phase>
                         <goals>
-                            <goal>copy-resources</goal>
+                            <goal>unpack</goal>
                         </goals>
                         <configuration>
-                            <useBuildFilters>false</useBuildFilters>
-                            <includeEmptyDirs>true</includeEmptyDirs>
-                            <outputDirectory>${assembly-directory}</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>${basedir}/src/main/resources</directory>
-                                </resource>
-                            </resources>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>com.dotcms</groupId>
+                                    <artifactId>dotcms-core</artifactId>
+                                    <version>1.0.0-SNAPSHOT</version>
+                                    <type>war</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.build.directory}/war</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                            <overWriteReleases>false</overWriteReleases>
+                            <overWriteSnapshots>true</overWriteSnapshots>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-test-starter</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>com.dotcms</groupId>
+                                    <artifactId>starter</artifactId>
+                                    <version>empty_20211007</version>
+                                    <type>zip</type>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${project.build.directory}/war</outputDirectory>
+                                    <destFileName>starter.zip</destFileName>
+                                </artifactItem>
+                            </artifactItems>
                         </configuration>
                     </execution>
                 </executions>
+
             </plugin>
+
+
+
             <plugin>
                 <groupId>com.dkanejs.maven.plugins</groupId>
                 <artifactId>docker-compose-maven-plugin</artifactId>
-                <version>4.0.0</version>
                 <configuration>
                     <!--  <envFile>${project.basedir}/.env</envFile>-->
                     <services>
@@ -147,6 +297,7 @@
                         <id>up</id>
                         <phase>pre-integration-test</phase>
                         <goals>
+                            <goal>down</goal>
                             <goal>up</goal>
                         </goals>
                         <configuration>
@@ -156,201 +307,121 @@
                     </execution>
                     <execution>
                         <id>down</id>
-                        <phase>verify</phase>
+                        <!-- Use verify to make sure post-integration-test is run -->
+                        <phase>post-integration-test</phase>
                         <goals>
                             <goal>down</goal>
                         </goals>
                         <configuration>
                             <composeFile>${project.basedir}/../docker-compose.yml</composeFile>
-                            <removeVolumes>true</removeVolumes>
+                            <!-- <removeVolumes>true</removeVolumes> -->
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
 
-            <plugin>
-                <groupId>org.codehaus.cargo</groupId>
-                <artifactId>cargo-maven3-plugin</artifactId>
-                <version>${cargo.version}</version>
-
-                <configuration>
-                    <container>
-
-                        <timeout>1800000</timeout>
-                        <systemProperties>
-                            <file.encoding>UTF-8</file.encoding>
-                            <javax.xml.transform.TransformerFactory>
-                                com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl
-                            </javax.xml.transform.TransformerFactory>
-                            <javax.xml.parsers.DocumentBuilderFactory>
-                                com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl
-                            </javax.xml.parsers.DocumentBuilderFactory>
-                            <javax.xml.parsers.SAXParserFactory>
-                                com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl
-                            </javax.xml.parsers.SAXParserFactory>
-                        </systemProperties>
-
-                        <dependencies>
-                            <dependency>
-                                <groupId>org.postgresql</groupId>
-                                <artifactId>postgresql</artifactId>
-                            </dependency>
-
-                        </dependencies>
-                    </container>
-                    <configuration>
-                        <!--<home>${project.build.directory}/catalina-base</home>-->
-                        <properties>
-                            <!--    <cargo.servlet.port>${cargo.samples.servlet.port}</cargo.servlet.port>
-                                <cargo.rmi.port>${cargo.samples.rmi.port}</cargo.rmi.port>
-                                <cargo.tomcat.ajp.port>${cargo.samples.tomcat.ajp.port}</cargo.tomcat.ajp.port>
-                          -->
-
-                            <cargo.servlet.port>${servlet.port}</cargo.servlet.port>
-                            <!--   <cargo.start.jvmargs>
-                                   -Xdebug
-                                   -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000
-                                   -Xnoagent
-                                   -Djava.compiler=NONE
-                               </cargo.start.jvmargs>-->
-                        </properties>
-                    </configuration>
-                    <deployables>
-                        <deployable>
-                            <groupId>com.dotcms</groupId>
-                            <artifactId>dotcms-core</artifactId>
-                            <type>war</type>
-                            <properties>
-                                <context>/</context>
-                            </properties>
-                            <pingURL>http://localhost:8080/dotAdmin</pingURL>
-                        </deployable>
-                    </deployables>
-                    <packager>
-                        <outputLocation>${project.build.directory}/tomcat-packaged</outputLocation>
-                    </packager>
-                </configuration>
-                <executions>
-
-                    <execution>
-                        <id>start</id>
-                        <phase>pre-integration-test</phase>
-                        <goals>
-                            <goal>start</goal>
-                        </goals>
-                        <configuration>
-                            <container>
-                                <timeout>3000000</timeout>
-                            </container>
-                            <skip>${skipITs}</skip>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>stop</id>
-                        <phase>post-integration-test</phase>
-                        <goals>
-                            <goal>stop</goal>
-                        </goals>
-                        <configuration>
-                            <container>
-                                <timeout>60000</timeout>
-                            </container>
-                            <skip>${skipITs}</skip>
-                        </configuration>
-                    </execution>
-
-
-                    <execution>
-                        <id>package</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>configure</goal>
-                            <goal>package</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.3.0</version>
-                <configuration>
-                    <tarLongFileMode>posix</tarLongFileMode>
-                    <appendAssemblyId>false</appendAssemblyId>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>binary</id>
-                        <phase>install</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                        <configuration>
-                            <overrideUid>0</overrideUid>
-                            <overrideGid>0</overrideGid>
-                            <descriptors>
-                                <descriptor>src/assembly/descriptor.xml</descriptor>
-                            </descriptors>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-        </plugins>
+    </plugins>
 
     </build>
-    <profiles>
-        <profile>
-            <id>tomcat9x</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.codehaus.cargo</groupId>
-                            <artifactId>cargo-maven3-plugin</artifactId>
-                            <configuration>
-                                <container>
-                                    <containerId>tomcat9x</containerId>
-                                    <zipUrlInstaller>
-                                        <url>
-                                            https://repo.maven.apache.org/maven2/org/apache/tomcat/tomcat/9.0.53/tomcat-9.0.53.zip
-                                        </url>
-                                    </zipUrlInstaller>
-                                </container>
-                            </configuration>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-        <profile>
-            <id>jetty9x</id>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.codehaus.cargo</groupId>
-                            <artifactId>cargo-maven3-plugin</artifactId>
-                            <configuration>
-                                <container>
-                                    <containerId>jetty9x</containerId>
-                                    <artifactInstaller>
-                                        <groupId>org.eclipse.jetty</groupId>
-                                        <artifactId>jetty-home</artifactId>
-                                        <version>9.4.38.v20210224</version>
-                                    </artifactInstaller>
-                                </container>
-                            </configuration>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-    </profiles>
 
+    <dependencies>
+       <dependency>
+            <groupId>com.dotcms</groupId>
+            <artifactId>dotcms-core</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+            <classifier>classes</classifier>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>com.dotcms</groupId>
+            <artifactId>dotcms-core</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+            <classifier>enterprise</classifier>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>com.dotcms</groupId>
+            <artifactId>dotcms-core</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+            <classifier>tests</classifier>
+            <type>jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.dotcms</groupId>
+            <artifactId>dotcms-core</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+            <classifier>enterprise</classifier>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <version>${servlet.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.servlet.jsp</groupId>
+            <artifactId>jakarta.servlet.jsp-api</artifactId>
+            <version>2.3.6</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.websocket</groupId>
+            <artifactId>jakarta.websocket-api</artifactId>
+            <version>1.1.2</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.tngtech.junit.dataprovider</groupId>
+            <artifactId>junit4-dataprovider</artifactId>
+            <version>2.6</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-module-junit4</artifactId>
+            <version>${powermock.version}</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <!-- 2.6 - 3.0.1 from  org.powermock:powermock-module-junit4-->
+                    <groupId>org.objenesis</groupId>
+                    <artifactId>objenesis</artifactId>
+                </exclusion>
+                <exclusion>
+                    <!-- 2.27.0-GA - 3.28.0-GA -->
+                    <groupId>org.javassist</groupId>
+                    <artifactId>javassist</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-api-mockito2</artifactId>
+            <version>${powermock.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.2.8</version>
+            <scope>provided</scope>
+
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>1.3.176</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+            <version>1.3.5</version>
+        </dependency>
+    </dependencies>
 </project>

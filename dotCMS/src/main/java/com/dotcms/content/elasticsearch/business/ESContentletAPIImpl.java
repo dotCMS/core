@@ -5081,7 +5081,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             binaryFieldFolder.mkdirs();
 
                             // we move files that have been newly uploaded or edited
-                            if(oldFile==null || !oldFile.equals(incomingFile)){
+                            if(oldFile==null || !oldFile.getAbsolutePath().equals(incomingFile.getAbsolutePath())){
                                 if(!createNewVersion){
                                     // If we're calling a checkinWithoutVersioning method,
                                     // then folder needs to be cleaned up in order to add the new file in it.

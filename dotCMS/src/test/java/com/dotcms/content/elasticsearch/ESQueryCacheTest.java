@@ -15,7 +15,7 @@ import org.apache.lucene.search.TotalHits;
 import org.apache.lucene.search.TotalHits.Relation;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.common.text.Text;
-import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
@@ -131,7 +131,7 @@ public class ESQueryCacheTest {
         List<SearchHit> hitList = new ArrayList<>();
         for(int i=0;i< rand.nextInt(10);i++) {
             Text text = new Text(RandomStringUtils.randomAscii(36));
-            SearchHit hit = new SearchHit(i,RandomStringUtils.randomAscii(36),text,new HashMap<>());
+            SearchHit hit = new SearchHit(i,RandomStringUtils.randomAscii(36),text,new HashMap<>(),new HashMap<>());
             hitList.add(hit);
         }
         

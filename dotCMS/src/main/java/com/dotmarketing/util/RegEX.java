@@ -10,13 +10,13 @@ import java.util.Map;
 
 public class RegEX {
 
-	private ThreadLocal<Perl5Matcher> localP5Matcher = new ThreadLocal<Perl5Matcher>(){
+	private static final ThreadLocal<Perl5Matcher> localP5Matcher = new ThreadLocal<Perl5Matcher>(){
 		protected Perl5Matcher initialValue() {
 			return new Perl5Matcher();
 		}
 	};
 	
-	private ThreadLocal<Perl5Substitution> localP5Sub = new ThreadLocal<Perl5Substitution>(){
+	private static final ThreadLocal<Perl5Substitution> localP5Sub = new ThreadLocal<Perl5Substitution>(){
 		protected Perl5Substitution initialValue() {
 			return new Perl5Substitution();
 		}

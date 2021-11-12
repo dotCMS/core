@@ -14,6 +14,10 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.liferay.portal.model.User;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Before;
@@ -140,14 +144,14 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
     }
 
     @NotNull
-    private String prepareResources() {
-        final String assetRealPath = Config.getStringProperty("ASSET_REAL_PATH", "test-resources");
-        final String endpointFolder = assetRealPath + "/integrity/" + endpointId;
-        final File outputFolder = new File(endpointFolder);
-        if (!outputFolder.exists()) {
-            Assert.assertTrue(outputFolder.mkdir());
+    private String prepareResources() throws IOException {
+        final Path endpointFolder = Config.getAbsolutePathProperty("ASSET_REAL_PATH", "test-resources")
+                .resolve(Path.of("integrity", endpointId));
+
+        if (!Files.exists(endpointFolder)) {
+            Files.createDirectories(endpointFolder);
         }
-        return endpointFolder;
+        return endpointFolder.toString();
     }
 
     private List<Map<String, Object>> getConflicts(DotConnect dc) throws DotDataException {

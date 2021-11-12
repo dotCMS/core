@@ -13,7 +13,7 @@ import java.io.Serializable;
  */
 public class HttpServletRequestThreadLocal implements Serializable {
 
-    private static ThreadLocal<HttpServletRequest> requestLocal =
+    private static final ThreadLocal<HttpServletRequest> requestLocal =
             new ThreadLocal<>();
 
     public static final HttpServletRequestThreadLocal INSTANCE =

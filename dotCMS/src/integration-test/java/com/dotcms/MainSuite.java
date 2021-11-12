@@ -445,7 +445,6 @@ import org.junit.runners.Suite.SuiteClasses;
         TemplateBundlerTest.class,
         WorkflowBundlerTest.class,
         PublisherAPIImplTest.class,
-        LegacyShortyIdApiTest.class,
         AutoLoginFilterTest.class,
         FolderCacheImplIntegrationTest.class,
         Task210218MigrateUserProxyTableTest.class,

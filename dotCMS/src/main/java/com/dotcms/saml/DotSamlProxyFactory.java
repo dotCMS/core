@@ -17,6 +17,7 @@ import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import io.vavr.control.Try;
+import java.nio.file.Paths;
 import org.apache.felix.framework.OSGIUtil;
 import org.tuckey.web.filters.urlrewrite.NormalRule;
 
@@ -37,8 +38,8 @@ public class DotSamlProxyFactory implements EventSubscriber<AppSecretSavedEvent>
     public static final String SAML_APP_CONFIG_KEY = "dotsaml-config";
     public static final String PROPERTIES_PATH     = File.separator + "saml" + File.separator + "dotcms-saml-default.properties";
 
-    private static final String ASSETS_PATH   = Config.getStringProperty("ASSET_REAL_PATH",
-            FileUtil.getRealPath(Config.getStringProperty("ASSET_PATH", "/assets")));
+    private static final String ASSETS_PATH   = Paths.get(Config.getStringProperty("ASSET_REAL_PATH",
+            FileUtil.getRealPath(Config.getStringProperty("ASSET_PATH", "/assets")))).toAbsolutePath().normalize().toString();
     private static final String IDP_FILE_PATH = ASSETS_PATH + PROPERTIES_PATH;
 
     private final MessageObserver    messageObserver    = new DotLoggerMessageObserver();

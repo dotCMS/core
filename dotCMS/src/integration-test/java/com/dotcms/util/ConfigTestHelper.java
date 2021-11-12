@@ -5,10 +5,12 @@ import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import javax.servlet.ServletContext;
 
+import org.jetbrains.annotations.NotNull;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
@@ -45,15 +47,13 @@ public class ConfigTestHelper extends Config {
             WebAppPool.put("dotcms.org", Globals.MESSAGES_KEY, messages);
             Mockito.when(context.getAttribute(Globals.MESSAGES_KEY)).thenReturn(messages);
 
-            final String topPath = Files.createTempDir().getCanonicalPath();
+            //final String topPath = Files.createTempDir().getCanonicalPath();
             Mockito.when(context.getRealPath(Matchers.anyString())).thenAnswer(new Answer<String>() {
             //Mockito.when(context.getRealPath(Matchers.matches("^(?!/WEB-INF/felix)(?:[\\S\\s](?!/WEB-INF/felix))*+$"))).thenAnswer(new Answer<String>() {
                 @Override
                 public String answer(InvocationOnMock invocation) throws Throwable {
                     String path = (String) invocation.getArguments()[0];
-                    path = topPath + path.replaceAll("/", File.separator);
-
-                    return path;
+                    return getInternalPath(path);
                 }
             });
             Mockito.when(context.getResource(Matchers.anyString())).thenAnswer(new Answer<URL>() {
@@ -64,18 +64,8 @@ public class ConfigTestHelper extends Config {
                   
                   URL url = MultiMessageResources.class.getClassLoader().getResource(path);
                   if(url==null) {
-                    String workingDir=new File(".").getAbsolutePath();
-                    System.out.println("Working Directory = " + workingDir);
-
-                    
-                    String newPath  = workingDir + File.separator + 
-                    "src" + File.separator + 
-                    "main"  + File.separator +
-                    "webapp"  + path;
-                    System.out.println("path      :" + path);
-                    System.out.println("workingDir:" + workingDir);
-                    System.out.println("newPath   :" + newPath);
-                    if(new File(newPath).exists()) {
+                      String newPath = getInternalPath(path);
+                      if(new File(newPath).exists()) {
                       return new URL("file://" + newPath);
                     }
                   }
@@ -95,12 +85,27 @@ public class ConfigTestHelper extends Config {
         setToolboxPath();
     }
 
+    @NotNull
+    private static String getInternalPath(String path) {
+        Path workingDir=Paths.get(".").toAbsolutePath();
+        System.out.println("Working Directory = " + workingDir);
+
+        Path newPath  = workingDir.resolve("."+path).normalize().toAbsolutePath();
+
+        System.out.println("path      :" + path);
+        System.out.println("workingDir:" + workingDir);
+        System.out.println("newPath   :" + newPath);
+        return newPath.toString();
+    }
+
     private static void setToolboxPath() throws IOException {
-        String toolboxManagerPath = Config.getStringProperty("TOOLBOX_MANAGER_PATH");
-        File toolboxManager= new File(toolboxManagerPath);
-        if(toolboxManager.exists()){
-          Mockito.when(Config.CONTEXT.getResourceAsStream(toolboxManagerPath)).thenReturn(
-                  java.nio.file.Files.newInputStream(Paths.get(toolboxManagerPath)));
+        String toolboxManagerPath = Config.getStringProperty("TOOLBOX_MANAGER_PATH",null);
+        if (toolboxManagerPath!=null) {
+            File toolboxManager = new File(toolboxManagerPath);
+            if (toolboxManager.exists()) {
+                Mockito.when(Config.CONTEXT.getResourceAsStream(toolboxManagerPath)).thenReturn(
+                        java.nio.file.Files.newInputStream(Paths.get(toolboxManagerPath)));
+            }
         }
     }
 

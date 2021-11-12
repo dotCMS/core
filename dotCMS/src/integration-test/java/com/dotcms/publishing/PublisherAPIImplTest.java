@@ -96,7 +96,10 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 import java.util.stream.Collectors;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
@@ -484,8 +487,13 @@ public class PublisherAPIImplTest {
 
         if (!Rule.class.isInstance(testAsset.asset)) {
             final ManifestItemsMapTest manifestLines = testAsset.manifestLines();
-            manifestLines.addExcludes(map("Excluded System Folder/Host",
-                    list(APILocator.getHostAPI().findSystemHost(), APILocator.getFolderAPI().findSystemFolder())));
+            List<ManifestItem> set = new ArrayList<>();
+            set.add(APILocator.getFolderAPI().findSystemFolder());
+            Map<String, List<ManifestItem>> map = new ConcurrentHashMap<>();
+            map.put(APILocator.getHostAPI().findSystemHost().toString(),set);
+            map.put("Excluded System Folder/Host",set);
+
+            manifestLines.addExcludes(map);
 
             addLanguageVariableManifestItem(
                     manifestLines,
@@ -507,7 +515,7 @@ public class PublisherAPIImplTest {
             final List<Contentlet> languageVariablesAddInBundle)
             throws DotDataException, DotSecurityException {
 
-        languageVariablesAddInBundle.stream().forEach(
+        languageVariablesAddInBundle.stream().forEachOrdered(
                 contentlet -> manifestLines.add(contentlet, "Added Automatically by dotCMS")
         );
 
@@ -517,7 +525,7 @@ public class PublisherAPIImplTest {
             final Collection<Object> dependenciesFrom = getLanguageVariable(languageVariable,
                     addLanguageVariableDependencies, true, true);
 
-            dependenciesFrom.stream().forEach(
+            dependenciesFrom.stream().forEachOrdered(
                     dependency -> manifestLines.add((ManifestItem) dependency,
                             String.format(DEPENDENCY_FROM_TEMPLATE, languageVariable.getIdentifier(), languageVariable.getTitle())
             ));
@@ -582,12 +590,13 @@ public class PublisherAPIImplTest {
                     assertEquals("Wrong headers", MANIFEST_HEADERS, line);
                 } else {
                     final boolean contains = manifestItems.contains(line);
+                    // Fixme : steve
                     assertTrue(manifestItems + " not contain " + line, contains);
                 }
 
                 nLines++;
             }
-
+            // Fixme : steve expected 17 actual 14
             assertEquals("manifestItems\n" + manifestItems + "\nManifest content\n" + buffer,
                     manifestItems.size(), nLines - (manifestMetadataLines.size() + 1) );
         }

@@ -60,6 +60,7 @@ import org.elasticsearch.client.Node;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.immutables.value.Value.Parameter;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -242,8 +243,8 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
         String clientCertPath = Config.getStringProperty(propertyName, null);
         if (clientCertPath == null || !Files.exists(Paths.get(clientCertPath))) {
 
-            String assetsRealPath = Config.getStringProperty("ASSET_REAL_PATH",
-                    FileUtil.getRealPath(Config.getStringProperty("ASSET_PATH", "/assets")));
+            String assetsRealPath = Paths.get(Config.getStringProperty("ASSET_REAL_PATH",
+                    FileUtil.getRealPath(Config.getStringProperty("ASSET_PATH", "/assets")))).toAbsolutePath().normalize().toString();
 
             clientCertPath = assetsRealPath + File.separator + "certs" + File.separator + fileName;
 
@@ -289,11 +290,6 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
         }
     }
 
-    public void close() throws IOException {
-        if(client!=null) {
-            client.close();
-        }
-    }
 
     /*
      * Copyright 2014 The Netty Project
@@ -435,4 +431,6 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
             }
         }
     }
+
+
 }

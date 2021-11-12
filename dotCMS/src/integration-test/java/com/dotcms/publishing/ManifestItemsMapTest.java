@@ -14,12 +14,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class ManifestItemsMapTest {
-    private Map<String, List<String>> includes = new HashMap<>();
-    private Map<String, List<String>> excludes = new HashMap<>();
-    private Set<String> alreadyCheck;
+    private Map<String, List<String>> includes = new ConcurrentHashMap<>();
+    private Map<String, List<String>> excludes = new ConcurrentHashMap<>();
+    private Set<String> alreadyCheck = ConcurrentHashMap.newKeySet();
 
 
     private static String getIncludeLine(final ManifestItem asset, final String reason) {
@@ -74,13 +75,7 @@ public class ManifestItemsMapTest {
             return;
         }
 
-        List<String> lines = includes.get(key);
-
-        if (lines == null) {
-            lines = new ArrayList<>();
-            includes.put(key, lines);
-        }
-
+        List<String> lines = includes.computeIfAbsent(key, k -> new ArrayList<>());
         lines.add(getIncludeLine(assetManifestItem, reason));
 
     }
@@ -92,12 +87,7 @@ public class ManifestItemsMapTest {
             includes.remove(key);
         }
 
-        List<String> lines = excludes.get(key);
-
-        if (lines == null) {
-            lines = new ArrayList<>();
-            excludes.put(key, lines);
-        }
+        List<String> lines = excludes.computeIfAbsent(key, k -> new ArrayList<>());
 
         lines.add(getExcludeLine(assetManifestItem, reason));
     }
@@ -107,7 +97,7 @@ public class ManifestItemsMapTest {
     }
 
     public void startCheck() {
-        alreadyCheck = new HashSet<>();
+        alreadyCheck.clear();
     }
 
     public boolean contains(final String line) {

@@ -29,13 +29,15 @@ public class PushPublishFiltersInitializer implements DotInitializer {
             final File basePath = new File(filtersDirectoryString);
             if (!basePath.exists()) {
                 Logger.debug(PushPublishFiltersInitializer.class, ()->"PushPublishing Filters directory does not exists, creating under: " + filtersDirectoryString);
-                basePath.mkdir();
+
                 //If the directory does not exists, copy the YAML files that are ship with
                 //dotcms to the created directory
                 final String systemFiltersDirectory = "publishing-filters" + File.separator;
                 final String systemFiltersPathString = Config.CONTEXT
                         .getRealPath("/WEB-INF/" + systemFiltersDirectory);
                 final File systemFilters = new File(systemFiltersPathString);
+                basePath.mkdirs();
+
                 Files.list(systemFilters.toPath()).forEach(filter -> {
                     try {
                         Files.copy(filter,

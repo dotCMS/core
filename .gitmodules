@@ -8,3 +8,8 @@
 	url = git@github.com:dotCMS/core-web.git
 	branch = master
 	ignore = dirty
+[submodule "dotcms-dojo-theme/src/main/node"]
+	path = dotcms-dojo-theme/src/main/node
+	url = git@github.com:dotCMS/dotcms-dojo-theme.git
+	branch = master
+	ignore = dirty

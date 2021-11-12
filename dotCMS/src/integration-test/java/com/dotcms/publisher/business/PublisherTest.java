@@ -42,6 +42,7 @@ import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.portal.struts.MultiMessageResourcesFactory;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Map;
 import org.apache.felix.framework.OSGIUtil;
 import org.junit.AfterClass;
@@ -244,7 +245,7 @@ public class PublisherTest extends IntegrationTestBase {
 
         final PublisherAPI publisherAPI = PublisherAPI.getInstance();
         final Bundle bundle             = PublisherTestUtil.createBundle(bundleName, user, ppBean.environment);
-        final String assetRealPath      = Config.getStringProperty("ASSET_REAL_PATH", "test-resources");
+        final String assetRealPath      = Config.getAbsolutePathProperty("ASSET_REAL_PATH", "test-resources").toString();
         final File tempDir              = new File(assetRealPath + "/bundles/" + System.currentTimeMillis());
 
         //Creating temp bundle dir
@@ -277,7 +278,8 @@ public class PublisherTest extends IntegrationTestBase {
 
         final PublisherAPI publisherAPI = PublisherAPI.getInstance();
         final Bundle bundle             = PublisherTestUtil.createBundle(bundleName, user, ppBean.environment);
-        final String assetRealPath      = Config.getStringProperty("ASSET_REAL_PATH", "test-resources");
+        final String assetRealPath      = Paths
+                .get(Config.getStringProperty("ASSET_REAL_PATH", "test-resources")).toAbsolutePath().normalize().toString();
 
         final List<PublishQueueElement> assets = PublisherTestUtil.getAssets(bundle, folderPage.folder);
 

@@ -18,6 +18,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -133,7 +134,7 @@ public class ConcurrentDependencyProcessor implements DependencyProcessor {
             while (!isFinish()) {
                 try {
                     Logger.debug(ConcurrentDependencyProcessor.class, () -> "Waiting for more assets");
-                    final DependencyProcessorItem dependencyProcessorItem = queue.take();
+                    final DependencyProcessorItem dependencyProcessorItem = queue.poll(10, TimeUnit.SECONDS);
                     Logger.debug(ConcurrentDependencyProcessor.class,
                             () -> "Taking one " + dependencyProcessorItem.asset);
                     if (!dependencyProcessorItem
@@ -143,7 +144,8 @@ public class ConcurrentDependencyProcessor implements DependencyProcessor {
                         finishReceived.incrementAndGet();
                     }
                 } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                    Logger.debug(ConcurrentDependencyProcessor.class, "10 s waiting for item");
+                   // throw new RuntimeException(e);
                 }
             }
 

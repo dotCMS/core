@@ -1,6 +1,8 @@
 package com.dotcms.concurrent;
 
 import static com.dotcms.util.CollectionsUtils.map;
+
+import com.dotcms.util.Lazy;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -131,30 +133,35 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     private final IdentifierStripedLock identifierStripedLock =
            new IdentifierStripedLock(DotKeyLockManagerBuilder.newLockManager(LOCK_MANAGER));
 
-    private static ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = null;
+    private static volatile Lazy<ScheduledThreadPoolExecutor> scheduledThreadPoolExecutor = new Lazy<>();
+    private static volatile Lazy<ScheduledThreadPoolExecutor> singleScheduledThreadPoolExecutor = new Lazy<>();
 
     /**
      * Returns the {@link ScheduledThreadPoolExecutor}
      * @return ScheduledThreadPoolExecutor
      */
     public static ScheduledThreadPoolExecutor getScheduledThreadPoolExecutor() {
-
-        if (null == scheduledThreadPoolExecutor) {
-
-            synchronized (DotInitScheduler.class) {
-
-                if (null == scheduledThreadPoolExecutor) {
-                    final int corePoolSize = Config.getIntProperty(SCHEDULER_COREPOOLSIZE, 5);
-                    scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor( corePoolSize,new ThreadFactoryBuilder().setDaemon(true).setNameFormat("dot-ScheduledPool-%d").build(),new ThreadPoolExecutor.CallerRunsPolicy() );
-                }
-            }
-        }
-
-        return scheduledThreadPoolExecutor;
+        return scheduledThreadPoolExecutor.getOrCompute(() ->
+                new ScheduledThreadPoolExecutor( Config.getIntProperty(SCHEDULER_COREPOOLSIZE, 5),
+                new ThreadFactoryBuilder().setNameFormat("dot-ScheduledPool-%d").build(),
+                new ThreadPoolExecutor.CallerRunsPolicy() )
+        );
     }
 
 
-    final static ThreadFactory buildDefaultThreadFactory(final String executorName) {
+    /**
+     * Returns the {@link ScheduledThreadPoolExecutor}
+     * @return SingleScheduledThreadPoolExecutor
+     */
+    public static ScheduledThreadPoolExecutor getSingleScheduledThreadPoolExecutor() {
+        return singleScheduledThreadPoolExecutor.getOrCompute(() ->
+                new ScheduledThreadPoolExecutor(1)
+        );
+    }
+
+
+
+    static ThreadFactory buildDefaultThreadFactory(final String executorName) {
 
         if (UtilMethods.isEmpty(executorName)) {
             new ThreadFactoryBuilder().setDaemon(true).setNameFormat("dotCMS-%d").build();
@@ -202,15 +209,16 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
                 (dotConcurrent instanceof DotConcurrentImpl)?
                         map(
                         "name",        name,
-                        "threadPool",  DotConcurrentImpl.class.cast(dotConcurrent).getThreadPoolExecutor().toString(),
-                        "maxPoolSize", DotConcurrentImpl.class.cast(dotConcurrent).getThreadPoolExecutor().getMaximumPoolSize(),
-                        "keepAlive",   DotConcurrentImpl.class.cast(dotConcurrent).getThreadPoolExecutor().getKeepAliveTime(TimeUnit.MILLISECONDS),
-                        "queue-length",DotConcurrentImpl.class.cast(dotConcurrent).getThreadPoolExecutor().getQueue().size(),
-                        "activeCount", DotConcurrentImpl.class.cast(dotConcurrent).getThreadPoolExecutor().getActiveCount(),
-                        "completedTaskCount", DotConcurrentImpl.class.cast(dotConcurrent).getThreadPoolExecutor().getCompletedTaskCount(),
-                        "TaskCount", DotConcurrentImpl.class.cast(dotConcurrent).getThreadPoolExecutor().getTaskCount(),
-                        "queue",       toString(DotConcurrentImpl.class.cast(dotConcurrent).getThreadPoolExecutor().getQueue()),
-                        "isShutdown",  DotConcurrentImpl.class.cast(dotConcurrent).shutdown
+                        "threadPool",  ((DotConcurrentImpl) dotConcurrent).getThreadPoolExecutor().toString(),
+                        "maxPoolSize", ((DotConcurrentImpl) dotConcurrent).getThreadPoolExecutor().getMaximumPoolSize(),
+                        "keepAlive",   ((DotConcurrentImpl) dotConcurrent).getThreadPoolExecutor().getKeepAliveTime(TimeUnit.MILLISECONDS),
+                        "queue-length", ((DotConcurrentImpl) dotConcurrent).getThreadPoolExecutor().getQueue().size(),
+                        "activeCount", ((DotConcurrentImpl) dotConcurrent).getThreadPoolExecutor().getActiveCount(),
+                        "completedTaskCount", ((DotConcurrentImpl) dotConcurrent).getThreadPoolExecutor().getCompletedTaskCount(),
+                        "TaskCount", ((DotConcurrentImpl) dotConcurrent).getThreadPoolExecutor().getTaskCount(),
+                        "queue",       toString(
+                                        ((DotConcurrentImpl) dotConcurrent).getThreadPoolExecutor().getQueue()),
+                        "isShutdown",  ((DotConcurrentImpl) dotConcurrent).shutdown
                         ):
                         map(
                                 "name",        name,
@@ -244,10 +252,9 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
         if (null != queue) {
 
-            final Iterator<Runnable> threadsOnQueue = queue.iterator();
-            while (threadsOnQueue.hasNext()) {
+            for (Runnable runnable : queue) {
 
-                builder.append(threadsOnQueue.next());
+                builder.append(runnable);
             }
         }
 
@@ -258,22 +265,44 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
     @Override
     public Boolean shutdown(final String name){
-        final DotSubmitter dotConcurrent =
-                this.submitterMap.get(name);
-        if(null == dotConcurrent){
-           return false;
-        }
-        dotConcurrent.shutdown();
-        return true;
+        return this.submitterMap.computeIfPresent(name,(k,v) -> {v.shutdown(); return v;}) != null;
     }
 
     @Override
     public void shutdownAndDestroy() {
-
+        long waitMs = Config.getLongProperty("dotcms.concurrent.shutdown.waitmillis", 20000);
         this.delayQueueConsumer.stopQueue();
-        this.submitterMap.values().stream().forEach(DotSubmitter::shutdown);
+        this.submitterMap.values().forEach(DotSubmitter::shutdown);
+        this.submitterMap.values().forEach( s -> {
+            try {
+                s.waitForAll(waitMs, TimeUnit.MILLISECONDS);
+            } catch (ExecutionException e) {
+                if (s.isAborting()) {
+                    s.shutdownNow();
+                }
+            }
+        });
         this.submitterMap.clear();
         this.delayQueueMap.clear();
+        scheduledThreadPoolExecutor.doIfComputed(e -> niceShutdown(waitMs,e));
+        singleScheduledThreadPoolExecutor.doIfComputed(e -> niceShutdown(waitMs,e));
+
+    }
+
+    private void niceShutdown(long ms, ExecutorService executor) {
+        if (executor==null || executor.isShutdown() || executor.isTerminated())
+            return;
+        executor.shutdown();
+        try {
+            if (!executor.awaitTermination(ms, TimeUnit.MILLISECONDS))
+            {
+                Logger.getLogger(DotConcurrentFactory.class).warn("Timed out "+ms+"ms awaiting executor shutdown, forcing shutdownNow", new Throwable());
+                executor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            try {executor.shutdownNow();} catch (Exception ex) {/*ignore*/}
+        }
     }
 
     @Override
@@ -290,7 +319,6 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     /**
      * Get the Future return without timeout and throws {@link DotConcurrentException} (which is runtime) on case of error, it helps to be used on lamdbas/
      * @param future
-     * @param <T>
      * @return T
      */
     public static <T>T get (final Future<T> future) {
@@ -360,35 +388,8 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
      * @return DotSubmitter
      */
     public DotSubmitter getSingleSubmitter (final String name) {
-
-        DotSubmitter submitter = null;
-
-        if (!this.submitterMap.containsKey(name)) {
-
-            synchronized (DotConcurrentFactory.class) {
-
-                if (null == submitter) {
-
-                    submitter = new DotSingleSubmitterImpl(name);
-                    this.submitterMap.put(name, submitter);
-                }
-            }
-        } else {
-
-            submitter =
-                    this.submitterMap.get(name);
-
-            if (null != submitter && (submitter.isAborting())) { // if it is shutdown, create a new one
-
-                synchronized (DotConcurrentFactory.class) {
-
-                    submitter = new DotSingleSubmitterImpl(name);
-                    this.submitterMap.put(name, submitter);
-                }
-            }
-        }
-
-        return submitter;
+        return this.submitterMap.compute(name,(k,v) ->  (v==null || v.isAborting())
+                ? new DotSingleSubmitterImpl(k) : v);
     }
 
     /**
@@ -407,40 +408,15 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
      */
     public DotSubmitter getSubmitter (final String name) {
 
-        DotConcurrentImpl submitter = null;
-
-        if (!this.submitterMap.containsKey(name)) {
-
-            synchronized (DotConcurrentFactory.class) {
-
-                if (null == submitter) {
-
-                    submitter =
-                            this.createDotConcurrent(name);
-                }
-            }
-        } else {
-
-            submitter =
-                    (DotConcurrentImpl)this.submitterMap.get(name);
-
-            if (null != submitter && (submitter.shutdown || submitter.threadPoolExecutor
-                    .isTerminated())) { // if it is shutdown, create a new one
-
-                synchronized (DotConcurrentFactory.class) {
-
-                    submitter =
-                            this.createDotConcurrent(name);
-                }
-            }
-        }
-
-        return submitter;
+        return this.submitterMap.compute(name,(k,v) ->
+                (null == v || ((DotConcurrentImpl)v).shutdown || ((DotConcurrentImpl)v).threadPoolExecutor
+                .isTerminated())
+                ? this.createDotConcurrent(k) : v);
     } // getBean.
 
     private DotConcurrentImpl createDotConcurrent (final String name) {
 
-        final DotConcurrentImpl submitter = this.submitterConfigCreatorMap.containsKey(name)?
+        return this.submitterConfigCreatorMap.containsKey(name)?
                 new DotConcurrentImpl(
                         this.submitterConfigCreatorMap.get(name).getDefaultThreadFactory(name),
                         this.submitterConfigCreatorMap.get(name).getRejectedExecutionHandler(),
@@ -461,10 +437,6 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
                         Config.getIntProperty (name  + DOTCMS_CONCURRENT_QUEUECAPACITY,            this.defaultQueueCapacity),
                         name
                 );
-
-        this.submitterMap.put(name, submitter);
-
-        return submitter;
     }
 
     /**
@@ -572,9 +544,9 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
          * Returns "Executors.defaultThreadFactory()"
          * @return ThreadFactory
          */
-        default ThreadFactory getDefaultThreadFactory (final String name) {
-            return getDefaultThreadFactory(name);
-        }
+        // Cannot attempt to call same method of implementation with default as it would
+        // cause infinite recursion if no implementation exists
+        ThreadFactory getDefaultThreadFactory (final String name);
 
         /**
          * Returns AbortPolicy
@@ -632,7 +604,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
      */
     public class DelayQueueConsumer implements Runnable {
 
-        private AtomicBoolean stop = new AtomicBoolean(false);
+        private final AtomicBoolean stop = new AtomicBoolean(false);
 
         public DelayQueueConsumer() {
             super();
@@ -674,7 +646,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     } // DelayQueueConsumer.
 
     /// DotSingleSubmitterImpl
-    private final class DotSingleSubmitterImpl implements DotSubmitter {
+    private static final class DotSingleSubmitterImpl implements DotSubmitter {
 
         private final String name;
         private final ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -849,13 +821,13 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
         } // DotConcurrentImpl.
 
-        final BlockingQueue<Runnable> createQueue(final int queueCapacity) {
+        BlockingQueue<Runnable> createQueue(final int queueCapacity) {
 
             return  (queueCapacity > 0)?
-                new LinkedBlockingQueue<Runnable>(queueCapacity): new SynchronousQueue<Runnable>();
+                    new LinkedBlockingQueue<>(queueCapacity): new SynchronousQueue<>();
         }
 
-        final ThreadPoolExecutor getThreadPoolExecutor() {
+        ThreadPoolExecutor getThreadPoolExecutor() {
 
             return this.threadPoolExecutor;
         }
@@ -871,7 +843,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         }
 
         @Override
-        public final void execute(final Runnable command) {
+        public void execute(final Runnable command) {
 
             final Executor executor =
                     this.getThreadPoolExecutor();
@@ -889,11 +861,11 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         } // execute.
 
         @Override
-        public final Future<?> submit(final Runnable task) {
+        public Future<?> submit(final Runnable task) {
 
             final ExecutorService executor =
                     this.getThreadPoolExecutor();
-            Future<?> future = null;
+            Future<?> future;
 
             try {
 
@@ -907,13 +879,10 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         } // submit.
 
         @Override
-        public final void delay(final Runnable task, final long delay, final TimeUnit unit) {
+        public void delay(final Runnable task, final long delay, final TimeUnit unit) {
 
             try {
-                this.delayedQueue.put(new DelayedDelegate(()-> {
-
-                    task.run();
-                }, delay, unit));
+                this.delayedQueue.put(new DelayedDelegate(task::run, delay, unit));
             } catch (InterruptedException e) {
                 throw new DotConcurrentException(e.getMessage(), e);
             }
@@ -921,7 +890,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
 
         @Override
-        public final Future<?> submit(final Runnable task, final long delay, final TimeUnit unit) {
+        public Future<?> submit(final Runnable task, final long delay, final TimeUnit unit) {
 
             return this.submit(() -> {
 
@@ -940,11 +909,11 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         }
 
         @Override
-        public final <T> Future<T> submit(final Callable<T> task) {
+        public <T> Future<T> submit(final Callable<T> task) {
 
             final ExecutorService executor =
                     this.getThreadPoolExecutor();
-            Future<T> future = null;
+            Future<T> future;
 
             try {
 
@@ -959,7 +928,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         } // submit.
 
         @Override
-        public final <T> Future<T> submit(final Callable<T> callable, final long delay, final TimeUnit unit) {
+        public <T> Future<T> submit(final Callable<T> callable, final long delay, final TimeUnit unit) {
 
             return this.submit(() -> {
 

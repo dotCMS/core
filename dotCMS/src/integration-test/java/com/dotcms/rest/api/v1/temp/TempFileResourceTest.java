@@ -85,7 +85,8 @@ public class TempFileResourceTest {
     }
 
     private static File testFile() throws Exception {
-        File testFile = new File(UUIDGenerator.shorty() + "test.png");
+        File testFile = File.createTempFile(UUIDGenerator.shorty(),  "test.png");
+        testFile.deleteOnExit();
         RandomAccessFile fileWrite = new RandomAccessFile(testFile, "rw");
         final long fileLength = 1024 * 50;
         fileWrite.setLength(fileLength);

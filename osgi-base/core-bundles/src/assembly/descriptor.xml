@@ -10,8 +10,8 @@
     </formats>
     <fileSets>
         <fileSet>
-            <directory>${project.build.directory}/bundles</directory>
-            <outputDirectory>/bundles</outputDirectory>
+            <directory>${project.build.directory}/bundle</directory>
+            <outputDirectory>/bundle</outputDirectory>
         </fileSet>
     </fileSets>
 

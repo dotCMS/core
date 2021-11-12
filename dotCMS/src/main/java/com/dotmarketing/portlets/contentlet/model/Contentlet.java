@@ -71,6 +71,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang3.BooleanUtils;
 
@@ -162,9 +163,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   private transient IndexPolicy indexPolicy = null;
   private transient IndexPolicy indexPolicyDependencies = null;
 
-  private transient boolean needsReindex = false;
+  private transient volatile boolean needsReindex = false;
 
-  private transient boolean loadedTags = false;
+  private transient volatile boolean loadedTags = false;
 
 	/**
 	 * Returns true if this contentlet needs reindex
@@ -276,7 +277,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     setSortOrder(0);
     setDisabledWysiwyg(new ArrayList<>());
     getWritableNullProperties();
-    this.needsReindex = false;
+    this.needsReindex=false;
 
   }
 
@@ -1478,6 +1479,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     @CloseDBIfOpened
 	public void setTags() throws DotDataException {
 
+
 		if (!this.loadedTags && isSet(getContentTypeId())) {
 
 			final boolean hasTagFields = this.getContentType().fields().stream().anyMatch(TagField.class::isInstance);
@@ -1534,7 +1536,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 				}
 			}
 
-			this.loadedTags = true;
+			this.loadedTags=true;
 		}
 	}
 
@@ -1612,6 +1614,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 
 	private class ContentletHashMap extends ConcurrentHashMap<String, Object> {
+		// Possibility of memory leak?? https://speedandfunction.com/javas-anonymous-inner-classes-proceed-caution/
 		 /**
 		 *
 		 */
@@ -1622,18 +1625,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		}
 
 		public Object put(final String key, final Object newValue) {
-
-		    final Object oldValue = this.get(key);
-		    if(!java.util.Objects.equals(oldValue, newValue)) {
-		        Contentlet.this.markAsDirty();
-		    }
-
-		    if(newValue==null) {
-		        return super.remove(key);
-		    }
-
-            return super.put(key, newValue);
-
+			return super.compute(key, (k,v) -> {
+				if (!Objects.equals(v,newValue)) Contentlet.this.markAsDirty();
+				return newValue;
+			});
 		 }
 	}
 

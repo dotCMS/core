@@ -1,6 +1,7 @@
 package com.dotmarketing.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -42,6 +43,10 @@ public class DNSUtilUnitTest {
      */
     @Test()
     public void anyIP() throws IOException {
-        assertEquals("192.168.0.100",DNSUtil.reverseDns("192.168.0.100"));
+        String name = DNSUtil.reverseDns("192.168.0.100");
+        System.out.println(name);
+        // Need to handle amazon resolution e.g. ip-192-168-0-100.us-east-2.compute.internal.
+        //(192/.168/./0./100)|
+        assertTrue(name.matches("(192/.168/./0./100)|(ip\\-192\\-168\\-0\\-100\\..*\\.compute\\.internal\\.)"));
     }
 }

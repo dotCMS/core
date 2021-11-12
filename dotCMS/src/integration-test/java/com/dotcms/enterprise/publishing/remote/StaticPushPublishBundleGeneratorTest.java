@@ -257,6 +257,7 @@ public class StaticPushPublishBundleGeneratorTest extends IntegrationTestBase {
 
             switch (testCase.condition){
                 case EQ : {
+                    // Fixme : steve works now on retry
                     assertEquals(testCase.expectedMatches, status.getCount());
                     break;
                 }

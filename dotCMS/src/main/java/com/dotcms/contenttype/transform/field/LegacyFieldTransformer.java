@@ -5,11 +5,11 @@ import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
-import org.elasticsearch.common.Nullable;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import javax.annotation.Nullable;
 
 
 public class LegacyFieldTransformer implements FieldTransformer {

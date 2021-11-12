@@ -131,7 +131,7 @@ public class PushUtils {
 						taos.closeArchiveEntry();
 			         // go through all the files in the directory and using recursion, add them to the archive
 					for (File childFile : file.listFiles()) {
-						addFilesToCompression(taos, childFile, file.getPath().substring(bundleRoot.length()), bundleRoot);
+						addFilesToCompression(taos, childFile, file.getAbsolutePath().substring(bundleRoot.length()), bundleRoot);
 					}
 				}
 	    	}

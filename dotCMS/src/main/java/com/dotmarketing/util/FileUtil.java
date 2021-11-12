@@ -154,7 +154,7 @@ public class FileUtil {
 		path = java.io.File.separator + _inode.charAt(0) + java.io.File.separator + _inode.charAt(1) + java.io.File.separator + _inode
 				+ "." + extenstion;
 		if (UtilMethods.isSet(realPath)) {
-			return realPath + path;
+			return Paths.get(realPath + path).toAbsolutePath().normalize().toString();
 		} else {
 			return com.liferay.util.FileUtil.getRealPath(assetPath + path);
 		}

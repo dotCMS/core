@@ -37,6 +37,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -161,9 +163,10 @@ public class BinaryExporterServletTest {
 
     @Test
     public void requestGifFile()
-            throws DotDataException, DotSecurityException, ServletException, IOException {
+            throws DotDataException, DotSecurityException, ServletException, IOException, URISyntaxException {
 
-        File gifFile = new File("src/integration-test/resources/images/issue19338.gif");
+        // Get file from resource integration tests now not running from dotCMS root.
+        File gifFile = getFileFromResource("images/issue19338.gif");
 
         final Contentlet fileContentlet = new FileAssetDataGen(gifFile).host(host)
                 .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
@@ -256,4 +259,17 @@ public class BinaryExporterServletTest {
 
     }
 
+
+    private File getFileFromResource(String fileName) throws URISyntaxException {
+
+        ClassLoader classLoader = getClass().getClassLoader();
+        URL resource = classLoader.getResource(fileName);
+        if (resource == null) {
+            throw new IllegalArgumentException("file not found! " + fileName);
+        } else {
+
+            return new File(resource.toURI());
+        }
+
+    }
 }

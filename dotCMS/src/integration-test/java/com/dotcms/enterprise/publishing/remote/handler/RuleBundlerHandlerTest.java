@@ -14,6 +14,7 @@ import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.liferay.portal.model.User;
 import java.io.File;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -49,15 +50,17 @@ public class RuleBundlerHandlerTest extends IntegrationTestBase {
 
         final PublisherConfig publisherConfig = new PublisherConfig();
         final RuleHandler ruleHandler         = new RuleHandler(publisherConfig);
-        final URL fileUrl = getClass().getResource("/bundle/rules/");
-        final File folderFile = new File(fileUrl.getFile());
-        final File rulesFile = new File(getClass().getResource(
-                "/bundle/rules/live/demo.dotcms.com/189eac50-4997-48ab-8250-8dac0d30adf4.rule.xml")
-                .getFile());
+
+        final File folderFile = getFileFromResource("bundle/rules");
+        // Need to make idempotent and not overwrite original template file
+        final File rulesFileTemplate = getFileFromResource(
+                "bundle/rules/live/demo.dotcms.com/189eac50-4997-48ab-8250-8dac0d30adf4.rule_template");
+        final File rulesFile = rulesFileTemplate.getParentFile().toPath().resolve("189eac50-4997-48ab-8250-8dac0d30adf4.rule.xml").toFile();
+
 
         //Read the rules file, replace the test site id and add it back as a file in order
         //to be processed
-        String rulesFileContent = FileUtils.readFileToString(rulesFile, StandardCharsets.UTF_8);
+        String rulesFileContent = FileUtils.readFileToString(rulesFileTemplate, StandardCharsets.UTF_8);
         rulesFileContent = rulesFileContent.replaceAll(TO_REPLACE_HOST_ID, site.getIdentifier());
         FileUtils.writeStringToFile(rulesFile, rulesFileContent, StandardCharsets.UTF_8);
 
@@ -110,5 +113,19 @@ public class RuleBundlerHandlerTest extends IntegrationTestBase {
     }
 
 
+    private File getFileFromResource(String fileName) throws URISyntaxException {
 
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        URL resource = classLoader.getResource(fileName);
+        if (resource == null) {
+            throw new IllegalArgumentException("file not found! " + fileName);
+        } else {
+
+            // failed if files have whitespaces or special characters
+            //return new File(resource.getFile());
+
+            return new File(resource.toURI());
+        }
+
+    }
 }

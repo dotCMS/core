@@ -17,37 +17,9 @@
     <packaging>war</packaging>
 
     <properties>
-        <aspectj.version>1.9.7</aspectj.version>
-        <java.version>11</java.version>
-        <maven.compiler.source>${java.version}</maven.compiler.source>
-        <maven.compiler.target>${java.version}</maven.compiler.target>
-        <maven.compiler.release>11</maven.compiler.release>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <tomcat.version>9.0.41</tomcat.version>
-        <felix.version>5.6.10</felix.version>
-        <log4j.version>2.11.1</log4j.version>
-        <npm.repositoryUrl>https://registry.npmjs.org</npm.repositoryUrl>
-        <powermock.version>2.0.9</powermock.version>
 
-        <javax.activation.version>1.2.0</javax.activation.version>
-        <jaxb.api.version>2.3.3</jaxb.api.version>
-        <jaxws.version>2.3.3</jaxws.version>
-        <mail.version>1.6.7</mail.version>
-        <!-- 4.0.2 first jakarta version-->
-        <servlet.version>4.0.2</servlet.version>
-        <jackson.version>2.11.4</jackson.version>
-        <jersey.version>2.25.1</jersey.version>
-        <!-- swagger version has jersey, jackson version dependency -->
-        <swagger.version>1.6.2</swagger.version>
-        <!--  <npm.username>service.account@......com</npm.username>
-        <npm.password>......</npm.password>-->
-        <httpclient.version>4.5.13</httpclient.version>
-        <!-- geoip2 has jackson dependency -->
-        <geoip2.version>2.15.0</geoip2.version>
-
-        <testSuite>com/dotcms/MainSuite.java</testSuite>
-        <proguard.plugin.version>2.4.0</proguard.plugin.version>
-        <proguard.version>6.3.0beta1</proguard.version>
+        <api-source>tomcat</api-source>
+        <dotcms.licence>${user.home}/license.zip</dotcms.licence>
     </properties>
 
     <build>
@@ -57,7 +29,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
-                <version>3.0.0</version>
+
                 <executions>
                     <execution>
                         <id>add-enterprise-source</id>
@@ -71,6 +43,7 @@
                             </sources>
                         </configuration>
                     </execution>
+
                     <execution>
                         <id>add-enterprise-resource</id>
                         <phase>generate-resources</phase>
@@ -86,6 +59,7 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>add-generated-sources</id>
                         <phase>generate-sources</phase>
                         <goals>
                             <goal>add-source</goal>
@@ -96,6 +70,33 @@
                             </sources>
                         </configuration>
                     </execution>
+                   <!-- <execution>
+                        <id>add-test-source</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>add-test-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.basedir}/src/integration-test/java</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>add-test-resource</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>add-test-resource</goal>
+                        </goals>
+                        <configuration>
+                            <resources>
+                                <resource>
+                                    <directory>${project.basedir}/src/integration-test/resources</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>-->
                 </executions>
             </plugin>
            
@@ -106,222 +107,84 @@
            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
                 <configuration>
-
-                    <source>11</source>
-                    <target>11</target>
-
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+                    <debug>true</debug>
                     <skipMain>false</skipMain>
-
                     <fork>true</fork>
                     <release>${maven.compiler.release}</release>
-
                     <useIncrementalCompilation>false</useIncrementalCompilation>
-                   <proc>only</proc>
-                    <compilerArguments>
-                        <d>${project.build.directory}/unwoven-classes</d>
-                    </compilerArguments>
                 </configuration>
+               <executions>
+                   <execution>
+                       <id>default-compile</id>
+                       <phase>none</phase>
+                       <goals>
+                           <goal>compile</goal>
+                       </goals>
+                   </execution>
+               <execution>
+                   <id>compile-processor-only</id>
+                   <phase>compile</phase>
+                   <goals>
+                       <goal>compile</goal>
+                   </goals>
+                   <configuration>
+                       <outputDirectory>${basedir}/target/unwoven/classes</outputDirectory>
+                   </configuration>
+               </execution>
+               <execution>
+                   <id>compile-test-processor-only</id>
+                   <phase>test-compile</phase>
+                   <goals>
+                       <goal>testCompile</goal>
+                   </goals>
+                   <configuration>
+                       <outputDirectory>${basedir}/target/unwoven/test-classes</outputDirectory>
+                   </configuration>
+               </execution>
+           </executions>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>aspectj-maven-plugin</artifactId>
-                <version>1.14.0</version>
                 <configuration>
-                    <complianceLevel>11</complianceLevel>
-                    <source>11</source>
-                    <target>11</target>
-
-                    <!-- <Xlint>ignore</Xlint> -->
-
+                    <complianceLevel>${maven.compiler.source}</complianceLevel>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
                     <encoding>UTF-8</encoding>
                     <verbose>true</verbose>
-                    <!--<additionalCompilerArgs>
-                        <v>-g</v>
-                    </additionalCompilerArgs>-->
-                    <forceAjcCompile>false</forceAjcCompile>
-                    <argumentFileName>argumentfile.txt</argumentFileName>
-                    <proc>none</proc>
-
-                     <weaveDirectories>
-                         <weaveDirectory>${project.build.directory}/unwoven-classes</weaveDirectory>
-                     </weaveDirectories>
-
+                    <forceAjcCompile>true</forceAjcCompile>
                 </configuration>
                 <executions>
                     <execution>
+                        <id>aspectj-compile</id>
                         <goals>
                             <goal>compile</goal>
+                        </goals>
+                        <configuration>
+                            <argumentFileName>argumentfile.txt</argumentFileName>
+                            <weaveDirectories>
+                                <weaveDirectory>${basedir}/target/unwoven/classes</weaveDirectory>
+                            </weaveDirectories>
+                            <proc>none</proc>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>aspectj-test-compile</id>
+                        <goals>
                             <goal>test-compile</goal>
                         </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-enforcer-plugin</artifactId>
-                <version>3.0.0-M3</version>
-                <executions>
-                    <execution>
-                        <id>enforce-warn</id>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
                         <configuration>
-                            <rules>
-                                <dependencyConvergence/>
-                                <banDuplicateClasses>
-                                    <ignoreClasses>
-                                        <!-- should remove duplicate from com.dotcms.lib:dot.daisydiff -->
-                                        <!--<ignoreClass>org.w3c.dom.html.HTMLDOMImplementation
-                                        </ignoreClass>-->
-                                       <!-- <ignoreClass>org.w3c.dom.events.*
-                                        </ignoreClass>-->
-                                        <ignoreClass>org.apache.felix.*</ignoreClass>
-                                        <ignoreClass>org.osgi.service.*</ignoreClass>
-                                    </ignoreClasses>
-                                    <findAllDuplicates>true</findAllDuplicates>
-                                    <ignoreWhenIdentical>false</ignoreWhenIdentical>
-                                </banDuplicateClasses>
-                                <requireEncoding>
-                                    <encoding>UTF-8</encoding>
-                                    <includes>src/main/resources/**,src/test/resources/**</includes>
-                                </requireEncoding>
-
-                            </rules>
-                            <fail>false</fail>
+                            <argumentFileName>test-argumentfile.txt</argumentFileName>
+                            <weaveDirectories>
+                                <weaveDirectory>${basedir}/target/unwoven/test-classes</weaveDirectory>
+                            </weaveDirectories>
+                            <proc>none</proc>
                         </configuration>
                     </execution>
-                    <execution>
-                        <id>enforce-fail</id>
-                        <configuration>
-                            <rules>
-
-
-                                <!-- Require Java 8 or higher for building (as bnd since version 4.0 is built with Java 8) -->
-                                <requireJavaVersion>
-
-                                    <version>[11,)</version>
-                                </requireJavaVersion>
-                                <requireMavenVersion>
-                                    <version>[3.8.2]</version>
-                                </requireMavenVersion>
-
-
-                                <enforceBytecodeVersion>
-                                    <maxJdkVersion>11</maxJdkVersion>
-                                    <excludes>
-                                        <exclude>org.mindrot:jbcrypt</exclude>
-                                    </excludes>
-                                </enforceBytecodeVersion>
-                                <!-- if you use com.sun.activation:jakarta.activation-->
-
-                                <bannedDependencies>
-                                    <excludes>
-                                        <exclude>javax.activation:javax.activation-api</exclude>
-                                        <exclude>com.sun.activation:javax.activation</exclude>
-                                        <exclude>javax.activation:activation</exclude>
-                                    </excludes>
-                                    <message>use jakarta.activation:jakarta.activation-api or com.sun.activation:jakarta.activation instead of javax.activation</message>
-                                </bannedDependencies>
-                                <bannedDependencies>
-                                    <excludes>
-                                        <!-- use java system xml-apis -->
-                                        <exclude>xml-apis:xml-apis</exclude>
-
-                                        <!-- need to use patched xerces for java 9 + -->
-                                        <exclude>xerces:xercesImpl</exclude>
-                                        <exclude>xerces:xmlParserAPIs</exclude>
-                                        <exclude>xerces:xerces</exclude>
-                                    </excludes>
-                                    <message>Remove xml-apis and xerces and latest versions provided by Java core</message>
-                                </bannedDependencies>
-
-                                <bannedDependencies>
-                                    <excludes>
-                                       <!-- <exclude>com.sun.xml.bind:jaxb-impl</exclude>-->
-
-                                        <exclude>com.sun.mail:javax.mail</exclude>
-
-                                       <!--
-                                       Use for Version 2.x  package changed from javax.mail to jakarta.mail
-                                       <exclude>com.sun.mail:jakarta.mail</exclude>-->
-                                        <exclude>javax.mail:mail</exclude>
-                                        <exclude>javax.mail:mailapi</exclude>
-                                        <exclude>javax.mail:javax.mail</exclude>
-                                        <exclude>com.sun.mail:mail</exclude>
-                                    </excludes>
-                                    <message>Remove apis not renamed to jakarta</message>
-                                </bannedDependencies>
-
-                                <bannedDependencies>
-                                    <excludes>
-                                        <exclude>org.hamcrest:hamcrest-all</exclude>
-                                    </excludes>
-                                    <message>Do not include uber jars, use individual sub jars instead.  This will clash</message>
-                                </bannedDependencies>
-
-
-                                <bannedDependencies>
-                                    <excludes>
-
-a
-                                        <exclude>javax.servlet:javax.servlet-api</exclude>
-
-                                        <exclude>javax.enterprise:cdi-api</exclude>
-                                        <exclude>javax.inject:javax.inject</exclude>
-                                        <exclude>javax.json:javax.json-api</exclude>
-                                        <exclude>javax.json.bind:javax.json.bind-api</exclude>
-                                        <exclude>org.glassfish:javax.json</exclude>
-                                        <exclude>org.glassfish:javax.el</exclude>
-                                        <exclude>javax.persistence:javax.persistence-api</exclude>
-                                        <exclude>javax.persistence:persistence-api</exclude>
-                                        <exclude>
-                                            javax.security.enterprise:javax.security.enterprise-api
-                                        </exclude>
-                                        <exclude>javax.servlet:servlet-api:*:jar:compile</exclude>
-                                        <exclude>javax.servlet:servlet-api:*:jar:runtime</exclude>
-                                        <exclude>javax.servlet:servlet-api:*:jar:test</exclude>
-                                        <!-- only allow provided scope use container version -->
-
-                                        <exclude>javax.transaction:jta</exclude>
-                                        <exclude>javax.transaction:javax.transaction-api</exclude>
-
-                                        <!-- Use org.glassfish.jaxb:jaxb-runtime -->
-                                        <exclude>com.sun.xml.bind:jaxb-core</exclude>
-                                        <exclude>javax.xml.bind:jaxb-api:jar</exclude>
-
-
-
-                                        <exclude>javax.websocket:javax.websocket-api</exclude>
-
-                                        <!-- renamed to org.jvnet.mimepull:mimepull -->
-                                        <exclude>org.jvnet:mimepull</exclude>
-
-                                    </excludes>
-                                    <includes>
-                                        <!-- this is for REST Assured -->
-                                        <include>jakarta.xml.bind:jakarta.xml.bind-api:*:*:test
-                                        </include>
-                                    </includes>
-                                </bannedDependencies>
-                            </rules>
-                        </configuration>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                    </execution>
                 </executions>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>extra-enforcer-rules</artifactId>
-                        <version>1.3</version>
-                    </dependency>
-                </dependencies>
             </plugin>
 
             <plugin>
@@ -329,36 +192,22 @@ a
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <argLine>
-                        --illegal-access=permit --add-opens java.base/jdk.internal.misc=ALL-UNNAMED
+                        ${jvm.base.argLine}
                     </argLine>
-                    <includes>
+                   <!--  testSuite for Integration tests
+                   <includes>
                         <include>${testSuite}</include>
-                    </includes>
+                    </includes>-->
                 </configuration>
             </plugin>
             <plugin>
-                <!-- Failsafe plugin runs integration tests -->
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-failsafe-plugin</artifactId>
-                <configuration>
-                    <argLine>
-                        --illegal-access=permit --add-opens java.base/jdk.internal.misc=ALL-UNNAMED
-                    </argLine>
-                    <!--TODO: Move integration tests to maven structure use *IT for name and move into src/test/java  -->
-                    <testSourceDirectory>${project.basedir}/src/integration-test
-                    </testSourceDirectory>
-                    <includes>
-                        <include>**/*Test</include>
-                    </includes>
-                </configuration>
+                <artifactId>maven-surefire-report-plugin</artifactId>
             </plugin>
-
-
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.2.0</version>
                 <executions>
                     <execution>
                         <id>unpack</id>
@@ -382,7 +231,7 @@ a
                                     <version>1.0.0-SNAPSHOT</version>
                                     <type>zip</type>
                                     <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}/bundles</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/felix</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
                             <overWriteReleases>false</overWriteReleases>
@@ -400,11 +249,32 @@ a
                                 <artifactItem>
                                     <groupId>com.dotcms</groupId>
                                     <artifactId>starter</artifactId>
-                                    <!--<version>empty_20210903</version>-->
-                                    <version>20210903</version>
+                                 <!--   <version>empty_20210903</version>-->
+
+                                   <version>empty_20210920</version>
+                                    <type>zip</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.build.directory}/classes</outputDirectory>
+                                    <destFileName>starter.zip</destFileName>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-test-starter</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>com.dotcms</groupId>
+                                    <artifactId>starter</artifactId>
+                                    <version>empty_20210903</version>
                                     <type>zip</type>
                                     <overWrite>false</overWrite>
-                                    <outputDirectory>${project.build.directory}/starter</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/test-classes</outputDirectory>
                                     <destFileName>starter.zip</destFileName>
                                 </artifactItem>
                             </artifactItems>
@@ -427,10 +297,11 @@ a
                     </execution>-->
                 </executions>
             </plugin>
+
+
     <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-antrun-plugin</artifactId>
-        <version>3.0.0</version>
         <executions>
             <execution>
                 <id>plugins</id>
@@ -451,14 +322,39 @@ a
                     <goal>run</goal>
                 </goals>
             </execution>
+            <execution>
+                <phase>generate-resources</phase>
+
+                <configuration>
+                    <target>
+                        <mkdir dir="${project.build.directory}/testing/assets" />
+                        <copy todir="${project.build.directory}/testing/assets">
+                            <fileset dir="${user.home}" includes="license.zip" />
+                        </copy>
+
+                        <mkdir dir="${project.build.directory}/felix/" />
+                        <copy todir="${project.build.directory}/felix">
+                            <fileset dir="src/main/webapp/WEB-INF/felix" includes="osgi-extra-generated.conf" />
+                        </copy>
+                    </target>
+                </configuration>
+                <goals>
+                    <goal>run</goal>
+                </goals>
+            </execution>
         </executions>
     </plugin>
-    <!--
     <plugin>
-
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
-        <version>3.2.0</version>
+        <!-- TODO: need to move enterprise into its own independent module and an
+          decoupled enterprise-api module that dotcms-core can depended upon to remove
+          circular dependencies.  Creating multiple jars like this goes against maven best practices
+          but follows the process from gradle. Here we essentially have a combined
+          class structure that is split by package name.   This enables us to obfuscate and
+          deliver enterprise classes separate from community but interface is brittle and both
+          sets of classes are required to run.  A profile is used to actually obfuscate for production
+         -->
         <executions>
            <execution>
                 <id>enterprise-jar</id>
@@ -475,98 +371,38 @@ a
             </execution>
             <execution>
                 <id>core-jar</id>
-                <phase>prepare-package</phase>
+                <phase>package</phase>
                 <goals>
                     <goal>jar</goal>
                 </goals>
                 <configuration>
+                    <classifier>classes</classifier>
                     <excludes>
                         <exclude>com/dotcms/enterprise/**</exclude>
                     </excludes>
                 </configuration>
             </execution>
-        </executions>
-
-    </plugin>
--->
-    <!--
-    <plugin>
-        <groupId>com.github.wvengen</groupId>
-        <artifactId>proguard-maven-plugin</artifactId>
-
-        <version>${proguard.plugin.version}</version>
-        <executions>
             <execution>
-                <id>obfuscation-packaging</id>
-                <phase>prepare-package</phase>
                 <goals>
-                    <goal>proguard</goal>
+                    <goal>test-jar</goal>
                 </goals>
-                <configuration>
-                    <proguardVersion>${proguard.version}</proguardVersion>
-                    <mappingFileName>proguard.map</mappingFileName>
-                    <inLibsFilter>!module-info.class,!META-INF/**</inLibsFilter>
-                    <obfuscate>true</obfuscate>
-                    <attach>true</attach>
-
-                    <appendClassifier>true</appendClassifier>
-
-                    <addMavenDescriptor>true</addMavenDescriptor>
-                    <injar>${project.build.finalName}-enterprise.jar</injar>
-                    <outjar>${project.build.finalName}-enterprise.jar</outjar>
-                    <inFilter>com/dotcms/enterprise/**</inFilter>
-                    <outFilter>com/dotcms/enterprise/**</outFilter>
-                    <proguardVersion>${proguard.version}</proguardVersion>
-                    <injarNotExistsSkip>true</injarNotExistsSkip>
-                    <libs>
-                        <lib>${project.build.directory}/${project.build.finalName}.jar</lib>
-                        <lib>${java.home}/jmods/java.base.jmod</lib>
-                        <lib>${java.home}/jmods/java.xml.jmod</lib>
-                        <lib>${java.home}/jmods/jdk.xml.dom.jmod</lib>
-                        <lib>${java.home}/jmods/java.sql.jmod</lib>
-                        <lib>${java.home}/jmods/java.desktop.jmod</lib>
-                        <lib>${java.home}/jmods/java.management.jmod</lib>
-
-                    </libs>
-
-                    <proguardInclude>${basedir}/src/main/enterprise/proguard.txt</proguardInclude>
-                    <exclusions>
-                        <exclusion>
-
-                            <groupId>org.apache.felix</groupId><artifactId>*</artifactId>
-                        </exclusion>
-                      
-                    </exclusions>
-
-
-                </configuration>
             </execution>
         </executions>
 
-        <dependencies>
-          <dependency>
-            <groupId>net.sf.proguard</groupId>
-            <artifactId>proguard-base</artifactId>
-            <version>${proguard.version}</version>
-        </dependency>
-        </dependencies>
-
     </plugin>
-    -->
 
     <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-war-plugin</artifactId>
-        <version>3.3.1</version>
         <configuration>
             <attachClasses>false</attachClasses>
             <archiveClasses>false</archiveClasses>
             <webXml>src/main/webapp/WEB-INF/web.xml</webXml>
 
-           <!-- <packagingExcludes>WEB-INF/classes/com/dotcms/enterprise/**</packagingExcludes>
--->
+           <packagingExcludes>WEB-INF/classes/com/dotcms/enterprise/**</packagingExcludes>
+
             <webResources>
-              <!--  <resource>
+                <resource>
                     <directory>
                         ${project.build.directory}
                     </directory>
@@ -574,7 +410,7 @@ a
                         <include>${project.build.finalName}-enterprise.jar</include>
                     </includes>
                     <targetPath>WEB-INF/lib</targetPath>
-                </resource>-->
+                </resource>
                 <resource>
                     <directory>src/main/webapp</directory>
                     <filtering>false</filtering>
@@ -582,15 +418,15 @@ a
                 <!-- add osgi bundles -->
                 <resource>
                     <directory>
-                        ${project.build.directory}/bundles/bundles
+                        ${project.build.directory}/felix
                     </directory>
-                    <targetPath>WEB-INF/felix/bundle</targetPath>
+                    <targetPath>WEB-INF/felix</targetPath>
                 </resource>
-                <resource>
+               <!-- <resource>
                     <directory>
                         ${project.build.directory}/starter
                     </directory>
-                </resource>
+                </resource>-->
                 <resource>
                     <directory>
                         ${project.build.directory}/core-web/apps/dotcms-ui
@@ -743,6 +579,12 @@ a
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>1.7.25</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>jakarta.activation</groupId>
+                    <artifactId>jakarta.activation-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
 <!--
@@ -812,6 +654,12 @@ a
             <groupId>jakarta.xml.bind</groupId>
             <artifactId>jakarta.xml.bind-api</artifactId>
             <version>${jaxb.api.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>jakarta.activation</groupId>
+                    <artifactId>jakarta.activation-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
        <!-- <dependency>
@@ -832,6 +680,12 @@ a
             <groupId>jakarta.xml.ws</groupId>
             <artifactId>jakarta.xml.ws-api</artifactId>
             <version>${jaxws.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>jakarta.activation</groupId>
+                    <artifactId>jakarta.activation-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.sun.xml.ws</groupId>
@@ -885,6 +739,11 @@ a
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>com.github.jonpeterson</groupId>
+            <artifactId>jackson-module-model-versioning</artifactId>
+            <version>1.2.2</version>
+        </dependency>
+        <dependency>
             <groupId>com.fasterxml.jackson.jaxrs</groupId>
             <artifactId>jackson-jaxrs-base</artifactId>
             <scope>compile</scope>
@@ -936,14 +795,19 @@ a
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-client</artifactId>
-            <version>2.25.1</version>
+            <version>${jersey.version}</version>
             <scope>compile</scope>
             <exclusions>
                 <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>*</groupId>
+                    <groupId>org.javassist</groupId>
+                    <artifactId>javassist</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.javassist</groupId>
+            <artifactId>javassist</artifactId>
+            <version>3.28.0-GA</version>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
@@ -952,8 +816,8 @@ a
             <scope>compile</scope>
             <exclusions>
                 <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>*</groupId>
+                    <groupId>javax.annotation</groupId>
+                    <artifactId>javax.annotation-api</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -1202,7 +1066,7 @@ a
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-web</artifactId>
             <version>${log4j.version}</version>
-            <scope>compile</scope>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
@@ -2025,9 +1889,9 @@ a
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>dom4j</groupId>
+            <groupId>org.dom4j</groupId>
             <artifactId>dom4j</artifactId>
-            <version>1.6.1</version>
+            <version>2.1.3</version>
             <scope>compile</scope>
             <exclusions>
                 <exclusion>
@@ -2216,66 +2080,9 @@ a
                 </exclusion>
             </exclusions>
         </dependency>
-        <dependency>
-            <groupId>org.glassfish.hk2</groupId>
-            <artifactId>hk2-locator</artifactId>
-            <version>2.4.0</version>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>*</groupId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.hk2</groupId>
-            <artifactId>hk2-utils</artifactId>
-            <version>2.4.0</version>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>*</groupId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.hk2</groupId>
-            <artifactId>hk2-api</artifactId>
-            <version>2.4.0</version>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>*</groupId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.hk2.external</groupId>
-            <artifactId>javax.inject</artifactId>
-            <version>2.5.0-b32</version>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>*</groupId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.javassist</groupId>
-            <artifactId>javassist</artifactId>
-            <version>3.28.0-GA</version>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <artifactId>*</artifactId>
-                    <groupId>*</groupId>
-                </exclusion>
-            </exclusions>
-        </dependency>
+
+
+
         <dependency>
             <groupId>org.antlr</groupId>
             <artifactId>antlr</artifactId>
@@ -2293,6 +2100,12 @@ a
             <artifactId>jedis</artifactId>
             <version>2.7.3</version>
             <scope>compile</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-pool2</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -2427,7 +2240,7 @@ a
             <version>3.4.2</version>
             <scope>compile</scope>
         </dependency>
-        <dependency>
+       <!-- <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.aws-java-sdk-core</artifactId>
             <version>1.11.66_2</version>
@@ -2445,6 +2258,30 @@ a
             <version>1.11.66_2</version>
             <scope>compile</scope>
         </dependency>
+        -->
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-s3</artifactId>
+            <version>${aws.client.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+                <exclusion>
+                    <!-- elasticsearch 2.8.1 > 2.10.2 -->
+                    <groupId>joda-time</groupId>
+                    <artifactId>joda-time</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-kms</artifactId>
+            <version>${aws.client.version}</version>
+        </dependency>
+
+
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.jmespath-java</artifactId>
@@ -3136,7 +2973,7 @@ a
         <dependency>
             <groupId>org.elasticsearch.client</groupId>
             <artifactId>elasticsearch-rest-high-level-client</artifactId>
-            <version>7.3.2</version>
+            <version>${elasticsearch.client.version}</version>
             <scope>compile</scope>
             <exclusions>
                 <exclusion>
@@ -3179,14 +3016,12 @@ a
             <scope>compile</scope>
         </dependency>
 
-        <!--
-                <dependency>
-                    <groupId>com.sun.activation</groupId>
-                    <artifactId>javax.activation</artifactId>
-                    <version>1.2.0</version>
-                    <scope>compile</scope>
-                </dependency>
-        -->
+        <dependency>
+            <groupId>com.sun.activation</groupId>
+            <artifactId>jakarta.activation</artifactId>
+            <version>${javax.activation.version}</version>
+            <scope>compile</scope>
+        </dependency>
 
         <!--
         <dependency>
@@ -3199,14 +3034,8 @@ a
         <dependency>
             <groupId>com.impossibl.pgjdbc-ng</groupId>
             <artifactId>pgjdbc-ng</artifactId>
-            <version>0.8.7</version>
+            <version>0.8.9</version>
             <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.netty</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.netty</groupId>
@@ -3218,7 +3047,7 @@ a
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-rekognition</artifactId>
-            <version>1.11.839</version>
+            <version>${aws.client.version}</version>
             <scope>compile</scope>
             <exclusions>
                 <exclusion>
@@ -3299,7 +3128,7 @@ a
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.12</version>
+            <version>4.13.1</version>
             <scope>test</scope>
         </dependency>
 
@@ -3388,6 +3217,19 @@ a
             <version>6.1.1.RELEASE</version>
 
         </dependency>
+        <!--	Parameter names	-->
+        <dependency>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-parameter-names</artifactId>
+        </dependency>
+
+        <!--	Java 8 Date/time	-->
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
+
+
     </dependencies>
 
     <repositories>
@@ -3410,7 +3252,9 @@ a
         <profile>
             <id>tomcat-apis</id>
             <activation>
-                <activeByDefault>true</activeByDefault>
+                <property>
+                    <name>!api-source</name>
+                </property>
             </activation>
             <dependencies>
                 <!-- container jars -->
@@ -3464,6 +3308,12 @@ a
         </profile>
         <profile>
             <id>jakarta-apis</id>
+            <activation>
+                <property>
+                    <name>api-source</name>
+                    <value>jakarta</value>
+                </property>
+            </activation>
             <dependencies>
 
 
@@ -3474,11 +3324,79 @@ a
                     <scope>provided</scope>
                 </dependency>
                 <dependency>
-                    <groupId>jakarta.annotation:</groupId>
+                    <groupId>jakarta.annotation</groupId>
                     <artifactId>jakarta.annotation-api</artifactId>
                     <version>1.3.5</version>
                 </dependency>
             </dependencies>
+        </profile>
+        <profile>
+            <id>production</id>
+            <build>
+
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.wvengen</groupId>
+                        <artifactId>proguard-maven-plugin</artifactId>
+
+                        <version>${proguard.plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>obfuscation-packaging</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>proguard</goal>
+                                </goals>
+                                <configuration>
+                                    <proguardVersion>${proguard.version}</proguardVersion>
+                                    <mappingFileName>proguard.map</mappingFileName>
+                                    <inLibsFilter>!module-info.class,!META-INF/**</inLibsFilter>
+                                    <obfuscate>true</obfuscate>
+                                    <attach>false</attach>
+                                    <addMavenDescriptor>true</addMavenDescriptor>
+                                    <injar>${project.build.finalName}-enterprise.jar</injar>
+                                    <outjar>${project.build.finalName}-enterprise.jar</outjar>
+                                    <inFilter>com/dotcms/enterprise/**</inFilter>
+                                    <outFilter>com/dotcms/enterprise/**</outFilter>
+                                    <proguardVersion>${proguard.version}</proguardVersion>
+                                    <injarNotExistsSkip>true</injarNotExistsSkip>
+                                    <libs>
+                                        <lib>${project.build.directory}/${project.build.finalName}.jar</lib>
+                                        <lib>${java.home}/jmods/java.base.jmod</lib>
+                                        <lib>${java.home}/jmods/java.xml.jmod</lib>
+                                        <lib>${java.home}/jmods/jdk.xml.dom.jmod</lib>
+                                        <lib>${java.home}/jmods/java.sql.jmod</lib>
+                                        <lib>${java.home}/jmods/java.desktop.jmod</lib>
+                                        <lib>${java.home}/jmods/java.management.jmod</lib>
+
+                                    </libs>
+
+                                    <proguardInclude>${basedir}/src/main/enterprise/proguard.txt</proguardInclude>
+                                    <exclusions>
+                                        <exclusion>
+
+                                            <groupId>org.apache.felix</groupId><artifactId>*</artifactId>
+                                        </exclusion>
+
+                                    </exclusions>
+
+
+                                </configuration>
+                            </execution>
+                        </executions>
+
+                        <dependencies>
+                            <dependency>
+                                <groupId>net.sf.proguard</groupId>
+                                <artifactId>proguard-base</artifactId>
+                                <version>${proguard.version}</version>
+                            </dependency>
+                        </dependencies>
+
+                    </plugin>
+
+                </plugins>
+            </build>
         </profile>
     </profiles>
 </project>

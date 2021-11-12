@@ -2,6 +2,7 @@ package com.dotmarketing.startup.runalways;
 
 import static com.dotcms.security.apps.AppsUtil.APPS_IMPORT_EXPORT_DEFAULT_PASSWORD;
 import static com.liferay.util.StringPool.BLANK;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 import com.dotcms.datagen.AppDescriptorDataGen;
 import com.dotcms.datagen.SiteDataGen;
@@ -26,6 +27,8 @@ import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.CopyOption;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.Key;
 import java.util.HashMap;
@@ -114,7 +117,8 @@ public class Task00050LoadAppsSecretsTest {
 
         final File fileToImport = new File(serverDir.toString(), "dotSecrets-import.xxx");
         //Task will match any file matching this name followed by any extension
-        exportFile.renameTo(fileToImport);
+        Files.move(exportFile.toPath(), fileToImport.toPath(), REPLACE_EXISTING);
+
         destroySecretsStore();
 
         final Task00050LoadAppsSecrets task = new Task00050LoadAppsSecrets();
@@ -151,7 +155,7 @@ public class Task00050LoadAppsSecretsTest {
 
         final File fileToImport = new File(serverDir.toString(), "dotSecrets-import.xxx");
         //Task will match any file matching this name followed by any extension
-        exportFile.renameTo(fileToImport);
+        Files.move(exportFile.toPath(), fileToImport.toPath(), REPLACE_EXISTING);
         destroySecretsStore();
 
         final Task00050LoadAppsSecrets task = new Task00050LoadAppsSecrets();
@@ -187,7 +191,8 @@ public class Task00050LoadAppsSecretsTest {
 
         final File fileToImport = new File(serverDir.toString(), "dotSecrets-import.xxx");
         //Task will match any file matching this name followed by any extension
-        exportFile.renameTo(fileToImport);
+
+        Files.move(exportFile.toPath(), fileToImport.toPath(), REPLACE_EXISTING);
         destroySecretsStore();
 
         final Task00050LoadAppsSecrets task = new Task00050LoadAppsSecrets();
@@ -198,6 +203,7 @@ public class Task00050LoadAppsSecretsTest {
         final Optional<AppSecrets> secrets = api.getSecrets(descriptor.getKey(), site, admin);
         Assert.assertFalse(secrets.isPresent());
         //Since there were errors the file should continue to exist.
+        // Fixme : steve
         Assert.assertTrue(fileToImport.exists());
     }
 

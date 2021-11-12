@@ -45,7 +45,7 @@ public class Randomizer extends Random {
 		super(seed);
 	}
 
-	public int[] nextInt(int n, int size) {
+	public int[] nextIntArray(int n, int size) {
 		if (size > n) {
 			size = n;
 		}

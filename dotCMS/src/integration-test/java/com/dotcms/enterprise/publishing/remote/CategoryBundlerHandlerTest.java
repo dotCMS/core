@@ -25,6 +25,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.liferay.portal.model.User;
 import java.io.File;
+import java.nio.file.LinkOption;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Set;
 import org.junit.BeforeClass;
@@ -38,6 +40,7 @@ import org.mockito.Mockito;
 public class CategoryBundlerHandlerTest extends IntegrationTestBase {
 
     private static User user;
+    private CategoryCache categoryCache;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -55,7 +58,7 @@ public class CategoryBundlerHandlerTest extends IntegrationTestBase {
 
         final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
         final CategoryCache categoryCache = CacheLocator.getCategoryCache();
-        final String assetRealPath = Config.getStringProperty("ASSET_REAL_PATH", "test-resources");
+        final String assetRealPath = Config.getAbsolutePathProperty("ASSET_REAL_PATH", "test-resources").toString();
         final File tempDir = new File(assetRealPath + "/bundles/" + System.currentTimeMillis());
 
         List<Category> categoriesToDelete = Lists.newArrayList();
@@ -169,7 +172,7 @@ public class CategoryBundlerHandlerTest extends IntegrationTestBase {
 
         final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
         final CategoryCache categoryCache = CacheLocator.getCategoryCache();
-        final String assetRealPath = Config.getStringProperty("ASSET_REAL_PATH", "test-resources");
+        final String assetRealPath = Config.getAbsolutePathProperty("ASSET_REAL_PATH", "test-resources").toString();
         final File tempDir = new File(assetRealPath + "/bundles/" + System.currentTimeMillis());
 
         List<Category> categoriesToDelete = Lists.newArrayList();
@@ -299,7 +302,7 @@ public class CategoryBundlerHandlerTest extends IntegrationTestBase {
 
         final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
         final CategoryCache categoryCache = CacheLocator.getCategoryCache();
-        final String assetRealPath = Config.getStringProperty("ASSET_REAL_PATH", "test-resources");
+        final String assetRealPath = Config.getAbsolutePathProperty("ASSET_REAL_PATH", "test-resources").toString();
         final File tempDir = new File(assetRealPath + "/bundles/" + System.currentTimeMillis());
 
         List<Category> categoriesToDelete = Lists.newArrayList();
@@ -384,7 +387,7 @@ public class CategoryBundlerHandlerTest extends IntegrationTestBase {
 
         final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
         final CategoryCache categoryCache = CacheLocator.getCategoryCache();
-        final String assetRealPath = Config.getStringProperty("ASSET_REAL_PATH", "test-resources");
+        final String assetRealPath = Config.getAbsolutePathProperty("ASSET_REAL_PATH", "test-resources").toString();
         final File tempDir = new File(assetRealPath + "/bundles/" + System.currentTimeMillis());
 
         List<Category> categoriesToDelete = Lists.newArrayList();
@@ -476,7 +479,7 @@ public class CategoryBundlerHandlerTest extends IntegrationTestBase {
 
         final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
         final CategoryCache categoryCache = CacheLocator.getCategoryCache();
-        final String assetRealPath = Config.getStringProperty("ASSET_REAL_PATH", "test-resources");
+        final String assetRealPath = Config.getAbsolutePathProperty("ASSET_REAL_PATH", "test-resources").toString();
         final File tempDir = new File(assetRealPath + "/bundles/" + System.currentTimeMillis());
 
         List<Category> categoriesToDelete = Lists.newArrayList();

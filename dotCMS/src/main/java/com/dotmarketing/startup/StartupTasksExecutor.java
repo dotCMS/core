@@ -178,7 +178,7 @@ public class StartupTasksExecutor {
         Logger.info(this, "Database version: " + Config.DB_VERSION);
 
         String name = null;
-        
+
         for (Class<?> c : TaskLocatorUtil.getStartupRunOnceTaskClasses()) {
             name = c.getCanonicalName();
             name = name.substring(name.lastIndexOf(".") + 1);

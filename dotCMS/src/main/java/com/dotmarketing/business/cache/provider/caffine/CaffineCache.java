@@ -1,6 +1,14 @@
 package com.dotmarketing.business.cache.provider.caffine;
 
-import com.dotcms.cache.Expirable;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.cache.provider.CacheProvider;
@@ -12,34 +20,10 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.Expiry;
-import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.collect.ImmutableSet;
 import io.vavr.control.Try;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 
-/**
- * In-Memory Cache implementation using https://github.com/ben-manes/caffeine
- *
- * Supports key-specific time invalidations by providing an {@link Expirable} object
- * in the {@link #put(String, String, Object)} method with the desired TTL.
- *
- * A group-wide invalidation time can also be set by config properties.
- *
- * i.e., for the "graphqlquerycache" group
- *
- * cache.graphqlquerycache.chain=com.dotmarketing.business.cache.provider.caffine.CaffineCache
- * cache.graphqlquerycache.seconds=15
- *
- */
 public class CaffineCache extends CacheProvider {
 
     private static final long serialVersionUID = 1348649382678659786L;
@@ -128,7 +112,8 @@ public class CaffineCache extends CacheProvider {
         cache.invalidateAll();
 
         // Remove this group from the global list of cache groups
-        groups.remove(group);
+        // Do we need to remove or just invalidate, otherwise keep recreating and initializing Cache
+        //groups.remove(group);
     }
 
     @Override
@@ -198,20 +183,16 @@ public class CaffineCache extends CacheProvider {
             final boolean isDefault = (Config.getIntProperty("cache." + group + ".size", -1) == -1);
 
 
-            final int size = isDefault ? Config.getIntProperty("cache." + DEFAULT_CACHE + ".size")
-                    : (Config.getIntProperty("cache." + group + ".size", -1) != -1)
-                            ? Config.getIntProperty("cache." + group + ".size")
-                            : Config.getIntProperty("cache." + DEFAULT_CACHE + ".size");
+            final int configured = isDefault ? Config.getIntProperty("cache." + DEFAULT_CACHE + ".size")
+                : (Config.getIntProperty("cache." + group + ".size", -1) != -1)
+                  ? Config.getIntProperty("cache." + group + ".size")
+                      : Config.getIntProperty("cache." + DEFAULT_CACHE + ".size");
 
-            final int seconds = isDefault ? Config.getIntProperty("cache." + DEFAULT_CACHE + ".seconds", 100)
-                    : (Config.getIntProperty("cache." + group + ".seconds", -1) != -1)
-                            ? Config.getIntProperty("cache." + group + ".seconds")
-                            : Config.getIntProperty("cache." + DEFAULT_CACHE + ".seconds", 100);
 
             com.github.benmanes.caffeine.cache.stats.CacheStats cstats = foundCache.stats();
             stats.addStat(CacheStats.REGION, group);
             stats.addStat(CacheStats.REGION_DEFAULT, isDefault + "");
-            stats.addStat(CacheStats.REGION_CONFIGURED_SIZE, "size:" + nf.format(size) + " / " + seconds + "s");
+            stats.addStat(CacheStats.REGION_CONFIGURED_SIZE, nf.format(configured));
             stats.addStat(CacheStats.REGION_SIZE, nf.format(foundCache.estimatedSize()));
             stats.addStat(CacheStats.REGION_LOAD, nf.format(cstats.missCount()+cstats.hitCount()));
             stats.addStat(CacheStats.REGION_HITS, nf.format(cstats.hitCount()));
@@ -241,76 +222,36 @@ public class CaffineCache extends CacheProvider {
         if (cacheName == null) {
             throw new DotStateException("Null cache region passed in");
         }
-
-        cacheName = cacheName.toLowerCase();
-        Cache<String, Object> cache = groups.get(cacheName);
-
-        // init cache if it does not exist
-        if (cache == null) {
-            synchronized (cacheName.intern()) {
-                cache = groups.get(cacheName);
-                if (cache == null) {
-
-                    boolean separateCache = (Config.getBooleanProperty(
-                            "cache.separate.caches.for.non.defined.regions", true)
-                            || availableCaches.contains(cacheName)
-                            || DEFAULT_CACHE.equals(cacheName));
-
-                    if (separateCache) {
-                        int size = Config.getIntProperty("cache." + cacheName + ".size", -1);
-
-                        if (size == -1) {
-                            size = Config.getIntProperty("cache." + DEFAULT_CACHE + ".size", 100);
-                        }
-
-                        final int defaultTTL = Config.getIntProperty("cache." + cacheName + ".seconds", -1);
-
-
-                        Logger.info(this.getClass(),
-                                "***\t Building Cache : " + cacheName + ", size:" + size
-                                        + ",Concurrency:"
-                                        + Config.getIntProperty("cache.concurrencylevel", 32));
-
-                        cache = Caffeine.newBuilder()
-                                .maximumSize(size)
-                                .recordStats()
-                                .expireAfter(new Expiry<String, Object>() {
-                                    public long expireAfterCreate(String key, Object value, long currentTime) {
-                                        long ttlInSeconds;
-
-                                        if(value instanceof Expirable
-                                                && ((Expirable) value).getTtl() > 0) {
-                                            ttlInSeconds = ((Expirable) value).getTtl();
-                                        } else if (defaultTTL > 0) {
-                                            ttlInSeconds = defaultTTL;
-                                        } else {
-                                            ttlInSeconds = Long.MAX_VALUE;
-                                        }
-
-                                        return TimeUnit.SECONDS.toNanos(ttlInSeconds);
-                                    }
-                                    public long expireAfterUpdate(String key, Object value,
-                                            long currentTime, long currentDuration) {
-                                        return currentDuration;
-                                    }
-                                    public long expireAfterRead(String key, Object value,
-                                            long currentTime, long currentDuration) {
-                                        return currentDuration;
-                                    }
-                                })
-                                .build(key -> null);
-
-                        groups.put(cacheName, cache);
-
-                    } else {
-                        Logger.info(this.getClass(),
-                                "***\t No Cache for   : " + cacheName + ", using " + DEFAULT_CACHE);
-                        cache = getCache(DEFAULT_CACHE);
-                        groups.put(cacheName, cache);
-                    }
-                }
-            }
-        }
-        return cache;
+        return groups.computeIfAbsent(cacheName.toLowerCase(), this::createCache);
     }
+
+    private Cache<String, Object> createCache(String key) {
+        boolean separateCache = (Config.getBooleanProperty(
+                "cache.separate.caches.for.non.defined.regions", true)
+                || availableCaches.contains(key)
+                || DEFAULT_CACHE.equals(key));
+
+        if (separateCache) {
+            int size = Config.getIntProperty("cache." + key + ".size", -1);
+
+            if (size == -1) {
+                size = Config.getIntProperty("cache." + DEFAULT_CACHE + ".size", 100);
+            }
+
+            Logger.info(this.getClass(),
+                    "***\t Building Cache : " + key + ", size:" + size
+                            + ",Concurrency:"
+                            + Config.getIntProperty("cache.concurrencylevel", 32));
+            return  Caffeine.newBuilder()
+                    .maximumSize(size)
+                    .recordStats()
+                    //.softValues()
+                    .build();
+        } else {
+            Logger.info(this.getClass(),
+                    "***\t No Cache for   : " + key + ", using " + DEFAULT_CACHE);
+            return getCache(DEFAULT_CACHE);
+        }
+    }
+
 }

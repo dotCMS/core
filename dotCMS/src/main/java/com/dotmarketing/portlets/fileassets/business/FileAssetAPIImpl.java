@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.ConnectException;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -569,7 +570,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
      * @return The absolute path of the File Asset.
      */
     public String getRealAssetPath(final String inode, final String fileName, final String ext) {
-        String realPath = Config.getStringProperty("ASSET_REAL_PATH");
+        String realPath = Paths.get(Config.getStringProperty("ASSET_REAL_PATH","target/assets")).toAbsolutePath().normalize().toString();
         if (UtilMethods.isSet(realPath) && !realPath.endsWith(java.io.File.separator)) {
             realPath += java.io.File.separator;
         }
@@ -630,7 +631,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
         String _inode = inode;
         String path = "";
 
-        String realPath = Config.getStringProperty("ASSET_REAL_PATH", null);
+        String realPath = Paths.get(Config.getStringProperty("ASSET_REAL_PATH","target/assets")).toAbsolutePath().normalize().toString();
         if (UtilMethods.isSet(realPath) && !realPath.endsWith(java.io.File.separator))
             realPath = realPath + java.io.File.separator;
 

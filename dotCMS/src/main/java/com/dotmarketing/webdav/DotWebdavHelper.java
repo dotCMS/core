@@ -100,7 +100,7 @@ import javax.servlet.http.HttpServletRequest;
 public class DotWebdavHelper {
 
 	private static final String PRE_AUTHENTICATOR = PropsUtil.get("auth.pipeline.pre");
-	private static ThreadLocal<Perl5Matcher> localP5Matcher = new ThreadLocal<Perl5Matcher>(){
+	private static final ThreadLocal<Perl5Matcher> localP5Matcher = new ThreadLocal<Perl5Matcher>(){
 		protected Perl5Matcher initialValue() {
 			return new Perl5Matcher();
 		}

@@ -37,6 +37,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -452,7 +453,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	 */
 	private String getGlobalVariablesPath () {
 		String ret="";
-		String realPath = Config.getStringProperty("ASSET_REAL_PATH");
+		String realPath = Paths.get(Config.getStringProperty("ASSET_REAL_PATH","target/assets")).toAbsolutePath().normalize().toString();
 
 		String assetPath = Config.getStringProperty("ASSET_PATH");
 		if(!UtilMethods.isSet(realPath)){

@@ -32,7 +32,10 @@ public class DBPropertiesDataSourceStrategy implements DotDataSourceStrategy {
         final ClassLoader loader = Thread.currentThread().getContextClassLoader();
         final URL resourceURL = loader.getResource(DB_PROPERTIES_FILE_NAME);
         if (resourceURL!=null){
-            propertiesFile = new File(resourceURL.getPath());
+            if (resourceURL.getPath().contains(".jar!"))
+                propertiesFile = new File("/"+DB_PROPERTIES_FILE_NAME);
+            else
+                propertiesFile = new File(resourceURL.getPath());
         }
 
     }
@@ -50,25 +53,12 @@ public class DBPropertiesDataSourceStrategy implements DotDataSourceStrategy {
      * @return True if a <b>db.properties</b> file exists in WEB-INF/classes directory
      */
     public boolean existsDBPropertiesFile() {
-        return propertiesFile!=null && propertiesFile.exists();
+        return propertiesFile!=null;
     }
 
     @Override
     public DataSource apply() {
-        try {
-
-            if (!(existsDBPropertiesFile())){
-                throw new FileNotFoundException("DB properties file not found");
-            }
             return new HikariDataSource(getHikariConfig());
-        } catch (IOException e) {
-            Logger.error(DBPropertiesDataSourceStrategy.class,
-                    "---------- Error getting dbconnection " + Constants.DATABASE_DEFAULT_DATASOURCE
-                            + " from db.properties file",
-                    e);
-
-            throw new DotRuntimeException(e.toString());
-        }
     }
 
     @VisibleForTesting

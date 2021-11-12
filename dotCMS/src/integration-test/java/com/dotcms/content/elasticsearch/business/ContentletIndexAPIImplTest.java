@@ -70,13 +70,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -802,7 +803,12 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
     ContentType type = new ContentTypeDataGen()
         .fields(ImmutableList.of(ImmutableTextField.builder().name("Title").variable("title").searchable(true).listed(true).build()))
         .nextPersisted();
-    Contentlet content = new ContentletDataGen(type.id()).setProperty("title", "contentTest " + System.currentTimeMillis()).next();
+
+      String testBody = RandomStringUtils.random(10000000, true, true);
+
+    Contentlet content = new ContentletDataGen(type.id()).setProperty("title", "contentTest " + System.currentTimeMillis())
+            .setProperty("body", testBody).next();
+
 
     String title = "version1";
     content.setStringProperty("title", title);
@@ -1142,6 +1148,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         indexAPI.appendBulkRequest(bulk, entries.values());
         indexAPI.putToIndex(bulk);
 
+        // FIXME: Steve
         assertTrue(contentletAPI
                 .indexCount("+live:false +identifier:" + baseCon.getIdentifier(), user, false)
                 == 0);

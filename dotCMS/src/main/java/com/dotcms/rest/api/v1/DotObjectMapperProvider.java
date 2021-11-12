@@ -41,6 +41,7 @@ public class DotObjectMapperProvider {
         if (Config.getBooleanProperty("dotcms.rest.sort.json.properties", true)) {
             result.configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true);
             result.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
+            result.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, true);
         }
         return result;
     }

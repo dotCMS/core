@@ -7,9 +7,13 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Array;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
@@ -84,7 +88,7 @@ public class Config {
 	    _loadProperties();
 	}
 
-	private static void registerWatcher(final File fileToRead) {
+	private static void registerWatcher(File fileToRead) {
 
 		initWatcherAPI();
 		if (null != fileWatcherAPI) {
@@ -92,6 +96,10 @@ public class Config {
 			// if we are not already watching, so register the waticher
 			if (!isWatching.get()) {
 				try {
+
+					if (fileToRead.getPath().contains(".jar!"))
+						fileToRead = new File(fileToRead.getPath().substring(5,fileToRead.getPath().lastIndexOf(".jar!") + 4));
+
 
 					Logger.debug(APILocator.class, "Start watching: " + fileToRead);
 					fileWatcherAPI.watchFile(fileToRead, () -> _loadProperties());
@@ -244,8 +252,11 @@ public class Config {
             if ( props == null ) {
                 props = new PropertiesConfiguration();
             }
+			if (fileToRead.getPath().contains(".jar!"))
+				propsInputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(fileToRead.getPath().substring(fileToRead.getPath().lastIndexOf(".jar!") + 6));
+            else
+				propsInputStream = fileToRead.toURI().toURL().openStream();
 
-            propsInputStream = Files.newInputStream(fileToRead.toPath());
             props.load( new InputStreamReader( propsInputStream ) );
             Logger.info( Config.class, "dotCMS Properties [" + fileName + "] Loaded" );
             postProperties();
@@ -303,6 +314,10 @@ public class Config {
 
 	private static void readEnvironmentVariables() {
 		synchronized (Config.class) {
+
+			System.getProperties().entrySet().stream().filter(e -> e.getKey().toString().startsWith(ENV_PREFIX))
+					.forEach(e -> props.setProperty(e.getKey().toString(), e.getValue()));
+
 			System.getenv().entrySet().stream().filter(e -> e.getKey().startsWith(ENV_PREFIX))
 					.forEach(e -> props.setProperty(e.getKey(), e.getValue()));
 		}
@@ -337,6 +352,31 @@ public class Config {
 		
 		return String.join(",", propsArr);
 		
+	}
+
+	/**
+	 * Returns a normalized absolute path property
+	 *
+	 * @param name     The name of the property to locate.
+	 * @return an Optional that could contain the normalized absolute path if property exists.
+	 */
+	public static Optional<Path> getAbsolutePathProperty(final String name) {
+		return Optional.ofNullable(getStringProperty(name,null))
+				.map( pathString ->
+						Paths.get(pathString).toAbsolutePath().normalize()
+				);
+	}
+
+	/**
+	 * Returns a normalized absolute path property
+	 *
+	 * @param name     The name of the property to locate.
+	 * @param defValue Value to return if property is not found.
+	 * @return an Optional that could contain the normalized absolute path if property exists.
+	 */
+	public static Path getAbsolutePathProperty(final String name,final String defValue) {
+		Objects.requireNonNull(defValue,"default value must not be null");
+		return Paths.get(getStringProperty(name,defValue)).toAbsolutePath().normalize();
 	}
 
 	/**

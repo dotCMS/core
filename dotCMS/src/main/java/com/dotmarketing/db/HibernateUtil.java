@@ -43,7 +43,7 @@ public class HibernateUtil {
 	private static Dialect dialect;
 	private static SessionFactory sessionFactory;
 
-	private static ThreadLocal <Session> sessionHolder = new ThreadLocal<>();
+	private static final ThreadLocal <Session> sessionHolder = new ThreadLocal<>();
 
 	private Class thisClass;
 
@@ -589,7 +589,7 @@ public class HibernateUtil {
 
 	// Session management methods
 
-	private static ThreadLocal <Object>forceDirtyObject = new ThreadLocal<>();
+	private static final ThreadLocal <Object>forceDirtyObject = new ThreadLocal<>();
 
 	protected static class NoDirtyFlushInterceptor implements Interceptor {
 

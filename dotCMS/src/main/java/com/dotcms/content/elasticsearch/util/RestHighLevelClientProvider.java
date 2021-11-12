@@ -3,6 +3,7 @@ package com.dotcms.content.elasticsearch.util;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonFactory;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -84,4 +85,23 @@ public abstract class RestHighLevelClientProvider {
     };
 
     public abstract void setClient(final RestHighLevelClient client);
+
+    public static void close() {
+        if(INSTANCE!=null)
+        {
+            synchronized (RestHighLevelClientProvider.class) {
+                if(INSTANCE!=null) {
+                    RestHighLevelClient client = INSTANCE.getClient();
+                    if (client != null) {
+                        try {
+                            client.close();
+                        } catch (IOException e) {
+                            Logger.error("Error closing http client ",e);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 }
