@@ -59,7 +59,7 @@
         <httpclient.version>4.5.13</httpclient.version>
         <aws.client.version>1.12.79</aws.client.version>
 
-        <elasticsearch.client.version>7.3.2</elasticsearch.client.version>
+        <elasticsearch.client.version>7.10.2</elasticsearch.client.version>
         <!-- geoip2 has jackson dependency -->
         <geoip2.version>2.15.0</geoip2.version>
 
