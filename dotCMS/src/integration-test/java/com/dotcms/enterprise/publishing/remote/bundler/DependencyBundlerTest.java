@@ -29,6 +29,7 @@ import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageDataGen;
@@ -521,11 +522,13 @@ public class DependencyBundlerTest {
                 .nextPersisted();
 
         final Contentlet contentletChild =  new ContentletDataGen(contentTypeChild.id())
+                .setPolicy(IndexPolicy.WAIT_FOR)
                 .languageId(language.getId())
                 .host(host)
                 .nextPersisted();
 
         final Contentlet contentletWithRelationship = new ContentletDataGen(contentTypeParent.id())
+                .setPolicy(IndexPolicy.WAIT_FOR)
                 .languageId(language.getId())
                 .host(host)
                 .setProperty(contentTypeParent.variable(), list(contentletChild))
