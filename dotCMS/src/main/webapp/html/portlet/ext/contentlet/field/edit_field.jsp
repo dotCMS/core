@@ -137,6 +137,42 @@
         }
         //END of TEXT field
 
+        // STORY BLOCK
+        else if (field.getFieldType().equals(Field.FieldType.STORY_BLOCK_FIELD.toString())) {
+            
+            // The extra single quotes indicate that it will return an empty string -> "''"
+            String textValue = UtilMethods.isSet(value) ? value.toString() : (UtilMethods.isSet(defaultValue) ? defaultValue : "''");
+            %>
+            <script src="/html/dotcms-block-editor.js"></script>
+            <dotcms-block-editor style="width: 100%; height: 500px; display: block;"></dotcms-block-editor>
+            <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"/>
+
+            <script>
+
+                /**
+                 * Do not use "<%=textValue%>" or '<%=textValue%>'
+                 * If we put it in quotes and the user adds a content that has quotes,
+                 * it will throw a syntax error 
+                 */
+                const data = <%=textValue%>;
+
+                const block = document.querySelector('dotcms-block-editor .ProseMirror');
+                const field = document.querySelector('#<%=field.getVelocityVarName()%>');
+
+                if (data) {
+                    block.editor.commands.setContent(data);
+                }
+
+                block.editor.on('update', ({ editor }) => {
+                    field.value = JSON.stringify({
+                        ...editor.getJSON(),
+                        render: editor.getHTML()
+                    });
+                })
+            </script>
+        <% }
+
+
         //TEXTAREA kind of field rendering
         else if (field.getFieldType().equals(
                 Field.FieldType.TEXT_AREA.toString())) {
