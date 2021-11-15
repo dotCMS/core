@@ -4,51 +4,58 @@ import {
     NodeView,
     NodeViewProps,
     NodeViewRenderer,
-    NodeViewRendererProps
+    NodeViewRendererProps,
+    NodeViewRendererOptions
 } from '@tiptap/core';
-import { Decoration, NodeView as ProseMirrorNodeView } from 'prosemirror-view';
-import { Node as ProseMirrorNode } from 'prosemirror-model';
+import type { Decoration } from 'prosemirror-view';
+import type { Node as ProseMirrorNode } from 'prosemirror-model';
+
 import { AngularRenderer } from './AngularRenderer';
 
 @Component({ template: '' })
-export class AngularNodeViewComponent {
-    @Input() props!: NodeViewProps;
+export class AngularNodeViewComponent implements NodeViewProps {
+    @Input() editor!: NodeViewProps['editor'];
+    @Input() node!: NodeViewProps['node'];
+    @Input() decorations!: NodeViewProps['decorations'];
+    @Input() selected!: NodeViewProps['selected'];
+    @Input() extension!: NodeViewProps['extension'];
+    @Input() getPos!: NodeViewProps['getPos'];
+    @Input() updateAttributes!: NodeViewProps['updateAttributes'];
+    @Input() deleteNode!: NodeViewProps['deleteNode'];
 }
 
-interface AngularNodeViewRendererOptions {
-    stopEvent?: ((event: Event) => boolean) | null;
+interface AngularNodeViewRendererOptions extends NodeViewRendererOptions {
     update?: ((node: ProseMirrorNode, decorations: Decoration[]) => boolean) | null;
     injector: Injector;
 }
 
-class AngularNodeView
-    extends NodeView<Type<AngularNodeViewComponent>, Editor>
-    implements ProseMirrorNodeView {
-    renderer!: AngularRenderer<AngularNodeViewComponent>;
+class AngularNodeView extends NodeView<
+    Type<AngularNodeViewComponent>,
+    Editor,
+    AngularNodeViewRendererOptions
+> {
+    renderer!: AngularRenderer<AngularNodeViewComponent, NodeViewProps>;
     contentDOMElement!: HTMLElement | null;
 
     mount() {
-        const injector = (this.options as AngularNodeViewRendererOptions).injector as Injector;
+        const injector = this.options.injector as Injector;
 
         const props: NodeViewProps = {
             editor: this.editor,
             node: this.node,
             decorations: this.decorations,
-            deleteNode: () => {},
             selected: false,
             extension: this.extension,
             getPos: () => this.getPos(),
-            updateAttributes: (attributes = {}) => this.updateAttributes(attributes)
+            updateAttributes: (attributes = {}) => this.updateAttributes(attributes),
+            deleteNode: () => this.deleteNode()
         };
 
         // create renderer
-        this.renderer = new AngularRenderer(this.component, injector);
+        this.renderer = new AngularRenderer(this.component, injector, props);
 
-        // Pass input props to the component
-        this.renderer.instance.props = props;
-
+        // Register drag handler
         if (this.extension.config.draggable) {
-            // Register drag handler
             this.renderer.elementRef.nativeElement.ondragstart = (e: DragEvent) => {
                 this.onDragStart(e);
             };
@@ -63,21 +70,8 @@ class AngularNodeView
             // With this fix it seems to work fine
             // See: https://github.com/ueberdosis/tiptap/issues/1197
             this.contentDOMElement.style.whiteSpace = 'inherit';
-
             this.renderer.detectChanges();
         }
-
-        // attach stopEvent
-        if (this.options.stopEvent) {
-            this.stopEvent = this.options.stopEvent;
-        }
-    }
-
-    private updateProps(props: Partial<NodeViewProps>) {
-        this.renderer.instance.props = {
-            ...this.renderer.instance.props,
-            ...props
-        };
     }
 
     get dom() {
@@ -89,6 +83,11 @@ class AngularNodeView
             return null;
         }
 
+        this.maybeMoveContentDOM();
+        return this.contentDOMElement;
+    }
+
+    private maybeMoveContentDOM(): void {
         const contentElement = this.dom.querySelector('[data-node-view-content]');
 
         if (
@@ -98,8 +97,6 @@ class AngularNodeView
         ) {
             contentElement.appendChild(this.contentDOMElement);
         }
-
-        return this.contentDOMElement;
     }
 
     update(node: ProseMirrorNode, decorations: Decoration[]): boolean {
@@ -117,17 +114,18 @@ class AngularNodeView
 
         this.node = node;
         this.decorations = decorations;
-        this.updateProps({ node, decorations });
+        this.renderer.updateProps({ node, decorations });
+        this.maybeMoveContentDOM();
 
         return true;
     }
 
     selectNode() {
-        this.updateProps({ selected: true });
+        this.renderer.updateProps({ selected: true });
     }
 
     deselectNode() {
-        this.updateProps({ selected: false });
+        this.renderer.updateProps({ selected: false });
     }
 
     destroy() {
@@ -137,9 +135,9 @@ class AngularNodeView
 
 export const AngularNodeViewRenderer = (
     component: Type<AngularNodeViewComponent>,
-    options: AngularNodeViewRendererOptions
+    options: Partial<AngularNodeViewRendererOptions>
 ): NodeViewRenderer => {
     return (props: NodeViewRendererProps) => {
-        return new AngularNodeView(component, props, options) as ProseMirrorNodeView;
+        return new AngularNodeView(component, props, options);
     };
 };

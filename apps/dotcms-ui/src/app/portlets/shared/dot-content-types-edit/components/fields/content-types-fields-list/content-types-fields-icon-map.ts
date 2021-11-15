@@ -28,5 +28,6 @@ export const FIELD_ICONS = {
     'com.dotcms.contenttype.model.field.ImmutableTabDividerField': 'folder',
     'com.dotcms.contenttype.model.field.ImmutableLineDividerField': 'more_horiz',
     'com.dotcms.contenttype.model.field.ImmutableRelationshipField': 'merge_type',
+    'com.dotcms.contenttype.model.field.ImmutableStoryBlockField': 'post_add',
     [COLUMN_BREAK.clazz]: 'view_column'
 };

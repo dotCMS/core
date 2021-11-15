@@ -1,41 +1,55 @@
 import {
-  ApplicationRef, ComponentFactoryResolver, ComponentRef,
-  ElementRef, Injector, Type
-} from "@angular/core";
+    ApplicationRef,
+    ComponentFactoryResolver,
+    ComponentRef,
+    ElementRef,
+    Injector,
+    Type
+} from '@angular/core';
 
-export class AngularRenderer<C> {
-  private applicationRef: ApplicationRef
-  private componentRef: ComponentRef<C>
+export class AngularRenderer<C, P> {
+    private applicationRef: ApplicationRef;
+    private componentRef: ComponentRef<C>;
 
-  constructor(component: Type<C>, injector: Injector) {
-    this.applicationRef = injector.get(ApplicationRef);
+    constructor(component: Type<C>, injector: Injector, props: Partial<P>) {
+        this.applicationRef = injector.get(ApplicationRef);
 
-    const componentFactoryResolver = injector.get(ComponentFactoryResolver);
-    const factory = componentFactoryResolver.resolveComponentFactory(component);
+        const componentFactoryResolver = injector.get(ComponentFactoryResolver);
+        const factory = componentFactoryResolver.resolveComponentFactory(component);
 
-    this.componentRef = factory.create(injector, []);
+        this.componentRef = factory.create(injector, []);
 
-    // Attach to the view so that the change detector knows to run
-    this.applicationRef.attachView(this.componentRef.hostView);
-  }
+        // set input props to the component
+        this.updateProps(props);
 
-  get instance(): C {
-    return this.componentRef.instance;
-  }
+        // Attach to the view so that the change detector knows to run
+        this.applicationRef.attachView(this.componentRef.hostView);
+    }
 
-  get elementRef(): ElementRef {
-    return this.componentRef.injector.get(ElementRef);
-  }
+    get instance(): C {
+        return this.componentRef.instance;
+    }
 
-  get dom(): HTMLElement {
-    return this.elementRef.nativeElement;
-  }
+    get elementRef(): ElementRef {
+        return this.componentRef.injector.get(ElementRef);
+    }
 
-  detectChanges():void {
-    this.componentRef.changeDetectorRef.detectChanges();
-  }
+    get dom(): HTMLElement {
+        return this.elementRef.nativeElement;
+    }
 
-  destroy(): void {
-    this.applicationRef.detachView(this.componentRef.hostView);
-  }
+    updateProps<T extends P>(props: Partial<T>): void {
+        Object.entries(props).forEach(([key, value]) => {
+            this.instance[key as keyof C] = value as C[keyof C];
+        });
+    }
+
+    detectChanges(): void {
+        this.componentRef.changeDetectorRef.detectChanges();
+    }
+
+    destroy(): void {
+        this.componentRef.destroy();
+        this.applicationRef.detachView(this.componentRef.hostView);
+    }
 }

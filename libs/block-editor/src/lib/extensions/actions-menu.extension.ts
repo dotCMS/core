@@ -158,10 +158,11 @@ export const ActionsMenu = (injector: Injector, resolver: ComponentFactoryResolv
     return Extension.create<FloatingMenuOptions>({
         name: 'actionsMenu',
         defaultOptions: {
+            pluginKey: 'actionsMenu',
             element: null,
             suggestion: {
-                char: '/c',
-                allowSpaces: true,
+                char: '/',
+                allowSpaces: false,
                 startOfLine: true,
                 render: () => {
                     return {
