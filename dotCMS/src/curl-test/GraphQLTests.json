@@ -8320,7 +8320,7 @@
 									"    pm.expect(contentType.fields.length).to.eql(2);",
 									"});",
 									"pm.test(\"Content Type has a Story_block_field\", function() {",
-									"    pm.expect(contentType.fields[1].fieldType).to.eql(\"Story_block_field\");",
+									"    pm.expect(contentType.fields[1].fieldType).to.eql(\"Story-Block\");",
 									"});"
 								],
 								"type": "text/javascript"
