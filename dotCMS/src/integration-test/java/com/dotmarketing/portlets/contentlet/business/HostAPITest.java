@@ -40,6 +40,7 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.quartz.job.HostCopyOptions;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UUIDGenerator;
@@ -813,5 +814,33 @@ public class HostAPITest extends IntegrationTestBase  {
         assertNotNull(hostAPIWithMockedLangAPI.findSystemHost());
 
     }
+
+    @Test(expected = RuntimeException.class)
+    public void Test_SiteKey_InValid_DNS_Format_Expect_Failure()  {
+        final String propName = "site.key.dns.validation";
+        final boolean propValue = Config.getBooleanProperty(propName, false);
+        Config.setProperty(propName, true);
+        try {
+            final String testHost = "test_host_" + System.currentTimeMillis() + ".dotcms.com";
+            new SiteDataGen().name(testHost).nextPersisted();
+        }finally {
+            Config.setProperty(propName, propValue);
+        }
+    }
+
+    @Test
+    public void Test_SiteKey_Valid_DNS_Format_No_Failure_Expected()  {
+        final String propName = "site.key.dns.validation";
+        final boolean propValue = Config.getBooleanProperty(propName, false);
+        Config.setProperty(propName, true);
+        try {
+            final String testHost = "test-host-" + System.currentTimeMillis() + ".dotcms.com";
+            final Host site = new SiteDataGen().name(testHost).nextPersisted();
+            assertNotNull(site);
+        }finally {
+            Config.setProperty(propName, propValue);
+        }
+    }
+
 
 }
