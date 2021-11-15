@@ -49,6 +49,14 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
     private List<Category> categories = new ArrayList<>();
     private String hostName;
 
+    public static void addField(Field hostFolderField) {
+        try {
+            APILocator.getContentTypeFieldAPI().save(hostFolderField, APILocator.systemUser());
+        } catch (DotDataException | DotSecurityException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public  ContentTypeDataGen addCategory(final Category category){
         categories.add(category);
         return this;
