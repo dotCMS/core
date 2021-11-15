@@ -6274,6 +6274,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (BaseContentType.HTMLPAGE.getType() == contentType.baseType().getType()) {
             this.validateHtmlPage(contentlet, contentIdentifier, contentType);
         }
+        if(contentlet.isHost()){
+            this.validateSite(contentlet);
+        }
         boolean hasError = false;
         final DotContentletValidationException cve = new DotContentletValidationException(
                 String.format("Contentlet with id:`%s` and title:`%s` has invalid / missing field(s).", contentIdentifier, contentlet.getTitle())
@@ -6788,6 +6791,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    final static Pattern dnsPattern = Pattern.compile(dnsRegEx);
+
+    /**
+     * Host validation method shared by HostResource and ContentletWebAPI
+     * @param contentlet
+     */
+    private void validateSite(Contentlet contentlet) {
+        if (Config.getBooleanProperty("site.key.dns.validation", false)) {
+            final String siteKey = (String) contentlet.get(Host.HOST_NAME_KEY);
+            if (!UtilMethods.isSet(siteKey) || !dnsPattern.matcher(siteKey).find()) {
+                throw new DotContentletValidationException(
+                        String.format("Site key %s doesn't match a valid dns format.", siteKey));
+            }
+        }
+    }
+
     @CloseDBIfOpened
     @Override
     public void validateContentlet(Contentlet contentlet,Map<Relationship, List<Contentlet>> contentRelationships,List<Category> cats)throws DotContentletValidationException {
@@ -6822,7 +6841,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if (BaseContentType.PERSONA.getType() == contentlet.getContentType().baseType().getType()) {
                 APILocator.getPersonaAPI().validatePersona(contentlet);
             }
-            if (null != contentlet && contentlet.isVanityUrl()) {
+            if (contentlet.isVanityUrl()) {
                 APILocator.getVanityUrlAPI().validateVanityUrl(contentlet);
             }
         } catch (final DotContentletValidationException ve) {
