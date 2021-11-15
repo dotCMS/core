@@ -5,6 +5,7 @@ import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
 import com.dotcms.cache.lettuce.DotObjectCodecTest;
 import com.dotcms.cache.lettuce.LettuceCacheTest;
 import com.dotcms.cache.lettuce.RedisClientTest;
+import com.dotcms.content.business.ContentletJsonAPITest;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
@@ -28,8 +29,10 @@ import com.dotcms.enterprise.publishing.remote.bundler.RuleBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.TemplateBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.WorkflowBundlerTest;
 import com.dotcms.enterprise.publishing.remote.handler.ContentHandlerTest;
+import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
+import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleAPITest;
@@ -126,7 +129,9 @@ import com.dotmarketing.startup.runonce.Task210816DeInodeRelationshipTest;
 import com.dotmarketing.startup.runonce.Task211012AddCompanyDefaultLanguageTest;
 import com.dotmarketing.startup.runonce.Task210901UpdateDateTimezonesTest;
 import com.dotmarketing.util.ResourceCollectorUtilTest;
+import com.dotmarketing.startup.runonce.Task211101AddContentletAsJsonColumnTest;
 import com.dotmarketing.startup.runonce.Task211007RemoveNotNullConstraintFromCompanyMXColumnTest;
+import com.dotmarketing.startup.runonce.Task211103RenameHostNameLabelTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -138,6 +143,8 @@ import org.junit.runners.Suite.SuiteClasses;
 
 /* grep -l -r "@Test" dotCMS/src/integration-test */
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
+
+
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
         PushPublishBundleGeneratorTest.class,
@@ -479,7 +486,12 @@ import org.junit.runners.Suite.SuiteClasses;
         ResourceCollectorUtilTest.class,
         Task211007RemoveNotNullConstraintFromCompanyMXColumnTest.class,
         ManifestReaderFactoryTest.class,
-        Task211012AddCompanyDefaultLanguageTest.class
+        Task211012AddCompanyDefaultLanguageTest.class,
+        StaticPublisherIntegrationTest.class,
+        HostIntegrityCheckerTest.class,
+        Task211101AddContentletAsJsonColumnTest.class,
+        ContentletJsonAPITest.class,
+        Task211103RenameHostNameLabelTest.class
 })
 public class MainSuite {
 

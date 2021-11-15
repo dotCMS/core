@@ -201,7 +201,8 @@ public class ESMappingAPITest {
         hiddenField = fieldAPI.save(hiddenField, user);
         final Date hiddenDate = new Date();
         final Contentlet contentlet = new ContentletDataGen(contentType.id())
-                .setProperty(hiddenField.variable(), hiddenDate).nextPersisted();
+                .setProperty(hiddenField.variable(), hiddenDate)
+                .nextPersisted();
 
         final Map<String, Object> contentletMap = esMappingAPI.toMap(contentlet);
 
@@ -1044,9 +1045,8 @@ public class ESMappingAPITest {
         Assert.assertFalse(searchResults.isEmpty());
         for (final Object searchResult : searchResults) {
             final Contentlet contentlet = (Contentlet) searchResult;
-            final String json = (String)contentlet.getMap().get("myKeyValueField");
-            assertNotNull(json);
-            final Map<String, Object> map = KeyValueFieldUtil.JSONValueToHashMap(json);
+            final Map<String, Object> map = (Map<String, Object>)contentlet.getMap().get("myKeyValueField");
+
             assertEquals(map.get("key1"),"val1");
             assertEquals(map.get("key2"),"val2");
         }

@@ -1018,6 +1018,7 @@ create table permission (
     disabled_wysiwyg NVARCHAR(255) null,
     identifier NVARCHAR(36) null,
     language_id numeric(19,0) null,
+    contentlet_as_json NVARCHAR(MAX),
     date1 datetime null,
     date2 datetime null,
     date3 datetime null,
@@ -2591,6 +2592,7 @@ create table sitelic(id NVARCHAR(36) primary key, serverid NVARCHAR(100), licens
 
 -- Integrity Checker
 create table folders_ir(folder NVARCHAR(255), local_inode NVARCHAR(36), remote_inode NVARCHAR(36), local_identifier NVARCHAR(36), remote_identifier NVARCHAR(36), endpoint_id NVARCHAR(40), PRIMARY KEY (local_inode, endpoint_id));
+create table hosts_ir(local_identifier varchar(36), remote_identifier varchar(36), endpoint_id varchar(40), local_working_inode varchar(36), local_live_inode varchar(36), remote_working_inode varchar(36), remote_live_inode varchar(36), language_id numeric(19,0), host varchar(255), PRIMARY KEY (local_working_inode, language_id, endpoint_id));
 create table structures_ir(velocity_name NVARCHAR(255), local_inode NVARCHAR(36), remote_inode NVARCHAR(36), endpoint_id NVARCHAR(40), PRIMARY KEY (local_inode, endpoint_id));
 create table schemes_ir(name NVARCHAR(255), local_inode NVARCHAR(36), remote_inode NVARCHAR(36), endpoint_id NVARCHAR(40), PRIMARY KEY (local_inode, endpoint_id));
 create table htmlpages_ir(html_page NVARCHAR(255), local_working_inode NVARCHAR(36), local_live_inode NVARCHAR(36), remote_working_inode NVARCHAR(36), remote_live_inode NVARCHAR(36),local_identifier NVARCHAR(36), remote_identifier NVARCHAR(36), endpoint_id NVARCHAR(40), language_id bigint, PRIMARY KEY (local_working_inode, language_id, endpoint_id));

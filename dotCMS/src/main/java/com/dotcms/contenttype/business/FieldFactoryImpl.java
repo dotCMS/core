@@ -602,7 +602,11 @@ public class FieldFactoryImpl implements FieldFactory {
       columns.add((String) rows.get(i).get("field_contentlet"));
     }
 
-    for (int i = 0; i < Config.getIntProperty("db.number.of.contentlet.columns.per.datatype", 25); i++) {
+    final int maxSupportedColumn =
+            //Json Fields isn't limited to a fix number of columns
+            APILocator.getContentletJsonAPI().isPersistContentAsJson() ? Integer.MAX_VALUE
+                    : Config.getIntProperty("db.number.of.contentlet.columns.per.datatype", 25);
+    for (int i = 0; i < maxSupportedColumn; i++) {
       if (!columns.contains(dataType + (i + 1))) {
         return dataType + (i + 1);
 

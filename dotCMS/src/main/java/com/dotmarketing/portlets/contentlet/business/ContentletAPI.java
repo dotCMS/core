@@ -62,6 +62,8 @@ public interface ContentletAPI {
 			"hh:mm:ss aa", "hh:mm aa", "HH:mm:ss", "HH:mm", "yyyy-MM-dd"
 	};
 
+	String dnsRegEx = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$";
+
 	/**
 	 * Use to retrieve all version of all content in the database.  This is not a common method to use. 
 	 * Only use if you need to do maintenance tasks like search and replace something in every piece 

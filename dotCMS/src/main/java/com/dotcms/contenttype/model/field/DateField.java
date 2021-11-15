@@ -1,8 +1,12 @@
 package com.dotcms.contenttype.model.field;
 
+import com.dotcms.content.model.FieldValue;
+import com.dotcms.content.model.type.date.DateFieldType;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 
+import java.util.Optional;
 import org.immutables.value.Value;
 
 import com.dotcms.contenttype.util.FieldUtil;
@@ -56,5 +60,16 @@ public abstract class DateField extends Field {
                 ContentTypeFieldProperties.HINT, ContentTypeFieldProperties.DEFAULT_VALUE,
                 ContentTypeFieldProperties.SEARCHABLE, ContentTypeFieldProperties.INDEXED,
                 ContentTypeFieldProperties.LISTED);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Optional<FieldValue<?>> fieldValue(Object value) {
+        if (value instanceof Date) {
+            return Optional.of(DateFieldType.of(((Date) value).toInstant()));
+        }
+        return Optional.empty();
     }
 }

@@ -12,6 +12,8 @@ import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.cms.login.LoginServiceAPIFactory;
 import com.dotcms.company.CompanyAPI;
 import com.dotcms.company.CompanyAPIFactory;
+import com.dotcms.content.business.ContentletJsonAPI;
+import com.dotcms.content.business.ContentletJsonAPIImpl;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
@@ -1084,6 +1086,14 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	/**
+	 * Creates a single instance of the {@link com.dotcms.content.business.ContentletJsonAPI} class.
+	 * @return the instance
+	 */
+	public static ContentletJsonAPI getContentletJsonAPI(){
+		return (ContentletJsonAPI) getInstance(APIIndex.CONTENTLET_JSON_API);
+	}
+
+	/**
 	 * Generates a unique instance of the specified dotCMS API.
 	 *
 	 * @param index
@@ -1229,7 +1239,8 @@ enum APIIndex
 	FILESTORAGE_API,
 	CONTENTLET_METADATA_API,
 	DEVICE_API,
-	DETERMINISTIC_IDENTIFIER_API;
+	DETERMINISTIC_IDENTIFIER_API,
+	CONTENTLET_JSON_API;
 
 
 
@@ -1316,6 +1327,7 @@ enum APIIndex
 			case CONTENTLET_METADATA_API: return new FileMetadataAPIImpl();
 			case DEVICE_API: return new DeviceAPIImpl();
 			case DETERMINISTIC_IDENTIFIER_API: return new DeterministicIdentifierAPIImpl();
+			case CONTENTLET_JSON_API: return new ContentletJsonAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

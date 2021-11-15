@@ -157,10 +157,12 @@ public class PageResource {
                             .setUser(user)
                             .setPageUri(uri)
                             .setPageMode(mode)
+                            .setParseJSON(true)
                             .build(),
                     request,
                     response
             );
+
             final Response.ResponseBuilder responseBuilder = Response.ok(new ResponseEntityView(pageRendered));
 
 

@@ -287,62 +287,74 @@ public class VelocityServletIntegrationTest {
         container = APILocator.getContainerAPI().save(container, csList, host, systemUser, false);
         PublishFactory.publishAsset(container, systemUser, false, false);
 
+        final boolean defaultContentToDefaultLanguage = Config.getBooleanProperty(
+                "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", true);
+        final boolean defaultPageToDefaultLanguage = Config.getBooleanProperty(
+                "DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", true);
+
         Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
         Config.setProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", false);
 
-        final Contentlet page = new HTMLPageDataGen(host, template).host(host).languageId(1).nextPersisted();
+        try {
+            final Contentlet page = new HTMLPageDataGen(host, template).host(host).languageId(1)
+                    .nextPersisted();
 
-        final Contentlet contentlet = new ContentletDataGen(contentGenericType.id())
-                .languageId(1)
-                .host(host)
-                .setProperty("title", "content1")
-                .setProperty("body", "content1")
-                .nextPersisted();
+            final Contentlet contentlet = new ContentletDataGen(contentGenericType.id())
+                    .languageId(1)
+                    .host(host)
+                    .setProperty("title", "content1")
+                    .setProperty("body", "content1")
+                    .nextPersisted();
 
-        ContentletDataGen.publish(contentlet);
-        ContentletDataGen.publish(page);
+            ContentletDataGen.publish(contentlet);
+            ContentletDataGen.publish(page);
 
-        new MultiTreeDataGen()
-                .setContainer(container)
-                .setPage((HTMLPageAsset) page)
-                .setContentlet(contentlet)
-                .nextPersisted();
+            new MultiTreeDataGen()
+                    .setContainer(container)
+                    .setPage((HTMLPageAsset) page)
+                    .setContentlet(contentlet)
+                    .nextPersisted();
 
-        final HttpServletRequest mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequestIntegrationTest(host.getName(), ((HTMLPageAsset) page).getURI()).request()).request()
-        )
-                .request();
+            final HttpServletRequest mockRequest = new MockSessionRequest(
+                    new MockAttributeRequest(new MockHttpRequestIntegrationTest(host.getName(),
+                            ((HTMLPageAsset) page).getURI()).request()).request()
+            )
+                    .request();
 
+            when(mockRequest.getParameter("host_id")).thenReturn(host.getIdentifier());
+            mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
+            mockRequest.getSession().setAttribute("tm_host", host);
+            mockRequest.getSession().setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
 
-        when(mockRequest.getParameter("host_id")).thenReturn(host.getIdentifier());
-        mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
-        HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
-        mockRequest.getSession().setAttribute("tm_host" , host);
-        mockRequest.getSession().setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
+            final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
 
-        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+            final ServletOutputStream outputStream = mock(ServletOutputStream.class);
+            when(mockResponse.getOutputStream()).thenReturn(outputStream);
 
-        final ServletOutputStream outputStream = mock(ServletOutputStream.class);
-        when(mockResponse.getOutputStream()).thenReturn(outputStream);
+            final Calendar tomorrow = Calendar.getInstance();
+            tomorrow.add(Calendar.DATE, 1);
 
-        final Calendar tomorrow = Calendar.getInstance();
-        tomorrow.add(Calendar.DATE, 1);
+            //setting Time Machine
+            mockRequest.getSession()
+                    .setAttribute("tm_date", Long.toString(tomorrow.getTime().getTime()));
+            mockRequest.getSession().setAttribute("tm_lang", "1");
 
-        //setting Time Machine
-        mockRequest.getSession().setAttribute("tm_date", Long.toString(tomorrow.getTime().getTime()));
-        mockRequest.getSession().setAttribute("tm_lang", "1");
+            mockRequest.setAttribute(com.liferay.portal.util.WebKeys.USER, systemUser);
+            mockRequest.getSession().setAttribute(WebKeys.PAGE_MODE_SESSION, PageMode.EDIT_MODE);
 
-        mockRequest.setAttribute(com.liferay.portal.util.WebKeys.USER, systemUser);
-        mockRequest.getSession().setAttribute(WebKeys.PAGE_MODE_SESSION, PageMode.EDIT_MODE);
+            final FilterChain chain = mock(FilterChain.class);
+            final TimeMachineFilter timeMachineFilter = new TimeMachineFilter();
+            timeMachineFilter.doFilter(mockRequest, mockResponse, chain);
 
-        final FilterChain chain = mock(FilterChain.class);
-        final TimeMachineFilter timeMachineFilter = new TimeMachineFilter();
-        timeMachineFilter.doFilter(mockRequest, mockResponse, chain);
+            final VelocityServlet velocityServlet = new VelocityServlet();
+            velocityServlet.service(mockRequest, mockResponse);
 
-        final VelocityServlet velocityServlet = new VelocityServlet();
-        velocityServlet.service(mockRequest, mockResponse);
-
-        verify(mockResponse, never()).sendError(anyInt());
-        verify(outputStream).write("<div>content1</div>".getBytes());
+            verify(mockResponse, never()).sendError(anyInt());
+            verify(outputStream).write("<div>content1</div>".getBytes());
+        } finally {
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", defaultContentToDefaultLanguage);
+            Config.setProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", defaultPageToDefaultLanguage);
+        }
     }
 }

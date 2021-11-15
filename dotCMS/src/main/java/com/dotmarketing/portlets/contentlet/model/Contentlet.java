@@ -40,17 +40,14 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.Categorizable;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
-import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.BinaryFileFilter;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.InodeUtils;
@@ -75,6 +72,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang3.BooleanUtils;
 
 /**
  * Represents a content unit in the system. Ideally, every single domain object
@@ -121,6 +119,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   public static final String TITLE_IMAGE_KEY = "titleImage";
 
   public static final String URL_MAP_FOR_CONTENT_KEY = "URL_MAP_FOR_CONTENT";
+
+  public static final String CONTENTLET_AS_JSON = "contentletAsJson";
 
   public static final String DONT_VALIDATE_ME = "_dont_validate_me";
   public static final String DISABLE_WORKFLOW = "__disable_workflow__";
@@ -706,10 +706,16 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @throws DotRuntimeException
 	 */
 	public boolean getBoolProperty(String fieldVarName) throws DotRuntimeException {
-		try{
-			return map.get(fieldVarName)!=null?(Boolean)map.get(fieldVarName):false;
-		}catch (Exception e) {
-			 throw new DotRuntimeException("Unable to retrieve field value", e);
+		try {
+			if (map.get(fieldVarName) instanceof String) {
+				return BooleanUtils.toBoolean(map.get(fieldVarName).toString());
+			}
+			if (map.get(fieldVarName) instanceof Boolean) {
+				return (Boolean) map.get(fieldVarName);
+			}
+			return false;
+		} catch (Exception e) {
+			throw new DotRuntimeException("Unable to retrieve field value", e);
 		}
 	}
 
@@ -1583,6 +1589,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	    getMap().remove(IS_COPY_CONTENTLET);
 	    getMap().remove(CONTENTLET_ASSET_NAME_COPY);
 	    getMap().remove(TEMPLATE_MAPPINGS);
+	    getMap().remove(CONTENTLET_AS_JSON);
 		getWritableNullProperties().clear();
 	}
 

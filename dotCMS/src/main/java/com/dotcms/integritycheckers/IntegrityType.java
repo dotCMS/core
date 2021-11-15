@@ -7,6 +7,11 @@ public enum IntegrityType {
     	"FoldersToCheck.csv", "FoldersToFix.csv"
     ),
 
+    HOSTS(
+        new HostIntegrityChecker(), "push_publish_integrity_hosts_conflicts", "host",
+        "HostsToCheck.csv", "HostsToFix.csv"
+    ),
+
     STRUCTURES(
     	new StructureIntegrityChecker(), "push_publish_integrity_structures_conflicts", "velocity_name",
     	"StructuresToCheck.csv", "StructuresToFix.csv"

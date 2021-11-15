@@ -62,7 +62,8 @@ public class StrategyResolverImpl implements StrategyResolver {
             of(
                 BaseContentType.FILEASSET, () -> new FileAssetViewStrategy(toolBox),
                 BaseContentType.HTMLPAGE, () -> new PageViewStrategy(toolBox),
-                BaseContentType.DOTASSET, () -> new DotAssetViewStrategy(toolBox)
+                BaseContentType.DOTASSET, () -> new DotAssetViewStrategy(toolBox),
+                BaseContentType.WIDGET, () -> new WidgetViewStrategy(toolBox)
                 ),
              CollectionsUtils.map(
                  CATEGORIES_VIEW, () -> new CategoryViewStrategy(toolBox),

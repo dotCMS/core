@@ -14,6 +14,7 @@ public class PageContextBuilder {
     private PageMode pageMode;
     private HTMLPageAsset page;
     private boolean graphQL;
+    private boolean parseJSON;
 
     private PageContextBuilder() {}
 
@@ -46,7 +47,12 @@ public class PageContextBuilder {
         return this;
     }
 
+    public PageContextBuilder setParseJSON(final boolean parseJSON) {
+        this.parseJSON = parseJSON;
+        return this;
+    }
+
     public PageContext build() {
-        return new PageContext(user, pageUri, pageMode, page, graphQL);
+        return new PageContext(user, pageUri, pageMode, page, graphQL, parseJSON);
     }
 }
