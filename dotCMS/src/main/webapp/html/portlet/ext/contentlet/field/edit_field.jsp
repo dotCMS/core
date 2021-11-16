@@ -164,6 +164,7 @@
 
                 if (data) {
                     block.editor.commands.setContent(data);
+                    field.value = JSON.stringify(data);
                 }
 
                 block.editor.on('update', ({ editor }) => {
