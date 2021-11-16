@@ -71,10 +71,17 @@ describe('DotGenerateSecurePasswordComponent', () => {
             expect(comp.typeInput).toBe('password');
         });
 
-        it('should copy password to clipboard', () => {
+        it('should copy password to clipboard', (done) => {
             const copyButton = fixture.debugElement.query(By.css('[data-testId="copyBtn"]'));
-            copyButton.triggerEventHandler('click', null);
+            copyButton.nativeElement.click();
+            fixture.detectChanges();
             expect(dotClipboardUtil.copy).toHaveBeenCalledWith(comp.value);
+            expect(copyButton.nativeElement.innerText).toBe('COPIED');
+            setTimeout(() => {
+                fixture.detectChanges();
+                expect(copyButton.nativeElement.innerText).toBe('COPY');
+                done();
+            }, 2000);
         });
 
         it('should Reveal password', () => {
@@ -82,8 +89,22 @@ describe('DotGenerateSecurePasswordComponent', () => {
                 By.css('.dot-generate-secure-password__reveal-link')
             );
             revealButton.nativeElement.click();
+            expect(revealButton.nativeElement.text).toBe('Reveal');
             fixture.detectChanges();
             expect(comp.typeInput).toBe('text');
+            expect(revealButton.nativeElement.text).toBe('hide');
+        });
+
+        it('should reset on close', () => {
+            const revealButton = fixture.debugElement.query(
+                By.css('.dot-generate-secure-password__reveal-link')
+            );
+            dialog.close();
+            fixture.detectChanges();
+            expect(comp.typeInput).toBe('password');
+            expect(comp.value).toBe('');
+            expect(comp.dialogShow).toBe(false);
+            expect(revealButton.nativeElement.text).toBe('Reveal');
         });
     });
 

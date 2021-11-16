@@ -10,7 +10,7 @@ import {
     OnDestroy
 } from '@angular/core';
 
-import { takeUntil, filter } from 'rxjs/operators';
+import { takeUntil, filter, debounceTime } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 
 import { DotcmsEventsService, DotEventTypeWrapper, LoggerService } from '@dotcms/dotcms-js';
@@ -179,6 +179,19 @@ export class IframeComponent implements OnInit, OnDestroy {
             )
             .subscribe(() => {
                 this.iframeElement.nativeElement.contentWindow.postMessage('reload');
+            });
+
+        /**
+         * The debouncetime is required because when the websocket event is received,
+         * the list of plugins still cannot be updated, thi is because the framework (OSGI)
+         * needs to restart before the list can be refreshed.
+         * Currently, an event cannot be emitted when the framework finishes restarting.
+         */
+        this.dotcmsEventsService
+            .subscribeTo('OSGI_BUNDLES_LOADED')
+            .pipe(takeUntil(this.destroy$), debounceTime(4000))
+            .subscribe(() => {
+                this.dotIframeService.run({ name: 'getBundlesData' });
             });
     }
 

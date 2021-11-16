@@ -12,8 +12,10 @@ import { DotClipboardUtil } from '@dotcms/app/api/util/clipboard/ClipboardUtil';
     styleUrls: ['./dot-generate-secure-password.component.scss']
 })
 export class DotGenerateSecurePasswordComponent implements OnInit, OnDestroy {
+    copyBtnLabel: string;    
     dialogActions: DotDialogActions;
     dialogShow = false;
+    revealBtnLabel: string;
     typeInput = 'password';
     value: string;
 
@@ -26,6 +28,7 @@ export class DotGenerateSecurePasswordComponent implements OnInit, OnDestroy {
     ) {}
 
     ngOnInit() {
+        this.setUILabels();
         this.createDialogActions();
         this.dotGenerateSecurePassword.showDialog$
             .pipe(takeUntil(this.destroy$))
@@ -47,6 +50,7 @@ export class DotGenerateSecurePasswordComponent implements OnInit, OnDestroy {
     close(): void {
         this.dialogShow = false;
         this.typeInput = 'password';
+        this.revealBtnLabel = this.dotMessageService.get('generate.secure.password.reveal');
         this.value = '';
     }
 
@@ -56,6 +60,11 @@ export class DotGenerateSecurePasswordComponent implements OnInit, OnDestroy {
      */
     copyToClipboard(): void {
         this.dotClipboardUtil.copy(this.value);
+
+        this.copyBtnLabel = this.dotMessageService.get('Copied');
+        setTimeout(() => {
+            this.copyBtnLabel = this.dotMessageService.get('Copy');
+        }, 2000);
     }
 
     /**
@@ -67,6 +76,12 @@ export class DotGenerateSecurePasswordComponent implements OnInit, OnDestroy {
         $event.stopPropagation();
         $event.preventDefault();
         this.typeInput = this.typeInput === 'password' ? 'text' : 'password';
+        this.revealBtnLabel = this.typeInput === 'password' ? this.dotMessageService.get('generate.secure.password.reveal') : this.dotMessageService.get('hide');
+    }
+
+    private setUILabels() {
+        this.copyBtnLabel = this.dotMessageService.get('Copy');
+        this.revealBtnLabel = this.dotMessageService.get('generate.secure.password.reveal');
     }
 
     private createDialogActions() {

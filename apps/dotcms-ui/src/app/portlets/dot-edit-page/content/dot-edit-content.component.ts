@@ -65,7 +65,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     showOverlay = false;
     dotPageMode = DotPageMode;
     contentPalletItems: DotCMSContentType[] = [];
-    isEditMode: boolean = false;
+    isEditMode = false;
     paletteCollapsed = false;
     isEnterpriseLicense = false;
 
@@ -273,7 +273,8 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
             .pipe(
                 filter((message: string) => {
                     return this.shouldReload(event.type) || message === 'error';
-                })
+                }),
+                take(1)
             )
             .subscribe(() => {
                 this.reload(null);
@@ -282,7 +283,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
     private shouldReload(type: PageModelChangeEventType): boolean {
         return (
-            type !== PageModelChangeEventType.MOVE_CONTENT &&
+            type !== PageModelChangeEventType.REMOVE_CONTENT &&
             this.pageStateInternal.page.remoteRendered
         );
     }
@@ -487,7 +488,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     private subscribePageModelChange(): void {
         this.dotEditContentHtmlService.pageModel$
             .pipe(
-                filter((event: PageModelChangeEvent) => !!event.model.length),
+                filter((event: PageModelChangeEvent) => {
+                    return !!event.model.length;
+                }),
                 takeUntil(this.destroy$)
             )
             .subscribe((event: PageModelChangeEvent) => {

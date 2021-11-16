@@ -1,7 +1,7 @@
 import { RouterTestingModule } from '@angular/router/testing';
 import { IframeOverlayService } from './../service/iframe-overlay.service';
 import { DotLoadingIndicatorService } from './../dot-loading-indicator/dot-loading-indicator.service';
-import { ComponentFixture, waitForAsync } from '@angular/core/testing';
+import { ComponentFixture, waitForAsync, fakeAsync, tick } from '@angular/core/testing';
 import { Component, DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
@@ -277,4 +277,24 @@ describe('IframeComponent', () => {
             expect(iframeOverlayService.hide).toHaveBeenCalledTimes(1);
         });
     });
+
+    it('should refresh OSGI Plugis list on OSGI_BUNDLES_LOADED websocket event', fakeAsync(() => {
+        comp.iframeElement.nativeElement = {
+            contentWindow: {
+                getBundlesData: jasmine.createSpy('getBundlesData'),
+                document: {
+                    body: {
+                        innerHTML: '<html></html>'
+                    }
+                }
+            }
+        };
+        dotcmsEventsService.triggerSubscribeTo('OSGI_BUNDLES_LOADED', {
+            name: 'OSGI_BUNDLES_LOADED'
+        });
+        tick(4500);
+        expect(comp.iframeElement.nativeElement.contentWindow.getBundlesData).toHaveBeenCalledTimes(
+            1
+        );
+    }));
 });

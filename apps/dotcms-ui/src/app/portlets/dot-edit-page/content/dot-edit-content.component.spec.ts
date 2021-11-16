@@ -86,6 +86,7 @@ import { DotContentPaletteComponent } from '@portlets/dot-edit-page/components/d
 import { HttpErrorResponse } from '@angular/common/http';
 import { DotGenerateSecurePasswordService } from '@services/dot-generate-secure-password/dot-generate-secure-password.service';
 import { DotPropertiesService } from '@services/dot-properties/dot-properties.service';
+import { PageModelChangeEventType } from './services/dot-edit-content-html/models';
 
 const responseData: DotCMSContentType[] = [
     {
@@ -744,6 +745,67 @@ describe('DotEditContentComponent', () => {
                     const contentPaletteWrapper = de.query(By.css('.dot-edit-content__palette'));
                     expect(contentPaletteWrapper).toBeNull();
                 }));
+
+                it('should reload the page because of EMA', fakeAsync(() => {
+                    spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
+                    const state = new DotPageRenderState(
+                        mockUser(),
+                        new DotPageRender({
+                            ...mockDotRenderedPage(),
+                            page: {
+                                ...mockDotRenderedPage().page,
+                                lockedBy: null,
+                                remoteRendered: true
+                            },
+                            viewAs: {
+                                mode: DotPageMode.EDIT,
+                                language: 1
+                            }
+                        })
+                    );
+                    route.parent.parent.data = of({
+                        content: state
+                    });
+                    detectChangesForIframeRender(fixture);
+                    fixture.detectChanges();
+
+                    dotEditContentHtmlService.pageModel$.next({
+                        model: [{ identifier: 'test', uuid: '111' }],
+                        type: PageModelChangeEventType.MOVE_CONTENT
+                    });
+
+                    expect(dotPageStateService.reload).toHaveBeenCalledTimes(1);
+                }))
+
+                it('should NOT reload the page', fakeAsync(() => {
+                    spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
+                    const state = new DotPageRenderState(
+                        mockUser(),
+                        new DotPageRender({
+                            ...mockDotRenderedPage(),
+                            page: {
+                                ...mockDotRenderedPage().page,
+                                lockedBy: null,
+                            },
+                            viewAs: {
+                                mode: DotPageMode.EDIT,
+                                language: 1
+                            }
+                        })
+                    );
+                    route.parent.parent.data = of({
+                        content: state
+                    });
+                    detectChangesForIframeRender(fixture);
+                    fixture.detectChanges();
+
+                    dotEditContentHtmlService.pageModel$.next({
+                        model: [{ identifier: 'test', uuid: '111' }],
+                        type: PageModelChangeEventType.MOVE_CONTENT
+                    });
+
+                    expect(dotPageStateService.reload).toHaveBeenCalledTimes(0);
+                }))
             });
 
             describe('events', () => {
@@ -769,6 +831,8 @@ describe('DotEditContentComponent', () => {
                     expect(dotLoadingIndicatorService.hide).toHaveBeenCalled();
                     expect(dotUiColorsService.setColors).toHaveBeenCalled();
                 }));
+
+
 
                 describe('custom', () => {
                     it('should handle remote-render-edit', fakeAsync(() => {
@@ -1267,7 +1331,7 @@ describe('DotEditContentComponent', () => {
 
                 dotEditContentHtmlService.pageModel$.next({
                     model: [{ identifier: 'test', uuid: '111' }],
-                    type: 1
+                    type: PageModelChangeEventType.ADD_CONTENT
                 });
 
                 expect(httpErrorManagerService.handle).toHaveBeenCalledOnceWith(errorResponse);
@@ -1277,9 +1341,7 @@ describe('DotEditContentComponent', () => {
     });
 
     describe('empty scenarios', () => {
-        let httpErrorManagerService: DotHttpErrorManagerService;
         beforeEach(() => {
-            httpErrorManagerService = de.injector.get(DotHttpErrorManagerService);
             spyOn(dotConfigurationService, 'getKeyAsList').and.returnValue(of(undefined));
         });
 

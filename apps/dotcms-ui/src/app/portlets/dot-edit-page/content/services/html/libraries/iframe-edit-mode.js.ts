@@ -110,7 +110,7 @@ function initDragAndDrop () {
         if (JSON.stringify(updatedModel) !== JSON.stringify(currentModel)) {
             window.${MODEL_VAR_NAME}.next({
                 model: getDotNgModel(),
-                type: 3,
+                type: 'MOVE_CONTENT',
             });
         }
 
@@ -451,6 +451,15 @@ function initDragAndDrop () {
         window.removeEventListener("beforeunload", removeEvents, false);
         window.removeEventListener("mousemove", clearScroll, false );
     }
+
+    function disableDraggableHtmlElements() {
+        var containerAnchorsList = document.querySelectorAll('[data-dot-object="container"] a, [data-dot-object="container"] a img');
+        for (var i = 0; i < containerAnchorsList.length; i++) {
+            containerAnchorsList[i].setAttribute("draggable", "false")
+        };
+    }
+
+    disableDraggableHtmlElements();
 
     // D&D Img - End
 }

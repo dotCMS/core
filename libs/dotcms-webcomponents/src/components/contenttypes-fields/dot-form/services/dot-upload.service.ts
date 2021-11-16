@@ -121,7 +121,7 @@ export class DotUploadService {
     private errorHandler(response: any, status: number): DotHttpErrorResponse {
         let message = '';
         try {
-            message = response.message || fallbackErrorMessages[status];
+            message = response.message || response.errors[0].message;
         } catch (e) {
             message = fallbackErrorMessages[status || 500];
         }

@@ -62,8 +62,22 @@ export class DotAssetDropZone {
     /** Error to be shown when an error happened on the uploading process*/
     @Prop() uploadErrorLabel = 'Drop action not allowed.';
 
+    /** Allowed file extensions*/
+    @Prop() acceptTypes: string[] = [];
+
+    /** Allowed file extensions*/
+    @Prop() typesErrorLabel: string = 'This action only allows $0 files.';
+
+    /* custom function to upload files */
+    @Prop() customUploadFiles: (props: {
+        files: File[],
+        onSuccess: () => void,
+        updateProgress: (progress: number) => void,
+        onError: (header: string, message: string) => void
+    }) => Promise<any>;
+
     /** Emit an array of Contentlets just created or array of errors */
-    @Event() uploadComplete: EventEmitter<DotCMSContentlet[] | DotHttpErrorResponse[]>;
+    @Event() uploadComplete: EventEmitter<DotCMSContentlet[] | DotHttpErrorResponse[] | any>;
 
     @State() dropState: DotDropStatus = DotDropStatus.NONE;
     @State() progressIndicator = 0;
@@ -158,7 +172,31 @@ export class DotAssetDropZone {
                 files.push(file);
             });
         }
-        if (files.length) {
+
+        // In case there are no files
+        if (!files.length) {
+            return;
+        }
+
+        // Validate that the uploaded files are allowed.
+        if (!this.areFilesAccepted(files)) {
+            this.showDialog(
+                this.dialogLabels.errorHeader,
+                this.typesErrorLabel.replace('$0', this.acceptTypes.join(', '))
+            );
+            return;
+        }
+
+        if (this.customUploadFiles) {
+            this.customUploadFiles({
+                files: files,
+                onSuccess: this.hideOverlay.bind(this),
+                updateProgress: this.updateProgressBar.bind(this),
+                onError: this.showDialog.bind(this)
+            })
+                .then((response: any) => this.uploadComplete.emit(response))
+                .catch((errors: any) => this.uploadComplete.emit(errors));
+        } else {
             uploadService
                 .uploadBinaryFile(files, this.updateProgressBar.bind(this), this.maxFileSize)
                 .then((data: DotCMSTempFile | DotCMSTempFile[]) => {
@@ -252,5 +290,16 @@ export class DotAssetDropZone {
     private hideDialog(): void {
         this.dialogHeader = '';
         this.errorMessage = '';
+    }
+
+    private areFilesAccepted(files: File[]): boolean {
+        // If there are no acceptTypes, every type is accepted by default.
+        return this.acceptTypes.length
+            ? files.some((file: File) => {
+                  const fileName = file.name;
+                  const extension = fileName.substring(fileName.lastIndexOf('.')).toLowerCase();
+                  return this.acceptTypes.includes(extension);
+              })
+            : true; 
     }
 }
