@@ -112,10 +112,12 @@
 #elseif(($structures.haveEditPermision($structure, null) || ($UtilMethods.isSet($user) && $structures.haveEditPermision($structure, $user))) && $_hasEditPermissionOnContent)
     #set($formId = "form_" + $date.getSystemDate().getTime())
 
-	<dot-form id="$formId" variable='${structure.velocityVarName}''></dot-form>
-    <script type="text/javascript">
-        document.getElementById('$formId').layout = $structures.getLayoutAsJson($structure, $user);
-    </script>
+    <script src="/api/v1/form/$structure.inode/successCallback"></script>
+
+    <dot-form id="$formDOM" variable='$structure.velocityVarName'></dot-form>
+     <script type="text/javascript">
+         document.getElementById('$formDOM').layout = $structures.getLayoutAsJson($formId);
+     </script>
 
 #elseif($UtilMethods.isSet($user) && !$structures.haveEditPermision($structure, $user))
    <div class="submitContent">
