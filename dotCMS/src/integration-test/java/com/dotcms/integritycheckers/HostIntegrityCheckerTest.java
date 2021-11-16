@@ -98,7 +98,7 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
         final Host host = addHost(testHost);
         final File generatedCsv = integrityChecker.generateCSVFile(endpointFolder);
         Assert.assertNotNull(generatedCsv);
-        final Host dup = addDupe();
+        final Host dup = addDup();
         final DotConnect dc = new DotConnect();
         try {
             Assert.assertTrue(integrityChecker.generateIntegrityResults(endpointId));
@@ -126,7 +126,7 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
         HibernateUtil.startTransaction();
         final Host host = addHost(testHost);
         integrityChecker.generateCSVFile(endpointFolder);
-        final Host dup = addDupe();
+        final Host dup = addDup();
         integrityChecker.generateIntegrityResults(endpointId);
 
         Assert.assertEquals(1L, dc.getRecordCount("hosts_ir", "WHERE host = '" + host.getName() + "'").longValue());
@@ -195,25 +195,12 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
     }
 
     @NotNull
-    private Host addDupe() throws Exception {
+    private Host addDup() throws Exception {
         final Host dup = addHost(testHost);
-        System.out.println(dup.getInode());
         final DotConnect dc = new DotConnect();
-        /*
         dc.setSQL("UPDATE contentlet SET text1 = ? WHERE inode = ?")
                 .addParam(testHost)
                 .addParam(dup.getInode());
-*/
-        /*
-        if(APILocator.getContentletJsonAPI().isPersistContentAsJson()){
-            if(DbConnectionFactory.isPostgres()){
-                final String sql = String.format("UPDATE contentlet SET contentlet_as_json = jsonb_set(contentlet_as_json,'{fields}', jsonb '{\"hostName\":\"%s\"}') WHERE inode = ? ",testHost);
-                dc.setSQL(sql)
-                        .addParam(dup.getInode());
-                dc.loadResult();
-            }
-        }*/
-
         return dup;
     }
 
