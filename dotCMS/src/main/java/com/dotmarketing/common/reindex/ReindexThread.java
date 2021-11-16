@@ -114,14 +114,7 @@ public class ReindexThread {
     private AtomicReference<ThreadState> STATE = new AtomicReference<>(ThreadState.RUNNING);
     
 
-    final DotSubmitter submitter = DotConcurrentFactory.getInstance().getSubmitter("ReindexThreadSubmitter_" + System.currentTimeMillis(),
-                    new DotConcurrentFactory.SubmitterConfigBuilder()
-                            .poolSize(1)
-                            .maxPoolSize(1)
-                            .queueCapacity(2)
-                            .rejectedExecutionHandler(new ThreadPoolExecutor.DiscardOldestPolicy())
-                            .build()
-            );
+
     
     
     
@@ -318,7 +311,18 @@ public class ReindexThread {
         Logger.infoEvery(ReindexThread.class, "--- ReindexThread Running", 60000);
         cache.get().remove(REINDEX_THREAD_PAUSED);
         final Thread thread = new Thread(getInstance().ReindexThreadRunnable, "ReindexThreadRunnable");
-        getInstance().submitter.submit(thread);
+        
+        final DotSubmitter submitter = DotConcurrentFactory.getInstance().getSubmitter("ReindexThreadSubmitter",
+                        new DotConcurrentFactory.SubmitterConfigBuilder()
+                                .poolSize(1)
+                                .maxPoolSize(1)
+                                .queueCapacity(2)
+                                .rejectedExecutionHandler(new ThreadPoolExecutor.DiscardOldestPolicy())
+                                .build()
+                );
+        
+        
+       submitter.submit(thread);
         getInstance().state(ThreadState.RUNNING);
     }
 
