@@ -55,7 +55,7 @@ public class BrowserQuery {
     private BrowserQuery(final Builder builder) {
 
         this.user = builder.user == null ? APILocator.systemUser() : builder.user;
-        final Tuple2<Host, Folder> hostAndFolder = getParents(builder.hostFolderId,this.user);
+        final Tuple2<Host, Folder> hostAndFolder = getParents(builder.hostFolderId,this.user, builder.hostIdSystemFolder);
         this.filter = builder.filter;
         this.luceneQuery = builder.luceneQuery.toString();
         this.sortBy = UtilMethods.isEmpty(builder.sortBy) ? "moddate" : builder.sortBy;
@@ -81,7 +81,7 @@ public class BrowserQuery {
 
 
     @CloseDBIfOpened
-    private Tuple2<Host, Folder> getParents(final String parentId, User user) {
+    private Tuple2<Host, Folder> getParents(final String parentId, final User user, final String hostIdSystemFolder) {
 
         boolean respectFrontEndPermissions = PageMode.get().respectAnonPerms;
         // gets folder parent
@@ -90,15 +90,15 @@ public class BrowserQuery {
 
 
         final Host host = folder.isSystemFolder()
-            ? Try.of(() -> APILocator.getHostAPI().find(parentId, user, respectFrontEndPermissions)).getOrNull()
+            ? Try.of(() -> APILocator.getHostAPI().find(hostIdSystemFolder, user, respectFrontEndPermissions)).getOrNull()
             : Try.of(() -> APILocator.getHostAPI().find(folder.getHostId(), user, respectFrontEndPermissions)).getOrNull();
 
 
         if (host == null || UtilMethods.isEmpty(host.getIdentifier())) {
 
-            Logger.error(this, "parentId doesn't belong to a Folder or a Host, id: " + parentId
-                            + ", maybe the Folder was modified in the background.");
-            throw new DotRuntimeException("parentId doesn't belong to a Folder or a Host, id: " + parentId);
+            Logger.error(this, "parentId doesn't belong to a Folder or a Host, id: " + folder.getInode()
+                            + ", maybe the Folder was modified in the background. If using SystemFolder must send hostIdSystemFolder.");
+            throw new DotRuntimeException("parentId doesn't belong to a Folder or a Host, id: " + folder.getInode());
         }
 
         return Tuple.of(host, folder);
@@ -135,9 +135,7 @@ public class BrowserQuery {
 
     public static final class Builder {
         private User user;
-        private String hostFolderId = Folder.SYSTEM_FOLDER;
         private String filter = null;
-        private Set<BaseContentType> baseTypes = new HashSet<>();
         private String sortBy = "moddate";
         private int offset = 0;
         private int maxResults = MAX_FETCH_PER_REQUEST;
@@ -149,6 +147,12 @@ public class BrowserQuery {
         private boolean showMenuItemsOnly = false;
         private long languageId = 0;
         private final StringBuilder luceneQuery=new StringBuilder();
+        private Set<BaseContentType> baseTypes = new HashSet<>();
+        private String hostFolderId = Folder.SYSTEM_FOLDER;
+        private String hostIdSystemFolder = null;
+
+
+
         
         private Builder() {}
 
@@ -171,6 +175,7 @@ public class BrowserQuery {
             this.showLinks = browserQuery.showLinks;
             this.languageId = browserQuery.languageId;
             this.showMenuItemsOnly = browserQuery.showMenuItemsOnly;
+
         }
 
         public Builder withUser(@Nonnull User user) {
@@ -180,11 +185,6 @@ public class BrowserQuery {
 
         public Builder inHostOrFolder(@Nonnull Parentable parentable) {
             this.hostFolderId = parentable != null ? parentable.getParentId() : null;
-            return this;
-        }
-
-        public Builder inHostOrFolder(@Nonnull Host host) {
-            this.hostFolderId = host.getIdentifier();
             return this;
         }
 
@@ -296,6 +296,11 @@ public class BrowserQuery {
 
         public Builder withBaseTypes(@Nonnull List<BaseContentType> types) {
             baseTypes.addAll(types);
+            return this;
+        }
+
+        public Builder hostIdSystemFolder(@Nonnull String hostIdSystemFolder){
+            this.hostIdSystemFolder = hostIdSystemFolder;
             return this;
         }
 

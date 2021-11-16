@@ -343,39 +343,24 @@ public class FolderFactoryImpl extends FolderFactory {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected java.util.List getMenuItems(Folder folder) throws DotDataException {
-		return getMenuItems(folder, 1);
+	protected java.util.List getMenuItems(final Folder folder) throws  DotDataException{
+		return getMenuItems(folder.getHost(), folder);
 	}
 
 	@SuppressWarnings("unchecked")
-	protected java.util.List getMenuItems(Host host) throws DotDataException, DotSecurityException {
-		return getMenuItems(host, 1);
-	}
-
-	@SuppressWarnings("unchecked")
-	protected java.util.List getMenuItems(Folder folder, int orderDirection) throws  DotDataException{
-
-		final Host host = Try.of(()-> APILocator.getHostAPI().find(folder.getHostId(), APILocator.systemUser(), true)).getOrNull();
-		return getMenuItems(host, folder, orderDirection);
-	}
-
-	@SuppressWarnings("unchecked")
-	protected java.util.List getMenuItems(Host host, int orderDirection) throws DotDataException, DotSecurityException {
-		List<Folder> subFolders = APILocator.getFolderAPI().findSubFolders(host, APILocator.getUserAPI().getSystemUser(), false);
-		List menuItems = new ArrayList<>();
-		subFolders.forEach(f->menuItems.addAll( getMenuItems(host, f, orderDirection)));
+	protected java.util.List getMenuItems(final Host host) throws DotDataException, DotSecurityException {
+		final List<Folder> subFolders = APILocator.getFolderAPI().findSubFolders(host, APILocator.getUserAPI().getSystemUser(), false);
+		final List menuItems = new ArrayList<>();
+		subFolders.forEach(f->menuItems.addAll(getMenuItems(host, f)));
 		
-		
-		
-		return subFolders;
+		return menuItems;
 	}
 
 	@SuppressWarnings("unchecked")
-	private List getMenuItems(Host host, Folder folder, int orderDirection)  {
-
-	    
-	    BrowserQuery browserQuery = BrowserQuery.builder()
-	                    .inHostOrFolder(host)
+	private List getMenuItems(final Host host, final Folder folder)  {
+	    final BrowserQuery browserQuery = BrowserQuery.builder()
+	                    .withHostOrFolderId(folder.getIdentifier())
+						.hostIdSystemFolder(host.getIdentifier())
 	                    .showOnlyMenuItems(true)
 	                    .showFolders(true)
 	                    .showFiles(true)
@@ -386,9 +371,6 @@ public class FolderFactoryImpl extends FolderFactory {
 	    return Try.of(()->APILocator.getBrowserAPI().getFolderContentList(browserQuery)).getOrElseThrow(DotRuntimeException::new);
 
 	}
-
-
-
 
 	protected Folder createFolders(String path, Host host) throws DotDataException {
 
