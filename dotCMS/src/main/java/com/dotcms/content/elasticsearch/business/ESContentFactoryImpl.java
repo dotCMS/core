@@ -13,6 +13,7 @@ import static com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTok
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.ContentletJsonAPI;
+import com.dotcms.content.business.ImmutableContentletHelper;
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -272,14 +273,24 @@ public class ESContentFactoryImpl extends ContentletFactory {
     @Override
     protected Object loadJsonField(final String inode,
             final com.dotcms.contenttype.model.field.Field field) throws DotDataException {
-           if(DbConnectionFactory.isPostgres()){
-               final String loadJsonFieldValueSQL = String.format("SELECT contentlet_as_json->'fields'->'template'->>'value' as value  FROM contentlet WHERE contentlet_as_json @> '{\"fields\":{\"%s\":{}}}' and inode = ? ",field.variable());
-               return new DotConnect().setSQL(loadJsonFieldValueSQL).addParam(inode).getString("value");
-           } else {
-               final String sql = "SELECT contentlet_as_json FROM contentlet WHERE inode=?";
-               //TODO::: Need a helper or something to load the json and extract the value for other non-postgres dbs
-           }
-           return loadField(inode,field.dbColumn());
+        if (DbConnectionFactory.isPostgres()) {
+            final String loadJsonFieldValueSQL = String
+                    .format("SELECT contentlet_as_json->'fields'->'template'->>'value' as value  FROM contentlet WHERE contentlet_as_json @> '{\"fields\":{\"%s\":{}}}' and inode = ? ",
+                            field.variable());
+            return new DotConnect().setSQL(loadJsonFieldValueSQL).addParam(inode)
+                    .getString("value");
+        } else {
+            //For other non postgres db we simply parse the content stored
+            final String json = new DotConnect()
+                    .setSQL("SELECT contentlet_as_json FROM contentlet WHERE inode=?")
+                    .addParam(inode).getString("contentlet_as_json");
+            final Optional<String> fieldValue = ImmutableContentletHelper
+                    .fieldValue(json, field.variable());
+            if (fieldValue.isPresent()) {
+                return fieldValue.get();
+            }
+        }
+        return loadField(inode, field.dbColumn());
     }
 
 	@Override

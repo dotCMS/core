@@ -18,16 +18,13 @@ import com.dotcms.contenttype.model.field.RelationshipsTabField;
 import com.dotcms.contenttype.model.field.TabDividerField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
@@ -36,7 +33,7 @@ import java.util.Optional;
 
 /**
  * Complementary class that centralize ImmutableContentlet to json and vice-versa conversion
- * NO API Are used here since this class is intended to be accessible from Upgrade Task and Factories
+ * NO APIs Are used here since this class is intended to be accessible from Upgrade Task and Factories
  */
 public class ImmutableContentletHelper {
 
@@ -46,7 +43,7 @@ public class ImmutableContentletHelper {
      * @param field
      * @return
      */
-    private boolean isSettable(final Field field) {
+    private static boolean isSettable(final Field field) {
         return !(
                 field instanceof LineDividerField ||
                         field instanceof TabDividerField ||
@@ -62,7 +59,7 @@ public class ImmutableContentletHelper {
      * @param field
      * @return
      */
-    private boolean isNoneMappableSystemField(final Field field) {
+    private static boolean isNoneMappableSystemField(final Field field) {
         return (field.dataType() == DataTypes.SYSTEM &&
                 !(field instanceof BinaryField) && !(field instanceof HiddenField)
         );
@@ -73,7 +70,7 @@ public class ImmutableContentletHelper {
      * @param field
      * @return
      */
-    private boolean isMetadataField(final Field field){
+    private static boolean isMetadataField(final Field field){
         return (field instanceof KeyValueField && FileAssetAPI.META_DATA_FIELD.equals(field.variable()));
     }
 
@@ -82,7 +79,7 @@ public class ImmutableContentletHelper {
      * @param field
      * @return
      */
-    boolean isNotMappable(final Field field) {
+    static boolean isNotMappable(final Field field) {
         return (!isSettable(field) || (field instanceof HostFolderField)
                 || (field instanceof TagField) || isNoneMappableSystemField(field) || isMetadataField(field)
         );
@@ -95,7 +92,7 @@ public class ImmutableContentletHelper {
      * @param field
      * @return
      */
-    private Optional<FieldValue<?>> getFieldValue(final Object value, final Field field) {
+    private static Optional<FieldValue<?>> getFieldValue(final Object value, final Field field) {
         return field.fieldValue(value);
     }
 
@@ -105,7 +102,7 @@ public class ImmutableContentletHelper {
      * @param contentlet
      * @return
      */
-    public ImmutableContentlet toImmutable(
+    public static ImmutableContentlet toImmutable(
             final com.dotmarketing.portlets.contentlet.model.Contentlet contentlet) {
 
         final Builder builder = ImmutableContentlet.builder();
@@ -162,7 +159,7 @@ public class ImmutableContentletHelper {
      * @return
      * @throws JsonProcessingException
      */
-    public Contentlet immutableFromJson(final String json) throws JsonProcessingException {
+    public static Contentlet immutableFromJson(final String json) throws JsonProcessingException {
         return objectMapper.get().readValue(json, Contentlet.class);
     }
 
@@ -173,8 +170,8 @@ public class ImmutableContentletHelper {
      * @throws JsonProcessingException
      * @throws DotDataException
      */
-    String toJson(final com.dotmarketing.portlets.contentlet.model.Contentlet contentlet)
-            throws JsonProcessingException, DotDataException {
+    static String toJson(final com.dotmarketing.portlets.contentlet.model.Contentlet contentlet)
+            throws JsonProcessingException {
         return objectMapper.get().writeValueAsString(toImmutable(contentlet));
     }
 
@@ -182,14 +179,25 @@ public class ImmutableContentletHelper {
     /**
      * Jackson mapper configuration and lazy initialized instance.
      */
-    final Lazy<ObjectMapper> objectMapper = Lazy.of(() -> {
-        final ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
-        objectMapper.registerModule(new Jdk8Module());
-        objectMapper.registerModule(new GuavaModule());
-        objectMapper.registerModule(new JavaTimeModule());
-        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-        return objectMapper;
-    });
+    final static Lazy<ObjectMapper> objectMapper = Lazy.of(
+            DotObjectMapperProvider::createDefaultMapper);
+
+
+    /**
+     * Short hand to parse the json but access directly the field of interest.
+     * Beware: The Type specified on the Optional is the expected type returned in the field if the conversion fails the optional comes back empty
+     * Be mindful of the expected type.
+     * @param jsonInput
+     * @param fieldName
+     * @param <R>
+     * @return
+     */
+    public static <R> Optional<R> fieldValue(final String jsonInput, final String fieldName){
+           final R fieldValue = Try.of(()-> (R)immutableFromJson(jsonInput).fields().get(fieldName).value()).getOrNull();
+           if(null != fieldValue){
+              return Optional.of(fieldValue);
+           }
+           return Optional.empty();
+    }
 
 }

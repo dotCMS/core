@@ -20,7 +20,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import io.vavr.control.Try;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -33,6 +32,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import org.apache.commons.lang.StringUtils;
 
@@ -80,7 +80,6 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
             final Connection conn = DbConnectionFactory.getConnection();
             try (final PreparedStatement statement = getCsvQuery(conn, hostField)) {
                 try (final ResultSet rs = statement.executeQuery()) {
-                    final ImmutableContentletHelper helper = new ImmutableContentletHelper();
                     int count = 0;
 
                     while (rs.next()) {
@@ -93,7 +92,9 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                         if(UtilMethods.isNotSet(hostName)){
                             final Object contentletAsJson = rs.getString("contentlet_as_json");
                             if(null != contentletAsJson){
-                                hostName = Try.of(()-> helper.immutableFromJson(contentletAsJson.toString()).fields().get("hostName").value().toString()).getOrElse("unknown");
+                                //Access the field name directly from the json
+                                final Optional <String> optionalHostName = ImmutableContentletHelper.fieldValue(contentletAsJson.toString(),"hostName");
+                                hostName = optionalHostName.orElse("unknown");
                             }
                         }
                         if("unknown".equals(hostName)){

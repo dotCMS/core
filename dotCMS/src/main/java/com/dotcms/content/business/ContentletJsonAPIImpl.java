@@ -16,24 +16,11 @@ import static com.dotmarketing.util.UtilMethods.isSet;
 
 import com.dotcms.content.model.Contentlet;
 import com.dotcms.content.model.FieldValue;
-import com.dotcms.content.model.ImmutableContentlet;
-import com.dotcms.content.model.ImmutableContentlet.Builder;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
-import com.dotcms.contenttype.model.field.CategoryField;
-import com.dotcms.contenttype.model.field.ColumnField;
 import com.dotcms.contenttype.model.field.ConstantField;
-import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.HiddenField;
-import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.KeyValueField;
-import com.dotcms.contenttype.model.field.LineDividerField;
-import com.dotcms.contenttype.model.field.PermissionTabField;
-import com.dotcms.contenttype.model.field.RelationshipsTabField;
-import com.dotcms.contenttype.model.field.TabDividerField;
-import com.dotcms.contenttype.model.field.TagField;
-import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotmarketing.business.APILocator;
@@ -42,17 +29,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.BinaryFileFilter;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.annotations.VisibleForTesting;
-import com.liferay.util.StringPool;
-import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.io.File;
 import java.time.Instant;
@@ -80,7 +58,6 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
     final IdentifierAPI identifierAPI;
     final ContentTypeAPI contentTypeAPI;
     final FileAssetAPI fileAssetAPI;
-    final ImmutableContentletHelper helper;
 
     /**
      * API-Parametrized constructor
@@ -91,11 +68,10 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
     @VisibleForTesting
     ContentletJsonAPIImpl(final IdentifierAPI identifierAPI,
             final ContentTypeAPI contentTypeAPI,
-            final FileAssetAPI fileAssetAPI, final ImmutableContentletHelper helper) {
+            final FileAssetAPI fileAssetAPI) {
         this.identifierAPI = identifierAPI;
         this.contentTypeAPI = contentTypeAPI;
         this.fileAssetAPI = fileAssetAPI;
-        this.helper = helper;
     }
 
     /**
@@ -103,7 +79,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
      */
     public ContentletJsonAPIImpl() {
         this(APILocator.getIdentifierAPI(), APILocator.getContentTypeAPI(APILocator.systemUser()),
-             APILocator.getFileAssetAPI(), new ImmutableContentletHelper());
+             APILocator.getFileAssetAPI());
     }
 
     /**
@@ -115,7 +91,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
      */
     public String toJson(final com.dotmarketing.portlets.contentlet.model.Contentlet contentlet)
             throws JsonProcessingException, DotDataException {
-        return helper.toJson(contentlet);
+        return ImmutableContentletHelper.toJson(contentlet);
     }
 
 
@@ -144,7 +120,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
     Map<String, Object> mapFieldsFromJson(final String json)
             throws JsonProcessingException, DotDataException, DotSecurityException {
 
-        final Contentlet immutableContentlet = helper.immutableFromJson(json);
+        final Contentlet immutableContentlet = ImmutableContentletHelper.immutableFromJson(json);
         final Map<String, Object> map = new HashMap<>();
         final String inode = immutableContentlet.inode();
         final String identifier = immutableContentlet.identifier();
@@ -172,7 +148,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
         for (final Entry<String, Field> entry : fieldsByVarName.entrySet()) {
 
             final Field field = entry.getValue();
-            if (helper.isNotMappable(field)) {
+            if (ImmutableContentletHelper.isNotMappable(field)) {
                 continue;
             }
 

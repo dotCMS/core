@@ -31,10 +31,15 @@ import org.junit.Test;
 
 public class ContentletJsonAPITest extends IntegrationTestBase {
 
+    static Host site;
+
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
+
+        final String hostName = "custom" + System.currentTimeMillis() + ".dotcms.com";
+        site = new SiteDataGen().name(hostName).nextPersisted(true);
     }
 
     /**
@@ -50,8 +55,6 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
         Config.setProperty(SAVE_CONTENTLET_AS_JSON, false);
         try {
 
-            final String hostName = "custom" + System.currentTimeMillis() + ".dotcms.com";
-            final Host site = new SiteDataGen().name(hostName).nextPersisted(true);
             final Folder folder = new FolderDataGen().site(site).nextPersisted();
             final ContentType contentType = TestDataUtils
                     .newContentTypeFieldTypesGalore();
@@ -116,8 +119,6 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
     @Test
     public void Create_Content_Then_Find_It_Then_Create_Json_Content_Then_Recover_And_Compare() throws Exception {
 
-        final String hostName = "my.custom" + System.currentTimeMillis() + ".dotcms.com";
-        final Host site = new SiteDataGen().name(hostName).nextPersisted(true);
         final Folder folder = new FolderDataGen().site(site).nextPersisted();
         final ContentType contentType = TestDataUtils
                 .newContentTypeFieldTypesGalore();
