@@ -3,11 +3,16 @@ package com.dotmarketing.common.reindex;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.SystemCache;
@@ -82,11 +87,11 @@ public class ReindexThread {
     private final RoleAPI roleAPI;
     private final UserAPI userAPI;
 
-    private static ReindexThread instance ;
+    private static Lazy<ReindexThread> instance = Lazy.of(ReindexThread::new);
 
     private final long SLEEP = Config.getLongProperty("REINDEX_THREAD_SLEEP", 250);
     private final int SLEEP_ON_ERROR = Config.getIntProperty("REINDEX_THREAD_SLEEP_ON_ERROR", 500);
-    private long contentletsIndexed = 0;
+    private AtomicLong contentletsIndexed = new AtomicLong();
     // bulk up to this many requests
     public static final int ELASTICSEARCH_BULK_ACTIONS =
                     Config.getIntProperty("REINDEX_THREAD_ELASTICSEARCH_BULK_ACTIONS", 10);
@@ -106,13 +111,19 @@ public class ReindexThread {
 
     // Time (in seconds) to wait before closing bulk processor in a full reindex
     private static final int BULK_PROCESSOR_AWAIT_TIMEOUT = Config.getIntProperty("BULK_PROCESSOR_AWAIT_TIMEOUT", 20);
-    private ThreadState STATE = ThreadState.RUNNING;
-    private Future<?> threadRunning;
-    private final ExecutorService executor = Executors
-                    .newSingleThreadExecutor(new ThreadFactoryBuilder().setDaemon(true).setNameFormat("reindex-thread-%d").build());
+
+    private volatile ThreadState STATE = ThreadState.STOPPED;
+
+    private static final AtomicReference<PausableScheduledThreadPoolExcecutor> executorService = new AtomicReference<>();
+
+    private static final AtomicReference<ScheduledFuture<?>> repeatingFuture = new AtomicReference<>();
+
+
+   // private final ExecutorService executor = Executors
+    //                .newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("reindex-thread-%d").build());
 
     private final static String REINDEX_THREAD_PAUSED = "REINDEX_THREAD_PAUSED";
-    private final static Lazy<SystemCache> cache = Lazy.of(() -> CacheLocator.getSystemCache());
+    private final static Lazy<SystemCache> cache = Lazy.of(CacheLocator::getSystemCache);
     
     
     
@@ -140,15 +151,10 @@ public class ReindexThread {
         this.indexAPI = indexAPI;
 
     }
-    
-
-    
-    
 
 
     private final Runnable ReindexThreadRunnable = () -> {
         Logger.info(this.getClass(), "---  ReindexThread is starting, background indexing will begin");
-
 
         while (STATE != ThreadState.STOPPED) {
             try {
@@ -163,7 +169,7 @@ public class ReindexThread {
 
     @VisibleForTesting
     long totalESPuts() {
-        return contentletsIndexed;
+        return contentletsIndexed.get();
     }
 
 
@@ -199,10 +205,12 @@ public class ReindexThread {
   private void runReindexLoop() {
     BulkProcessor bulkProcessor = null;
     BulkProcessorListener bulkProcessorListener = null;
-    while (STATE != ThreadState.STOPPED) {
+   // while (STATE != ThreadState.STOPPED && !Thread.interrupted()) {
       try {
 
         final Map<String, ReindexEntry> workingRecords = queueApi.findContentToReindex();
+
+          Logger.info(this, "Found "+workingRecords.size()+" reindex entries");
 
         if (workingRecords.isEmpty()) {
             bulkProcessor = finalizeReIndex(bulkProcessor);
@@ -217,7 +225,7 @@ public class ReindexThread {
               }
               bulkProcessorListener.workingRecords.putAll(workingRecords);
               indexAPI.appendToBulkProcessor(bulkProcessor, workingRecords.values());
-              contentletsIndexed += bulkProcessorListener.getContentletsIndexed();
+              contentletsIndexed.addAndGet(bulkProcessorListener.getContentletsIndexed());
               // otherwise, reindex normally
           
         } 
@@ -227,6 +235,7 @@ public class ReindexThread {
       } finally {
         DbConnectionFactory.closeSilently();
       }
+      /*
       while (STATE == ThreadState.PAUSED) {
         ThreadUtils.sleep(SLEEP);
         //Logs every 60 minutes
@@ -236,8 +245,8 @@ public class ReindexThread {
         if(restartTime ==null || restartTime < System.currentTimeMillis()) {
             STATE = ThreadState.RUNNING;
         }
-      }
-    }
+      }*/
+   // }
   }
 
 
@@ -258,61 +267,69 @@ public class ReindexThread {
      * Tells the thread to start processing. Starts the thread
      */
     public static void startThread() {
-        unpause();
-        if(getInstance().threadRunning ==null || getInstance().threadRunning.isDone()) {
-            final Thread thread = new Thread(getInstance().ReindexThreadRunnable, "ReindexThreadRunnable");
-            getInstance().threadRunning = getInstance().executor.submit(thread);
-        }
+        getInstance().tryStart();
     }
 
-    private void state(ThreadState state) {
-        getInstance().STATE = state;
+    private void tryStart() {
+
+        ScheduledFuture<?> existingJob = repeatingFuture.get();
+        final PausableScheduledThreadPoolExcecutor exec = getExcutor();
+        if (existingJob == null || existingJob.isDone())
+        {
+            Logger.info(this.getClass(),"Create new reindex schedule");
+            existingJob = repeatingFuture.updateAndGet( v -> (v==null|| v.isDone()) ? exec
+                            .scheduleWithFixedDelay(this::runReindexLoop, 0, 1, TimeUnit.SECONDS)  : v );
+        }
+        getExcutor().resume();
     }
+
+    private PausableScheduledThreadPoolExcecutor getExcutor() {
+
+        PausableScheduledThreadPoolExcecutor exec = executorService.get();
+        if (exec == null || exec.isTerminated()) {
+            Logger.info(this.getClass(),"Create new reindex executor");
+            return executorService.updateAndGet(
+                    v -> (v == null || v.isTerminated()) ? new PausableScheduledThreadPoolExcecutor(
+                            1) : v);
+        }
+        return exec;
+    }
+
     /**
      * Tells the thread to stop processing. Doesn't shut down the thread.
      */
     public static void stopThread() {
-        getInstance().state(ThreadState.STOPPED);
-        int i=0;
-        while(getInstance().threadRunning !=null && ! getInstance().threadRunning.isDone() && ++i<10) {
-            getInstance().state(ThreadState.STOPPED);
-            ThreadUtils.sleep(500);
-        }
-        while(getInstance().threadRunning !=null && ! getInstance().threadRunning.isDone()) {
-            getInstance().threadRunning.cancel(true);
-        }
+        getInstance().tryStop();
     }
 
+    public void tryStop() {
 
-    /**
-     * Gets the running thread if any, and cancels it.
-     */
-
-    public static void cancelThread(){
-        if (instance != null && instance.threadRunning != null) {
-            instance.threadRunning.cancel(true);
-            instance = null;
+        ScheduledFuture<?> existingJob = repeatingFuture.get();
+        if (existingJob != null && !(existingJob.isCancelled() || existingJob.isDone()))
+        {
+            Logger.info(this.getClass(),"cancel reindex job");
+            existingJob.cancel(false);
         }
+
     }
+
 
     /**
      * This instance is intended to already be started. It will try to restart the thread if instance is
      * null.
      */
     public static ReindexThread getInstance() {
-        if(instance==null) {
-            instance=new ReindexThread();
-            startThread();
-        }
-        return instance;
+        return instance.get();
     }
 
     public static void pause() {
-        Logger.debug(ReindexThread.class, "--- ReindexThread - Paused");
-        cache.get().put(REINDEX_THREAD_PAUSED, System.currentTimeMillis() + Duration
-                .ofMinutes(Config.getIntProperty("REINDEX_THREAD_PAUSE_IN_MINUTES", 10))
-                .toMillis());
-        getInstance().state(ThreadState.PAUSED);
+        getInstance().pauseInt();
+    }
+
+    private void pauseInt() {
+        Logger.info(this.getClass(),"Pausing Reindex");
+
+        getExcutor().pause();
     }
 
     /**
@@ -320,23 +337,34 @@ public class ReindexThread {
      */
 
     public static void pauseExistingInstance() {
+        pause();
+        /*
         if(instance!=null) {
             Logger.debug(ReindexThread.class, "--- ReindexThread - Paused");
             cache.get().put(REINDEX_THREAD_PAUSED, System.currentTimeMillis() + Duration
                     .ofMinutes(Config.getIntProperty("REINDEX_THREAD_PAUSE_IN_MINUTES", 10))
                     .toMillis());
-            instance.state(ThreadState.PAUSED);
-        }
+            instance.get().state(ThreadState.PAUSED);
+        }*/
     }
 
     public static void unpause() {
-        Logger.infoEvery(ReindexThread.class, "--- ReindexThread Running", 60000);
-        cache.get().remove(REINDEX_THREAD_PAUSED);
-        getInstance().state(ThreadState.RUNNING);
+        getInstance().resumeInt();
+
+        //Logger.infoEvery(ReindexThread.class, "--- ReindexThread Running", 60000);
+       // cache.get().remove(REINDEX_THREAD_PAUSED);
+    }
+
+    protected void resumeInt() {
+        getExcutor().resume();
+        Logger.info(this.getClass(),"Resuming Reindex");
+       // Logger.infoEvery(ReindexThread.class, "--- ReindexThread Running", 60000);
+        //getInstance().state(ThreadState.RUNNING);
     }
 
     public static boolean isWorking() {
-        return getInstance().STATE == ThreadState.RUNNING;
+        ScheduledFuture<?> future = repeatingFuture.get();
+        return future != null && !future.isDone();
     }
 
 
