@@ -10,6 +10,7 @@ import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.startup.StartupTask;
 
+import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -114,8 +115,23 @@ public class Task05380ChangeContainerPathToAbsolute implements StartupTask {
 
         final String hostNameColumnName = (String) results.get("field_contentlet");
 
-        return new DotConnect()
-                .setSQL(String.format(GET_TEMPLATES_QUERY,hostNameColumnName))
+
+        final ImmutableList.Builder <Map<String, Object>> builder = new ImmutableList.Builder<>();
+
+        final List<Map<String, Object>> columnLoadedTemplates = new DotConnect()
+                .setSQL(String.format(GET_TEMPLATES_QUERY, hostNameColumnName))
                 .loadObjectResults();
+        builder.addAll(columnLoadedTemplates);
+
+        if(DbConnectionFactory.isPostgres()) {
+            final List<Map<String, Object>> jsonLoadedTemplates = new DotConnect()
+                    .setSQL(String.format(GET_TEMPLATES_QUERY,
+                            "contentlet_as_json-> 'fields' ->'hostName'->>'value'"))
+                    .loadObjectResults();
+            builder.addAll(jsonLoadedTemplates);
+        }
+        //TODO: add support for all other non-postgres dbs using json
+
+        return builder.build();
     }
 }

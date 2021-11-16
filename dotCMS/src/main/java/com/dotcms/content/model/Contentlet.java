@@ -1,5 +1,6 @@
 package com.dotcms.content.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -18,6 +19,7 @@ import com.github.jonpeterson.jackson.module.versioning.JsonVersionedModel;
  */
 @Value.Immutable
 @JsonInclude(Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
 @JsonSerialize(as = ImmutableContentlet.class)
 @JsonDeserialize(as = ImmutableContentlet.class)
 @JsonVersionedModel(currentVersion = "1")

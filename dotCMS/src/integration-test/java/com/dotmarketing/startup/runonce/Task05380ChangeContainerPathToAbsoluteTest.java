@@ -11,6 +11,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -22,7 +23,6 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static com.dotmarketing.startup.runonce.Task05380ChangeContainerPathToAbsolute.GET_HOSTNAME_COLUMN;
@@ -524,14 +524,32 @@ public class Task05380ChangeContainerPathToAbsoluteTest {
 
         final String hostNameColumnName = (String) results.get("field_contentlet");
 
-        final boolean anyMatchWithOldName = new DotConnect()
+        //columns
+        final boolean anyMatchWithOldNameColumnBased = new DotConnect()
                 .setSQL(String.format(GET_TEMPLATES_QUERY,hostNameColumnName))
                 .loadObjectResults()
                 .stream()
+                .filter(templateMap-> null != templateMap.get("host_name"))
                 .map(templateMap -> templateMap.get("host_name"))
                 .anyMatch(title -> title.equals(oldName));
 
-        assertFalse(anyMatchWithOldName);
+        assertFalse(anyMatchWithOldNameColumnBased);
+
+        //json column support
+        if(DbConnectionFactory.isPostgres()) {
+            final boolean anyMatchWithOldNameJsonBased = new DotConnect()
+                    .setSQL(String.format(GET_TEMPLATES_QUERY,
+                            "contentlet_as_json-> 'fields' ->'hostName'->>'value'"))
+                    .loadObjectResults()
+                    .stream()
+                    .filter(templateMap -> null != templateMap.get("host_name"))
+                    .map(templateMap -> templateMap.get("host_name"))
+                    .anyMatch(title -> title.equals(oldName));
+
+            assertFalse(anyMatchWithOldNameJsonBased);
+        } else {
+            //TODO: Need to handle cases for the non-postgres dbs
+        }
 
         final long count = new DotConnect()
                 .setSQL(String.format(GET_TEMPLATES_QUERY,hostNameColumnName))

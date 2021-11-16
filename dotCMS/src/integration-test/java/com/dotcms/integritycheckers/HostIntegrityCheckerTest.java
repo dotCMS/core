@@ -93,20 +93,24 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
      */
     @Test
     public void test_generateIntegrityResults() throws Exception {
+
         final String endpointFolder = prepareResources();
         final Host host = addHost(testHost);
         final File generatedCsv = integrityChecker.generateCSVFile(endpointFolder);
         Assert.assertNotNull(generatedCsv);
-        final Host dup = addDup();
-
-        Assert.assertTrue(integrityChecker.generateIntegrityResults(endpointId));
+        final Host dup = addDupe();
         final DotConnect dc = new DotConnect();
-        Assert.assertEquals(1L, dc.getRecordCount("hosts_ir", "WHERE host = '" + host.getName() + "'").longValue());
-
-        HibernateUtil.startTransaction();
-        removeHost(dc, host.getInode());
-        removeHost(dc, dup.getInode());
-        HibernateUtil.closeAndCommitTransaction();
+        try {
+            Assert.assertTrue(integrityChecker.generateIntegrityResults(endpointId));
+            Assert.assertEquals(1L,
+                    dc.getRecordCount("hosts_ir", "WHERE host = '" + host.getName() + "'")
+                            .longValue());
+        } finally {
+            HibernateUtil.startTransaction();
+            removeHost(dc, host.getInode());
+            removeHost(dc, dup.getInode());
+            HibernateUtil.closeAndCommitTransaction();
+        }
     }
 
     /**
@@ -117,13 +121,14 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
     public void test_executeFix() throws Exception {
         final String endpointFolder = prepareResources();
 
+        final DotConnect dc = new DotConnect();
+
         HibernateUtil.startTransaction();
         final Host host = addHost(testHost);
         integrityChecker.generateCSVFile(endpointFolder);
-        final Host dup = addDup();
+        final Host dup = addDupe();
         integrityChecker.generateIntegrityResults(endpointId);
 
-        final DotConnect dc = new DotConnect();
         Assert.assertEquals(1L, dc.getRecordCount("hosts_ir", "WHERE host = '" + host.getName() + "'").longValue());
 
         // Some hack in order to simulate remote integrity
@@ -145,7 +150,7 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
         final String endpointFolder = assetRealPath + "/integrity/" + endpointId;
         final File outputFolder = new File(endpointFolder);
         if (!outputFolder.exists()) {
-            Assert.assertTrue(outputFolder.mkdir());
+            Assert.assertTrue(outputFolder.mkdirs());
         }
         return endpointFolder;
     }
@@ -190,12 +195,25 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
     }
 
     @NotNull
-    private Host addDup() throws Exception {
+    private Host addDupe() throws Exception {
         final Host dup = addHost(testHost);
+        System.out.println(dup.getInode());
         final DotConnect dc = new DotConnect();
+        /*
         dc.setSQL("UPDATE contentlet SET text1 = ? WHERE inode = ?")
                 .addParam(testHost)
                 .addParam(dup.getInode());
+*/
+        /*
+        if(APILocator.getContentletJsonAPI().isPersistContentAsJson()){
+            if(DbConnectionFactory.isPostgres()){
+                final String sql = String.format("UPDATE contentlet SET contentlet_as_json = jsonb_set(contentlet_as_json,'{fields}', jsonb '{\"hostName\":\"%s\"}') WHERE inode = ? ",testHost);
+                dc.setSQL(sql)
+                        .addParam(dup.getInode());
+                dc.loadResult();
+            }
+        }*/
+
         return dup;
     }
 
