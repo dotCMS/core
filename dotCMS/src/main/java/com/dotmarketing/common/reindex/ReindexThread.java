@@ -3,9 +3,6 @@ package com.dotmarketing.common.reindex;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -33,7 +30,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.ThreadUtils;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
@@ -268,7 +264,7 @@ public class ReindexThread {
     }
 
     private void state(ThreadState state) {
-        getInstance().STATE.set(ThreadState.RUNNING);
+        getInstance().STATE.set(state);
     }
     /**
      * Tells the thread to stop processing. Doesn't shut down the thread.
