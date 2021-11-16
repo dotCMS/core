@@ -211,7 +211,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.BeanUtils;
 
-
 /**
  * Implementation class for the {@link ContentletAPI} interface.
  *
@@ -5507,7 +5506,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return;
         }
         if (UtilMethods.isSet(contentlet.getIdentifier())){
-            final Field fieldVar = contentlet.getStructure().getFieldVar(HTMLPageAssetAPI.TEMPLATE_FIELD);
+
             final Optional<com.dotcms.contenttype.model.field.Field> templateField = contentlet
                     .getContentType().fields().stream()
                     .filter(field -> HTMLPageAssetAPI.TEMPLATE_FIELD.equals(field.variable()))

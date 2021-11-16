@@ -18,13 +18,16 @@ import com.dotcms.contenttype.model.field.RelationshipsTabField;
 import com.dotcms.contenttype.model.field.TabDividerField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
@@ -179,8 +182,15 @@ public class ImmutableContentletHelper {
     /**
      * Jackson mapper configuration and lazy initialized instance.
      */
-    final static Lazy<ObjectMapper> objectMapper = Lazy.of(
-            DotObjectMapperProvider::createDefaultMapper);
+    final static Lazy<ObjectMapper> objectMapper = Lazy.of(() -> {
+        final ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+        objectMapper.registerModule(new Jdk8Module());
+        objectMapper.registerModule(new GuavaModule());
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        return objectMapper;
+    });
 
 
     /**
@@ -194,10 +204,7 @@ public class ImmutableContentletHelper {
      */
     public static <R> Optional<R> fieldValue(final String jsonInput, final String fieldName){
            final R fieldValue = Try.of(()-> (R)immutableFromJson(jsonInput).fields().get(fieldName).value()).getOrNull();
-           if(null != fieldValue){
-              return Optional.of(fieldValue);
-           }
-           return Optional.empty();
+           return Optional.ofNullable(fieldValue);
     }
 
 }
