@@ -275,8 +275,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
             final com.dotcms.contenttype.model.field.Field field) throws DotDataException {
         if (DbConnectionFactory.isPostgres()) {
             final String loadJsonFieldValueSQL = String
-                    .format("SELECT contentlet_as_json->'fields'->'template'->>'value' as value  FROM contentlet WHERE contentlet_as_json @> '{\"fields\":{\"%s\":{}}}' and inode = ? ",
-                            field.variable());
+                    .format("SELECT contentlet_as_json->'fields'->'%s'->>'value' as value  FROM contentlet WHERE contentlet_as_json @> '{\"fields\":{\"%s\":{}}}' and inode = ? ",
+                            field.variable(),field.variable());
             return new DotConnect().setSQL(loadJsonFieldValueSQL).addParam(inode)
                     .getString("value");
         } else {

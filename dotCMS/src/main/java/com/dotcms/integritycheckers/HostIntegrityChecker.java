@@ -150,7 +150,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
             boolean tempCreated = false;
             final String tempTableName = getTempTableName(endpointId);
             // let's create a temp table AND insert all the records coming from the CSV file
-            final String tempKeyword =  ""; //DbConnectionFactory.getTempKeyword();
+            final String tempKeyword = DbConnectionFactory.getTempKeyword();
             final boolean isOracle = DbConnectionFactory.isOracle();
             final StringBuilder createBuilder = new StringBuilder("CREATE ")
                     .append(tempKeyword)
