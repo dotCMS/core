@@ -139,12 +139,15 @@ public class TempFileResourceTest {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         binaryStreamingOutput.write(baos);
         final byte[] data = baos.toByteArray();
-        final Map<String, List<DotTempFile>> dotTempFiles =
-                (Map<String, List<DotTempFile>>) DotObjectMapperProvider.getInstance().getDefaultObjectMapper().readTree(data);
+        final Map dotTempFiles =
+                DotObjectMapperProvider.getInstance().getDefaultObjectMapper().readValue(data, Map.class);
+        final List tempFiles = ( List<DotTempFile>)dotTempFiles.get("tempFiles");
+        final Map dotTempFileMap = (Map)tempFiles.get(0);
+        final String id = (String) dotTempFileMap.get("id");
+        final File file = new File((String)dotTempFileMap.get("thumbnailUrl"));
+        final DotTempFile dotTempFile = new DotTempFile(id, file);
 
-
-        //final Map<String, List<DotTempFile>> dotTempFiles = (Map) jsonResponse.getEntity();
-        return dotTempFiles.get("tempFiles").get(0);
+        return dotTempFile;
     }
 
     @Test
