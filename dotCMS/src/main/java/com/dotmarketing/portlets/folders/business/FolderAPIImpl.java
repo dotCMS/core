@@ -613,7 +613,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	
 	
 	@CloseDBIfOpened
-	public Folder findSystemFolder() throws DotDataException {
+	public Folder findSystemFolder()  {
 		return loadSystemFolder.get();
 	}
 

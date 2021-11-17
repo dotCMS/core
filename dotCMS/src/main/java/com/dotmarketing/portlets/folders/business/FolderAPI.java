@@ -309,7 +309,7 @@ import java.util.function.Predicate;
 	DotSecurityException, DotDataException;
 
 	// http://jira.dotmarketing.net/browse/DOTCMS-3232
-	Folder findSystemFolder() throws DotDataException;
+	Folder findSystemFolder() ;
 
 	/**
 	 * This method returns a new folder or the folder on the path you have
