@@ -1,6 +1,7 @@
 package com.dotmarketing.common.reindex;
 
 
+import com.dotmarketing.db.DbConnectionFactory;
 import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -101,7 +102,8 @@ public class BulkProcessorListener implements BulkProcessor.Listener {
     }
 
     private void handleSuccess(final List<ReindexEntry> successful) {
-
+        Logger.info(this, "Connection exists: " + DbConnectionFactory.connectionExists());
+        Logger.info(this, "Is in transaction: " + DbConnectionFactory.inTransaction());
         try {
             if (!successful.isEmpty()) {
                 APILocator.getReindexQueueAPI().deleteReindexEntry(successful);
