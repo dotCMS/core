@@ -53,6 +53,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -844,6 +845,55 @@ public class FolderAPITest {//24 contentlets
 
 		Assert.assertNotNull(folders);
 		Assert.assertFalse(folders.isEmpty());
+	}
+
+	/**
+	 * Method to test: findSubFoldersByParent
+	 * Given Scenario: Create a host and folder under it, get the folders living directly under the host.
+	 * ExpectedResult: the folder created.
+	 *
+	 */
+	@Test
+	public void testFindSubFoldersByParent_parentIsHost() throws DotDataException, DotSecurityException {
+		final Host newHost = new SiteDataGen().nextPersisted();
+		final String folderPath = "/folder"+System.currentTimeMillis();
+
+		final Folder folder = folderAPI.createFolders(folderPath, newHost, user, false);
+		folder.setOwner("folder's owner");
+
+		folderAPI.save(folder, user, false);
+
+		final List<Folder> folders = folderAPI.findSubFoldersByParent(newHost, user,false);
+
+		Assert.assertNotNull(folders);
+		Assert.assertFalse(folders.isEmpty());
+		Assert.assertEquals(folder.getPath(),folders.get(0).getPath());
+	}
+
+	/**
+	 * Method to test: findSubFoldersByParent
+	 * Given Scenario: Create a host, folder and a subfolder under it, get the folders living directly under the folder.
+	 * ExpectedResult: the subfolder created.
+	 *
+	 */
+	@Test
+	public void testFindSubFoldersByParent_parentIsFolder() throws DotDataException, DotSecurityException {
+		final Host newHost = new SiteDataGen().nextPersisted();
+		final String folder1Path = "/folder"+System.currentTimeMillis();
+		final String folder2Path = "/subfolder"+System.currentTimeMillis();
+
+		final Folder folder = folderAPI.createFolders(folder1Path, newHost, user, false);
+		folder.setOwner("folder's owner");
+		final Folder subfolder = folderAPI.createFolders(folder1Path+folder2Path, newHost, user, false);
+		subfolder.setOwner("folder's owner");
+
+		folderAPI.save(folder, user, false);
+
+		final List<Folder> folders = folderAPI.findSubFoldersByParent(folder, user,false);
+
+		Assert.assertNotNull(folders);
+		Assert.assertFalse(folders.isEmpty());
+		Assert.assertTrue(folder2Path.contains(folders.get(0).getTitle()));
 	}
 
 	@Test
