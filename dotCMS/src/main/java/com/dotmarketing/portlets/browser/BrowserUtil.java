@@ -91,7 +91,7 @@ public class BrowserUtil {
             final com.dotcms.contenttype.model.field.Field hostFolderField = fields.get(0);
             final String hostFolderValue = contentlet.getStringProperty(hostFolderField.variable());
             try {
-                return Optional.of(
+                return Optional.ofNullable(
                     APILocator.getFolderAPI().find(hostFolderValue, user, false)
                 );
             } catch (DotSecurityException | DotDataException e) {
