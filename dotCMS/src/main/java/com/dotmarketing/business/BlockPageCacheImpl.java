@@ -126,13 +126,6 @@ public class BlockPageCacheImpl extends BlockPageCache {
 		
 		
 	}
-	
-	
-	public void addInternal(String key, String subkey, BlockDirectiveCacheObject  cto) {
-		
-
-	}
-	
 
 	@Override
 	public String get(IHTMLPage page, PageCacheParameters pageChacheParams) {
