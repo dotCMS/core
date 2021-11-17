@@ -106,7 +106,7 @@ public class TempFileResource {
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON).build();
     }
 
-    private class MultipleBinaryStreamingOutput implements StreamingOutput {
+    protected class MultipleBinaryStreamingOutput implements StreamingOutput {
 
         private final FormDataMultiPart body;
         private final HttpServletRequest request;

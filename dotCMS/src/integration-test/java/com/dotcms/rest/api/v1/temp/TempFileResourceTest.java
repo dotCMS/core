@@ -20,6 +20,7 @@ import com.dotcms.mock.request.MockParameterRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.AnonymousAccess;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -35,10 +36,14 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple5;
+
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -118,7 +123,7 @@ public class TempFileResourceTest {
     }
 
     private DotTempFile saveTempFile_usingTempResource(final String fileName,
-            final HttpServletRequest request) {
+            final HttpServletRequest request) throws IOException {
 
         final BodyPart filePart1 = new StreamDataBodyPart(fileName, inputStream());
 
@@ -128,12 +133,22 @@ public class TempFileResourceTest {
         final Response jsonResponse = resource.uploadTempResourceMulti(request, response, "-1",
                 (FormDataMultiPart) multipartEntity);
 
-        final Map<String, List<DotTempFile>> dotTempFiles = (Map) jsonResponse.getEntity();
+        final TempFileResource.MultipleBinaryStreamingOutput binaryStreamingOutput =
+                (TempFileResource.MultipleBinaryStreamingOutput) jsonResponse.getEntity();
+
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        binaryStreamingOutput.write(baos);
+        final byte[] data = baos.toByteArray();
+        final Map<String, List<DotTempFile>> dotTempFiles =
+                (Map<String, List<DotTempFile>>) DotObjectMapperProvider.getInstance().getDefaultObjectMapper().readTree(data);
+
+
+        //final Map<String, List<DotTempFile>> dotTempFiles = (Map) jsonResponse.getEntity();
         return dotTempFiles.get("tempFiles").get(0);
     }
 
     @Test
-    public void test_temp_resource_upload() {
+    public void test_temp_resource_upload() throws IOException {
         resetTempResourceConfig();
         final String fileName = "test.file";
         final DotTempFile dotTempFile = saveTempFile_usingTempResource(fileName, mockRequest());
@@ -186,7 +201,7 @@ public class TempFileResourceTest {
      * Then an user is set to the request and it works b/c is the same user.
      */
     @Test
-    public void test_tempResourceAPI_who_can_use_via_userID() {
+    public void test_tempResourceAPI_who_can_use_via_userID() throws IOException {
         resetTempResourceConfig();
 
         HttpServletRequest request = mockRequest();
@@ -209,7 +224,7 @@ public class TempFileResourceTest {
     }
 
     @Test
-    public void test_tempResourceapi_max_age() {
+    public void test_tempResourceapi_max_age() throws IOException {
         resetTempResourceConfig();
         HttpServletRequest request = mockRequest();
         final String fileName = "test.png";
@@ -484,7 +499,7 @@ public class TempFileResourceTest {
     @Test
     @UseDataProvider("testCasesChangeFingerPrint")
     public void testGetTempFile_fileIsNotReturned_fingerprintIsDifferent(
-            final testCaseChangeFingerPrint testCase) {
+            final testCaseChangeFingerPrint testCase) throws IOException {
 
         resetTempResourceConfig();
         HttpServletRequest request = mockRequest();
