@@ -1,5 +1,6 @@
 package com.dotcms.browser;
 
+import com.dotmarketing.business.web.WebAPILocator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -90,7 +91,8 @@ public class BrowserQuery {
 
 
         final Host host = folder.isSystemFolder()
-            ? Try.of(() -> APILocator.getHostAPI().find(hostIdSystemFolder, user, respectFrontEndPermissions)).getOrNull()
+            ? null != hostIdSystemFolder ? Try.of(() -> APILocator.getHostAPI().find(hostIdSystemFolder, user, respectFrontEndPermissions)).getOrNull()
+                :  Try.of(() -> WebAPILocator.getHostWebAPI().getCurrentHost()).getOrNull()
             : Try.of(() -> APILocator.getHostAPI().find(folder.getHostId(), user, respectFrontEndPermissions)).getOrNull();
 
 
