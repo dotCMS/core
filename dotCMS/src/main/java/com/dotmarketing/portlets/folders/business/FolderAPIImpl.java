@@ -1205,4 +1205,22 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 	}
 
+	/**
+	 *
+	 * @param parent (host or folder)
+	 * @return List of sub folders for passed in folder regardless the show on menu boolean
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@Override
+	@CloseDBIfOpened
+	public List<Folder> findSubFoldersByParent(final Parentable parent, final User user,
+			final boolean respectFrontEndPermissions) throws DotDataException,
+			DotSecurityException {
+
+		return (parent instanceof Folder )
+				? findSubFolders((Folder)parent, user, respectFrontEndPermissions)
+				: findSubFolders((Host)parent, user, respectFrontEndPermissions);
+	} // findSubFolders.
+
 }

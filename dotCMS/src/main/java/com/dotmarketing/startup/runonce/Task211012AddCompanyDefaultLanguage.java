@@ -20,8 +20,8 @@ public class Task211012AddCompanyDefaultLanguage implements StartupTask {
 
     static final String POSTGRES_SCRIPT = "ALTER TABLE company ADD COLUMN default_language_id int8 null;";
     static final String MYSQL_SCRIPT = "ALTER TABLE company ADD default_language_id bigint null;";
-    static final String ORACLE_SCRIPT = "ALTER TABLE company ADD default_language_id number(19,0) null;";
-    static final String MSSQL_SCRIPT = "ALTER TABLE company ADD default_language_id default_language_id null;";
+    static final String ORACLE_SCRIPT = "ALTER TABLE company ADD default_language_id number(19,0) null";
+    static final String MSSQL_SCRIPT = "ALTER TABLE company ADD default_language_id numeric(19,0) null;";
     static final String SELECT = "SELECT default_language_id FROM company WHERE companyid = ? ";
     static final String UPDATE = "UPDATE company SET default_language_id = ? WHERE companyid = ? ";
     static final String DEFAULT_COMPANY_ID = "dotcms.org";

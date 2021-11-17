@@ -190,7 +190,7 @@ public class InitServlet extends HttpServlet {
             Logger.fatal(InitServlet.class, e.getMessage(), e);
             throw new ServletException("Unable to initialize system host", e);
         }
-            APILocator.getFolderAPI().findSystemFolder();
+        APILocator.getFolderAPI().findSystemFolder();
 
         // Create the GeoIP2 database reader on startup since it takes around 2
         // seconds to load the file. If the prop is not set, just move on

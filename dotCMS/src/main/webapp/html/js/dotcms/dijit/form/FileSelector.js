@@ -139,7 +139,8 @@ dojo.declare("dotcms.dijit.form.FileSelector", [dijit._Widget, dijit._Templated]
 	onlyFiles: false,
 	allowFileUpload: true,
 	contentLanguage: 0,
-	
+	selectFolder: ['root', 'SYSTEM_HOST'],
+
 	postCreate: function () {
 		
 		if(this.value != '') {
@@ -154,6 +155,7 @@ dojo.declare("dotcms.dijit.form.FileSelector", [dijit._Widget, dijit._Templated]
 		this.fileBrowser.onlyFiles = this.onlyFiles;
 		this.fileBrowser.currentView = this.fileBrowserView;
 		this.fileBrowser.allowFileUpload = this.allowFileUpload;
+		this.fileBrowser.selectFolder = this.selectFolder;
 		
 	},
 	

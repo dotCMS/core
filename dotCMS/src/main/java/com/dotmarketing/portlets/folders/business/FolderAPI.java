@@ -553,12 +553,12 @@ import java.util.function.Predicate;
 
     /**
      *
-     * @param folder
-     * @return List of sub folders for passed in folder
+     * @param parent (host or folder)
+     * @return List of sub folders for passed in folder regardless the show on menu boolean
      * @throws DotDataException
      * @throws DotSecurityException
      */
     List<Folder> findSubFoldersByParent(Parentable parent, User user, boolean respectFrontEndPermissions)
-                    throws DotDataException, DotSecurityException;
+            throws DotDataException, DotSecurityException;
 
 }

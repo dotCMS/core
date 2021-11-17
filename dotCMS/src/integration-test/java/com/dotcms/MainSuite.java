@@ -81,6 +81,7 @@ import com.dotmarketing.filters.AutoLoginFilterTest;
 import com.dotmarketing.image.filter.ImageFilterAPIImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.osgi.GenericBundleActivatorTest;
+import com.dotmarketing.portlets.browser.BrowserUtilTest;
 import com.dotmarketing.portlets.categories.business.CategoryFactoryTest;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
 import com.dotmarketing.portlets.containers.business.ContainerFactoryImplTest;
@@ -128,6 +129,7 @@ import com.dotmarketing.startup.runonce.Task210805DropUserProxyTableTest;
 import com.dotmarketing.startup.runonce.Task210816DeInodeRelationshipTest;
 import com.dotmarketing.startup.runonce.Task211012AddCompanyDefaultLanguageTest;
 import com.dotmarketing.startup.runonce.Task210901UpdateDateTimezonesTest;
+import com.dotmarketing.util.ResourceCollectorUtilTest;
 import com.dotmarketing.startup.runonce.Task211101AddContentletAsJsonColumnTest;
 import com.dotmarketing.startup.runonce.Task211007RemoveNotNullConstraintFromCompanyMXColumnTest;
 import com.dotmarketing.startup.runonce.Task211103RenameHostNameLabelTest;
@@ -482,12 +484,15 @@ import org.junit.runners.Suite.SuiteClasses;
         LettuceCacheTest.class,
         RedisPubSubImplTest.class,
         ManifestReaderFactoryTest.class,
+        ResourceCollectorUtilTest.class,
         Task211007RemoveNotNullConstraintFromCompanyMXColumnTest.class,
         ManifestReaderFactoryTest.class,
         Task211012AddCompanyDefaultLanguageTest.class,
         StaticPublisherIntegrationTest.class,
         HostIntegrityCheckerTest.class,
+        BrowserUtilTest.class,
         Task211101AddContentletAsJsonColumnTest.class,
+        ContentletJsonAPITest.class,
         ContentletJsonAPITest.class,
         Task211103RenameHostNameLabelTest.class
 })
