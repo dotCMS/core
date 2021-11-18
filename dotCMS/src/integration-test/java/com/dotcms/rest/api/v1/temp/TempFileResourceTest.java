@@ -213,12 +213,13 @@ public class TempFileResourceTest {
 
         assertEquals(2, tempFiles.size());
         DotTempFile file = APILocator.getTempFileAPI().getTempFile(request, dotTempFile.id).get();
-        assertEquals(fileName1, file.fileName);
+        // the execution is random so it could be one or another
+        assertTrue(fileName1.equals(file.fileName) || fileName2.equals(file.fileName) );
         assertNotNull(file.image);
         assertTrue(file.length() > 1000);
 
         file = APILocator.getTempFileAPI().getTempFile(request, dotTempFile2.id).get();
-        assertEquals(fileName2, file.fileName);
+        assertTrue(fileName1.equals(file.fileName) || fileName2.equals(file.fileName) );
         assertNotNull(file.image);
         assertTrue(file.length() > 1000);
 
