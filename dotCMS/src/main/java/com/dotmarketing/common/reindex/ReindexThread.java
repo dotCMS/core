@@ -106,6 +106,8 @@ public class ReindexThread {
 
     // Time (in seconds) to wait before closing bulk processor in a full reindex
     private static final int BULK_PROCESSOR_AWAIT_TIMEOUT = Config.getIntProperty("BULK_PROCESSOR_AWAIT_TIMEOUT", 20);
+
+    public static final int BACKOFF_POLICY_TIME_IN_MILLIS = Config.getIntProperty("BACKOFF_POLICY_TIME_IN_MILLIS", 200);
     
     private AtomicReference<ThreadState> STATE = new AtomicReference<>(ThreadState.RUNNING);
     
