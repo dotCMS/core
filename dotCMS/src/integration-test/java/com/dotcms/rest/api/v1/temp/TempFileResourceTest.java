@@ -25,6 +25,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.util.Config;
@@ -144,7 +145,7 @@ public class TempFileResourceTest {
         final List tempFiles = ( List<DotTempFile>)dotTempFiles.get("tempFiles");
         final Map dotTempFileMap = (Map)tempFiles.get(0);
         final String id = (String) dotTempFileMap.get("id");
-        final File file = new File((String)dotTempFileMap.get("thumbnailUrl"));
+        final File file = new File((String)dotTempFileMap.get("referenceUrl"));
         final DotTempFile dotTempFile = new DotTempFile(id, file);
 
         return dotTempFile;
@@ -153,20 +154,25 @@ public class TempFileResourceTest {
     @Test
     public void test_temp_resource_upload() throws IOException {
         resetTempResourceConfig();
+        Config.setProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
+
         final String fileName = "test.file";
-        final DotTempFile dotTempFile = saveTempFile_usingTempResource(fileName, mockRequest());
+        final HttpServletRequest request = mockRequest();
+        final DotTempFile dotTempFile = saveTempFile_usingTempResource(fileName, request);
         // its not an image because we set the filename to "test.file"
         assertFalse((Boolean) dotTempFile.image);
 
         assertTrue(dotTempFile.id.startsWith(TempFileAPI.TEMP_RESOURCE_PREFIX));
 
         assertTrue(dotTempFile.file.getName().equals(fileName));
-        assertTrue(dotTempFile.length() > 0);
+        final Optional<DotTempFile> dotTempFileOpt = APILocator.getTempFileAPI().getTempFile(request, dotTempFile.id);
+        assertTrue(dotTempFileOpt.get().length() > 0);
     }
 
     @Test
-    public void test_temp_resource_multifile_upload() {
+    public void test_temp_resource_multifile_upload() throws IOException {
         resetTempResourceConfig();
+        Config.setProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
         final String fileName1 = "here-is-my-file.png";
         final BodyPart filePart1 = new StreamDataBodyPart(fileName1, inputStream());
 
@@ -178,20 +184,40 @@ public class TempFileResourceTest {
                 .bodyPart(filePart1)
                 .bodyPart(filePart2);
 
-        final Response jsonResponse = resource.uploadTempResourceMulti(mockRequest(), response, "-1",
+        final HttpServletRequest request = mockRequest();
+
+        final Response jsonResponse = resource.uploadTempResourceMulti(request, response, "-1",
                 (FormDataMultiPart) multipartEntity);
         assertNotNull(jsonResponse);
 
-        final Map<String, List<DotTempFile>> dotTempFile = (Map) jsonResponse.getEntity();
-        assertFalse(dotTempFile.isEmpty());
+        final TempFileResource.MultipleBinaryStreamingOutput binaryStreamingOutput =
+                (TempFileResource.MultipleBinaryStreamingOutput) jsonResponse.getEntity();
 
-        assertEquals(2, dotTempFile.get("tempFiles").size());
-        DotTempFile file = (DotTempFile) dotTempFile.get("tempFiles").get(0);
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        binaryStreamingOutput.write(baos);
+        final byte[] data = baos.toByteArray();
+        final Map dotTempFiles =
+                DotObjectMapperProvider.getInstance().getDefaultObjectMapper().readValue(data, Map.class);
+        final List tempFiles = ( List<DotTempFile>)dotTempFiles.get("tempFiles");
+        final Map dotTempFileMap = (Map)tempFiles.get(0);
+        final String id = (String) dotTempFileMap.get("id");
+        final File tempfile = new File((String)dotTempFileMap.get("referenceUrl"));
+        final DotTempFile dotTempFile = new DotTempFile(id, tempfile);
+
+        final Map dotTempFileMap2 = (Map)tempFiles.get(1);
+        final String id2 = (String) dotTempFileMap2.get("id");
+        final File tempfile2 = new File((String)dotTempFileMap2.get("referenceUrl"));
+        final DotTempFile dotTempFile2 = new DotTempFile(id2, tempfile2);
+
+        assertFalse(dotTempFileMap.isEmpty());
+
+        assertEquals(2, tempFiles.size());
+        DotTempFile file = APILocator.getTempFileAPI().getTempFile(request, dotTempFile.id).get();
         assertEquals(fileName1, file.fileName);
         assertNotNull(file.image);
         assertTrue(file.length() > 1000);
 
-        file = (DotTempFile) dotTempFile.get("tempFiles").get(1);
+        file = APILocator.getTempFileAPI().getTempFile(request, dotTempFile2.id).get();
         assertEquals(fileName2, file.fileName);
         assertNotNull(file.image);
         assertTrue(file.length() > 1000);
@@ -229,6 +255,7 @@ public class TempFileResourceTest {
     @Test
     public void test_tempResourceapi_max_age() throws IOException {
         resetTempResourceConfig();
+        Config.setProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
         HttpServletRequest request = mockRequest();
         final String fileName = "test.png";
 
@@ -254,10 +281,9 @@ public class TempFileResourceTest {
     }
 
 
-    @Test
+    @Test(expected = com.dotcms.rest.exception.SecurityException.class)
     public void test_tempResourceapi_test_anonymous_access() {
         resetTempResourceConfig();
-
         final String fileName = "test.png";
         HttpServletRequest request = mockRequest();
         Config.setProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, false);
@@ -267,6 +293,10 @@ public class TempFileResourceTest {
                 .bodyPart(filePart1);
         Response jsonResponse = resource.uploadTempResourceMulti(request, response, "-1",
                 (FormDataMultiPart) multipartEntity);
+
+
+
+
         assertEquals(Status.UNAUTHORIZED.getStatusCode(), jsonResponse.getStatus());
 
         Config.setProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
@@ -340,9 +370,23 @@ public class TempFileResourceTest {
 
         Response jsonResponse = resource.uploadTempResourceMulti(request, response, "-1",
                 (FormDataMultiPart) multipartEntity);
+
+        final TempFileResource.MultipleBinaryStreamingOutput binaryStreamingOutput =
+                (TempFileResource.MultipleBinaryStreamingOutput) jsonResponse.getEntity();
+
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        binaryStreamingOutput.write(baos);
+        final byte[] data = baos.toByteArray();
+        final Map dotTempFiles =
+                DotObjectMapperProvider.getInstance().getDefaultObjectMapper().readValue(data, Map.class);
+        final List tempFiles = ( List<DotTempFile>)dotTempFiles.get("tempFiles");
+        final Map dotTempFileMap = (Map)tempFiles.get(0);
+        final String errorCode = (String) dotTempFileMap.get("errorCode");
+
+
         assertTrue(
-                "Anon User cannot upload temp file larger than TEMP_RESOURCE_MAX_FILE_SIZE_ANONYMOUS" + jsonResponse.getStatus(),
-                jsonResponse.getStatus() == 400);
+                "Anon User cannot upload temp file larger than TEMP_RESOURCE_MAX_FILE_SIZE_ANONYMOUS" + errorCode,
+                Integer.parseInt(errorCode) == 400);
 
     }
 
@@ -355,6 +399,7 @@ public class TempFileResourceTest {
     @Test
     public void test_tempResourceapi_test_max_filesize() throws Exception {
         resetTempResourceConfig();
+        Config.setProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
         final File testFile = testFile();
         HttpServletRequest request = mockRequest();
         final BodyPart filePart1 = new StreamDataBodyPart(testFile.getName(),
@@ -370,8 +415,21 @@ public class TempFileResourceTest {
         Config.setProperty(TempFileAPI.TEMP_RESOURCE_MAX_FILE_SIZE, testFile.length() - 10);
         Response jsonResponse = resource.uploadTempResourceMulti(request, response, "-1",
                 (FormDataMultiPart) multipartEntity);
-        assertTrue("anon user cannot upload >TEMP_RESOURCE_MAX_FILE_SIZE " + jsonResponse.getStatus(),
-                jsonResponse.getStatus() == 400);
+
+        final TempFileResource.MultipleBinaryStreamingOutput binaryStreamingOutput =
+                (TempFileResource.MultipleBinaryStreamingOutput) jsonResponse.getEntity();
+
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        binaryStreamingOutput.write(baos);
+        final byte[] data = baos.toByteArray();
+        final Map dotTempFiles =
+                DotObjectMapperProvider.getInstance().getDefaultObjectMapper().readValue(data, Map.class);
+        final List tempFiles = ( List<DotTempFile>)dotTempFiles.get("tempFiles");
+        final Map dotTempFileMap = (Map)tempFiles.get(0);
+        final String errorCode = (String) dotTempFileMap.get("errorCode");
+
+        assertTrue("anon user cannot upload >TEMP_RESOURCE_MAX_FILE_SIZE " + errorCode,
+                Integer.parseInt(errorCode) == 400);
     }
 
     @Test
@@ -449,7 +507,7 @@ public class TempFileResourceTest {
      *
      * @throws Exception
      */
-    @Test
+    @Test(expected = DoesNotExistException.class)
     public void test_TempResourceAPI_TempResourceEnabledProperty() {
         resetTempResourceConfig();
         final boolean tempResourceEnabledOriginalValue = Config
