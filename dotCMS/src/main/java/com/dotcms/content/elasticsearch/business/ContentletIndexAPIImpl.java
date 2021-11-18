@@ -358,6 +358,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 if (!luckyServer.equals(ConfigUtils.getServerId())) {
                     logSwitchover(oldInfo, luckyServer);
                     DateUtil.sleep(5000);
+                    CacheLocator.getIndiciesCache().clearCache();
                     return false;
                 }
             }
