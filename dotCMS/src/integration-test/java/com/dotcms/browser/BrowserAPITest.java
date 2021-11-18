@@ -396,7 +396,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                             BrowserQuery.builder()
                             .showDotAssets(true)
                             .showLinks(true)
-                            .inHostOrFolder(testFolder)
+                            .withHostOrFolderId(testFolder.getInode())
                             .showFolders(true)
                             .showPages(true)
                             .showFiles(true)
@@ -421,7 +421,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                         BrowserQuery.builder()
                         .showDotAssets(true)
                         .showFiles(true)
-                        .inHostOrFolder(testFolder)
+                        .withHostOrFolderId(testFolder.getInode())
                         .withLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
                         .build(),
                         
@@ -439,7 +439,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                         BrowserQuery.builder()
                         .showDotAssets(true)
                         .showFiles(true)
-                        .inHostOrFolder(testFolder)
+                        .withHostOrFolderId(testFolder.getInode())
                         .build(),
                         
                         ImmutableSet.of(
@@ -458,7 +458,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                         BrowserQuery.builder()
                         .showFiles(true)
                         .showArchived(true)
-                        .inHostOrFolder(testFolder)
+                        .withHostOrFolderId(testFolder.getInode())
                         .build(),
                         
                         ImmutableSet.of(
@@ -477,7 +477,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                         
                         BrowserQuery.builder()
                         .showPages(true)
-                        .inHostOrFolder(testFolder)
+                        .withHostOrFolderId(testFolder.getInode())
                         .build(),
                         
                         ImmutableSet.of(
@@ -493,7 +493,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                         
                         BrowserQuery.builder()
                         .showLinks(true)
-                        .inHostOrFolder(testFolder)
+                        .withHostOrFolderId(testFolder.getInode())
                         .build(),
                         
                         ImmutableSet.of(
