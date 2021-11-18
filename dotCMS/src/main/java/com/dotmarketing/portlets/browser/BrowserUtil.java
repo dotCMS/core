@@ -7,6 +7,7 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -23,7 +24,9 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -155,7 +158,9 @@ public class BrowserUtil {
 
     private static Optional<Folder> resolveWithCurrentValue(
             final Contentlet contentlet, final Field field) {
-        final String value = contentlet.getStringProperty(field.variable());
+        final String value = WysiwygField.class.equals(field.type())
+                ? getValueFromWysiwygField(contentlet, field)
+                : contentlet.getStringProperty(field.variable());
 
         if (UtilMethods.isSet(value)) {
             final Identifier identifier;
@@ -171,6 +176,31 @@ public class BrowserUtil {
             }
         } else {
             return Optional.empty();
+        }
+    }
+
+    private static String getValueFromWysiwygField(final Contentlet contentlet, final Field field) {
+        if (!WysiwygField.class.equals(field.type()) ) {
+            return null;
+        }
+
+        final String value = contentlet.getStringProperty(field.variable());
+
+        if (UtilMethods.isSet(value) && value.contains("<img")) {
+            final String[] valueSplit = value.split(StringPool.SPACE);
+
+            final List<String> atributes = Arrays.stream(valueSplit)
+                    .filter(split -> split.startsWith("data-identifier"))
+                    .collect(Collectors.toList());
+
+            final String dataIdentifier = atributes.isEmpty() ? StringPool.BLANK : atributes.get(0);
+
+            final String[] dataIdentifierSplit = dataIdentifier.split("=");
+            return dataIdentifierSplit.length > 1
+                    ? dataIdentifierSplit[1].replace("\"", StringPool.BLANK)
+                    : null;
+        } else {
+            return null;
         }
     }
 
