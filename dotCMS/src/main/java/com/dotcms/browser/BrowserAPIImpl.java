@@ -72,8 +72,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         final Tuple2<String, List<Object>> sqlQuery = this.selectQuery(browserQuery);
 
 
-        final DotConnect dc = new DotConnect().setSQL(sqlQuery._1).setStartRow(browserQuery.offset).setMaxRows(browserQuery.maxResults)
-                .setStartRow(browserQuery.offset);
+        final DotConnect dc = new DotConnect().setSQL(sqlQuery._1);
 
         sqlQuery._2.forEach(o -> dc.addParam(o));
 
@@ -136,7 +135,8 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
 
         //Get Content
-        final List<Contentlet> contentlets = getContentUnderParentDB(browserQuery);
+        final List<Contentlet> contentlets = browserQuery.showContent ? getContentUnderParentDB(browserQuery)
+                : Collections.emptyList();
 
         for (final Contentlet contentlet : contentlets) {
 
@@ -331,7 +331,7 @@ public class BrowserAPIImpl implements BrowserAPI {
 
         if (browserQuery.directParent instanceof Folder) {
             return folderAPI
-                    .getLinks((Folder) browserQuery.directParent, false, browserQuery.showArchived,
+                    .getLinks((Folder) browserQuery.directParent, browserQuery.showWorking, browserQuery.showArchived,
                             browserQuery.user,
                             false);
         }

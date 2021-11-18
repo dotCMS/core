@@ -1,11 +1,11 @@
 package com.dotcms.browser;
 
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.web.WebAPILocator;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import com.dotcms.api.tree.Parentable;
 import com.dotcms.business.CloseDBIfOpened;
@@ -35,7 +35,7 @@ public class BrowserQuery {
     final User user;
     final String  filter, sortBy;
     final int offset, maxResults;
-    final boolean showWorking, showArchived, showFolders, sortByDesc, showLinks,showMenuItemsOnly;
+    final boolean showWorking, showArchived, showFolders, sortByDesc, showLinks,showMenuItemsOnly,showContent;
     final long languageId;
     final String luceneQuery;
     final Set<BaseContentType> baseTypes;
@@ -51,7 +51,7 @@ public class BrowserQuery {
         return "BrowserQuery {user:" + user + ", host:" + host+ ", folder:" + folder + ", filter:" + filter + ", sortBy:" + sortBy
                 + ", offset:" + offset + ", maxResults:" + maxResults + ", showWorking:" + showWorking + ", showArchived:"
                 + showArchived + ", showFolders:" + showFolders + ", sortByDesc:" + sortByDesc + ", showLinks:"
-                + showLinks + ", languageId:" + languageId + ", luceneQuery:" + luceneQuery
+                + showLinks + ", showContent:" + showContent + ", languageId:" + languageId + ", luceneQuery:" + luceneQuery
                 + ", baseTypes:" + baseTypes + "}";
     }
 
@@ -67,6 +67,7 @@ public class BrowserQuery {
         this.showWorking = builder.showWorking || builder.showArchived;
         this.showArchived = builder.showArchived;
         this.showFolders = builder.showFolders;
+        this.showContent = builder.showContent;
         this.mimeTypes     = builder.mimeTypes;
         this.extensions    = builder.extensions;
         this.sortByDesc = UtilMethods.isEmpty(builder.sortBy) ? true : builder.sortByDesc;
@@ -89,6 +90,14 @@ public class BrowserQuery {
     private Tuple2<Host, Folder> getParents(final String parentId, final User user, final String hostIdSystemFolder) {
 
         boolean respectFrontEndPermissions = PageMode.get().respectAnonPerms;
+        //check if the parentId exists
+        final Identifier identifier = Try.of(() -> APILocator.getIdentifierAPI().findFromInode(parentId)).getOrNull();
+        if (identifier == null || UtilMethods.isEmpty(identifier.getId())) {
+            Logger.error(this, "parentId doesn't belong to a Folder or a Host, id: " + parentId
+                    + ", maybe the Folder was modified in the background. If using SystemFolder must send hostIdSystemFolder.");
+            throw new DotRuntimeException("parentId doesn't belong to a Folder or a Host, id: " + parentId);
+        }
+
         // gets folder parent
         final Folder folder = Try.of(() -> APILocator.getFolderAPI().find(parentId, user, respectFrontEndPermissions)).toJavaOptional()
                 .orElse(APILocator.getFolderAPI().findSystemFolder());
@@ -98,14 +107,6 @@ public class BrowserQuery {
                 ? null != hostIdSystemFolder ? Try.of(() -> APILocator.getHostAPI().find(hostIdSystemFolder, user, respectFrontEndPermissions)).getOrNull()
                 :  Try.of(() -> WebAPILocator.getHostWebAPI().getCurrentHost()).getOrNull()
                 : Try.of(() -> APILocator.getHostAPI().find(folder.getHostId(), user, respectFrontEndPermissions)).getOrNull();
-
-
-        if (host == null || UtilMethods.isEmpty(host.getIdentifier())) {
-
-            Logger.error(this, "parentId doesn't belong to a Folder or a Host, id: " + folder.getInode()
-                    + ", maybe the Folder was modified in the background. If using SystemFolder must send hostIdSystemFolder.");
-            throw new DotRuntimeException("parentId doesn't belong to a Folder or a Host, id: " + folder.getInode());
-        }
 
         return Tuple.of(host, folder);
 
@@ -138,6 +139,7 @@ public class BrowserQuery {
      */
 
     public static final class Builder {
+
         private User user;
         private String filter = null;
         private String sortBy = "moddate";
@@ -145,27 +147,29 @@ public class BrowserQuery {
         private int maxResults = MAX_FETCH_PER_REQUEST;
         private boolean showWorking = true;
         private boolean showArchived = false;
+        private boolean showContent = true;
         private boolean showFolders = false;
         private boolean sortByDesc = false;
         private boolean showLinks = false;
         private boolean showMenuItemsOnly = false;
         private long languageId = 0;
-        private final StringBuilder luceneQuery=new StringBuilder();
+        private final StringBuilder luceneQuery = new StringBuilder();
         private Set<BaseContentType> baseTypes = new HashSet<>();
         private String hostFolderId = Folder.SYSTEM_FOLDER;
         private String hostIdSystemFolder = null;
-        private List<String> mimeTypes=new ArrayList<>();
-        private List<String>  extensions=new ArrayList<>();
+        private List<String> mimeTypes = new ArrayList<>();
+        private List<String> extensions = new ArrayList<>();
 
-        private Builder() {}
+        private Builder() {
+        }
 
         private Builder(BrowserQuery browserQuery) {
             this.user = browserQuery.user;
             this.hostFolderId = browserQuery.folder.isSystemFolder()
                     ? browserQuery.host.getIdentifier()
-                    : browserQuery.folder.getInode() ;
+                    : browserQuery.folder.getInode();
             this.filter = browserQuery.filter;
-            if(browserQuery.luceneQuery!=null) {
+            if (browserQuery.luceneQuery != null) {
                 this.luceneQuery.append(browserQuery.luceneQuery);
             }
             this.sortBy = browserQuery.sortBy;
@@ -180,6 +184,7 @@ public class BrowserQuery {
             this.showMenuItemsOnly = browserQuery.showMenuItemsOnly;
             this.mimeTypes = browserQuery.mimeTypes;
             this.extensions = browserQuery.extensions;
+            this.showContent = browserQuery.showContent;
         }
 
         public Builder withUser(@Nonnull User user) {
@@ -194,7 +199,7 @@ public class BrowserQuery {
 
         public Builder withFilter(@Nonnull String filter) {
 
-            if(UtilMethods.isSet(filter)) {
+            if (UtilMethods.isSet(filter)) {
                 luceneQuery.append(StringPool.SPACE).append(filter);
             }
             return this;
@@ -210,7 +215,7 @@ public class BrowserQuery {
             return this;
         }
 
-        public Builder showExtensions(@Nonnull List<String>  extensions) {
+        public Builder showExtensions(@Nonnull List<String> extensions) {
             this.extensions = extensions;
             return this;
         }
@@ -240,13 +245,24 @@ public class BrowserQuery {
             return this;
         }
 
+        public Builder showContent(@Nonnull boolean showContent) {
+            this.showContent = showContent;
+            return this;
+        }
+
         public Builder showFolders(@Nonnull boolean showFolders) {
             this.showFolders = showFolders;
             return this;
         }
 
         public Builder showFiles(@Nonnull boolean showFiles) {
-            baseTypes.add(BaseContentType.FILEASSET);
+            if (showFiles) {
+                baseTypes.add(BaseContentType.FILEASSET);
+            }
+//            }else {
+//                baseTypes.remove(BaseContentType.ANY);
+//                baseTypes.remove(BaseContentType.FILEASSET);
+//            }
             return this;
         }
 
@@ -261,16 +277,24 @@ public class BrowserQuery {
         }
 
         public Builder showPages(@Nonnull boolean showPages) {
-            if(showPages) {
+            if (showPages) {
                 baseTypes.add(BaseContentType.HTMLPAGE);
             }
+//            }else {
+//                baseTypes.remove(BaseContentType.ANY);
+//                baseTypes.remove(BaseContentType.HTMLPAGE);
+//            }
             return this;
         }
 
         public Builder showDotAssets(@Nonnull boolean dotAssets) {
-            if(dotAssets) {
+            if (dotAssets) {
                 baseTypes.add(BaseContentType.DOTASSET);
             }
+//            } else {
+//                baseTypes.remove(BaseContentType.ANY);
+//                baseTypes.remove(BaseContentType.DOTASSET);
+//            }
             return this;
         }
 
@@ -284,16 +308,23 @@ public class BrowserQuery {
             return this;
         }
 
-        public Builder hostIdSystemFolder(@Nonnull String hostIdSystemFolder){
+        public Builder hostIdSystemFolder(@Nonnull String hostIdSystemFolder) {
             this.hostIdSystemFolder = hostIdSystemFolder;
             return this;
         }
 
 
-
         public BrowserQuery build() {
             return new BrowserQuery(this);
         }
+//
+//        private Set<BaseContentType> addAllBaseTypes(){
+//            baseTypes = new HashSet<>();
+//            for(BaseContentType baseCT : BaseContentType.values()){
+//                baseTypes.add(baseCT);
+//            }
+//            return baseTypes;
+//        }
+//    }
     }
-
 }
