@@ -78,3 +78,7 @@ This maintenance release includes the following code fixes:
 37. https://github.com/dotCMS/core/issues/19931	: Automatically delete old ES indices (indexes)
 
 38. https://github.com/dotCMS/core/issues/20799 : When try to import a Bundle get a OutOfMemoryError #20799
+
+39. https://github.com/dotCMS/core/issues/20965 : Response code in Integrity Checker producing a 502 #20965
+
+
