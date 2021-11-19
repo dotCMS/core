@@ -11,6 +11,11 @@ import StarterKit from '@tiptap/starter-kit';
 import { ActionsMenu } from '../extensions/actions-menu.extension';
 import { ContentletBlock } from '../extensions/blocks/contentlet-block/contentlet-block.extension';
 import { DragHandler } from '../extensions/dragHandler.extention';
+import BubbleMenu from '@tiptap/extension-bubble-menu';
+
+// Marks Extensions
+import { TextAlign } from '@tiptap/extension-text-align';
+import { Underline } from '@tiptap/extension-underline';
 
 @Component({
     selector: 'dotcms-block-editor',
@@ -31,7 +36,21 @@ export class BlockEditorComponent implements OnInit {
                 StarterKit,
                 ContentletBlock(this.injector),
                 ActionsMenu(this.injector, this.resolver),
-                DragHandler(this.injector, this.resolver)
+                DragHandler(this.injector, this.resolver),
+                BubbleMenu.configure({
+                    element: document.querySelector('#bubbleMenu'),
+                    tippyOptions: {
+                        duration: 500,
+                        maxWidth: 'none',
+                        placement: 'bottom-start',
+                        trigger: 'manual'
+                    }
+                }),
+                // Marks Extensions
+                Underline,
+                TextAlign.configure({
+                    types: ['heading', 'paragraph'],
+                })
             ]
         });
     }

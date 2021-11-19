@@ -1,0 +1,23 @@
+@import "variables";
+
+:host {
+    height: 100%;
+    width: 100%;
+}
+
+.bubble-menu {
+    align-items: center;
+    background: $white;
+    border-radius: $border-radius;
+    box-shadow: $md-shadow-3;
+    display: flex;
+    justify-content: center;
+    overflow: auto;
+    padding: 0.4rem 0.7rem;
+
+    .divider {
+        border-left: 1px solid $gray-bg;
+        height: 100%;
+        margin: 0px $spacing-1;
+    }
+}
