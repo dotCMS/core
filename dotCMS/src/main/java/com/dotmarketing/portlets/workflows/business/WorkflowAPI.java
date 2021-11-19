@@ -37,7 +37,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
@@ -1079,7 +1082,14 @@ public interface WorkflowAPI {
 	Map<String, List<WorkflowScheme>> findSchemesMapForContentType(List<ContentType> contentTypes)  throws DotDataException;
 
 
-
+	void fireBulkActionTasks(final WorkflowAction action,
+			final User user,
+			final List<Contentlet> contentlets,
+			final AdditionalParamsBean additionalParamsBean,
+			final Consumer<Long> successConsumer,
+			final BiConsumer<String,Exception> failConsumer,
+			final ConcurrentMap<String,Object> context,
+			final int sleep);
 
 	/**
 	 * Render mode for the available actions

@@ -77,14 +77,12 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
-import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
@@ -141,10 +139,11 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
-
-import io.vavr.control.Try;
 import org.apache.commons.lang.time.StopWatch;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.glassfish.jersey.media.sse.EventOutput;
+import org.glassfish.jersey.media.sse.OutboundEvent;
+import org.glassfish.jersey.media.sse.SseFeature;
 import org.glassfish.jersey.server.JSONP;
 
 /**
@@ -500,7 +499,6 @@ public class WorkflowResource {
         return actionInputViews;
     }
 
-
     /**
      * Get the bulk actions based on the {@link BulkActionForm}
      * @param request HttpServletRequest
@@ -562,6 +560,59 @@ public class WorkflowResource {
             Logger.error(this.getClass(), "Exception attempting to fire bulk actions by : " +fireBulkActionsForm + ", exception message: " + e.getMessage(), e);
             asyncResponse.resume(ResponseUtil.mapExceptionResponse(e));
         }
+    }
+
+    @POST
+    @Path("/contentlet/actions/bulk/events")
+    @Produces(SseFeature.SERVER_SENT_EVENTS)
+    public EventOutput getServerSentEvents(@Context final HttpServletRequest request,
+            final FireBulkActionsForm fireBulkActionsForm) {
+        final InitDataObject initDataObject = this.webResource
+                .init(null, request, new EmptyHttpResponse(), true, null);
+
+        final EventOutput eventOutput = new EventOutput();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+
+                    fireBulkActionsForm.getContentletIds().stream().map(id->{
+                        contentletAPI.find
+                    })
+
+                    final WorkflowAction action = workflowAPI.findAction(fireBulkActionsForm
+                                    .getWorkflowActionId(),
+                            initDataObject.getUser());
+
+                    workflowAPI.fireBulkActionTasks(
+                            action, initDataObject.getUser(),
+                    );
+                    final OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
+                    eventBuilder.name("message-to-client");
+                    eventBuilder.data(String.class, result);
+                    final OutboundEvent event = eventBuilder.build();
+                    eventOutput.write(event);
+
+//                    for (int i = 0; i < 10; i++) {
+//                        // ... code that waits 1 second
+//                        final OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
+//                        eventBuilder.name("message-to-client");
+//                        eventBuilder.data(String.class, "Hello world " + i + "!");
+//                        final OutboundEvent event = eventBuilder.build();
+//                        eventOutput.write(event);
+//                    }
+                } catch (Exception e) {
+                    throw new RuntimeException("Error when writing the event.", e);
+                } finally {
+                    try {
+                        eventOutput.close();
+                    } catch (IOException ioClose) {
+                        throw new RuntimeException("Error when closing the event output.", ioClose);
+                    }
+                }
+            }
+        }).start();
+        return eventOutput;
     }
 
 

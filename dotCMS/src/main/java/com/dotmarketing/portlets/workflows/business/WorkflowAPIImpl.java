@@ -2911,28 +2911,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	/**
-	 * Applies the values captured via pop-up on the UI (If any) And gets them applied directly to the contentlet.
-	 * @param additionalParamsBean
-	 * @param contentlet
-	 * @return
-	 */
-	private Contentlet applyAdditionalParams(final AdditionalParamsBean additionalParamsBean, Contentlet contentlet){
-		if(UtilMethods.isSet(additionalParamsBean) && UtilMethods.isSet(additionalParamsBean.getPushPublishBean()) ){
-			final PushPublishBean pushPublishBean = additionalParamsBean.getPushPublishBean();
-			contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE, pushPublishBean.getPublishDate());
-			contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME, pushPublishBean.getPublishTime());
-			contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE, pushPublishBean.getExpireDate());
-			contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME, pushPublishBean.getExpireTime());
-			contentlet.setStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE, pushPublishBean.getNeverExpire());
-			contentlet.setStringProperty(Contentlet.WHERE_TO_SEND, pushPublishBean.getWhereToSend());
-			contentlet.setStringProperty(Contentlet.FILTER_KEY, pushPublishBean.getFilterKey());
-			contentlet.setStringProperty(Contentlet.I_WANT_TO, pushPublishBean.getIWantTo());
-		}
-
-		return contentlet;
-	}
-
-	/**
 	 * This process a batch of Contents all within the same Thread
 	 * @param action
 	 * @param user
@@ -2943,7 +2921,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * @param context
 	 * @param sleep
 	 */
-	private void fireBulkActionTasks(final WorkflowAction action,
+	public void fireBulkActionTasks(final WorkflowAction action,
 			final User user,
 			final List<Contentlet> contentlets,
 			final AdditionalParamsBean additionalParamsBean,
@@ -2962,8 +2940,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		final boolean requiresAdditionalParams = ActionletUtil.requiresPopupAdditionalParams(action);
 
 		if(requiresAdditionalParams){
-		// additional params applied through the builder
-           dependenciesBuilder = applyAdditionalParams(additionalParamsBean, dependenciesBuilder);
+			// additional params applied through the builder
+			dependenciesBuilder = applyAdditionalParams(additionalParamsBean, dependenciesBuilder);
 		}
 
 		final ContentletDependencies dependencies = dependenciesBuilder.build();
@@ -2993,6 +2971,28 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				DateUtil.sleep(sleep);
 			}
 		}
+	}
+
+	/**
+	 * Applies the values captured via pop-up on the UI (If any) And gets them applied directly to the contentlet.
+	 * @param additionalParamsBean
+	 * @param contentlet
+	 * @return
+	 */
+	private Contentlet applyAdditionalParams(final AdditionalParamsBean additionalParamsBean, Contentlet contentlet){
+		if(UtilMethods.isSet(additionalParamsBean) && UtilMethods.isSet(additionalParamsBean.getPushPublishBean()) ){
+			final PushPublishBean pushPublishBean = additionalParamsBean.getPushPublishBean();
+			contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE, pushPublishBean.getPublishDate());
+			contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME, pushPublishBean.getPublishTime());
+			contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE, pushPublishBean.getExpireDate());
+			contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME, pushPublishBean.getExpireTime());
+			contentlet.setStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE, pushPublishBean.getNeverExpire());
+			contentlet.setStringProperty(Contentlet.WHERE_TO_SEND, pushPublishBean.getWhereToSend());
+			contentlet.setStringProperty(Contentlet.FILTER_KEY, pushPublishBean.getFilterKey());
+			contentlet.setStringProperty(Contentlet.I_WANT_TO, pushPublishBean.getIWantTo());
+		}
+
+		return contentlet;
 	}
 
 	@WrapInTransaction
