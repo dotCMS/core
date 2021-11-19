@@ -309,8 +309,8 @@ public class TaskLocatorUtil {
 		.add(Task211012AddCompanyDefaultLanguage.class)
 		.add(Task211020CreateHostIntegrityCheckerResultTables.class)
 		.add(Task211101AddContentletAsJsonColumn.class)
-
-        .build();
+		.add(Task211103RenameHostNameLabel.class)
+		.build();
         
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 

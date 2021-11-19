@@ -93,7 +93,7 @@
             <option value="2">Failed End-points Only</option>
         </select> &nbsp;&nbsp;
 
-        <%if (BundlerUtil.isRetryable(bundle.getId())){%>&nbsp;&nbsp;
+        <%if (BundlerUtil.isRetryable(bundleId)){%>&nbsp;&nbsp;
             <button id="retryButton" dojoType="dijit.form.Button" onClick="retryBundles('<%=bundleId%>')" iconClass="repeatIcon"><%= LanguageUtil.get(pageContext, "publisher_retry") %></button>
         <%}%>
     </div>

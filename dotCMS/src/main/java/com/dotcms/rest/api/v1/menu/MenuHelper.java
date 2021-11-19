@@ -16,6 +16,7 @@ import com.liferay.portlet.VelocityPortlet;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Helper for the {@link MenuResource}
@@ -44,7 +45,8 @@ public class MenuHelper implements Serializable {
         for (String portletId : portletIds) {
             menuContext.setPortletId( portletId );
             String linkHREF = getUrl(menuContext);
-            String linkName = LanguageUtil.get(menuContext.getUser(), "com.dotcms.repackage.javax.portlet.title." + portletId);
+            Locale locale = new Locale(menuContext.getHttpServletRequest().getSession().getAttribute("com.dotcms.repackage.org.apache.struts.action.LOCALE").toString());
+            String linkName = LanguageUtil.get(locale, "com.dotcms.repackage.javax.portlet.title." + portletId);
             boolean isAngular = isAngular( portletId );
             boolean isAjax = isAjax( portletId );
 

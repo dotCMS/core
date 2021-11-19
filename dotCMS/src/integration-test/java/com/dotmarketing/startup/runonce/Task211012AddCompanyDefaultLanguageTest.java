@@ -38,10 +38,13 @@ public class Task211012AddCompanyDefaultLanguageTest {
 
         Logger.debug(this, "Prepping for testing `add` column.");
         try {
-            DbConnectionFactory.getConnection().setAutoCommit(true);
-            dotConnect.setSQL("UPDATE company SET default_language_id = NULL").loadResult();
-            final String dropColumnSQL = "ALTER TABLE company DROP COLUMN default_language_id";
-            dotConnect.executeStatement(dropColumnSQL);
+            final Task211012AddCompanyDefaultLanguage task = new Task211012AddCompanyDefaultLanguage();
+            if(task.companyHasDefaultLanguageColumn()) {
+                DbConnectionFactory.getConnection().setAutoCommit(true);
+                dotConnect.setSQL("UPDATE company SET default_language_id = NULL").loadResult();
+                final String dropColumnSQL = "ALTER TABLE company DROP COLUMN default_language_id";
+                dotConnect.executeStatement(dropColumnSQL);
+            }
         } catch (SQLException e) {
             Logger.warn(Task211012AddCompanyDefaultLanguageTest.class, e.getMessage(), e);
         }
