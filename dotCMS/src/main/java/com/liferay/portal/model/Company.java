@@ -94,6 +94,7 @@ public class Company extends CompanyModel {
 		super.setKey(key);
 	}
 
+	@JsonIgnore
 	public Key getKeyObj() {
 		return _keyObj;
 	}

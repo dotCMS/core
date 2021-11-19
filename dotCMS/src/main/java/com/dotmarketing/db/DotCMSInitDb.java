@@ -10,7 +10,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.startup.runonce.Task210321RemoveOldMetadataFiles;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ImportStarterUtil;
+import com.dotmarketing.util.starter.ImportStarterUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.UtilMethods;

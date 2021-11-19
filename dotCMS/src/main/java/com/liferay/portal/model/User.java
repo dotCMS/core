@@ -122,6 +122,7 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 		setAdditionalInfo(additionalInfo);
 	}
 
+	@JsonIgnore
 	public boolean isDefaultUser() {
 		return _defaultUser;
 	}
@@ -137,6 +138,7 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 		super.setCompanyId(companyId);
 	}
 
+	@JsonIgnore
 	public String getActualCompanyId() {
 		if (isDefaultUser()) {
 			return getUserId().substring(
@@ -198,6 +200,7 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 		super.setLanguageId(_locale.getLanguage() + "_" + _locale.getCountry());
 	}
 
+	@JsonIgnore
 	public TimeZone getTimeZone() {
 		return _timeZone;
 	}
@@ -302,7 +305,6 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 			user.getFullName().toLowerCase());
 	}
 
-	@JsonIgnore
     public Date getModificationDate() {
 
         return this.modificationDate;
@@ -324,6 +326,7 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
 	 * Returns true if the user is an admin
 	 * @return boolean
 	 */
+	@JsonIgnore
 	public boolean isAdmin() {
 
 		return Try.of(() -> {
