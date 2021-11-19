@@ -1,23 +1,25 @@
 package com.dotcms.content.business;
 
-import java.util.List;
-import java.util.Map;
-
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.structure.model.Structure;
 
+import java.util.List;
+
+/**
+ * This API provides useful methods and mechanisms to map properties that are present in a {@link Contentlet} object,
+ * specially for ES indexation purposes.
+ *
+ * @author root
+ * @since Mar 22nd, 2012
+ */
 public interface ContentMappingAPI {
 
-	//public Object buildMapping(Structure struct) throws DotMappingException;
+	boolean RESPECT_FRONTEND_ROLES = Boolean.TRUE;
+    boolean DONT_RESPECT_FRONTEND_ROLES = Boolean.FALSE;
 
-	public Object toMappedObj(Contentlet con) throws DotMappingException;
-
-	/*public Contentlet toContentlet(String string) throws DotMappingException;
-	public Contentlet toContentlet(Map<String, Object> map) throws DotMappingException;*/
-
-    public List<String> dependenciesLeftToReindex(Contentlet con)
+    List<String> dependenciesLeftToReindex(Contentlet con)
             throws DotStateException, DotDataException, DotSecurityException;
+
 }

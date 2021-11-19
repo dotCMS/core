@@ -85,4 +85,6 @@ This maintenance release includes the following code fixes:
 
 41. https://github.com/dotCMS/core/issues/20746 : Content Export tool is not exporting relationships correctly #20746
 
+42. https://github.com/dotCMS/core/issues/20722 : [Reindex] : Perform Site check before Folder check #20722
+
 
