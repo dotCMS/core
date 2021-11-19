@@ -259,10 +259,6 @@ public class BrowserQuery {
             if (showFiles) {
                 baseTypes.add(BaseContentType.FILEASSET);
             }
-//            }else {
-//                baseTypes.remove(BaseContentType.ANY);
-//                baseTypes.remove(BaseContentType.FILEASSET);
-//            }
             return this;
         }
 
@@ -280,10 +276,6 @@ public class BrowserQuery {
             if (showPages) {
                 baseTypes.add(BaseContentType.HTMLPAGE);
             }
-//            }else {
-//                baseTypes.remove(BaseContentType.ANY);
-//                baseTypes.remove(BaseContentType.HTMLPAGE);
-//            }
             return this;
         }
 
@@ -291,10 +283,6 @@ public class BrowserQuery {
             if (dotAssets) {
                 baseTypes.add(BaseContentType.DOTASSET);
             }
-//            } else {
-//                baseTypes.remove(BaseContentType.ANY);
-//                baseTypes.remove(BaseContentType.DOTASSET);
-//            }
             return this;
         }
 
@@ -317,14 +305,5 @@ public class BrowserQuery {
         public BrowserQuery build() {
             return new BrowserQuery(this);
         }
-//
-//        private Set<BaseContentType> addAllBaseTypes(){
-//            baseTypes = new HashSet<>();
-//            for(BaseContentType baseCT : BaseContentType.values()){
-//                baseTypes.add(baseCT);
-//            }
-//            return baseTypes;
-//        }
-//    }
     }
 }
