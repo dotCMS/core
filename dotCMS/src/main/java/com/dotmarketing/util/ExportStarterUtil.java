@@ -3,7 +3,6 @@ package com.dotmarketing.util;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
 import com.dotcms.publishing.BundlerUtil;
-import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.Clickstream404;
@@ -12,7 +11,6 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.PermissionReference;
-import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
@@ -39,6 +37,7 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
@@ -59,7 +58,7 @@ public class ExportStarterUtil {
         
     }
     
-    public File createStarterWithAssets() throws IOException {
+    public File createStarterWithAssets() throws FileNotFoundException, IOException {
         
         moveAssetsToBackupDir();
         return createStarterData() ;
@@ -67,47 +66,18 @@ public class ExportStarterUtil {
     }
     
     public File createStarterData() {
-        createJSONFiles() ;
+        createXMLFiles() ;
         
         return outputDirectory;
         
         
     }
-
-    private Set getTableSet() throws HibernateException {
-        final Set<Class> _tablesToDump = new HashSet<>();
-        _tablesToDump.add(Identifier.class);
-        _tablesToDump.add(Language.class);
-        _tablesToDump.add(Relationship.class);
-        _tablesToDump.add(ContentletVersionInfo.class);
-        _tablesToDump.add(Template.class);
-        _tablesToDump.add(Contentlet.class);
-        _tablesToDump.add(Category.class);
-        _tablesToDump.add(Tree.class);
-        _tablesToDump.add(MultiTree.class);
-
-        //end classes no longer mapped with Hibernate
-        _tablesToDump.addAll(HibernateUtil.getSession().getSessionFactory().getAllClassMetadata().keySet());
-
-        _tablesToDump.removeIf(c->c.equals(Inode.class));
-        _tablesToDump.removeIf(c->c.equals(Clickstream.class));
-        _tablesToDump.removeIf(c->c.equals(ClickstreamRequest.class));
-        _tablesToDump.removeIf(c->c.equals(Clickstream404.class));
-        _tablesToDump.removeIf(c->c.equals(Structure.class));
-        _tablesToDump.removeIf(c->c.equals(Field.class));
-        _tablesToDump.removeIf(c->c.equals(WorkflowHistory.class));
-        _tablesToDump.removeIf(c->c.equals(PermissionReference.class));
-
-        _tablesToDump.removeIf(t->t.getName().startsWith("Dashboard"));
-        _tablesToDump.removeIf(t->t.getName().contains("HBM"));
-
-        return _tablesToDump;
-    }
+    
     
     /**
      * This method will pull a list of all tables /classed being managed by
      * hibernate and export them, one class per file to the backupTempFilePath
-     * as valid JSON. It uses Jackson to write the json out to the files.
+     * as valid XML. It uses XStream to write the xml out to the files.
      *
      * @throws ServletException
      * @throws IOException
@@ -115,16 +85,38 @@ public class ExportStarterUtil {
      * @throws DotDataException
      */
     @CloseDBIfOpened
-    private void createJSONFiles()  {
+    private void createXMLFiles()  {
 
-        Logger.info(this, "Starting createJSONFiles into " + outputDirectory);
+        Logger.info(this, "Starting createXMLFiles into " + outputDirectory);
 
-
+        final Set<Class> _tablesToDump = new HashSet<Class>();
         try {
 
             /* get a list of all our tables */
             //Including classes that are no longer mapped with Hibernate anymore
-            final Set<Class> _tablesToDump = getTableSet();
+            _tablesToDump.add(Identifier.class);
+            _tablesToDump.add(Language.class);
+            _tablesToDump.add(Relationship.class);
+            _tablesToDump.add(ContentletVersionInfo.class);
+            _tablesToDump.add(Template.class);
+            _tablesToDump.add(Contentlet.class);
+            _tablesToDump.add(Category.class);
+
+            //end classes no longer mapped with Hibernate
+            _tablesToDump.addAll(HibernateUtil.getSession().getSessionFactory().getAllClassMetadata().keySet());
+
+            _tablesToDump.removeIf(c->c.equals(Inode.class));
+            _tablesToDump.removeIf(c->c.equals(Clickstream.class));
+            _tablesToDump.removeIf(c->c.equals(ClickstreamRequest.class));
+            _tablesToDump.removeIf(c->c.equals(Clickstream404.class));
+            _tablesToDump.removeIf(c->c.equals(Structure.class));
+            _tablesToDump.removeIf(c->c.equals(Field.class));
+            _tablesToDump.removeIf(c->c.equals(WorkflowHistory.class));
+            _tablesToDump.removeIf(c->c.equals(PermissionReference.class));
+            
+            _tablesToDump.removeIf(t->t.getName().startsWith("Dashboard"));
+            _tablesToDump.removeIf(t->t.getName().contains("HBM"));
+
 
             HibernateUtil _dh = null;
             DotConnect dc = null;
@@ -133,44 +125,55 @@ public class ExportStarterUtil {
             java.text.NumberFormat formatter = new java.text.DecimalFormat("0000000000");
 
             for (Class clazz : _tablesToDump) {
+
+
+                /*
+                 * String _shortClassName =
+                 * clazz.getName().substring(clazz.getName().lastIndexOf("."),clazz.getName().length());
+                 * xstream.alias(_shortClassName, clazz);
+                 */
                 int i= 0;
                 int step = 1000;
                 int total =0;
                 
                 /* we will only export 10,000,000 items of any given type */
-                for(i=0;i < 10000000;i=i+step) {
+                for(i=0;i < 10000000;i=i+step){
 
                     _dh = new HibernateUtil(clazz);
                     _dh.setFirstResult(i);
                     _dh.setMaxResults(step);
 
-                    if (com.dotmarketing.beans.Tree.class.equals(clazz)) {
-                        dc = new DotConnect();
-                        dc.setSQL("SELECT * FROM tree order by parent, child, relation_type")
-                                .setStartRow(i).setMaxRows(step);
-                        //_dh.setQuery("from " + clazz.getName() + " order by parent, child, relation_type");
-                    } else if (MultiTree.class.equals(clazz)) {
-                        dc = new DotConnect();
-                        dc.setSQL(
-                                        "SELECT * FROM multi_tree order by parent1, parent2, child, relation_type")
-                                .setStartRow(i).setMaxRows(step);
-                        //_dh.setQuery("from " + clazz.getName() + " order by parent1, parent2, child, relation_type");
-                    } else if (TagInode.class.equals(clazz)) {
+                    //This line was previously like;
+                    //_dh.setQuery("from " + clazz.getName() + " order by 1,2");
+                    //This caused a problem when the database is Oracle because Oracle causes problems when the results are ordered
+                    //by an NCLOB field. In the case of dot_containers table, the second field, CODE, is an NCLOB field. Because of this,
+                    //ordering is done only on the first field for the tables, which is INODE
+                    if(com.dotmarketing.beans.Tree.class.equals(clazz)){
+                        _dh.setQuery("from " + clazz.getName() + " order by parent, child, relation_type");
+                    }
+                    else if(MultiTree.class.equals(clazz)){
+                        _dh.setQuery("from " + clazz.getName() + " order by parent1, parent2, child, relation_type");
+                    }
+                    else if(TagInode.class.equals(clazz)){
                         _dh.setQuery("from " + clazz.getName() + " order by inode, tag_id");
-                    } else if (Tag.class.equals(clazz)) {
+                    }
+                    else if(Tag.class.equals(clazz)){
                         _dh.setQuery("from " + clazz.getName() + " order by tag_id, tagname");
-                    } else if (CalendarReminder.class.equals(clazz)) {
-                        _dh.setQuery("from " + clazz.getName()
-                                + " order by user_id, event_id, send_date");
-                    } else if (Identifier.class.equals(clazz)) {
+                    }
+                    else if(CalendarReminder.class.equals(clazz)){
+                        _dh.setQuery("from " + clazz.getName() + " order by user_id, event_id, send_date");
+                    }
+                    else if(Identifier.class.equals(clazz)){
                         dc = new DotConnect();
                         dc.setSQL("select * from identifier order by parent_path, id")
                                 .setStartRow(i).setMaxRows(step);
-                    } else if (Language.class.equals(clazz)) {
+                    }
+                    else if (Language.class.equals(clazz)) {
                         dc = new DotConnect();
                         dc.setSQL("SELECT * FROM language order by id")
                                 .setStartRow(i).setMaxRows(step);
-                    } else if (Relationship.class.equals(clazz)) {
+                    }
+                    else if (Relationship.class.equals(clazz)) {
                         dc = new DotConnect();
                         dc.setSQL("SELECT * FROM relationship order by inode")
                                 .setStartRow(i).setMaxRows(step);
@@ -184,9 +187,8 @@ public class ExportStarterUtil {
                                 .setStartRow(i).setMaxRows(step);
                     } else if (Contentlet.class.equals(clazz)) {
                         dc = new DotConnect();
-                        dc.setSQL(
-                                        "select contentlet.*, contentlet_1_.owner from contentlet join inode contentlet_1_ "
-                                                + " on contentlet_1_.inode = contentlet.inode ORDER BY contentlet.inode")
+                        dc.setSQL("select contentlet.*, contentlet_1_.owner from contentlet join inode contentlet_1_ "
+                                + " on contentlet_1_.inode = contentlet.inode ORDER BY contentlet.inode")
                                 .setStartRow(i).setMaxRows(step);
                     } else if (Category.class.equals(clazz)) {
                         dc = new DotConnect();
@@ -196,7 +198,7 @@ public class ExportStarterUtil {
                         _dh.setQuery("from " + clazz.getName() + " order by 1");
                     }
 
-                    if (Identifier.class.equals(clazz)) {
+                    if(Identifier.class.equals(clazz)){
                         _list = TransformerLocator
                                 .createIdentifierTransformer(dc.loadObjectResults()).asList();
                     } else if (Language.class.equals(clazz)) {
@@ -217,14 +219,10 @@ public class ExportStarterUtil {
                         _list = TransformerLocator
                                 .createContentletTransformer(dc.loadObjectResults())
                                 .asList();
-                    } else if (Category.class.equals(clazz)) {
+                    } else if(Category.class.equals(clazz)) {
                         _list = TransformerLocator
                                 .createCategoryTransformer(dc.loadObjectResults())
                                 .asList();
-                    } else if (Tree.class.equals(clazz)){
-                        _list = TransformerLocator.createTreeTransformer(dc.loadObjectResults()).asList();
-                    } else if (MultiTree.class.equals(clazz)){
-                        _list = TransformerLocator.createMultiTreeTransformer(dc.loadObjectResults()).asList();
                     } else {
                         _list = _dh.list();
                     }
@@ -232,17 +230,24 @@ public class ExportStarterUtil {
                         break;
                     }
                     if(_list.get(0) instanceof Comparable){
-                        java.util.Collections.sort(_list);
+      
+                    java.util.Collections.sort(_list);
+
+                        
                     }
 
-                    _writing = new File(outputDirectory,  clazz.getName() + "_" + formatter.format(i) + ".json");
+                    _writing = new File(outputDirectory,  clazz.getName() + "_" + formatter.format(i) + ".xml");
 
-                    BundlerUtil.objectToJSON(_list, _writing);
-
+                    BundlerUtil.objectToXML(_list, _writing);
+                    
+                    
                     total = total + _list.size();
 
                     Thread.sleep(50);
 
+
+                    
+                    
                 }
                 Logger.info(this, "writing : " + total + " records for " + clazz.getName());
             }
@@ -252,9 +257,9 @@ public class ExportStarterUtil {
             /* Companies */
             _list = ImmutableList.of(APILocator.getCompanyAPI().getDefaultCompany());
 
-            _writing = new File(outputDirectory,  Company.class.getName() + ".json");
+            _writing = new File(outputDirectory,  Company.class.getName() + ".xml");
             
-            BundlerUtil.objectToJSON(_list, _writing);
+            BundlerUtil.objectToXML(_list, _writing);
             
 
 
@@ -262,8 +267,8 @@ public class ExportStarterUtil {
             _list = APILocator.getUserAPI().findAllUsers();
             _list.add(APILocator.getUserAPI().getDefaultUser());
 
-            _writing = new File(outputDirectory,  User.class.getName() + ".json");
-            BundlerUtil.objectToJSON(_list, _writing);
+            _writing = new File(outputDirectory,  User.class.getName() + ".xml");
+            BundlerUtil.objectToXML(_list, _writing);
 
             /* users_roles */
             dc = new DotConnect();
@@ -272,8 +277,8 @@ public class ExportStarterUtil {
             dc.setSQL("select * from counter");
             _list = dc.getResults();
 
-            _writing = new File(outputDirectory, "/Counter.json");
-            BundlerUtil.objectToJSON(_list, _writing);
+            _writing = new File(outputDirectory, "/Counter.xml");
+            BundlerUtil.objectToXML(_list, _writing);
 
 
             /* image */
@@ -287,8 +292,8 @@ public class ExportStarterUtil {
              */
 
 
-            _writing = new File(outputDirectory, "/Image.json");
-            BundlerUtil.objectToJSON(_list, _writing);
+            _writing = new File(outputDirectory, "/Image.xml");
+            BundlerUtil.objectToXML(_list, _writing);
 
             /* portlet */
 
@@ -300,8 +305,8 @@ public class ExportStarterUtil {
              */
             dc.setSQL("select * from portlet");
             _list = dc.getResults();
-            _writing = new File(outputDirectory,"/Portlet.json");
-            BundlerUtil.objectToJSON(_list, _writing);
+            _writing = new File(outputDirectory,"/Portlet.xml");
+            BundlerUtil.objectToXML(_list, _writing);
 
             
             //backup content types
@@ -314,7 +319,7 @@ public class ExportStarterUtil {
             file = new File(outputDirectory, "/RuleImportExportObject.json");
             RulesImportExportUtil.getInstance().export(file);
 
-            Logger.info(this, "Finished createJSONFiles into " + outputDirectory);
+            Logger.info(this, "Finished createXMLFiles into " + outputDirectory);
         } catch (Exception e) {
             Logger.error(this,e.getMessage(),e);
             throw new DotRuntimeException(e);
@@ -322,11 +327,16 @@ public class ExportStarterUtil {
     }
     
     
-    private void moveAssetsToBackupDir() throws IOException{
+    private void moveAssetsToBackupDir() throws FileNotFoundException, IOException{
         String assetDir = ConfigUtils.getAbsoluteAssetsRootPath();
 
         Logger.info(this, "Moving assets to back up directory: " + outputDirectory);
 
         FileUtil.copyDirectory(assetDir, outputDirectory + File.separator + "assets", new AssetFileNameFilter());
+
     }
+    
+    
+    
+    
 }
