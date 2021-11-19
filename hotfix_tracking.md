@@ -83,4 +83,6 @@ This maintenance release includes the following code fixes:
 
 40. https://github.com/dotCMS/core/issues/20616 : Button for Navigation Reorder is not working correctly #20616
 
+41. https://github.com/dotCMS/core/issues/20746 : Content Export tool is not exporting relationships correctly #20746
+
 
