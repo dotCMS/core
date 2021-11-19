@@ -6,6 +6,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.util.DbExporterUtil;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DoesNotExistException;
@@ -48,16 +49,15 @@ public class MaintenanceResource implements Serializable {
     @VisibleForTesting
     public MaintenanceResource(WebResource webResource) {
         this.webResource = webResource;
-
     }
 
-
     /**
-     * This me
+     * This method is meant to shut down the current DotCMS instance.
+     * It will pass the control to catalina.sh (Tomcat) script to deal with any exit code.
      * 
-     * @param request
-     * @param response
-     * @return
+     * @param request http request
+     * @param response http response
+     * @return string response
      */
     @DELETE
     @Path("/_shutdown")
@@ -66,12 +66,10 @@ public class MaintenanceResource implements Serializable {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response shutdown(@Context final HttpServletRequest request,
-                    @Context final HttpServletResponse response) {
-
+                                   @Context final HttpServletResponse response) {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                         .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE).requestAndResponse(request, response)
                         .rejectWhenNoUser(true).requiredPortlet("maintenance").init();
-
 
         Logger.info(this.getClass(), "User:" + initData.getUser() + " is shutting down dotCMS!"); 
         SecurityLogger.logInfo(this.getClass(),
@@ -92,6 +90,15 @@ public class MaintenanceResource implements Serializable {
         return Response.ok(new ResponseEntityView("Shutdown")).build();
     }
 
+    /**
+     * This method attempts to send resolved log file using an octet stream http response.
+     *
+     * @param request  http request
+     * @param response http response
+     * @param fileName name to give to file
+     * @return octet stream response with file contents
+     * @throws IOException
+     */
     @Path("/_downloadLog/{fileName}")
     @GET
     @JSONP
@@ -101,29 +108,56 @@ public class MaintenanceResource implements Serializable {
             @Context final HttpServletResponse response, @PathParam("fileName") final String fileName)
             throws IOException {
 
-        final InitDataObject initData =
-                new WebResource.InitBuilder(webResource)
-                        .requiredBackendUser(true)
-                        .requestAndResponse(request, response)
-                        .rejectWhenNoUser(true)
-                        .requiredPortlet("maintenance")
-                        .init();
+        assertBackendUser(request, response);
 
-            String tailLogFolder = Config
-                    .getStringProperty("TAIL_LOG_LOG_FOLDER", "./dotsecure/logs/");
-            if (!tailLogFolder.endsWith(File.separator)) {
-                tailLogFolder = tailLogFolder + File.separator;
-            }
+        String tailLogFolder = Config
+                .getStringProperty("TAIL_LOG_LOG_FOLDER", "./dotsecure/logs/");
+        if (!tailLogFolder.endsWith(File.separator)) {
+            tailLogFolder = tailLogFolder + File.separator;
+        }
 
-            final File logFile = new File(FileUtil.getAbsolutlePath(tailLogFolder + fileName));
-            if(!logFile.exists()){
-                throw new DoesNotExistException("Requested LogFile: " + logFile.getCanonicalPath() + " does not exist.");
-            }
+        final File logFile = new File(FileUtil.getAbsolutlePath(tailLogFolder + fileName));
+        if(!logFile.exists()){
+            throw new DoesNotExistException("Requested LogFile: " + logFile.getCanonicalPath() + " does not exist.");
+        }
 
-            Logger.info(this.getClass(), "Requested logFile: " + logFile.getCanonicalPath());
+        Logger.info(this.getClass(), "Requested logFile: " + logFile.getCanonicalPath());
 
-            response.setHeader( "Content-Disposition", "attachment; filename=" + fileName );
-            return Response.ok(logFile, MediaType.APPLICATION_OCTET_STREAM).build();
+        response.setHeader( "Content-Disposition", "attachment; filename=" + fileName );
+        return Response.ok(logFile, MediaType.APPLICATION_OCTET_STREAM).build();
+    }
+
+    /**
+     * This method attempts to send resolved DB dump file using an octet stream http response.
+     *
+     * @param request  http request
+     * @param response http response
+     * @return octet stream response with file contents
+     * @throws IOException
+     */
+    @Path("/_downloadDb/{fileName}")
+    @GET
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
+    public final Response downloadDb(@Context final HttpServletRequest request,
+                                     @Context final HttpServletResponse response) throws IOException {
+        assertBackendUser(request, response);
+
+        final File dbFile = DbExporterUtil.exportToFile();
+        Logger.info(this.getClass(), "Requested dbFile: " + dbFile.getCanonicalPath());
+
+        response.setHeader("Content-Disposition", "attachment; filename=" + dbFile.getName());
+        return Response.ok(dbFile, MediaType.APPLICATION_OCTET_STREAM).build();
+    }
+
+    private InitDataObject assertBackendUser(HttpServletRequest request, HttpServletResponse response) {
+        return new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .requiredPortlet("maintenance")
+                .init();
     }
 
 }
