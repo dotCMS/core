@@ -81,4 +81,6 @@ This maintenance release includes the following code fixes:
 
 39. https://github.com/dotCMS/core/issues/20965 : Response code in Integrity Checker producing a 502 #20965
 
+40. https://github.com/dotCMS/core/issues/20616 : Button for Navigation Reorder is not working correctly #20616
+
 

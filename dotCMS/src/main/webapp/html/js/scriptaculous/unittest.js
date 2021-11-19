@@ -1,8 +1,8 @@
-// script.aculo.us unittest.js v1.7.0, Fri Jan 19 19:16:36 CET 2007
+// script.aculo.us unittest.js v1.9.0, Thu Dec 23 16:54:48 -0500 2010
 
-// Copyright (c) 2005, 2006 Thomas Fuchs (http://script.aculo.us, http://mir.aculo.us)
-//           (c) 2005, 2006 Jon Tirsen (http://www.tirsen.com)
-//           (c) 2005, 2006 Michael Schuerig (http://www.schuerig.de/michael/)
+// Copyright (c) 2005-2010 Thomas Fuchs (http://script.aculo.us, http://mir.aculo.us)
+//           (c) 2005-2010 Jon Tirsen (http://www.tirsen.com)
+//           (c) 2005-2010 Michael Schuerig (http://www.schuerig.de/michael/)
 //
 // script.aculo.us is freely distributable under the terms of an MIT-style license.
 // For details, see the script.aculo.us web site: http://script.aculo.us/
@@ -19,10 +19,10 @@ Event.simulateMouse = function(element, eventName) {
     metaKey:  false
   }, arguments[2] || {});
   var oEvent = document.createEvent("MouseEvents");
-  oEvent.initMouseEvent(eventName, true, true, document.defaultView, 
-    options.buttons, options.pointerX, options.pointerY, options.pointerX, options.pointerY, 
-    options.ctrlKey, options.altKey, options.shiftKey, options.metaKey, 0, $(element));
-  
+  oEvent.initMouseEvent(eventName, true, true, document.defaultView,
+      options.buttons, options.pointerX, options.pointerY, options.pointerX, options.pointerY,
+      options.ctrlKey, options.altKey, options.shiftKey, options.metaKey, 0, $(element));
+
   if(this.mark) Element.remove(this.mark);
   this.mark = document.createElement('div');
   this.mark.appendChild(document.createTextNode(" "));
@@ -32,12 +32,12 @@ Event.simulateMouse = function(element, eventName) {
   this.mark.style.left = options.pointerX + "px";
   this.mark.style.width = "5px";
   this.mark.style.height = "5px;";
-  this.mark.style.borderTop = "1px solid red;"
-  this.mark.style.borderLeft = "1px solid red;"
-  
+  this.mark.style.borderTop = "1px solid red;";
+  this.mark.style.borderLeft = "1px solid red;";
+
   if(this.step)
     alert('['+new Date().getTime().toString()+'] '+eventName+'/'+Test.Unit.inspect(options));
-  
+
   $(element).dispatchEvent(oEvent);
 };
 
@@ -55,9 +55,9 @@ Event.simulateKey = function(element, eventName) {
   }, arguments[2] || {});
 
   var oEvent = document.createEvent("KeyEvents");
-  oEvent.initKeyEvent(eventName, true, true, window, 
-    options.ctrlKey, options.altKey, options.shiftKey, options.metaKey,
-    options.keyCode, options.charCode );
+  oEvent.initKeyEvent(eventName, true, true, window,
+      options.ctrlKey, options.altKey, options.shiftKey, options.metaKey,
+      options.keyCode, options.charCode );
   $(element).dispatchEvent(oEvent);
 };
 
@@ -67,7 +67,7 @@ Event.simulateKeys = function(element, command) {
   }
 };
 
-var Test = {}
+var Test = {};
 Test.Unit = {};
 
 // security exception workaround
@@ -112,28 +112,28 @@ Test.Unit.Logger.prototype = {
   },
   _createLogTable: function() {
     this.log.innerHTML =
-    '<div id="logsummary"></div>' +
-    '<table id="logtable">' +
-    '<thead><tr><th>Status</th><th>Test</th><th>Message</th></tr></thead>' +
-    '<tbody id="loglines"></tbody>' +
-    '</table>';
-    this.logsummary = $('logsummary')
+        '<div id="logsummary"></div>' +
+        '<table id="logtable">' +
+        '<thead><tr><th>Status</th><th>Test</th><th>Message</th></tr></thead>' +
+        '<tbody id="loglines"></tbody>' +
+        '</table>';
+    this.logsummary = $('logsummary');
     this.loglines = $('loglines');
   },
   _toHTML: function(txt) {
     return txt.escapeHTML().replace(/\n/g,"<br/>");
   },
-  addLinksToResults: function(){ 
+  addLinksToResults: function(){
     $$("tr.failed .nameCell").each( function(td){ // todo: limit to children of this.log
-      td.title = "Run only this test"
+      td.title = "Run only this test";
       Event.observe(td, 'click', function(){ window.location.search = "?tests=" + td.innerHTML;});
     });
     $$("tr.passed .nameCell").each( function(td){ // todo: limit to children of this.log
-      td.title = "Run all tests"
+      td.title = "Run all tests";
       Event.observe(td, 'click', function(){ window.location.search = "";});
     });
   }
-}
+};
 
 Test.Unit.Runner = Class.create();
 Test.Unit.Runner.prototype = {
@@ -161,10 +161,10 @@ Test.Unit.Runner.prototype = {
         for(var testcase in testcases) {
           if(/^test/.test(testcase)) {
             this.tests.push(
-               new Test.Unit.Testcase(
-                 this.options.context ? ' -> ' + this.options.titles[testcase] : testcase, 
-                 testcases[testcase], testcases["setup"], testcases["teardown"]
-               ));
+                new Test.Unit.Testcase(
+                    this.options.context ? ' -> ' + this.options.titles[testcase] : testcase,
+                    testcases[testcase], testcases["setup"], testcases["teardown"]
+                ));
           }
         }
       }
@@ -178,7 +178,7 @@ Test.Unit.Runner.prototype = {
   },
   parseTestsQueryParameter: function(){
     if (window.location.search.parseQuery()["tests"]){
-        return window.location.search.parseQuery()["tests"].split(',');
+      return window.location.search.parseQuery()["tests"].split(',');
     };
   },
   // Returns:
@@ -203,8 +203,8 @@ Test.Unit.Runner.prototype = {
   },
   postResults: function() {
     if (this.options.resultsURL) {
-      new Ajax.Request(this.options.resultsURL, 
-        { method: 'get', parameters: 'result=' + this.getResult(), asynchronous: false });
+      new Ajax.Request(this.options.resultsURL,
+          { method: 'get', parameters: 'result=' + this.getResult(), asynchronous: false });
     }
   },
   runTests: function() {
@@ -240,13 +240,13 @@ Test.Unit.Runner.prototype = {
       errors     +=   this.tests[i].errors;
     }
     return (
-      (this.options.context ? this.options.context + ': ': '') + 
-      this.tests.length + " tests, " + 
-      assertions + " assertions, " + 
-      failures   + " failures, " +
-      errors     + " errors");
+        (this.options.context ? this.options.context + ': ': '') +
+        this.tests.length + " tests, " +
+        assertions + " assertions, " +
+        failures   + " failures, " +
+        errors     + " errors");
   }
-}
+};
 
 Test.Unit.Assertions = Class.create();
 Test.Unit.Assertions.prototype = {
@@ -258,10 +258,10 @@ Test.Unit.Assertions.prototype = {
   },
   summary: function() {
     return (
-      this.assertions + " assertions, " + 
-      this.failures   + " failures, " +
-      this.errors     + " errors" + "\n" +
-      this.messages.join("\n"));
+        this.assertions + " assertions, " +
+        this.failures   + " failures, " +
+        this.errors     + " errors" + "\n" +
+        this.messages.join("\n"));
   },
   pass: function() {
     this.assertions++;
@@ -284,63 +284,63 @@ Test.Unit.Assertions.prototype = {
   },
   assert: function(expression) {
     var message = arguments[1] || 'assert: got "' + Test.Unit.inspect(expression) + '"';
-    try { expression ? this.pass() : 
-      this.fail(message); }
+    try { expression ? this.pass() :
+        this.fail(message); }
     catch(e) { this.error(e); }
   },
   assertEqual: function(expected, actual) {
     var message = arguments[2] || "assertEqual";
     try { (expected == actual) ? this.pass() :
-      this.fail(message + ': expected "' + Test.Unit.inspect(expected) + 
-        '", actual "' + Test.Unit.inspect(actual) + '"'); }
+        this.fail(message + ': expected "' + Test.Unit.inspect(expected) +
+            '", actual "' + Test.Unit.inspect(actual) + '"'); }
     catch(e) { this.error(e); }
   },
   assertInspect: function(expected, actual) {
     var message = arguments[2] || "assertInspect";
     try { (expected == actual.inspect()) ? this.pass() :
-      this.fail(message + ': expected "' + Test.Unit.inspect(expected) + 
-        '", actual "' + Test.Unit.inspect(actual) + '"'); }
+        this.fail(message + ': expected "' + Test.Unit.inspect(expected) +
+            '", actual "' + Test.Unit.inspect(actual) + '"'); }
     catch(e) { this.error(e); }
   },
   assertEnumEqual: function(expected, actual) {
     var message = arguments[2] || "assertEnumEqual";
-    try { $A(expected).length == $A(actual).length && 
-      expected.zip(actual).all(function(pair) { return pair[0] == pair[1] }) ?
-        this.pass() : this.fail(message + ': expected ' + Test.Unit.inspect(expected) + 
-          ', actual ' + Test.Unit.inspect(actual)); }
+    try { $A(expected).length == $A(actual).length &&
+    expected.zip(actual).all(function(pair) { return pair[0] == pair[1] }) ?
+        this.pass() : this.fail(message + ': expected ' + Test.Unit.inspect(expected) +
+            ', actual ' + Test.Unit.inspect(actual)); }
     catch(e) { this.error(e); }
   },
   assertNotEqual: function(expected, actual) {
     var message = arguments[2] || "assertNotEqual";
-    try { (expected != actual) ? this.pass() : 
-      this.fail(message + ': got "' + Test.Unit.inspect(actual) + '"'); }
+    try { (expected != actual) ? this.pass() :
+        this.fail(message + ': got "' + Test.Unit.inspect(actual) + '"'); }
     catch(e) { this.error(e); }
   },
-  assertIdentical: function(expected, actual) { 
-    var message = arguments[2] || "assertIdentical"; 
-    try { (expected === actual) ? this.pass() : 
-      this.fail(message + ': expected "' + Test.Unit.inspect(expected) +  
-        '", actual "' + Test.Unit.inspect(actual) + '"'); } 
-    catch(e) { this.error(e); } 
+  assertIdentical: function(expected, actual) {
+    var message = arguments[2] || "assertIdentical";
+    try { (expected === actual) ? this.pass() :
+        this.fail(message + ': expected "' + Test.Unit.inspect(expected) +
+            '", actual "' + Test.Unit.inspect(actual) + '"'); }
+    catch(e) { this.error(e); }
   },
-  assertNotIdentical: function(expected, actual) { 
-    var message = arguments[2] || "assertNotIdentical"; 
-    try { !(expected === actual) ? this.pass() : 
-      this.fail(message + ': expected "' + Test.Unit.inspect(expected) +  
-        '", actual "' + Test.Unit.inspect(actual) + '"'); } 
-    catch(e) { this.error(e); } 
+  assertNotIdentical: function(expected, actual) {
+    var message = arguments[2] || "assertNotIdentical";
+    try { !(expected === actual) ? this.pass() :
+        this.fail(message + ': expected "' + Test.Unit.inspect(expected) +
+            '", actual "' + Test.Unit.inspect(actual) + '"'); }
+    catch(e) { this.error(e); }
   },
   assertNull: function(obj) {
-    var message = arguments[1] || 'assertNull'
-    try { (obj==null) ? this.pass() : 
-      this.fail(message + ': got "' + Test.Unit.inspect(obj) + '"'); }
+    var message = arguments[1] || 'assertNull';
+    try { (obj==null) ? this.pass() :
+        this.fail(message + ': got "' + Test.Unit.inspect(obj) + '"'); }
     catch(e) { this.error(e); }
   },
   assertMatch: function(expected, actual) {
     var message = arguments[2] || 'assertMatch';
     var regex = new RegExp(expected);
     try { (regex.exec(actual)) ? this.pass() :
-      this.fail(message + ' : regex: "' +  Test.Unit.inspect(expected) + ' did not match: ' + Test.Unit.inspect(actual) + '"'); }
+        this.fail(message + ' : regex: "' +  Test.Unit.inspect(expected) + ' did not match: ' + Test.Unit.inspect(actual) + '"'); }
     catch(e) { this.error(e); }
   },
   assertHidden: function(element) {
@@ -353,39 +353,39 @@ Test.Unit.Assertions.prototype = {
   },
   assertType: function(expected, actual) {
     var message = arguments[2] || 'assertType';
-    try { 
-      (actual.constructor == expected) ? this.pass() : 
-      this.fail(message + ': expected "' + Test.Unit.inspect(expected) +  
-        '", actual "' + (actual.constructor) + '"'); }
+    try {
+      (actual.constructor == expected) ? this.pass() :
+          this.fail(message + ': expected "' + Test.Unit.inspect(expected) +
+              '", actual "' + (actual.constructor) + '"'); }
     catch(e) { this.error(e); }
   },
   assertNotOfType: function(expected, actual) {
     var message = arguments[2] || 'assertNotOfType';
-    try { 
-      (actual.constructor != expected) ? this.pass() : 
-      this.fail(message + ': expected "' + Test.Unit.inspect(expected) +  
-        '", actual "' + (actual.constructor) + '"'); }
+    try {
+      (actual.constructor != expected) ? this.pass() :
+          this.fail(message + ': expected "' + Test.Unit.inspect(expected) +
+              '", actual "' + (actual.constructor) + '"'); }
     catch(e) { this.error(e); }
   },
   assertInstanceOf: function(expected, actual) {
     var message = arguments[2] || 'assertInstanceOf';
-    try { 
-      (actual instanceof expected) ? this.pass() : 
-      this.fail(message + ": object was not an instance of the expected type"); }
-    catch(e) { this.error(e); } 
+    try {
+      (actual instanceof expected) ? this.pass() :
+          this.fail(message + ": object was not an instance of the expected type"); }
+    catch(e) { this.error(e); }
   },
   assertNotInstanceOf: function(expected, actual) {
     var message = arguments[2] || 'assertNotInstanceOf';
-    try { 
-      !(actual instanceof expected) ? this.pass() : 
-      this.fail(message + ": object was an instance of the not expected type"); }
-    catch(e) { this.error(e); } 
+    try {
+      !(actual instanceof expected) ? this.pass() :
+          this.fail(message + ": object was an instance of the not expected type"); }
+    catch(e) { this.error(e); }
   },
   assertRespondsTo: function(method, obj) {
     var message = arguments[2] || 'assertRespondsTo';
     try {
-      (obj[method] && typeof obj[method] == 'function') ? this.pass() : 
-      this.fail(message + ": object doesn't respond to [" + method + "]"); }
+      (obj[method] && typeof obj[method] == 'function') ? this.pass() :
+          this.fail(message + ": object doesn't respond to [" + method + "]"); }
     catch(e) { this.error(e); }
   },
   assertReturnsTrue: function(method, obj) {
@@ -393,8 +393,8 @@ Test.Unit.Assertions.prototype = {
     try {
       var m = obj[method];
       if(!m) m = obj['is'+method.charAt(0).toUpperCase()+method.slice(1)];
-      m() ? this.pass() : 
-      this.fail(message + ": method returned false"); }
+      m() ? this.pass() :
+          this.fail(message + ": method returned false"); }
     catch(e) { this.error(e); }
   },
   assertReturnsFalse: function(method, obj) {
@@ -402,17 +402,17 @@ Test.Unit.Assertions.prototype = {
     try {
       var m = obj[method];
       if(!m) m = obj['is'+method.charAt(0).toUpperCase()+method.slice(1)];
-      !m() ? this.pass() : 
-      this.fail(message + ": method returned true"); }
+      !m() ? this.pass() :
+          this.fail(message + ": method returned true"); }
     catch(e) { this.error(e); }
   },
   assertRaise: function(exceptionName, method) {
     var message = arguments[2] || 'assertRaise';
-    try { 
+    try {
       method();
       this.fail(message + ": exception expected but none was raised"); }
     catch(e) {
-      ((exceptionName == null) || (e.name==exceptionName)) ? this.pass() : this.error(e); 
+      ((exceptionName == null) || (e.name==exceptionName)) ? this.pass() : this.error(e);
     }
   },
   assertElementsMatch: function() {
@@ -434,8 +434,8 @@ Test.Unit.Assertions.prototype = {
     var startAt = new Date();
     (iterations || 1).times(operation);
     var timeTaken = ((new Date())-startAt);
-    this.info((arguments[2] || 'Operation') + ' finished ' + 
-       iterations + ' iterations in ' + (timeTaken/1000)+'s' );
+    this.info((arguments[2] || 'Operation') + ' finished ' +
+        iterations + ' iterations in ' + (timeTaken/1000)+'s' );
     return timeTaken;
   },
   _isVisible: function(element) {
@@ -444,7 +444,7 @@ Test.Unit.Assertions.prototype = {
     this.assertNotNull(element);
     if(element.style && Element.getStyle(element, 'display') == 'none')
       return false;
-    
+
     return this._isVisible(element.parentNode);
   },
   assertNotVisible: function(element) {
@@ -457,18 +457,18 @@ Test.Unit.Assertions.prototype = {
     var startAt = new Date();
     (iterations || 1).times(operation);
     var timeTaken = ((new Date())-startAt);
-    this.info((arguments[2] || 'Operation') + ' finished ' + 
-       iterations + ' iterations in ' + (timeTaken/1000)+'s' );
+    this.info((arguments[2] || 'Operation') + ' finished ' +
+        iterations + ' iterations in ' + (timeTaken/1000)+'s' );
     return timeTaken;
   }
-}
+};
 
 Test.Unit.Testcase = Class.create();
 Object.extend(Object.extend(Test.Unit.Testcase.prototype, Test.Unit.Assertions.prototype), {
   initialize: function(name, test, setup, teardown) {
     Test.Unit.Assertions.prototype.initialize.bind(this)();
     this.name           = name;
-    
+
     if(typeof test == 'string') {
       test = test.gsub(/(\.should[^\(]+\()/,'#{0}this,');
       test = test.gsub(/(\.should[^\(]+)\(this,\)/,'#{1}(this)');
@@ -478,7 +478,7 @@ Object.extend(Object.extend(Test.Unit.Testcase.prototype, Test.Unit.Assertions.p
     } else {
       this.test = test || function() {};
     }
-    
+
     this.setup          = setup || function() {};
     this.teardown       = teardown || function() {};
     this.isWaiting      = false;
@@ -519,27 +519,31 @@ Test.setupBDDExtensionMethods = function(){
     shouldNotBeAn:   'assertNotOfType',
     shouldBeNull:    'assertNull',
     shouldNotBeNull: 'assertNotNull',
-    
+
     shouldBe:        'assertReturnsTrue',
     shouldNotBe:     'assertReturnsFalse',
     shouldRespondTo: 'assertRespondsTo'
   };
+  var makeAssertion = function(assertion, args, object) {
+    this[assertion].apply(this,(args || []).concat([object]));
+  };
+
   Test.BDDMethods = {};
-  for(m in METHODMAP) {
-    Test.BDDMethods[m] = eval(
-      'function(){'+
-      'var args = $A(arguments);'+
-      'var scope = args.shift();'+
-      'scope.'+METHODMAP[m]+'.apply(scope,(args || []).concat([this])); }');
-  }
-  [Array.prototype, String.prototype, Number.prototype].each(
-    function(p){ Object.extend(p, Test.BDDMethods) }
+  $H(METHODMAP).each(function(pair) {
+    Test.BDDMethods[pair.key] = function() {
+      var args = $A(arguments);
+      var scope = args.shift();
+      makeAssertion.apply(scope, [pair.value, args, this]); };
+  });
+
+  [Array.prototype, String.prototype, Number.prototype, Boolean.prototype].each(
+      function(p){ Object.extend(p, Test.BDDMethods) }
   );
-}
+};
 
 Test.context = function(name, spec, log){
   Test.setupBDDExtensionMethods();
-  
+
   var compiledSpec = {};
   var titles = {};
   for(specName in spec) {
@@ -553,7 +557,7 @@ Test.context = function(name, spec, log){
         var body = spec[specName].toString().split('\n').slice(1);
         if(/^\{/.test(body[0])) body = body.slice(1);
         body.pop();
-        body = body.map(function(statement){ 
+        body = body.map(function(statement){
           return statement.strip()
         });
         compiledSpec[testName] = body.join('\n');
