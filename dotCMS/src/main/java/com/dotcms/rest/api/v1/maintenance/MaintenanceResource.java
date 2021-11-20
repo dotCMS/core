@@ -135,7 +135,7 @@ public class MaintenanceResource implements Serializable {
      * @return octet stream response with file contents
      * @throws IOException
      */
-    @Path("/_downloadDb/{fileName}")
+    @Path("/_downloadDb")
     @GET
     @JSONP
     @NoCache

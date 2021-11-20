@@ -1455,6 +1455,16 @@ dd.leftdl {
 						</div>
                     </td>
                 </tr>
+                <tr>
+                    <td><%= LanguageUtil.get(pageContext,"Download-DB-Dump") %></td>
+                    <td style="text-align:center;white-space:nowrap;">
+                        <div class="inline-form">
+                            <button dojoType="dijit.form.Button" onclick="location.href='/api/v1/maintenance/_downloadDb'" iconClass="backupIcon">
+                                <%= LanguageUtil.get(pageContext,"Download-DB-Dump") %>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
             </table>
 
             <div style="height:20px">&nbsp;</div>
