@@ -1,0 +1,33 @@
+version: '3.5'
+
+networks:
+  es_net:
+
+volumes:
+  esdata:
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.1
+    environment:
+      - cluster.name=elastic-cluster
+      - discovery.type=single-node
+      - data
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xmx1G "
+    ports:
+      - 9200:9200
+      - 9600:9600
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    networks:
+      - es_net
+      
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.9.1
+    environment:
+      ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+    ports:
+      - 5601:5601
+    networks:
+      - es_net
