@@ -379,4 +379,11 @@ public interface ContainerAPI {
 	 */
 	List<ContentType> getContentTypesInContainer(User user, Container container) throws DotStateException, DotDataException;
 
+	/**
+	 * Archive a container
+	 * @param container {@link Container}
+	 * @param user {@link User}
+	 * @param respectAnonPerms {@link Boolean}
+	 */
+    void archive(Container container, User user, boolean respectAnonPerms) throws DotDataException, DotSecurityException;
 }
