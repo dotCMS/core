@@ -7,6 +7,11 @@ import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.api.BulkResultView;
+import com.dotcms.rest.api.FailedResultView;
+import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.portlets.containers.model.ContainerView;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.google.common.collect.Maps;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
@@ -56,7 +61,9 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -346,7 +353,7 @@ public class ContainerResource implements Serializable {
                            final Contentlet contentlet) throws DotDataException, DotSecurityException {
 
         final PageMode mode = PageMode.EDIT_MODE;
-        final Container container = getContainer(containerId, user, WebAPILocator.getHostWebAPI().getHost(req));
+        final Container container = getContainerWorking(containerId, user, WebAPILocator.getHostWebAPI().getHost(req));
         ContainerResourceHelper.getInstance().setContainerLanguage(container, req);
 
         final org.apache.velocity.context.Context context = velocityUtil.getContext(req, res);
@@ -362,10 +369,19 @@ public class ContainerResource implements Serializable {
         return velocityUtil.merge(key.path, context);
     }
 
+    private Container getContainerWorking(final String containerId, final User user, final Host host) throws DotDataException, DotSecurityException {
 
-    private Container getContainer(final String containerId, final User user, final Host host) throws DotDataException, DotSecurityException {
+        final PageMode mode = PageMode.EDIT_MODE;
+        return this.getContainer(containerId, user, host, mode);
+    }
 
-        final PageMode mode = PageMode.EDIT_MODE; // todo: ask for this, does not make sense ask for mode.showLive
+    private Container getContainerLive(final String containerId, final User user, final Host host) throws DotDataException, DotSecurityException {
+
+        final PageMode mode = PageMode.LIVE;
+        return this.getContainer(containerId, user, host, mode);
+    }
+
+    private Container getContainer(final String containerId, final User user, final Host host, final PageMode mode) throws DotDataException, DotSecurityException {
 
         if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerId)) {
 
@@ -522,5 +538,126 @@ public class ContainerResource implements Serializable {
         }
     }
 
+
+    ///////
+
+    /**
+     * Return live version {@link com.dotmarketing.portlets.containers.model.Container} based on the id
+     *
+     * @param httpRequest
+     * @param httpResponse
+     * @param containerId container identifier to get the live version.
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @GET
+    @Path("/live")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response getLiveById(@Context final HttpServletRequest  httpRequest,
+                                      @Context final HttpServletResponse httpResponse,
+                                      @QueryParam("containerId")  final String containerId) throws DotSecurityException, DotDataException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
+        final User user     = initData.getUser();
+        Logger.debug(this, ()-> "Getting the live container by id: " + containerId);
+
+        final Container container = this.getContainerLive(containerId, user, WebAPILocator.getHostWebAPI().getHost(httpRequest));
+
+        if (null == container || UtilMethods.isNotSet(container.getIdentifier())) {
+
+            throw new DoesNotExistException("Live Version of the Container with Id: " + containerId + " does not exist");
+        }
+
+        return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
+    }
+
+    /**
+     * Return working version {@link com.dotmarketing.portlets.containers.model.Container} based on the id
+     *
+     * @param httpRequest
+     * @param httpResponse
+     * @param containerId container identifier to get the working version.
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @GET
+    @Path("/working")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response getWorkingById(@Context final HttpServletRequest  httpRequest,
+                                         @Context final HttpServletResponse httpResponse,
+                                         @QueryParam("containerId") final String containerId) throws DotSecurityException, DotDataException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
+        final User user     = initData.getUser();
+        Logger.debug(this, ()-> "Getting the working container by id: " + containerId);
+
+        final Container container = this.getContainerLive(containerId, user, WebAPILocator.getHostWebAPI().getHost(httpRequest));
+
+        if (null == container || UtilMethods.isNotSet(container.getIdentifier())) {
+
+            throw new DoesNotExistException("Working Version of the Container with Id: " + containerId + " does not exist");
+        }
+
+        return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
+    }
+
+
+    /**
+     * Archives container
+     *
+     * This method receives a container id and archives it.
+     * To archive a container successfully the user needs to have Edit Permissions.
+     *
+     * @param request            {@link HttpServletRequest}
+     * @param response           {@link HttpServletResponse}
+     * @param containerId       containerId identifier to archive.
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @PUT
+    @Path("/_archive")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response archive(@Context final HttpServletRequest  request,
+                                  @Context final HttpServletResponse response,
+                                  @QueryParam("containerId") final String containerId) throws DotSecurityException, DotDataException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final User user         = initData.getUser();
+        final PageMode pageMode = PageMode.get(request);
+
+        if (!UtilMethods.isSet(containerId)) {
+
+            throw new IllegalArgumentException("The container id is required");
+        }
+
+        final Container container = this.getContainerWorking(containerId,user,
+                WebAPILocator.getHostWebAPI().getHost(request));
+        if (null != container && InodeUtils.isSet(container.getInode())) {
+
+            this.containerAPI.archive(container, user, pageMode.respectAnonPerms);
+            ActivityLogger.logInfo(this.getClass(), "Doing Archive Container Action", "User " +
+                    user.getPrimaryKey() + " archived container: " + container.getIdentifier());
+        } else {
+
+            Logger.error(this, "Container with Id: " + containerId + " does not exist");
+            throw new DoesNotExistException("Container with Id: " + containerId + " does not exist");
+        }
+
+        return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
+    }
 
 }
