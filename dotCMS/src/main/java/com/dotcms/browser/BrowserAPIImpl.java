@@ -123,7 +123,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             this.getLinks(browserQuery).forEach(f -> returnList.add(f));
         }
 
-        return returnList;
+        return permissionAPI.filterCollection(returnList,PERMISSION_READ,true, browserQuery.user);
     }
 
 
