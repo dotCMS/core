@@ -380,6 +380,16 @@ public interface ContainerAPI {
 	List<ContentType> getContentTypesInContainer(User user, Container container) throws DotStateException, DotDataException;
 
 	/**
+	 * Unpublish a container
+	 * @param container {@link Container}
+	 * @param user {@link User}
+	 * @param respectAnonPerms {@link Boolean}
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	 void unpublish(final Container container, final User user, final boolean respectAnonPerms) throws DotDataException, DotSecurityException;
+
+	/**
 	 * Archive a container
 	 * @param container {@link Container}
 	 * @param user {@link User}

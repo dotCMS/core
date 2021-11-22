@@ -8,6 +8,7 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
+import com.dotcms.rendering.velocity.services.TemplateLoader;
 import com.dotcms.system.event.local.model.Subscriber;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.transform.TransformerLocator;
@@ -765,6 +766,28 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
     public List<Container> findContainersForStructure(final String structureInode) throws DotDataException {
         return containerFactory.findContainersForStructure(structureInode);
     }
+
+	@WrapInTransaction
+	@Override
+	public void unpublish(final Container container, final User user, final boolean respectAnonPerms) throws DotDataException, DotSecurityException {
+
+		Logger.debug(this, ()-> "Doing archive of container: " + container.getIdentifier());
+
+		//Check write Permissions over container
+		if(!this.permissionAPI.doesUserHavePermission(container, PERMISSION_WRITE, user)){
+			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to write the container");
+			throw new DotSecurityException("User does not have Permissions to write the Container");
+		}
+
+		final Container containerWorkingVersion = getWorkingContainerById(container.getIdentifier(), user,false);
+		//Remove live version from version_info
+		APILocator.getVersionableAPI().removeLive(containerWorkingVersion.getIdentifier());
+		containerWorkingVersion.setModDate(new java.util.Date());
+		containerWorkingVersion.setModUser(user.getUserId());
+		containerFactory.save(containerWorkingVersion);
+		//remove template from the live directory
+		new ContainerLoader().invalidate(container);
+	}
 
 	@WrapInTransaction
 	@Override
