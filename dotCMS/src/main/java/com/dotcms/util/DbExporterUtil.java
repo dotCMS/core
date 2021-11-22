@@ -4,6 +4,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
@@ -28,34 +29,52 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
-import static java.io.File.*;
+import static java.io.File.separator;
 
+/**
+ * Utility class to export Postgres DB dump to a sql.gz file
+ *
+ * @author vic
+ */
 public class DbExporterUtil {
+    /**
+     * pg_dump binary distribution.
+     */
     public enum PG_ARCH {
         ARM("pg_dump_aarch64"), AMD64("pg_dump_amd64"), OSX_INTEL("pg_dump_x86_64");
 
-        final private String pgdump;
+        final private String pgDump;
 
-        PG_ARCH(String pgdump) {
-            this.pgdump = pgdump;
+        PG_ARCH(String pgDump) {
+            this.pgDump = pgDump;
         }
 
-        public static String pgdump() {
+        public static String pgDump() {
             if ("amd64".equalsIgnoreCase(System.getProperty("os.arch"))) {
-                return AMD64.pgdump;
+                return AMD64.pgDump;
             }
             if ("aarch64".equalsIgnoreCase(System.getProperty("os.arch"))) {
-                return ARM.pgdump;
+                return ARM.pgDump;
             }
             if ("x86_64".equalsIgnoreCase(System.getProperty("os.arch"))) {
-                return OSX_INTEL.pgdump;
+                return OSX_INTEL.pgDump;
             }
             throw new DotRuntimeException("Unable to determine architecture for : " + System.getenv("os.arch"));
         }
     }
     
-    private static final SimpleDateFormat datetostring = new SimpleDateFormat("yyyy-MM-dd_hh-mm-ss");
+    private static final SimpleDateFormat DATE_TO_STRING = new SimpleDateFormat("yyyy-MM-dd_hh-mm-ss");
 
+    /**
+     * Utility private and empty constructor.
+     */
+    private DbExporterUtil() {}
+
+    /**
+     * Resolves the path for pg_dump binary.
+     * It tries to find it by calling the `which pg_dump` command. If it cannot locate the command there, then copies it
+     * from the classpath to the dynamic content path.
+     */
     static final Lazy<String> pgDumpPath = Lazy.of(() -> {
         final Optional<String> pgDumpOpt = findExecutable("pg_dump");
         if (pgDumpOpt.isPresent()) {
@@ -70,13 +89,18 @@ public class DbExporterUtil {
         return pgDump.getAbsolutePath();
     });
 
+    /**
+     * Copies pg_dumb binary to a defined folder for it to called later.
+     *
+     * @param pgDumpFile pg_dump binary file
+     */
     @VisibleForTesting
     static void copyPgDump(final File pgDumpFile) {
         pgDumpFile.mkdirs();
         pgDumpFile.delete();
         
-        Logger.info(DbExporterUtil.class, "Copying pg_dump from: " + PG_ARCH.pgdump() + " to " + pgDumpFile);
-        try (final InputStream in = DbExporterUtil.class.getResourceAsStream("/" + PG_ARCH.pgdump());
+        Logger.info(DbExporterUtil.class, "Copying pg_dump from: " + PG_ARCH.pgDump() + " to " + pgDumpFile);
+        try (final InputStream in = DbExporterUtil.class.getResourceAsStream("/" + PG_ARCH.pgDump());
              final OutputStream out = Files.newOutputStream(pgDumpFile.toPath())) {
             System.out.println("in: " + in);
             System.out.println("out:" + out);
@@ -90,6 +114,12 @@ public class DbExporterUtil {
         pgDumpFile.setExecutable(true);
     }
 
+    /**
+     * Calls the pg_dumb binary with necessary arguments and redirects standard output to {@link InputStream}.
+     *
+     * @return input stream with commands output
+     * @throws IOException
+     */
     static InputStream exportSql() throws IOException {
         final ProcessBuilder pb = new ProcessBuilder(
                 pgDumpPath.get(),
@@ -104,6 +134,11 @@ public class DbExporterUtil {
         return new BufferedInputStream(pb.start().getInputStream());
     }
 
+    /**
+     * Executes pg_dump binary and stores its output in a generated SQL gzipped file.
+     *
+     * @return file with DB dump
+     */
     public static File exportToFile() {
         final String hostName = Try.of(() ->
                 APILocator.getHostAPI()
@@ -112,7 +147,10 @@ public class DbExporterUtil {
                                 false)
                         .getHostname())
                 .getOrElse("dotcms");
-        final String fileName = StringUtils.sanitizeFileName(hostName) + "_db_" + datetostring.format(new Date()) + ".sql.gz";
+        final String fileName = StringUtils.sanitizeFileName(hostName)
+                + "_db_"
+                + DATE_TO_STRING.format(new Date())
+                + ".sql.gz";
         final File file = new File(ConfigUtils.getAbsoluteAssetsRootPath()
                 + File.separator
                 + "server"
@@ -138,11 +176,20 @@ public class DbExporterUtil {
         Logger.info(DbExporterUtil.class, "Database Dump Complete : " + file);
         Logger.info(
                 DbExporterUtil.class,
-                "- took: " + humanReadableFormat(Duration.of(System.currentTimeMillis() -starter, ChronoUnit.MILLIS)));
+                "- took: " + DateUtil.humanReadableFormat(
+                        Duration.of(
+                                System.currentTimeMillis() -starter,
+                                ChronoUnit.MILLIS)));
 
         return file;
     }
 
+    /**
+     * Looks for pg_dump binary by calling the `which <binary to find>` command.
+     *
+     * @param programToFind binary to find
+     * @return path to the located binary
+     */
     @VisibleForTesting
     static Optional<String> findExecutable(final String programToFind) {
         final List<String> commands = ImmutableList.<String>builder()
@@ -176,6 +223,11 @@ public class DbExporterUtil {
         }
     }
 
+    /**
+     * Gets the current datasource to get DB connection info.
+     *
+     * @return DB connection info
+     */
     private static DataSourceAttributes getDatasource() {
         try {
             HikariDataSource hds = (HikariDataSource) DbConnectionFactory.getDataSource();
@@ -185,10 +237,4 @@ public class DbExporterUtil {
         }
     }
 
-    private static String humanReadableFormat(final Duration duration) {
-        return duration.toString()
-                .substring(2)
-                .replaceAll("(\\d[HMS])(?!$)", "$1 ")
-                .toLowerCase();
-    }
 }

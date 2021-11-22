@@ -14,6 +14,7 @@ import org.apache.commons.lang.StringUtils;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -706,5 +707,18 @@ public class DateUtil {
 	public static Date toDate (final Instant instant) {
 
 		return new Date(instant.toEpochMilli());
+	}
+
+	/**
+	 * Formats duration to a friendly format.
+	 *
+	 * @param duration duration object
+	 * @return formatted date text
+	 */
+	public static String humanReadableFormat(final Duration duration) {
+		return duration.toString()
+				.substring(2)
+				.replaceAll("(\\d[HMS])(?!$)", "$1 ")
+				.toLowerCase();
 	}
 }

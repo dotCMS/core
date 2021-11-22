@@ -432,8 +432,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
       long elapsedTime = reindexTimeElapsedInLong();
       if (elapsedTime > 0) {
-        return Optional.ofNullable(
-            Duration.ofMillis(reindexTimeElapsedInLong()).toString().substring(2).replaceAll("(\\d[HMS])(?!$)", "$1 ").toLowerCase());
+        return Optional.of(DateUtil.humanReadableFormat(Duration.ofMillis(reindexTimeElapsedInLong())).toLowerCase());
       }
     } catch (Exception e) {
       Logger.debug(this, "unable to parse time:" + e, e);

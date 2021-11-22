@@ -33,6 +33,9 @@ import javax.ws.rs.core.Response.Status;
 import org.glassfish.jersey.server.JSONP;
 
 
+/**
+ * Maintenance (portlet) resource.
+ */
 @Path("/v1/maintenance")
 @SuppressWarnings("serial")
 public class MaintenanceResource implements Serializable {
@@ -151,6 +154,13 @@ public class MaintenanceResource implements Serializable {
         return Response.ok(dbFile, MediaType.APPLICATION_OCTET_STREAM).build();
     }
 
+    /**
+     * Verifies that calling user is a backend user required to access the Maintenance portlet.
+     *
+     * @param request http request
+     * @param response http response
+     * @return {@link InitDataObject} instance associated to defined criteria.
+     */
     private InitDataObject assertBackendUser(HttpServletRequest request, HttpServletResponse response) {
         return new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)

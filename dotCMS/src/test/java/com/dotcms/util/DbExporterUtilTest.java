@@ -6,7 +6,17 @@ import org.junit.Test;
 import java.io.File;
 import java.util.Optional;
 
+/**
+ * Tests for {@link DbExporterUtil} class.
+ *
+ * @author vic
+ */
 public class DbExporterUtilTest {
+    /**
+     * Tests executable finding.
+     *
+     * @throws Exception
+     */
     @Test
     public void test_finding_executables() throws Exception {
         Optional<String> sh = DbExporterUtil.findExecutable("sh");
@@ -14,13 +24,21 @@ public class DbExporterUtilTest {
         assert(sh.get().equals("/bin/sh"));
         assert(!DbExporterUtil.findExecutable("thisDoesNotExist").isPresent());
     }
-    
+
+    /**
+     * Tests pg_dump distribution lookup.
+     */
     @Test
     public void test_arch_lookup() {
         // testing on OS-X
-        assert(PG_ARCH.pgdump().equals(PG_ARCH.pgdump()));
+        assert(PG_ARCH.pgDump().equals(PG_ARCH.pgDump()));
     }
-    
+
+    /**
+     * Tests copying of files.
+     *
+     * @throws Exception
+     */
     @Test
     public void test_copy_pgdump() throws Exception {
         final File tempFile = File.createTempFile("testing", "temp");
@@ -29,9 +47,12 @@ public class DbExporterUtilTest {
         assert(tempFile.canExecute());
         tempFile.delete();
     }
-    
+
+    /**
+     * Tests locating of pg_dump binary.
+     */
     @Test
-    public void test_getting_pg_dumps_path() throws Exception {
+    public void test_getting_pg_dumps_path() {
         final String pgDumpPath = DbExporterUtil.pgDumpPath.get();
         assert(pgDumpPath!=null);
         assert(new File(pgDumpPath).exists());
