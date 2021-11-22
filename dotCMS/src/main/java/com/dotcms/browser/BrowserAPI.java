@@ -232,7 +232,7 @@ public interface BrowserAPI {
 	 * @param browserQuery {@link BrowserQuery}
 	 * @return list of contentlets
 	 */
-	List<Contentlet> getContentUnderParentDB(BrowserQuery browserQuery);
+	List<Contentlet> getContentUnderParentFromDB(BrowserQuery browserQuery);
 
 	/**
 	 * Returns a collection of contentlets, folders, links that live inside the parent(browserQuery.directParent)

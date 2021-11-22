@@ -5,7 +5,6 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotcms.api.tree.Parentable;
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -32,9 +31,7 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
@@ -52,7 +49,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.mutable.MutableInt;
 
 /**
  * Default implementation
@@ -65,9 +61,16 @@ public class BrowserAPIImpl implements BrowserAPI {
     private final FolderAPI folderAPI = APILocator.getFolderAPI();
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
+    /**
+     * Returns a collection of contentlets based on diff attributes of the BrowserQuery
+     * e.g folder, host, archived, baseTypes, language.
+     * After that filters the list of contentlets based on permissions.
+     * @param browserQuery {@link BrowserQuery}
+     * @return list of contentlets
+     */
     @Override
     @CloseDBIfOpened
-    public List<Contentlet> getContentUnderParentDB(final BrowserQuery browserQuery) {
+    public List<Contentlet> getContentUnderParentFromDB(final BrowserQuery browserQuery) {
 
         final Tuple2<String, List<Object>> sqlQuery = this.selectQuery(browserQuery);
 
@@ -81,8 +84,7 @@ public class BrowserAPIImpl implements BrowserAPI {
 
             final List<String> inodes = new ArrayList<>();
             for (final Map<String, String> versionInfoMap : inodesMapList) {
-                final String inode = versionInfoMap.get("inode");
-                inodes.add(inode);
+                inodes.add(versionInfoMap.get("inode"));
             }
 
             final List<Contentlet> cons  = APILocator.getContentletAPI().findContentlets(inodes);
@@ -96,18 +98,23 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
     }
 
-
+    /**
+     * Returns a collection of contentlets, folders, links based on diff attributes of the BrowserQuery
+     * @param browserQuery {@link BrowserQuery}
+     * @return list of treeable (folders, content, links)
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     @Override
     @CloseDBIfOpened
     public List<Treeable> getFolderContentList(final BrowserQuery browserQuery) throws DotSecurityException, DotDataException {
 
-        final Parentable parent = browserQuery.directParent;
         final List<Treeable> returnList = new ArrayList<>();
 
-        getContentUnderParentDB(browserQuery).forEach(f -> returnList.add(f));
+        getContentUnderParentFromDB(browserQuery).forEach(f -> returnList.add(f));
 
         if (browserQuery.showFolders) {
-            List<Folder> folders = folderAPI.findSubFoldersByParent(parent, userAPI.getSystemUser(), false);
+            List<Folder> folders = folderAPI.findSubFoldersByParent(browserQuery.directParent, userAPI.getSystemUser(), false);
             folders.removeIf(f->!f.isShowOnMenu());
             folders.forEach(f -> returnList.add(f));
         }
@@ -127,7 +134,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         final Role[] roles = APILocator.getRoleAPI().loadRolesForUser(browserQuery.user.getUserId()).toArray(new Role[0]);
 
         if (browserQuery.showFolders) {
-            returnList.addAll(this.includeFolders(browserQuery,  roles));
+            returnList.addAll(this.getFolders(browserQuery,  roles));
         }
 
         if (browserQuery.showLinks) {
@@ -135,7 +142,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
 
         //Get Content
-        final List<Contentlet> contentlets = browserQuery.showContent ? getContentUnderParentDB(browserQuery)
+        final List<Contentlet> contentlets = browserQuery.showContent ? getContentUnderParentFromDB(browserQuery)
                 : Collections.emptyList();
 
         for (final Contentlet contentlet : contentlets) {
@@ -340,7 +347,7 @@ public class BrowserAPIImpl implements BrowserAPI {
 
 
 
-    private  List<Map<String, Object>> includeFolders(final BrowserQuery browserQuery, final Role[] roles) throws DotDataException, DotSecurityException {
+    private  List<Map<String, Object>> getFolders(final BrowserQuery browserQuery, final Role[] roles) throws DotDataException, DotSecurityException {
 
         if (browserQuery.directParent != null) {
 
@@ -368,7 +375,7 @@ public class BrowserAPIImpl implements BrowserAPI {
 
         }
         return ImmutableList.of();
-    } // includeFolders.
+    } // getFolders.
 
     private Map<String,Object> htmlPageMap(final HTMLPageAsset page,
                                            final User user,
