@@ -87,4 +87,6 @@ This maintenance release includes the following code fixes:
 
 42. https://github.com/dotCMS/core/issues/20722 : [Reindex] : Perform Site check before Folder check #20722
 
+43. https://github.com/dotCMS/core/issues/20452 : "Back end user" role breaks front end user permissions #20452
+
 
