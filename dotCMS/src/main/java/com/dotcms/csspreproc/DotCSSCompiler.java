@@ -26,6 +26,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.util.FileUtil;
 
@@ -224,6 +225,9 @@ abstract class DotCSSCompiler {
         if (f.exists())
           continue;
         String assetUri = asset.getURI();
+        if (assetUri.endsWith(".scss") && StringUtils.shareSamePath(uri, assetUri)) {
+          continue;
+        }
         getAllImportedURI().add(assetUri);
         f.getParentFile().mkdirs();
         FileUtil.copyFile(asset.getFileAsset(), f);

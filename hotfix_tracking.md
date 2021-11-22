@@ -89,4 +89,4 @@ This maintenance release includes the following code fixes:
 
 43. https://github.com/dotCMS/core/issues/20452 : "Back end user" role breaks front end user permissions #20452
 
-
+44. https://github.com/dotCMS/core/issues/18301 : SASS not working with multiple independent SCSS files. Causes hanging on front-end #18301

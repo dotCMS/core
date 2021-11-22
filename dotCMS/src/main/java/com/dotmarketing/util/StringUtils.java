@@ -10,6 +10,7 @@ import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.uuid.shorty.ShortyException;
 import com.liferay.util.StringPool;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class StringUtils {
 
@@ -368,11 +370,29 @@ public class StringUtils {
                   + minLength + " alphanumeric chars in length", se);
       }
     }
-    
-    
-    
 
+    /**
+     * Given a SLASH delimited string extract the base path
+     *
+     * @param path path
+     * @return base path
+     */
+    public static String getBasePath(final String path) {
+        final List<String> parts = Arrays.asList(getOrDefault(path, () -> "").split(StringPool.SLASH));
+        return String.join(StringPool.SLASH, parts.isEmpty() ? parts : parts.subList(0, parts.size() - 1));
+    }
 
+    /**
+     * Returns true if provided paths share the same base path.
+     * AKA: if they are siblings.
+     *
+     * @param path one path to compare
+     * @param otherPath other path to compare
+     * @return tru if they are siblings, otherwise false
+     */
+    public static boolean shareSamePath(final String path, final String otherPath) {
+        return getBasePath(path).equals(getBasePath(otherPath));
+    }
 
    private static final Pattern pattern = Pattern.compile("\\s");
 
