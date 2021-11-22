@@ -24,6 +24,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -36,6 +37,44 @@ import static java.io.File.separator;
  * @author vic
  */
 public class DbExporterUtil {
+    static final List<String> PG_DUMP_OPTIONS = Arrays.asList(
+            "--no-comments",
+            "--exclude-table-data=analytic_summary",
+            "--exclude-table-data=analytic_summary_404",
+            "--exclude-table-data=analytic_summary_content",
+            "--exclude-table-data=analytic_summary_pages",
+            "--exclude-table-data=analytic_summary_period",
+            "--exclude-table-data=analytic_summary_referer",
+            "--exclude-table-data=analytic_summary_visits",
+            "--exclude-table-data=analytic_summary_workstream",
+            "--exclude-table-data=clickstream",
+            "--exclude-table-data=clickstream_404",
+            "--exclude-table-data=clickstream_request",
+            "--exclude-table-data=cluster_server",
+            "--exclude-table-data=cluster_server_action",
+            "--exclude-table-data=cluster_server_uptime",
+            "--exclude-table-data=cms_roles_ir",
+            "--exclude-table-data=dist_reindex_journal",
+            "--exclude-table-data=dot_cluster",
+            "--exclude-table-data=fileassets_ir",
+            "--exclude-table-data=folders_ir",
+            "--exclude-table-data=htmlpages_ir",
+            "--exclude-table-data=indicies",
+            "--exclude-table-data=notification",
+            "--exclude-table-data=publishing_bundle",
+            "--exclude-table-data=publishing_bundle_environment",
+            "--exclude-table-data=publishing_pushed_assets",
+            "--exclude-table-data=publishing_queue",
+            "--exclude-table-data=publishing_queue_audit",
+            "--exclude-table-data=schemes_ir",
+            "--exclude-table-data=sitelic",
+            "--exclude-table-data=structures_ir",
+            "--exclude-table-data=system_event",
+            "-Z7",
+            "-O",
+            "-x",
+            "--quote-all-identifiers"
+    );
     /**
      * pg_dump binary distribution.
      */
@@ -94,8 +133,9 @@ public class DbExporterUtil {
         final long starter = System.currentTimeMillis();
         Logger.info(DbExporterUtil.class, "DB Dumping database to  : " + file);
         if (file.exists()) {
-            throw new DotRuntimeException("DB Dump already exists:" + file);
+            throw new DotRuntimeException("DB Dump already exists: " + file);
         }
+
         file.mkdirs();
         file.delete();
 
@@ -169,16 +209,15 @@ public class DbExporterUtil {
      */
     static InputStream exportSql() throws IOException {
         final ProcessBuilder pb = new ProcessBuilder(
-                pgDumpPath.get(),
-                getDatasource().getDbUrl(),
-                "--no-comments",
-                "-T clickstream*",
-                "-T dashboard*",
-                "-Z7",
-                "-O",
-                "-x")
+                getCommandAndArgs(pgDumpPath.get(), getDatasource().getDbUrl()))
                 .redirectErrorStream(true);
         return new BufferedInputStream(pb.start().getInputStream());
+    }
+
+    private static List<String> getCommandAndArgs(final String command, final String dbUrl) {
+        final List<String> finalCmd = Arrays.asList(command, dbUrl);
+        finalCmd.addAll(PG_DUMP_OPTIONS);
+        return finalCmd;
     }
 
     /**
@@ -212,6 +251,10 @@ public class DbExporterUtil {
 
             return Optional.ofNullable(input);
         } catch(Exception e) {
+            Logger.error(
+                    DbExporterUtil.class,
+                    String.format("Could not execute the commands %s", String.join(" ", commands)),
+                    e);
             return Optional.empty();
         } finally {
             if (processHolder != null) {

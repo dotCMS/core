@@ -389,7 +389,8 @@ function doReplace () {
   }
 }
 
-function doCreateZip(dataOnly){
+<% if (Config.getBooleanProperty("ALLOW_STARTER_ZIP_GENERATION_ON_DISK", false)) { %>
+function doCreateZip(dataOnly) {
    form = document.getElementById('cmsMaintenanceForm');
 	var action = "<portlet:actionURL>";
 	action += "<portlet:param name='struts_action' value='/ext/cmsmaintenance/view_cms_maintenance' />";
@@ -400,7 +401,7 @@ function doCreateZip(dataOnly){
 	form.action = action
 	form.submit();
 }
-
+<% } %>
 
 function doDownloadZip(dataOnly){
    form = document.getElementById('cmsMaintenanceForm');
@@ -1448,11 +1449,11 @@ dd.leftdl {
                     <td><%= LanguageUtil.get(pageContext,"Download-Zip-file") %></td>
                     <td style="text-align:center;white-space:nowrap;">
 						<div class="inline-form">
-							<button dojoType="dijit.form.Button" onClick="doDownloadZip('true');" iconClass="downloadIcon">
+							<button dojoType="dijit.form.Button" onClick="location.href='/api/v1/maintenance/_donwloadStarter'" iconClass="downloadIcon">
 							   <%= LanguageUtil.get(pageContext,"Download-Data-Only") %>
 							</button>
 
-							<button dojoType="dijit.form.Button" onClick="doDownloadZip('false');" iconClass="downloadIcon">
+							<button dojoType="dijit.form.Button" onClick="location.href='/api/v1/maintenance/_donwloadStarterWithAssets'" iconClass="downloadIcon">
 							  <%= LanguageUtil.get(pageContext,"Download-Data/Assets") %>
 							</button>
 						</div>
@@ -1470,6 +1471,16 @@ dd.leftdl {
                         </td>
                     </tr>
                 <% } %>
+                <tr>
+                    <td><%= LanguageUtil.get(pageContext,"Download-Assets") %></td>
+                    <td style="text-align:center;white-space:nowrap;">
+                        <div class="inline-form">
+                            <button dojoType="dijit.form.Button" onclick="location.href='/api/v1/maintenance/_downloadAssets'" iconClass="downloadIcon">
+                                <%= LanguageUtil.get(pageContext,"Download-Assets") %>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
             </table>
 
             <div style="height:20px">&nbsp;</div>

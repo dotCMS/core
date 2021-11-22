@@ -12,12 +12,14 @@ import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ExportStarterUtil;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -75,12 +77,16 @@ public class MaintenanceResource implements Serializable {
     public final Response shutdown(@Context final HttpServletRequest request,
                                    @Context final HttpServletResponse response) {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                        .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE).requestAndResponse(request, response)
-                        .rejectWhenNoUser(true).requiredPortlet("maintenance").init();
+                .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .requiredPortlet("maintenance")
+                .init();
 
         Logger.info(this.getClass(), "User:" + initData.getUser() + " is shutting down dotCMS!"); 
-        SecurityLogger.logInfo(this.getClass(),
-                        "User:" + initData.getUser() + " is shutting down dotCMS from ip:" + request.getRemoteAddr());
+        SecurityLogger.logInfo(
+                this.getClass(),
+                "User:" + initData.getUser() + " is shutting down dotCMS from ip:" + request.getRemoteAddr());
 
         if (!Config.getBooleanProperty("ALLOW_DOTCMS_SHUTDOWN_FROM_CONSOLE", true)) {
             return Response.status(Status.FORBIDDEN).build();
@@ -166,19 +172,94 @@ public class MaintenanceResource implements Serializable {
      * @return octet stream response with file contents
      * @throws IOException
      */
-    @Path("/_assets")
+    @Path("/_downloadAssets")
     @GET
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response downloadAssets(@Context final HttpServletRequest request,
                                          @Context final HttpServletResponse response) throws IOException {
-        final User user = Try.of(() -> assertBackendUser(request, response).getUser()).get();
-        final String fileName = AssetExporterUtil.exportToFile(user, response.getOutputStream());
-
+        final String assetsFile = AssetExporterUtil.resolveFileName();
         response.setHeader("Content-Type", MediaType.APPLICATION_OCTET_STREAM);
-        response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
-        return Response.ok(MediaType.APPLICATION_OCTET_STREAM).build();
+        response.setHeader("Content-Disposition", "attachment; filename=\"" + assetsFile + "\"");
+
+        final User user = Try.of(() -> assertBackendUser(request, response).getUser()).get();
+        SecurityLogger.logInfo(AssetExporterUtil.class, "User : " + user.getEmailAddress() + " downloading assets");
+
+        AssetExporterUtil.exportAssets(response.getOutputStream());
+        Logger.info(this.getClass(), "Requested assets file: " + assetsFile);
+
+        return Response.ok(assetsFile, MediaType.APPLICATION_OCTET_STREAM).build();
+    }
+
+    /**
+     * This method attempts to download a zip file containing the starter with assets.
+     *
+     * @param request  http request
+     * @param response http response
+     * @return octet stream response with octet stream
+     * @throws IOException
+     */
+    @Path("/_downloadStarter")
+    @GET
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
+    public final Response downloadStarter(@Context final HttpServletRequest request,
+                                          @Context final HttpServletResponse response) throws IOException {
+        return downloadStarter(request, response, false, true);
+    }
+
+    /**
+     * This method attempts to download a zip file containing the starter with just data.
+     *
+     * @param request  http request
+     * @param response http response
+     * @return octet stream response with octet stream
+     * @throws IOException
+     */
+    @Path("/_downloadStarterWithAssets")
+    @GET
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
+    public final Response downloadStarterWithAssets(@Context final HttpServletRequest request,
+                                                    @Context final HttpServletResponse response) throws IOException {
+        return downloadStarter(request, response, true, false);
+    }
+
+    /**
+     * This method attempts to download a zip file containing the starter whether it is with just data or assets.
+     *
+     * @param request http request
+     * @param response http response
+     * @param withAssets flag telling to include or not assets
+     * @param download flag telling to download or to stream
+     * @return octet stream response with octet stream
+     * @throws IOException
+     */
+    private Response downloadStarter(final HttpServletRequest request,
+                                     final HttpServletResponse response,
+                                     final boolean withAssets,
+                                     final boolean download) throws IOException {
+        assertBackendUser(request, response);
+
+        final ExportStarterUtil exportStarterUtil = new ExportStarterUtil();
+        final Optional<File> starterFile = exportStarterUtil.zipStarter(
+                response.getOutputStream(),
+                withAssets,
+                download);
+        if (!starterFile.isPresent()) {
+            return Response.status(Status.UNAUTHORIZED).build();
+        }
+
+        final File file = starterFile.get();
+        Logger.info(this.getClass(), "Requested starter file: " + file.getCanonicalPath());
+
+        response.setHeader("Content-type", download ? "application/zip" : MediaType.APPLICATION_OCTET_STREAM);
+        response.setHeader("Content-Disposition", "attachment; filename=" + file.getName());
+
+        return Response.ok(file, MediaType.APPLICATION_OCTET_STREAM).build();
     }
 
     /**
@@ -191,6 +272,7 @@ public class MaintenanceResource implements Serializable {
     private InitDataObject assertBackendUser(HttpServletRequest request, HttpServletResponse response) {
         return new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
+                .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .requiredPortlet("maintenance")
