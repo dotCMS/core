@@ -601,7 +601,7 @@ public class ContainerResource implements Serializable {
         final User user     = initData.getUser();
         Logger.debug(this, ()-> "Getting the working container by id: " + containerId);
 
-        final Container container = this.getContainerLive(containerId, user, WebAPILocator.getHostWebAPI().getHost(httpRequest));
+        final Container container = this.getContainerWorking(containerId, user, WebAPILocator.getHostWebAPI().getHost(httpRequest));
 
         if (null == container || UtilMethods.isNotSet(container.getIdentifier())) {
 
@@ -611,6 +611,54 @@ public class ContainerResource implements Serializable {
         return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
     }
 
+    /**
+     * Unpublishes a Container
+     *
+     * This method receives an identifier and unpublish it
+     * To unpublish a template successfully the user needs to have Publish Permissions and the container
+     * can not be archived.
+     *
+     * @param request            {@link HttpServletRequest}
+     * @param response           {@link HttpServletResponse}
+     * @param containerId        {@link Integer} container id to unpublish
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @PUT
+    @Path("/_unpublish")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response unpublish(@Context final HttpServletRequest  request,
+                                    @Context final HttpServletResponse response,
+                                    @QueryParam("containerId") final String containerId) throws DotSecurityException, DotDataException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final User user         = initData.getUser();
+        final PageMode pageMode = PageMode.get(request);
+
+        if (!UtilMethods.isSet(containerId)) {
+
+            throw new DoesNotExistException("The Container with Id: " + containerId + " does not exist");
+        }
+
+        final Container container = this.getContainerWorking(containerId, user, WebAPILocator.getHostWebAPI().getHost(request));
+
+        if (null != container && InodeUtils.isSet(container.getInode())){
+            this.containerAPI.unpublish(container, user, pageMode.respectAnonPerms);
+            ActivityLogger.logInfo(this.getClass(), "Unpublish Container Action", "User " +
+                    user.getPrimaryKey() + " unpublished container: " + container.getIdentifier());
+        } else {
+
+            Logger.error(this, "The Container with Id: " + containerId + " does not exist");
+            throw new DoesNotExistException("The Container with Id: " + containerId + " does not exist");
+        }
+
+        return Response.ok(new ResponseEntityView(container))
+                .build();
+    }
 
     /**
      * Archives container
