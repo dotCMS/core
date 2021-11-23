@@ -7,31 +7,23 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.ContainerView;
-import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtil;
 import com.dotmarketing.portlets.templates.design.bean.Body;
 import com.dotmarketing.portlets.templates.design.bean.Sidebar;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutColumn;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
-import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
-import io.swagger.models.auth.In;
 import io.vavr.control.Try;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import org.apache.commons.collections.map.HashedMap;
 
 /**
  * Helper for templates

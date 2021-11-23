@@ -11,6 +11,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.template.TemplateForm;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.PaginationUtil;
@@ -38,6 +39,7 @@ import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.HostUtil;
@@ -60,6 +62,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -575,6 +578,34 @@ public class ContainerResource implements Serializable {
 
 
     ///////
+
+    /**
+     * Saves a new working version of a container.
+     *
+     * @param request
+     * @param response
+     * @param templateForm
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @POST
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response saveNew(@Context final HttpServletRequest  request,
+                                  @Context final HttpServletResponse response,
+                                  final TemplateForm templateForm) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final User user         = initData.getUser();
+        final Host host         = this.hostWebAPI.getCurrentHostNoThrow(request);
+        final PageMode pageMode = PageMode.get(request);
+
+        return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(
+                this.fillAndSaveTemplate(templateForm, user, host, pageMode, new Template()), user))).build();
+    }
 
     /**
      * Return live version {@link com.dotmarketing.portlets.containers.model.Container} based on the id
