@@ -1,0 +1,52 @@
+version: '3.5'
+
+networks:
+  es_net:
+  oracle_net:
+    external: true
+
+volumes:
+  cms-shared:
+  esdata:
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.1
+    environment:
+      - cluster.name=elastic-cluster
+      - discovery.type=single-node
+      - data
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xmx1G "
+    ports:
+      - 9200:9200
+      - 9600:9600
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    networks:
+      - es_net
+
+  dotcms:
+    image: dotcms/dotcms:latest
+    environment:
+      "CMS_HEAP_SIZE": '1g'
+      "PROVIDER_DB_DNSNAME": '{ip_address}'
+      "PROVIDER_DB_URL": 'jdbc:oracle:thin:@{ip_address}:1521:XE'
+      "PROVIDER_DB_DRIVER": 'ORACLE'
+      "PROVIDER_DB_USERNAME": "oracle"
+      "PROVIDER_DB_PASSWORD": "oracle"
+      "PROVIDER_ELASTICSEARCH_ENDPOINTS": 'http://elasticsearch:9200'
+      "ES_ADMIN_PASSWORD": 'admin'
+      "TZ": UTC
+      #"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20210920/starter-20210920.zip'
+    depends_on:
+      - elasticsearch
+    volumes:
+      #- {local_data_path}:/data/shared
+      - {license_local_path}/license.zip:/data/shared/assets/license.zip
+    networks:
+      - oracle_net
+      - es_net
+    ports:
+      - "8080:8081"
+      - "8443:8443"
