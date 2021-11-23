@@ -358,7 +358,6 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 if (!luckyServer.equals(ConfigUtils.getServerId())) {
                     logSwitchover(oldInfo, luckyServer);
                     DateUtil.sleep(5000);
-                    CacheLocator.getIndiciesCache().clearCache();
                     return false;
                 }
             }
@@ -639,8 +638,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         builder.setBulkActions(numberToReindexInRequest)
                         .setBulkSize(new ByteSizeValue(ReindexThread.ELASTICSEARCH_BULK_SIZE, ByteSizeUnit.MB))
                         .setConcurrentRequests(ELASTICSEARCH_CONCURRENT_REQUESTS)
-                        .setBackoffPolicy(BackoffPolicy.exponentialBackoff(TimeValue.timeValueMillis(
-                                BACKOFF_POLICY_TIME_IN_MILLIS), 5));
+                        .setFlushInterval(new TimeValue(ReindexThread.ELASTICSEARCH_BULK_FLUSH_INTERVAL))
+                        .setBackoffPolicy(BackoffPolicy.exponentialBackoff(TimeValue.timeValueMillis(1000), 5));
 
         return builder.build();
     }
