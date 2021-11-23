@@ -638,8 +638,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         builder.setBulkActions(numberToReindexInRequest)
                         .setBulkSize(new ByteSizeValue(ReindexThread.ELASTICSEARCH_BULK_SIZE, ByteSizeUnit.MB))
                         .setConcurrentRequests(ELASTICSEARCH_CONCURRENT_REQUESTS)
-                        .setFlushInterval(new TimeValue(ReindexThread.ELASTICSEARCH_BULK_FLUSH_INTERVAL))
-                        .setBackoffPolicy(BackoffPolicy.exponentialBackoff(TimeValue.timeValueMillis(1000), 5));
+                        .setBackoffPolicy(BackoffPolicy.constantBackoff(TimeValue.timeValueSeconds(
+                                        ReindexThread.BACKOFF_POLICY_TIME_IN_SECONDS), ReindexThread.BACKOFF_POLICY_MAX_RETRYS));
 
         return builder.build();
     }
