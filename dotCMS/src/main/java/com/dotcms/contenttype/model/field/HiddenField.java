@@ -1,6 +1,6 @@
 package com.dotcms.contenttype.model.field;
 
-import com.dotcms.content.model.FieldValue;
+import com.dotcms.content.model.FieldValueBuilder;
 import com.dotcms.content.model.type.hidden.BoolHiddenFieldType;
 import com.dotcms.content.model.type.hidden.DateHiddenFieldType;
 import com.dotcms.content.model.type.hidden.FloatHiddenFieldType;
@@ -61,26 +61,27 @@ public abstract class HiddenField extends Field {
 
 	/**
 	 * {@inheritDoc}
-	 */
+     * @return
+     */
 	@Override
-	public Optional<FieldValue<?>> fieldValue(final Object value){
+	public Optional<FieldValueBuilder> fieldValue(final Object value){
 		if (value instanceof String) {
-			return Optional.of(HiddenFieldType.of((String) value));
+			return Optional.of(HiddenFieldType.builder().value(((String) value)));
 		}
 		if (value instanceof Boolean) {
-			return Optional.of(BoolHiddenFieldType.of((Boolean) value));
+			return Optional.of(BoolHiddenFieldType.builder().value((Boolean) value));
 		}
 		if (value instanceof Date) {
-			return Optional.of(DateHiddenFieldType.of((Date) value));
+			return Optional.of(DateHiddenFieldType.builder().value((Date) value));
 		}
 		if (value instanceof Float) {
-			return Optional.of(FloatHiddenFieldType.of((Float) value));
+			return Optional.of(FloatHiddenFieldType.builder().value((Float) value));
 		}
 		if (value instanceof Long) {
-			return Optional.of(LongHiddenFieldType.of((Long) value));
+			return Optional.of(LongHiddenFieldType.builder().value((Long) value));
 		}
 		if (value instanceof Integer) {
-			return Optional.of(LongHiddenFieldType.of(((Integer) value).longValue()));
+			return Optional.of(LongHiddenFieldType.builder().value(((Integer)value).longValue()));
 		}
 		return Optional.empty();
 	}

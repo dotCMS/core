@@ -19,7 +19,9 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import java.awt.Dimension;
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Comparator;
@@ -27,9 +29,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 
 /**
  * Default implementation
@@ -141,13 +147,39 @@ public class FileStorageAPIImpl implements FileStorageAPI {
             //we add them for image types with a default value of zero that gets replaced by the values provided by tika
             //if tika fails to tell us the dimension we are keeping a default 0
             if(isImage){
-               mapBuilder.put(WIDTH_META_KEY.key(), 0);
-               mapBuilder.put(HEIGHT_META_KEY.key(), 0);
+               final Dimension dimension = computeDimension(binary).orElse(new Dimension(0,0));
+               mapBuilder.put(WIDTH_META_KEY.key(), dimension.width);
+               mapBuilder.put(HEIGHT_META_KEY.key(), dimension.height);
             }
 
         }
 
         return mapBuilder.build();
+    }
+
+    /**
+     * Basic metadata is supposed to be tika independent
+     * @param input
+     * @return
+     */
+    private Optional<Dimension> computeDimension(File input){
+        try(ImageInputStream in = ImageIO.createImageInputStream(input)){
+            final Iterator<ImageReader> readers = ImageIO.getImageReaders(in);
+            if (readers.hasNext()) {
+                ImageReader reader = readers.next();
+                try {
+                    reader.setInput(in);
+                    return  Optional.of(
+                            new Dimension(reader.getWidth(0), reader.getHeight(0))
+                    );
+                } finally {
+                    reader.dispose();
+                }
+            }
+        }catch (Throwable e){
+            Logger.error(FileStorageAPIImpl.class,"unable to get file dimensions",e);
+        }
+        return Optional.empty();
     }
 
     /**

@@ -1,7 +1,8 @@
 package com.dotcms.content.model;
 
 
-import com.dotcms.content.model.annotation.ValueTypeStyle;
+import com.dotcms.content.model.annotation.ValueType;
+import com.dotcms.content.model.type.AbstractBinaryFieldType;
 import com.dotcms.content.model.type.AbstractCheckBoxFieldType;
 import com.dotcms.content.model.type.AbstractCustomFieldType;
 import com.dotcms.content.model.type.AbstractFileFieldType;
@@ -31,11 +32,11 @@ import com.dotcms.content.model.type.keyvalue.AbstractKeyValueType;
 import com.dotcms.content.model.type.AbstractListType;
 import com.dotcms.content.model.type.text.AbstractLongTextFieldType;
 import com.dotcms.content.model.type.text.AbstractTextFieldType;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.immutables.value.Value.Parameter;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = As.EXISTING_PROPERTY, property = "type")
@@ -101,12 +102,15 @@ import org.immutables.value.Value.Parameter;
         @JsonSubTypes.Type(name = AbstractLongHiddenFieldType.TYPENAME, value = AbstractLongHiddenFieldType.class),
         @JsonSubTypes.Type(name = AbstractDateHiddenFieldType.TYPENAME, value = AbstractDateHiddenFieldType.class),
 
+        //BinaryField
+        @JsonSubTypes.Type(name = AbstractBinaryFieldType.TYPENAME, value = AbstractBinaryFieldType.class),
+
         //StoryBlockField
         @JsonSubTypes.Type(name = AbstractStoryBlockFieldType.TYPENAME, value = AbstractStoryBlockFieldType.class),
 
 })
-@ValueTypeStyle
-@JsonDeserialize(as = FieldValue.class)
+@ValueType
+@JsonIgnoreProperties(ignoreUnknown = true)
 public interface FieldValue<T> {
 
     /**

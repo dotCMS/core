@@ -2,7 +2,7 @@ package com.dotcms.contenttype.model.field;
 
 import static com.dotcms.util.CollectionsUtils.list;
 
-import com.dotcms.content.model.FieldValue;
+import com.dotcms.content.model.FieldValueBuilder;
 import com.dotcms.content.model.type.text.FloatTextFieldType;
 import com.dotcms.content.model.type.text.LongTextFieldType;
 import com.dotcms.content.model.type.text.TextFieldType;
@@ -51,20 +51,21 @@ public abstract class TextField extends Field {
 
 	/**
 	 * {@inheritDoc}
-	 */
+     * @return
+     */
 	@Override
-	public Optional<FieldValue<?>> fieldValue(final Object value) {
+	public Optional<FieldValueBuilder> fieldValue(final Object value) {
 		if (value instanceof String) {
-			return Optional.of(TextFieldType.of((String) value));
+			return Optional.of(TextFieldType.builder().value((String) value));
 		}
 		if (value instanceof Float) {
-			return Optional.of(FloatTextFieldType.of((Float) value));
+			return Optional.of(FloatTextFieldType.builder().value((Float) value));
 		}
 		if (value instanceof Long) {
-			return Optional.of(LongTextFieldType.of((Long) value));
+			return Optional.of(LongTextFieldType.builder().value((Long) value));
 		}
 		if (value instanceof Integer) {
-			return Optional.of(LongTextFieldType.of(((Integer) value).longValue()));
+			return Optional.of(LongTextFieldType.builder().value(((Integer) value).longValue()));
 		}
 		return Optional.empty();
 	}

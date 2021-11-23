@@ -564,8 +564,8 @@ dependencies {
 
     compile group: 'javax.websocket', name: 'javax.websocket-api', version:'1.1'
 
-    compileOnly "org.immutables:value:2.3.3:annotations"
-    compile 'org.immutables:gson:2.3.3'
+    compileOnly  'org.immutables:value-annotations:2.8.8'
+    compile  'org.immutables:gson:2.8.8'
 
     compile group: 'org.aspectj', name: 'aspectjrt', version:'1.9.2'
     compile group: 'io.bit3', name: 'jsass', version: '5.10.3'

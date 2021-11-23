@@ -18,10 +18,13 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.Date;
@@ -31,10 +34,14 @@ import org.junit.Test;
 
 public class ContentletJsonAPITest extends IntegrationTestBase {
 
+    static Host site;
+
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
+        final String hostName = "yet.another.site" + System.currentTimeMillis() + ".dotcms.com";
+        site = new SiteDataGen().name(hostName).nextPersisted(true);
     }
 
     /**
@@ -50,8 +57,6 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
         Config.setProperty(SAVE_CONTENTLET_AS_JSON, false);
         try {
 
-            final String hostName = "custom" + System.currentTimeMillis() + ".dotcms.com";
-            final Host site = new SiteDataGen().name(hostName).nextPersisted(true);
             final Folder folder = new FolderDataGen().site(site).nextPersisted();
             final ContentType contentType = TestDataUtils
                     .newContentTypeFieldTypesGalore();
@@ -116,8 +121,6 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
     @Test
     public void Create_Content_Then_Find_It_Then_Create_Json_Content_Then_Recover_And_Compare() throws Exception {
 
-        final String hostName = "my.custom" + System.currentTimeMillis() + ".dotcms.com";
-        final Host site = new SiteDataGen().name(hostName).nextPersisted(true);
         final Folder folder = new FolderDataGen().site(site).nextPersisted();
         final ContentType contentType = TestDataUtils
                 .newContentTypeFieldTypesGalore();
@@ -221,6 +224,40 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
         assertEquals(in.get("keyValueField"),out.get("keyValueField"));
 
 
+    }
+
+    @Test
+    public void Simple_Serializer_Test()
+            throws DotDataException, JsonProcessingException, DotSecurityException {
+        final boolean defaultValue = Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
+        Config.setProperty(SAVE_CONTENTLET_AS_JSON, false);
+        try {
+
+            final Folder folder = new FolderDataGen().site(site).nextPersisted();
+            final ContentType contentType = TestDataUtils
+                    .newContentTypeFieldTypesGalore();
+
+            new TagDataGen().name("tag1").nextPersisted();
+            final Contentlet imageFileAsset = TestDataUtils.getFileAssetContent(true, 1, TestFile.JPG);
+
+            final Contentlet in = new ContentletDataGen(contentType).host(site)
+                    .languageId(1)
+                    .setProperty("title", "lol")
+                    .setProperty("hostFolder", folder.getIdentifier())
+                    .setProperty("imageField",imageFileAsset.getIdentifier())
+                    .nextPersisted();
+
+            assertNotNull(in);
+            final ContentletJsonAPI impl = APILocator.getContentletJsonAPI();
+            final String json = impl.toJson(in);
+            assertNotNull(json);
+            System.out.println(json);
+            final Contentlet out = impl.mapContentletFieldsFromJson(json);
+            mapsAreEqual(in.getMap(),out.getMap());
+
+        } finally {
+            Config.setProperty(SAVE_CONTENTLET_AS_JSON, defaultValue);
+        }
     }
 
 }

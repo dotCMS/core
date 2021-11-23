@@ -16,8 +16,12 @@ import static com.dotmarketing.util.UtilMethods.isSet;
 
 import com.dotcms.content.model.Contentlet;
 import com.dotcms.content.model.FieldValue;
+import com.dotcms.content.model.FieldValueBuilder;
 import com.dotcms.content.model.ImmutableContentlet;
 import com.dotcms.content.model.ImmutableContentlet.Builder;
+import com.dotcms.content.model.annotation.HydrateWith;
+import com.dotcms.content.model.annotation.Hydration;
+import com.dotcms.content.model.hydration.HydrationDelegate;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -36,6 +40,7 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
+import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -54,8 +59,11 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.File;
 import java.time.Instant;
@@ -159,7 +167,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
         builder.folder(contentlet.getFolder());
 
         //These two are definitively mandatory but..
-        //intenralCheckIn calls "save" twice and the first time it is called these two aren't already set
+        //internalCheckIn calls "save" twice and the first time it is called these two aren't already set
         //At that moment we have to fake it to make it. Second save should provide the actual identifiers.
         //We'll have to use empty strings to prevent breaking the execution.
         builder.identifier(UtilMethods.isNotSet(contentlet.getIdentifier()) ? StringPool.BLANK : contentlet.getIdentifier() );
@@ -172,7 +180,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
             }
             final Object value = contentlet.get(field.variable());
             if (null != value) {
-                final Optional<FieldValue<?>> fieldValue = getFieldValue(value, field);
+                final Optional<FieldValue<?>> fieldValue = hydrateThenGetFieldValue(value, field, contentlet);
                 if (!fieldValue.isPresent()) {
                     Logger.warn(ContentletJsonAPIImpl.class,
                             String.format("Unable to set field `%s` with the given value %s.",
@@ -318,9 +326,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
      * @return
      */
     private boolean isNotMappable(final Field field) {
-        return (!isSettable(field) || (field instanceof HostFolderField)
-                || (field instanceof TagField) || isNoneMappableSystemField(field) || isMetadataField(field)
-        );
+        return (!isSettable(field) || (field instanceof HostFolderField) || (field instanceof TagField) || isNoneMappableSystemField(field) || isMetadataField(field));
     }
 
     /**
@@ -379,11 +385,68 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
      * Meaning this converts the field to a json representation
      * @param value
      * @param field
+     * @param contentlet
      * @return
      */
-    private Optional<FieldValue<?>> getFieldValue(final Object value, final Field field) {
-        return field.fieldValue(value);
+    private Optional<FieldValue<?>> hydrateThenGetFieldValue(final Object value, final Field field,
+            final com.dotmarketing.portlets.contentlet.model.Contentlet contentlet) {
+
+        Optional<FieldValueBuilder> fieldValueBuilder = field.fieldValue(value);
+        if (fieldValueBuilder.isPresent()) {
+            FieldValueBuilder builder = fieldValueBuilder.get();
+            final List<Tuple2<HydrationDelegate,String>> delegateAndFields = getHydrationDelegatesFromAnnotations(builder.getClass());
+            for (Tuple2<HydrationDelegate,String> delegateAndField : delegateAndFields) {
+                final HydrationDelegate delegate = delegateAndField._1();
+                final String propertyName = delegateAndField._2();
+                try {
+                    builder = delegate.hydrate(builder, field, contentlet, propertyName);
+                } catch (Exception e) {
+                    Logger.error(ContentletJsonAPIImpl.class,
+                            String.format(
+                                    "An error occurred while hydrating FieldValue with Builder: %s, field: %s, contentlet: %s , propertyName %s ",
+                                    builder, field, contentlet.getIdentifier(), propertyName), e);
+                }
+            }
+            return Optional.of(builder.build());
+        }
+        return Optional.empty();
     }
+
+    /**
+     * FieldValue descendant's Builders are annotated so the builder class is instructed on how the properties need to be fetched and set into the Builder
+     * This method takes the
+     * @param builderClass
+     * @return
+     */
+    private List<Tuple2<HydrationDelegate,String>> getHydrationDelegatesFromAnnotations(final Class<? extends FieldValueBuilder> builderClass){
+
+        final ImmutableList.Builder<Hydration> annotations = new ImmutableList.Builder<>();
+        Optional<Hydration> hydrateWith = annotations
+                .add(builderClass.getAnnotationsByType(Hydration.class))
+                .add(builderClass.getSuperclass().getAnnotationsByType(Hydration.class))
+                .build().stream().findFirst();
+
+        final ImmutableList.Builder<Tuple2<HydrationDelegate,String>> delegates = new ImmutableList.Builder<>();
+        if(hydrateWith.isPresent()) {
+            final HydrateWith [] hydrateWiths = hydrateWith.get().properties();
+            for (final HydrateWith with : hydrateWiths) {
+                final HydrationDelegate instance = ReflectionUtils.newInstance(with.delegate());
+                if(null == instance){
+                    Logger.error(ContentletJsonAPIImpl.class,String.format("Unable to instantiate hydration delegate %s.",with.delegate()));
+                    continue;
+                }
+                if(UtilMethods.isNotSet(with.propertyName())){
+                    Logger.error(ContentletJsonAPIImpl.class,String.format("HydrateWith Annotation is missing required param 'field' %s.",with.propertyName()));
+                    continue;
+                }
+                delegates.add(Tuple.of(instance, with.propertyName()));
+            }
+        }
+
+
+        return delegates.build();
+    }
+
 
     /**
      * Json read to immutable
