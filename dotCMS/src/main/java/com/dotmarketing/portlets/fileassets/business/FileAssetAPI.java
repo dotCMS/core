@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.fileassets.business;
 
+import com.dotcms.api.tree.Parentable;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.rendering.velocity.viewtools.content.FileAssetMap;
 import java.io.File;
@@ -45,6 +46,10 @@ public interface FileAssetAPI {
 	String DEFAULT_FILE_ASSET_STRUCTURE_INODE = "33888b6f-7a8e-4069-b1b6-5c1aa9d0a48d";
 
 	String TMP_UPLOAD = "tmp_upload";
+
+	public List<FileAsset> findFileAssetsByParentable(final Parentable parent,
+			final String sortBy, final boolean working, final boolean archived,
+			final User user, final boolean respectFrontendRoles);
 
 	void createBaseFileAssetFields(Structure structure) throws DotDataException,DotStateException;
 

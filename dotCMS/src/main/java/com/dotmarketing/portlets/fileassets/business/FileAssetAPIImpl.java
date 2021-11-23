@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.fileassets.business;
 
+import com.dotcms.api.tree.Parentable;
+import com.dotcms.browser.BrowserQuery;
 import com.dotmarketing.portlets.structure.model.Field.DataType;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -11,6 +13,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
 import com.dotcms.exception.ExceptionUtil;
@@ -102,30 +105,56 @@ public class FileAssetAPIImpl implements FileAssetAPI {
         this.contentletCache = contentletCache;
     }
 
+	@Override
 	@CloseDBIfOpened
+	public List<FileAsset> findFileAssetsByParentable(final Parentable parent,
+			final String sortBy, final boolean working, final boolean archived,
+			final User user, final boolean respectFrontendRoles){
+
+		if(parent==null) {
+			throw new DotRuntimeException("parent is null :" + parent);
+		}
+
+		final BrowserQuery query = BrowserQuery.builder()
+				.withHostOrFolderId(parent instanceof Folder ? ((Folder) parent).getInode() : ((Host) parent).getIdentifier())
+				.withUser(user)
+				.showFiles(true)
+				.showWorking(working)
+				.showArchived(archived)
+				.hostIdSystemFolder(parent instanceof Folder ? ((Folder) parent).getHostId() : ((Host) parent).getIdentifier())
+				.sortBy(sortBy)
+				.build();
+
+		final List<Contentlet> contentlets = APILocator.getBrowserAPI().getContentUnderParentFromDB(query);
+
+		return contentlets.stream().map(c -> fromContentlet(c)).collect(Collectors.toList());
+	}
+
+	@CloseDBIfOpened//abrir pagina
 	public List<FileAsset> findFileAssetsByFolder(
 			final Folder parentFolder,
 			final User user,
 			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
-		try {
-		    return fromContentlets(this.contAPI.search(
-					"+structureType:" + Structure.STRUCTURE_TYPE_FILEASSET + " +conFolder:" + parentFolder.getInode(),
-					-1, 0, null, user, respectFrontendRoles));
-		} catch (final DotRuntimeException e) {
-			if ( ExceptionUtil.causedBy(e, ConnectException.class)) {
-				Logger.warnEveryAndDebug(FileAssetAPIImpl.class, e.getMessage(), e, 5000);
-				return findFileAssetsByDB(FileAssetSearcher.builder().folder(parentFolder).user(user).respectFrontendRoles(respectFrontendRoles).build());
-			} else {
-				throw e;
-			}
-		} catch (final DotSecurityException | DotDataException e) {
-			throw e;
-		} catch (final Exception e) {
-            final String errorMsg = getFilesByFolderErrorMsg(parentFolder, e);
-            Logger.error(this.getClass(), errorMsg, e);
-			throw new DotRuntimeException(errorMsg, e);
-		}
+		return findFileAssetsByParentable(parentFolder,null,false,false,user,respectFrontendRoles);
+//		try {
+//		    return fromContentlets(this.contAPI.search(
+//					"+structureType:" + Structure.STRUCTURE_TYPE_FILEASSET + " +conFolder:" + parentFolder.getInode(),
+//					-1, 0, null, user, respectFrontendRoles));
+//		} catch (final DotRuntimeException e) {
+//			if ( ExceptionUtil.causedBy(e, ConnectException.class)) {
+//				Logger.warnEveryAndDebug(FileAssetAPIImpl.class, e.getMessage(), e, 5000);
+//				return findFileAssetsByDB(FileAssetSearcher.builder().folder(parentFolder).user(user).respectFrontendRoles(respectFrontendRoles).build());
+//			} else {
+//				throw e;
+//			}
+//		} catch (final DotSecurityException | DotDataException e) {
+//			throw e;
+//		} catch (final Exception e) {
+//            final String errorMsg = getFilesByFolderErrorMsg(parentFolder, e);
+//            Logger.error(this.getClass(), errorMsg, e);
+//			throw new DotRuntimeException(errorMsg, e);
+//		}
 
 	}
 
@@ -141,18 +170,19 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	@CloseDBIfOpened
 	public List<FileAsset> findFileAssetsByHost(final Host parentHost, final User user, final boolean respectFrontendRoles) throws DotDataException,
 	DotSecurityException {
-		List<FileAsset> assets;
-		try {
-			final Folder parentFolder = APILocator.getFolderAPI().find(FolderAPI.SYSTEM_FOLDER, user, false);
-			assets = fromContentlets(this.perAPI.filterCollection(this.contAPI.search("+conHost:" +parentHost.getIdentifier() +" +structureType:" + Structure.STRUCTURE_TYPE_FILEASSET+" +conFolder:" + parentFolder.getInode(), -1, 0, null , user, respectFrontendRoles),
-					PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
-		} catch (final Exception e) {
-            final String errorMsg = String.format("An error occurred when finding files by host under '%s': %s", null
-                    != parentHost ? parentHost.getHostname() : "- null -", e.getMessage());
-            Logger.error(this.getClass(), errorMsg, e);
-			throw new DotRuntimeException(errorMsg, e);
-		}
-		return assets;
+		return findFileAssetsByParentable(parentHost,null,false,false,user,respectFrontendRoles);
+//		List<FileAsset> assets;
+//		try {
+//			final Folder parentFolder = APILocator.getFolderAPI().find(FolderAPI.SYSTEM_FOLDER, user, false);
+//			assets = fromContentlets(this.perAPI.filterCollection(this.contAPI.search("+conHost:" +parentHost.getIdentifier() +" +structureType:" + Structure.STRUCTURE_TYPE_FILEASSET+" +conFolder:" + parentFolder.getInode(), -1, 0, null , user, respectFrontendRoles),
+//					PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
+//		} catch (final Exception e) {
+//            final String errorMsg = String.format("An error occurred when finding files by host under '%s': %s", null
+//                    != parentHost ? parentHost.getHostname() : "- null -", e.getMessage());
+//            Logger.error(this.getClass(), errorMsg, e);
+//			throw new DotRuntimeException(errorMsg, e);
+//		}
+//		return assets;
 	}
 
 	@CloseDBIfOpened
@@ -160,22 +190,22 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 												final boolean working, final boolean archived,
 												final boolean respectFrontendRoles)
 										throws DotDataException, DotSecurityException {
-
-		List<FileAsset> assets;
-
-		try {
-			final Folder parentFolder = APILocator.getFolderAPI().find(FolderAPI.SYSTEM_FOLDER, user, true);
-			assets = fromContentlets(this.perAPI.filterCollection
-					(this.contAPI.search("+conHost:" +parentHost.getIdentifier() +" +structureType:" + Structure.STRUCTURE_TYPE_FILEASSET+" +conFolder:" + parentFolder.getInode() + (live?" +live:true":"") + (working? " +working:true":"") + (archived? " +deleted:true":""), -1, 0, null , user, respectFrontendRoles),
-					PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
-		} catch (final Exception e) {
-            final String errorMsg = String.format("An error occurred when finding files by host under '%s': %s", null
-                    != parentHost ? parentHost.getHostname() : "- null -", e.getMessage());
-            Logger.error(this.getClass(), errorMsg, e);
-            throw new DotRuntimeException(errorMsg, e);
-		}
-
-		return assets;
+		return findFileAssetsByParentable(parentHost,null,working,archived,user,respectFrontendRoles);
+//		List<FileAsset> assets;
+//
+//		try {
+//			final Folder parentFolder = APILocator.getFolderAPI().find(FolderAPI.SYSTEM_FOLDER, user, true);
+//			assets = fromContentlets(this.perAPI.filterCollection
+//					(this.contAPI.search("+conHost:" +parentHost.getIdentifier() +" +structureType:" + Structure.STRUCTURE_TYPE_FILEASSET+" +conFolder:" + parentFolder.getInode() + (live?" +live:true":"") + (working? " +working:true":"") + (archived? " +deleted:true":""), -1, 0, null , user, respectFrontendRoles),
+//					PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
+//		} catch (final Exception e) {
+//            final String errorMsg = String.format("An error occurred when finding files by host under '%s': %s", null
+//                    != parentHost ? parentHost.getHostname() : "- null -", e.getMessage());
+//            Logger.error(this.getClass(), errorMsg, e);
+//            throw new DotRuntimeException(errorMsg, e);
+//		}
+//
+//		return assets;
 	} // findFileAssetsByHost.
 
 	@WrapInTransaction
@@ -540,41 +570,43 @@ public class FileAssetAPIImpl implements FileAssetAPI {
         return false;
     }
 
-    @CloseDBIfOpened
+    @CloseDBIfOpened//templates portlet, abrir pagina, containers portlet//DE ACA VIENE VER QUE TIRABA ANTES
     public List<FileAsset> findFileAssetsByFolder(Folder parentFolder,
 			String sortBy, boolean live, User user, boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
-		List<FileAsset> assets;
-		try {
-			final StringBuffer query = new StringBuffer();
-			query.append("+baseType:" + BaseContentType.FILEASSET.getType())
-					.append(" +conFolder:" + parentFolder.getInode())
-					.append(" +conHost:" + parentFolder.getHostId())
-					.append(live?" +live:true":"");
-			assets = fromContentlets(this.perAPI.filterCollection(this.contAPI.search(query.toString(), -1, 0, sortBy , user, respectFrontendRoles),
-					PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
-		} catch (Exception e) {
-            final String errorMsg = getFilesByFolderErrorMsg(parentFolder, e);
-            Logger.error(this.getClass(), errorMsg, e);
-            throw new DotRuntimeException(errorMsg, e);
-		}
-		return assets;
+		return findFileAssetsByParentable(parentFolder,sortBy,!live,false,user,respectFrontendRoles);
+//		List<FileAsset> assets;
+//		try {
+//			final StringBuffer query = new StringBuffer();
+//			query.append("+baseType:" + BaseContentType.FILEASSET.getType())
+//					.append(" +conFolder:" + parentFolder.getInode())
+//					.append(" +conHost:" + parentFolder.getHostId())
+//					.append(live?" +live:true":"");
+//			assets = fromContentlets(this.perAPI.filterCollection(this.contAPI.search(query.toString(), -1, 0, sortBy , user, respectFrontendRoles),
+//					PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
+//		} catch (Exception e) {
+//            final String errorMsg = getFilesByFolderErrorMsg(parentFolder, e);
+//            Logger.error(this.getClass(), errorMsg, e);
+//            throw new DotRuntimeException(errorMsg, e);
+//		}
+//		return assets;
 	}
 
 	@CloseDBIfOpened
 	public List<FileAsset> findFileAssetsByFolder(Folder parentFolder,
 			String sortBy, boolean live, boolean working, User user, boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
-		List<FileAsset> assets;
-		try {
-			assets = fromContentlets(this.perAPI.filterCollection(this.contAPI.search("+structureType:" + Structure.STRUCTURE_TYPE_FILEASSET+" +conFolder:" + parentFolder.getInode() + (live?" +live:true":"") + (working? " +working:true":""), -1, 0, sortBy , user, respectFrontendRoles),
-					PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
-		} catch (Exception e) {
-            final String errorMsg = getFilesByFolderErrorMsg(parentFolder, e);
-            Logger.error(this.getClass(), errorMsg, e);
-            throw new DotRuntimeException(errorMsg, e);
-		}
-		return assets;
+		return findFileAssetsByParentable(parentFolder,sortBy,working,false,user,respectFrontendRoles);
+//		List<FileAsset> assets;
+//		try {
+//			assets = fromContentlets(this.perAPI.filterCollection(this.contAPI.search("+structureType:" + Structure.STRUCTURE_TYPE_FILEASSET+" +conFolder:" + parentFolder.getInode() + (live?" +live:true":"") + (working? " +working:true":""), -1, 0, sortBy , user, respectFrontendRoles),
+//					PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
+//		} catch (Exception e) {
+//            final String errorMsg = getFilesByFolderErrorMsg(parentFolder, e);
+//            Logger.error(this.getClass(), errorMsg, e);
+//            throw new DotRuntimeException(errorMsg, e);
+//		}
+//		return assets;
 	}
 
   @Override

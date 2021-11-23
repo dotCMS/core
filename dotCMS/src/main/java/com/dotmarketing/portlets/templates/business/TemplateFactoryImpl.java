@@ -788,7 +788,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	 * @param includeArchived {@link Boolean} if wants to include archive templates
 	 * @return List of Folder where the files lives
 	 */
-	private List<Folder> findTemplatesAssetsByHost(final Host host, final User user, final boolean includeArchived) {
+	private List<Folder> findTemplatesAssetsByHost(final Host host, final User user, final boolean includeArchived) {//MODIFICAR PARA QUE USE DB EN VEZ DE ES
 
 		List<Contentlet>           templates = null;
 		final List<Folder>         folders   = new ArrayList<>();
