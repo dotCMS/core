@@ -179,9 +179,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private static final int MAX_EXCEPTIONS_REPORTED_ON_BULK_ACTIONS_DEFAULT = 1000;
 
-	private static final int BULK_ACTIONS_SLEEP_THRESHOLD_DEFAULT = 400;
+	public static final int BULK_ACTIONS_SLEEP_THRESHOLD_DEFAULT = 400;
 
-	private static final String BULK_ACTIONS_SLEEP_THRESHOLD = "workflow.action.bulk.sleep";
+	public static final String BULK_ACTIONS_SLEEP_THRESHOLD = "workflow.action.bulk.sleep";
 
 	private static final int BULK_ACTIONS_CONTENTLET_FETCH_STEP_DEFAULT = 350;
 

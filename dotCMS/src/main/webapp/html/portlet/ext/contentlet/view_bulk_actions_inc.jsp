@@ -1,5 +1,6 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.util.UtilMethods" %>
+<script type="text/javascript" src="/html/js/sse.js"></script>
 <script language="Javascript">
 
     /**
@@ -332,23 +333,38 @@
         }
 
         var dataAsJson = dojo.toJson(data);
-        var xhrArgs = {
-            url: "/api/v1/workflow/contentlet/actions/bulk/fire",
-            postData: dataAsJson,
-            handleAs: "json",
-            headers : {
-                'Accept' : 'application/json',
-                'Content-Type' : 'application/json;charset=utf-8',
-            },
-            load: function(data) {
-                const entity = data ? data.entity : null; bulkWorkflowActionCallback(entity);
-            },
-            error: function(error){
-                dojo.byId('bulkActionsContainer').innerHTML = `<%=LanguageUtil.get(pageContext, "Available-actions-error")%>`;
-            }
-        };
 
-        dojo.xhrPut(xhrArgs);
+        var url = '/api/v1/workflow/contentlet/actions/_bulkfire'
+
+        var source = new SSE(url, {headers: {'Content-Type': 'application/json'},
+            payload: dataAsJson});
+
+        source.addEventListener('message', function(e) {
+            // Assuming we receive JSON-encoded data payloads:
+            console.log(e.data);
+        });
+
+        source.stream();
+
+
+
+        <%--var xhrArgs = {--%>
+        <%--    url: "/api/v1/workflow/contentlet/actions/bulk/fire",--%>
+        <%--    postData: dataAsJson,--%>
+        <%--    handleAs: "json",--%>
+        <%--    headers : {--%>
+        <%--        'Accept' : 'application/json',--%>
+        <%--        'Content-Type' : 'application/json;charset=utf-8',--%>
+        <%--    },--%>
+        <%--    load: function(data) {--%>
+        <%--        const entity = data ? data.entity : null; bulkWorkflowActionCallback(entity);--%>
+        <%--    },--%>
+        <%--    error: function(error){--%>
+        <%--        dojo.byId('bulkActionsContainer').innerHTML = `<%=LanguageUtil.get(pageContext, "Available-actions-error")%>`;--%>
+        <%--    }--%>
+        <%--};--%>
+
+        <%--dojo.xhrPut(xhrArgs);--%>
         return true;
     }
 

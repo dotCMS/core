@@ -3,6 +3,8 @@ package com.dotcms.rest.api.v1.workflow;
 import static com.dotcms.rest.ResponseEntityView.OK;
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.DotLambdas.not;
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPIImpl.BULK_ACTIONS_SLEEP_THRESHOLD;
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPIImpl.BULK_ACTIONS_SLEEP_THRESHOLD_DEFAULT;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.WrapInTransaction;
@@ -68,6 +70,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -101,6 +104,7 @@ import com.liferay.util.HttpHeaders;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.Tuple2;
+import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -115,6 +119,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletionService;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Future;
@@ -563,9 +569,10 @@ public class WorkflowResource {
     }
 
     @POST
-    @Path("/contentlet/actions/bulk/events")
+    @Path("/contentlet/actions/_bulkfire")
+    @JSONP
     @Produces(SseFeature.SERVER_SENT_EVENTS)
-    public EventOutput getServerSentEvents(@Context final HttpServletRequest request,
+    public EventOutput fireBulkActions(@Context final HttpServletRequest request,
             final FireBulkActionsForm fireBulkActionsForm) {
         final InitDataObject initDataObject = this.webResource
                 .init(null, request, new EmptyHttpResponse(), true, null);
@@ -576,22 +583,52 @@ public class WorkflowResource {
             public void run() {
                 try {
 
-                    fireBulkActionsForm.getContentletIds().stream().map(id->{
-                        contentletAPI.find
-                    })
+                    final List<Contentlet> contentlets = fireBulkActionsForm.getContentletIds().stream().map(id->
+                            Try.of(()->contentletAPI.find(id, initDataObject.getUser(), false))
+                                    .getOrElse((Contentlet)null)).collect(
+                            Collectors.toList());
 
                     final WorkflowAction action = workflowAPI.findAction(fireBulkActionsForm
                                     .getWorkflowActionId(),
                             initDataObject.getUser());
 
-                    workflowAPI.fireBulkActionTasks(
-                            action, initDataObject.getUser(),
-                    );
                     final OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
-                    eventBuilder.name("message-to-client");
-                    eventBuilder.data(String.class, result);
-                    final OutboundEvent event = eventBuilder.build();
-                    eventOutput.write(event);
+                    eventBuilder.name("message");
+
+                    final ConcurrentMap<String, Object> actionsContext = new ConcurrentHashMap<>();
+
+                    //The long we want to sleep to avoid threads starvation.
+                    final int sleepThreshold;
+                    sleepThreshold = Config.getIntProperty(BULK_ACTIONS_SLEEP_THRESHOLD, BULK_ACTIONS_SLEEP_THRESHOLD_DEFAULT);
+
+                    workflowAPI.fireBulkActionTasks(
+                            action, initDataObject.getUser(), contentlets, null,
+                            (delta)-> {
+                                eventBuilder.data(Map.class, CollectionsUtils.map("success", delta));
+                                eventBuilder.mediaType(MediaType.APPLICATION_JSON_TYPE);
+                                final OutboundEvent event = eventBuilder.build();
+                                try {
+                                    eventOutput.write(event);
+                                } catch (Exception e) {
+                                    throw new DotRuntimeException(e);
+                                }
+                            },
+                            (inode, e)-> {
+                                    eventBuilder.data(String.class, "failed:" + inode);
+                                    final OutboundEvent event = eventBuilder.build();
+                                    try {
+                                        eventOutput.write(event);
+                                    } catch (Exception e1) {
+                                        throw new DotRuntimeException(e1);
+                                    }
+                                },
+                            actionsContext,
+                            sleepThreshold
+                    );
+
+
+//
+
 
 //                    for (int i = 0; i < 10; i++) {
 //                        // ... code that waits 1 second
