@@ -188,7 +188,7 @@ public class ES6UpgradeTest extends IntegrationTestBase {
         @Override
         public void loadData() throws Exception {
            final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-           TestDataUtils.getNewsContent(true, languageId, newsContentType.id());
+           TestDataUtils.getNewsContent(true, languageId, newsContentType.id(),site);
         }
 
        // @Override public boolean ignore() { return true; }
