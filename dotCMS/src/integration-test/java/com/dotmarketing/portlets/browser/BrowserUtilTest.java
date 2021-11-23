@@ -4,6 +4,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -160,6 +161,35 @@ public class BrowserUtilTest {
 
     /**
      * Method to test: {@link BrowserUtil#getDefaultPathFolder(Contentlet, Field, User)}
+     * When: The {@link ContentType} has an Host/Folder field with no value
+     * Should: Return the folder from the Contentlet's Host/Folder field value
+     *
+     * @throws DotDataException
+     * @throws IOException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void defaultPathEqualsToFolderHostFieldNoValue() {
+
+        final Map<String, Object> map = createContentletWithImageFieldWithoutValue();
+        final Folder folder = addFolderHostFieldNoValue(
+                (ContentType) map.get(CONTENT_TYPE),
+                (Contentlet) map.get(CONTENTLET));
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+
+        final HttpSession httpSession = mock(HttpSession.class);
+        when(request.getSession(false)).thenReturn(httpSession);
+
+        final Optional<Folder> defaultPathFolder = BrowserUtil.getDefaultPathFolder(
+                (Contentlet) map.get(CONTENTLET), (Field) map.get(FIELD), APILocator.systemUser());
+
+        assertFalse(defaultPathFolder.isPresent());
+    }
+
+    /**
+     * Method to test: {@link BrowserUtil#getDefaultPathFolder(Contentlet, Field, User)}
      * When: The {@link ContentType} has an Image field and a Host/Folder field both without values
      * but with a Folder selected as Current File browser selected folder
      * Should: Return the Current File browser selected folder
@@ -218,6 +248,20 @@ public class BrowserUtilTest {
         final Folder folder = new FolderDataGen().site(host).nextPersisted();
 
         when(httpSession.getAttribute("LAST_SELECTED_FOLDER_ID")).thenReturn(folder.getIdentifier());
+
+        return folder;
+    }
+
+    private Folder addFolderHostFieldNoValue(final ContentType contentType,
+            final Contentlet contentlet) {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+        final Field hostFolderField = new FieldDataGen()
+                .contentTypeId(contentType.id())
+                .type(HostFolderField.class)
+                .nextPersisted();
+        ContentTypeDataGen.addField(hostFolderField);
 
         return folder;
     }
