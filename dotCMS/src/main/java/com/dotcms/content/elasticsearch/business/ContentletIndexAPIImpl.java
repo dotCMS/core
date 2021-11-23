@@ -1,6 +1,7 @@
 package com.dotcms.content.elasticsearch.business;
 
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
+import static com.dotmarketing.common.reindex.ReindexThread.BACKOFF_POLICY_TIME_IN_MILLIS;
 import static com.dotmarketing.common.reindex.ReindexThread.ELASTICSEARCH_CONCURRENT_REQUESTS;
 import static com.dotmarketing.util.StringUtils.builder;
 import com.dotcms.api.system.event.message.MessageSeverity;
@@ -639,8 +640,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         builder.setBulkActions(numberToReindexInRequest)
                         .setBulkSize(new ByteSizeValue(ReindexThread.ELASTICSEARCH_BULK_SIZE, ByteSizeUnit.MB))
                         .setConcurrentRequests(ELASTICSEARCH_CONCURRENT_REQUESTS)
-                        .setBackoffPolicy(BackoffPolicy.constantBackoff(TimeValue.timeValueSeconds(
-                                        ReindexThread.BACKOFF_POLICY_TIME_IN_SECONDS), ReindexThread.BACKOFF_POLICY_MAX_RETRYS));
+                        .setBackoffPolicy(BackoffPolicy.exponentialBackoff(TimeValue.timeValueMillis(
+                                BACKOFF_POLICY_TIME_IN_MILLIS), 5));
 
         return builder.build();
     }
