@@ -264,7 +264,7 @@ public class PublisherAPIImplTest {
                         folder, list(folderContentType)
                     ),
                     "/bundlers-test/host/host.host.xml");
-        } catch (DotDataException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }

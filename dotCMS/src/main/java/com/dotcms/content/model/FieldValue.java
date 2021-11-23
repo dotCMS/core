@@ -5,6 +5,7 @@ import com.dotcms.content.model.annotation.ValueTypeStyle;
 import com.dotcms.content.model.type.AbstractCheckBoxFieldType;
 import com.dotcms.content.model.type.AbstractCustomFieldType;
 import com.dotcms.content.model.type.AbstractFileFieldType;
+import com.dotcms.content.model.type.AbstractStoryBlockFieldType;
 import com.dotcms.content.model.type.hidden.AbstractBoolHiddenFieldType;
 import com.dotcms.content.model.type.hidden.AbstractDateHiddenFieldType;
 import com.dotcms.content.model.type.hidden.AbstractFloatHiddenFieldType;
@@ -99,6 +100,9 @@ import org.immutables.value.Value.Parameter;
         @JsonSubTypes.Type(name = AbstractFloatHiddenFieldType.TYPENAME, value = AbstractFloatHiddenFieldType.class),
         @JsonSubTypes.Type(name = AbstractLongHiddenFieldType.TYPENAME, value = AbstractLongHiddenFieldType.class),
         @JsonSubTypes.Type(name = AbstractDateHiddenFieldType.TYPENAME, value = AbstractDateHiddenFieldType.class),
+
+        //StoryBlockField
+        @JsonSubTypes.Type(name = AbstractStoryBlockFieldType.TYPENAME, value = AbstractStoryBlockFieldType.class),
 
 })
 @ValueTypeStyle

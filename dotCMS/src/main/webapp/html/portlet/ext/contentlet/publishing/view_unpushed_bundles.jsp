@@ -167,7 +167,8 @@
 									type:'<%=asset.get(PublishQueueElementTransformer.TYPE_KEY)%>',
 									content_type_name:'<%= asset.get(PublishQueueElementTransformer.CONTENT_TYPE_NAME_KEY) %>',
 									language_code:'<%= asset.get(PublishQueueElementTransformer.LANGUAGE_CODE_KEY)  %>',
-									country_code:'<%= asset.get(PublishQueueElementTransformer.COUNTRY_CODE_KEY) %>'
+									country_code:'<%= asset.get(PublishQueueElementTransformer.COUNTRY_CODE_KEY) %>',
+									asset:'<%= asset.get(PublishQueueElementTransformer.ASSET_KEY) %>'
 								}, '<%=bundle.getId()%>');
 							<%}
 						}
@@ -197,7 +198,7 @@
 		let newCell = newRow.insertCell();
 		newCell.colSpan = 2;
 
-		var content = "<span class=\"deleteIcon\" style=\"margin-right:2px; cursor: pointer\" onclick=\"deleteAsset('" + data.title + "','" + bundleId + "')\"/></span>&nbsp;";
+		var content = "<span class=\"deleteIcon\" style=\"margin-right:2px; cursor: pointer\" onclick=\"deleteAsset('" + data.asset + "','" + bundleId + "')\"/></span>&nbsp;";
 
 		if (data.type === "contentlet" ) {
 			content += "<a href=\"/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=<%=PortletID.CONTENT%>&p_p_action=1&p_p_state=maximized&p_p_mode=view&_<%=PortletID.CONTENT%>_struts_action=/ext/contentlet/edit_contentlet&_content_cmd=edit&inode=" + data.inode + "&referer=<%=referer %>\">" +

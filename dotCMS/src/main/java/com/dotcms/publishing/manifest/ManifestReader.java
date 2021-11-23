@@ -22,14 +22,19 @@ public interface ManifestReader {
     String getMetadata(final String name);
 
     default List<PublishQueueElement> getPublishQueueElement(){
-        final Operation operation = Operation
-                .valueOf(getMetadata(CSVManifestBuilder.OPERATION_METADATA_NAME));
+        final String OperationAsString = getMetadata(CSVManifestBuilder.OPERATION_METADATA_NAME);
+        final Operation operation = UtilMethods.isSet(OperationAsString) ?
+                Operation.valueOf(OperationAsString) : null;
 
         return getAssets().stream()
                 .map(manifestInfo -> {
                     final PublishQueueElement publishQueueElement = new PublishQueueElement();
                     publishQueueElement.setAsset(UtilMethods.isSet(manifestInfo.inode()) ? manifestInfo.inode() : manifestInfo.id());
-                    publishQueueElement.setOperation(operation.ordinal());
+
+                    if (UtilMethods.isSet(operation)) {
+                        publishQueueElement.setOperation(operation.ordinal());
+                    }
+
                     publishQueueElement.setBundleId(
                             getMetadata(CSVManifestBuilder.BUNDLE_ID_METADATA_NAME));
                     publishQueueElement.setType(manifestInfo.objectType());

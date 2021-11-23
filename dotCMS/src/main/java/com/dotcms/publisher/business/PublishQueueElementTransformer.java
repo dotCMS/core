@@ -9,7 +9,9 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.base.CaseFormat;
+import com.liferay.util.StringPool;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -99,7 +101,7 @@ public class PublishQueueElementTransformer {
                 }
             }
 
-            result = map(TITLE_KEY, title);
+            result = map(TITLE_KEY, UtilMethods.isSet(title) ? title : StringPool.BLANK);
         }
 
         result.putAll(map(
@@ -115,13 +117,13 @@ public class PublishQueueElementTransformer {
 
         final Language language = APILocator.getLanguageAPI().getLanguage(id);
 
-        return map(
-                TITLE_KEY, String.format( "%s(%s)", language.getLanguage(), language.getCountryCode()),
-                LANGUAGE_CODE_KEY, language.getLanguageCode(),
-                COUNTRY_CODE_KEY, language.getCountryCode(),
-                CONTENT_TYPE_NAME_KEY,  CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL,
-                        PusheableAsset.LANGUAGE.getType())
-        );
+        return UtilMethods.isSet(language) ? map(
+                    TITLE_KEY, String.format( "%s(%s)", language.getLanguage(), language.getCountryCode()),
+                    LANGUAGE_CODE_KEY, language.getLanguageCode(),
+                    COUNTRY_CODE_KEY, language.getCountryCode(),
+                    CONTENT_TYPE_NAME_KEY,  CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL,
+                            PusheableAsset.LANGUAGE.getType())
+            ) : map(TITLE_KEY, id);
     }
 
     private static Map<String, Object> getMapForContentlet(final String id) {
@@ -132,12 +134,12 @@ public class PublishQueueElementTransformer {
             contentlet = PublishAuditUtil.getInstance()
                     .findContentletByIdentifier(id);
 
-            return map(
-                    TITLE_KEY, contentlet.getTitle(),
-                    INODE_KEY, contentlet.getInode(),
-                    CONTENT_TYPE_NAME_KEY, contentlet.getContentType().name(),
-                    HTML_PAGE_KEY, contentlet.isHTMLPage()
-            );
+            return UtilMethods.isSet(contentlet) ? map(
+                        TITLE_KEY, contentlet.getTitle(),
+                        INODE_KEY, contentlet.getInode(),
+                        CONTENT_TYPE_NAME_KEY, contentlet.getContentType().name(),
+                        HTML_PAGE_KEY, contentlet.isHTMLPage()
+                ) : map(TITLE_KEY, id, INODE_KEY, id);
         } catch (DotSecurityException | DotDataException e) {
             Logger.error(PublishQueueElementTransformer.class, e.getMessage());
             return null;

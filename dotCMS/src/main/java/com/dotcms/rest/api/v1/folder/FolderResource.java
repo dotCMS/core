@@ -14,12 +14,15 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.browser.BrowserUtil;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import javax.servlet.http.HttpSession;
+import javax.ws.rs.PUT;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -43,6 +46,7 @@ import java.util.Map;
  */
 @Path("/v1/folder")
 public class FolderResource implements Serializable {
+
     private final WebResource webResource;
     private final FolderHelper folderHelper;
 
@@ -83,6 +87,26 @@ public class FolderResource implements Serializable {
             final List<Map<String, Object>> createdFolders = folderHelper.createFolders(paths, siteName, user);
 
             return Response.ok(new ResponseEntityView(createdFolders)).build(); // 200
+    }
+
+    @PUT
+    @Path("/{id}/file-browser-selected")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response selectFolder(@Context final HttpServletRequest httpServletRequest,
+            @Context final HttpServletResponse httpServletResponse,
+            @PathParam("id") final String folderId)
+            throws DotSecurityException, DotDataException {
+
+        new WebResource.InitBuilder(webResource)
+                    .requiredBackendUser(true)
+                    .requiredFrontendUser(false)
+                    .requestAndResponse(httpServletRequest, httpServletResponse)
+                    .init();
+
+        BrowserUtil.setSelectedLastFolder(httpServletRequest, folderId);
+
+        return Response.ok().build(); // 200
     }
 
     @GET

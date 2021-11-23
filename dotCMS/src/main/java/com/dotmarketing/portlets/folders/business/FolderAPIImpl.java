@@ -11,6 +11,7 @@ import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.VisibilityRoles;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
+import com.dotcms.api.tree.Parentable;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.event.ContentletArchiveEvent;
@@ -613,7 +614,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	
 	
 	@CloseDBIfOpened
-	public Folder findSystemFolder() throws DotDataException {
+	public Folder findSystemFolder()  {
 		return loadSystemFolder.get();
 	}
 
@@ -1181,5 +1182,23 @@ public class FolderAPIImpl implements FolderAPI  {
 			}
 		}
 	}
+
+	/**
+	 *
+	 * @param parent (host or folder)
+	 * @return List of sub folders for passed in folder regardless the show on menu boolean
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@Override
+	@CloseDBIfOpened
+	public List<Folder> findSubFoldersByParent(final Parentable parent, final User user,
+			final boolean respectFrontEndPermissions) throws DotDataException,
+			DotSecurityException {
+
+		return (parent instanceof Folder )
+				? findSubFolders((Folder)parent, user, respectFrontEndPermissions)
+				: findSubFolders((Host)parent, user, respectFrontEndPermissions);
+	} // findSubFolders.
 
 }

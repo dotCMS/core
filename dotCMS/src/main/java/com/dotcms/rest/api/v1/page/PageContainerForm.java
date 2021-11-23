@@ -94,6 +94,13 @@ public class PageContainerForm {
             contentIds = new ArrayList<>();
         }
 
+        public ContainerEntry(final String personaTag, final String id, final String uuid, final List<String> contentIds) {
+            this.id = id;
+            this.uuid = uuid;
+            this.personaTag  = personaTag;
+            this.contentIds = contentIds;
+        }
+
         public String getPersonaTag() {
             return personaTag;
         }
