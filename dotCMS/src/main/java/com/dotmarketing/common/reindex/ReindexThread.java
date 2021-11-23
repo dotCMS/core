@@ -109,7 +109,7 @@ public class ReindexThread {
 
     public static final int BACKOFF_POLICY_TIME_IN_SECONDS = Config.getIntProperty("BACKOFF_POLICY_TIME_IN_SECONDS", 20);
     
-    public static final int BACKOFF_POLICY_MAX_RETRYS = Config.getIntProperty("BACKOFF_POLICY_TIME_IN_MILLIS", 10);
+    public static final int BACKOFF_POLICY_MAX_RETRYS = Config.getIntProperty("BACKOFF_POLICY_MAX_RETRYS", 10);
     
     
     private AtomicReference<ThreadState> STATE = new AtomicReference<>(ThreadState.RUNNING);
