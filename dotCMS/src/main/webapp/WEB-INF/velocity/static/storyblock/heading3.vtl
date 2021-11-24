@@ -1,5 +1,6 @@
+#parse( "marks-macro.vtl" )
 <h3>
     #foreach($content in $item.content)
-        $content.text
+        #renderText($content.text)
     #end
 </h3>

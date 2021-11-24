@@ -1,12 +1,13 @@
+#parse( "marks-macro.vtl" )
 <ul>
     #foreach($listItem in $item.content)
         #if ($listItem.type == "listItem")
             <li>
                 #foreach($listItemContent in $listItem.content)
-                            #foreach($listItemContentContent in $listItemContent.content)
-                    $listItemContentContent.text
+                    #foreach($listItemContentContent in $listItemContent.content)
+                        #renderText($listItemContentContent.text)
+                     #end
                 #end
-                        #end
             </li>
         #end
 
