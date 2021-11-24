@@ -793,26 +793,52 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		List<Contentlet>           templates = null;
 		final List<Folder>         folders   = new ArrayList<>();
 
-		try {
-			final StringBuilder queryBuilder = StringUtils.builder("+structureType:", BaseContentType.FILEASSET.getType(),
-					" +path:",    Constants.TEMPLATE_FOLDER_PATH, "/*",
-					" +path:*/" + Constants.TEMPLATE_META_INFO_FILE_NAME,
-					" +working:true",
-					includeArchived? StringPool.BLANK : " +deleted:false");
+		final StringBuilder sqlQuery = new StringBuilder("select cvi.working_inode as inode from contentlet_version_info cvi, identifier id where"
+				+ " id.parent_path like ? and id.asset_name = ? and cvi.identifier = id.id");
+		final List<Object> parameters = new ArrayList<>();
+		parameters.add(Constants.TEMPLATE_FOLDER_PATH + StringPool.FORWARD_SLASH + StringPool.PERCENT);
+		parameters.add(Constants.TEMPLATE_META_INFO_FILE_NAME);
 
-			if (null != host) {
-				queryBuilder.append(" +conhost:" + host.getIdentifier());
+		if(!includeArchived){
+			sqlQuery.append(" and cvi.deleted = " + DbConnectionFactory.getDBFalse());
+		}
+
+		if(null != host){
+			sqlQuery.append(" and id.host_inode = ?");
+			parameters.add(host.getIdentifier());
+		}
+
+		final DotConnect dc = new DotConnect().setSQL(sqlQuery.toString());
+		parameters.forEach(param -> dc.addParam(param));
+
+		try {
+			final List<Map<String,String>> inodesMapList =  dc.loadResults();
+
+			final List<String> inodes = new ArrayList<>();
+			for (final Map<String, String> versionInfoMap : inodesMapList) {
+				inodes.add(versionInfoMap.get("inode"));
 			}
 
-			final String query = queryBuilder.toString();
+			final List<Contentlet> cons  = APILocator.getContentletAPI().findContentlets(inodes);
+//			final StringBuilder queryBuilder = StringUtils.builder("+structureType:", BaseContentType.FILEASSET.getType(),
+//					" +path:",    Constants.TEMPLATE_FOLDER_PATH, "/*",
+//					" +path:*/" + Constants.TEMPLATE_META_INFO_FILE_NAME,
+//					" +working:true",
+//					includeArchived? StringPool.BLANK : " +deleted:false");
+//
+//			if (null != host) {
+//				queryBuilder.append(" +conhost:" + host.getIdentifier());
+//			}
+//
+//			final String query = queryBuilder.toString();
 
 			templates =
-					this.filterTemplatesAssetsByLanguage (APILocator.getPermissionAPI().filterCollection(
-							APILocator.getContentletAPI().search(query,-1, 0, null , user, false),
+					this.filterTemplatesAssetsByLanguage (APILocator.getPermissionAPI().filterCollection(cons
+							,
 							PermissionAPI.PERMISSION_READ, false, user),
 							APILocator.getLanguageAPI().getDefaultLanguage().getId());
 
-
+//TODO: YA FUNCIONA PERO COMO USA CONTAINERS ESTA REVENTANDO
 
 			for(final Contentlet template : templates) {
 				folders.add(APILocator.getFolderAPI().find(template.getFolder(), user, false));
