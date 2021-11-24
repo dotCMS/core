@@ -1,0 +1,14 @@
+<ul>
+    #foreach($listItem in $item.content)
+        #if ($listItem.type == "listItem")
+            <li>
+                #foreach($listItemContent in $listItem.content)
+                            #foreach($listItemContentContent in $listItemContent.content)
+                    $listItemContentContent.text
+                #end
+                        #end
+            </li>
+        #end
+
+    #end
+</ul>
