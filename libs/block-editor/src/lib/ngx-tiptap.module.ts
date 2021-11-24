@@ -38,7 +38,7 @@ import { BubbleMenuButtonComponent } from './extensions/components/bubble-menu-b
         ActionButtonComponent,
         DragHandlerComponent,
         ImageBlockComponent,
-        LoaderComponent
+        LoaderComponent,
         BubbleMenuComponent,
         BubbleMenuButtonComponent
     ],

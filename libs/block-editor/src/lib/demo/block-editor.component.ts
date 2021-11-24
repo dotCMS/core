@@ -41,7 +41,7 @@ export class BlockEditorComponent implements OnInit {
                 ImageBlock(this.injector),
                 ActionsMenu(this.injector, this.resolver),
                 DragHandler(this.injector, this.resolver),
-                ImageUpload(this.injector, this.resolver)
+                ImageUpload(this.injector, this.resolver),
                 BubbleMenu.configure({
                     element: document.querySelector('#bubbleMenu'),
                     tippyOptions: {
