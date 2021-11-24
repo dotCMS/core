@@ -7,6 +7,7 @@ import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.Logger;
@@ -72,9 +73,14 @@ public class StoryBlockMap implements Renderable {
             final JSONArray items = this.jsonContFieldValue.getJSONArray("content");
             for (int i = 0; i < items.length(); ++i) {
 
-                final JSONObject jsonObjectItem = items.getJSONObject(i);
-                this.defaultRenderableItem
+                try {
+                    final JSONObject jsonObjectItem = items.getJSONObject(i);
+                    this.defaultRenderableItem
                         .toHtml(jsonObjectItem, this.processType(jsonObjectItem));
+                } catch (JSONException | DotRuntimeException e) {
+                    Logger.error(this, e.getMessage(), e);
+                    this.addError (DEFAULT_TEMPLATE_STOCK_BLOCK_PATH, builder, e);
+                }
             }
         } catch (JSONException e) {
             Logger.error(this, e.getMessage(), e);
@@ -91,15 +97,20 @@ public class StoryBlockMap implements Renderable {
 
         try {
             final JSONArray items = this.jsonContFieldValue.getJSONArray("content");
-            for (int i = 0; i < items.length(); ++i) {
 
-                final JSONObject jsonObjectItem = items.getJSONObject(i);
-                this.defaultRenderableItem
+            for (int i = 0; i < items.length(); ++i) {
+                try {
+                    final JSONObject jsonObjectItem = items.getJSONObject(i);
+                    this.defaultRenderableItem
                         .toHtml(baseTemplatePath, jsonObjectItem, this.processType(jsonObjectItem));
+                } catch (JSONException | DotRuntimeException e) {
+                    Logger.error(this, e.getMessage(), e);
+                    this.addError (baseTemplatePath, builder, e);
+                }
             }
         } catch (JSONException e) {
             Logger.error(this, e.getMessage(), e);
-            this.addError (DEFAULT_TEMPLATE_STOCK_BLOCK_PATH, builder, e);
+            this.addError (baseTemplatePath, builder, e);
         }
 
         return builder.toString();
