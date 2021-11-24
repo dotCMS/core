@@ -19,6 +19,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
@@ -133,16 +134,16 @@ public class WorkflowResourceLicenseIntegrationTest {
         final InitDataObject dataObject1 = mock(InitDataObject.class);
         when(dataObject1.getUser()).thenReturn(userAdmin);
         when(webResourceThatReturnsAdminUser
-                .init(anyString(), any(HttpServletRequest.class),any(HttpServletResponse.class), anyBoolean(),
-                        anyString())).thenReturn(dataObject1);
+                .init(nullable(String.class), any(HttpServletRequest.class),any(HttpServletResponse.class), anyBoolean(),
+                        nullable(String.class))).thenReturn(dataObject1);
 
 
         final WebResource webResourceThatReturnsARandomUser = mock(WebResource.class);
         final InitDataObject dataObject2 = mock(InitDataObject.class);
         when(dataObject2.getUser()).thenReturn(billIntranet);
         when(webResourceThatReturnsARandomUser
-                .init(anyString(), any(HttpServletRequest.class), any(HttpServletResponse.class), anyBoolean(),
-                        anyString())).thenReturn(dataObject2);
+                .init(nullable(String.class), any(HttpServletRequest.class), any(HttpServletResponse.class), anyBoolean(),
+                        nullable(String.class))).thenReturn(dataObject2);
 
         licenseWorkflowResource = new WorkflowResource(licensedWorkflowHelper, contentHelper,
                 licensedWorkflowAPI,

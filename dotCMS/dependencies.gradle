@@ -433,15 +433,15 @@ dependencies {
      */
     compile group: 'org.hamcrest', name: 'hamcrest-all', version: '1.3'
     testCompile 'junit:junit:4.12'
-    testCompile "org.mockito:mockito-core:1.+"
+    testCompile "org.mockito:mockito-core:2.+"
     testCompile "com.tngtech.junit.dataprovider:junit4-dataprovider:2.6"
-    testCompile ("org.powermock:powermock-api-mockito:1.6.5" ){
+    testCompile ("org.powermock:powermock-api-mockito2:2.0.9" ){
         exclude group: 'org.hamcrest'
         exclude group: 'org.objenesis'
         exclude group: 'cglib'
 
     }
-    testCompile "org.powermock:powermock-module-junit4:1.6.5"
+    testCompile "org.powermock:powermock-module-junit4:2.0.9"
     testCompile group: 'com.google.guava', name: 'guava', version: '19.0'
     testCompile group: 'org.apache.tomcat', name: 'tomcat-jdbc', version: '9.0.41'
 
