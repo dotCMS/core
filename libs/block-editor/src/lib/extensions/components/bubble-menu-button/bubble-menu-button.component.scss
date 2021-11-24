@@ -1,4 +1,4 @@
-@import "variables";
+@use "libs/dot-primeng-theme-styles/src/scss/variables" as *;
 
 :host {
     display: flex;
