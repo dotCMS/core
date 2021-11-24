@@ -1,6 +1,4 @@
-import { DotCMSTempFile } from '@dotcms/dotcms-models';
-import { DotHttpErrorResponse } from '../../../../models/dot-http-error-response.model';
-import { DotHttpRequestOptions } from '../../../../models/dot-http-request-options.model';
+import { DotCMSTempFile, DotHttpErrorResponse, DotHttpRequestOptions } from '@dotcms/dotcms-models';
 
 export const fallbackErrorMessages = {
     500: '500 Internal Server Error',

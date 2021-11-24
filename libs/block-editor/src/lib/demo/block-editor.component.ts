@@ -11,6 +11,9 @@ import StarterKit from '@tiptap/starter-kit';
 import { ActionsMenu } from '../extensions/actions-menu.extension';
 import { ContentletBlock } from '../extensions/blocks/contentlet-block/contentlet-block.extension';
 import { DragHandler } from '../extensions/dragHandler.extention';
+
+import { ImageUpload } from '../extensions/imageUpload.extention';
+import { ImageBlock } from '../extensions/blocks/image-block/image-block.extention';
 import BubbleMenu from '@tiptap/extension-bubble-menu';
 
 // Marks Extensions
@@ -35,8 +38,10 @@ export class BlockEditorComponent implements OnInit {
             extensions: [
                 StarterKit,
                 ContentletBlock(this.injector),
+                ImageBlock(this.injector),
                 ActionsMenu(this.injector, this.resolver),
                 DragHandler(this.injector, this.resolver),
+                ImageUpload(this.injector, this.resolver)
                 BubbleMenu.configure({
                     element: document.querySelector('#bubbleMenu'),
                     tippyOptions: {

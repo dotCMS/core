@@ -1,15 +1,15 @@
-import { 
-  Component,
-  OnInit,
-  ComponentFactoryResolver,
-  Injector,
-  ViewEncapsulation
+import {
+    Component,
+    OnInit,
+    ComponentFactoryResolver,
+    Injector,
+    ViewEncapsulation
 } from '@angular/core';
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 
-import { ContentletBlock } from '@dotcms/block-editor';
-import { ActionsMenu } from '@dotcms/block-editor';
+import { ContentletBlock, ImageBlock, ImageUpload } from '@dotcms/block-editor';
+import { ActionsMenu, DragHandler } from '@dotcms/block-editor';
 
 // Marks Extensions
 import { TextAlign } from '@tiptap/extension-text-align';
@@ -35,6 +35,9 @@ export class DotBlockEditorComponent implements OnInit {
                 StarterKit,
                 ContentletBlock(this.injector),
                 ActionsMenu(this.injector, this.resolver),
+                DragHandler(this.injector, this.resolver),
+                ImageUpload(this.injector, this.resolver),
+                ImageBlock(this.injector)
                 Underline,
                 TextAlign.configure({
                     types: ['heading', 'paragraph']

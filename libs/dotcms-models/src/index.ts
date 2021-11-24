@@ -5,3 +5,6 @@ export * from './lib/dot-push-publish-dialog-data.model';
 export * from './lib/dot-temp-file.model';
 export * from './lib/dot-workflow-action.model';
 export * from './lib/dot-workflow.model';
+export * from './lib/dot-asset-create-options.model';
+export * from './lib/dot-http-error-response.model';
+export * from './lib/dot-http-request-options.model';

@@ -15,6 +15,10 @@ import { SuggestionsComponent } from '../extensions/components/suggestions/sugge
 import { ActionButtonComponent } from '../extensions/components/action-button/action-button.component';
 import { ContentletBlockComponent } from '../extensions/blocks/contentlet-block/contentlet-block.component';
 import { DragHandlerComponent } from '../extensions/components/drag-handler/drag-handler.component';
+import { ImageBlockComponent } from '../extensions/blocks/image-block/image-block.component';
+import { LoaderComponent } from '../extensions/components/loader/loader.component';
+import { DotImageService } from '../extensions/services/dot-image/dot-image.service';
+import { delay } from 'rxjs/operators';
 
 export default {
     title: 'Block Editor'
@@ -32,6 +36,23 @@ export const primary = () => ({
             BrowserAnimationsModule
         ],
         providers: [
+            {
+                provide: DotImageService,
+                useValue: {
+                    publishContent() {
+                        return of([
+                            {
+                                cd769844de530f7b5d3434b1b5cfdd62: {
+                                    asset:
+                                        'https://media.istockphoto.com/vectors/costa-rica-vector-id652225694?s=170667a',
+                                    mimeType: 'image/png',
+                                    name: 'costarica.png'
+                                }
+                            }
+                        ]).pipe(delay(800));
+                    }
+                }
+            },
             {
                 provide: SuggestionsService,
                 useValue: {
@@ -99,7 +120,9 @@ export const primary = () => ({
             SuggestionsComponent,
             ContentletBlockComponent,
             ActionButtonComponent,
-            DragHandlerComponent
+            DragHandlerComponent,
+            ImageBlockComponent,
+            LoaderComponent
         ]
     },
     component: BlockEditorComponent

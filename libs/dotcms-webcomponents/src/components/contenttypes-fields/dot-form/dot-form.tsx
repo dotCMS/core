@@ -7,10 +7,10 @@ import {
     DotCMSContentTypeLayoutRow,
     DotCMSContentTypeField,
     DotCMSTempFile,
-    DotCMSContentlet
+    DotCMSContentlet,
+    DotHttpErrorResponse
 } from '@dotcms/dotcms-models';
 import { DotUploadService, fallbackErrorMessages } from './services/dot-upload.service';
-import { DotHttpErrorResponse } from '../../../models/dot-http-error-response.model';
 import { DotBinaryFileComponent } from '../dot-binary-file/dot-binary-file';
 
 const SUBMIT_FORM_API_URL = '/api/v1/workflow/actions/default/fire/NEW';
