@@ -130,13 +130,13 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		return contentlets.stream().map(c -> fromContentlet(c)).collect(Collectors.toList());
 	}
 
-	@CloseDBIfOpened//abrir pagina
+	@CloseDBIfOpened
 	public List<FileAsset> findFileAssetsByFolder(
 			final Folder parentFolder,
 			final User user,
 			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
-		return findFileAssetsByParentable(parentFolder,null,false,false,user,respectFrontendRoles);
+		return findFileAssetsByParentable(parentFolder,null,true,false,user,respectFrontendRoles);
 //		try {
 //		    return fromContentlets(this.contAPI.search(
 //					"+structureType:" + Structure.STRUCTURE_TYPE_FILEASSET + " +conFolder:" + parentFolder.getInode(),
@@ -170,7 +170,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	@CloseDBIfOpened
 	public List<FileAsset> findFileAssetsByHost(final Host parentHost, final User user, final boolean respectFrontendRoles) throws DotDataException,
 	DotSecurityException {
-		return findFileAssetsByParentable(parentHost,null,false,false,user,respectFrontendRoles);
+		return findFileAssetsByParentable(parentHost,null,true,false,user,respectFrontendRoles);
 //		List<FileAsset> assets;
 //		try {
 //			final Folder parentFolder = APILocator.getFolderAPI().find(FolderAPI.SYSTEM_FOLDER, user, false);
@@ -570,7 +570,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
         return false;
     }
 
-    @CloseDBIfOpened//templates portlet, abrir pagina, containers portlet//DE ACA VIENE VER QUE TIRABA ANTES
+    @CloseDBIfOpened
     public List<FileAsset> findFileAssetsByFolder(Folder parentFolder,
 			String sortBy, boolean live, User user, boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
