@@ -255,3 +255,5 @@ This maintenance release includes the following code fixes:
 125. https://github.com/dotCMS/core/issues/20685 : [Vanity URL] : Missing parameters in Vanity URL cause problems in API #20685
 
 126. https://github.com/dotCMS/core/issues/20649 : IndexPolicy do not respected on wf toolview #20649
+
+127. https://github.com/dotCMS/core/issues/20640 : Tika failing to init, hanging dotCMS startup #20640
