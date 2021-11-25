@@ -93,9 +93,6 @@ import org.elasticsearch.common.xcontent.XContentType;
 
 /**
  * Implementation class for the {@link ContentMappingAPI}.
- * <p>
- * This class provides useful methods and mechanisms to map properties that are present in a {@link Contentlet} object,
- * specially for ES indexation purposes.
  *
  * @author root
  * @since Mar 22nd, 2012
@@ -212,8 +209,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		try {
 			final StringWriter sw = new StringWriter();
 			final User systemUser = APILocator.getUserAPI().getSystemUser();
-			final Map<String,Object> contentletMap = new HashMap();
-			final Map<String,Object> mlowered	   = new HashMap();
+			final Map<String,Object> contentletMap = new HashMap<>();
+			final Map<String,Object> mlowered	   = new HashMap<>();
 			loadCategories(contentlet, contentletMap);
 			loadFields(contentlet, contentletMap);
 			loadPermissions(contentlet, contentletMap);
@@ -237,17 +234,18 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                         contentlet.getContentTypeId());
                 throw new DotDataException(errorMsg);
             }
-			final Folder contentFolder = APILocator.getFolderAPI().findFolderByPath(contentIdentifier.getParentPath(), contentIdentifier.getHostId(), systemUser, false);
+            final Host contentSite = APILocator.getHostAPI().find(contentIdentifier.getHostId(), systemUser, DONT_RESPECT_FRONTEND_ROLES);
+            if (null == contentSite || !UtilMethods.isSet(contentSite.getIdentifier())) {
+                final String errorMsg = String.format("Identifier '%s' is pointing to a Site that is not valid: '%s'." +
+                                " Please manually change this record to point to a valid Site, or delete it altogether.",
+                        contentIdentifier.getId(), contentIdentifier.getHostId());
+                throw new DotDataException(errorMsg);
+            }
+			final Folder contentFolder = APILocator.getFolderAPI().findFolderByPath(contentIdentifier.getParentPath(), contentIdentifier.getHostId(), systemUser, DONT_RESPECT_FRONTEND_ROLES);
             if (null == contentFolder || !UtilMethods.isSet(contentFolder.getIdentifier())) {
                 final String errorMsg = String.format("Parent folder '%s' in Site '%s' was not found via API. Please " +
                         "check that the specified value points to a valid folder.", contentIdentifier.getParentPath()
                         , contentIdentifier.getHostId());
-                throw new DotDataException(errorMsg);
-            }
-			final Host contentSite = APILocator.getHostAPI().find(contentIdentifier.getHostId(), systemUser, false);
-            if (null == contentSite || !UtilMethods.isSet(contentSite.getIdentifier())) {
-                final String errorMsg = String.format("Site with ID '%s' was not found via API. Please check that the" +
-                        " specified value points to a valid Site.", contentIdentifier.getHostId());
                 throw new DotDataException(errorMsg);
             }
 
@@ -308,9 +306,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			contentletMap.put(ESMappingConstants.VERSION_TS, elasticSearchDateTimeFormat.format(versionInfo.getVersionTs()));
 			contentletMap.put(ESMappingConstants.VERSION_TS + TEXT, datetimeFormat.format(versionInfo.getVersionTs()));
 
-			String urlMap;
 			try{
-				urlMap = APILocator.getContentletAPI().getUrlMapForContentlet(contentlet, APILocator.getUserAPI().getSystemUser(), true);
+				final String urlMap = APILocator.getContentletAPI().getUrlMapForContentlet(contentlet, systemUser, RESPECT_FRONTEND_ROLES);
 				if(urlMap != null){
 					contentletMap.put(ESMappingConstants.URL_MAP,urlMap );
 				}
