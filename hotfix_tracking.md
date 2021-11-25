@@ -253,3 +253,5 @@ This maintenance release includes the following code fixes:
 124. https://github.com/dotCMS/core/issues/20719 : NPE on tags via graphql if no tags present #20719
 
 125. https://github.com/dotCMS/core/issues/20685 : [Vanity URL] : Missing parameters in Vanity URL cause problems in API #20685
+
+126. https://github.com/dotCMS/core/issues/20649 : IndexPolicy do not respected on wf toolview #20649
