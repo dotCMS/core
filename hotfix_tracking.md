@@ -245,3 +245,5 @@ This maintenance release includes the following code fixes:
 120. https://github.com/dotCMS/core/issues/20616 : Button for Navigation Reorder is not working correctly
 
 121. https://github.com/dotCMS/core/issues/21173 : Ignore application/x-zerosize mime type #21173
+
+122. https://github.com/dotCMS/core/issues/20746 : Content Export tool is not exporting relationships correctly #20746
