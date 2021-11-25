@@ -249,3 +249,5 @@ This maintenance release includes the following code fixes:
 122. https://github.com/dotCMS/core/issues/20746 : Content Export tool is not exporting relationships correctly #20746
 
 123. https://github.com/dotCMS/core/issues/20722 : [Reindex] : Perform Site check before Folder check #20722
+
+124. https://github.com/dotCMS/core/issues/20719 : NPE on tags via graphql if no tags present #20719
