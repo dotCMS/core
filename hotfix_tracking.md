@@ -259,3 +259,5 @@ This maintenance release includes the following code fixes:
 127. https://github.com/dotCMS/core/issues/20640 : Tika failing to init, hanging dotCMS startup #20640
 
 128. https://github.com/dotCMS/core/issues/20494 : Error retrieving content references in multilingual setup #20494
+
+129. https://github.com/dotCMS/core/issues/20399 : [Content] : Many to One relationship not displaying in Content Search #20399
