@@ -23,12 +23,14 @@
 		<th><%= LanguageUtil.get(pageContext, "Page") %></th>
 		<th><%= LanguageUtil.get(pageContext, "Container") %></th>
 		<th><%= LanguageUtil.get(pageContext, "Page-Owner") %></th>
+		<th><%= LanguageUtil.get(pageContext, "Persona") %></th>
 	</tr>
 <%
 	int Cmod=0;
    	for (Map<String, Object> reference : references) {
     	IHTMLPage htmlpageRef = (IHTMLPage)reference.get("page");
     	Container containerRef = (Container)reference.get("container");
+    	String persona = (String)reference.get("persona");
 		Host host = APILocator.getHTMLPageAssetAPI().getParentHost(htmlpageRef);
 		
 		String str_style2 = "";
@@ -48,6 +50,7 @@
 		</td>
 		<td><%= containerRef.getTitle() %></td>
 		<td><%= UtilMethods.getUserFullName(htmlpageRef.getModUser()) %></td>
+		<td><%= persona %></td>
 	</tr>
 	<%
 	}

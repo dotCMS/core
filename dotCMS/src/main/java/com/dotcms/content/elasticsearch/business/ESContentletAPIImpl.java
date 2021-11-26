@@ -36,6 +36,8 @@ import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.rendering.velocity.services.PageLoader;
+import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotcms.repackage.com.google.common.collect.Lists;
@@ -207,6 +209,7 @@ import java.util.stream.Stream;
 import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
 import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
+import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -437,19 +440,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     this.find(contentletVersionInfo.getWorkingInode(), user, respectFrontendRoles);
 
             if (null == contentlet) {
-
                 return Optional.empty();
             }
 
             // if we are using the fallback, and it is not allowed, return empty
             if (fallback && tryLanguage != defaultLanguageId && !contentlet.getContentType().languageFallback()) {
-
                 return Optional.empty();
             }
 
             return Optional.of(contentlet);
         } catch (Exception e) {
-
             throw new DotContentletStateException("Can't find contentlet: " + identifier + " lang:" + incomingLangId + " live:" + live, e);
         }
     }
@@ -955,7 +955,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 isAdmin = true;
             }
         }
-        StringBuffer buffy = new StringBuffer(luceneQuery);
+        final StringBuffer buffy = new StringBuffer(luceneQuery);
 
         // Permissions in the query
         if (!isAdmin)
@@ -970,26 +970,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         if(limit<=MAX_LIMIT) {
-            SearchHits lc = contentFactory.indexSearch(buffy.toString(), limit, offset, sortBy);
-            PaginatedArrayList <ContentletSearch> list=new PaginatedArrayList<>();
-            list.setTotalResults(lc.getTotalHits().value);
+            final SearchHits searchHits = contentFactory.indexSearch(buffy.toString(), limit, offset, sortBy);
+            final PaginatedArrayList <ContentletSearch> list=new PaginatedArrayList<>();
+            list.setTotalResults(searchHits.getTotalHits().value);
 
-            for (SearchHit sh : lc.getHits()) {
+            for (final SearchHit searchHit : searchHits.getHits()) {
                 try{
-                    Map<String, Object> sourceMap = sh.getSourceAsMap();
-                    ContentletSearch conwrapper= new ContentletSearch();
-                    conwrapper.setId(sh.getId());
-                    conwrapper.setIndex(sh.getIndex());
-                    conwrapper.setIdentifier(sourceMap.get("identifier").toString());
-                    conwrapper.setInode(sourceMap.get("inode").toString());
-                    conwrapper.setScore(sh.getScore());
+                    final Map<String, Object> sourceMap = searchHit.getSourceAsMap();
+                    final ContentletSearch conWrapper = new ContentletSearch();
+                    conWrapper.setId(searchHit.getId());
+                    conWrapper.setIndex(searchHit.getIndex());
+                    conWrapper.setIdentifier(sourceMap.get("identifier").toString());
+                    conWrapper.setInode(sourceMap.get("inode").toString());
+                    conWrapper.setScore(searchHit.getScore());
 
-                    list.add(conwrapper);
+                    list.add(conWrapper);
                 }
                 catch(Exception e){
                     Logger.error(this,e.getMessage(),e);
                 }
-
             }
             return list;
         } else {
@@ -1191,20 +1190,47 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         final List<MultiTree> trees = APILocator.getMultiTreeAPI().getMultiTreesByChild(id.getId());
         for (final MultiTree tree : trees) {
-            final IHTMLPage page = APILocator.getHTMLPageAssetAPI()
-                    .findByIdLanguageFallback(tree.getParent1(), contentlet.getLanguageId(), false,
-                            APILocator.getUserAPI().getSystemUser(), false);
-            final Container container = APILocator.getContainerAPI()
-                    .getWorkingContainerById(tree.getParent2(),
-                            APILocator.getUserAPI().getSystemUser(), false);
-            if (InodeUtils.isSet(page.getInode()) && InodeUtils.isSet(container.getInode())) {
-                final Map<String, Object> map = new HashMap<String, Object>();
-                map.put("page", page);
-                map.put("container", container);
-                results.add(map);
+
+            try {
+                final IHTMLPage page = APILocator.getHTMLPageAssetAPI()
+                        .findByIdLanguageFallback(tree.getHtmlPage(), contentlet.getLanguageId(),
+                                false,
+                                APILocator.getUserAPI().getSystemUser(), false);
+
+                if (InodeUtils.isSet(page.getInode())) {
+
+                    final Container container = APILocator.getContainerAPI()
+                            .getWorkingContainerById(tree.getContainer(),
+                                    APILocator.getUserAPI().getSystemUser(), false);
+
+                    if (InodeUtils.isSet(container.getInode())) {
+                        final String personaName = getPersonaNameByMultitree(tree);
+                        final Map<String, Object> map = new HashMap<>();
+                        map.put("page", page);
+                        map.put("container", container);
+                        map.put("persona", personaName);
+                        results.add(map);
+                    }
+                }
+            } catch(DoesNotExistException e) {
+                Logger.debug(this, "Page not available in the requested language. This is ok");
             }
         }
         return results;
+    }
+
+    private String getPersonaNameByMultitree(final MultiTree tree) throws DotSecurityException, DotDataException {
+        final Supplier<String> defaultPersonaSupplier = () -> Try.of(()->
+                LanguageUtil.get(DEFAULT_PERSONA_NAME_KEY)).getOrElse("Default Visitor");
+
+        String personaTag = Try.of(()-> tree.getPersonalization()
+                .substring((Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON).length()))
+                .getOrElse("");
+        Optional<Persona> personaOpt = APILocator.getPersonaAPI()
+                .findPersonaByTag(personaTag,
+                        APILocator.systemUser(), false);
+
+        return personaOpt.isPresent()? personaOpt.get().getName(): defaultPersonaSupplier.get();
     }
 
     @CloseDBIfOpened
@@ -4449,8 +4475,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         if (!isCheckInSafe(contentRelationships)){
             this.esReadOnlyMonitor.start();
+            final String contentletIdentifier =
+                    null != contentlet && null != contentlet.getIdentifier()? contentlet.getIdentifier(): StringPool.NULL;
             throw new DotContentletStateException(
-                    "Content cannot be saved at this moment. Reason: Elastic Search cluster is in read only mode.");
+                    "Content cannot be saved at this moment. Reason: Elastic Search cluster is in read only mode. Contentlet Id: " +
+                            contentletIdentifier);
         }
 
         if(cats == null) {
@@ -4613,10 +4642,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             HashMap<String, String> tagsValues = new HashMap<>();
             String tagsHost = Host.SYSTEM_HOST;
 
-
-            
-            
-
             for ( com.dotcms.contenttype.model.field.Field field : contentType.fields(TagField.class) ) {
                 String value = null;
                 if ( contentlet.getStringProperty(field.variable()) != null ) {
@@ -4686,7 +4711,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 //Adding back temporarily the page URL to the contentlet, is needed in order to create a proper Identifier
                 addURLToContentlet( contentlet, htmlPageURL );
 
-                Treeable parent;
+                final Treeable parent;
                 if ( UtilMethods.isSet( contentletRaw.getFolder() ) && !contentletRaw.getFolder().equals( FolderAPI.SYSTEM_FOLDER ) ) {
                     parent = APILocator.getFolderAPI().find( contentletRaw.getFolder(), sysuser, false );
                 } else {
@@ -4710,7 +4735,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
 
-                String oldURI = identifier.getURI();
+                final String oldURI = identifier.getURI();
 
                 // make sure the identifier is removed from cache
                 // because changes here may affect URI then IdentifierCache
@@ -4721,8 +4746,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET){
                     try {
                         if(contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD) == null){
-                            String binaryIdentifier = contentletRaw.getIdentifier() != null ? contentletRaw.getIdentifier() : StringPool.BLANK;
-                            String binarynode = contentletRaw.getInode() != null ? contentletRaw.getInode() : StringPool.BLANK;
+                            final String binaryIdentifier = contentletRaw.getIdentifier() != null ? contentletRaw.getIdentifier() : StringPool.BLANK;
+                            final String binarynode = contentletRaw.getInode() != null ? contentletRaw.getInode() : StringPool.BLANK;
                             throw new FileAssetValidationException("Unable to validate field: " + FileAssetAPI.BINARY_FIELD
                                     + " identifier: " + binaryIdentifier
                                     + " inode: " + binarynode);
@@ -4745,7 +4770,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     identifier.setAssetName( htmlPageURL );
                 }
                 if(UtilMethods.isSet(contentletRaw.getFolder()) && !contentletRaw.getFolder().equals(FolderAPI.SYSTEM_FOLDER)){
-                    Folder folder = APILocator.getFolderAPI().find(contentletRaw.getFolder(), sysuser, false);
+                    final Folder folder = APILocator.getFolderAPI().find(contentletRaw.getFolder(), sysuser, false);
                     Identifier folderIdent = APILocator.getIdentifierAPI().find(folder);
                     identifier.setParentPath(folderIdent.getPath());
                 }
@@ -4797,8 +4822,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 
             // Binary Files
-            String newInode = contentlet.getInode();
-            String oldInode = workingContentlet.getInode();
+            final String newInode = contentlet.getInode();
+            final String oldInode = workingContentlet.getInode();
 
 
             File newDir = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator
@@ -8083,7 +8108,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         String lockedBy = null;
         try {
-
             lockedBy = APILocator.getVersionableAPI().getLockedBy(contentlet);
         } catch(Exception e) {
 

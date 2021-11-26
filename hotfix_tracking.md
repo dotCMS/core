@@ -257,3 +257,5 @@ This maintenance release includes the following code fixes:
 126. https://github.com/dotCMS/core/issues/20649 : IndexPolicy do not respected on wf toolview #20649
 
 127. https://github.com/dotCMS/core/issues/20640 : Tika failing to init, hanging dotCMS startup #20640
+
+128. https://github.com/dotCMS/core/issues/20494 : Error retrieving content references in multilingual setup #20494
