@@ -175,7 +175,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
 
         final List<Field> fields = contentlet.getContentType().fields();
         for (final Field field : fields) {
-            if (isNotMappable(field)) {
+            if (isNotMappable(field) || skipSystemField(field, contentlet) ) {
                 continue;
             }
             final Object value = contentlet.get(field.variable());
@@ -273,6 +273,10 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
         return map;
     }
 
+    private boolean isAllowedSystemField(final Field field){
+        return (field instanceof BinaryField || field instanceof HiddenField || field instanceof CategoryField || field instanceof TagField);
+    }
+
     /**
      * Determine if we're looking at File-Asset.
      * @param contentType
@@ -292,11 +296,10 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
     private boolean isSettable(final Field field) {
         return !(
                 field instanceof LineDividerField ||
-                        field instanceof TabDividerField ||
-                        field instanceof ColumnField ||
-                        field instanceof CategoryField ||
-                        field instanceof PermissionTabField ||
-                        field instanceof RelationshipsTabField
+                field instanceof TabDividerField ||
+                field instanceof ColumnField ||
+                field instanceof PermissionTabField ||
+                field instanceof RelationshipsTabField
         );
     }
 
@@ -307,7 +310,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
      */
     private boolean isNoneMappableSystemField(final Field field) {
         return (field.dataType() == DataTypes.SYSTEM &&
-                  !(field instanceof BinaryField) && !(field instanceof HiddenField)
+                  !(isAllowedSystemField(field))
         );
     }
 
@@ -326,7 +329,23 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
      * @return
      */
     private boolean isNotMappable(final Field field) {
-        return (!isSettable(field) || (field instanceof HostFolderField) || (field instanceof TagField) || isNoneMappableSystemField(field) || isMetadataField(field));
+        return (!isSettable(field) ||
+               (field instanceof HostFolderField) ||
+                isNoneMappableSystemField(field) ||
+                isMetadataField(field));
+    }
+
+    /**
+     * Sometimes just isn't the right moment to process system fields
+     * @param field
+     * @param contentlet
+     * @return
+     */
+    private boolean skipSystemField(final Field field, final com.dotmarketing.portlets.contentlet.model.Contentlet contentlet){
+        if(isAllowedSystemField(field)){
+           return UtilMethods.isNotSet(contentlet.getIdentifier()) || UtilMethods.isNotSet(contentlet.getInode());
+        }
+        return false;
     }
 
     /**
@@ -454,7 +473,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
      * @return
      * @throws JsonProcessingException
      */
-    Contentlet immutableFromJson(final String json) throws JsonProcessingException {
+    public Contentlet immutableFromJson(final String json) throws JsonProcessingException {
         return objectMapper.get().readValue(json, Contentlet.class);
     }
 

@@ -1,10 +1,10 @@
-package com.dotcms.content.model.type;
+package com.dotcms.content.model.type.system;
 
 import com.dotcms.content.model.FieldValue;
 import com.dotcms.content.model.FieldValueBuilder;
 import com.dotcms.content.model.annotation.HydrateWith;
-import com.dotcms.content.model.annotation.ValueType;
 import com.dotcms.content.model.annotation.Hydration;
+import com.dotcms.content.model.annotation.ValueType;
 import com.dotcms.content.model.hydration.MetadataDelegate;
 import com.dotcms.content.model.hydration.ResourceLinkDelegate;
 import com.fasterxml.jackson.annotation.JsonProperty;

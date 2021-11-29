@@ -171,7 +171,6 @@ import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -4601,7 +4600,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private Contentlet internalCheckin(Contentlet contentlet,
-            ContentletRelationships contentRelationships, List<Category> cats,
+            ContentletRelationships contentRelationships, List<Category> categories,
             final User incomingUser,
             final boolean respectFrontendRoles,
             boolean createNewVersion
@@ -4612,10 +4611,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(user.isAnonymousUser() && AnonymousAccess.systemSetting() != AnonymousAccess.WRITE) {
             throw new DotSecurityException("CONTENT_APIS_ALLOW_ANONYMOUS setting does not allow anonymous content WRITEs");
         }
-        
-        final boolean validateEmptyFile =
-                contentlet.getMap().containsKey(Contentlet.VALIDATE_EMPTY_FILE)?
-                        contentlet.getBoolProperty(Contentlet.VALIDATE_EMPTY_FILE):true;
 
         if(contentRelationships == null) {
 
@@ -4643,8 +4638,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             contentletIdentifier);
         }
 
-        if(cats == null) {
-            cats = getExistingContentCategories(contentlet);
+        if(categories == null) {
+            categories = getExistingContentCategories(contentlet);
         }
         final ContentType contentType = contentlet.getContentType();
         boolean saveWithExistingID = false;
@@ -4700,14 +4695,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             checkPermission(contentlet, respectFrontendRoles, user);
 
-            if (createNewVersion && cats == null) {
+            if (createNewVersion && categories == null) {
                 throw new IllegalArgumentException(
                         "The categories cannot be null when trying to checkin. The method was called improperly");
             }
 
             try {
                 // note: we do this in this way in order to invoke hooks if they are
-                APILocator.getContentletAPI().validateContentlet(contentlet, contentRelationships, cats);
+                APILocator.getContentletAPI().validateContentlet(contentlet, contentRelationships, categories);
 
             } catch (DotContentletValidationException ve) {
                 throw ve;
@@ -4801,7 +4796,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             boolean structureHasAHostField = hasAHostField(contentlet.getStructureInode());
 
             //Preparing the tags info to be related to this contentlet
-            HashMap<String, String> tagsValues = new HashMap<>();
+            final HashMap<String, String> tagsValues = new HashMap<>();
             String tagsHost = Host.SYSTEM_HOST;
 
             for ( com.dotcms.contenttype.model.field.Field field : contentType.fields(TagField.class) ) {
@@ -4876,6 +4871,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 contentlet = contentFactory.save(contentlet);
                 contentlet.setIndexPolicy(indexPolicy);
                 contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
+
             } else {
 
                 Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
@@ -4888,14 +4884,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
 
                 identifier.setHostId(contentlet.getHost());
-                if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET){
+                if(contentlet.isFileAsset()){
                     try {
                         if(contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD) == null){
                             final String binaryIdentifier = contentletRaw.getIdentifier() != null ? contentletRaw.getIdentifier() : StringPool.BLANK;
-                            final String binarynode = contentletRaw.getInode() != null ? contentletRaw.getInode() : StringPool.BLANK;
+                            final String binaryNode = contentletRaw.getInode() != null ? contentletRaw.getInode() : StringPool.BLANK;
                             throw new FileAssetValidationException("Unable to validate field: " + FileAssetAPI.BINARY_FIELD
                                     + " identifier: " + binaryIdentifier
-                                    + " inode: " + binarynode);
+                                    + " inode: " + binaryNode);
                         } else {
                             //We no longer use the old BinaryField to recover the file name.
                             //From now on we'll recover such value from the field "fileName" presented on the screen.
@@ -4910,7 +4906,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     } catch (IOException e) {
                         Logger.error( this.getClass(), "Error handling Binary Field.", e );
                     }
-                } else if ( contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE ) {
+                } else if ( contentlet.isHTMLPage() ) {
                     //For HTML Pages - The asset name maps to the page URL
                     identifier.setAssetName( htmlPageURL );
                 }
@@ -4942,9 +4938,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     //Relate the found/created tag with this contentlet
                     tagAPI.addContentletTagInode(tag, contentlet.getInode(), tagEntry.getKey());
                 }
-                //Adding tags back as field to be returned
+                //Adding tags back as field to be returned (they're returned as a List)
                 if (tagEntry.getValue()!=null && !StringPool.BLANK.equals(tagEntry.getValue())) {
-                    contentlet.setProperty(tagEntry.getKey(), tagEntry.getValue());
+                    contentlet.setProperty(tagEntry.getKey(), Stream.of(tagEntry.getValue().split(",")).collect(
+                            Collectors.toList()));
                 } else{
                     contentlet.setProperty(tagEntry.getKey(), null);
                 }
@@ -4958,11 +4955,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             final boolean movedContentDependencies = (createNewVersion || contentRelationships != null
-                    || cats != null);
+                    || categories != null);
 
             if (movedContentDependencies) {
                 contentlet.setBoolProperty(CHECKIN_IN_PROGRESS, Boolean.TRUE);
-                moveContentDependencies(workingContentlet, contentlet, contentRelationships, cats, user, respectFrontendRoles);
+                moveContentDependencies(workingContentlet, contentlet, contentRelationships, categories, user, respectFrontendRoles);
             }
 
             // Refreshing permissions
@@ -4984,139 +4981,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 contentlet.setProperty(Contentlet.DISABLE_WORKFLOW, disableWorkflow);
             }
 
-            // http://jira.dotmarketing.net/browse/DOTCMS-1073
-            // storing binary files in file system.
-            Logger.debug(this, "ContentletAPIImpl : storing binary files in file system.");
+            final boolean hasBinaries = handleBinaries(contentlet, createNewVersion, contentType, workingContentlet, contentletRaw);
 
-
-            // Binary Files
-            final String newInode = contentlet.getInode();
-            final String oldInode = workingContentlet.getInode();
-
-
-            File newDir = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator
-                    + newInode.charAt(0)
-                    + File.separator
-                    + newInode.charAt(1) + File.separator + newInode);
-            newDir.mkdirs();
-
-            File oldDir = null;
-            if(UtilMethods.isSet(oldInode)) {
-                oldDir = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath()
-                        + File.separator + oldInode.charAt(0)
-                        + File.separator + oldInode.charAt(1)
-                        + File.separator + oldInode);
-            }
-
-            File tmpDir = null;
-            if(UtilMethods.isSet(oldInode)) {
-                tmpDir = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
-                        + File.separator + oldInode.charAt(0)
-                        + File.separator + oldInode.charAt(1)
-                        + File.separator + oldInode);
-            }
-
-
-            // loop over the new field values
-            // if we have a new temp file or a deleted file
-            // do it to the new inode directory
-            for ( com.dotcms.contenttype.model.field.Field field : contentType.fields(BinaryField.class) ) {
-                try {
-
-
-                    final String velocityVarNm = field.variable();
-                    File incomingFile = contentletRaw.getBinary(velocityVarNm);
-                    if(validateEmptyFile && incomingFile!=null && incomingFile.length()==0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false)){
-                        throw new DotContentletStateException("Cannot checkin 0 length file: " + incomingFile );
-                    }
-                    final File binaryFieldFolder = new File(newDir.getAbsolutePath() + File.separator + velocityVarNm);
-
-
-                    // if the user has removed this file via ui
-                    if (incomingFile == null  || incomingFile.getAbsolutePath().contains("-removed-")){
-                        FileUtil.deltree(binaryFieldFolder);
-                        contentlet.setBinary(velocityVarNm, null);
-
-                        //For removed files we should cleanup any existing metadata.
-                        if(contentlet.isFileAsset()){
-                           fileMetadataAPI.removeMetadata(contentlet);
-                        }
-
-                    } else { // if we have an incoming file
-                        if (incomingFile.exists() ){
-
-                            //If the incoming file is temp resource we need to find out if there is any metadata associated
-                            final Optional<String> tempResourceId = tempApi.getTempResourceId(incomingFile);
-
-                            //The physical file name is preserved across versions.
-                            //No need to update the name. We will only reference the file through the logical asset-name
-                            final String oldFileName  = incomingFile.getName();
-
-                            File oldFile = null;
-                            if(UtilMethods.isSet(oldInode)) {
-                                //get old file
-                                oldFile = new File(oldDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  oldFileName);
-
-                                // do we have an inline edited file, if so use that
-                                File editedFile = new File(tmpDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator + WebKeys.TEMP_FILE_PREFIX + oldFileName);
-                                if(editedFile.exists()){
-                                    incomingFile = editedFile;
-                                }
-                            }
-
-                            //The file name must be preserved so it remains the same across versions.
-                            final File newFile = new File(newDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  oldFileName);
-                            binaryFieldFolder.mkdirs();
-
-                            // we move files that have been newly uploaded or edited
-                            if(oldFile==null || !oldFile.equals(incomingFile)){
-                                if(!createNewVersion){
-                                    // If we're calling a checkinWithoutVersioning method,
-                                    // then folder needs to be cleaned up in order to add the new file in it.
-                                    // Otherwise we will have the old file and incoming file at the same time
-                                    FileUtil.deltree(binaryFieldFolder);
-                                    binaryFieldFolder.mkdirs();
-                                }
-                                // We want to copy (not move) cause the same file could be in
-                                // another field and we don't want to delete it in the first time.
-                                final boolean contentVersionHardLink = Config
-                                        .getBooleanProperty("CONTENT_VERSION_HARD_LINK", true);
-                                FileUtil.copyFile(incomingFile, newFile, contentVersionHardLink, validateEmptyFile);
-
-                            } else if (oldFile.exists()) {
-                                // otherwise, we copy the files as hardlinks
-                                final boolean contentVersionHardLink = Config
-                                        .getBooleanProperty("CONTENT_VERSION_HARD_LINK", true);
-                                FileUtil.copyFile(incomingFile, newFile, contentVersionHardLink, validateEmptyFile);
-                            }
-
-                            if(workingContentlet != contentlet){
-                                //This copies the metadata from version to version so we don't lose any any custom attribute previously added
-                                fileMetadataAPI.copyCustomMetadata(workingContentlet, contentlet);
-                                Logger.debug(ESContentletAPIImpl.class,String.format("Metadata copied from inode: `%s` to  inode `%s` ", workingContentlet.getInode(), contentlet.getInode()));
-                            }
-
-                            contentlet.setBinary(velocityVarNm, newFile);
-
-                            //This copies the metadata associated with the temp resource passed if any.
-                            if(tempResourceId.isPresent()){
-                                final Optional<Metadata> optionalMetadata = fileMetadataAPI.getMetadata(tempResourceId.get());
-                                if(optionalMetadata.isPresent()){
-                                   final Metadata tempMeta = optionalMetadata.get();
-                                   fileMetadataAPI.putCustomMetadataAttributes(contentlet, ImmutableMap.of(velocityVarNm, tempMeta.getCustomMeta()));
-                                   Logger.debug(ESContentletAPIImpl.class,String.format("Metadata copied from temp resource: `%s` ", tempResourceId.get()));
-                                }
-                            }
-                        }
-                    }
-                } catch (FileNotFoundException e) {
-                    throw new DotContentletValidationException("Error occurred while processing the file:" + e.getMessage(),e);
-                } catch (IOException e) {
-                    throw new DotContentletValidationException("Error occurred while processing the file:" + e.getMessage(),e);
-                }
-            }
-
-            // lets update identifier's syspubdate & sysexpiredate
+            // lets update identifier's sysPubDate & sysExpireDate
             if ((contentlet != null) && InodeUtils.isSet(contentlet.getIdentifier())) {
                 final Structure st=contentlet.getStructure();
                 if(UtilMethods.isSet(st.getPublishDateVar()) || UtilMethods.isSet(st.getExpireDateVar())) {
@@ -5228,7 +5095,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
             }
             boolean isLive = false;
-            if (contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) {
+            if (contentlet.isHTMLPage()) {
                 try {
                     isLive = contentlet.isLive();
                 } catch (DotStateException e) {
@@ -5295,6 +5162,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
             }
 
+            //if any of these system-fields is present then we pass the contentlet again down to the factory update method so the json field can get regenerated in full
+            if (hasBinaries || !categories.isEmpty() || !tagsValues.isEmpty()) {
+                Optional<com.dotcms.contenttype.model.field.Field> optional = Optional.empty();
+                if (!categories.isEmpty()) {
+                    optional = contentlet
+                            .getContentType().fields(CategoryField.class).stream().findFirst();
+                    if(optional.isPresent()){
+                       contentlet.setProperty(optional.get().variable(), categories);
+                    }
+                }
+                try {
+                    contentFactory.save(contentlet);
+                } finally {
+                    if(optional.isPresent()) {
+                       contentlet.getMap().remove(optional.get().variable());
+                    }
+                }
+            }
+
             // Set the properties again after the store on DB and before the fire on an Actionlet.
             contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE, contentPushPublishDate);
             contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME, contentPushPublishTime);
@@ -5330,6 +5216,147 @@ public class ESContentletAPIImpl implements ContentletAPI {
             bubbleUpException(e);
         }
         return contentlet;
+    }
+
+    private boolean handleBinaries(final Contentlet contentlet, final boolean createNewVersion, final ContentType contentType, final Contentlet workingContentlet, final Contentlet contentletRaw) throws DotDataException {
+
+        // http://jira.dotmarketing.net/browse/DOTCMS-1073
+        // storing binary files in file system.
+        Logger.debug(this, "ContentletAPIImpl : storing binary files in file system.");
+
+        final boolean validateEmptyFile =
+                contentlet.getMap().containsKey(Contentlet.VALIDATE_EMPTY_FILE)?
+                        contentlet.getBoolProperty(Contentlet.VALIDATE_EMPTY_FILE):true;
+
+        // Binary Files
+        final String newInode = contentlet.getInode();
+        final String oldInode = workingContentlet.getInode();
+
+        File newDir = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator
+                + newInode.charAt(0)
+                + File.separator
+                + newInode.charAt(1) + File.separator + newInode);
+        newDir.mkdirs();
+
+        File oldDir = null;
+        if(UtilMethods.isSet(oldInode)) {
+            oldDir = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath()
+                    + File.separator + oldInode.charAt(0)
+                    + File.separator + oldInode.charAt(1)
+                    + File.separator + oldInode);
+        }
+
+        File tmpDir = null;
+        if(UtilMethods.isSet(oldInode)) {
+            tmpDir = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
+                    + File.separator + oldInode.charAt(0)
+                    + File.separator + oldInode.charAt(1)
+                    + File.separator + oldInode);
+        }
+
+        boolean binaryHandled = false;
+
+        // loop over the new field values
+        // if we have a new temp file or a deleted file
+        // do it to the new inode directory
+        for ( com.dotcms.contenttype.model.field.Field field : contentType.fields(BinaryField.class) ) {
+            try {
+
+                final String velocityVarNm = field.variable();
+                File incomingFile = contentletRaw.getBinary(velocityVarNm);
+                if(validateEmptyFile && incomingFile!=null && incomingFile.length()==0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false)){
+                    throw new DotContentletStateException("Cannot checkin 0 length file: " + incomingFile );
+                }
+                final File binaryFieldFolder = new File(newDir.getAbsolutePath() + File.separator + velocityVarNm);
+
+
+                // if the user has removed this file via ui
+                if (incomingFile == null  || incomingFile.getAbsolutePath().contains("-removed-")){
+                    FileUtil.deltree(binaryFieldFolder);
+                    contentlet.setBinary(velocityVarNm, null);
+
+                    //For removed files we should cleanup any existing metadata.
+                    if(contentlet.isFileAsset()){
+                       fileMetadataAPI.removeMetadata(contentlet);
+                    }
+
+                } else { // if we have an incoming file
+                    if (incomingFile.exists() ){
+
+                        //If the incoming file is temp resource we need to find out if there is any metadata associated
+                        final Optional<String> tempResourceId = tempApi.getTempResourceId(incomingFile);
+
+                        //The physical file name is preserved across versions.
+                        //No need to update the name. We will only reference the file through the logical asset-name
+                        final String oldFileName  = incomingFile.getName();
+
+                        File oldFile = null;
+                        if(UtilMethods.isSet(oldInode)) {
+                            //get old file
+                            oldFile = new File(oldDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  oldFileName);
+
+                            // do we have an inline edited file, if so use that
+                            File editedFile = new File(tmpDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator + WebKeys.TEMP_FILE_PREFIX + oldFileName);
+                            if(editedFile.exists()){
+                                incomingFile = editedFile;
+                            }
+                        }
+
+                        //The file name must be preserved so it remains the same across versions.
+                        final File newFile = new File(newDir.getAbsolutePath()  + File.separator + velocityVarNm + File.separator +  oldFileName);
+                        binaryFieldFolder.mkdirs();
+
+                        // we move files that have been newly uploaded or edited
+                        if(oldFile==null || !oldFile.equals(incomingFile)){
+                            if(!createNewVersion){
+                                // If we're calling a checkinWithoutVersioning method,
+                                // then folder needs to be cleaned up in order to add the new file in it.
+                                // Otherwise we will have the old file and incoming file at the same time
+                                FileUtil.deltree(binaryFieldFolder);
+                                binaryFieldFolder.mkdirs();
+                            }
+                            // We want to copy (not move) cause the same file could be in
+                            // another field and we don't want to delete it in the first time.
+                            final boolean contentVersionHardLink = Config
+                                    .getBooleanProperty("CONTENT_VERSION_HARD_LINK", true);
+                            FileUtil.copyFile(incomingFile, newFile, contentVersionHardLink,
+                                    validateEmptyFile);
+
+                        } else if (oldFile.exists()) {
+                            // otherwise, we copy the files as hardlinks
+                            final boolean contentVersionHardLink = Config
+                                    .getBooleanProperty("CONTENT_VERSION_HARD_LINK", true);
+                            FileUtil.copyFile(incomingFile, newFile, contentVersionHardLink,
+                                    validateEmptyFile);
+                        }
+
+                        if(workingContentlet != contentlet){
+                            //This copies the metadata from version to version so we don't lose any any custom attribute previously added
+                            fileMetadataAPI.copyCustomMetadata(workingContentlet, contentlet);
+                            Logger.debug(ESContentletAPIImpl.class,String.format("Metadata copied from inode: `%s` to  inode `%s` ", workingContentlet
+                                    .getInode(), contentlet.getInode()));
+                        }
+
+                        contentlet.setBinary(velocityVarNm, newFile);
+                        binaryHandled = true;
+
+                        //This copies the metadata associated with the temp resource passed if any.
+                        if(tempResourceId.isPresent()){
+                            final Optional<Metadata> optionalMetadata = fileMetadataAPI.getMetadata(tempResourceId.get());
+                            if(optionalMetadata.isPresent()){
+                               final Metadata tempMeta = optionalMetadata.get();
+                               fileMetadataAPI.putCustomMetadataAttributes(
+                                       contentlet, ImmutableMap.of(velocityVarNm, tempMeta.getCustomMeta()));
+                               Logger.debug(ESContentletAPIImpl.class,String.format("Metadata copied from temp resource: `%s` ", tempResourceId.get()));
+                            }
+                        }
+                    }
+                }
+            } catch (IOException e) {
+                throw new DotContentletValidationException("Error occurred while processing the file:" + e.getMessage(),e);
+            }
+        }
+        return binaryHandled;
     }
 
     private void checkPermission(

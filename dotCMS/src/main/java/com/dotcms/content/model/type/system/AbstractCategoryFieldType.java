@@ -1,4 +1,4 @@
-package com.dotcms.content.model.type;
+package com.dotcms.content.model.type.system;
 
 import com.dotcms.content.model.FieldValue;
 import com.dotcms.content.model.FieldValueBuilder;
@@ -8,16 +8,17 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.util.List;
 import org.immutables.value.Value.Immutable;
 
-/**
- * List json representation for any List Like field we might need
- */
-@Immutable
-@JsonDeserialize(as = ListType.class)
-@JsonTypeName(value = AbstractListType.TYPENAME)
-@ValueType
-public interface AbstractListType<T> extends FieldValue<List<Object>> {
 
-    String TYPENAME = "List";
+/**
+ * Binary-Field json representation
+ */
+@ValueType
+@Immutable
+@JsonDeserialize(as = CategoryFieldType.class)
+@JsonTypeName(value = AbstractCategoryFieldType.TYPENAME)
+public interface AbstractCategoryFieldType extends FieldValue<List<String>> {
+
+    String TYPENAME = "Categories";
 
     /**
      * {@inheritDoc}
@@ -25,7 +26,8 @@ public interface AbstractListType<T> extends FieldValue<List<Object>> {
     @Override
     default String type() {
         return TYPENAME;
-    }
+    };
 
     abstract class Builder implements FieldValueBuilder {}
+
 }

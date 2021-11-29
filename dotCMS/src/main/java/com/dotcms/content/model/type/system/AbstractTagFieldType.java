@@ -1,22 +1,23 @@
-package com.dotcms.content.model.type;
+package com.dotcms.content.model.type.system;
 
 import com.dotcms.content.model.FieldValue;
 import com.dotcms.content.model.FieldValueBuilder;
 import com.dotcms.content.model.annotation.ValueType;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import java.util.List;
 import org.immutables.value.Value.Immutable;
 
 /**
- * Image-Field json representation
+ * Tag-Field json representation
  */
 @ValueType
 @Immutable
-@JsonDeserialize(as = ImageType.class)
-@JsonTypeName(value = AbstractImageType.TYPENAME)
-public interface AbstractImageType extends FieldValue<String> {
+@JsonDeserialize(as = TagFieldType.class)
+@JsonTypeName(value = AbstractTagFieldType.TYPENAME)
+public interface AbstractTagFieldType extends FieldValue <List<String>> {
 
-    String TYPENAME = "Image";
+    String TYPENAME = "Tags";
 
     /**
      * {@inheritDoc}
@@ -24,7 +25,7 @@ public interface AbstractImageType extends FieldValue<String> {
     @Override
     default String type() {
         return TYPENAME;
-    }
+    };
 
     abstract class Builder implements FieldValueBuilder {}
 

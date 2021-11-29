@@ -6,6 +6,9 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.content.model.FieldValue;
+import com.dotcms.content.model.type.ImageFieldType;
+import com.dotcms.content.model.type.system.BinaryFieldType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.CategoryDataGen;
 import com.dotcms.datagen.ContentletDataGen;
@@ -14,6 +17,7 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TagDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestDataUtils.TestFile;
+import com.dotcms.storage.model.Metadata;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -26,6 +30,8 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.File;
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.Date;
 import java.util.Map;
@@ -62,6 +68,7 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
                     .newContentTypeFieldTypesGalore();
 
             new TagDataGen().name("tag1").nextPersisted();
+            new TagDataGen().name("tag2").nextPersisted();
 
             final Contentlet in = new ContentletDataGen(contentType).host(site)
                     .languageId(1)
@@ -74,7 +81,7 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
                     .setProperty("textAreaField", "Desc")
                     .setProperty("dateField",new Date())
                     .setProperty("dateTimeField",new Date())
-                    .setProperty("tagField","tag1") //System field isn't expected to get saved in the json
+                    .setProperty("tagField","tag1,tag2")
                     .setProperty("keyValueField", "{\"key1\":\"val1\"}")
                     .nextPersisted();
 
@@ -108,8 +115,15 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
         assertEquals(in.get("owner"),out.get("owner"));
         assertEquals(in.get("tagField"),out.get("tagField"));
         assertEquals(in.get("keyValueField"),out.get("keyValueField"));
-        assertEquals(((Date)in.get("dateField")).toInstant(),((Date)out.get("dateField")).toInstant());
-        assertEquals(((Date)in.get("modDate")).toInstant(),((Date)out.get("modDate")).toInstant());
+
+        if (null != in.get("dateField") && null != out.get("dateField")) {
+            assertEquals(((Date) in.get("dateField")).toInstant(),
+                    ((Date) out.get("dateField")).toInstant());
+        }
+        if(null != in.get("modDate") &&  null != out.get("modDate") ) {
+            assertEquals(((Date) in.get("modDate")).toInstant(),
+                    ((Date) out.get("modDate")).toInstant());
+        }
     }
 
 
@@ -226,6 +240,11 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Method to test {@link ContentletJsonAPI#toJson(Contentlet)} && {@link ContentletJsonAPI#mapContentletFieldsFromJson(String)} called within a checkin context
+     * This is a much simpler test. What changes here is the set of fields we're passing
+     * @throws Exception
+     */
     @Test
     public void Simple_Serializer_Test()
             throws DotDataException, JsonProcessingException, DotSecurityException {
@@ -259,5 +278,57 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
             Config.setProperty(SAVE_CONTENTLET_AS_JSON, defaultValue);
         }
     }
+
+
+    @Test
+    public void Test_Raw_Immutable_Serialization()
+            throws DotDataException, IOException, DotSecurityException, URISyntaxException {
+        final boolean defaultValue = Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
+        Config.setProperty(SAVE_CONTENTLET_AS_JSON, false);
+        try {
+
+            final Folder folder = new FolderDataGen().site(site).nextPersisted();
+            final ContentType contentType = TestDataUtils
+                    .newContentTypeFieldTypesGalore();
+
+            new TagDataGen().name("tag1").nextPersisted();
+            final Contentlet imageFileAsset = TestDataUtils.getFileAssetContent(true, 1, TestFile.JPG);
+
+            final Metadata metadataNoCache = APILocator.getFileMetadataAPI()
+                    .getFullMetadataNoCache((File) imageFileAsset.get("fileAsset"), null);
+            assertNotNull(metadataNoCache);
+
+            final Metadata metadata = APILocator.getFileMetadataAPI()
+                    .getMetadataForceGenerate(imageFileAsset, "fileAsset");
+
+            System.out.println(metadata);
+
+            final Contentlet in = new ContentletDataGen(contentType).host(site)
+                    .languageId(1)
+                    .setProperty("title", "lol")
+                    .setProperty("hostFolder", folder.getIdentifier())
+                    .setProperty("imageField",imageFileAsset.getIdentifier())
+                    .setProperty("binaryField", TestDataUtils.nextBinaryFile(TestFile.JPG))
+                    .nextPersisted();
+
+            final ContentletJsonAPI impl = APILocator.getContentletJsonAPI();
+            final String json = impl.toJson(in);
+            final com.dotcms.content.model.Contentlet immutableFromJson = impl.immutableFromJson(json);
+            assertNotNull(immutableFromJson);
+            final Map<String, FieldValue<?>> fieldValueMap = immutableFromJson.fields();
+            final FieldValue<?> imageField = fieldValueMap.get("imageField");
+            imageField.value();
+            final FieldValue<?> binaryField = fieldValueMap.get("binaryField");
+            final ImageFieldType imageType = (ImageFieldType)imageField;
+            assertNotNull(imageType.link());
+            assertNotNull(imageType.metadata());
+            final BinaryFieldType binaryType = (BinaryFieldType)binaryField;
+            assertNotNull(binaryType.link());
+            assertNotNull(binaryType.metadata());
+        } finally {
+            Config.setProperty(SAVE_CONTENTLET_AS_JSON, defaultValue);
+        }
+    }
+
 
 }

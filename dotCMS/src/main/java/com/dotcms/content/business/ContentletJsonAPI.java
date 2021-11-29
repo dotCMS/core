@@ -1,5 +1,6 @@
 package com.dotcms.content.business;
 
+import com.dotcms.content.model.Contentlet;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -42,6 +43,15 @@ public interface ContentletJsonAPI {
      */
     com.dotmarketing.portlets.contentlet.model.Contentlet mapContentletFieldsFromJson(final String json)
             throws JsonProcessingException, DotDataException, DotSecurityException;
+
+
+    /**
+     * Json String to Immutable Contentlet
+     * @param json
+     * @return
+     * @throws JsonProcessingException
+     */
+    Contentlet immutableFromJson(String json) throws JsonProcessingException;
 
     /**
      * This basically tells Weather or not we support saving content as json and we have not turned it off

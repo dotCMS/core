@@ -1,11 +1,13 @@
 package com.dotcms.content.model.hydration;
 
+import static com.dotcms.content.model.hydration.HydrationUtils.*;
 import static com.dotcms.util.ReflectionUtils.setValue;
 
 import com.dotcms.content.model.FieldValueBuilder;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.ImageField;
+import com.dotcms.storage.FileMetadataAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -28,26 +30,18 @@ public class MetadataDelegate implements HydrationDelegate {
     public FieldValueBuilder hydrate(final FieldValueBuilder builder, final Field field,
             final Contentlet contentlet, String propertyName)
             throws DotDataException, DotSecurityException {
+        final FileMetadataAPI fileMetadataAPI = APILocator.getFileMetadataAPI();
         Map<String, Serializable> metadataMap = null;
         if (field instanceof BinaryField) {
-            metadataMap = Try.of(() -> contentlet.getBinaryMetadata(field).getMap()).getOrNull();
+            final File file =  (File)contentlet.get(field.variable());
+            metadataMap = fileMetadataAPI.getFullMetadataNoCache(file,null).getFieldsMeta();
         } else {
             if (field instanceof ImageField) {
-                Object fileAssetIdentifier = contentlet.get(field.variable());
-                Optional<Contentlet> fileAsContentOptional = APILocator.getContentletAPI()
-                        .findContentletByIdentifierOrFallback(fileAssetIdentifier.toString(),
-                                Try.of(
-                                        contentlet::isLive).getOrElseThrow(
-                                        () -> new DotDataException(
-                                                "can't determine if content is live."))
-                                , contentlet.getLanguageId(),
-                                APILocator.systemUser(), true);
+                final Optional<Contentlet> fileAsContentOptional = findLinkedBinary(contentlet,(ImageField) field);
                 if (fileAsContentOptional.isPresent()) {
                     final Contentlet fileAsset = fileAsContentOptional.get();
                     //Currently this is the only way we have to generate MD for dotAssets
-                    metadataMap = APILocator.getFileMetadataAPI()
-                            .getFullMetadataNoCache((File) fileAsset.get("asset"), null)
-                            .getFieldsMeta();
+                    metadataMap = fileMetadataAPI.getMetadataForceGenerate(fileAsset,"fileAsset").getFieldsMeta();
                 }
             }
         }

@@ -1,7 +1,17 @@
 package com.dotcms.storage;
 
 import static com.dotcms.storage.StoragePersistenceAPI.HASH_OBJECT;
-import static com.dotcms.storage.model.BasicMetadataFields.*;
+import static com.dotcms.storage.model.BasicMetadataFields.CONTENT_TYPE_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.HEIGHT_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.IS_IMAGE_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.LENGTH_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.MOD_DATE_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.NAME_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.PATH_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.SHA256_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.SIZE_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.TITLE_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.WIDTH_META_KEY;
 import static com.dotmarketing.util.UtilMethods.isSet;
 
 import com.dotcms.storage.model.BasicMetadataFields;
@@ -21,7 +31,6 @@ import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.awt.Dimension;
 import java.io.File;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Comparator;
@@ -177,7 +186,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
                 }
             }
         }catch (Throwable e){
-            Logger.error(FileStorageAPIImpl.class,"unable to get file dimensions",e);
+            Logger.debug(FileStorageAPIImpl.class,"unable to get file dimensions",e);
         }
         return Optional.empty();
     }

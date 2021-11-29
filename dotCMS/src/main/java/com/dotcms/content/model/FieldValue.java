@@ -2,22 +2,22 @@ package com.dotcms.content.model;
 
 
 import com.dotcms.content.model.annotation.ValueType;
-import com.dotcms.content.model.type.AbstractBinaryFieldType;
 import com.dotcms.content.model.type.AbstractCheckBoxFieldType;
 import com.dotcms.content.model.type.AbstractCustomFieldType;
 import com.dotcms.content.model.type.AbstractFileFieldType;
+import com.dotcms.content.model.type.AbstractImageFieldType;
 import com.dotcms.content.model.type.AbstractStoryBlockFieldType;
-import com.dotcms.content.model.type.hidden.AbstractBoolHiddenFieldType;
-import com.dotcms.content.model.type.hidden.AbstractDateHiddenFieldType;
-import com.dotcms.content.model.type.hidden.AbstractFloatHiddenFieldType;
-import com.dotcms.content.model.type.hidden.AbstractHiddenFieldType;
-import com.dotcms.content.model.type.AbstractImageType;
 import com.dotcms.content.model.type.AbstractTextAreaType;
 import com.dotcms.content.model.type.AbstractWysiwygType;
 import com.dotcms.content.model.type.date.AbstractDateFieldType;
 import com.dotcms.content.model.type.date.AbstractDateTimeFieldType;
 import com.dotcms.content.model.type.date.AbstractTimeFieldType;
+import com.dotcms.content.model.type.hidden.AbstractBoolHiddenFieldType;
+import com.dotcms.content.model.type.hidden.AbstractDateHiddenFieldType;
+import com.dotcms.content.model.type.hidden.AbstractFloatHiddenFieldType;
+import com.dotcms.content.model.type.hidden.AbstractHiddenFieldType;
 import com.dotcms.content.model.type.hidden.AbstractLongHiddenFieldType;
+import com.dotcms.content.model.type.keyvalue.AbstractKeyValueType;
 import com.dotcms.content.model.type.radio.AbstractBoolRadioFieldType;
 import com.dotcms.content.model.type.radio.AbstractFloatRadioFieldType;
 import com.dotcms.content.model.type.radio.AbstractLongRadioFieldType;
@@ -27,9 +27,10 @@ import com.dotcms.content.model.type.select.AbstractFloatSelectFieldType;
 import com.dotcms.content.model.type.select.AbstractLongSelectFieldType;
 import com.dotcms.content.model.type.select.AbstractMultiSelectFieldType;
 import com.dotcms.content.model.type.select.AbstractSelectFieldType;
+import com.dotcms.content.model.type.system.AbstractBinaryFieldType;
+import com.dotcms.content.model.type.system.AbstractCategoryFieldType;
+import com.dotcms.content.model.type.system.AbstractTagFieldType;
 import com.dotcms.content.model.type.text.AbstractFloatTextFieldType;
-import com.dotcms.content.model.type.keyvalue.AbstractKeyValueType;
-import com.dotcms.content.model.type.AbstractListType;
 import com.dotcms.content.model.type.text.AbstractLongTextFieldType;
 import com.dotcms.content.model.type.text.AbstractTextFieldType;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -51,7 +52,7 @@ import org.immutables.value.Value.Parameter;
 @JsonSubTypes({
 
         //Image
-        @JsonSubTypes.Type(name = AbstractImageType.TYPENAME, value = AbstractImageType.class),
+        @JsonSubTypes.Type(name = AbstractImageFieldType.TYPENAME, value = AbstractImageFieldType.class),
         //File
         @JsonSubTypes.Type(name = AbstractFileFieldType.TYPENAME, value = AbstractFileFieldType.class),
 
@@ -84,13 +85,15 @@ import org.immutables.value.Value.Parameter;
 
         //Key Values and List
         @JsonSubTypes.Type(name = AbstractKeyValueType.TYPENAME, value = AbstractKeyValueType.class),
-        @JsonSubTypes.Type(name = AbstractListType.TYPENAME, value = AbstractListType.class),
 
         //Wysiwyg
         @JsonSubTypes.Type(name = AbstractWysiwygType.TYPENAME, value = AbstractWysiwygType.class),
 
         //TextArea
         @JsonSubTypes.Type(name = AbstractTextAreaType.TYPENAME, value = AbstractTextAreaType.class),
+
+        //StoryBlockField
+        @JsonSubTypes.Type(name = AbstractStoryBlockFieldType.TYPENAME, value = AbstractStoryBlockFieldType.class),
 
         //CustomField
         @JsonSubTypes.Type(name = AbstractCustomFieldType.TYPENAME, value = AbstractCustomFieldType.class),
@@ -102,11 +105,15 @@ import org.immutables.value.Value.Parameter;
         @JsonSubTypes.Type(name = AbstractLongHiddenFieldType.TYPENAME, value = AbstractLongHiddenFieldType.class),
         @JsonSubTypes.Type(name = AbstractDateHiddenFieldType.TYPENAME, value = AbstractDateHiddenFieldType.class),
 
+        //System Fields (These are here so they can be included in the json for import export purposes)
+
         //BinaryField
         @JsonSubTypes.Type(name = AbstractBinaryFieldType.TYPENAME, value = AbstractBinaryFieldType.class),
+        //Category Field
+        @JsonSubTypes.Type(name = AbstractCategoryFieldType.TYPENAME, value = AbstractCategoryFieldType.class),
+        //Tag Fields
+        @JsonSubTypes.Type(name = AbstractTagFieldType.TYPENAME, value = AbstractTagFieldType.class),
 
-        //StoryBlockField
-        @JsonSubTypes.Type(name = AbstractStoryBlockFieldType.TYPENAME, value = AbstractStoryBlockFieldType.class),
 
 })
 @ValueType

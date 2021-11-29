@@ -3,7 +3,7 @@ package com.dotcms.contenttype.model.field;
 import static com.dotcms.util.CollectionsUtils.list;
 
 import com.dotcms.content.model.FieldValueBuilder;
-import com.dotcms.content.model.type.BinaryFieldType;
+import com.dotcms.content.model.type.system.BinaryFieldType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
