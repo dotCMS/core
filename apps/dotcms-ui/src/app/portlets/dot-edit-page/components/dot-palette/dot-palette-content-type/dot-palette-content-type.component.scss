@@ -12,30 +12,6 @@
     height: 100%;
 }
 
-.dot-content-palette__search {
-    color: $gray;
-    position: sticky;
-    align-self: flex-start;
-    top: 0;
-    width: 100%;
-
-    input {
-        width: 100%;
-        border: none;
-        outline: 0px;
-        background: transparent;
-        padding: $spacing-2 $spacing-5 $spacing-2 $spacing-1;
-        color: $gray;
-    }
-
-    dot-icon {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        right: $spacing-1;
-    }
-}
-
 .dot-content-palette__items {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -49,6 +25,7 @@
         cursor: grab;
         overflow: hidden;
         padding: 1rem $spacing-1;
+        position: relative;
         text-align: center;
 
         &:hover {
@@ -63,6 +40,17 @@
             text-overflow: ellipsis;
             white-space: nowrap;
             width: 100%;
+        }
+
+        button {
+            background-color: transparent;
+            border: none;
+            color: $gray;
+            cursor: pointer;
+            padding: 0;
+            position: absolute;
+            right: 0;
+            top: 0;
         }
     }
 }

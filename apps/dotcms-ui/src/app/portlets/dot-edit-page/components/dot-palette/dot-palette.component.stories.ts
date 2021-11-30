@@ -1,4 +1,4 @@
-import { DotContentPaletteComponent } from '@portlets/dot-edit-page/components/dot-content-palette/dot-content-palette.component';
+import { DotPaletteComponent } from '@dotcms/app/portlets/dot-edit-page/components/dot-palette/dot-palette.component';
 import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
 import { Meta, Story } from '@storybook/angular/types-6-0';
@@ -116,10 +116,10 @@ const messageServiceMock = new MockDotMessageService({
 
 export default {
     title: 'DotCMS/ Content Palette',
-    component: DotContentPaletteComponent,
+    component: DotPaletteComponent,
     decorators: [
         moduleMetadata({
-            declarations: [DotContentPaletteComponent, DotMessagePipe],
+            declarations: [DotPaletteComponent, DotMessagePipe],
             imports: [CommonModule, DotIconModule, DotFilterPipeModule],
             providers: [
                 { provide: DotContentletEditorService, useClass: MockDotContentletEditorService },
@@ -132,24 +132,24 @@ export default {
     }
 } as Meta;
 
-export const Default: Story<DotContentPaletteComponent> = (props) => {
+export const Default: Story<DotPaletteComponent> = (props) => {
     return {
         moduleMetadata: {
-            declarations: [DotContentPaletteComponent]
+            declarations: [DotPaletteComponent]
         },
-        component: DotContentPaletteComponent,
+        component: DotPaletteComponent,
         props,
-        template: `<dot-content-palette [items]='items'></dot-content-palette>`
+        template: `<dot-palette [items]='items'></dot-content-palette>`
     };
 };
 
-export const Empty: Story<DotContentPaletteComponent> = (props) => {
+export const Empty: Story<DotPaletteComponent> = (props) => {
     return {
         moduleMetadata: {
-            declarations: [DotContentPaletteComponent]
+            declarations: [DotPaletteComponent]
         },
-        component: DotContentPaletteComponent,
+        component: DotPaletteComponent,
         props,
-        template: `<dot-content-palette [items]='[]'></dot-content-palette>`
+        template: `<dot-palette [items]='[]'></dot-content-palette>`
     };
 };

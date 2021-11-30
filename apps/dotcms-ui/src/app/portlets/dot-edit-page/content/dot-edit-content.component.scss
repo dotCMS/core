@@ -19,6 +19,7 @@ dot-whats-changed,
 }
 
 .dot-edit__page-wrapper {
+    background-color: $gray-bg;
     height: 100%;
     max-width: 100%;
     min-width: 100%;
@@ -42,6 +43,7 @@ dot-whats-changed,
     display: flex;
     flex-direction: column;
     flex-grow: 1;
+    z-index: 1;
 }
 
 .dot-edit__page-wrapper:after {
@@ -109,7 +111,7 @@ dot-whats-changed,
 }
 
 /*
-    When the primeng dialog components resize it adds .p-unselectable-text to the <body>, we beed to disable
+    When the primeng dialog components resize it adds .p-unselectable-text to the <body>, we need to disable
     pointer events in the iframe during the resize of the dialog otherwise resize breaks.
 */
 ::ng-deep .p-unselectable-text .dot-edit__contentlet-iframe {
@@ -137,14 +139,15 @@ dot-whats-changed,
         display: none;
         align-items: center;
         justify-content: center;
-        width: 35px;
+        width: 29px;
         height: 35px;
-        left: -34px;
+        left: -28px;
         position: absolute;
         background: $white;
         top: 134px;
         border: 1px solid $gray-lighter;
         border-radius: 6px 0 0 6px;
         cursor: pointer;
+        z-index: 2;
     }
 }

@@ -65,9 +65,10 @@
      *ngIf="isEnterpriseLicense"
      [class.editMode]="isEditMode"
      [class.collapsed]="paletteCollapsed">
-    <dot-content-palette
+    <dot-palette
+        [languageId]="pageStateInternal.page?.languageId"
         [items]='contentPalletItems'>
-    </dot-content-palette>
+    </dot-palette>
     <div class="dot-edit-content__palette-visibility"
          data-testId="palette-visibility"
          (click)='paletteCollapsed = !paletteCollapsed'>

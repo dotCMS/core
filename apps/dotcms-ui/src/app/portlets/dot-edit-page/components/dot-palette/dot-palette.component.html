@@ -1,0 +1,11 @@
+<dot-palette-content-type
+    [class.switch-view]="!!contentTypeVariable"
+    [items]="items"
+    (show)="switchView($event)"
+></dot-palette-content-type>
+<dot-palette-contentlets
+    [class.switch-view]="!!contentTypeVariable"
+    [contentTypeVariable]="contentTypeVariable"
+    [languageId]="languageId"
+    (hide)="switchView()"
+></dot-palette-contentlets>

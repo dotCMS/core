@@ -516,7 +516,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     private subscribeDraggedContentType(): void {
         this.dotContentletEditorService.draggedContentType$
             .pipe(takeUntil(this.destroy$))
-            .subscribe((contentType: DotCMSContentType) => {
+            .subscribe((contentType: DotCMSContentType | DotCMSContentlet) => {
                 const iframeWindow: any = (this.iframe.nativeElement as HTMLIFrameElement)
                     .contentWindow;
                 iframeWindow.draggedContent = contentType;
