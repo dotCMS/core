@@ -17,9 +17,6 @@ public class StoryBlockFieldDataFetcher implements DataFetcher<Map<String, Objec
 
         final String contFieldValue = contentlet.getStringProperty(variableName);
         final JSONObject jsonContFieldValue = new JSONObject(contFieldValue);
-        storyBlockMap.put("render",jsonContFieldValue.get("render").toString());
-        //Remove Render property from the json, since it's another sub-fieldType
-        jsonContFieldValue.remove("render");
         storyBlockMap.put("json",new ObjectMapper().readValue(jsonContFieldValue.toString(), HashMap.class));
 
         return storyBlockMap;

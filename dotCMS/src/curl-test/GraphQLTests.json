@@ -8462,11 +8462,6 @@
 									"var jsonData = pm.response.json();",
 									"var collectionName = pm.collectionVariables.get(\"contentTypeVarNameWithStoryBlock\")+\"Collection\"",
 									"",
-									"pm.test(\"Content has the correct value at the render property\", function () {",
-									"    pm.expect(jsonData.data[collectionName][0].block.render).to.eql(\"<h4>Wow, this editor instance exports its content as JSON.</h4>\");",
-									"    pm.expect(jsonData.data[collectionName][0].block.json.render).to.eql(undefined);",
-									"});",
-									"",
 									"pm.test(\"Content has the correct value at the json property\", function () {",
 									"    pm.expect(jsonData.data[collectionName][0].block.json.render).to.eql(undefined);",
 									"});"
@@ -8481,7 +8476,7 @@
 						"body": {
 							"mode": "graphql",
 							"graphql": {
-								"query": "{\n  {{contentTypeVarNameWithStoryBlock}}Collection(limit: 20) {\n    identifier\n    title\n    block{\n        render\n        json\n    }\n  }\n}",
+								"query": "{\n  {{contentTypeVarNameWithStoryBlock}}Collection(limit: 20) {\n    identifier\n    title\n    block{\n        json\n    }\n  }\n}",
 								"variables": ""
 							}
 						},
