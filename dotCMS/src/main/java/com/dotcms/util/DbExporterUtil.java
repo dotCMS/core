@@ -10,6 +10,7 @@ import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.zaxxer.hikari.HikariDataSource;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
@@ -27,7 +28,10 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.io.File.separator;
 
@@ -81,23 +85,28 @@ public class DbExporterUtil {
     public enum PG_ARCH {
         ARM("pg_dump_aarch64"), AMD64("pg_dump_amd64"), OSX_INTEL("pg_dump_x86_64");
 
-        final private String pgDump;
+        private static final String AMD64_ARCH = "amd64";
+        private static final String ARM64_ARCH = "aarch64";
+        private static final String X86_64_ARCH = "x86_64";
 
-        PG_ARCH(String pgDump) {
+        private static final Map<String, PG_ARCH> ARCHS = ImmutableMap.of(
+                AMD64_ARCH, AMD64,
+                ARM64_ARCH, ARM,
+                X86_64_ARCH, OSX_INTEL
+        );
+        private final String pgDump;
+
+        PG_ARCH(final String pgDump) {
             this.pgDump = pgDump;
         }
 
         public static String pgDump() {
-            if ("amd64".equalsIgnoreCase(System.getProperty("os.arch"))) {
-                return AMD64.pgDump;
-            }
-            if ("aarch64".equalsIgnoreCase(System.getProperty("os.arch"))) {
-                return ARM.pgDump;
-            }
-            if ("x86_64".equalsIgnoreCase(System.getProperty("os.arch"))) {
-                return OSX_INTEL.pgDump;
-            }
-            throw new DotRuntimeException("Unable to determine architecture for : " + System.getenv("os.arch"));
+            final String currentArch = System.getenv("os.arch");
+            return Optional
+                    .ofNullable(ARCHS.get(currentArch.toLowerCase()))
+                    .map(arch -> arch.pgDump)
+                    .orElseThrow(() -> new DotRuntimeException("Unable to determine architecture for : " + currentArch))
+            ;
         }
     }
     
@@ -136,13 +145,22 @@ public class DbExporterUtil {
             throw new DotRuntimeException("DB Dump already exists: " + file);
         }
 
-        file.mkdirs();
+        try {
+            Files.createDirectories(file.toPath());
+        } catch (IOException e) {
+            Logger.error(
+                    DbExporterUtil.class,
+                    String.format("Error creating directories %s", file.getAbsolutePath()),
+                    e);
+            throw new DotRuntimeException(e);
+        }
         file.delete();
 
         try (final InputStream input = exportSql();
              final OutputStream output = Files.newOutputStream(file.toPath())) {
             IOUtils.copy(input, output);
         } catch (Exception e) {
+            Logger.error(DbExporterUtil.class, String.format("Error exporting to file %s", file.getName()), e);
             throw new RuntimeException(e);
         }
 
@@ -183,18 +201,30 @@ public class DbExporterUtil {
      */
     @VisibleForTesting
     static void copyPgDump(final File pgDumpFile) {
-        pgDumpFile.mkdirs();
+        try {
+            Files.createDirectories(pgDumpFile.toPath());
+        } catch (IOException e) {
+            Logger.error(
+                    DbExporterUtil.class,
+                    String.format("Error creating directories %s", pgDumpFile.getAbsolutePath()),
+                    e);
+            throw new DotRuntimeException(e);
+        }
+
         pgDumpFile.delete();
-        
+
         Logger.info(DbExporterUtil.class, "Copying pg_dump from: " + PG_ARCH.pgDump() + " to " + pgDumpFile);
         try (final InputStream in = DbExporterUtil.class.getResourceAsStream("/" + PG_ARCH.pgDump());
              final OutputStream out = Files.newOutputStream(pgDumpFile.toPath())) {
-            System.out.println("in: " + in);
-            System.out.println("out:" + out);
-            
+            Logger.info(DbExporterUtil.class, String.format("In resource: %s", PG_ARCH.pgDump()));
+            Logger.info(DbExporterUtil.class, String.format("Out resource: %s", pgDumpFile.toPath()));
+
             IOUtils.copy(in, out);
         } catch (Exception e) {
-            e.printStackTrace();
+            Logger.error(
+                    DbExporterUtil.class,
+                    String.format("Could not copy PG dump for file: %s", pgDumpFile.getName()),
+                    e);
             pgDumpFile.delete();
             throw new DotRuntimeException(e);
         }
@@ -208,14 +238,21 @@ public class DbExporterUtil {
      * @throws IOException
      */
     static InputStream exportSql() throws IOException {
-        final ProcessBuilder pb = new ProcessBuilder(
-                getCommandAndArgs(pgDumpPath.get(), getDatasource().getDbUrl()))
-                .redirectErrorStream(true);
+        final List<String> commands = getCommandAndArgs(pgDumpPath.get(), getDatasource().getDbUrl());
+        Logger.info(DbExporterUtil.class, String.format("Executing commands %s", String.join(" ", commands)));
+        final ProcessBuilder pb = new ProcessBuilder(commands).redirectErrorStream(true);
         return new BufferedInputStream(pb.start().getInputStream());
     }
 
+    /**
+     * Creates the necessary list of commands required to dump a DB.
+     *
+     * @param command initial command
+     * @param dbUrl DB connection url
+     * @return list of commands
+     */
     private static List<String> getCommandAndArgs(final String command, final String dbUrl) {
-        final List<String> finalCmd = Arrays.asList(command, dbUrl);
+        final List<String> finalCmd = Stream.of(command, dbUrl).collect(Collectors.toList());
         finalCmd.addAll(PG_DUMP_OPTIONS);
         return finalCmd;
     }
@@ -235,6 +272,7 @@ public class DbExporterUtil {
 
         Process processHolder = null;
         try {
+            Logger.info(DbExporterUtil.class, String.format("Executing commands %s", String.join(" ", commands)));
             final ProcessBuilder pb = new ProcessBuilder(commands);
             pb.redirectErrorStream(true);
             final Process process = Try.of(pb::start).getOrElseThrow(DotRuntimeException::new);
@@ -270,9 +308,10 @@ public class DbExporterUtil {
      */
     private static DataSourceAttributes getDatasource() {
         try {
-            HikariDataSource hds = (HikariDataSource) DbConnectionFactory.getDataSource();
+            final HikariDataSource hds = (HikariDataSource) DbConnectionFactory.getDataSource();
             return new DataSourceAttributes(hds.getUsername(), hds.getPassword(), hds.getJdbcUrl());
         } catch (Exception e) {
+            Logger.error(DbExporterUtil.class, "Could acquire datasource", e);
             throw new DotRuntimeException(e);
         }
     }

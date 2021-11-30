@@ -1,8 +1,11 @@
 
 package com.dotcms.util;
 
-import java.io.StringWriter;
-
+/**
+ * This class holds information fof the datasource connection to be used when exporting the DB as a postgres dump.
+ *
+ * @author vic
+ */
 public class DataSourceAttributes {
     public final String username;
     public final String url;
@@ -20,14 +23,17 @@ public class DataSourceAttributes {
         return "{username=" + username + ", password=******, url=" + url + "}";
     }
 
+    /**
+     * Builds a String representation of the DB connection url.
+     *
+     * @return the db connection url.
+     */
     public String getDbUrl() {
-        StringWriter sw = new StringWriter();
-        sw.append(url.substring(url.indexOf(":") + 1, url.indexOf("://") + 3))
-        .append(username)
-        .append(":")
-        .append(new String(password))
-        .append("@")
-        .append(url.substring(url.indexOf("://") + 3, url.length()));
-        return sw.toString();
+        return url.substring(url.indexOf(":") + 1, url.indexOf("://") + 3) +
+                username +
+                ":" +
+                new String(password) +
+                "@" +
+                url.substring(url.indexOf("://") + 3);
     }
 }

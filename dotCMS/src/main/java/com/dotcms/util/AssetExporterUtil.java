@@ -1,12 +1,14 @@
 
 package com.dotcms.util;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.FileUtil;
@@ -26,6 +28,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringWriter;
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -65,14 +68,10 @@ public class AssetExporterUtil {
             "dotcms.sql.gz"
     };
     static final Lazy<File> PARENT = Lazy.of(() -> new File(ConfigUtils.getAbsoluteAssetsRootPath()));
-    static final FileFilter FILE_FILTER = pathname -> {
-        for (String dir : ACCEPTED) {
-            if ((pathname.getPath()+"/").contains(dir)) {
-                return true;
-            }
-        }
-        return false;
-    };
+    static final FileFilter FILE_FILTER = pathname -> Arrays
+            .stream(ACCEPTED)
+            .anyMatch(dir ->
+                    (pathname.getPath() + "/").contains(dir));
 
     /**
      * Utility private and empty constructor.
@@ -99,9 +98,9 @@ public class AssetExporterUtil {
      * 
      * @param out output stream
      */
-     public static void exportAssets(OutputStream out) throws IOException {
+     public static void exportAssets(final OutputStream out) throws IOException {
          synchronized (AssetExporterUtil.class) {
-             try (TarArchiveOutputStream taos =
+             try (final TarArchiveOutputStream taos =
                           new TarArchiveOutputStream(new GZIPOutputStream(new BufferedOutputStream(out)))) {
                  taos.setBigNumberMode(TarArchiveOutputStream.BIGNUMBER_STAR);
                  taos.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
@@ -111,6 +110,12 @@ public class AssetExporterUtil {
                          .filter(File::isFile)
                          .forEach(file -> {
                              final String relativeFilePath = file.getPath().replace(PARENT.get().getPath(), "assets");
+                             Logger.info(
+                                     AssetExporterUtil.class,
+                                     String.format(
+                                             "Adding file %s (%s) to zip output stream",
+                                             file.getName(),
+                                             relativeFilePath));
                              final TarArchiveEntry tarEntry = new TarArchiveEntry(file, relativeFilePath);
                              tarEntry.setSize(file.length());
                              try {
@@ -120,6 +125,7 @@ public class AssetExporterUtil {
                                  }
                                  taos.closeArchiveEntry();
                              } catch (Exception e) {
+                                 Logger.error(AssetExporterUtil.class, "Error generating assets zip file", e);
                                  throw new DotRuntimeException(e);
                              }
                          });
@@ -136,15 +142,16 @@ public class AssetExporterUtil {
      * @param lastCursorId last cursor id
      * @return loaded inodes
      */
+    @CloseDBIfOpened
     static Tuple2<String, Set<String>> loadUpInodes(final EXPORT_VERSION version, final String lastCursorId) {
         final DotConnect db = new DotConnect().setSQL(LIVE_WORKING_SQL).addParam(lastCursorId);
         final Set<String> inodes = new HashSet<>();
         final StringWriter nextCursor = new StringWriter();
         try {
             db.loadObjectResults()
-                    .forEach(m -> {
-                        final String live = (String) m.get("live_inode");
-                        final String working = (String) m.get("working_inode");
+                    .forEach(contentVersion -> {
+                        final String live = (String) contentVersion.get("live_inode");
+                        final String working = (String) contentVersion.get("working_inode");
 
                         nextCursor.getBuffer().setLength(0);
                         nextCursor.write(working);
@@ -166,6 +173,7 @@ public class AssetExporterUtil {
                         }
             });
         } catch (DotDataException e) {
+            Logger.error(AssetExporterUtil.class, "Cannot load Inodes", e);
             throw new DotRuntimeException(e);
         }
 
