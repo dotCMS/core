@@ -302,7 +302,7 @@
 		</init-param>
 		<init-param>
 			<param-name>config</param-name>
-			<param-value>/WEB-INF/struts-config.xml,/WEB-INF/struts-config-ext.xml,/WEB-INF/struts-cms.xml</param-value>
+			<param-value>/WEB-INF/struts-config.xml,/WEB-INF/struts-config-ext.xml</param-value>
 		</init-param>
 		<init-param>
 			<param-name>debug</param-name>
@@ -512,17 +512,9 @@
 	</servlet-mapping>
 	<servlet-mapping>
 		<servlet-name>MainServlet</servlet-name>
-		<url-pattern>/dotCMS/*</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>MainServlet</servlet-name>
 		<url-pattern>/dotAdmin/c/*</url-pattern>
 	</servlet-mapping>
 	
-	<servlet-mapping>
-		<servlet-name>ImageServlet</servlet-name>
-		<url-pattern>/image/*</url-pattern>
-	</servlet-mapping>
     <servlet-mapping>
 	    <servlet-name>BinaryExporterServlet</servlet-name>
 	    <url-pattern>/contentAsset/*</url-pattern>
