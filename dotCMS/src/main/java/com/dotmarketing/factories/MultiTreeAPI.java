@@ -27,6 +27,15 @@ public interface MultiTreeAPI {
     void saveMultiTrees(String pageId, List<MultiTree> mTrees) throws DotDataException;
 
     /**
+     * Saves MultiTrees for a given page, keeping the tree order on the MultiTree
+     * Do not clean any previous multi tree for the page, assumes the clean up was already done
+     *
+     * @param mTrees
+     * @throws DotDataException
+     */
+    void saveMultiTreesKeepTreeOrder(String pageId, List<MultiTree> mTrees) throws DotDataException;
+
+    /**
      * Saves a specific MultiTree
      * 
      * @param multiTree

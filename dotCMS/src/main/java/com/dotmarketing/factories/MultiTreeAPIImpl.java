@@ -703,6 +703,36 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     }
 
     @Override
+    @WrapInTransaction
+    public void saveMultiTreesKeepTreeOrder(final String pageId, final List<MultiTree> multiTrees) throws DotDataException {
+
+        Logger.debug(this, () -> String
+                .format("Saving MutiTrees: pageId -> %s multiTrees-> %s", pageId, multiTrees));
+        if (multiTrees == null) {
+            throw new DotDataException("empty list passed in");
+        }
+
+        final DotConnect db = new DotConnect();
+
+        if (!multiTrees.isEmpty()) {
+            final List<Params> insertParams = Lists.newArrayList();
+            final Set<String> newContainers = new HashSet<>();
+
+            for (final MultiTree tree : multiTrees) {
+                insertParams
+                        .add(new Params(pageId, tree.getContainerAsID(), tree.getContentlet(),
+                                tree.getRelationType(), tree.getTreeOrder(), tree.getPersonalization()));
+                newContainers.add(tree.getContainer());
+            }
+
+            db.executeBatch(INSERT_SQL, insertParams);
+        }
+
+        updateHTMLPageVersionTS(pageId);
+        refreshPageInCache(pageId);
+    }
+
+    @Override
     public List<String> getContainersId(final String pageId) throws DotDataException {
         return this.getMultiTrees(pageId).stream().map(multiTree -> multiTree.getContainer()).distinct().sorted()
                 .collect(Collectors.toList());
