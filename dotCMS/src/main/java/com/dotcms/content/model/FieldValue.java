@@ -34,6 +34,8 @@ import com.dotcms.content.model.type.text.AbstractFloatTextFieldType;
 import com.dotcms.content.model.type.text.AbstractLongTextFieldType;
 import com.dotcms.content.model.type.text.AbstractTextFieldType;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -117,6 +119,7 @@ import org.immutables.value.Value.Parameter;
 
 })
 @ValueType
+@JsonInclude(Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface FieldValue<T> {
 

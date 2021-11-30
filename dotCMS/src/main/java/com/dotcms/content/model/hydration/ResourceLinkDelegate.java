@@ -12,30 +12,55 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ResourceLink;
+import com.dotmarketing.util.Logger;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 
+/**
+ * Little reusable component meant to populate a field in the FieldValue Object through the Builder
+ */
 public class ResourceLinkDelegate implements HydrationDelegate {
 
     @Override
     public FieldValueBuilder hydrate(final FieldValueBuilder builder, final Field field,
             final Contentlet contentlet, String propertyName)
             throws DotDataException, DotSecurityException {
+        ResourceLink resourceLink = null;
+        try {
+            resourceLink = getResourceLink(field, contentlet);
+        }finally {
+            //We know it is safe to set null as a fallback cuz we marked the attribute nullable
+            setValue(builder, propertyName,  resourceLink != null ? resourceLink.getConfiguredImageURL() : null);
+        }
+        return builder;
+    }
 
+    /**
+     *
+     * This must be solid we dont want a NPE here since it could break the entire start-up process
+     */
+    private ResourceLink getResourceLink(final Field field, final Contentlet contentlet) {
         ResourceLink resourceLink = null;
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-
-        if(field instanceof ImageField){
-            final Optional<Contentlet> fileAsContentOptional = findLinkedBinary(contentlet,(ImageField) field);
-            if (fileAsContentOptional.isPresent()) {
-                final Contentlet fileAsset = fileAsContentOptional.get();
-                resourceLink = new ResourceLink.ResourceLinkBuilder().build(request, APILocator.systemUser(), fileAsset, "fileAsset");
+        if (null != request) {
+            try {
+                if (field instanceof ImageField) {
+                    final Optional<Contentlet> fileAsContentOptional = findLinkedBinary(contentlet,
+                            (ImageField) field);
+                    if (fileAsContentOptional.isPresent()) {
+                        final Contentlet fileAsset = fileAsContentOptional.get();
+                        resourceLink = new ResourceLink.ResourceLinkBuilder()
+                                .build(request, APILocator.systemUser(), fileAsset, "fileAsset");
+                    }
+                } else {
+                    resourceLink = new ResourceLink.ResourceLinkBuilder()
+                            .build(request, APILocator.systemUser(), contentlet, field.variable());
+                }
+            } catch (Exception e) {
+                Logger.error(MetadataDelegate.class, "error calculating resource link ", e);
             }
-        } else {
-            resourceLink = new ResourceLink.ResourceLinkBuilder().build(request, APILocator.systemUser(), contentlet, field.variable());
         }
-        setValue(builder, propertyName,  resourceLink != null ? resourceLink.getConfiguredImageURL() : "unknown");
-        return builder;
+        return resourceLink;
     }
 
 }

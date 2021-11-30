@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.io.Serializable;
 import java.util.Map;
+import javax.annotation.Nullable;
 import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Parameter;
 
@@ -34,10 +35,13 @@ public interface AbstractImageFieldType extends FieldValue<String> {
         return TYPENAME;
     }
 
+    //Additional calculated attributes must be marked as nullable since the calculation might fail
+    @Nullable
     @JsonProperty("link")
     @Parameter
     String link();
 
+    @Nullable
     @JsonProperty("metadata")
     @Parameter
     Map<String, Serializable> metadata();

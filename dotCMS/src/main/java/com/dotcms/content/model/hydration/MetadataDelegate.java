@@ -12,6 +12,8 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Logger;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.vavr.control.Try;
 import java.io.File;
@@ -22,6 +24,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Little reusable component meant to populate a field in the FieldValue Object through the Builder
+ */
 public class MetadataDelegate implements HydrationDelegate {
 
     final Set<String> filter = ImmutableSet.of("sha256","name","contentType","isImage");
@@ -30,25 +35,52 @@ public class MetadataDelegate implements HydrationDelegate {
     public FieldValueBuilder hydrate(final FieldValueBuilder builder, final Field field,
             final Contentlet contentlet, String propertyName)
             throws DotDataException, DotSecurityException {
-        final FileMetadataAPI fileMetadataAPI = APILocator.getFileMetadataAPI();
+
         Map<String, Serializable> metadataMap = null;
-        if (field instanceof BinaryField) {
-            final File file =  (File)contentlet.get(field.variable());
-            metadataMap = fileMetadataAPI.getFullMetadataNoCache(file,null).getFieldsMeta();
-        } else {
-            if (field instanceof ImageField) {
-                final Optional<Contentlet> fileAsContentOptional = findLinkedBinary(contentlet,(ImageField) field);
-                if (fileAsContentOptional.isPresent()) {
-                    final Contentlet fileAsset = fileAsContentOptional.get();
-                    //Currently this is the only way we have to generate MD for dotAssets
-                    metadataMap = fileMetadataAPI.getMetadataForceGenerate(fileAsset,"fileAsset").getFieldsMeta();
-                }
-            }
+        try{
+            metadataMap = getMetadataMap(field, contentlet);
+        } finally {
+            //We know it is safe to set null as a fallback cuz we marked the attribute nullable
+            setValue(builder, propertyName, metadataMap);
         }
-        setValue(builder, propertyName, filterMetadataFields(metadataMap));
         return builder;
     }
 
+    /**
+     * This must be solid we dont want a NPE here since it could break the entire start-up process
+     * @param field
+     * @param contentlet
+     * @return
+     */
+    private Map<String, Serializable> getMetadataMap(final Field field, final Contentlet contentlet) {
+        final FileMetadataAPI fileMetadataAPI = APILocator.getFileMetadataAPI();
+        Map<String, Serializable> metadataMap = null;
+        try {
+            if (field instanceof BinaryField) {
+                final File file = (File) contentlet.get(field.variable());
+                metadataMap = fileMetadataAPI.getFullMetadataNoCache(file, null).getFieldsMeta();
+            } else {
+                if (field instanceof ImageField) {
+                    final Optional<Contentlet> fileAsContentOptional = findLinkedBinary(
+                            contentlet, (ImageField) field);
+                    if (fileAsContentOptional.isPresent()) {
+                        final Contentlet fileAsset = fileAsContentOptional.get();
+                        metadataMap = fileMetadataAPI
+                                .getMetadataForceGenerate(fileAsset, "fileAsset").getFieldsMeta();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Logger.error(MetadataDelegate.class, "error calculating metadata ", e);
+        }
+        return (metadataMap == null || metadataMap.isEmpty() ? null : filterMetadataFields(metadataMap));
+    }
+
+    /**
+     * Remove unwanted extra attributes
+     * @param originalMap
+     * @return
+     */
     private Map<String, Serializable> filterMetadataFields(
             final Map<String, Serializable> originalMap) {
         if (null == originalMap) {
