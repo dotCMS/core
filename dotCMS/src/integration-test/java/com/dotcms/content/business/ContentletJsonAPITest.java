@@ -320,10 +320,8 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
             imageField.value();
             final FieldValue<?> binaryField = fieldValueMap.get("binaryField");
             final ImageFieldType imageType = (ImageFieldType)imageField;
-            assertNotNull(imageType.link());
             assertNotNull(imageType.metadata());
             final BinaryFieldType binaryType = (BinaryFieldType)binaryField;
-            assertNotNull(binaryType.link());
             assertNotNull(binaryType.metadata());
         } finally {
             Config.setProperty(SAVE_CONTENTLET_AS_JSON, defaultValue);

@@ -6,7 +6,6 @@ import com.dotcms.content.model.annotation.HydrateWith;
 import com.dotcms.content.model.annotation.Hydration;
 import com.dotcms.content.model.annotation.ValueType;
 import com.dotcms.content.model.hydration.MetadataDelegate;
-import com.dotcms.content.model.hydration.ResourceLinkDelegate;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -37,17 +36,11 @@ public interface AbstractBinaryFieldType extends FieldValue<String> {
 
     //Additional calculated attributes must be marked as nullable since the calculation might fail
     @Nullable
-    @JsonProperty("link")
-    @Parameter
-    String link();
-
-    @Nullable
     @JsonProperty("metadata")
     @Parameter
     Map<String, Serializable> metadata();
 
     @Hydration(properties = {
-        @HydrateWith(delegate = ResourceLinkDelegate.class, propertyName = "link"),
         @HydrateWith(delegate = MetadataDelegate.class, propertyName = "metadata")
     })
     abstract class Builder implements FieldValueBuilder {

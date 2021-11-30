@@ -1,6 +1,5 @@
 package com.dotcms.util;
 
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.config.DotInitializationService;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
@@ -12,7 +11,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.SystemProperties;
 import java.util.concurrent.atomic.AtomicBoolean;
-import javax.servlet.http.HttpServletRequest;
 import org.mockito.Mockito;
 
 /**
@@ -56,7 +54,6 @@ public class IntegrationTestInitService {
                 Config.setProperty("NETWORK_CACHE_FLUSH_DELAY", (long) 0);
                 // Init other dotCMS services.
                 DotInitializationService.getInstance().initialize();
-                defaultMockedRequest();
             }
         } catch(Exception e) {
             Logger.error(this, "Error initializing Integration Test Init Service", e);
@@ -67,10 +64,5 @@ public class IntegrationTestInitService {
         ModuleConfigFactory factoryObject = ModuleConfigFactory.createFactory();
         ModuleConfig config = factoryObject.createModuleConfig("");
         Mockito.when(Config.CONTEXT.getAttribute(Globals.MODULE_KEY)).thenReturn(config);
-    }
-
-    static void defaultMockedRequest(){
-        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
     }
 }
