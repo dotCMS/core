@@ -59,6 +59,9 @@ public interface WorkflowAPI {
 	 */
 	public static final Set<WorkflowState> DEFAULT_SHOW_ON = EnumSet.of(WorkflowState.LOCKED, WorkflowState.UNLOCKED);
 
+	String SUCCESS_ACTION_CALLBACK = "successActionCallback";
+	String FAIL_ACTION_CALLBACK = "failActionCallback";
+
 	/**
 	 * Return true if the license is valid for the workflows
 	 * @return

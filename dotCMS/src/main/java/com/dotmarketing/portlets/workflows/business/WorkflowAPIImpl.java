@@ -16,7 +16,6 @@ import com.dotcms.rekognition.actionlet.RekognitionActionlet;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.api.v1.workflow.ActionFail;
-import com.dotcms.rest.api.v1.workflow.ActionInputView;
 import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.model.Subscriber;
@@ -65,8 +64,53 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageDeletedEvent;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.LargeMessageActionlet;
 import com.dotmarketing.portlets.workflows.MessageActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.*;
-import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.portlets.workflows.actionlet.Actionlet;
+import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.BatchAction;
+import com.dotmarketing.portlets.workflows.actionlet.CheckURLAccessibilityActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CheckoutContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CommentOnWorkflowActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CopyActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.DestroyContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.EmailActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.FourEyeApproverActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.MultipleApproverActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.NotifyUsersActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.PushNowActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.ReindexContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.ResetApproversActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.ResetTaskActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SendFormEmailActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SetValueActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.TranslationActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.TwitterActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
+import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
+import com.dotmarketing.portlets.workflows.model.WorkflowComment;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistoryState;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistoryType;
+import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
+import com.dotmarketing.portlets.workflows.model.WorkflowState;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.WorkflowTimelineItem;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.InodeUtils;
@@ -85,6 +129,7 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -113,8 +158,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.Nullable;
-
-import io.vavr.control.Try;
 import org.apache.commons.lang.time.StopWatch;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.elasticsearch.search.query.QueryPhaseExecutionException;
@@ -2763,6 +2806,34 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			final List<List<Contentlet>> partitions = partitionContentletInput(contentlets);
 
+			final Consumer<Long> sucessCallback = UtilMethods.isSet(additionalParamsBean
+					.getAdditionalParamsMap().get(SUCCESS_ACTION_CALLBACK))
+					? (Consumer<Long>) additionalParamsBean
+							.getAdditionalParamsMap().get(SUCCESS_ACTION_CALLBACK)
+					: successCount::addAndGet;
+
+			additionalParamsBean.getAdditionalParamsMap().remove(SUCCESS_ACTION_CALLBACK);
+
+			final BiConsumer<String,Exception> failCallback = UtilMethods.isSet(additionalParamsBean
+					.getAdditionalParamsMap().get(FAIL_ACTION_CALLBACK))
+					? (BiConsumer<String,Exception>) additionalParamsBean
+					.getAdditionalParamsMap().get(FAIL_ACTION_CALLBACK)
+					: (inode, e) -> {
+						//if not accepting exceptions no need to lock and process. We're simply not accepting more.
+						if (acceptingExceptions.get()) {
+							lock.lock();
+							try {
+								fails.add(ActionFail.newInstance(user, inode, e));
+								acceptingExceptions
+										.set(fails.size() < maxExceptions);
+							} finally {
+								lock.unlock();
+							}
+						}
+					};
+
+			additionalParamsBean.getAdditionalParamsMap().remove(FAIL_ACTION_CALLBACK);
+
 			for (final List<Contentlet> partition : partitions) {
 				futures.add(
 						submitter.submit(() -> {
@@ -2773,20 +2844,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 							}
 
 								fireBulkActionTasks(action, user, partition,
-										additionalParamsBean,
-										successCount::addAndGet, (inode, e) -> {
-											//if not accepting exceptions no need to lock and process. We're simply not accepting more.
-											if (acceptingExceptions.get()) {
-												lock.lock();
-												try {
-													fails.add(ActionFail.newInstance(user, inode, e));
-													acceptingExceptions
-															.set(fails.size() < maxExceptions);
-												} finally {
-													lock.unlock();
-												}
-											}
-										}, actionsContext, sleepThreshold);
+										additionalParamsBean,sucessCallback, failCallback,
+										actionsContext, sleepThreshold);
 								}
 						)
 				);

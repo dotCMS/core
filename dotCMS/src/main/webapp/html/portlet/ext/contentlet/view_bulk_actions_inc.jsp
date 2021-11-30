@@ -3,6 +3,8 @@
 <script type="text/javascript" src="/html/js/sse.js"></script>
 <script language="Javascript">
 
+    var successCount = 0;
+
     /**
      *
      *
@@ -176,7 +178,7 @@
 
         var skipsCount = entity.skippedCount;
         var successCount = entity.successCount;
-        var failsCount = entity.fails.length;
+        var failsCount = entity.fails;
 
         var resultsLabel = '<%=LanguageUtil.get(pageContext, "Results")%>';
         var sucessLabel = '<%=LanguageUtil.get(pageContext, "Successul")%>';
@@ -195,15 +197,15 @@
             '</tr>' +
             '<tr>' +
               '<td> ' + sucessLabel + ':&nbsp;</td>' +
-              '<td> ' + successCount + ' </td>' +
+              '<td id="successCount"> ' + successCount + ' </td>' +
             '</tr>' +
             '<tr>' +
               '<td> ' + failsLabel + ':&nbsp;</td>' +
-              '<td><a href="#" onclick="toggleFailDetails();" > ' + failsCount + ' </a></td>' +
+              '<td id="failsCount"><a href="#" onclick="toggleFailDetails();" > ' + failsCount + ' </a></td>' +
             '</tr>' +
             '<tr>' +
               '<td> ' + skipsLabel + ':&nbsp;</td>' +
-              '<td> ' + skipsCount + ' </td>' +
+              '<td id="skipsCount"> ' + skipsCount + ' </td>' +
             '</tr>' +
           '</table>' +
         '</div>';
@@ -339,14 +341,20 @@
         var source = new SSE(url, {headers: {'Content-Type': 'application/json'},
             payload: dataAsJson});
 
+        var entity = {skippedCount: 0, successCount: 0, fails: 0};
+
+        bulkWorkflowActionCallback(entity);
+        successCount = 0;
+
         source.addEventListener('message', function(e) {
             // Assuming we receive JSON-encoded data payloads:
-            console.log(e.data);
+            var data = JSON.parse(e.data);
+            console.log(data);
+            successCount = successCount + parseInt(data.success);
+            dojo.byId('successCount').innerHTML = successCount;
         });
 
         source.stream();
-
-
 
         <%--var xhrArgs = {--%>
         <%--    url: "/api/v1/workflow/contentlet/actions/bulk/fire",--%>
@@ -365,6 +373,7 @@
         <%--};--%>
 
         <%--dojo.xhrPut(xhrArgs);--%>
+
         return true;
     }
 

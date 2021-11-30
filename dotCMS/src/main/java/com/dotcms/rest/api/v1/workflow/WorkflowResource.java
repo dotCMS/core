@@ -3,6 +3,8 @@ package com.dotcms.rest.api.v1.workflow;
 import static com.dotcms.rest.ResponseEntityView.OK;
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.DotLambdas.not;
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.FAIL_ACTION_CALLBACK;
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SUCCESS_ACTION_CALLBACK;
 import static com.dotmarketing.portlets.workflows.business.WorkflowAPIImpl.BULK_ACTIONS_SLEEP_THRESHOLD;
 import static com.dotmarketing.portlets.workflows.business.WorkflowAPIImpl.BULK_ACTIONS_SLEEP_THRESHOLD_DEFAULT;
 
@@ -124,6 +126,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Future;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -601,43 +605,51 @@ public class WorkflowResource {
                     final int sleepThreshold;
                     sleepThreshold = Config.getIntProperty(BULK_ACTIONS_SLEEP_THRESHOLD, BULK_ACTIONS_SLEEP_THRESHOLD_DEFAULT);
 
-                    workflowAPI.fireBulkActionTasks(
-                            action, initDataObject.getUser(), contentlets, null,
-                            (delta)-> {
-                                eventBuilder.data(Map.class, CollectionsUtils.map("success", delta));
-                                eventBuilder.mediaType(MediaType.APPLICATION_JSON_TYPE);
-                                final OutboundEvent event = eventBuilder.build();
-                                try {
-                                    eventOutput.write(event);
-                                } catch (Exception e) {
-                                    throw new DotRuntimeException(e);
-                                }
-                            },
-                            (inode, e)-> {
-                                    eventBuilder.data(String.class, "failed:" + inode);
-                                    final OutboundEvent event = eventBuilder.build();
-                                    try {
-                                        eventOutput.write(event);
-                                    } catch (Exception e1) {
-                                        throw new DotRuntimeException(e1);
-                                    }
-                                },
-                            actionsContext,
-                            sleepThreshold
-                    );
+                    fireBulkActionsForm.getPopupParamsBean()
+                            .getAdditionalParamsMap().put(SUCCESS_ACTION_CALLBACK,
+                                    (Consumer<Long>) delta -> {
+                                        eventBuilder.data(Map.class,
+                                                map("success", delta));
+                                        eventBuilder.mediaType(MediaType.APPLICATION_JSON_TYPE);
+                                        final OutboundEvent event = eventBuilder.build();
+                                        try {
+                                            eventOutput.write(event);
+                                        } catch (Exception e) {
+                                            throw new DotRuntimeException(e);
+                                        }
+                                    });
+
+                    fireBulkActionsForm.getPopupParamsBean()
+                            .getAdditionalParamsMap().put(FAIL_ACTION_CALLBACK,
+                                    (BiConsumer<String,Exception>) (inode, e)-> {
+                                        eventBuilder.data(String.class, "failed:" + inode);
+                                        final OutboundEvent event = eventBuilder.build();
+                                        try {
+                                            eventOutput.write(event);
+                                        } catch (Exception e1) {
+                                            throw new DotRuntimeException(e1);
+                                        }
+                                    });
+
+                    final BulkActionsResultView view = workflowHelper
+                            .fireBulkActions(fireBulkActionsForm, initDataObject.getUser());
 
 
-//
-
-
-//                    for (int i = 0; i < 10; i++) {
-//                        // ... code that waits 1 second
-//                        final OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
-//                        eventBuilder.name("message-to-client");
-//                        eventBuilder.data(String.class, "Hello world " + i + "!");
-//                        final OutboundEvent event = eventBuilder.build();
-//                        eventOutput.write(event);
-//                    }
+//                    workflowAPI.fireBulkActionTasks(
+//                            action, initDataObject.getUser(), contentlets, null,
+//                            ,
+//                            (inode, e)-> {
+//                                    eventBuilder.data(String.class, "failed:" + inode);
+//                                    final OutboundEvent event = eventBuilder.build();
+//                                    try {
+//                                        eventOutput.write(event);
+//                                    } catch (Exception e1) {
+//                                        throw new DotRuntimeException(e1);
+//                                    }
+//                                },
+//                            actionsContext,
+//                            sleepThreshold
+//                    );
                 } catch (Exception e) {
                     throw new RuntimeException("Error when writing the event.", e);
                 } finally {
@@ -651,7 +663,6 @@ public class WorkflowResource {
         }).start();
         return eventOutput;
     }
-
 
     /**
      * Returns a single action, 404 if does not exists. 401 if the user does not have permission.

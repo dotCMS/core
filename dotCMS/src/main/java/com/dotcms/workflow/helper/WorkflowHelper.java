@@ -88,6 +88,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -432,7 +434,6 @@ public class WorkflowHelper {
             throw new DoesNotExistException("Workflow-does-not-exists-action");
         }
     }
-
 
     private void checkActionLicense(final WorkflowAction action) {
 
