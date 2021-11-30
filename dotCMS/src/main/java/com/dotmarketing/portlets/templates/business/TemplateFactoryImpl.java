@@ -788,7 +788,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	 * @param includeArchived {@link Boolean} if wants to include archive templates
 	 * @return List of Folder where the files lives
 	 */
-	private List<Folder> findTemplatesAssetsByHost(final Host host, final User user, final boolean includeArchived) {//MODIFICAR PARA QUE USE DB EN VEZ DE ES
+	private List<Folder> findTemplatesAssetsByHost(final Host host, final User user, final boolean includeArchived) {
 
 		List<Contentlet>           templates = null;
 		final List<Folder>         folders   = new ArrayList<>();
@@ -820,25 +820,12 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			}
 
 			final List<Contentlet> cons  = APILocator.getContentletAPI().findContentlets(inodes);
-//			final StringBuilder queryBuilder = StringUtils.builder("+structureType:", BaseContentType.FILEASSET.getType(),
-//					" +path:",    Constants.TEMPLATE_FOLDER_PATH, "/*",
-//					" +path:*/" + Constants.TEMPLATE_META_INFO_FILE_NAME,
-//					" +working:true",
-//					includeArchived? StringPool.BLANK : " +deleted:false");
-//
-//			if (null != host) {
-//				queryBuilder.append(" +conhost:" + host.getIdentifier());
-//			}
-//
-//			final String query = queryBuilder.toString();
 
 			templates =
 					this.filterTemplatesAssetsByLanguage (APILocator.getPermissionAPI().filterCollection(cons
 							,
 							PermissionAPI.PERMISSION_READ, false, user),
 							APILocator.getLanguageAPI().getDefaultLanguage().getId());
-
-//TODO: YA FUNCIONA PERO COMO USA CONTAINERS ESTA REVENTANDO
 
 			for(final Contentlet template : templates) {
 				folders.add(APILocator.getFolderAPI().find(template.getFolder(), user, false));
