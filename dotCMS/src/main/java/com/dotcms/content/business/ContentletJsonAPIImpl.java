@@ -273,8 +273,13 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
         return map;
     }
 
+    /**
+     * These basically tells what system fields are accepted in the generate contentlet-json
+     * @param field
+     * @return
+     */
     private boolean isAllowedSystemField(final Field field){
-        return (field instanceof BinaryField || field instanceof HiddenField || field instanceof CategoryField || field instanceof TagField);
+        return (field instanceof BinaryField || field instanceof HiddenField || field instanceof CategoryField || field instanceof TagField || field instanceof ConstantField);
     }
 
     /**

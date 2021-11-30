@@ -29,6 +29,7 @@ import com.dotcms.content.model.type.select.AbstractMultiSelectFieldType;
 import com.dotcms.content.model.type.select.AbstractSelectFieldType;
 import com.dotcms.content.model.type.system.AbstractBinaryFieldType;
 import com.dotcms.content.model.type.system.AbstractCategoryFieldType;
+import com.dotcms.content.model.type.system.AbstractConstantFieldType;
 import com.dotcms.content.model.type.system.AbstractTagFieldType;
 import com.dotcms.content.model.type.text.AbstractFloatTextFieldType;
 import com.dotcms.content.model.type.text.AbstractLongTextFieldType;
@@ -115,7 +116,7 @@ import org.immutables.value.Value.Parameter;
         @JsonSubTypes.Type(name = AbstractCategoryFieldType.TYPENAME, value = AbstractCategoryFieldType.class),
         //Tag Fields
         @JsonSubTypes.Type(name = AbstractTagFieldType.TYPENAME, value = AbstractTagFieldType.class),
-
+        @JsonSubTypes.Type(name = AbstractConstantFieldType.TYPENAME, value = AbstractConstantFieldType.class),
 
 })
 @ValueType
