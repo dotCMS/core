@@ -704,7 +704,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     @Override
     @WrapInTransaction
-    public void saveMultiTreesKeepTreeOrder(final String pageId, final List<MultiTree> multiTrees) throws DotDataException {
+    public void saveMultiTreeOrderPreserve(final String pageId, final List<MultiTree> multiTrees) throws DotDataException {
 
         Logger.debug(this, () -> String
                 .format("Saving MutiTrees: pageId -> %s multiTrees-> %s", pageId, multiTrees));
