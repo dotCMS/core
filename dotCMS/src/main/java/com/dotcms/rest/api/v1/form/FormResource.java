@@ -52,7 +52,7 @@ public class FormResource {
 
         final InitDataObject initDataObject = new InitBuilder(webResource)
                 .rejectWhenNoUser(true)
-                .requiredBackendUser(true)
+                .requiredBackendUser(false)
                 .requiredFrontendUser(false)
                 .requestAndResponse(req, res)
                 .init();
