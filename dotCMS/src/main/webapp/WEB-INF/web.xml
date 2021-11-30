@@ -228,11 +228,6 @@
 			98
 		</load-on-startup>
 	</servlet>
-	<servlet>
-		<servlet-name>proxy</servlet-name>
-		<servlet-class>com.dotmarketing.osgi.OSGIProxyServlet</servlet-class>
-		<load-on-startup>0</load-on-startup>
-	</servlet>
 	
 	<servlet>
 		<servlet-name>Init</servlet-name>
@@ -256,11 +251,11 @@
 		<servlet-name>CategoriesServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.JSONCategoriesServlet</servlet-class>
 	</servlet>
-	
-	<servlet>
-		<servlet-name>login_edit_mode</servlet-name>
-		<servlet-class>com.dotmarketing.servlets.LoginEditModeServlet</servlet-class>
-	</servlet>
+    
+    <servlet>
+        <servlet-name>login_edit_mode</servlet-name>
+        <servlet-class>com.dotmarketing.servlets.LoginEditModeServlet</servlet-class>
+    </servlet>
 	
 	<servlet>
 		<servlet-name>TailLogServlet</servlet-name>
@@ -320,11 +315,6 @@
 	</servlet>
 	
 	<servlet>
-		<servlet-name>ImageServlet</servlet-name>
-		<servlet-class>com.liferay.portal.servlet.ImageServlet</servlet-class>
-		<load-on-startup>4</load-on-startup>
-	</servlet>
-	<servlet>
 		<servlet-name>WebDav</servlet-name>
 		<servlet-class>com.dotcms.repackage.com.bradmcevoy.http.MiltonServlet</servlet-class>
 		<init-param>
@@ -333,10 +323,6 @@
 		</init-param>
 	</servlet>
 	
-	<servlet>
-		<servlet-name>ScheduledJobs</servlet-name>
-		<servlet-class>com.dotmarketing.servlets.RunScheduledJobServlet</servlet-class>
-	</servlet>
 	<servlet>
 		<servlet-name>BinaryExporterServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.BinaryExporterServlet</servlet-class>
@@ -352,10 +338,6 @@
 		<servlet-name>JSONTagsServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.JSONTagsServlet</servlet-class>
 	</servlet>
-    <servlet>
-       <servlet-name>springmvc</servlet-name>
-       <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
-    </servlet>
     
     <servlet>
     	<servlet-name>CSSPreProcessServlet</servlet-name>
@@ -375,19 +357,10 @@
 			<param-name>jersey.config.server.mediaTypeMappings</param-name>
 			<param-value>txt : text/plain, xml : application/xml, json : application/json, js : application/javascript</param-value>
 		</init-param>
-		<load-on-startup>1</load-on-startup>
+		<load-on-startup>100</load-on-startup>
 		<async-supported>true</async-supported>
 	</servlet>
 	
-    <servlet>
-		<servlet-name>XMLSitemapServlet</servlet-name>
-		<servlet-class>com.dotcms.xmlsitemap.XMLSitemapServlet</servlet-class>
-	</servlet>
-	
-    <servlet>
-    	<servlet-name>PreviewDesignTemplateServlet</servlet-name>
-    	<servlet-class>com.dotmarketing.portlets.templates.design.servlets.PreviewDesignTemplateServlet</servlet-class>
-    </servlet>
 	<servlet>
 		<servlet-name>DotGraphQLHttpServlet</servlet-name>
 		<servlet-class>com.dotcms.graphql.DotGraphQLHttpServlet</servlet-class>
@@ -414,16 +387,7 @@
 	END OF TEST FRAMEWORK SERVLETS -->
 	
     <!-- DOTCMS SERVLET-MAPPINGS -->
-	<servlet-mapping>
-        <servlet-name>proxy</servlet-name>
-        <url-pattern>/app/*</url-pattern>
-    </servlet-mapping>
-    
-    <servlet-mapping>
-      <servlet-name>springmvc</servlet-name>
-      <url-pattern>/spring/*</url-pattern>
-    </servlet-mapping>
-    
+
     <servlet-mapping>
       <servlet-name>CSSPreProcessServlet</servlet-name>
       <url-pattern>/DOTLESS/*</url-pattern>
@@ -462,11 +426,6 @@
         <servlet-name>login_edit_mode</servlet-name>
         <url-pattern>/admin</url-pattern>
     </servlet-mapping>
-    
-	<servlet-mapping>
-		<servlet-name>ScheduledJobs</servlet-name>
-		<url-pattern>/dotScheduledJobs</url-pattern>
-	</servlet-mapping>
 	
 	<servlet-mapping>
 		<servlet-name>TailLogServlet</servlet-name>
@@ -538,15 +497,6 @@
 		<url-pattern>/api/*</url-pattern>
 	</servlet-mapping>
 	
-	<servlet-mapping>
-		<servlet-name>XMLSitemapServlet</servlet-name>
-		<url-pattern>/sitemap_index.xml</url-pattern>
-	</servlet-mapping>
-	
-	<servlet-mapping>
-		<servlet-name>PreviewDesignTemplateServlet</servlet-name>
-		<url-pattern>/servlets/template/design/preview</url-pattern>
-	</servlet-mapping>
 	<!--END DOTMARKETING SERVLET-MAPPING-->
 	
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
