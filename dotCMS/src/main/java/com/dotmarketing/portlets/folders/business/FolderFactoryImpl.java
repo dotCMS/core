@@ -564,7 +564,7 @@ public class FolderFactoryImpl extends FolderFactory {
             List<MultiTree> pageContents = APILocator.getMultiTreeAPI().getMultiTrees(cont.getIdentifier());
             for(MultiTree m : pageContents){
             	MultiTree mt = new MultiTree(newContent.getIdentifier(), m.getParent2(), m.getChild());
-            	APILocator.getMultiTreeAPI().saveMultiTreeAndReorder(mt);
+            	APILocator.getMultiTreeAPI().saveMultiTree(mt);
             }
             pagesCopied.put(cont.getInode(), new IHTMLPage[] {page , APILocator.getHTMLPageAssetAPI().fromContentlet(cont)});
 		}
