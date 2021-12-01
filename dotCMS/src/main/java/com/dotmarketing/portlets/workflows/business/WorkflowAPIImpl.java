@@ -2858,26 +2858,26 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		Logger.debug(getClass(),String.format("A grand total of %d contentlets has been pulled from ES.",offset));
 
-		for (final Future future : futures) {
-			try {
-				future.get();
-			} catch (InterruptedException | ExecutionException e) {
-				Logger.error(this, e.getMessage(), e);
-			}
-		}
+//		for (final Future future : futures) {
+//			try {
+//				future.get();
+//			} catch (InterruptedException | ExecutionException e) {
+//				Logger.error(this, e.getMessage(), e);
+//			}
+//		}
 
 		//Actions which implement the interface BatchAction are shared between threads using the actionsContext
-		executeBatchActions(user, action, actionsContext, (list, e) -> {
-
-			list.forEach(o -> {
-						fails.add(ActionFail.newInstance(user, o.toString(), e));
-					}
-			);
-			//Initially When adding up to the list of batch actions we assume a success.
-			//So we need to Update success count in case something has gone wrong internally.
-			//This assumes that if one single action fails internally the whole batch has failed.
-			successCount.updateAndGet(value -> value - list.size());
-		});
+//		executeBatchActions(user, action, actionsContext, (list, e) -> {
+//
+//			list.forEach(o -> {
+//						fails.add(ActionFail.newInstance(user, o.toString(), e));
+//					}
+//			);
+//			//Initially When adding up to the list of batch actions we assume a success.
+//			//So we need to Update success count in case something has gone wrong internally.
+//			//This assumes that if one single action fails internally the whole batch has failed.
+//			successCount.updateAndGet(value -> value - list.size());
+//		});
 
 		return new BulkActionsResultView(
 				successCount.get(),

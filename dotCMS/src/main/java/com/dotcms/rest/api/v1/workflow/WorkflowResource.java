@@ -577,90 +577,77 @@ public class WorkflowResource {
     @JSONP
     @Produces(SseFeature.SERVER_SENT_EVENTS)
     public EventOutput fireBulkActions(@Context final HttpServletRequest request,
-            final FireBulkActionsForm fireBulkActionsForm) {
+            final FireBulkActionsForm fireBulkActionsForm)
+            throws DotDataException, DotSecurityException {
         final InitDataObject initDataObject = this.webResource
                 .init(null, request, new EmptyHttpResponse(), true, null);
 
         final EventOutput eventOutput = new EventOutput();
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
 
-                    final List<Contentlet> contentlets = fireBulkActionsForm.getContentletIds().stream().map(id->
-                            Try.of(()->contentletAPI.find(id, initDataObject.getUser(), false))
-                                    .getOrElse((Contentlet)null)).collect(
-                            Collectors.toList());
+        DotConcurrentFactory.getInstance().getSubmitter().submit(()-> {
 
-                    final WorkflowAction action = workflowAPI.findAction(fireBulkActionsForm
-                                    .getWorkflowActionId(),
-                            initDataObject.getUser());
-
-                    final OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
-                    eventBuilder.name("message");
-
-                    final ConcurrentMap<String, Object> actionsContext = new ConcurrentHashMap<>();
-
-                    //The long we want to sleep to avoid threads starvation.
-                    final int sleepThreshold;
-                    sleepThreshold = Config.getIntProperty(BULK_ACTIONS_SLEEP_THRESHOLD, BULK_ACTIONS_SLEEP_THRESHOLD_DEFAULT);
-
-                    fireBulkActionsForm.getPopupParamsBean()
-                            .getAdditionalParamsMap().put(SUCCESS_ACTION_CALLBACK,
-                                    (Consumer<Long>) delta -> {
-                                        eventBuilder.data(Map.class,
-                                                map("success", delta));
-                                        eventBuilder.mediaType(MediaType.APPLICATION_JSON_TYPE);
-                                        final OutboundEvent event = eventBuilder.build();
-                                        try {
-                                            eventOutput.write(event);
-                                        } catch (Exception e) {
-                                            throw new DotRuntimeException(e);
-                                        }
-                                    });
-
-                    fireBulkActionsForm.getPopupParamsBean()
-                            .getAdditionalParamsMap().put(FAIL_ACTION_CALLBACK,
-                                    (BiConsumer<String,Exception>) (inode, e)-> {
-                                        eventBuilder.data(String.class, "failed:" + inode);
-                                        final OutboundEvent event = eventBuilder.build();
-                                        try {
-                                            eventOutput.write(event);
-                                        } catch (Exception e1) {
-                                            throw new DotRuntimeException(e1);
-                                        }
-                                    });
-
-                    final BulkActionsResultView view = workflowHelper
-                            .fireBulkActions(fireBulkActionsForm, initDataObject.getUser());
+            final OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
 
 
-//                    workflowAPI.fireBulkActionTasks(
-//                            action, initDataObject.getUser(), contentlets, null,
-//                            ,
-//                            (inode, e)-> {
-//                                    eventBuilder.data(String.class, "failed:" + inode);
-//                                    final OutboundEvent event = eventBuilder.build();
-//                                    try {
-//                                        eventOutput.write(event);
-//                                    } catch (Exception e1) {
-//                                        throw new DotRuntimeException(e1);
-//                                    }
-//                                },
-//                            actionsContext,
-//                            sleepThreshold
-//                    );
-                } catch (Exception e) {
-                    throw new RuntimeException("Error when writing the event.", e);
-                } finally {
-                    try {
-                        eventOutput.close();
-                    } catch (IOException ioClose) {
-                        throw new RuntimeException("Error when closing the event output.", ioClose);
-                    }
-                }
+            fireBulkActionsForm.getPopupParamsBean()
+                    .getAdditionalParamsMap().put(SUCCESS_ACTION_CALLBACK,
+                            (Consumer<Long>) delta -> {
+                                eventBuilder.name("success");
+                                eventBuilder.data(Map.class,
+                                        map("success", delta));
+                                eventBuilder.mediaType(MediaType.APPLICATION_JSON_TYPE);
+                                final OutboundEvent event = eventBuilder.build();
+                                try {
+                                    eventOutput.write(event);
+                                } catch (Exception e) {
+                                    throw new DotRuntimeException(e);
+                                }
+                            });
+
+            fireBulkActionsForm.getPopupParamsBean()
+                    .getAdditionalParamsMap().put(FAIL_ACTION_CALLBACK,
+                            (BiConsumer<String, Exception>) (inode, e) -> {
+                                eventBuilder.name("failure");
+                                eventBuilder.data(Map.class,
+                                        map("failure", inode));
+                                final OutboundEvent event = eventBuilder.build();
+                                try {
+                                    eventOutput.write(event);
+                                } catch (Exception e1) {
+                                    throw new DotRuntimeException(e1);
+                                }
+                            });
+
+            try {
+                workflowHelper.fireBulkActions(fireBulkActionsForm, initDataObject.getUser());
+            } catch (DotSecurityException | DotDataException e) {
+                throw new DotRuntimeException(e);
             }
-        }).start();
+
+    //                    workflowAPI.fireBulkActionTasks(
+    //                            action, initDataObject.getUser(), contentlets, null,
+    //                            ,
+    //                            (inode, e)-> {
+    //                                    eventBuilder.data(String.class, "failed:" + inode);
+    //                                    final OutboundEvent event = eventBuilder.build();
+    //                                    try {
+    //                                        eventOutput.write(event);
+    //                                    } catch (Exception e1) {
+    //                                        throw new DotRuntimeException(e1);
+    //                                    }
+    //                                },
+    //                            actionsContext,
+    //                            sleepThreshold
+    //                    );
+
+    //        try {
+    //            eventOutput.close();
+    //        } catch (IOException ioClose) {
+    //            throw new RuntimeException("Error when closing the event output.", ioClose);
+    //        }
+
+        });
+
         return eventOutput;
     }
 

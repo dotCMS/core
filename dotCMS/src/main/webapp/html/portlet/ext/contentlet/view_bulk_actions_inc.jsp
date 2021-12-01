@@ -4,6 +4,7 @@
 <script language="Javascript">
 
     var successCount = 0;
+    var failCount = 0;
 
     /**
      *
@@ -201,7 +202,7 @@
             '</tr>' +
             '<tr>' +
               '<td> ' + failsLabel + ':&nbsp;</td>' +
-              '<td id="failsCount"><a href="#" onclick="toggleFailDetails();" > ' + failsCount + ' </a></td>' +
+              '<td id="failCount"><a href="#" onclick="toggleFailDetails();" > ' + failsCount + ' </a></td>' +
             '</tr>' +
             '<tr>' +
               '<td> ' + skipsLabel + ':&nbsp;</td>' +
@@ -345,13 +346,24 @@
 
         bulkWorkflowActionCallback(entity);
         successCount = 0;
+        failCount = 0;
 
-        source.addEventListener('message', function(e) {
+        source.addEventListener('success', function(e) {
             // Assuming we receive JSON-encoded data payloads:
+            console.log(e.data);
             var data = JSON.parse(e.data);
-            console.log(data);
+            console.log(successCount);
             successCount = successCount + parseInt(data.success);
             dojo.byId('successCount').innerHTML = successCount;
+        });
+
+        source.addEventListener('failure', function(e) {
+            // Assuming we receive JSON-encoded data payloads:
+            console.log(e.data);
+            var data = JSON.parse(e.data);
+            console.log(failCount);
+            failCount = failCount + 1;
+            dojo.byId('failCount').innerHTML = failCount;
         });
 
         source.stream();
