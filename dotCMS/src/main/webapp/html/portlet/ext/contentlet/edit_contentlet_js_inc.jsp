@@ -111,7 +111,7 @@
         var customEvent = document.createEvent("CustomEvent");
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "compare-contentlet",
-            payload: { inode, identifier, language }
+            data: { inode, identifier, language }
         });
         console.log(inode, identifier+' - '+language);
         document.dispatchEvent(customEvent)

@@ -127,7 +127,7 @@
 		<td nowrap="nowrap" style="text-align:center;"><%= UtilMethods.dateToHTMLDate(modDate) %> - <%= UtilMethods.dateToHTMLTime(modDate) %></td>
 		<td nowrap="nowrap"><%= vinode %></td>
 		<td nowrap="nowrap">
-			<% if (!live) { %>
+			<% if (!working) { %>
 				<button dojoType="dijit.form.Button" class="dijitButton" onclick="emmitCompareEvent('<%=vinode%>', '<%=ident.getId()%>', '<%=langV.getLanguageCode() %>-<%=langV.getCountryCode().toLowerCase()%>');return false;"><%= LanguageUtil.get(pageContext, "compare") %></button>
 			<% } %>
 		</td>
