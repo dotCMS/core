@@ -360,7 +360,6 @@
         source.addEventListener('failure', function(e) {
             // Assuming we receive JSON-encoded data payloads:
             console.log(e.data);
-            var data = JSON.parse(e.data);
             console.log(failCount);
             failCount = failCount + 1;
             dojo.byId('failCount').innerHTML = failCount;
