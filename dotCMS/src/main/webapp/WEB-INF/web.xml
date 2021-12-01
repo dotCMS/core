@@ -79,7 +79,11 @@
 		<filter-class>com.dotmarketing.filters.CMSFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
-	
+    <filter>
+        <filter-name>VisitorFilter</filter-name>
+        <filter-class>com.dotcms.visitor.filter.servlet.VisitorFilter</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
 	<filter>
 		<filter-name>AutoLoginFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.AutoLoginFilter</filter-class>
@@ -158,7 +162,10 @@
         <filter-name>VanityURLFilter</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
-	
+    <filter-mapping>
+        <filter-name>VisitorFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
 	<filter-mapping>
 		<filter-name>AutoLoginFilter</filter-name>
 		<url-pattern>/*</url-pattern>
@@ -316,7 +323,7 @@
     <servlet>
            <servlet-name>ImageServlet</servlet-name>
            <servlet-class>com.liferay.portal.servlet.ImageServlet</servlet-class>
-           <load-on-startup>4</load-on-startup>
+           <load-on-startup>400</load-on-startup>
     </servlet>
 	<servlet>
 		<servlet-name>WebDav</servlet-name>
@@ -415,7 +422,10 @@
         <servlet-name>login_edit_mode</servlet-name>
         <url-pattern>/edit/*</url-pattern>
     </servlet-mapping>
-    
+    <servlet-mapping>
+        <servlet-name>ImageServlet</servlet-name>
+        <url-pattern>/image/company_logo</url-pattern>
+    </servlet-mapping>
 	<servlet-mapping>
         <servlet-name>login_edit_mode</servlet-name>
         <url-pattern>/admin/*</url-pattern>
@@ -477,10 +487,7 @@
 		<servlet-name>MainServlet</servlet-name>
 		<url-pattern>/dotAdmin/c/*</url-pattern>
 	</servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>ImageServlet</servlet-name>
-        <url-pattern>/image/*</url-pattern>
-    </servlet-mapping>
+
     <servlet-mapping>
 	    <servlet-name>BinaryExporterServlet</servlet-name>
 	    <url-pattern>/contentAsset/*</url-pattern>
