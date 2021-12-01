@@ -779,7 +779,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	/**
 	 * Finds all the properties.vtl on a specific host
 	 * returns even working versions but not archived
-	 * the search is based on the ES Index.
+	 * the search is based on the DB.
 	 * If exists multiple language version, will consider only the versions based on the default language,
 	 * so if only exists a properties.vtl with a non-default language it will be skipped.
 	 *
@@ -819,11 +819,10 @@ public class TemplateFactoryImpl implements TemplateFactory {
 				inodes.add(versionInfoMap.get("inode"));
 			}
 
-			final List<Contentlet> cons  = APILocator.getContentletAPI().findContentlets(inodes);
+			final List<Contentlet> contentletList  = APILocator.getContentletAPI().findContentlets(inodes);
 
 			templates =
-					this.filterTemplatesAssetsByLanguage (APILocator.getPermissionAPI().filterCollection(cons
-							,
+					this.filterTemplatesAssetsByLanguage (APILocator.getPermissionAPI().filterCollection(contentletList,
 							PermissionAPI.PERMISSION_READ, false, user),
 							APILocator.getLanguageAPI().getDefaultLanguage().getId());
 

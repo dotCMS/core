@@ -514,7 +514,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	/**
 	 * Finds the container.vtl on a specific host
 	 * returns even working versions but not archived
-	 * the search is based on the ES Index.
+	 * the search is based on the DB.
 	 * If exists multiple language version, will consider only the versions based on the default language, so if only exists a container.vtl with a non-default language it will be skipped.
 	 *
 	 * @param host {@link Host}
@@ -527,25 +527,36 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		List<Contentlet>           containers = null;
 		final List<Folder>         folders    = new ArrayList<>();
 
+		final StringBuilder sqlQuery = new StringBuilder("select cvi.working_inode as inode from contentlet_version_info cvi, identifier id where"
+				+ " id.parent_path like ? and id.asset_name = ? and cvi.identifier = id.id");
+		final List<Object> parameters = new ArrayList<>();
+		parameters.add(Constants.CONTAINER_FOLDER_PATH + StringPool.FORWARD_SLASH + StringPool.PERCENT);
+		parameters.add(Constants.CONTAINER_META_INFO_FILE_NAME);
+
+		if(!includeArchived){
+			sqlQuery.append(" and cvi.deleted = " + DbConnectionFactory.getDBFalse());
+		}
+
+		if(null != host){
+			sqlQuery.append(" and id.host_inode = ?");
+			parameters.add(host.getIdentifier());
+		}
+
+		final DotConnect dc = new DotConnect().setSQL(sqlQuery.toString());
+		parameters.forEach(param -> dc.addParam(param));
+
 		try {
+			final List<Map<String,String>> inodesMapList =  dc.loadResults();
 
-			final StringBuilder queryBuilder = builder("+structureType:", Structure.STRUCTURE_TYPE_FILEASSET,
-					" +path:", Constants.CONTAINER_FOLDER_PATH, "/*",
-					" +path:*/container.vtl",
-					" +working:true",
-			includeArchived? StringPool.BLANK : " +deleted:false");
+			final List<String> inodes = new ArrayList<>();
+			for (final Map<String, String> versionInfoMap : inodesMapList) {
+				inodes.add(versionInfoMap.get("inode"));
+			}
 
-
-			if (null != host) {
-
-			    queryBuilder.append(	" +conhost:" + host.getIdentifier());
-            }
-
-            final String query = queryBuilder.toString();
+			final List<Contentlet> contentletList  = APILocator.getContentletAPI().findContentlets(inodes);
 
             containers =
-					this.filterContainersAssetsByLanguage (this.permissionAPI.filterCollection(
-							this.contentletAPI.search(query,-1, 0, null , user, false),
+					this.filterContainersAssetsByLanguage (this.permissionAPI.filterCollection(contentletList,
 							PermissionAPI.PERMISSION_READ, false, user),
 							APILocator.getLanguageAPI().getDefaultLanguage().getId());
 
@@ -804,7 +815,8 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 
 	/**
-	 * Finds all container that have the contentTypeVarNameFileName as a vtl in their folders (reference to the content type for the file asset containers)
+	 * Finds all container that have the contentTypeVarNameFileName as a vtl in their folders
+	 * (reference to the content type for the file asset containers)
 	 * Will include working content type but not archived
 	 * @param contentTypeVarNameFileName {@link String}
 	 * @return List of Folder
@@ -815,14 +827,24 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		final List<Folder>         folders    = new ArrayList<>();
 		final User 				   user       = APILocator.systemUser();
 
-		try{
+		final StringBuilder sqlQuery = new StringBuilder("select cvi.working_inode as inode from contentlet_version_info cvi, identifier id where"
+				+ " id.parent_path like ? and id.asset_name = ? and cvi.identifier = id.id");
+		final List<Object> parameters = new ArrayList<>();
+		parameters.add(Constants.TEMPLATE_FOLDER_PATH + StringPool.FORWARD_SLASH + StringPool.PERCENT);
+		parameters.add(Constants.TEMPLATE_META_INFO_FILE_NAME);
 
-			final String query = builder("+structureType:", Structure.STRUCTURE_TYPE_FILEASSET,
-					" +path:", Constants.CONTAINER_FOLDER_PATH, "/*",
-					" +path:*/" + contentTypeVarNameFileName + ".vtl",
-					" +working:true +deleted:false").toString();
+		final DotConnect dc = new DotConnect().setSQL(sqlQuery.toString());
+		parameters.forEach(param -> dc.addParam(param));
 
-			containers = this.contentletAPI.search(query,-1, 0, null , user, false);
+		try {
+			final List<Map<String,String>> inodesMapList =  dc.loadResults();
+
+			final List<String> inodes = new ArrayList<>();
+			for (final Map<String, String> versionInfoMap : inodesMapList) {
+				inodes.add(versionInfoMap.get("inode"));
+			}
+
+			containers  = APILocator.getContentletAPI().findContentlets(inodes);
 
 			for(final Contentlet container : containers) {
 
