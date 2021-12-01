@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -10,6 +11,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,21 +35,32 @@ public class VelocityScriptActionletAbortTest extends BaseWorkflowIntegrationTes
     @Test
     public void Test_Velocity_Script_Actionlet_Abort_Non_Stopped() throws Exception {
 
-        final Contentlet contentlet = new Contentlet();
+        final HttpServletRequest currentRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
 
-        final WorkflowActionClassParameter scriptParameter = new WorkflowActionClassParameter();
-        final WorkflowActionClassParameter keyParameter    = new WorkflowActionClassParameter();
-        scriptParameter.setValue("##nothing");
-        keyParameter.setValue(null);
-        final Map<String, WorkflowActionClassParameter> params = new HashMap<>();
-        params.put("script", scriptParameter);
-        params.put("resultKey", keyParameter);
-        final VelocityScriptActionlet  velocityScriptActionlet = new VelocityScriptActionlet();
-        final WorkflowProcessor processor = new WorkflowProcessor(contentlet, APILocator.systemUser());
+        try {
 
-        Assert.assertFalse(processor.abort());
-        velocityScriptActionlet.executeAction(processor, params);
-        Assert.assertFalse(processor.abort());
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+            final Contentlet contentlet = new Contentlet();
+
+            final WorkflowActionClassParameter scriptParameter = new WorkflowActionClassParameter();
+            final WorkflowActionClassParameter keyParameter = new WorkflowActionClassParameter();
+            scriptParameter.setValue("##nothing");
+            keyParameter.setValue(null);
+            final Map<String, WorkflowActionClassParameter> params = new HashMap<>();
+            params.put("script", scriptParameter);
+            params.put("resultKey", keyParameter);
+            final VelocityScriptActionlet velocityScriptActionlet = new VelocityScriptActionlet();
+            final WorkflowProcessor processor = new WorkflowProcessor(contentlet, APILocator.systemUser());
+
+            Assert.assertFalse(processor.abort());
+            velocityScriptActionlet.executeAction(processor, params);
+            Assert.assertFalse(processor.abort());
+        } finally {
+
+            if (null != currentRequest) {
+                HttpServletRequestThreadLocal.INSTANCE.setRequest(currentRequest);
+            }
+        }
     }
 
     /**
@@ -59,21 +72,32 @@ public class VelocityScriptActionletAbortTest extends BaseWorkflowIntegrationTes
     @Test
     public void Test_Velocity_Script_Actionlet_Abort_Stopped() throws Exception {
 
-        final Contentlet contentlet = new Contentlet();
+        final HttpServletRequest currentRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
 
-        final WorkflowActionClassParameter scriptParameter = new WorkflowActionClassParameter();
-        final WorkflowActionClassParameter keyParameter    = new WorkflowActionClassParameter();
-        scriptParameter.setValue("$workflow.abortProcessor()");
-        keyParameter.setValue(null);
-        final Map<String, WorkflowActionClassParameter> params = new HashMap<>();
-        params.put("script", scriptParameter);
-        params.put("resultKey", keyParameter);
-        final VelocityScriptActionlet  velocityScriptActionlet = new VelocityScriptActionlet();
-        final WorkflowProcessor processor = new WorkflowProcessor(contentlet, APILocator.systemUser());
+        try {
 
-        Assert.assertFalse(processor.abort());
-        velocityScriptActionlet.executeAction(processor, params);
-        Assert.assertTrue(processor.abort());
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+            final Contentlet contentlet = new Contentlet();
+
+            final WorkflowActionClassParameter scriptParameter = new WorkflowActionClassParameter();
+            final WorkflowActionClassParameter keyParameter    = new WorkflowActionClassParameter();
+            scriptParameter.setValue("$workflow.abortProcessor()");
+            keyParameter.setValue(null);
+            final Map<String, WorkflowActionClassParameter> params = new HashMap<>();
+            params.put("script", scriptParameter);
+            params.put("resultKey", keyParameter);
+            final VelocityScriptActionlet  velocityScriptActionlet = new VelocityScriptActionlet();
+            final WorkflowProcessor processor = new WorkflowProcessor(contentlet, APILocator.systemUser());
+
+            Assert.assertFalse(processor.abort());
+            velocityScriptActionlet.executeAction(processor, params);
+            Assert.assertTrue(processor.abort());
+        } finally {
+
+            if (null != currentRequest) {
+                HttpServletRequestThreadLocal.INSTANCE.setRequest(currentRequest);
+            }
+        }
     }
 
 }
