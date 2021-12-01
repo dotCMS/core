@@ -101,7 +101,7 @@ public class DbExporterUtil {
         }
 
         public static String pgDump() {
-            final String currentArch = System.getenv("os.arch");
+            final String currentArch = System.getProperty("os.arch");
             return Optional
                     .ofNullable(ARCHS.get(currentArch.toLowerCase()))
                     .map(arch -> arch.pgDump)
@@ -201,14 +201,16 @@ public class DbExporterUtil {
      */
     @VisibleForTesting
     static void copyPgDump(final File pgDumpFile) {
-        try {
-            Files.createDirectories(pgDumpFile.toPath());
-        } catch (IOException e) {
-            Logger.error(
-                    DbExporterUtil.class,
-                    String.format("Error creating directories %s", pgDumpFile.getAbsolutePath()),
-                    e);
-            throw new DotRuntimeException(e);
+        if (Files.notExists(pgDumpFile.toPath())) {
+            try {
+                Files.createDirectories(pgDumpFile.toPath());
+            } catch (IOException e) {
+                Logger.error(
+                        DbExporterUtil.class,
+                        String.format("Error creating directories %s", pgDumpFile.getAbsolutePath()),
+                        e);
+                throw new DotRuntimeException(e);
+            }
         }
 
         pgDumpFile.delete();
