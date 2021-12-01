@@ -388,7 +388,7 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
                     getUserId()));
             map.put("gravitar", StringPool.BLANK);
         } else {
-            map.put("gravitar", DigestUtils.md5Hex(emailAddress.toLowerCase()).toString());
+            map.put("gravitar", DigestUtils.md5Hex(emailAddress.toLowerCase()));
         }
 		map.put("emailAddress", emailAddress);
         map.put("emailaddress", emailAddress);
