@@ -8426,7 +8426,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"{{contentTypeIdWithStoryBlock}}\",\n        \"name\": \"test with data block field\",\n        \"title\": \"test with data block field\",\n        \"block\": \"{\\\"type\\\": \\\"doc\\\",\\\"render\\\": \\\"<h4>Wow, this editor instance exports its content as JSON.</h4>\\\",\\\"content\\\": [{\\\"type\\\": \\\"paragraph\\\",\\\"content\\\": [{\\\"type\\\": \\\"text\\\",\\\"text\\\": \\\"Wow, this editor instance exports its content as JSON.\\\"}]}]}\"\n    }\n}",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"{{contentTypeIdWithStoryBlock}}\",\n        \"name\": \"test with data block field\",\n        \"title\": \"test with data block field\",\n        \"block\": \"{\\\"type\\\": \\\"doc\\\",\\\"content\\\": [{\\\"type\\\": \\\"paragraph\\\",\\\"content\\\": [{\\\"type\\\": \\\"text\\\",\\\"text\\\": \\\"Wow, this editor instance exports its content as JSON.\\\"}]}]}\"\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -8463,7 +8463,7 @@
 									"var collectionName = pm.collectionVariables.get(\"contentTypeVarNameWithStoryBlock\")+\"Collection\"",
 									"",
 									"pm.test(\"Content has the correct value at the json property\", function () {",
-									"    pm.expect(jsonData.data[collectionName][0].block.json.render).to.eql(undefined);",
+									"    pm.expect(jsonData.data[collectionName][0].block.json).to.not.eql(undefined);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -8573,6 +8573,14 @@
 		},
 		{
 			"key": "contentTypeVariableDCKRH",
+			"value": ""
+		},
+		{
+			"key": "contentTypeIdWithStoryBlock",
+			"value": ""
+		},
+		{
+			"key": "contentTypeVarNameWithStoryBlock",
 			"value": ""
 		}
 	]
