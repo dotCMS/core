@@ -1,4 +1,5 @@
 import { NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 import { EditorDirective } from './editor.directive';
 import { BubbleMenuDirective } from './bubble-menu.directive';
@@ -23,9 +24,11 @@ import { LoaderComponent } from './extensions/components/loader/loader.component
 import { DotImageService } from './extensions/services/dot-image/dot-image.service';
 import { BubbleMenuComponent } from './extensions/components/bubble-menu/bubble-menu.component';
 import { BubbleMenuButtonComponent } from './extensions/components/bubble-menu-button/bubble-menu-button.component';
+import { BubbleMenuLinkFormComponent } from './extensions/components/bubble-menu-link-form/bubble-menu-link-form.component';
+// import { BubbleMenuComponent } from './extensions/components/bubble-menu/bubble-menu.component';
 
 @NgModule({
-    imports: [CommonModule, CardModule, MenuModule],
+    imports: [CommonModule, FormsModule, CardModule, MenuModule],
     declarations: [
         EditorDirective,
         BubbleMenuDirective,
@@ -40,7 +43,8 @@ import { BubbleMenuButtonComponent } from './extensions/components/bubble-menu-b
         ImageBlockComponent,
         LoaderComponent,
         BubbleMenuComponent,
-        BubbleMenuButtonComponent
+        BubbleMenuButtonComponent,
+        BubbleMenuLinkFormComponent
     ],
     providers: [SuggestionsService, DotImageService, LoggerService, StringUtils],
     exports: [
@@ -50,7 +54,8 @@ import { BubbleMenuButtonComponent } from './extensions/components/bubble-menu-b
         DraggableDirective,
         NodeViewContentDirective,
         ActionButtonComponent,
-        BubbleMenuComponent
+        BubbleMenuComponent,
+        BubbleMenuLinkFormComponent
     ]
 })
 export class NgxTiptapModule {}

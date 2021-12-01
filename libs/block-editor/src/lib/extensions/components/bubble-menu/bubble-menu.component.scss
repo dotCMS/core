@@ -12,9 +12,8 @@
     box-shadow: $md-shadow-3;
     display: flex;
     justify-content: center;
-    overflow: auto;
     padding: 0.4rem 0.7rem;
-
+    height: 40px;
     .divider {
         border-left: 1px solid $gray-bg;
         height: 100%;

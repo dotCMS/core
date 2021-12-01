@@ -80,6 +80,12 @@ export class BubbleMenuComponent implements OnInit {
             divider: true
         },
         {
+            icon: 'link',
+            markAction: 'link',
+            active: false,
+            divider: true
+        },
+        {
             icon: 'format_clear',
             markAction: 'clearAll',
             active: false
@@ -87,20 +93,20 @@ export class BubbleMenuComponent implements OnInit {
     ];
 
     ngOnInit() {
-        this.enabledMarks = this.getEnabledMarks();
+        this.setEnabledMarks();
 
         /**
          * Every time the selection is updated, the active state of the buttons must be updated.
          */
-        this.editor.on('selectionUpdate', () => {
-            this.activeMarks = this.getActiveMarks();
+        this.editor.on('transaction', () => {
+            this.setActiveMarks();
             this.updateActiveItems();
         });
     }
 
     command(item: BubbleMenuItem): void {
         this.menuActions(item);
-        this.activeMarks = this.getActiveMarks();
+        this.setActiveMarks();
         this.updateActiveItems();
     }
 
@@ -147,6 +153,9 @@ export class BubbleMenuComponent implements OnInit {
                     this.editor.commands.liftListItem('listItem');
                 }
             },
+            link: () => {
+                this.editor.commands.toogleLinkForm();
+            },
             clearAll: () => {
                 this.editor.commands.unsetAllMarks();
                 this.editor.commands.clearNodes();
@@ -166,7 +175,7 @@ export class BubbleMenuComponent implements OnInit {
         });
     }
 
-    private toggleTextAlign(aligment: string, active: boolean) {
+    private toggleTextAlign(aligment: string, active: boolean): void {
         if (active) {
             this.editor.commands.unsetTextAlign();
         } else {
@@ -174,16 +183,16 @@ export class BubbleMenuComponent implements OnInit {
         }
     }
 
-    private isListNode() {
+    private isListNode(): boolean {
         return this.editor.isActive('bulletList') || this.editor.isActive('orderedList');
     }
 
-    private getEnabledMarks() {
-        return [...Object.keys(this.editor.schema.marks), ...Object.keys(this.editor.schema.nodes)];
+    private setEnabledMarks(): void {
+        this.enabledMarks = [...Object.keys(this.editor.schema.marks), ...Object.keys(this.editor.schema.nodes)];
     }
 
-    private getActiveMarks(): string[] {
-        return [
+    private setActiveMarks(): void {
+        this.activeMarks = [
             ...this.enabledMarks.filter((mark) => this.editor.isActive(mark)),
             ...this.textAlings.filter((alignment) => this.editor.isActive({ textAlign: alignment }))
         ];

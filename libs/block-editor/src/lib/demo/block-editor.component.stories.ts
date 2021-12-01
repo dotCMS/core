@@ -15,6 +15,7 @@ import { SuggestionsComponent } from '../extensions/components/suggestions/sugge
 import { ActionButtonComponent } from '../extensions/components/action-button/action-button.component';
 import { ContentletBlockComponent } from '../extensions/blocks/contentlet-block/contentlet-block.component';
 import { DragHandlerComponent } from '../extensions/components/drag-handler/drag-handler.component';
+import { BubbleMenuLinkFormComponent } from '../extensions/components/bubble-menu-link-form/bubble-menu-link-form.component';
 import { ImageBlockComponent } from '../extensions/blocks/image-block/image-block.component';
 import { LoaderComponent } from '../extensions/components/loader/loader.component';
 import { DotImageService } from '../extensions/services/dot-image/dot-image.service';
@@ -121,6 +122,7 @@ export const primary = () => ({
             ContentletBlockComponent,
             ActionButtonComponent,
             DragHandlerComponent,
+            BubbleMenuLinkFormComponent,
             ImageBlockComponent,
             LoaderComponent
         ]

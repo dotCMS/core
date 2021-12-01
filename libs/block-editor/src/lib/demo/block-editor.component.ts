@@ -9,16 +9,19 @@ import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 
 import { ActionsMenu } from '../extensions/actions-menu.extension';
+import { BubbleLinkFormExtension } from '../extensions/bubble-link-form.extension';
 import { ContentletBlock } from '../extensions/blocks/contentlet-block/contentlet-block.extension';
 import { DragHandler } from '../extensions/dragHandler.extention';
 
 import { ImageUpload } from '../extensions/imageUpload.extention';
 import { ImageBlock } from '../extensions/blocks/image-block/image-block.extention';
-import BubbleMenu from '@tiptap/extension-bubble-menu';
 
 // Marks Extensions
+import { Highlight } from '@tiptap/extension-highlight';
+import { Link } from '@tiptap/extension-link';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
+
 
 @Component({
     selector: 'dotcms-block-editor',
@@ -27,8 +30,14 @@ import { Underline } from '@tiptap/extension-underline';
     encapsulation: ViewEncapsulation.None
 })
 export class BlockEditorComponent implements OnInit {
-    editor: Editor;
 
+    editor: Editor;
+    bubbleMenuTippyOption = {
+        duration: 500,
+        maxWidth: 'none',
+        placement: 'top-start',
+        trigger: 'manual'
+    }
     value = '<p>Hello, Tiptap!</p>'; // can be HTML or JSON, see https://www.tiptap.dev/api/editor#content
 
     constructor(private injector: Injector, private resolver: ComponentFactoryResolver) {}
@@ -42,21 +51,14 @@ export class BlockEditorComponent implements OnInit {
                 ActionsMenu(this.injector, this.resolver),
                 DragHandler(this.injector, this.resolver),
                 ImageUpload(this.injector, this.resolver),
-                BubbleMenu.configure({
-                    element: document.querySelector('#bubbleMenu'),
-                    tippyOptions: {
-                        duration: 500,
-                        maxWidth: 'none',
-                        placement: 'bottom-start',
-                        trigger: 'manual'
-                    }
-                }),
+                BubbleLinkFormExtension(this.injector, this.resolver),
                 // Marks Extensions
                 Underline,
-                TextAlign.configure({
-                    types: ['heading', 'paragraph'],
-                })
+                TextAlign.configure({ types: ['heading', 'paragraph', 'listItem'] }),
+                Highlight.configure({ HTMLAttributes: { class: 'highlighted'} }),
+                Link.configure({ openOnClick: true })
             ]
         });
     }
+
 }
