@@ -36,12 +36,12 @@
 
 
 <div class="contentIdentifier">
-<%= LanguageUtil.get(pageContext, "Identifier") %> : <%=ident.getId() %> 
+<%= LanguageUtil.get(pageContext, "Identifier") %> : <%=ident.getId() %>
 
 
 
 	<div style="float:right">
-	(&nbsp;<a href="/api/content/id/<%=ident.getId() %>" target="_blank">json</a> | 
+	(&nbsp;<a href="/api/content/id/<%=ident.getId() %>" target="_blank">json</a> |
 	<a href="/api/content/id/<%=ident.getId() %>/type/xml" target="_blank">xml</a>&nbsp;)
 	</div>
 </div>
@@ -57,12 +57,13 @@
 		<%} %>
 		<th width="20%" style="text-align:center;"><%= LanguageUtil.get(pageContext, "Modified-Date") %></th>
 		<th width="20%" style="text-align:center;"><%= LanguageUtil.get(pageContext, "Inode") %></th>
+		<th width="20%" style="text-align:center;"><%= LanguageUtil.get(pageContext, "Actions") %></th>
 	</tr>
 <%
     Iterator<Contentlet> versionsIt = versions.iterator();
 	boolean isAlreadyLocked = false;
 	while (versionsIt.hasNext()) {
-		Contentlet ver = versionsIt.next();		
+		Contentlet ver = versionsIt.next();
 		String vinode = ver.getInode();
 		String title = ver.getTitle();
 		String modUser = ver.getModUser();
@@ -83,9 +84,9 @@
 		<td nowrap="nowrap">
 		<% if (!working) {  %>
 			<% if(canEdit) {  %>
-				<% if (!live) { %>					
+				<% if (!live) { %>
 					<a  href="javascript:void(0);" onclick="deleteVersion('<%= vinode%>');return false;"><%= LanguageUtil.get(pageContext, "Delete") %></a> -
-					
+
 				<% } %>
 				<a  href="javascript: selectVersion('<%= vinode %>');"><%= LanguageUtil.get(pageContext, "Bring-Back") %></a>
 			<% } %>
@@ -125,6 +126,11 @@
 		 <%} %>
 		<td nowrap="nowrap" style="text-align:center;"><%= UtilMethods.dateToHTMLDate(modDate) %> - <%= UtilMethods.dateToHTMLTime(modDate) %></td>
 		<td nowrap="nowrap"><%= vinode %></td>
+		<td nowrap="nowrap">
+			<% if (!live) { %>
+				<button dojoType="dijit.form.Button" class="dijitButton" onclick="emmitCompareEvent('<%=vinode%>', '<%=ident.getId()%>', '<%=langV.getLanguageCode() %>-<%=langV.getCountryCode().toLowerCase()%>');return false;"><%= LanguageUtil.get(pageContext, "compare") %></button>
+			<% } %>
+		</td>
 	</tr>
 	<% } if (versions.size() == 0) { %>
 		<tr>
