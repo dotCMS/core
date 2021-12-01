@@ -26,6 +26,15 @@ public class HandlerUtilTest {
         IntegrationTestInitService.getInstance().init();
     }
 
+    /**
+     * Method to test: {@link HandlerUtil#setMultiTree(String, String, List, String)}
+     * Given Scenario: Sends a set of multi tree with specific tree order
+     * ExpectedResult: when recover the multi tree the order should be preserve
+     *
+     * @throws IOException
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     @Test
     public void setMultiTree_on_diff_orders_should_not_reorder() throws IOException, DotSecurityException, DotDataException {
 
@@ -37,7 +46,6 @@ public class HandlerUtilTest {
         final String modUser = "dotcms.org1";
         HandlerUtil.setMultiTree(pageIdentifier, pageInode, pageLanguage, wrapperMultiTree, modUser);
 
-        //Identifier htmlPage, Identifier container, Identifier childContent, String containerInstance
         final List<MultiTree>  multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(pageIdentifier);
 
         assertNotNull(multiTrees);
