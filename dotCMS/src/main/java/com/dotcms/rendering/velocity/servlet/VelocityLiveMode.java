@@ -4,6 +4,8 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
+import com.dotcms.repackage.org.apache.axiom.om.util.Base64;
+import com.dotcms.security.ContentSecurityPolicyUtil;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -170,7 +172,10 @@ public class VelocityLiveMode extends VelocityModeHandler {
                 this.getTemplate(htmlPage, mode).merge(context, tmpOut);
 
                 if (cacheKey != null) {
-                    final String trimmedPage = tmpOut.toString().trim();
+                    String trimmedPage = tmpOut.toString().trim();
+                    trimmedPage = ContentSecurityPolicyUtil
+                            .calculateContentSecurityPolicy(trimmedPage, response);
+
                     out.write(trimmedPage.getBytes());
                     synchronized (cacheKey.intern()) {
                         CacheLocator.getBlockPageCache().add(htmlPage, trimmedPage, cacheParameters);
@@ -183,6 +188,8 @@ public class VelocityLiveMode extends VelocityModeHandler {
         }
     }
 
+
+
     User getUser() {
         User user = null;
         final HttpSession session = request.getSession(false);
@@ -193,5 +200,4 @@ public class VelocityLiveMode extends VelocityModeHandler {
 
         return user;
     }
-
 }
