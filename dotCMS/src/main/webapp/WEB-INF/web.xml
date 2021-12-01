@@ -313,7 +313,11 @@
 		</init-param>
 		<load-on-startup>2</load-on-startup>
 	</servlet>
-	
+    <servlet>
+           <servlet-name>ImageServlet</servlet-name>
+           <servlet-class>com.liferay.portal.servlet.ImageServlet</servlet-class>
+           <load-on-startup>4</load-on-startup>
+    </servlet>
 	<servlet>
 		<servlet-name>WebDav</servlet-name>
 		<servlet-class>com.dotcms.repackage.com.bradmcevoy.http.MiltonServlet</servlet-class>
@@ -473,7 +477,10 @@
 		<servlet-name>MainServlet</servlet-name>
 		<url-pattern>/dotAdmin/c/*</url-pattern>
 	</servlet-mapping>
-	
+    <servlet-mapping>
+        <servlet-name>ImageServlet</servlet-name>
+        <url-pattern>/image/*</url-pattern>
+    </servlet-mapping>
     <servlet-mapping>
 	    <servlet-name>BinaryExporterServlet</servlet-name>
 	    <url-pattern>/contentAsset/*</url-pattern>
