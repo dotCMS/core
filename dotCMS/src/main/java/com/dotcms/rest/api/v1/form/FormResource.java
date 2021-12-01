@@ -50,14 +50,7 @@ public class FormResource {
             @PathParam("idOrVar") final String idOrVar)
             throws DotDataException, DotSecurityException {
 
-        final InitDataObject initDataObject = new InitBuilder(webResource)
-                .rejectWhenNoUser(true)
-                .requiredBackendUser(false)
-                .requiredFrontendUser(false)
-                .requestAndResponse(req, res)
-                .init();
-
-        final ContentType contentType = APILocator.getContentTypeAPI(initDataObject.getUser())
+        final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
                 .find(idOrVar);
 
         if (BaseContentType.FORM  != contentType.baseType()){
