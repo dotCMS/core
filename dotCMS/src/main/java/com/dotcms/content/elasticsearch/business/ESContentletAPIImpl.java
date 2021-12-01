@@ -1,13 +1,18 @@
 package com.dotcms.content.elasticsearch.business;
 
 
+import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
+import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
+
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
-import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.event.ContentletArchiveEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
@@ -35,16 +40,6 @@ import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.rendering.velocity.services.PageLoader;
-import com.dotcms.storage.FileMetadataAPI;
-import com.dotcms.storage.model.Metadata;
-import com.dotmarketing.exception.DoesNotExistException;
-import com.dotmarketing.portlets.personas.model.Persona;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import org.apache.commons.io.FileUtils;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
@@ -61,7 +56,6 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.Tree;
-import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
@@ -122,6 +116,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
@@ -174,19 +169,6 @@ import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.junit.Test;
-import org.springframework.beans.BeanUtils;
-
-import javax.activation.MimeType;
-import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -213,16 +195,20 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
-import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
-import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
+import javax.activation.MimeType;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.springframework.beans.BeanUtils;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -6288,9 +6274,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (BaseContentType.HTMLPAGE.getType() == contentType.baseType().getType()) {
             this.validateHtmlPage(contentlet, contentIdentifier, contentType);
         }
+        if(contentlet.isHost()){
+            this.validateSite(contentlet);
+        }
         boolean hasError = false;
-        final DotContentletValidationException cve = new DotContentletValidationException("Contentlet [" +
-                contentIdentifier + "] has invalid / missing field(s).");
+        final DotContentletValidationException cve = new DotContentletValidationException(
+                String.format("Contentlet with id:`%s` and title:`%s` has invalid / missing field(s).", contentIdentifier, contentlet.getTitle())
+        );
         final List<Field> fields = FieldsCache.getFieldsByStructureInode(contentTypeId);
         final Map<String, Object> contentletMap = contentlet.getMap();
         final Set<String> nullValueProperties = contentlet.getNullProperties();
@@ -6299,6 +6289,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // Validate Field Type
             if(fieldValue != null){
                 if(isFieldTypeString(field)){
+
+                    if(fieldValue instanceof Map && FieldType.KEY_VALUE.toString().equals(field.getFieldType())){
+                        //That's fine we're handling now keyValues directly as maps
+                        continue;
+                    }
+
                     if(!(fieldValue instanceof String)){
                         cve.addBadTypeField(field);
                         Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type String");
@@ -6350,7 +6346,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             // validate required
             if (field.isRequired()) {
-                if(fieldValue instanceof String){
+
+                if(fieldValue instanceof Map){
+                    final Map map = (Map)fieldValue;
+                    if(field.getFieldType().equals(Field.FieldType.KEY_VALUE.toString()) && map.isEmpty()) {
+                        cve.addRequiredField(field);
+                        hasError = true;
+                        Logger.warn(this, "String Field [" + field.getVelocityVarName() + "] is required");
+                        continue;
+                    }
+                }
+                else if(fieldValue instanceof String){
                     String s1 = (String)fieldValue;
                     if(!UtilMethods.isSet(s1.trim()) || (field.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())) && s1.equals("{}")) {
                         cve.addRequiredField(field);
@@ -6425,10 +6431,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 continue;
                             }
                         }
-                    } catch (DotDataException e) {
-                        Logger.warn(this, "Unable to validate a category field [" + field.getVelocityVarName() + "]", e);
-                        throw new DotContentletValidationException("Unable to validate a category field: " + field.getVelocityVarName(), e);
-                    } catch (DotSecurityException e) {
+                    } catch (DotDataException | DotSecurityException e) {
                         Logger.warn(this, "Unable to validate a category field [" + field.getVelocityVarName() + "]", e);
                         throw new DotContentletValidationException("Unable to validate a category field: " + field.getVelocityVarName(), e);
                     }
@@ -6551,9 +6554,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             }
                         }
                     }
-                } catch (final DotDataException e) {
-                    Logger.warn(this,"Unable to get contentlets for Content Type: " + contentlet.getStructure().getName(), e);
-                } catch (final DotSecurityException e) {
+                } catch (DotDataException | DotSecurityException e) {
                     Logger.warn(this,"Unable to get contentlets for Content Type: " + contentlet.getStructure().getName(), e);
                 }
             }
@@ -6798,6 +6799,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    final static Pattern dnsPattern = Pattern.compile(dnsRegEx);
+
+    /**
+     * Host validation method shared by HostResource and ContentletWebAPI
+     * @param contentlet
+     */
+    private void validateSite(Contentlet contentlet) {
+        if (Config.getBooleanProperty("site.key.dns.validation", false)) {
+            final String siteKey = (String) contentlet.get(Host.HOST_NAME_KEY);
+            if (!UtilMethods.isSet(siteKey) || !dnsPattern.matcher(siteKey).find()) {
+                throw new DotContentletValidationException(
+                        String.format("Site key %s doesn't match a valid dns format.", siteKey));
+            }
+        }
+    }
+
     @CloseDBIfOpened
     @Override
     public void validateContentlet(Contentlet contentlet,Map<Relationship, List<Contentlet>> contentRelationships,List<Category> cats)throws DotContentletValidationException {
@@ -6832,7 +6849,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if (BaseContentType.PERSONA.getType() == contentlet.getContentType().baseType().getType()) {
                 APILocator.getPersonaAPI().validatePersona(contentlet);
             }
-            if (null != contentlet && contentlet.isVanityUrl()) {
+            if (contentlet.isVanityUrl()) {
                 APILocator.getVanityUrlAPI().validateVanityUrl(contentlet);
             }
         } catch (final DotContentletValidationException ve) {

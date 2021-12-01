@@ -91,7 +91,7 @@ public class CMSUrlUtil {
 			Identifier id = APILocator.getIdentifierAPI().find(asset);
 			if (CONTENTLET.equals(id.getAssetType()) && asset instanceof Contentlet) {
 				Contentlet c = (Contentlet) asset;
-				return (c.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE);
+				return c.isHTMLPage();
 			} else if (HTMLPAGE.equals(id.getAssetType())) {
 				return true;
 			}
@@ -115,19 +115,25 @@ public class CMSUrlUtil {
             final Host site,
             final long languageId) {
 
-        final String uriWithoutQueryString = this.urlUtil.getUriWithoutQueryString (uri);
+        final String uriWithoutQueryString = this.getUriWithoutQueryString (uri);
         if (isFileAsset(uriWithoutQueryString, site, languageId)) {
             return IAm.FILE;
-        } else if (isPageAsset(uriWithoutQueryString, site, languageId)) {
+        } 
+        if (isPageAsset(uriWithoutQueryString, site, languageId)) {
             return IAm.PAGE;
-        } else if (isFolder(uriWithoutQueryString, site)) {
-            return IAm.FOLDER;
         }
-        else {
-            return IAm.NOTHING_IN_THE_CMS;
+        if(isFolder(uriWithoutQueryString, site)) {
+            // resolves correctly for folders with index pages
+            return uriWithoutQueryString.endsWith("/") && isPageAsset(uriWithoutQueryString + CMSFilter.CMS_INDEX_PAGE, site, languageId) 
+                        ? IAm.PAGE
+                        : IAm.FOLDER;     
+            
         }
 
-} // resolveResourceType.
+        return IAm.NOTHING_IN_THE_CMS;
+        
+
+        } // resolveResourceType.
 	/**
 	 * Indicates if the uri belongs to a Page Asset
 	 *
@@ -183,13 +189,10 @@ public class CMSUrlUtil {
 				}
 				if (!cinfo.isPresent() || cinfo.get().getWorkingInode().equals(NOT_FOUND)) {
 					return false;//At this point we know is not a page
-				} else {
-					Contentlet c = APILocator.getContentletAPI()
-							.find(cinfo.get().getWorkingInode(), APILocator.getUserAPI().getSystemUser(),
-									false);
-					return (c.getStructure().getStructureType()
-							== Structure.STRUCTURE_TYPE_HTMLPAGE);
-				}
+				} 
+				Contentlet c = APILocator.getContentletAPI().find(cinfo.get().getWorkingInode(), APILocator.systemUser(),false);
+				return c.isHTMLPage();
+				
 			} catch (Exception e) {
 				Logger.error(this.getClass(), UNABLE_TO_FIND + uri);
 				return false;
@@ -429,8 +432,8 @@ public class CMSUrlUtil {
 	 * the request.
 	 */
 	public String getURIFromRequest(final HttpServletRequest request) {
-        return (request.getAttribute(CMS_FILTER_URI_OVERRIDE) != null) ? (String) request
-				.getAttribute(CMS_FILTER_URI_OVERRIDE)
+        return (request.getAttribute(CMS_FILTER_URI_OVERRIDE) != null) 
+                ? (String) request.getAttribute(CMS_FILTER_URI_OVERRIDE)
 				: getRequestPath(request);
 	}
 

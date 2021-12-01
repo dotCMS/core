@@ -47,8 +47,7 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
 
     @Override
     public File generateCSVFile(final String outputPath) throws DotDataException, IOException {
-        final String outputFile = outputPath + File.separator
-                + getIntegrityType().getDataToCheckCSVName();
+        final String outputFile = getOutputFilePath(outputPath);
 
         File csvFile;
         CsvWriter writer = null;

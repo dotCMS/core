@@ -5,10 +5,19 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringUtil;
+import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
 
 /**
  * Generic UpsertCommand that can be used to Generate and execute Native SQL Upsert Queries
@@ -70,6 +79,7 @@ public abstract class UpsertCommand implements DatabaseCommand {
             }
         }
         if (replacements.getAttribute(QueryReplacements.EXTRA_COLUMNS) != null) {
+            final Map<String, Function<String, String>> columnsFormatFunction = replacements.getColumnsFormatFunction();
             String[] extraColumns = replacements.getAttribute(QueryReplacements.EXTRA_COLUMNS);
             for (String column : extraColumns) {
                 builder.append(column);
@@ -78,7 +88,8 @@ public abstract class UpsertCommand implements DatabaseCommand {
                 if (replacements.doNothingOnConflict()) {
                     builder.append("=").append(column).append(",");
                 } else {
-                    builder.append("=?,");
+                    final Function<String, String> function = columnsFormatFunction.get(column);
+                    builder.append(null != function ? function.apply("=?" ) : "=?").append(",");
                 }
             }
         }
@@ -114,7 +125,7 @@ public abstract class UpsertCommand implements DatabaseCommand {
      * @return
      */
     protected String getInsertValuesString(SimpleMapAppContext replacements) {
-        ArrayList<String> values = new ArrayList<>();
+        final List<String> values = new ArrayList<>();
         if (replacements.getAttribute(QueryReplacements.ID_COLUMN) != null) {
             values.add(replacements.getAttribute(QueryReplacements.ID_VALUE));
         }
@@ -122,9 +133,13 @@ public abstract class UpsertCommand implements DatabaseCommand {
             values.add(SQLUtil.PARAMETER);
         }
         if (replacements.getAttribute(QueryReplacements.EXTRA_COLUMNS) != null) {
+
+            final Map<String, Function<String, String>> columnsFormatFunction = replacements.getColumnsFormatFunction();
             String[] extraColumns = replacements.getAttribute(QueryReplacements.EXTRA_COLUMNS);
-            for (int i=0; i<extraColumns.length; i++) {
-                values.add(SQLUtil.PARAMETER);
+            for (final String extraColumn : extraColumns) {
+                final Function<String,String> function = columnsFormatFunction.get(extraColumn);
+                //There can be functions bound to a column if so we apply it otherwise simply put the parameter place holder
+                values.add(function != null ? function.apply(SQLUtil.PARAMETER) : SQLUtil.PARAMETER );
             }
         }
         return StringUtil.merge(values.toArray(new String[0]));

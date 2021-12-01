@@ -125,11 +125,25 @@ public class VisitorsCurrentURLConditionletTest extends UnitTestBase {
                     .shouldBeTrue()
             );
 
-            data.add(new TestCase("Regexp: If \\/pro.* set and current URL is /about-us/ , evaluate to true.")
+            data.add(new TestCase("Regexp: If \\/pro.* set and current URL is /about-us/ , evaluate to false.")
                     .withComparison(REGEX)
                     .withURI("/about-us/index")
                     .withPattern("\\/pro.*")
                     .shouldBeFalse()
+            );
+
+            data.add(new TestCase("Regexp: If \\/test(.*) set and current URL is /products/ , evaluate to true.")
+                    .withComparison(REGEX)
+                    .withURI("/products/index")
+                    .withPattern("\\/test(.*)")
+                    .shouldBeFalse()
+            );
+
+            data.add(new TestCase("Regexp: If \\/test(.*) set and current URL is /products/ , evaluate to true.")
+                    .withComparison(REGEX)
+                    .withURI("/test?inode=12345678-1234-1234-1234567")
+                    .withPattern("\\/test(.*)")
+                    .shouldBeTrue()
             );
 
 

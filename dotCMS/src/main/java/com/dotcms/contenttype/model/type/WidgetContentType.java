@@ -1,17 +1,15 @@
 package com.dotcms.contenttype.model.type;
 
-import java.util.List;
-
-import org.immutables.gson.Gson;
-import org.immutables.value.Value;
-
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.ImmutableConstantField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
-import com.google.common.collect.ImmutableList;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.common.collect.ImmutableList;
+import java.util.List;
+import org.immutables.gson.Gson;
+import org.immutables.value.Value;
 @JsonSerialize(as = ImmutableWidgetContentType.class)
 @JsonDeserialize(as = ImmutableWidgetContentType.class)
 @Gson.TypeAdapters
@@ -20,6 +18,8 @@ public abstract class WidgetContentType extends ContentType implements Expireabl
 	
 	public static final String WIDGET_CODE_FIELD_NAME = "Widget Code";
 	public static final String WIDGET_CODE_FIELD_VAR = "widgetCode";
+	public static final String WIDGET_CODE_JSON_FIELD_NAME = "Widget Code as JSON";
+	public static final String WIDGET_CODE_JSON_FIELD_VAR = "widgetCodeJSON";
 	public static final String WIDGET_USAGE_FIELD_NAME = "Widget Usage";
 	public static final String WIDGET_USAGE_FIELD_VAR = "widgetUsage";
 	public static final String WIDGET_TITLE_FIELD_NAME = "Widget Title";
@@ -55,7 +55,7 @@ public abstract class WidgetContentType extends ContentType implements Expireabl
 		Field preExecute = ImmutableConstantField.builder()
 				.name(WIDGET_PRE_EXECUTE_FIELD_NAME)
 				.variable(WIDGET_PRE_EXECUTE_FIELD_VAR)
-				.sortOrder(4)
+				.sortOrder(5)
 				.fixed(false)
 				.readOnly(false)
 				.searchable(true)
@@ -70,8 +70,8 @@ public abstract class WidgetContentType extends ContentType implements Expireabl
 				.readOnly(true)
 				.searchable(true)
 				.build();
-		
-		Field usageField = ImmutableConstantField.builder()
+
+		Field usageField = ImmutableTextField.builder()
 				.name(WIDGET_USAGE_FIELD_NAME)
 				.variable(WIDGET_USAGE_FIELD_VAR)
 				.sortOrder(2)
@@ -79,12 +79,7 @@ public abstract class WidgetContentType extends ContentType implements Expireabl
 				.readOnly(false)
 				.searchable(true)
 				.build();
-		
 
-		
 		return ImmutableList.of(titleField,usageField,codeField,preExecute);
-		
-		
-		
 	}
 }

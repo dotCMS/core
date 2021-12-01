@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
+import com.dotcms.content.business.ContentletJsonAPI;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
@@ -10,7 +11,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -19,7 +19,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
@@ -28,9 +27,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.StringTokenizer;
-import org.apache.commons.beanutils.PropertyUtils;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -65,7 +62,7 @@ public class ContentletTransformer implements DBTransformer {
 
     @NotNull
     private static Contentlet transform(final Map<String, Object> map)  {
-        final Contentlet contentlet = new Contentlet();
+
         final String inode = (String) map.get("inode");
         final String contentletId = (String) map.get(IDENTIFIER);
         final String contentTypeId = (String) map.get(STRUCTURE_INODE);
@@ -73,6 +70,24 @@ public class ContentletTransformer implements DBTransformer {
         if (!UtilMethods.isSet(contentTypeId)) {
             throw new DotRuntimeException("Contentlet must have a content type.");
         }
+
+        final ContentletJsonAPI contentletJsonAPI = APILocator.getContentletJsonAPI();
+
+        final Contentlet contentlet;
+        final boolean hasJsonFields = (contentletJsonAPI.isPersistContentAsJson() && UtilMethods.isSet(map.get(ContentletJsonAPI.CONTENTLET_AS_JSON)));
+        if(hasJsonFields){
+          try {
+              final String json = map.get(ContentletJsonAPI.CONTENTLET_AS_JSON).toString();
+              contentlet = contentletJsonAPI.mapContentletFieldsFromJson(json);
+          }catch (Exception e){
+              final String errorMsg = String.format("Unable to populate contentlet from json for ID='%s', Inode='%s', Content-Type '%s': %s", contentletId, inode, contentTypeId, e.getMessage());
+              Logger.error(ContentletTransformer.class, errorMsg, e);
+              throw new DotRuntimeException(errorMsg, e);
+          }
+        } else {
+            contentlet = new Contentlet();
+        }
+
         contentlet.setInode(inode);
         contentlet.setIdentifier(contentletId);
         contentlet.setContentTypeId(contentTypeId);
@@ -85,12 +100,14 @@ public class ContentletTransformer implements DBTransformer {
         contentlet.setLanguageId(ConversionUtils.toLong(map.get("language_id"), 0L));
 
         try {
-            populateFields(contentlet, map);
-            populateFolderAndHost(contentlet, contentletId, contentTypeId);
+           if(!hasJsonFields) {
+               populateFields(contentlet, map);
+           }
             populateWysiwyg(map, contentlet);
+            populateFolderAndHost(contentlet, contentletId, contentTypeId);
         } catch (final Exception e) {
             final String errorMsg = String
-                    .format("Unable to populate contentlet with ID='%s', Inode='%s', Content Type '%s': %s", contentletId, inode,
+                    .format("Unable to populate contentlet from table columns for ID='%s', Inode='%s', Content-Type '%s': %s", contentletId, inode,
                             contentTypeId, e
                                     .getMessage());
             Logger.error(ContentletTransformer.class, errorMsg, e);
@@ -260,6 +277,12 @@ public class ContentletTransformer implements DBTransformer {
         } else {
             value = originalMap.get(field.getFieldContentlet());
         }
+
+        //KeyValue objects must be returned as Maps
+        if(LegacyFieldTypes.KEY_VALUE.legacyValue().equals(field.getFieldType()) && value instanceof String ){
+            value = com.dotmarketing.portlets.structure.model.KeyValueFieldUtil.JSONValueToHashMap((String)value);
+        }
+
         return value;
     }
 }

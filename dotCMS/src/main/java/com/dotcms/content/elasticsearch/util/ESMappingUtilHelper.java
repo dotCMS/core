@@ -8,6 +8,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldFactory;
+import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.DateTimeField;
@@ -372,7 +373,7 @@ public class ESMappingUtilHelper {
         } else if (field instanceof TextField || field instanceof TextAreaField
                 || field instanceof WysiwygField || field instanceof RadioField
                     || field instanceof SelectField || field instanceof MultiSelectField
-                    || field instanceof TagField) {
+                    || field instanceof TagField || field instanceof StoryBlockField) {
 
             if (dataTypesMap.containsKey(field.dataType())) {
                     mappingForField = String

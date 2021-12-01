@@ -21,9 +21,9 @@ import org.apache.velocity.context.Context;
 /**
  * This DataFetcher returns the {@link TemplateLayout} associated to the requested {@link HTMLPageAsset}.
  */
-public class RenderedContainersDataFetcher implements DataFetcher<Set<Entry<String, String>>> {
+public class RenderedContainersDataFetcher implements DataFetcher<Set<Entry<String, Object>>> {
     @Override
-    public Set<Entry<String, String>> get(final DataFetchingEnvironment environment) throws Exception {
+    public Set<Entry<String, Object>> get(final DataFetchingEnvironment environment) throws Exception {
         try {
             final DotGraphQLContext context = environment.getContext();
             final ContainerRaw containerRaw = environment.getSource();
@@ -38,7 +38,7 @@ public class RenderedContainersDataFetcher implements DataFetcher<Set<Entry<Stri
             final Context velocityContext  = pageRenderUtil
                     .addAll(VelocityUtil.getInstance().getContext(request, response));
 
-            final Map<String, String> uuidsRendered = ContainerRenderedBuilder.
+            final Map<String, Object> uuidsRendered = ContainerRenderedBuilder.
                     render(velocityContext, mode, containerRaw);
 
             return uuidsRendered.entrySet();

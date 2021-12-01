@@ -261,7 +261,7 @@ public class ContentTypeResourceTest {
 
 		final ContentTypeResource resource = new ContentTypeResource
 				(new ContentTypeHelper(), webResource, paginationUtil, WorkflowHelper.getInstance(), permissionAPI);
-		final Response response = resource.getContentTypes(request,  new EmptyHttpResponse(),  filter, page, perPage, orderBy, direction.toString(), "FORM");
+		final Response response = resource.getContentTypes(request,  new EmptyHttpResponse(),  filter, page, perPage, orderBy, direction.toString(), "FORM",null);
 		RestUtilTest.verifySuccessResponse(response);
 	}
 
@@ -287,7 +287,7 @@ public class ContentTypeResourceTest {
 		final ContentTypeResource resource = new ContentTypeResource
 				(new ContentTypeHelper(), webResource,new PaginationUtil(new ContentTypesPaginator()) , WorkflowHelper.getInstance(), permissionAPI);
 
-		resource.getContentTypes(request,  new EmptyHttpResponse(), filter, page, perPage, orderBy, direction.toString(), "FORM2");
+		resource.getContentTypes(request,  new EmptyHttpResponse(), filter, page, perPage, orderBy, direction.toString(), "FORM2",null);
 
 	}
 
@@ -322,7 +322,7 @@ public class ContentTypeResourceTest {
 
 		final ContentTypeResource resource = new ContentTypeResource
 				(new ContentTypeHelper(), webResource, paginationUtil, WorkflowHelper.getInstance(), permissionAPI);
-		final Response response = resource.getContentTypes(request,  new EmptyHttpResponse(), filter, page, perPage, orderBy, direction.toString(), null);
+		final Response response = resource.getContentTypes(request,  new EmptyHttpResponse(), filter, page, perPage, orderBy, direction.toString(), null,null);
 		RestUtilTest.verifySuccessResponse(response);
 	}
 

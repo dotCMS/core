@@ -12,7 +12,7 @@ import com.liferay.util.StringPool;
 public class MultiTreeDataGen extends AbstractDataGen<MultiTree> {
     private Container container;
     private Contentlet contentlet;
-    private String instanceID;
+    private String instanceID = "1";
     private String personalization = MultiTree.DOT_PERSONALIZATION_DEFAULT;
     private int treeOrder;
     private HTMLPageAsset page;
