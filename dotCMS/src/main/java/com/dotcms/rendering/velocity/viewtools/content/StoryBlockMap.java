@@ -75,8 +75,8 @@ public class StoryBlockMap implements Renderable {
 
                 try {
                     final JSONObject jsonObjectItem = items.getJSONObject(i);
-                    this.defaultRenderableItem
-                        .toHtml(jsonObjectItem, this.processType(jsonObjectItem));
+                    builder.append(this.defaultRenderableItem
+                            .toHtml(jsonObjectItem, this.processType(jsonObjectItem)));
                 } catch (JSONException | DotRuntimeException e) {
                     Logger.error(this, e.getMessage(), e);
                     this.addError (DEFAULT_TEMPLATE_STOCK_BLOCK_PATH, builder, e);
@@ -101,8 +101,8 @@ public class StoryBlockMap implements Renderable {
             for (int i = 0; i < items.length(); ++i) {
                 try {
                     final JSONObject jsonObjectItem = items.getJSONObject(i);
-                    this.defaultRenderableItem
-                        .toHtml(baseTemplatePath, jsonObjectItem, this.processType(jsonObjectItem));
+                    builder.append(this.defaultRenderableItem
+                            .toHtml(baseTemplatePath, jsonObjectItem, this.processType(jsonObjectItem)));
                 } catch (JSONException | DotRuntimeException e) {
                     Logger.error(this, e.getMessage(), e);
                     this.addError (baseTemplatePath, builder, e);

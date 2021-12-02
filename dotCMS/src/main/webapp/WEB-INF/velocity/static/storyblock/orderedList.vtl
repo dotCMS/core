@@ -1,6 +1,12 @@
-#parse( "marks-macro.vtl" )
+#parse( "static/storyblock/marks-macro.vtl" )
 <ol>
-    #foreach($listItem in $item.content)
+
+    #set($start = 0)
+    #set($end = $item.content.length())
+    #set($end = $end - 1)
+    #set($range = [$start..$end])
+    #foreach($i in $range)
+        #set($listItem = $item.content.get($i))
         #if ($listItem.type == "listItem")
             <li>
                 #foreach($listItemContent in $listItem.content)
@@ -13,3 +19,4 @@
 
     #end
 </ol>
+
