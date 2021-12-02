@@ -1,6 +1,7 @@
 package com.dotcms.util;
 
 import com.dotcms.util.DbExporterUtil.PG_ARCH;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.File;
@@ -54,7 +55,7 @@ public class DbExporterUtilTest {
     @Test
     public void test_getting_pg_dumps_path() {
         final String pgDumpPath = DbExporterUtil.pgDumpPath.get();
-        assert(pgDumpPath!=null);
+        Assert.assertNotNull(pgDumpPath);
         assert(new File(pgDumpPath).exists());
         assert(new File(pgDumpPath).canExecute());
     }

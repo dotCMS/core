@@ -1449,11 +1449,11 @@ dd.leftdl {
                     <td><%= LanguageUtil.get(pageContext,"Download-Zip-file") %></td>
                     <td style="text-align:center;white-space:nowrap;">
 						<div class="inline-form">
-							<button dojoType="dijit.form.Button" onClick="location.href='/api/v1/maintenance/_donwloadStarter'" iconClass="downloadIcon">
+							<button dojoType="dijit.form.Button" onClick="location.href='/api/v1/maintenance/_downloadStarter'" iconClass="downloadIcon">
 							   <%= LanguageUtil.get(pageContext,"Download-Data-Only") %>
 							</button>
 
-							<button dojoType="dijit.form.Button" onClick="location.href='/api/v1/maintenance/_donwloadStarterWithAssets'" iconClass="downloadIcon">
+							<button dojoType="dijit.form.Button" onClick="location.href='/api/v1/maintenance/_downloadStarterWithAssets'" iconClass="downloadIcon">
 							  <%= LanguageUtil.get(pageContext,"Download-Data/Assets") %>
 							</button>
 						</div>
