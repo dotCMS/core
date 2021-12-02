@@ -5,7 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
-import org.elasticsearch.common.Nullable;
+import javax.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Date;
