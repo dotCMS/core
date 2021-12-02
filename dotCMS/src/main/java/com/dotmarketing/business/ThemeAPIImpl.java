@@ -84,7 +84,7 @@ public class ThemeAPIImpl implements ThemeAPI, DotInitializer {
         final List<Contentlet> results = APILocator.getFileAssetAPI().
                 findFileAssetsByParentable(folder,null,false,false,user,false)
                 .stream().filter(fileAsset -> fileAsset.getFileName().equalsIgnoreCase(THEME_PNG))
-                .collect(Collectors.toList());//si esta unpublish no deberia mostrarlo
+                .collect(Collectors.toList());
 
         return UtilMethods.isSet(results) ? results.get(0).getIdentifier() : null;
     }
@@ -140,13 +140,15 @@ public class ThemeAPIImpl implements ThemeAPI, DotInitializer {
 
         //If themeId is sent, it's because a specific theme is wanted, so call the findThemeById
         if (UtilMethods.isSet(themeId)) {
-            return Collections.singletonList(findThemeById(themeId, user, respectFrontendRoles));
+            result.add(findThemeById(themeId, user, respectFrontendRoles));
+            return result;
         }
 
         //TODO: If we modify that the hostId is not required we need to add system theme is hostId is not set.
         //This is because themes can not live under system_host
         if (hostId.equals(this.systemTheme.getHostId())) {
-            return Collections.singletonList(this.systemTheme());
+            result.add(this.systemTheme());
+            return result;
         }
 
         final StringBuilder sqlQuery = new StringBuilder("select cvi.working_inode as inode from contentlet_version_info cvi, identifier id where"
@@ -181,7 +183,8 @@ public class ThemeAPIImpl implements ThemeAPI, DotInitializer {
         final String sortBy = String.format("id.parent_path %s", direction.toString().toLowerCase());
         sqlQuery.append(" order by " + sortBy);
 
-        final DotConnect dc = new DotConnect().setSQL(sqlQuery.toString());
+        final DotConnect dc = new DotConnect().setSQL(sqlQuery.toString())
+                .setMaxRows(limit).setStartRow(offset);
         parameters.forEach(param -> dc.addParam(param));
 
         //List of inodes of the template.vtl files found
