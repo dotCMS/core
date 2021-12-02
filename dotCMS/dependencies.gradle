@@ -567,6 +567,10 @@ dependencies {
     compileOnly "org.immutables:value:2.3.3:annotations"
     compile 'org.immutables:gson:2.3.3'
 
+
+    compileOnly  'com.google.code.findbugs:jsr305:3.0.2'
+
+
     compile group: 'org.aspectj', name: 'aspectjrt', version:'1.9.2'
     compile group: 'io.bit3', name: 'jsass', version: '5.10.3'
 
