@@ -830,8 +830,10 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		final StringBuilder sqlQuery = new StringBuilder("select cvi.working_inode as inode from contentlet_version_info cvi, identifier id where"
 				+ " id.parent_path like ? and id.asset_name = ? and cvi.identifier = id.id");
 		final List<Object> parameters = new ArrayList<>();
-		parameters.add(Constants.TEMPLATE_FOLDER_PATH + StringPool.FORWARD_SLASH + StringPool.PERCENT);
-		parameters.add(Constants.TEMPLATE_META_INFO_FILE_NAME);
+		parameters.add(Constants.CONTAINER_FOLDER_PATH + StringPool.FORWARD_SLASH + StringPool.PERCENT);
+		parameters.add(contentTypeVarNameFileName + StringPool.PERIOD + "vtl");
+
+		sqlQuery.append(" and cvi.deleted = " + DbConnectionFactory.getDBFalse());
 
 		final DotConnect dc = new DotConnect().setSQL(sqlQuery.toString());
 		parameters.forEach(param -> dc.addParam(param));
