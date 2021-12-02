@@ -76,7 +76,7 @@ import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
 import org.elasticsearch.action.admin.indices.cache.clear.ClearIndicesCacheRequest;
 import org.elasticsearch.action.admin.indices.cache.clear.ClearIndicesCacheResponse;
-import org.elasticsearch.action.admin.indices.close.CloseIndexRequest;
+import org.elasticsearch.client.indices.CloseIndexRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeRequest;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeResponse;
@@ -98,9 +98,9 @@ import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.cluster.health.ClusterIndexHealth;
-import org.elasticsearch.cluster.metadata.RepositoryMetaData;
+import org.elasticsearch.cluster.metadata.RepositoryMetadata;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.repositories.fs.FsRepository;
 import org.elasticsearch.rest.RestStatus;
@@ -899,7 +899,7 @@ public class ESIndexAPI {
     	AdminLogger.log(this.getClass(), "closeIndex", "Trying to close index: " + indexName);
 
 		final CloseIndexRequest request = new CloseIndexRequest(getNameWithClusterIDPrefix(indexName));
-		request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+		request.setTimeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
         Sneaky.sneak(()->RestHighLevelClientProvider.getInstance().getClient()
 				.indices().close(request, RequestOptions.DEFAULT));
 
@@ -1327,10 +1327,10 @@ public class ESIndexAPI {
 				RestHighLevelClientProvider.getInstance().getClient().snapshot()
 				.getRepository(request, RequestOptions.DEFAULT));
 
-		List<RepositoryMetaData> repositories = response.repositories();
+		List<RepositoryMetadata> repositories = response.repositories();
 
 		if (repositories.size() > 0) {
-			for (RepositoryMetaData repo : repositories) {
+			for (RepositoryMetadata repo : repositories) {
 				result = repo.name().equals(repositoryName);
 				if (result){
 					break;
