@@ -83,7 +83,8 @@ public class GenericRenderableItem {
                     final Context context = VelocityUtil.getInstance().getContext(requestProxy, responseProxy);
                     context.put("item", item);
 
-                    return VelocityUtil.getInstance().merge(baseTemplatePath + type + ".vtl", context);
+                    final String customTemplate = String.format("#dotParse(\"%s\")", baseTemplatePath + type + ".vtl");
+                    return VelocityUtil.getInstance().parseVelocity(customTemplate, context);
                 }
             }
 
