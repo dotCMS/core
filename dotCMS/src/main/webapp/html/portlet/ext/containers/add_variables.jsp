@@ -77,17 +77,7 @@
 				if (field.getFieldType().equals(FieldType.STORY_BLOCK_FIELD.toString())) {
 		%>
 
-
-
-		<tr>
-			<td align="center">
-				<button dojoType="dijit.form.Button" onClick="addStoryBlockFieldRender('<%= field.getVelocityVarName() %>')">
-					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add")) %>
-				</button>
-			</td>
-			<td>ADD RENDER</td><!-- TODO: VER CUAL ES EL NOMBRE A MOSTRAR -->
-		</tr>
-
+		<!-- TODO: We need to add some options here?? -->
 
 		<% } %>
 		<% } %>
