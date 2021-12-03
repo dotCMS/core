@@ -261,3 +261,5 @@ This maintenance release includes the following code fixes:
 128. https://github.com/dotCMS/core/issues/20494 : Error retrieving content references in multilingual setup #20494
 
 129. https://github.com/dotCMS/core/issues/20399 : [Content] : Many to One relationship not displaying in Content Search #20399
+
+130. https://github.com/dotCMS/core/issues/20721 : "Login As" Data Constraints #20721
