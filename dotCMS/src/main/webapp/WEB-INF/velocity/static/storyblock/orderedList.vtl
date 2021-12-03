@@ -9,14 +9,24 @@
         #set($listItem = $item.content.get($i))
         #if ($listItem.type == "listItem")
             <li>
-                #foreach($listItemContent in $listItem.content)
-                    #foreach($listItemContentContent in $listItemContent.content)
-                        #renderText($listItemContentContent.text)
-                    #end
+
+                #set($start2 = 0)
+                #set($end2 = $listItem.content.length())
+                #set($end2 = $end2 - 1)
+                #set($range2 = [$start2..$end2])
+                #foreach($i2 in $range2)
+                #set($listItemContent = $listItem.content.get($i2))
+                #set($start3 = 0)
+                #set($end3 = $listItemContent.content.length())
+                #set($end3 = $end3 - 1)
+                #set($range3 = [$start3..$end3])
+                #foreach($i3 in $range3)
+                    #set($listItemContentContent = $listItemContent.content.get($i3))
+                    #renderText($listItemContentContent)
                 #end
+            #end
             </li>
         #end
 
     #end
 </ol>
-
