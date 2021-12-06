@@ -18,6 +18,8 @@ import com.dotcms.content.model.Contentlet;
 import com.dotcms.content.model.FieldValue;
 import com.dotcms.content.model.ImmutableContentlet;
 import com.dotcms.content.model.ImmutableContentlet.Builder;
+import com.dotcms.content.model.type.text.FloatTextFieldType;
+import com.dotcms.content.model.type.text.LongTextFieldType;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -27,6 +29,7 @@ import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.HiddenField;
 import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.LineDividerField;
 import com.dotcms.contenttype.model.field.PermissionTabField;
@@ -45,6 +48,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -54,8 +58,11 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.File;
 import java.time.Instant;
@@ -174,7 +181,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
             if (null != value) {
                 final Optional<FieldValue<?>> fieldValue = getFieldValue(value, field);
                 if (!fieldValue.isPresent()) {
-                    Logger.warn(ContentletJsonAPIImpl.class,
+                    Logger.debug(ContentletJsonAPIImpl.class,
                             String.format("Unable to set field `%s` with the given value %s.",
                                     field.name(), value));
                 } else {
@@ -183,10 +190,29 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
             } else {
                 Logger.debug(ContentletJsonAPIImpl.class,
                         String.format("Unable to set field `%s` as it wasn't set on the source contentlet", field.name()));
+
+                if(Config.getBooleanProperty(JSON_NUMERIC_FIELD_DEFAULT_TO_ZERO, true)) {
+                    final FieldValueInitializer<?> fieldValueInitializer = initializeWithValue
+                            .get(Tuple.of(field.getClass(),field.dataType()));
+                    if (null != fieldValueInitializer) {
+                        builder.putFields(field.variable(), fieldValueInitializer.init());
+                        Logger.debug(ContentletJsonAPIImpl.class,
+                                String.format("Field `%s` was set to a default.", field.name()));
+                    }
+                }
             }
         }
         return builder.build();
     }
+
+    interface FieldValueInitializer<T>{
+        FieldValue <T> init();
+    }
+
+    final Map<Tuple2<Class<?>,DataTypes>, FieldValueInitializer<?>> initializeWithValue = ImmutableMap.of(
+            Tuple.of(ImmutableTextField.class, DataTypes.INTEGER), (FieldValueInitializer<Long>) () -> LongTextFieldType.of(0L),
+            Tuple.of(ImmutableTextField.class, DataTypes.FLOAT), (FieldValueInitializer<Float>) () -> FloatTextFieldType.of(0F)
+    );
 
     /**
      * Public entry point when going from the json representation to a regular "mutable" contentlet

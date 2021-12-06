@@ -1,9 +1,12 @@
 package com.dotcms.content.business;
 
+import static com.dotcms.content.business.ContentletJsonAPI.JSON_NUMERIC_FIELD_DEFAULT_TO_ZERO;
 import static com.dotcms.content.business.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
+import static junit.framework.TestCase.assertNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -221,6 +224,76 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
         assertEquals(in.get("keyValueField"),out.get("keyValueField"));
 
 
+    }
+
+    /**
+     * Method to test {@link ContentletJsonAPI#toJson(Contentlet)} && {@link ContentletJsonAPI#mapContentletFieldsFromJson(String)}
+     * Called over two version of a contentlet (with text fields) one with preset numeric value the other with nulls
+     * Basically we're are testing here is that the even if call toJson on contentlet that has nulls on their text fields we get back 0s as the defaults.
+     * @throws Exception
+     */
+    @Test
+    public void Text_Field_Initialize_Test() throws Exception {
+
+        final boolean defaultValue = Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
+        Config.setProperty(SAVE_CONTENTLET_AS_JSON, false);
+
+        final boolean initNumericTextFields = Config.getBooleanProperty(
+                JSON_NUMERIC_FIELD_DEFAULT_TO_ZERO, true);
+
+        try {
+            final String hostName = "custom" + System.currentTimeMillis() + ".dotcms.com";
+            final Host site = new SiteDataGen().name(hostName).nextPersisted(true);
+            final Folder folder = new FolderDataGen().site(site).nextPersisted();
+            final ContentType contentType = TestDataUtils
+                    .newContentTypeFieldTypesGalore();
+
+            final ContentletJsonAPI impl = APILocator.getContentletJsonAPI();
+
+            final Contentlet filledWithZeros = new ContentletDataGen(contentType).host(site)
+                    .languageId(1)
+                    .setProperty("title", "lol")
+                    .setProperty("hostFolder", folder.getIdentifier())
+                    .setProperty("textFieldNumeric",null)
+                    .setProperty("textFieldFloat",null)
+                    .setProperty("textField",null)
+                    .nextPersisted();
+
+            assertNotNull(filledWithZeros);
+            final String json = impl.toJson(filledWithZeros);
+            assertNotNull(json);
+            final Contentlet outWithZeros = impl.mapContentletFieldsFromJson(json);
+            assertEquals(outWithZeros.get("textFieldNumeric"),0L );
+            assertEquals(outWithZeros.get("textFieldFloat"),0F );
+            assertNull(outWithZeros.get("textField"));
+
+            Config.setProperty("json.field.number.init", false);
+
+            final Contentlet filledWithNulls = new ContentletDataGen(contentType).host(site)
+                    .languageId(1)
+                    .setProperty("title", "lol2")
+                    .setProperty("hostFolder", folder.getIdentifier())
+                    .setProperty("textFieldNumeric",null)
+                    .setProperty("textFieldFloat",null)
+                    .setProperty("textField",null)
+                    .nextPersisted();
+
+            assertNotNull(filledWithNulls);
+            filledWithNulls.getMap().put("textFieldNumeric",null);
+            filledWithNulls.getMap().put("textFieldFloat",null);
+
+            final String json2 = impl.toJson(filledWithNulls);
+            assertNotNull(json2);
+
+            final Contentlet outWithNulls = impl.mapContentletFieldsFromJson(json2);
+            assertNull(outWithNulls.get("textFieldNumeric"));
+            assertNull(outWithNulls.get("textFieldFloat"));
+            assertNull(outWithNulls.get("textField"));
+
+        } finally {
+            Config.setProperty(SAVE_CONTENTLET_AS_JSON, defaultValue);
+            Config.setProperty("json.field.number.init", initNumericTextFields);
+        }
     }
 
 }
