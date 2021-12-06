@@ -281,7 +281,7 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
             assertNotNull(filledWithNulls);
             filledWithNulls.getMap().put("textFieldNumeric",null);
             filledWithNulls.getMap().put("textFieldFloat",null);
-
+            Config.setProperty(JSON_NUMERIC_FIELD_DEFAULT_TO_ZERO, false);
             final String json2 = impl.toJson(filledWithNulls);
             assertNotNull(json2);
 
@@ -292,7 +292,7 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
 
         } finally {
             Config.setProperty(SAVE_CONTENTLET_AS_JSON, defaultValue);
-            Config.setProperty("json.field.number.init", initNumericTextFields);
+            Config.setProperty(JSON_NUMERIC_FIELD_DEFAULT_TO_ZERO, initNumericTextFields);
         }
     }
 
