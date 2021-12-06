@@ -33,7 +33,7 @@ import java.util.Set;
  * Also, users can pass their own base path, in case the item render velocity template does not exists will fallbacks to the default one.
  * @author jsanca
  */
-class GenericRenderableItem implements Renderable {  // refactor this to implement the renderable, will be created by a Factory and will receive
+class GenericRenderableImpl implements Renderable {  // refactor this to implement the renderable, will be created by a Factory and will receive
     // the final Object item, final String type on the constructors, the rest of the parameters will be provided by the factory
 
     private final String defaultPath;
@@ -42,7 +42,7 @@ class GenericRenderableItem implements Renderable {  // refactor this to impleme
     private final Object item;
     private final String type;
 
-    public GenericRenderableItem(final String defaultPath, final String templateName,
+    public GenericRenderableImpl(final String defaultPath, final String templateName,
                                  final Set<String> allowedTypeSet, final Object item, final String type) {
 
         this.defaultPath    = defaultPath;
@@ -56,8 +56,9 @@ class GenericRenderableItem implements Renderable {  // refactor this to impleme
     public String toHtml() {
 
         try {
-            final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
-            final HttpServletRequest  requestProxy  = new FakeHttpRequest(host.getHostname(), null).request();
+            final String host = Try.of(()->APILocator.getHostAPI().findDefaultHost(
+                    APILocator.systemUser(), false).getHostname()).getOrElse("dotcms.com");
+            final HttpServletRequest  requestProxy  = new FakeHttpRequest(host, null).request();
             final HttpServletResponse responseProxy = new BaseResponse().response();
             final Context context = VelocityUtil.getInstance().getContext(requestProxy, responseProxy);
             context.put("item", item);
