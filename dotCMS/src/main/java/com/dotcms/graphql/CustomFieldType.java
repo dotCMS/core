@@ -125,7 +125,6 @@ public enum CustomFieldType {
         customFieldTypes.put("LANGUAGE", TypeUtil.createObjectType(LANGUAGE.getTypeName(), languageTypeFields, null));
 
         final Map<String, GraphQLOutputType> storyBlockTypeFields = new HashMap<>();
-        storyBlockTypeFields.put("render", GraphQLString);
         storyBlockTypeFields.put("json", ExtendedScalars.Json);
         customFieldTypes.put("STORY_BLOCK", TypeUtil.createObjectType(STORY_BLOCK.getTypeName(), storyBlockTypeFields, null));
 

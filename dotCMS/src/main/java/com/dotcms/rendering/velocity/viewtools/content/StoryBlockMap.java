@@ -21,7 +21,6 @@ import java.io.StringWriter;
  * Converts the json into a map and gets returned when it is requested like this $contentlet.storyBlock (var name of the field is storyBlock).
  * This will allow you to do:
  * $contentlet.storyBlock.type
- * $contentlet.storyBlock.render
  * $contentlet.storyBlock.content
  * $contentlet.storyBlock.toHtml
  */
@@ -55,10 +54,6 @@ public class StoryBlockMap implements Renderable {
 
     public String getType() {
         return type;
-    }
-
-    public String getRender() {
-        return render;
     }
 
     public String getContent() {
