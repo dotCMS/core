@@ -1,12 +1,17 @@
 package com.dotcms.rendering.velocity.viewtools.content.util;
 
+import com.dotcms.rendering.velocity.viewtools.content.Renderable;
 import com.google.common.collect.ImmutableSet;
 
-public class GenericRenderableFactory {
+/**
+ * Renderable Factoruy
+ * @author jsanca
+ */
+public class RenderableFactory {
 
     final static String DEFAULT_TEMPLATE_STOCK_BLOCK_PATH = "static/storyblock/";
 
-    public com.dotcms.rendering.velocity.viewtools.content.Readable create (final Object item, final String type) {
+    public Renderable create (final Object item, final String type) {
 
         final GenericRenderableItem defaultRenderableItem =
                 new GenericRenderableItem(DEFAULT_TEMPLATE_STOCK_BLOCK_PATH, "default.vtl",

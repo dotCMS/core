@@ -96,11 +96,11 @@ class GenericRenderableItem implements Renderable {  // refactor this to impleme
                 }
             }
 
-            return this.toHtml(item, type);
+            return this.toHtml();
         } catch (DotStateException | DotDataException | DotSecurityException e) {
 
             Logger.error(this, e.getMessage(), e);
-            return this.toHtml(item, type);
+            return this.toHtml();
         } catch (Exception e) {
 
             Logger.error(this, e.getMessage(), e);

@@ -2,6 +2,7 @@ package com.dotcms.rendering.velocity.viewtools.content;
 
 
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.rendering.velocity.viewtools.content.util.RenderableFactory;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
@@ -27,6 +28,7 @@ import java.io.StringWriter;
 public class StoryBlockMap implements Renderable {
 
     final static String DEFAULT_TEMPLATE_STOCK_BLOCK_PATH = "static/storyblock/";
+    final static RenderableFactory renderableFactory = new RenderableFactory();
 
     private final String type;
     private final String render;
@@ -74,13 +76,14 @@ public class StoryBlockMap implements Renderable {
         final StringBuilder builder = new StringBuilder();
 
         try {
+
             final JSONArray items = this.jsonContFieldValue.getJSONArray("content");
             for (int i = 0; i < items.length(); ++i) {
 
                 try {
                     final JSONObject jsonObjectItem = items.getJSONObject(i);
-                    builder.append(this.defaultRenderableItem
-                            .toHtml(jsonObjectItem, this.processType(jsonObjectItem)));
+                    final Renderable renderable = renderableFactory.create(jsonObjectItem, this.processType(jsonObjectItem));
+                    builder.append(renderable.toHtml());
                 } catch (JSONException | DotRuntimeException e) {
                     Logger.error(this, e.getMessage(), e);
                     this.addError (DEFAULT_TEMPLATE_STOCK_BLOCK_PATH, builder, e);
@@ -105,8 +108,8 @@ public class StoryBlockMap implements Renderable {
             for (int i = 0; i < items.length(); ++i) {
                 try {
                     final JSONObject jsonObjectItem = items.getJSONObject(i);
-                    builder.append(this.defaultRenderableItem
-                            .toHtml(baseTemplatePath, jsonObjectItem, this.processType(jsonObjectItem)));
+                    final Renderable renderable = renderableFactory.create(jsonObjectItem, this.processType(jsonObjectItem));
+                    builder.append(renderable.toHtml(baseTemplatePath));
                 } catch (JSONException | DotRuntimeException e) {
                     Logger.error(this, e.getMessage(), e);
                     this.addError (baseTemplatePath, builder, e);
