@@ -3,7 +3,7 @@ import { ChangeDetectorRef, Component, Input, OnInit, ViewChild } from '@angular
 import { map, take } from 'rxjs/operators';
 import { MenuItem } from 'primeng/api';
 
-import { SuggestionsService } from '../../services/suggestions.service';
+import { SuggestionsService } from '../../services/suggestions/suggestions.service';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { SuggestionListComponent } from '../suggestion-list/suggestion-list.component';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
@@ -14,7 +14,7 @@ export interface SuggestionsCommandProps {
     type: { name: string; level?: number };
 }
 
-export interface DotMenuItem  extends Omit<MenuItem, 'icon'> {
+export interface DotMenuItem extends Omit<MenuItem, 'icon'> {
     icon: string | SafeUrl;
 }
 
@@ -214,7 +214,7 @@ export class SuggestionsComponent implements OnInit {
             });
     }
 
-    private sanitizeUrl( url: string ): SafeUrl {
+    private sanitizeUrl(url: string): SafeUrl {
         return this.domSanitizer.bypassSecurityTrustUrl(url);
     }
 }

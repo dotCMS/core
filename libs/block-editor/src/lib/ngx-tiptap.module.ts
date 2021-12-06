@@ -11,7 +11,7 @@ import { CommonModule } from '@angular/common';
 import { CardModule } from 'primeng/card';
 import { ContentletBlockComponent } from './extensions/blocks/contentlet-block/contentlet-block.component';
 
-import { SuggestionsService } from './extensions/services/suggestions.service';
+import { SuggestionsService } from './extensions/services/suggestions/suggestions.service';
 import { SuggestionsComponent } from './extensions/components/suggestions/suggestions.component';
 import { SuggestionListComponent } from './extensions/components/suggestion-list/suggestion-list.component';
 import { ActionButtonComponent } from './extensions/components/action-button/action-button.component';
@@ -25,7 +25,6 @@ import { DotImageService } from './extensions/services/dot-image/dot-image.servi
 import { BubbleMenuComponent } from './extensions/components/bubble-menu/bubble-menu.component';
 import { BubbleMenuButtonComponent } from './extensions/components/bubble-menu-button/bubble-menu-button.component';
 import { BubbleMenuLinkFormComponent } from './extensions/components/bubble-menu-link-form/bubble-menu-link-form.component';
-// import { BubbleMenuComponent } from './extensions/components/bubble-menu/bubble-menu.component';
 
 @NgModule({
     imports: [CommonModule, FormsModule, CardModule, MenuModule],

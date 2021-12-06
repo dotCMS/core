@@ -6,14 +6,21 @@ import { of } from 'rxjs';
 import { ListboxModule } from 'primeng/listbox';
 import { OrderListModule } from 'primeng/orderlist';
 import { MenuModule } from 'primeng/menu';
+
+import { delay } from 'rxjs/operators';
 import { DotBlockEditorComponent } from './dot-block-editor.component';
-
-import { NgxTiptapModule } from '@dotcms/block-editor';
-
-import { SuggestionsService } from '@dotcms/block-editor';
-import { SuggestionsComponent } from '@dotcms/block-editor';
-import { ContentletBlockComponent } from '@dotcms/block-editor';
-import { ActionButtonComponent } from '@dotcms/block-editor';
+import { BubbleMenuLinkFormComponent } from '@dotcms/block-editor';
+import {
+    ActionButtonComponent,
+    ContentletBlockComponent,
+    NgxTiptapModule,
+    SuggestionsComponent,
+    SuggestionsService,
+    ImageBlockComponent,
+    DragHandlerComponent,
+    LoaderComponent,
+    DotImageService
+} from '@dotcms/block-editor';
 
 export default {
     title: 'Block Editor'
@@ -31,6 +38,23 @@ export const primary = () => ({
             BrowserAnimationsModule
         ],
         providers: [
+            {
+                provide: DotImageService,
+                useValue: {
+                    publishContent() {
+                        return of([
+                            {
+                                cd769844de530f7b5d3434b1b5cfdd62: {
+                                    asset:
+                                        'https://media.istockphoto.com/vectors/costa-rica-vector-id652225694?s=170667a',
+                                    mimeType: 'image/png',
+                                    name: 'costarica.png'
+                                }
+                            }
+                        ]).pipe(delay(800));
+                    }
+                }
+            },
             {
                 provide: SuggestionsService,
                 useValue: {
@@ -54,7 +78,7 @@ export const primary = () => ({
                             },
                             {
                                 name: 'Product in the store',
-                                icon: 'inventory_2',
+                                icon: 'inventory_2'
                             },
                             {
                                 name: 'Reatil information',
@@ -94,7 +118,15 @@ export const primary = () => ({
             }
         ],
         // We need these here because they are dynamically rendered
-        entryComponents: [SuggestionsComponent, ContentletBlockComponent, ActionButtonComponent]
+        entryComponents: [
+            SuggestionsComponent,
+            ContentletBlockComponent,
+            ActionButtonComponent,
+            DragHandlerComponent,
+            ImageBlockComponent,
+            LoaderComponent,
+            BubbleMenuLinkFormComponent
+        ]
     },
     component: DotBlockEditorComponent
 });
