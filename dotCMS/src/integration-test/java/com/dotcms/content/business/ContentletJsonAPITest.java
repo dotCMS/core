@@ -25,6 +25,7 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.Date;
@@ -118,6 +119,12 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
      */
     @Test
     public void Create_Content_Then_Find_It_Then_Create_Json_Content_Then_Recover_And_Compare() throws Exception {
+
+        //TODO: Once we have json capabilities enabled on all the supported dbs we must remove this condition. Currently we only support them on Postgres
+        if(!APILocator.getContentletJsonAPI().isPersistContentAsJson()){
+            Logger.info(ContentletJsonAPITest.class, ()->"Test Should only run on databases with enabled json capabilities.");
+            return;
+        }
 
         final String hostName = "my.custom" + System.currentTimeMillis() + ".dotcms.com";
         final Host site = new SiteDataGen().name(hostName).nextPersisted(true);
