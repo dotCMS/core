@@ -8,6 +8,7 @@ import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.google.common.collect.Maps;
 import javax.ws.rs.*;
@@ -372,9 +373,13 @@ public class ContainerResource implements Serializable {
         context.put(mode.name(), Boolean.TRUE);
 
         if (UtilMethods.isSet(pageInode)) {
-            final IHTMLPage htmlPage = APILocator.getHTMLPageAssetAPI().findPage(pageInode, user, false);
-            context.put("dotPageContent",
-                    new ContentMap(((Contentlet) htmlPage), user, mode, host, context));
+
+            final IHTMLPage htmlPage =  APILocator.getHTMLPageAssetAPI().findPage(pageInode, user, false);
+            final long languageId = htmlPage.getLanguageId();
+
+            final VelocityResourceKey pageKey = new VelocityResourceKey((HTMLPageAsset) htmlPage, mode, languageId);
+            velocityUtil.merge(pageKey.path, context);
+
         } else {
             context.put("dotPageContent", Boolean.TRUE);
         }
