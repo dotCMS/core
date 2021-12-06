@@ -2,7 +2,6 @@ package com.dotcms.rendering.velocity.viewtools.content;
 
 
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
-import com.dotcms.rendering.velocity.viewtools.content.util.GenericRenderableItem;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
@@ -11,7 +10,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.Logger;
-import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
@@ -29,18 +27,24 @@ import java.io.StringWriter;
 public class StoryBlockMap implements Renderable {
 
     final static String DEFAULT_TEMPLATE_STOCK_BLOCK_PATH = "static/storyblock/";
+
     private final String type;
     private final String render;
     private final String content;
     private final JSONObject jsonContFieldValue;
-    private final GenericRenderableItem defaultRenderableItem =
-            new GenericRenderableItem(DEFAULT_TEMPLATE_STOCK_BLOCK_PATH, "default.vtl",
-                    ImmutableSet.of("heading1","heading2","heading3","paragraph","dotContent","bulletList","orderedList"));
 
     public StoryBlockMap(final Field field,final Contentlet contentlet) throws JSONException {
 
         final com.dotcms.contenttype.model.field.Field fieldTransformed = new LegacyFieldTransformer(field).from();
         final Object contFieldValue = APILocator.getContentletAPI().getFieldValue(contentlet,fieldTransformed);
+        this.jsonContFieldValue = new JSONObject(contFieldValue.toString());
+        type = jsonContFieldValue.get("type").toString();
+        render = jsonContFieldValue.get("render").toString();
+        content = jsonContFieldValue.get("content").toString();
+    }
+
+    public StoryBlockMap(final Object contFieldValue) throws JSONException {
+
         this.jsonContFieldValue = new JSONObject(contFieldValue.toString());
         type = jsonContFieldValue.get("type").toString();
         render = jsonContFieldValue.get("render").toString();

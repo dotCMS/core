@@ -3,6 +3,7 @@ package com.dotcms.rendering.velocity.viewtools.content.util;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.response.BaseResponse;
+import com.dotcms.rendering.velocity.viewtools.content.Renderable;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -32,21 +33,27 @@ import java.util.Set;
  * Also, users can pass their own base path, in case the item render velocity template does not exists will fallbacks to the default one.
  * @author jsanca
  */
-public class GenericRenderableItem {
+class GenericRenderableItem implements Renderable {  // refactor this to implement the renderable, will be created by a Factory and will receive
+    // the final Object item, final String type on the constructors, the rest of the parameters will be provided by the factory
 
     private final String defaultPath;
     private final String templateName;
     private final Set<String> allowedTypeSet;
+    private final Object item;
+    private final String type;
 
     public GenericRenderableItem(final String defaultPath, final String templateName,
-                                 final Set<String> allowedTypeSet) {
+                                 final Set<String> allowedTypeSet, final Object item, final String type) {
 
         this.defaultPath    = defaultPath;
         this.templateName   = templateName;
         this.allowedTypeSet = allowedTypeSet;
+        this.item           = item;
+        this.type           = type;
     }
 
-    public String toHtml(final Object item, final String type) {
+    @Override
+    public String toHtml() {
 
         try {
             final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
@@ -64,7 +71,8 @@ public class GenericRenderableItem {
         }
     }
 
-    public String toHtml(final String baseTemplatePath, final Object item, final String type) {
+    @Override
+    public String toHtml(final String baseTemplatePath) {
 
         try {
 
