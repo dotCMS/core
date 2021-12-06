@@ -1,0 +1,225 @@
+{
+	"info": {
+		"_postman_id": "a9672c25-6856-4ed8-8b88-863f2bcfd5e7",
+		"name": "Form Resource",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Upload ContentType",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Bundle uploaded sucessfully\", function () {",
+							"    pm.response.to.have.status(200);",
+							"",
+							"    var jsonData = pm.response.json();",
+							"    console.log(jsonData);",
+							"",
+							"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"_dotPageContent_test-01FNRS68FETJPPDHY6PJ9SA9ZQ.tar.gz\");",
+							"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"type": "text",
+						"value": "application/octet-stream"
+					},
+					{
+						"key": "Content-Disposition",
+						"type": "text",
+						"value": "attachment"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"contentType": "application/tar+gzip ",
+							"type": "file",
+							"src": "resources/FormResource/form-resource-data-01FP89VBD0HKCDFTA469F8H7QX.tar.gz"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/bundle/sync",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"bundle",
+						"sync"
+					],
+					"query": [
+						{
+							"key": "AUTH_TOKEN",
+							"value": "",
+							"disabled": true
+						}
+					]
+				},
+				"description": "Imports a Bundle that includes:\n*  A piece of content of type \"Rich text\" with \"test Content\" as title and body"
+			},
+			"response": []
+		},
+		{
+			"name": "get form sucessCallback",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Get form successCallback\", function () {",
+							"    pm.response.to.have.status(200);",
+							"",
+							"    var body = pm.response.body();",
+							"    console.log(body);",
+							"",
+							"    pm.expect(body).to.contains(\"console.log('This is a test')\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/form/391c639d83bde553a96325ecc41bccc6/successCallback",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"form",
+						"391c639d83bde553a96325ecc41bccc6",
+						"successCallback"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get form sucessCallback with no valid user",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"console.log('This is a test')\", function () {",
+							"    pm.response.to.have.status(200);",
+							"",
+							"    var body = pm.response.body();",
+							"    console.log(body);",
+							"",
+							"    pm.expect(body).to.contains(\"console.log('This is a test')\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/form/391c639d83bde553a96325ecc41bccc6/successCallback",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"form",
+						"391c639d83bde553a96325ecc41bccc6",
+						"successCallback"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get not found form",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Not exists form successcallback\", function () {",
+							"    pm.response.to.have.status(404);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/form/not-exists/successCallback",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"form",
+						"not-exists",
+						"successCallback"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
