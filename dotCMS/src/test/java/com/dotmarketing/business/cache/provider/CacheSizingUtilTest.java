@@ -24,7 +24,8 @@ public class CacheSizingUtilTest {
 
         
         long fourLettersSize = cacheSizer.sizeOf(fourLetters);
-        assert(fourLettersSize==44);
+        // Depends upon jvm, not a great test
+        assert(fourLettersSize==44 || fourLettersSize==48);
         
         
     }
@@ -49,7 +50,8 @@ public class CacheSizingUtilTest {
         assert(cacheSize==16);
         
         cacheSize = cacheSizer.sizeOf(Optional.of(fourLetters));
-        assert(cacheSize==60);
+        // Depends upon jvm, not a great test
+        assert(cacheSize==60 || cacheSize==64);
 
         
     }
