@@ -182,8 +182,8 @@ public class KeyValueAPIImpl implements KeyValueAPI {
                 KeyValue keyValue = fromContentlet(contentlet);
                 results.add(keyValue);
             });
-        } catch (DotDataException | DotSecurityException e) {
-            Logger.error(this, String.format("An error occurred when retrieving a KeyValue object with key '%s': %s", key,
+        } catch (Exception e) {
+            Logger.warnAndDebug(KeyValueAPIImpl.class, String.format("An error occurred when retrieving a KeyValue object with key '%s': %s", key,
                             e.getMessage()), e);
         }
         return results.build();
