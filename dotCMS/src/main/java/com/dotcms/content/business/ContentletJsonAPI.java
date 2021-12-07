@@ -20,6 +20,8 @@ public interface ContentletJsonAPI {
 
     String SAVE_CONTENTLET_AS_COLUMNS =  "persist.contentlet.as.columns";
 
+    String JSON_NUMERIC_FIELD_DEFAULT_TO_ZERO = "json.numeric.field.default.to.zero";
+
     String CONTENTLET_AS_JSON = "contentlet_as_json";
 
     /**
