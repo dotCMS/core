@@ -154,7 +154,7 @@
             String textValue = UtilMethods.isSet(value) ? value.toString() : (UtilMethods.isSet(defaultValue) ? defaultValue : "''");
             %>
             <script src="/html/dotcms-block-editor.js"></script>
-            <dotcms-block-editor></dotcms-block-editor>
+            <dotcms-block-editor style="width: 100%; height: 500px; display: block;"></dotcms-block-editor>
             <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"/>
 
             <script>
