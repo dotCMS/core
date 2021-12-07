@@ -16,6 +16,10 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import java.util.List;
+<<<<<<< HEAD
+=======
+import java.util.Optional;
+>>>>>>> origin/master
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -31,6 +35,12 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.glassfish.jersey.server.JSONP;
 
+<<<<<<< HEAD
+=======
+/**
+ * Provides method to access information about form
+ */
+>>>>>>> origin/master
 @Path("/v1/form")
 public class FormResource {
 
@@ -41,6 +51,20 @@ public class FormResource {
         this.webResource = new WebResource();
     }
 
+<<<<<<< HEAD
+=======
+    /**
+     * Response with the successCallback field value to the form with the ID or variable name equals to
+     * <code>idOrVar</code>
+     *
+     * @param req
+     * @param res
+     * @param idOrVar form's Id or variable name
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+>>>>>>> origin/master
     @GET
     @Path("/{idOrVar}/successCallback")
     @NoCache
@@ -57,6 +81,7 @@ public class FormResource {
             throw new NotFoundInDbException("The form not exists: " + idOrVar);
         }
 
+<<<<<<< HEAD
         final List<Field> fields = contentType.fields().stream()
                 .filter(field -> FORM_SUCCESS_CALLBACK.equals(field.variable()))
                 .limit(1)
@@ -67,6 +92,17 @@ public class FormResource {
         }
 
         final String formSuccessCallback = fields.get(0).values();
+=======
+        final Optional<Field> fieldOptional = contentType.fields().stream()
+                .filter(field -> FORM_SUCCESS_CALLBACK.equals(field.variable()))
+                .findFirst();
+
+        if (!fieldOptional.isPresent()) {
+            throw new BadRequestException(FORM_SUCCESS_CALLBACK + " field not exists in:" + idOrVar);
+        }
+
+        final String formSuccessCallback = fieldOptional.get().values();
+>>>>>>> origin/master
         final String functionSuccessCallback = String.format(SUCCESS_CALLBACK_FUNCTION_TEMPLATE, idOrVar,
                 formSuccessCallback);
         return Response.ok(functionSuccessCallback).build();

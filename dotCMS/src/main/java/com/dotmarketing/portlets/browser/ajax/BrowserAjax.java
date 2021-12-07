@@ -333,7 +333,9 @@ public class BrowserAjax {
 
 		List<Map<String, Object>> listToReturn;
         try {
-			Map<String, Object> resultsMap = getFolderContent(parentInode, 0, -1, "", null, null, showArchived, false, false, this.lastSortBy, this.lastSortDirectionDesc, languageId);
+        	//Only show folders if the parent is not a host
+        	final boolean showFolders = APILocator.getHostAPI().find(parentInode,APILocator.systemUser(),false)  == null;
+			Map<String, Object> resultsMap = getFolderContent(parentInode, 0, -1, "", null, null, showArchived, !showFolders, false, this.lastSortBy, this.lastSortDirectionDesc, languageId);
             listToReturn = (List<Map<String, Object>>) resultsMap.get("list");
 		} catch ( NotFoundInDbException e ){
             Logger.error( this, "Please refresh the screen you opened this Folder from.", e );

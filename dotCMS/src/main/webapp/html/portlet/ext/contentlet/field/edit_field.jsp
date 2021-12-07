@@ -82,7 +82,7 @@
 		<% } %>
     </div>
 
-    <div class="fieldValue field__<%=field.getFieldType()%>" style="display:flex" id="<%=field.getVelocityVarName()%>_field">
+    <div class="fieldValue field__<%=field.getFieldType()%>" id="<%=field.getVelocityVarName()%>_field">
         <%
             //TEXT kind of field rendering
             if (field.getFieldType().equals(Field.FieldType.TEXT.toString())) {
@@ -105,6 +105,12 @@
                     isReadOnly = true;
                 }
 
+                if (isHostNameField && textValue != "") {
+        %>
+            <%---  Renders wrapper to style INPUT and Edit Button for Site name --%>
+            <div style="display: flex;">
+        <%
+                }
         %>
         <%---  Renders the field it self --%>
         <input type="text" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"
@@ -133,6 +139,7 @@
                     </button>
                 </div>
             </div>
+        </div>
         <%
             }
 
@@ -164,13 +171,11 @@
 
                 if (data) {
                     block.editor.commands.setContent(data);
+                    field.value = JSON.stringify(data);
                 }
 
                 block.editor.on('update', ({ editor }) => {
-                    field.value = JSON.stringify({
-                        ...editor.getJSON(),
-                        render: editor.getHTML()
-                    });
+                    field.value = JSON.stringify(editor.getJSON());
                 })
             </script>
         <% }
@@ -581,7 +586,7 @@
            </div>
        </div>
 
-    <%}else{ %>
+    <% }else{ %>
 
         <%
          final Optional<FocalPoint> focalPoint =new FocalPointAPIImpl().readFocalPoint(binInode, field.getVelocityVarName());

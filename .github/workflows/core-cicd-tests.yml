@@ -24,7 +24,7 @@ jobs:
         if: env.DEBUG == 'true'
       - name: Get commit message
         id: get-commit-message
-        uses:  dotcms/get-commit-message@escape-messg
+        uses: dotcms/get-commit-message@master
         with:
           accessToken: ${{ secrets.GITHUB_TOKEN }}
       - name: Set Common Vars
@@ -122,7 +122,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        databaseType: [ postgres, mysql, oracle, mssql ]
+        databaseType: [ postgres, mssql ]
     env:
       DOT_CICD_BRANCH: master
       EXPORT_REPORTS: true

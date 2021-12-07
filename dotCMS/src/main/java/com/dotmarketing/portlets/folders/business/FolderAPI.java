@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.folders.business;
 
+import com.dotcms.api.tree.Parentable;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.DotIdentifierStateException;
@@ -309,7 +310,7 @@ import java.util.function.Predicate;
 	DotSecurityException, DotDataException;
 
 	// http://jira.dotmarketing.net/browse/DOTCMS-3232
-	Folder findSystemFolder() throws DotDataException;
+	Folder findSystemFolder() ;
 
 	/**
 	 * This method returns a new folder or the folder on the path you have
@@ -549,5 +550,15 @@ import java.util.function.Predicate;
 	 * @param childNameFilter {@link Predicate} filter
 	 */
 	void subscribeFolderListener (final Folder folder, final FolderListener folderListener, final Predicate<String> childNameFilter);
+
+    /**
+     *
+     * @param parent (host or folder)
+     * @return List of sub folders for passed in folder regardless the show on menu boolean
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    List<Folder> findSubFoldersByParent(Parentable parent, User user, boolean respectFrontEndPermissions)
+            throws DotDataException, DotSecurityException;
 
 }

@@ -14,14 +14,12 @@ import org.apache.commons.lang.builder.ToStringBuilder;
  * Converts the json into a map and gets returned when it is requested like this $contentlet.storyBlock (var name of the field is storyBlock).
  * This will allow you to do:
  * $contentlet.storyBlock.type
- * $contentlet.storyBlock.render
  * $contentlet.storyBlock.content
  */
 
 public class StoryBlockMap {
 
     private String type = StringPool.BLANK;
-    private String render = StringPool.BLANK;
     private String content = StringPool.BLANK;
 
     public StoryBlockMap(final Field field,final Contentlet contentlet) throws JSONException {
@@ -29,16 +27,11 @@ public class StoryBlockMap {
         final Object contFieldValue = APILocator.getContentletAPI().getFieldValue(contentlet,fieldTransformed);
         final JSONObject jsonContFieldValue = new JSONObject(contFieldValue.toString());
         type = jsonContFieldValue.get("type").toString();
-        render = jsonContFieldValue.get("render").toString();
         content = jsonContFieldValue.get("content").toString();
     }
 
     public String getType() {
         return type;
-    }
-
-    public String getRender() {
-        return render;
     }
 
     public String getContent() {
