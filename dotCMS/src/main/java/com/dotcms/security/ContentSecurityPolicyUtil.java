@@ -25,6 +25,47 @@ public class ContentSecurityPolicyUtil {
     private ContentSecurityPolicyUtil() {
     }
 
+    /**
+     *
+     * Set the <code>Content-Security-Policy</code> header according to the
+     * <code>ContentSecurityPolicy.header</code> config property, for example if the config property
+     * has the follow value <code>default-src 'self'</code>, then the header is going to be set with the value
+     *
+     * The <code>ContentSecurityPolicy.header</code> config property has two special values:
+     * - {script-src nonce}: You can use it like <code>script-src {script-src nonce}</code>, and a random
+     * nonce is going to be calculated and set to each script block in <code>htmlCode</code>
+     *
+     * - {style-src nonce}: You can use it like <code>style-src {style-src nonce}</code>, and a random
+     * nonce is going to be calculated and set to each style block in <code>htmlCode</code>
+     *
+     * When any of the special values to the <code>ContentSecurityPolicy.header</code> config property
+     * is used then a new nonce value is calculated and set it to any script block or style block
+     * in <code>htmlCode</code>, so if you have the follow html code:
+     *
+     * <pre>
+     *     <script>
+     *         console.log('This is a test');
+     *     </script>
+     *
+     *     <h1>THIS IS A TEST</h1>
+     * </pre>
+     *
+     * This method is going to return:
+     *
+     * <pre>
+     *     <script nonce='[random nonce value]'">
+     *         console.log('This is a test');
+     *     </script>
+     *
+     *     <h1>THIS IS A TEST</h1>
+     * </pre>
+     *
+     * Where <code>random nonce value</code> is a random string encode with Base 64 algorithm.
+     *
+     * @param htmlCode
+     * @param response
+     * @return
+     */
     public static String calculateContentSecurityPolicy(final String htmlCode,
             final HttpServletResponse response) {
         String htmlCodeResult = htmlCode;
