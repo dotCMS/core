@@ -633,37 +633,13 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			}
         } else {//only do this if is not drawed
 
-//			final Set<ContainerUUID> containerUUIDSet = APILocator.getTemplateAPI().getContainersUUIDFromDrawTemplateBody(
-//					template.getBody()).stream().collect(Collectors.toSet());
-//			for (final ContainerUUID containerUUID : containerUUIDSet) {
-//				final Optional<Container> container = APILocator.getContainerAPI()
-//						.findContainer(containerUUID.getIdentifier(), user, false, false);
-//				if(container.isPresent()){
-//					containers.add(container.get());
-//				}
-//			}
-
-			// this is a light weight search for pages that use this template
-			final List<ContentletSearch> pages =
-					APILocator.getContentletAPIImpl()
-							.searchIndex("+catchall:" + template.getIdentifier() + " +baseType:"
-											+ BaseContentType.HTMLPAGE.getType(), 100, 0, null, user,
-									respectFrontendRoles);
-
-			for (final ContentletSearch page : pages) {
-				final Set<String> containerIdSet =
-						APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier())
-								.stream()
-								.map(MultiTree::getContainer)
-								.collect(Collectors.toSet());
-
-				for (final String containerId : containerIdSet) {
-					final Container container = APILocator.getContainerAPI()
-							.getWorkingContainerById(containerId, user, false);
-					if (container == null) {
-						continue;
-					}
-					containers.add(container);
+			final Set<ContainerUUID> containerUUIDSet = APILocator.getTemplateAPI().getContainersUUIDFromDrawTemplateBody(
+					template.getBody()).stream().collect(Collectors.toSet());
+			for (final ContainerUUID containerUUID : containerUUIDSet) {
+				final Optional<Container> container = APILocator.getContainerAPI()
+						.findContainer(containerUUID.getIdentifier(), user, false, false);
+				if(container.isPresent() && !APILocator.getMultiTreeAPI().getMultiTrees(container.get().getIdentifier()).isEmpty()){
+					containers.add(container.get());
 				}
 			}
 		}
