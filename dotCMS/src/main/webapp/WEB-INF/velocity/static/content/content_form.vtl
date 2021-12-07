@@ -7,7 +7,10 @@
 <script type="module" src="/dotcms-webcomponents/dotcms-webcomponents.esm.js"></script>
 <script nomodule="" src="/dotcms-webcomponents/dotcms-webcomponents.js"></script>
 
+<script src="/api/v1/form/$structure.inode/successCallback"></script>
+
 <dot-form id="$formDOM" variable='$structure.velocityVarName'></dot-form>
  <script type="text/javascript">
      document.getElementById('$formDOM').layout = $structures.getLayoutAsJson($formId);
+     document.getElementById('$formDOM').addEventListener('submit', formSuccessCallback_$structure.inode);
  </script>
