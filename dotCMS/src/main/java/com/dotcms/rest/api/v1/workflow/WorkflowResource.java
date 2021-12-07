@@ -592,6 +592,7 @@ public class WorkflowResource {
             fireBulkActionsForm.getPopupParamsBean()
                     .getAdditionalParamsMap().put(SUCCESS_ACTION_CALLBACK,
                             (Consumer<Long>) delta -> {
+                                Logger.info(this, "CALLBACK ------");
                                 eventBuilder.name("success");
                                 eventBuilder.data(Map.class,
                                         map("success", delta));
@@ -619,7 +620,8 @@ public class WorkflowResource {
                             });
 
             try {
-                workflowHelper.fireBulkActions(fireBulkActionsForm, initDataObject.getUser());
+                workflowHelper.fireBulkActionsNoReturn(fireBulkActionsForm, initDataObject.getUser());
+                Logger.info(this, "finished");
             } catch (DotSecurityException | DotDataException e) {
                 throw new DotRuntimeException(e);
             }

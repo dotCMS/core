@@ -868,6 +868,16 @@ public interface WorkflowAPI {
 	BulkActionsResultView fireBulkActions(WorkflowAction action, User user,  String luceneQuery, AdditionalParamsBean additionalParamsBean) throws DotDataException;
 
 	/**
+	 * Fires a list of contentlets returned by the luceneQuery and using an action.
+	 * @param action {@link WorkflowAction}
+	 * @param user  {@link User}
+	 * @param luceneQuery luceneQuery
+	 * @param additionalParamsBean
+	 * @return
+	 */
+	void fireBulkActionsNoReturn(WorkflowAction action, User user,  String luceneQuery, AdditionalParamsBean additionalParamsBean) throws DotDataException;
+
+	/**
 	 * Fires a list of contentlets by using an action.
 	 * It returns a list of a success, failed and skipped contentlets
 	 * @param action {@link WorkflowAction}
@@ -877,6 +887,16 @@ public interface WorkflowAPI {
 	 * @return Future BulkActionsResultView
 	 */
 	BulkActionsResultView fireBulkActions(WorkflowAction action, User user, List<String> contentletIds, AdditionalParamsBean additionalParamsBean) throws DotDataException ;
+
+	/**
+	 * Fires a list of contentlets by using an action.
+	 * It returns a list of a success, failed and skipped contentlets
+	 * @param action {@link WorkflowAction}
+	 * @param user   {@link User}
+	 * @param contentletIds {@link List}
+	 * @param additionalParamsBean
+	 */
+	void fireBulkActionsNoReturn(WorkflowAction action, User user, List<String> contentletIds, AdditionalParamsBean additionalParamsBean) throws DotDataException ;
 
 	/**
 	 * Finds the available {@link WorkflowAction} for the contentlet to a user on any give
