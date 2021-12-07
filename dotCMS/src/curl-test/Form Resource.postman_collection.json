@@ -18,7 +18,7 @@
 							"    var jsonData = pm.response.json();",
 							"    console.log(jsonData);",
 							"",
-							"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"_dotPageContent_test-01FNRS68FETJPPDHY6PJ9SA9ZQ.tar.gz\");",
+							"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"form-resource-data-01FP89VBD0HKCDFTA469F8H7QX.tar.gz\");",
 							"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
 							"});"
 						],
@@ -98,10 +98,10 @@
 							"pm.test(\"Get form successCallback\", function () {",
 							"    pm.response.to.have.status(200);",
 							"",
-							"    var body = pm.response.body();",
+							"    var body = pm.response.text();",
 							"    console.log(body);",
 							"",
-							"    pm.expect(body).to.contains(\"console.log('This is a test')\");",
+							"    pm.expect(body).to.contains(\"const formSuccessCallback_391c639d83bde553a96325ecc41bccc6 = function(contentlet){console.log('This is a test')};\");",
 							"});"
 						],
 						"type": "text/javascript"
@@ -152,10 +152,10 @@
 							"pm.test(\"console.log('This is a test')\", function () {",
 							"    pm.response.to.have.status(200);",
 							"",
-							"    var body = pm.response.body();",
+							"    var body = pm.response.text();",
 							"    console.log(body);",
 							"",
-							"    pm.expect(body).to.contains(\"console.log('This is a test')\");",
+							"    pm.expect(body).to.contains(\"const formSuccessCallback_391c639d83bde553a96325ecc41bccc6 = function(contentlet){console.log('This is a test')};\");",
 							"});"
 						],
 						"type": "text/javascript"
