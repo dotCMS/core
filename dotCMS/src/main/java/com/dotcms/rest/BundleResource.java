@@ -145,10 +145,11 @@ public class BundleResource {
                 .init();
 
         try {
-            final int limit = UtilMethods.isSet(limitParam) ? limitParam : NO_LIMIT_ASSETS;
-            final Bundle bundleById = APILocator.getBundleAPI().getBundleById(bundleId);
 
-            if (bundleById == null) {
+            PublishAuditStatus publishAuditStatus = PublishAuditAPI.getInstance()
+                    .getPublishAuditStatus(bundleId, 0);
+
+            if (publishAuditStatus == null) {
                 throw new NotFoundException(String.format("Bundle %s not exists", bundleId));
             }
 
@@ -160,7 +161,8 @@ public class BundleResource {
             if (UtilMethods.isSet(queueElements)) {
                 detailedAssets = publishQueueElementTransformer.transform(queueElements);
             } else {
-                final PublishAuditStatus publishAuditStatus = PublishAuditAPI.getInstance()
+                final int limit = UtilMethods.isSet(limitParam) ? limitParam : NO_LIMIT_ASSETS;
+                publishAuditStatus = PublishAuditAPI.getInstance()
                         .getPublishAuditStatus(bundleId, limit);
 
                 final Map<String, String> assets = publishAuditStatus.getStatusPojo().getAssets();
