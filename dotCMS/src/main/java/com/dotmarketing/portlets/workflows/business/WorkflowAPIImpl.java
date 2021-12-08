@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.workflows.business;
 
 import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isHost;
 
+import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -12,6 +13,8 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.event.ContentTypeDeletedEvent;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.rekognition.actionlet.RekognitionActionlet;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
@@ -23,6 +26,7 @@ import com.dotcms.util.AnnotationUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.FriendClass;
+import com.dotcms.util.I18NMessage;
 import com.dotcms.util.LicenseValiditySupplier;
 import com.dotcms.util.ThreadContext;
 import com.dotcms.util.ThreadContextUtil;
@@ -2948,26 +2952,25 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		Logger.debug(getClass(),String.format("A grand total of %d contentlets has been pulled from ES.",offset));
 
-//		for (final Future future : futures) {
-//			try {
-//				future.get();
-//			} catch (InterruptedException | ExecutionException e) {
-//				Logger.error(this, e.getMessage(), e);
-//			}
-//		}
+		for (final Future future : futures) {
+			try {
+				future.get();
+			} catch (InterruptedException | ExecutionException e) {
+				Logger.error(this, e.getMessage(), e);
+			}
+		}
 
 		//Actions which implement the interface BatchAction are shared between threads using the actionsContext
-//		executeBatchActions(user, action, actionsContext, (list, e) -> {
-//
-//			list.forEach(o -> {
-//						fails.add(ActionFail.newInstance(user, o.toString(), e));
-//					}
-//			);
-//			//Initially When adding up to the list of batch actions we assume a success.
-//			//So we need to Update success count in case something has gone wrong internally.
-//			//This assumes that if one single action fails internally the whole batch has failed.
-//			successCount.updateAndGet(value -> value - list.size());
-//		});
+		executeBatchActions(user, action, actionsContext, (list, e) -> {
+			list.forEach(o -> {
+						fails.add(ActionFail.newInstance(user, o.toString(), e));
+					}
+			);
+			//Initially When adding up to the list of batch actions we assume a success.
+			//So we need to Update success count in case something has gone wrong internally.
+			//This assumes that if one single action fails internally the whole batch has failed.
+			successCount.updateAndGet(value -> value - list.size());
+		});
 
 		return new BulkActionsResultView(
 				successCount.get(),
@@ -3017,11 +3020,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		final AtomicBoolean acceptingExceptions = new AtomicBoolean(true);
 
-//		final List<Future> futures = new ArrayList<>();
-
-		final Long skipsCount = computeSkippedContentletsCount(sanitizedQuery,
-				workflowAssociatedStepsIds,
-				user);
+		final List<Future> futures = new ArrayList<>();
 
 		int offset = 0;
 
@@ -3044,8 +3043,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					.getAdditionalParamsMap().get(SUCCESS_ACTION_CALLBACK)
 					: successCount::addAndGet;
 
-//			additionalParamsBean.getAdditionalParamsMap().remove(SUCCESS_ACTION_CALLBACK);
-
 			final BiConsumer<String,Exception> failCallback = UtilMethods.isSet(additionalParamsBean
 					.getAdditionalParamsMap().get(FAIL_ACTION_CALLBACK))
 					? (BiConsumer<String,Exception>) additionalParamsBean
@@ -3064,10 +3061,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 						}
 					};
 
-//			additionalParamsBean.getAdditionalParamsMap().remove(FAIL_ACTION_CALLBACK);
-
 			for (final List<Contentlet> partition : partitions) {
-//				futures.add(
+				futures.add(
 						submitter.submit(() -> {
 
 									if(submitter.isAborting()){
@@ -3079,43 +3074,39 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 											additionalParamsBean,sucessCallback, failCallback,
 											actionsContext, sleepThreshold);
 								}
-						);
-//				);
+						)
+				);
 			}
 
 			offset += limit;
-
 		}
 
+		sendNotification(futures);
 
 		Logger.debug(getClass(),String.format("A grand total of %d contentlets has been pulled from ES.",offset));
+	}
 
-//		for (final Future future : futures) {
-//			try {
-//				future.get();
-//			} catch (InterruptedException | ExecutionException e) {
-//				Logger.error(this, e.getMessage(), e);
-//			}
-//		}
+	private void sendNotification(final List<Future> futures)
+			throws DotDataException {
+		final Role cmsAdminRole = this.roleAPI.loadCMSAdminRole();
+		final User systemUser = APILocator.systemUser();
 
-		//Actions which implement the interface BatchAction are shared between threads using the actionsContext
-//		executeBatchActions(user, action, actionsContext, (list, e) -> {
-//
-//			list.forEach(o -> {
-//						fails.add(ActionFail.newInstance(user, o.toString(), e));
-//					}
-//			);
-//			//Initially When adding up to the list of batch actions we assume a success.
-//			//So we need to Update success count in case something has gone wrong internally.
-//			//This assumes that if one single action fails internally the whole batch has failed.
-//			successCount.updateAndGet(value -> value - list.size());
-//		});
+		DotConcurrentFactory.getInstance().getSubmitter().submit(()-> {
+			for (final Future future : futures) {
+				try {
+					future.get();
+				} catch (InterruptedException | ExecutionException e) {
+					Logger.error(this, e.getMessage(), e);
+				}
+			}
 
-//		return new BulkActionsResultView(
-//				successCount.get(),
-//				skipsCount,
-//				ImmutableList.copyOf(fails)
-//		);
+			Try.run(() -> {
+				APILocator.getNotificationAPI().generateNotification(new I18NMessage("Workflow-Bulk-Actions-Title"), // title = Reindex Notification
+						new I18NMessage("Workflow-Bulk-Actions-Finished", null, null), null, // no actions
+						NotificationLevel.INFO, NotificationType.GENERIC, Visibility.ROLE, cmsAdminRole.getId(), systemUser.getUserId(),
+						systemUser.getLocale());
+			});
+		});
 	}
 
 
@@ -3145,9 +3136,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					this.executeBatchAction(user, actionsContext, actionClass, params, batchAction);
 				} catch (final Exception e) {
 					failsConsumer.accept(objects, e);
-                    Logger.error(getClass(), String.format("Exception while trying to execute action '%s' [%s] in " +
-                            "batch: %s", actionClass.getName(), actionClass.getActionId(), e.getMessage()), e);
-                    // We assume the entire batch is has failed. So break;
+					Logger.error(getClass(), String.format("Exception while trying to execute action '%s' [%s] in " +
+							"batch: %s", actionClass.getName(), actionClass.getActionId(), e.getMessage()), e);
+					// We assume the entire batch is has failed. So break;
 					break;
 				}
 			}

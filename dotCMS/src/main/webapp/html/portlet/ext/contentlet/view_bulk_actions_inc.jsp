@@ -198,15 +198,15 @@
             '</tr>' +
             '<tr>' +
               '<td> ' + sucessLabel + ':&nbsp;</td>' +
-              '<td id="successCount"> ' + successCount + ' </td>' +
+              '<td id="successCount" style="width: 100px"> ' + successCount + ' </td>' +
             '</tr>' +
             '<tr>' +
               '<td> ' + failsLabel + ':&nbsp;</td>' +
-              '<td id="failCount"><a href="#" onclick="toggleFailDetails();" > ' + failsCount + ' </a></td>' +
+              '<td id="failCount" style="width: 100px"><a href="#" onclick="toggleFailDetails();" > ' + failsCount + ' </a></td>' +
             '</tr>' +
             '<tr>' +
               '<td> ' + skipsLabel + ':&nbsp;</td>' +
-              '<td id="skipsCount"> ' + skipsCount + ' </td>' +
+              '<td id="skipsCount" style="width: 100px"> ' + skipsCount + ' </td>' +
             '</tr>' +
           '</table>' +
         '</div>';
