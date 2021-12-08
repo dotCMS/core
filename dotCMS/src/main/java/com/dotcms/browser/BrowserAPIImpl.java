@@ -31,6 +31,7 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.util.AssetsComparator;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
@@ -111,16 +112,24 @@ public class BrowserAPIImpl implements BrowserAPI {
 
         final List<Treeable> returnList = new ArrayList<>();
 
-        getContentUnderParentFromDB(browserQuery).forEach(f -> returnList.add(f));
+        final List<Contentlet> contentlets = browserQuery.showContent ? getContentUnderParentFromDB(browserQuery)
+                : Collections.emptyList();
+        returnList.addAll(contentlets);
 
         if (browserQuery.showFolders) {
             List<Folder> folders = folderAPI.findSubFoldersByParent(browserQuery.directParent, userAPI.getSystemUser(), false);
-            folders.removeIf(f->!f.isShowOnMenu());
-            folders.forEach(f -> returnList.add(f));
+            if (browserQuery.showMenuItemsOnly) {
+                folders.removeIf(folder -> !folder.isShowOnMenu());
+            }
+            folders.forEach(folder -> returnList.add(folder));
         }
 
         if (browserQuery.showLinks) {
-            this.getLinks(browserQuery).forEach(f -> returnList.add(f));
+            List<Link> links = this.getLinks(browserQuery);
+            if(browserQuery.showMenuItemsOnly){
+                links.removeIf(link -> !link.isShowOnMenu());
+            }
+            links.forEach(link -> returnList.add(link));
         }
 
         return permissionAPI.filterCollection(returnList,PERMISSION_READ,true, browserQuery.user);

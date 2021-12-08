@@ -129,10 +129,10 @@ public class NavTool implements ViewTool {
             List<?> menuItems = APILocator.getFolderAPI()
                     .findMenuItems(folder, systemUserParam, true);
             List<Folder> folders = new ArrayList<>();
-            if (path.equals("/")) {
-                folders.addAll(APILocator.getFolderAPI()
-                        .findSubFolders(host, true));
-            }
+//            if (path.equals("/")) {
+//                folders.addAll(APILocator.getFolderAPI()
+//                        .findSubFolders(host, true));
+//            }
 
             for (Folder itemFolder : folders) {
                 addFolderToNav(host, languageId, folder, children, folderIds, itemFolder);
