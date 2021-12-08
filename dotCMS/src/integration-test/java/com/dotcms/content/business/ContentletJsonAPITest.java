@@ -264,10 +264,11 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
             assertNotNull(filledWithZeros);
             final String json = impl.toJson(filledWithZeros);
             assertNotNull(json);
-            final Contentlet outWithZeros = impl.mapContentletFieldsFromJson(json);
-            assertEquals(outWithZeros.get("textFieldNumeric"),0L );
-            assertEquals(outWithZeros.get("textFieldFloat"),0F );
-            assertNull(outWithZeros.get("textField"));
+            final Contentlet out = impl.mapContentletFieldsFromJson(json);
+            assertEquals(out.get("textFieldNumeric"),0L );
+            assertEquals(out.get("textFieldFloat"),0F );
+            assertEquals(out.get("hiddenBool"),false );
+            assertNull(out.get("textField"));
 
         } finally {
             Config.setProperty(SAVE_CONTENTLET_AS_JSON, defaultValue);
