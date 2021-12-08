@@ -12,7 +12,8 @@ dotcms-block-editor {
     position: relative;
     outline: $gray-light solid 1px;
 
-    &:focus {
+    // If a child is focused, set this style to the parent
+    &:focus-within {
         outline-color: $brand-primary;
     }
 
