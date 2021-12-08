@@ -1,10 +1,14 @@
 package com.dotmarketing.portlets.templates.business;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.MultiTreeDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateAsFileDataGen;
 import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
@@ -12,6 +16,7 @@ import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -27,8 +32,10 @@ import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImpl;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
@@ -1091,5 +1098,45 @@ public class TemplateAPITest extends IntegrationTestBase {
         assertTrue(UtilMethods.isSet(templateA.getIdentifier()));
         assertEquals(templateA.getTitle(), title + "_UPDATED");
         assertEquals(templateOriginalInode,templateA.getInode());
+    }
+
+    /**
+     * Method to test: {@link TemplateAPI#getContainersInTemplate(Template, User, boolean)}
+     * Given Scenario: Finds the containers that are being used by the template.
+     * ExpectedResult: list of containers.
+     */
+    @Test
+    public void test_getContainersInTemplate_success() throws Exception{
+
+        final Host newHost = new SiteDataGen().nextPersisted();
+
+        //Create a container for the given contentlet
+        final Container container = new ContainerDataGen().site(newHost)
+                .nextPersisted();
+
+        //Create a template
+        final Template template = new TemplateDataGen().site(newHost)
+                .withContainer(container.getIdentifier())
+                .nextPersisted();
+
+        //Create page
+        final HTMLPageAsset page = new HTMLPageDataGen(newHost, template)
+                .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId()).nextPersisted();
+
+        //Create content
+        final Contentlet contentlet = TestDataUtils
+                .getGenericContentContent(true,APILocator.getLanguageAPI().getDefaultLanguage().getId(),newHost);
+
+        //Add content to page
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet)
+                .setInstanceID(UUIDGenerator.shorty())
+                .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1)
+                .nextPersisted();
+
+        assertEquals(1,APILocator.getTemplateAPI().getContainersInTemplate(template,user,false).size());
     }
 }
