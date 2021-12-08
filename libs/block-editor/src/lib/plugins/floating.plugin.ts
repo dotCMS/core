@@ -133,19 +133,19 @@ export class FloatingActionsView {
             !selection.$anchor.parent.isLeaf && !selection.$anchor.parent.textContent;
         const isActive = isRootDepth && isNodeEmpty;
 
-        if (!empty || !isActive) {
-            this.hide();
+        const next = this.key?.getState(view.state);
+        const prev = prevState ? this.key?.getState(prevState) : null;
 
+        if (!prev?.open && (!empty || !isActive)) {
+            this.hide();
             return;
         }
+
         this.tippy.setProps({
             getReferenceClientRect: () => posToDOMRect(view, from, to)
         });
 
         this.show();
-
-        const next = this.key?.getState(view.state);
-        const prev = prevState ? this.key?.getState(prevState) : null;
 
         if (next.open) {
             const { from, to } = this.editor.state.selection;
