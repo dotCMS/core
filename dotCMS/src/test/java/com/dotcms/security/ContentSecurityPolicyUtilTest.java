@@ -30,7 +30,7 @@ public class ContentSecurityPolicyUtilTest {
             final String htmlCodeResult = ContentSecurityPolicyUtil.calculateContentSecurityPolicy(hmlCode,
                     response);
 
-            final String nonce = getNonce(htmlCodeResult);
+            final String nonce = getNonce(htmlCodeResult, "<script nonce='");
             assertNotNull(nonce);
 
             final String hmlCodeExpected = String.format(
@@ -63,7 +63,7 @@ public class ContentSecurityPolicyUtilTest {
             final String htmlCodeResult = ContentSecurityPolicyUtil.calculateContentSecurityPolicy(hmlCode,
                     response);
 
-            final String nonce = getNonce(htmlCodeResult);
+            final String nonce = getNonce(htmlCodeResult, "<style nonce='");
             assertNotNull(nonce);
 
             final String hmlCodeExpected = String.format(
@@ -96,7 +96,7 @@ public class ContentSecurityPolicyUtilTest {
                     hmlCode,
                     response);
 
-            final String nonce = getNonce(htmlCodeResult);
+            final String nonce = getNonce(htmlCodeResult, "<script nonce='");
             assertNotNull(nonce);
 
             final String hmlCodeExpected = String.format(
@@ -131,11 +131,11 @@ public class ContentSecurityPolicyUtilTest {
                     hmlCode,
                     response);
 
-            final String nonce = getNonce(htmlCodeResult);
+            final String nonce = getNonce(htmlCodeResult, "<style nonce='");
             assertNotNull(nonce);
 
             final String hmlCodeExpected = String.format(
-                    "<style>.h1{background-color: red;}</style>  <h1>This is a example</h1> <style>.h1{background-color: blue;}</style> "
+                    "<style nonce='%s'>.h1{background-color: red;}</style>  <h1>This is a example</h1> <style nonce='%s'>.h1{background-color: blue;}</style> "
                     , nonce, nonce);
 
             assertEquals(hmlCodeExpected, htmlCodeResult);
@@ -199,15 +199,14 @@ public class ContentSecurityPolicyUtilTest {
         }
     }
 
-    private String getNonce(final String htmlCodeResult) {
-        final String nOnceString = "<scrip nonce='";
-        final int startNonce = htmlCodeResult.indexOf(nOnceString);
+    private String getNonce(final String htmlCodeResult, final String template) {
+        final int startNonce = htmlCodeResult.indexOf(template);
 
         if (startNonce == -1) {
             return null;
         }
 
-        final int startNonceIndex = startNonce + nOnceString.length();
+        final int startNonceIndex = startNonce + template.length();
         final int endNonceIndex = htmlCodeResult.indexOf("'", startNonceIndex);
 
         return htmlCodeResult.substring(startNonceIndex, endNonceIndex);

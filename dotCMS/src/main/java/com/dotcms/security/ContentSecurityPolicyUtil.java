@@ -84,8 +84,7 @@ public class ContentSecurityPolicyUtil {
                 }
             }
 
-            response.addHeader("Content-Security-Policy",
-                    String.format("script-src 'nonce-%s'", contentSecurityPolicyHeader));
+            response.addHeader("Content-Security-Policy", contentSecurityPolicyHeader);
         }
         return htmlCodeResult;
     }
@@ -110,7 +109,7 @@ public class ContentSecurityPolicyUtil {
                 String.format("<script nonce='%s'",nonce));
 
         contentSecurityPolicyData.headerValue = contentSecurityPolicyConfig.replace("{script-src nonce}",
-                String.format("nonce-%s",nonce));
+                String.format("'nonce-%s'",nonce));
 
         return contentSecurityPolicyData;
     }
@@ -124,7 +123,7 @@ public class ContentSecurityPolicyUtil {
                 String.format("<style nonce='%s'",nonce));
 
         contentSecurityPolicyData.headerValue = contentSecurityPolicyConfig.replace("{style-src nonce}",
-                String.format("nonce-%s",nonce));
+                String.format("'nonce-%s'",nonce));
 
         return contentSecurityPolicyData;
     }
