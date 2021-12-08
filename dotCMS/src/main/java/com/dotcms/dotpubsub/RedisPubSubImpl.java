@@ -2,7 +2,9 @@ package com.dotcms.dotpubsub;
 
 import com.dotcms.cache.lettuce.RedisClient;
 import com.dotcms.cache.lettuce.RedisClientFactory;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.google.common.annotations.VisibleForTesting;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -17,11 +19,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class RedisPubSubImpl implements DotPubSubProvider {
 
+    public final String serverId;
     private final AtomicBoolean start = new AtomicBoolean(false);
     private final RedisClient<String, Object> redisClient = RedisClientFactory.getClient("pubsub");
 
     @VisibleForTesting
     private static DotPubSubEvent lastEventIn, lastEventOut;
+
+    public RedisPubSubImpl() {
+        this(APILocator.getServerAPI().readServerId());
+
+    }
+
+    public RedisPubSubImpl(final String serverId) {
+        this.serverId = StringUtils.shortify(serverId, 10);
+    }
 
     @Override
     public DotPubSubProvider subscribe(final DotPubSubTopic topic) {
@@ -55,16 +67,17 @@ public class RedisPubSubImpl implements DotPubSubProvider {
     }
 
     @Override
-    public boolean publish(final DotPubSubEvent event) {
+    public boolean publish(final DotPubSubEvent eventIn) {
 
         if (this.start.get()) {
 
-            this.redisClient.publishMessage(event, event.getTopic());
-            lastEventOut = event;
+            final DotPubSubEvent eventOut = new DotPubSubEvent.Builder(eventIn).withOrigin(serverId).build();
+            this.redisClient.publishMessage(eventOut, eventOut.getTopic());
+            lastEventOut = eventOut;
             return true;
         } else {
 
-            Logger.debug(this, ()->"(PubSub stopped) Message Filtered: " + event);
+            Logger.debug(this, ()->"(PubSub stopped) Message Filtered: " + eventIn);
         }
 
         return false;

@@ -1,6 +1,9 @@
 package com.dotcms.dotpubsub;
 
 import java.io.StringWriter;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import io.vavr.control.Try;
 
 /**
  * A Utility Class that converts the default dotCMS postgres DB connection/driver to a url using the
@@ -22,8 +25,9 @@ class PgNgDataSourceUrl {
      * @param url
      */
     PgNgDataSourceUrl(final String username, final String password, final String url) {
-
-        this.finalUrl = createUrl(username, password, url);
+        final String encodedUsername = Try.of(()->URLEncoder.encode(username, StandardCharsets.UTF_8.toString())).getOrNull();
+        final String encodedPassword = Try.of(()->URLEncoder.encode(password, StandardCharsets.UTF_8.toString())).getOrNull();
+        this.finalUrl = createUrl(encodedUsername, encodedPassword, url);
     }
 
     PgNgDataSourceUrl(final String providedUrl) {
