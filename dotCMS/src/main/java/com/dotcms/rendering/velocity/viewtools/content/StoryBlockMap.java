@@ -76,6 +76,7 @@ public class StoryBlockMap implements Renderable {
             for (int i = 0; i < items.length(); ++i) {
 
                 try {
+                    // todo: do we have to catch this?
                     final JSONObject jsonObjectItem = items.getJSONObject(i);
                     final Renderable renderable = renderableFactory.create(jsonObjectItem, this.processType(jsonObjectItem));
                     builder.append(renderable.toHtml());
