@@ -366,25 +366,6 @@
         });
 
         source.stream();
-
-        <%--var xhrArgs = {--%>
-        <%--    url: "/api/v1/workflow/contentlet/actions/bulk/fire",--%>
-        <%--    postData: dataAsJson,--%>
-        <%--    handleAs: "json",--%>
-        <%--    headers : {--%>
-        <%--        'Accept' : 'application/json',--%>
-        <%--        'Content-Type' : 'application/json;charset=utf-8',--%>
-        <%--    },--%>
-        <%--    load: function(data) {--%>
-        <%--        const entity = data ? data.entity : null; bulkWorkflowActionCallback(entity);--%>
-        <%--    },--%>
-        <%--    error: function(error){--%>
-        <%--        dojo.byId('bulkActionsContainer').innerHTML = `<%=LanguageUtil.get(pageContext, "Available-actions-error")%>`;--%>
-        <%--    }--%>
-        <%--};--%>
-
-        <%--dojo.xhrPut(xhrArgs);--%>
-
         return true;
     }
 

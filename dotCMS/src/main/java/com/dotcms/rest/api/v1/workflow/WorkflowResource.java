@@ -5,8 +5,6 @@ import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.DotLambdas.not;
 import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.FAIL_ACTION_CALLBACK;
 import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SUCCESS_ACTION_CALLBACK;
-import static com.dotmarketing.portlets.workflows.business.WorkflowAPIImpl.BULK_ACTIONS_SLEEP_THRESHOLD;
-import static com.dotmarketing.portlets.workflows.business.WorkflowAPIImpl.BULK_ACTIONS_SLEEP_THRESHOLD_DEFAULT;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.WrapInTransaction;
@@ -106,7 +104,6 @@ import com.liferay.util.HttpHeaders;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.Tuple2;
-import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -121,8 +118,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletionService;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Future;
@@ -625,29 +620,6 @@ public class WorkflowResource {
             } catch (DotSecurityException | DotDataException e) {
                 throw new DotRuntimeException(e);
             }
-
-    //                    workflowAPI.fireBulkActionTasks(
-    //                            action, initDataObject.getUser(), contentlets, null,
-    //                            ,
-    //                            (inode, e)-> {
-    //                                    eventBuilder.data(String.class, "failed:" + inode);
-    //                                    final OutboundEvent event = eventBuilder.build();
-    //                                    try {
-    //                                        eventOutput.write(event);
-    //                                    } catch (Exception e1) {
-    //                                        throw new DotRuntimeException(e1);
-    //                                    }
-    //                                },
-    //                            actionsContext,
-    //                            sleepThreshold
-    //                    );
-
-    //        try {
-    //            eventOutput.close();
-    //        } catch (IOException ioClose) {
-    //            throw new RuntimeException("Error when closing the event output.", ioClose);
-    //        }
-
         });
 
         return eventOutput;
