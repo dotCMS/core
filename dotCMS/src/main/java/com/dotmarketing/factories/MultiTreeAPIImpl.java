@@ -476,6 +476,16 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     @WrapInTransaction
     public void saveMultiTree(final MultiTree mTree) throws DotDataException {
         Logger.debug(this, () -> String.format("Saving MutiTree: %s", mTree));
+        _dbUpsert(mTree);
+        updateHTMLPageVersionTS(mTree.getHtmlPage());
+        refreshPageInCache(mTree.getHtmlPage());
+
+    }
+
+    @Override
+    @WrapInTransaction
+    public void saveMultiTreeAndReorder(final MultiTree mTree) throws DotDataException {
+        Logger.debug(this, () -> String.format("Saving MutiTree and Reordering: %s", mTree));
         _reorder(mTree);
         updateHTMLPageVersionTS(mTree.getHtmlPage());
         refreshPageInCache(mTree.getHtmlPage());
