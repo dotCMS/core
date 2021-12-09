@@ -11,12 +11,11 @@
         draggable="true"
         data-testId="paletteItem"
         (dragstart)="dragStart(item)"
+        (click)="showContentTypesList(item.variable)"
     >
         <dot-icon size="30" [name]="item.icon"></dot-icon>
         <p>{{ item.name }}</p>
-        <button (click)="showContentTypesList(item.variable)">
-            <dot-icon name="keyboard_arrow_right"></dot-icon>
-        </button>
+        <dot-icon name="keyboard_arrow_right" class="arrow"></dot-icon>
     </div>
 </div>
 

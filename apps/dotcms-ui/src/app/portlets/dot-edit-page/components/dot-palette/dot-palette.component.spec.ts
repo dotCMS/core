@@ -6,6 +6,7 @@ import { By } from '@angular/platform-browser';
 import { dotcmsContentTypeBasicMock } from '@dotcms/app/test/dot-content-types.mock';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 @Component({
     selector: 'dot-palette-content-type',
@@ -13,9 +14,9 @@ import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 })
 export class DotPaletteContentTypeMockComponent {
     @Input() items: any[];
-    @Output() show = new EventEmitter<any>();
+    @Output() selected = new EventEmitter<any>();
 
-    constructor() {}
+    focusInputFilter() {}
 }
 
 @Component({
@@ -25,9 +26,10 @@ export class DotPaletteContentTypeMockComponent {
 export class DotPaletteContentletsMockComponent {
     @Input() contentTypeVariable: string;
     @Input() languageId: string;
-    @Output() hide = new EventEmitter<any>();
+    @Output() back = new EventEmitter<any>();
 
-    constructor() {}
+
+    focusInputFilter() {}
 }
 
 const itemMock = {
@@ -56,7 +58,7 @@ describe('DotPaletteComponent', () => {
                 DotPaletteContentletsMockComponent,
                 DotPaletteContentTypeMockComponent
             ],
-            imports: [HttpClientTestingModule],
+            imports: [HttpClientTestingModule, NoopAnimationsModule],
             providers: [{ provide: CoreWebService, useClass: CoreWebServiceMock }]
         });
 
@@ -72,28 +74,30 @@ describe('DotPaletteComponent', () => {
         expect(contentTypeComp.componentInstance.items).toEqual([itemMock]);
     });
 
-    it('should change view to contentlets and set Content Type Variable on contentlets palette view', () => {
+    it('should change view to contentlets and set Content Type Variable on contentlets palette view', async () => {
         const contentTypeComp = fixture.debugElement.query(By.css('dot-palette-content-type'));
-        contentTypeComp.componentInstance.show.emit('Blog');
+        contentTypeComp.triggerEventHandler('selected', 'Blog');
         fixture.detectChanges();
+        await fixture.whenStable();
         const contentContentletsComp = fixture.debugElement.query(
             By.css('dot-palette-contentlets')
         );
-        expect(contentTypeComp.nativeElement.className).toEqual('switch-view');
-        expect(contentContentletsComp.nativeElement.className).toEqual('switch-view');
+        expect(contentTypeComp.nativeElement.style.transform).toEqual('translateX(-100%)');
+        expect(contentContentletsComp.nativeElement.style.transform).toEqual('translateX(-100%)');
         expect(contentContentletsComp.componentInstance.contentTypeVariable).toEqual('Blog');
     });
 
-    it('should change view to content type and unset Content Type Variable on contentlets palette view', () => {
+    it('should change view to content type and unset Content Type Variable on contentlets palette view', async () => {
         const contentContentletsComp = fixture.debugElement.query(
             By.css('dot-palette-contentlets')
         );
-        contentContentletsComp.componentInstance.hide.emit('');
+        contentContentletsComp.triggerEventHandler('back', '');
         comp.languageId = '2';
         fixture.detectChanges();
+        await fixture.whenStable();
         const contentTypeComp = fixture.debugElement.query(By.css('dot-palette-content-type'));
-        expect(contentTypeComp.nativeElement.className).toEqual('');
+        expect(contentTypeComp.nativeElement.style.transform).toEqual('translateX(0px)');
         expect(contentContentletsComp.componentInstance.languageId).toEqual('2');
-        expect(contentContentletsComp.nativeElement.className).toEqual('');
+        expect(contentContentletsComp.nativeElement.style.transform).toEqual('translateX(100%)');
     });
 });

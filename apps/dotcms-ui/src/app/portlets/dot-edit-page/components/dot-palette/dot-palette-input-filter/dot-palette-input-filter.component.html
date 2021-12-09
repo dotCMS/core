@@ -10,11 +10,13 @@
 <input
     #searchInput
     data-testId="searchInput"
-    [(ngModel)]="value" 
+    [(ngModel)]="value"
     [placeholder]="'Search' | dm | uppercase"
     pInputText
     type="text"
+    class="p-inputtext-sm"
 />
+
 <dot-icon
     name="search"
     class="dot-palette-input-filter__search-icon"

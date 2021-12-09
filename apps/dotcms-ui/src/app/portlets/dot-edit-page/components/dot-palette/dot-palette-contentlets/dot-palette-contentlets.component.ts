@@ -24,13 +24,16 @@ import { DotPaletteInputFilterComponent } from '../dot-palette-input-filter/dot-
 export class DotPaletteContentletsComponent implements OnChanges {
     @Input() contentTypeVariable: string;
     @Input() languageId: string;
-    @Output() hide = new EventEmitter();
+    @Output() back = new EventEmitter();
+
     items: DotCMSContentlet[] | DotCMSContentType[] = [];
     isFormContentType: boolean;
     hideNoResults = true;
     filter: string;
-    itemsPerPage = 15;
+    itemsPerPage = 25;
     totalRecords = 0;
+
+    @ViewChild('inputFilter') inputFilter: DotPaletteInputFilterComponent;
 
     constructor(
         public paginatorESService: DotESContentService,
@@ -101,15 +104,14 @@ export class DotPaletteContentletsComponent implements OnChanges {
     }
 
     /**
-     * Emits notification to show content type's component and clears
-     * component's local variables
+     * Clear component and emit back
      *
      * @memberof DotPaletteContentletsComponent
      */
-    showContentTypesList(): void {
-        this.items = null;
+    backHandler(): void {
         this.filter = '';
-        this.hide.emit();
+        this.back.emit();
+        this.items = null;
     }
 
     /**
@@ -139,5 +141,14 @@ export class DotPaletteContentletsComponent implements OnChanges {
         }
 
         this.loadData({ first: 0 });
+    }
+
+    /**
+     * Focus the input filter
+     *
+     * @memberof DotPaletteContentletsComponent
+     */
+    focusInputFilter(): void {
+        this.inputFilter.focus();
     }
 }

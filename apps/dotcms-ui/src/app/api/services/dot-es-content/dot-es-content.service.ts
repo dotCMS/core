@@ -26,11 +26,11 @@ export interface queryEsParams {
 @Injectable()
 export class DotESContentService {
     private _paginationPerPage = 40;
-    private _offset: string = '0';
+    private _offset = '0';
     private _url = '/api/content/_search';
     private _defaultQueryParams = { '+languageId': '1', '+deleted': 'false', '+working': 'true' };
-    private _sortField: string = 'modDate';
-    private _sortOrder: ESOrderDirection = ESOrderDirection.ASC;
+    private _sortField = 'modDate';
+    private _sortOrder: ESOrderDirection = ESOrderDirection.DESC;
     private _extraParams: Map<string, string> = new Map(Object.entries(this._defaultQueryParams));
 
     constructor(private coreWebService: CoreWebService) {}

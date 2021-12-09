@@ -41,4 +41,13 @@ export class DotPaletteInputFilterComponent implements OnInit, OnDestroy {
         this.destroy$.next(true);
         this.destroy$.complete();
     }
+
+    /**
+     * Focus on the search input
+     *
+     * @memberof DotPaletteInputFilterComponent
+     */
+    focus() {
+        this.searchInput.nativeElement.focus();
+    }
 }

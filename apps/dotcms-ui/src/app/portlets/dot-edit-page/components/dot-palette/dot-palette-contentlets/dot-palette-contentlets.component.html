@@ -1,7 +1,8 @@
 <dot-palette-input-filter
+    #inputFilter
     [value]="filter"
     [goBackBtn]="true"
-    (goBack)="showContentTypesList()"
+    (goBack)="backHandler()"
     (filter)="filterContentlets($event)"
 ></dot-palette-input-filter>
 

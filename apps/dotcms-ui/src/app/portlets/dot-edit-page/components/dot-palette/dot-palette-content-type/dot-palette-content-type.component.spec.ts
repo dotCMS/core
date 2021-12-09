@@ -125,13 +125,13 @@ describe('DotPaletteContentTypeComponent', () => {
 
     it('should emit event to show a specific contentlet', () => {
         componentHost.items = data;
-        spyOn(de.componentInstance.show, 'emit').and.callThrough();
+        spyOn(de.componentInstance.selected, 'emit').and.callThrough();
         fixtureHost.detectChanges();
         const buttons = fixtureHost.debugElement.queryAll(
-            By.css('[data-testId="paletteItem"] button')
+            By.css('[data-testId="paletteItem"]')
         );
         buttons[3].nativeElement.click();
         expect(de.componentInstance.itemsFiltered).toEqual(data);
-        expect(de.componentInstance.show.emit).toHaveBeenCalledWith('Text');
+        expect(de.componentInstance.selected.emit).toHaveBeenCalledWith('Text');
     });
 });

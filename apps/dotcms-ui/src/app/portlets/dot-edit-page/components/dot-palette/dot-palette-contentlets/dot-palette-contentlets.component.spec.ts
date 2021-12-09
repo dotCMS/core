@@ -108,8 +108,6 @@ class MockESPaginatorService {
 export class DotContentletIconMockComponent {
     @Input() icon: string;
     @Input() size: string;
-
-    constructor() {}
 }
 
 describe('DotPaletteContentletsComponent', () => {
@@ -169,7 +167,7 @@ describe('DotPaletteContentletsComponent', () => {
         const contentletIcon = fixtureHost.debugElement.query(By.css('dot-contentlet-icon'));
 
         expect(paginatorService.url).toBe('v1/contenttype');
-        expect(paginatorService.paginationPerPage).toBe(15);
+        expect(paginatorService.paginationPerPage).toBe(25);
         expect(paginatorService.sortField).toBe('modDate');
         expect(paginatorService.sortOrder).toBe(1);
         expect(paginatorService.setExtraParams).toHaveBeenCalledWith('type', 'Form');
@@ -200,7 +198,7 @@ describe('DotPaletteContentletsComponent', () => {
         );
 
         expect(paginatorESService.get).toHaveBeenCalledWith({
-            itemsPerPage: 15,
+            itemsPerPage: 25,
             lang: '1',
             filter: '',
             offset: '0',
@@ -256,7 +254,7 @@ describe('DotPaletteContentletsComponent', () => {
         const paginatorContainer = fixtureHost.debugElement.query(By.css('p-paginator'));
 
         expect(paginatorContainer).toBeTruthy();
-        expect(paginatorContainer.componentInstance.rows).toBe(15);
+        expect(paginatorContainer.componentInstance.rows).toBe(25);
         expect(paginatorContainer.componentInstance.totalRecords).toBe(20);
         expect(paginatorContainer.componentInstance.showFirstLastIcon).toBe(false);
         expect(paginatorContainer.componentInstance.pageLinkSize).toBe('2');
@@ -267,7 +265,7 @@ describe('DotPaletteContentletsComponent', () => {
         await fixtureHost.whenStable();
 
         expect(paginatorESService.get).toHaveBeenCalledWith({
-            itemsPerPage: 15,
+            itemsPerPage: 25,
             lang: '1',
             filter: '',
             offset: '15',
@@ -322,7 +320,7 @@ describe('DotPaletteContentletsComponent', () => {
                 resultsSize: 2
             })
         );
-        spyOn(de.componentInstance.hide, 'emit').and.callThrough();
+        spyOn(de.componentInstance.back, 'emit').and.callThrough();
         componentHost.languageId = '1';
         componentHost.contentTypeVariable = 'Product';
 
@@ -335,7 +333,7 @@ describe('DotPaletteContentletsComponent', () => {
         expect(filterComp.componentInstance.goBackBtn).toBe(true);
         expect(de.componentInstance.items).toEqual(null);
         expect(de.componentInstance.filter).toEqual('');
-        expect(de.componentInstance.hide.emit).toHaveBeenCalled();
+        expect(de.componentInstance.back.emit).toHaveBeenCalled();
     });
 
     it('should filter Product items on search via DotESContent', async () => {
@@ -359,7 +357,7 @@ describe('DotPaletteContentletsComponent', () => {
         fixtureHost.detectChanges();
 
         expect(paginatorESService.get).toHaveBeenCalledWith({
-            itemsPerPage: 15,
+            itemsPerPage: 25,
             lang: '1',
             filter: 'test',
             offset: '0',

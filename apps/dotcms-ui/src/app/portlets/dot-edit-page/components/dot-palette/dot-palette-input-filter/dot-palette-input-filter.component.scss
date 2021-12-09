@@ -11,24 +11,17 @@
     width: 100%;
 }
 
+.p-inputtext {
+    flex: 1;
+    padding-right: $spacing-5;
+}
+
 .dot-palette-input-filter__back-btn {
     background-color: transparent;
     border: 0;
     cursor: pointer;
     margin: 0 $spacing-1 0 0;
     padding: 0;
-}
-
-input {
-    border: 1px solid $gray-lighter;
-    background: transparent;
-    color: $gray;
-    flex: 1;
-    font-size: $font-size-x-small;
-    height: 24px;
-    outline: 0px;
-    padding-right: $spacing-5;
-    padding-left: $spacing-1;
 }
 
 .dot-palette-input-filter__search-icon {

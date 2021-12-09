@@ -1,11 +1,15 @@
 <dot-palette-content-type
-    [class.switch-view]="!!contentTypeVariable"
+    #contentTypes
+    (@inOut.done)="onAnimationDone($event)"
+    (selected)="switchView($event)"
+    [@inOut]="stateContentType"
     [items]="items"
-    (show)="switchView($event)"
 ></dot-palette-content-type>
 <dot-palette-contentlets
-    [class.switch-view]="!!contentTypeVariable"
+    #contentlets
+    (@inOut.done)="onAnimationDone($event)"
+    (back)="switchView()"
+    [@inOut]="stateContentlet"
     [contentTypeVariable]="contentTypeVariable"
     [languageId]="languageId"
-    (hide)="switchView()"
 ></dot-palette-contentlets>
