@@ -120,12 +120,13 @@ public class BrowserUtilTest {
 
         final Field field = (Field) map.get(FIELD);
 
-        addDefaultPathFieldVariable(host, field, folder.getPath());
+        final Folder defaultPathFolderValue = new FolderDataGen().nextPersisted();
+        addDefaultPathFieldVariable(host, field, defaultPathFolderValue.getPath());
 
         final Optional<Folder> defaultPathFolder = BrowserUtil.getDefaultPathFolder(
                 (Contentlet) map.get(CONTENTLET), field, APILocator.systemUser());
 
-        assertEquals(folder.getIdentifier(), defaultPathFolder.get().getIdentifier());
+        assertEquals(defaultPathFolderValue.getIdentifier(), defaultPathFolder.get().getIdentifier());
     }
 
     /**
@@ -144,6 +145,7 @@ public class BrowserUtilTest {
         addFolderHostField((ContentType) map.get(CONTENT_TYPE), (Contentlet) map.get(CONTENTLET));
 
         final Host host = (Host) map.get(HOST);
+        final Folder folder = (Folder) map.get(FOLDER);
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
@@ -161,7 +163,7 @@ public class BrowserUtilTest {
         final Optional<Folder> defaultPathFolder = BrowserUtil.getDefaultPathFolder(
                 (Contentlet) map.get(CONTENTLET), field, APILocator.systemUser());
 
-        assertEquals(selectAsLastFolder.getIdentifier(), defaultPathFolder.get().getIdentifier());
+        assertEquals(folder.getIdentifier(), defaultPathFolder.get().getIdentifier());
     }
 
     /**
