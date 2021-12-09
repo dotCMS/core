@@ -372,63 +372,20 @@ public class FolderFactoryImpl extends FolderFactory {
 		List menuList = new ArrayList();
 
 		for (Folder folder : folders) {
-//		    ChildrenCondition cond = new ChildrenCondition();
-//		    cond.showOnMenu=true;
-//
-//			// gets all subfolders
-//			List subFolders = getChildrenClass(folder, Folder.class, cond);
-//
-//			cond.deleted=false;
-//			cond.live=true;
-//
-//			// gets all links for this folder
-//			List linksListSubChildren = getChildrenClass(folder, Link.class, cond);
-//
-//			// gets all files for this folder
-//			List filesListSubChildren = new ArrayList();
-//
-//
-//			List<FileAsset> fileAssets = null;
-//			try {
-//				fileAssets = APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, "",true,APILocator.getUserAPI().getSystemUser(), false);
-//				for(FileAsset fileAsset : fileAssets) {
-//
-//					if(fileAsset.isShowOnMenu() && !fileAsset.isDeleted()){
-//
-//						filesListSubChildren.add(fileAsset);
-//					}
-//				}
-//			} catch (DotSecurityException e) {}
-//
-//			try {
-//				final List<IHTMLPage> pages = APILocator.getHTMLPageAssetAPI().getHTMLPages(folder, true, false, APILocator.getUserAPI().getSystemUser(), false);
-//                for(IHTMLPage page : pages) {
-//                    if(page.isShowOnMenu()) {
-//                        filesListSubChildren.add(page);
-//                    }
-//                }
-//
-//            } catch (DotSecurityException e) {}
-//
-//			// gets all subitems
-//			menuList.addAll(subFolders);
-//			menuList.addAll(linksListSubChildren);
-//			menuList.addAll(filesListSubChildren);
-//
-			Comparator comparator = new AssetsComparator(orderDirection);
-//			java.util.Collections.sort(menuList, comparator);
-
 			final BrowserQuery browserQuery = BrowserQuery.builder()
 					.withHostOrFolderId(folder.getIdentifier())
 					.hostIdSystemFolder(folder.getHostId())
 					.showOnlyMenuItems(true)
-					.showFolders(true)
+					.showFolders(!folder.getInode()
+							.equals(FolderAPI.SYSTEM_FOLDER))
 					.showFiles(true)
 					.showLinks(true)
 					.showPages(true)
 					.build();
 			final List contentList = Try.of(()->APILocator.getBrowserAPI().getFolderContentList(browserQuery))
 					.getOrElseThrow(DotRuntimeException::new);
+
+			Comparator comparator = new AssetsComparator(orderDirection);
 			java.util.Collections.sort(contentList,comparator);
 			menuList.addAll(contentList);
 		}
