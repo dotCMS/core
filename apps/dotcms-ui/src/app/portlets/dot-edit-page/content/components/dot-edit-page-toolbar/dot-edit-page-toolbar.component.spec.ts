@@ -203,6 +203,14 @@ describe('DotEditPageToolbarComponent', () => {
         });
     });
 
+    describe('dot-global-message', () => {
+        it('should have show', () => {
+            fixtureHost.detectChanges();
+            const dotGlobalMessage = de.query(By.css('[data-testId="globalMessage"]'));
+            expect(dotGlobalMessage).not.toBeNull();
+        });
+    });
+
     describe('dot-edit-page-workflows-actions', () => {
         it('should have pageState attr', () => {
             fixtureHost.detectChanges();
@@ -302,19 +310,6 @@ describe('DotEditPageToolbarComponent', () => {
             whatsChangedElem.triggerEventHandler('onChange', { checked: false });
             expect(component.whatschange.emit).toHaveBeenCalledTimes(1);
             expect(component.whatschange.emit).toHaveBeenCalledWith(false);
-        });
-
-        it('should set the value of the message to DotMessageDisplayService with the corresponding data', () => {
-            dotEventsService.notify('dot-global-message', {
-                value: 'test',
-                type: DotMessageSeverity.SUCCESS
-            });
-            expect(dotMessageDisplayService.push).toHaveBeenCalledWith({
-                life: 3000,
-                severity: DotMessageSeverity.SUCCESS,
-                type: DotMessageType.SIMPLE_MESSAGE,
-                message: 'test'
-            });
         });
 
         describe('whats change on state change', () => {

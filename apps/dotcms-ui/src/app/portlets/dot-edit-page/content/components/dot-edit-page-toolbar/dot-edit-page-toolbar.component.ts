@@ -47,7 +47,6 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy
 
     ngOnInit() {
         this.isEnterpriseLicense$ = this.dotLicenseService.isEnterprise();
-        this.listenGlobalMessages();
 
         this.apiLink = `api/v1/page/render${this.pageState.page.pageURI}?language_id=${this.pageState.page.languageId}`;
     }
@@ -73,22 +72,5 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy
             this.showWhatsChanged = false;
             this.whatschange.emit(this.showWhatsChanged);
         }
-    }
-
-    private listenGlobalMessages() {
-        this.dotEventsService
-            .listen('dot-global-message')
-            .pipe(
-                filter((event: DotEvent) => !!event.data),
-                takeUntil(this.destroy$)
-            )
-            .subscribe((event: DotEvent) => {
-                this.dotMessageDisplayService.push({
-                    life: 3000,
-                    message: event.data.value,
-                    severity: event.data.type || DotMessageSeverity.INFO,
-                    type: DotMessageType.SIMPLE_MESSAGE
-                });
-            });
     }
 }

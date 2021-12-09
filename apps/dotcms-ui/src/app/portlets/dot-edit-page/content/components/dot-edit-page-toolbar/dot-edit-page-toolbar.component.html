@@ -8,6 +8,7 @@
     </div>
 
     <div class="main-toolbar-right">
+        <dot-global-message data-testId="globalMessage" right></dot-global-message>
         <dot-edit-page-workflows-actions
             [page]="pageState.page"
             (fired)="actionFired.emit($event)"

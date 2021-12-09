@@ -3,7 +3,7 @@ import { of as observableOf, of, throwError } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
-import { ComponentFixture, tick, fakeAsync, TestBed } from '@angular/core/testing';
+import { ComponentFixture, tick, fakeAsync, TestBed, discardPeriodicTasks, flush } from '@angular/core/testing';
 import {
     Component,
     DebugElement,
@@ -776,10 +776,13 @@ describe('DotEditContentComponent', () => {
                     });
 
                     expect(dotPageStateService.reload).toHaveBeenCalledTimes(1);
+
+                    flush();
                 }))
 
                 it('should NOT reload the page', fakeAsync(() => {
                     spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
+
                     const state = new DotPageRenderState(
                         mockUser(),
                         new DotPageRender({
@@ -794,10 +797,13 @@ describe('DotEditContentComponent', () => {
                             }
                         })
                     );
+
                     route.parent.parent.data = of({
                         content: state
                     });
+
                     detectChangesForIframeRender(fixture);
+
                     fixture.detectChanges();
 
                     dotEditContentHtmlService.pageModel$.next({
@@ -806,6 +812,8 @@ describe('DotEditContentComponent', () => {
                     });
 
                     expect(dotPageStateService.reload).toHaveBeenCalledTimes(0);
+
+                    flush();
                 }))
             });
 
