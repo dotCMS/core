@@ -263,3 +263,5 @@ This maintenance release includes the following code fixes:
 129. https://github.com/dotCMS/core/issues/20399 : [Content] : Many to One relationship not displaying in Content Search #20399
 
 130. https://github.com/dotCMS/core/issues/20721 : "Login As" Data Constraints #20721
+
+131. https://github.com/dotCMS/core/issues/21313 : Push publishing sometimes changes the order of contentlets in the multi-tree table on multilingual pages #21313

@@ -512,7 +512,7 @@ public class DirectorAction extends DotPortletAction {
 	                                        htmlPage.getIdentifier(),
 	                                        contentlet.getLanguageId());
 	                        if (versionInfo != null) {
-	                            APILocator.getMultiTreeAPI().saveMultiTree(mTree);
+	                            APILocator.getMultiTreeAPI().saveMultiTreeAndReorder(mTree);
 	                        } else {
 	                            // The language in the page and the 
 	                            // contentlet do not match
