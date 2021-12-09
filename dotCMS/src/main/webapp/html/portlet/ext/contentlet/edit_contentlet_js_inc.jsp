@@ -113,7 +113,6 @@
             name: "compare-contentlet",
             data: { inode, identifier, language }
         });
-        console.log(inode, identifier+' - '+language);
         document.dispatchEvent(customEvent)
     }
 
