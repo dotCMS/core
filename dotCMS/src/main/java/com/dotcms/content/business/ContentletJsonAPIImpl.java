@@ -18,6 +18,8 @@ import com.dotcms.content.model.Contentlet;
 import com.dotcms.content.model.FieldValue;
 import com.dotcms.content.model.ImmutableContentlet;
 import com.dotcms.content.model.ImmutableContentlet.Builder;
+import com.dotcms.content.model.type.hidden.BoolHiddenFieldType;
+import com.dotcms.content.model.type.radio.BoolRadioFieldType;
 import com.dotcms.content.model.type.text.FloatTextFieldType;
 import com.dotcms.content.model.type.text.LongTextFieldType;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -29,6 +31,8 @@ import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.HiddenField;
 import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImmutableHiddenField;
+import com.dotcms.contenttype.model.field.ImmutableRadioField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.LineDividerField;
@@ -166,7 +170,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
         builder.folder(contentlet.getFolder());
 
         //These two are definitively mandatory but..
-        //intenralCheckIn calls "save" twice and the first time it is called these two aren't already set
+        //internalCheckIn calls "save" twice and the first time it is called these two aren't already set
         //At that moment we have to fake it to make it. Second save should provide the actual identifiers.
         //We'll have to use empty strings to prevent breaking the execution.
         builder.identifier(UtilMethods.isNotSet(contentlet.getIdentifier()) ? StringPool.BLANK : contentlet.getIdentifier() );
@@ -178,41 +182,17 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
                 continue;
             }
             final Object value = contentlet.get(field.variable());
-            if (null != value) {
-                final Optional<FieldValue<?>> fieldValue = getFieldValue(value, field);
-                if (!fieldValue.isPresent()) {
+            final Optional<FieldValue<?>> fieldValue = getFieldValue(value, field);
+            if (!fieldValue.isPresent()) {
                     Logger.debug(ContentletJsonAPIImpl.class,()->
                             String.format("Unable to set field `%s` with the given value %s.",
                                     field.name(), value));
                 } else {
                     builder.putFields(field.variable(), fieldValue.get());
                 }
-            } else {
-                Logger.debug(ContentletJsonAPIImpl.class,()->
-                        String.format("Unable to set field `%s` as it wasn't set on the source contentlet", field.name()));
-
-                if(Config.getBooleanProperty(JSON_NUMERIC_FIELD_DEFAULT_TO_ZERO, true)) {
-                    final FieldValueInitializer<?> fieldValueInitializer = initializeWithValue
-                            .get(Tuple.of(field.getClass(),field.dataType()));
-                    if (null != fieldValueInitializer) {
-                        builder.putFields(field.variable(), fieldValueInitializer.init());
-                        Logger.debug(ContentletJsonAPIImpl.class,
-                                String.format("Field `%s` was set to a default.", field.name()));
-                    }
-                }
-            }
         }
         return builder.build();
     }
-
-    interface FieldValueInitializer<T>{
-        FieldValue <T> init();
-    }
-
-    final Map<Tuple2<Class<?>,DataTypes>, FieldValueInitializer<?>> initializeWithValue = ImmutableMap.of(
-            Tuple.of(ImmutableTextField.class, DataTypes.INTEGER), (FieldValueInitializer<Long>) () -> LongTextFieldType.of(0L),
-            Tuple.of(ImmutableTextField.class, DataTypes.FLOAT), (FieldValueInitializer<Float>) () -> FloatTextFieldType.of(0F)
-    );
 
     /**
      * Public entry point when going from the json representation to a regular "mutable" contentlet
