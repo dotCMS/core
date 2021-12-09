@@ -27,6 +27,7 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import java.nio.charset.StandardCharsets;
 import org.apache.velocity.context.Context;
 
 import javax.servlet.http.HttpServletRequest;
@@ -166,14 +167,16 @@ public class VelocityLiveMode extends VelocityModeHandler {
             
             try (final Writer tmpOut = (cacheKey != null) ? stringWriterLocal.get() : new BufferedWriter(new OutputStreamWriter(out))) {
 
+                if (ContentSecurityPolicyUtil.isConfig()) {
+                    ContentSecurityPolicyUtil.init(request);
+                    ContentSecurityPolicyUtil.addHeader(response);
+                }
+
                 HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
-                this.getTemplate(htmlPage, mode).merge(context, tmpOut);
+                    this.getTemplate(htmlPage, mode).merge(context, tmpOut);
 
                 if (cacheKey != null) {
-                    String trimmedPage = tmpOut.toString().trim();
-                    trimmedPage = ContentSecurityPolicyUtil
-                            .calculateContentSecurityPolicy(trimmedPage, response);
-
+                    final String trimmedPage = tmpOut.toString().trim();
                     out.write(trimmedPage.getBytes());
                     synchronized (cacheKey.intern()) {
                         CacheLocator.getBlockPageCache().add(htmlPage, trimmedPage, cacheParameters);

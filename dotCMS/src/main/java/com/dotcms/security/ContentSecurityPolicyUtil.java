@@ -2,23 +2,34 @@ package com.dotcms.security;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.repackage.org.apache.axiom.om.util.Base64;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import java.util.Map;
 import java.util.Map.Entry;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang.RandomStringUtils;
 
 public class ContentSecurityPolicyUtil {
 
-    final static Map<String, ContentSecurityPolicyCalculator> contentSecurityPolicyCalculators;
+    final static Map<String, ContentSecurityPolicyResolver> contentSecurityPolicyResolvers;
     public static final int RANDOM_STRING_LENGTH = 20;
 
+    private static String NONCE_REQUEST_ATTRIBUTE = "NONCE_REQUEST_ATTRIBUTE";
+
     static {
-        contentSecurityPolicyCalculators = map(
-                "{script-src nonce}", (htmlCode, headerConfig) -> calculateNonceToScript(headerConfig, htmlCode),
-                "{style-src nonce}", (htmlCode, headerConfig) -> calculateNonceToStyle(headerConfig, htmlCode)
+        contentSecurityPolicyResolvers = map(
+                "{script-src nonce}", new ContentSecurityPolicyResolver(
+                        (header) -> calculateNonceHeaderToScript(header),
+                        (headerConfig, htmlCode) -> calculateNonceToScript(headerConfig, htmlCode)
+                ),
+                "{style-src nonce}", new ContentSecurityPolicyResolver(
+                        (header) -> calculateNonceHeaderToStyle(header),
+                        (headerConfig, htmlCode) -> calculateNonceToStyle(headerConfig, htmlCode)
+                )
         );
     }
 
@@ -66,72 +77,116 @@ public class ContentSecurityPolicyUtil {
      * @param response
      * @return
      */
-    public static String calculateContentSecurityPolicy(final String htmlCode,
-            final HttpServletResponse response) {
-        String htmlCodeResult = htmlCode;
-        String contentSecurityPolicyHeader = Config.getStringProperty(
-                "ContentSecurityPolicy.header", null);
-
-        if (UtilMethods.isSet(contentSecurityPolicyHeader)) {
-
-            for (final Entry<String, ContentSecurityPolicyCalculator> entry : contentSecurityPolicyCalculators.entrySet()) {
-                if (contentSecurityPolicyHeader.contains(entry.getKey())) {
-                    final ContentSecurityPolicyData calculate = entry.getValue()
-                            .calculate(htmlCodeResult, contentSecurityPolicyHeader);
-
-                    htmlCodeResult = calculate.htmlCode;
-                   contentSecurityPolicyHeader = calculate.headerValue;
-                }
-            }
-
-            response.addHeader("Content-Security-Policy", contentSecurityPolicyHeader);
-        }
-        return htmlCodeResult;
-    }
 
     private static String calculateNonce() {
         final String randomAlphanumeric = RandomStringUtils.randomAlphanumeric(RANDOM_STRING_LENGTH);
         return Base64.encode(randomAlphanumeric.getBytes());
     }
 
-    private static class ContentSecurityPolicyData {
+    public static boolean isConfig() {
+        final String contentSecurityPolicyHeader = getContentSecurityPolicyHeader();
 
-        String htmlCode;
-        String headerValue;
+        return UtilMethods.isSet(contentSecurityPolicyHeader);
     }
 
-    private static ContentSecurityPolicyData calculateNonceToScript(final String contentSecurityPolicyConfig,
+    private static String getContentSecurityPolicyHeader() {
+        return Config.getStringProperty(
+                "ContentSecurityPolicy.header", null);
+    }
+
+    public static void init(final HttpServletRequest request) {
+        if (shouldCalculateNonce()) {
+            final String nonce = calculateNonce();
+            request.setAttribute(NONCE_REQUEST_ATTRIBUTE, nonce);
+        }
+    }
+
+    private static boolean shouldCalculateNonce() {
+        final String contentSecurityPolicyHeader = getContentSecurityPolicyHeader();
+        final PageMode pageMode = PageMode.get();
+        return pageMode == PageMode.LIVE && contentSecurityPolicyHeader.contains("nonce");
+    }
+
+    public static void addHeader(final HttpServletResponse response) {
+        if (isConfig()) {
+            String contentSecurityPolicyHeader = getContentSecurityPolicyHeader();
+
+            for (final Entry<String, ContentSecurityPolicyResolver> entry : contentSecurityPolicyResolvers.entrySet()) {
+                if (contentSecurityPolicyHeader.contains(entry.getKey())) {
+                    contentSecurityPolicyHeader = entry.getValue().headerResolver.resolve(contentSecurityPolicyHeader);
+                }
+            }
+
+            response.addHeader("Content-Security-Policy", contentSecurityPolicyHeader);
+        }
+    }
+
+    public static String apply(final String htmlCodeParam) {
+        String htmlCodeResult = htmlCodeParam;
+
+        if (isConfig()) {
+            String contentSecurityPolicyHeader = getContentSecurityPolicyHeader();
+
+            for (final Entry<String, ContentSecurityPolicyResolver> entry : contentSecurityPolicyResolvers.entrySet()) {
+                if (contentSecurityPolicyHeader.contains(entry.getKey())) {
+                    htmlCodeResult = entry.getValue().htmlCodeResolver
+                            .resolve(contentSecurityPolicyHeader, htmlCodeResult);
+                }
+            }
+        }
+
+        return htmlCodeResult;
+    }
+
+    private static String calculateNonceToScript(final String contentSecurityPolicyConfig,
             final String htmlCode) {
 
-        final ContentSecurityPolicyData contentSecurityPolicyData = new ContentSecurityPolicyData();
-        final String nonce = calculateNonce();
-        contentSecurityPolicyData.htmlCode = htmlCode.replaceAll("<script",
-                String.format("<script nonce='%s'",nonce));
-
-        contentSecurityPolicyData.headerValue = contentSecurityPolicyConfig.replace("{script-src nonce}",
-                String.format("'nonce-%s'",nonce));
-
-        return contentSecurityPolicyData;
+        final String nonce = getNonceFromCurrentRequest();
+        return htmlCode.replaceAll("<script", String.format("<script nonce='%s'",nonce));
     }
 
-    private static ContentSecurityPolicyData calculateNonceToStyle(final String contentSecurityPolicyConfig,
+    private static String calculateNonceHeaderToScript(final String header) {
+        final String nonce = getNonceFromCurrentRequest();
+        return header.replace("{script-src nonce}", String.format("'nonce-%s'",nonce));
+    }
+
+    private static String calculateNonceToStyle(final String contentSecurityPolicyConfig,
             final String htmlCode) {
 
-        final ContentSecurityPolicyData contentSecurityPolicyData = new ContentSecurityPolicyData();
-        final String nonce = calculateNonce();
-        contentSecurityPolicyData.htmlCode = htmlCode.replaceAll("<style",
-                String.format("<style nonce='%s'",nonce));
-
-        contentSecurityPolicyData.headerValue = contentSecurityPolicyConfig.replace("{style-src nonce}",
-                String.format("'nonce-%s'",nonce));
-
-        return contentSecurityPolicyData;
+        final String nonce = getNonceFromCurrentRequest();
+        return htmlCode.replaceAll("<style", String.format("<style nonce='%s'",nonce));
     }
 
+    private static String calculateNonceHeaderToStyle(final String header) {
+        final String nonce = getNonceFromCurrentRequest();
+        return header.replace("{style-src nonce}", String.format("'nonce-%s'",nonce));
+    }
+
+    private static String getNonceFromCurrentRequest() {
+        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        final String nonce = (String) request.getAttribute(NONCE_REQUEST_ATTRIBUTE);
+        return nonce;
+    }
 
     @FunctionalInterface
-    interface ContentSecurityPolicyCalculator {
-        ContentSecurityPolicyData calculate(final String contentSecurityPolicyConfig,
-                final String htmlCode);
+    interface HeaderResolver {
+        String resolve(final String header);
+    }
+
+    @FunctionalInterface
+    interface HtmlCodeResolver {
+        String resolve(final String contentSecurityPolicyConfig, final String htmlCode);
+    }
+
+    private static class ContentSecurityPolicyResolver {
+        HeaderResolver headerResolver;
+        HtmlCodeResolver htmlCodeResolver;
+
+        public ContentSecurityPolicyResolver(
+                HeaderResolver headerResolver,
+                HtmlCodeResolver htmlCodeResolver) {
+            this.headerResolver = headerResolver;
+            this.htmlCodeResolver = htmlCodeResolver;
+        }
     }
 }
