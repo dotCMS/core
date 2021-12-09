@@ -96,3 +96,5 @@ This maintenance release includes the following code fixes:
 46. https://github.com/dotCMS/core/issues/20801 : Warning log message incomplete for not allowed categories when retrieving content #20801
 
 47. https://github.com/dotCMS/core/issues/21313 : Push publishing sometimes changes the order of contentlets in the multi-tree table on multilingual pages #21313
+
+48. https://github.com/dotCMS/core/issues/20995 : Use a different connection for PostgresPubSub.publish #20995

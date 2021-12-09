@@ -252,7 +252,7 @@ public class PostgresPubSubImpl implements DotPubSubProvider {
         final DotPubSubEvent eventOut = new DotPubSubEvent.Builder(eventIn).withOrigin(serverId).build();
 
         Logger.debug(getClass(), () -> "sending  event:" + eventOut);
-        try (final Connection conn = DbConnectionFactory.getConnection();
+        try (final Connection conn = DbConnectionFactory.getDataSource().getConnection();
                         final PreparedStatement statment = conn.prepareStatement(PG_NOTIFY_SQL)) {
 
             statment.setString(1, eventIn.getTopic());
