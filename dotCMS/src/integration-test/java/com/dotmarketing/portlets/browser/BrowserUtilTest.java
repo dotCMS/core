@@ -130,6 +130,42 @@ public class BrowserUtilTest {
 
     /**
      * Method to test: {@link BrowserUtil#getDefaultPathFolder(Contentlet, Field, User)}
+     * When: The {@link Field} has a wrong defaultPath's Field Variable
+     * Should: Return the folder set in the defaultPath
+     *
+     * @throws DotDataException
+     * @throws IOException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void defaultPathEqualsToWrongFieldVariable() throws DotDataException, DotSecurityException {
+
+        final Map<String, Object> map = createContentletWithImageFieldWithoutValue();
+        addFolderHostField((ContentType) map.get(CONTENT_TYPE), (Contentlet) map.get(CONTENTLET));
+
+        final Host host = (Host) map.get(HOST);
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+
+        final HttpSession httpSession = mock(HttpSession.class);
+        when(request.getSession(false)).thenReturn(httpSession);
+        when(request.getAttribute(Host.HOST_VELOCITY_VAR_NAME)).thenReturn(host.getIdentifier());
+
+        final Folder selectAsLastFolder = selectAsLastFolder(httpSession);
+
+        final Field field = (Field) map.get(FIELD);
+
+        addDefaultPathFieldVariable(host, field, "wrong_path");
+
+        final Optional<Folder> defaultPathFolder = BrowserUtil.getDefaultPathFolder(
+                (Contentlet) map.get(CONTENTLET), field, APILocator.systemUser());
+
+        assertEquals(selectAsLastFolder.getIdentifier(), defaultPathFolder.get().getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link BrowserUtil#getDefaultPathFolder(Contentlet, Field, User)}
      * When: The {@link ContentType} has an Image field without value and a Host/Folder field
      * Should: Return the folder from the Contentlet's Host/Folder field value
      *
