@@ -111,13 +111,12 @@ public class BrowserUtil {
             List<FieldVariable> fieldVariables = APILocator.getFieldAPI()
                     .getFieldVariablesForField(field.id(), user, true);
 
-            final List<FieldVariable> defaulPathVariable = fieldVariables.stream()
+            final Optional<FieldVariable> defaulPathVariable = fieldVariables.stream()
                     .filter(fieldVariable -> "defaultPath".equals(fieldVariable.getKey()))
-                    .limit(1)
-                    .collect(Collectors.toList());
+                    .findFirst();
 
-            if (UtilMethods.isSet(defaulPathVariable)) {
-                final FieldVariable defaultPathVariable = defaulPathVariable.get(0);
+            if (defaulPathVariable.isPresent()) {
+                final FieldVariable defaultPathVariable = defaulPathVariable.get();
                 final String fieldVariableValue = defaultPathVariable.getValue();
 
                 if (fieldVariableValue.startsWith(HOST_INDICATOR)) {
@@ -141,11 +140,13 @@ public class BrowserUtil {
                 } else {
                     final String currentHost = WebAPILocator.getHostWebAPI().getCurrentHost()
                             .getIdentifier();
-                    return Optional.of(
-                        APILocator.getFolderAPI()
+
+                    final Folder folderByPath = APILocator.getFolderAPI()
                             .findFolderByPath(fieldVariableValue, currentHost,
-                                    APILocator.systemUser(), false)
-                    );
+                                    APILocator.systemUser(), false);
+
+                    return UtilMethods.isSet(folderByPath) && UtilMethods.isSet(folderByPath.getIdentifier())
+                        ? Optional.of(folderByPath) : Optional.empty();
                 }
             } else {
                 Logger.warn(BrowserUtil.class, () -> "defaultPath variable not exists for field " + field.name());

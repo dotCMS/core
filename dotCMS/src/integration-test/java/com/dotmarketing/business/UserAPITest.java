@@ -51,6 +51,9 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.UserTestUtil;
 import com.liferay.portal.ejb.UserUtil;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -1337,5 +1340,33 @@ public class UserAPITest extends IntegrationTestBase {
 				APILocator.systemUser(), false);
 
 		assertTrue(reloadedUser.getFirstName().contains("modifiedLimitedUser"));
+	}
+
+	/**
+	 * Method to test: {@link User#toMap()}
+	 * Given Scenario: Any user that lacks email address should have a blank gravatar
+	 * ExpectedResult: While the user has an email the gravatar prop should be different from null if the user does not have an email gravatar should come back as an empty string
+	 * @throws Exception
+	 */
+	@Test
+	public void Test_User_Returns_No_Gravatar_When_No_Email_Is_Available_And_OtherWise()
+			throws Exception {
+		final User user = new UserDataGen().firstName("noEmailUser" + System.currentTimeMillis())
+				.emailAddress(String.format("any%d@dotCMS.com", System.currentTimeMillis()))
+				.nextPersisted();
+		assertNotNull(user.getEmailAddress());
+		final Map<String, Object> userMapWithEmail = user.toMap();
+		assertNotNull(userMapWithEmail.get("emailAddress"));
+		assertNotNull(userMapWithEmail.get("gravitar"));
+
+		//Wipe out email
+		user.setEmailAddress(null);
+		userAPI.save(user, APILocator.systemUser(), false);
+		//Verify it is gone
+		assertNull(user.getEmailAddress());
+        //Test that gravatar comes back as blank
+		final Map<String, Object> userMapNoEmail = user.toMap();
+		assertEquals(userMapNoEmail.get("emailAddress"), StringPool.BLANK);
+		assertEquals(userMapNoEmail.get("gravitar"), StringPool.BLANK);
 	}
 }
