@@ -100,3 +100,5 @@ This maintenance release includes the following code fixes:
 48. https://github.com/dotCMS/core/issues/20995 : Use a different connection for PostgresPubSub.publish #20995
 
 49. https://github.com/dotCMS/core/issues/21393 : log4j2 zero day exploit #21393
+
+50. https://github.com/dotCMS/core/issues/20793 : Upgrade log4j version to permit JsonLayout custom key-value pairs #20793
