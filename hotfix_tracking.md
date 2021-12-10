@@ -102,3 +102,5 @@ This maintenance release includes the following code fixes:
 49. https://github.com/dotCMS/core/issues/21393 : log4j2 zero day exploit #21393
 
 50. https://github.com/dotCMS/core/issues/20793 : Upgrade log4j version to permit JsonLayout custom key-value pairs #20793
+
+51. https://github.com/dotCMS/core/issues/21392 : Make userId immutable #21392
