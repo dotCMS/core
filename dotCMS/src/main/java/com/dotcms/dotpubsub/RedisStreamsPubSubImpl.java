@@ -1,5 +1,6 @@
 package com.dotcms.dotpubsub;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -8,6 +9,7 @@ import com.dotcms.cache.lettuce.RedisClient;
 import com.dotcms.cache.lettuce.RedisClientFactory;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
@@ -34,36 +36,29 @@ public class RedisStreamsPubSubImpl implements DotPubSubProvider {
     private final boolean testing;
     private final String clusterId;
     private final String serverId;
+    private final String licenseId;
     private final Map<Comparable<String>, DotPubSubTopic> topicMap = new ConcurrentHashMap<>();
 
     private final RedisClient<String, Object> redisClient = RedisClientFactory.getClient("pubsub");
     
     
     
-    private final long PUBSUB_THREAD_PAUSE_MS=Config.getLongProperty("PUBSUB_THREAD_PAUSE_MS", 200);
-    public RedisStreamsPubSubImpl(String serverId, String clusterId, boolean testing) {
+    private final long PUBSUB_THREAD_PAUSE_MS=Config.getLongProperty("REDIS_PUBSUB_THREAD_PAUSE_MS", 200);
+    public RedisStreamsPubSubImpl(String serverId, String clusterId, String licenseId, boolean testing) {
         super();
         this.testing = testing;
         this.serverId = serverId;
         this.clusterId = clusterId;
-    }
-    
-    
-    
-    
-    StatefulRedisConnection<String, String> getConn(){
-        
-        return (StatefulRedisConnection<String, String>) redisClient.getConnection();
-        
+        this.licenseId = licenseId;
     }
 
 
     public RedisStreamsPubSubImpl() {
-        this(APILocator.getServerAPI().readServerId(), ClusterFactory.getClusterId(), false);
+        this(APILocator.getServerAPI().readServerId(), ClusterFactory.getClusterId(), LicenseManager.getInstance().getDisplaySerial(), false);
 
     }
 
-    private final long maxStreamSize = Config.getLongProperty("REDIS_MAX_PUBSUB_STREAM_SIZE", 100000);
+    private final long maxStreamSize = Config.getLongProperty("REDIS_PUBSUB__MAX_STREAM_SIZE", 100000);
 
     private StreamListener listener = null;
 
@@ -76,7 +71,7 @@ public class RedisStreamsPubSubImpl implements DotPubSubProvider {
             Logger.info(RedisStreamsPubSubImpl.class, "No topics, nothing to listen for");
             return false;
         }
-        this.listener = new StreamListener(topicMap, serverId);
+        this.listener = new StreamListener(topicMap);
 
         DotConcurrentFactory.getInstance().getSingleSubmitter(RedisStreamsPubSubImpl.class.getSimpleName())
                         .submit(this.listener);
@@ -84,17 +79,38 @@ public class RedisStreamsPubSubImpl implements DotPubSubProvider {
         return true;
 
     }
+    
+    
+    
+    
+    
+    private StatefulRedisConnection<String, String> getConn(){
+        
+        return (StatefulRedisConnection<String, String>) redisClient.getConnection();
+        
+    }
 
+    
+    /**
+     * This inner class is in charge of polling redis streams for 
+     * new messages. It loops over the subscribed topics and polls each
+     * 300ms then moves on.
+     * 
+     * When a new topic is subscribed to, a new instance of this class will run
+     * and create the groups/subscribers based on the licenseId
+     * 
+     *
+     */
     public class StreamListener implements Runnable {
 
         private boolean running = true;
         private final Map<Comparable<String>, DotPubSubTopic> topics;
-        private final String serverId;
 
-        public StreamListener(Map<Comparable<String>, DotPubSubTopic> topics, String serverId) {
+
+        public StreamListener(Map<Comparable<String>, DotPubSubTopic> topics) {
             super();
             this.topics = topics;
-            this.serverId = serverId;
+            
         }
 
         public void stop() {
@@ -113,7 +129,7 @@ public class RedisStreamsPubSubImpl implements DotPubSubProvider {
                     RedisCommands<String, String> commands = conn.sync();
 
                     
-                    commands.xgroupCreate( XReadArgs.StreamOffset.from(redisTopic, "0-0"), serverId ,
+                    commands.xgroupCreate( XReadArgs.StreamOffset.from(redisTopic, "0-0"), licenseId ,
                                     XGroupCreateArgs.Builder.mkstream(true) );
                     Logger.info(RedisStreamsPubSubImpl.class, "Creating/Connecting to Redis Stream : " + redisTopic);
 
@@ -140,11 +156,12 @@ public class RedisStreamsPubSubImpl implements DotPubSubProvider {
                 // sub the pub
                 topics.values().forEach(v -> eventsIn(v));
                 Try.run(() -> Thread.sleep(PUBSUB_THREAD_PAUSE_MS));
-
+                
             }
 
         }
 
+        @SuppressWarnings("unchecked")
         void eventsIn(DotPubSubTopic topic) {
             final String redisTopic = redisTopic(topic);
 
@@ -152,12 +169,12 @@ public class RedisStreamsPubSubImpl implements DotPubSubProvider {
                 RedisCommands<String, String> commands = conn.sync();
                 
                 //we are a consumer group of 1
-                final Consumer<String> consumer = Consumer.from(serverId, serverId);
+                final Consumer<String> consumer = Consumer.from(licenseId, serverId);
 
-                List<StreamMessage<String, String>> messages = commands.xreadgroup(consumer,
+                List<StreamMessage<String, String>> messages = commands.xreadgroup(consumer,XReadArgs.Builder.block(300),
                                 XReadArgs.StreamOffset.lastConsumed(redisTopic));
                 // ACK Attack
-                messages.forEach(m -> conn.async().xack(redisTopic, serverId, m.getId()));
+                messages.forEach(m -> conn.async().xack(redisTopic, licenseId, m.getId()));
 
                 for (final StreamMessage<String, String> messageIn : messages) {
                     final List<DotPubSubEvent> bodyEvents = Try
@@ -256,5 +273,40 @@ public class RedisStreamsPubSubImpl implements DotPubSubProvider {
         startListening();
         return this;
     }
+    
+    
+    /**
+     * Not sure that we need something like this but if we do
+     * this code should point us in the right direction.
+     * @return
+     */
+    public boolean cleanUpOldConsumerGroups() {
+        final List<String> serverIds = Try.of(() -> Arrays.asList(APILocator.getServerAPI().getAliveServersIds())).getOrElse(ImmutableList.of());
+        if (serverIds.isEmpty()) {
+            return false;
+        }
+
+        for (final DotPubSubTopic topic : topicMap.values()) {
+
+            final String redisTopic = redisTopic(topic);
+
+            try (StatefulRedisConnection<String, String> conn = getConn()) {
+                List<Object> groups = conn.sync().xinfoGroups(redisTopic);
+                groups.removeAll(serverIds);
+                groups.forEach(g->conn.sync().xgroupDestroy(redisTopic, g.toString()));
+            }catch(Exception e) {
+               e.printStackTrace();
+            }
+        }
+
+
+        return true;
+
+    }
+    
+    
+    
+    
+    
 
 }
