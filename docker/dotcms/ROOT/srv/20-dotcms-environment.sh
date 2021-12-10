@@ -6,7 +6,7 @@ source /srv/utils/config-defaults.sh
 
 echo "dotCMS environment ...."
 # Default opts
-JAVA_OPTS="-Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -server -XX:+DisableExplicitGC"
+JAVA_OPTS="-Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -server -XX:+DisableExplicitGC -Dlog4j2.formatMsgNoLookups=true"
 # Memory opts
 JAVA_OPTS="$JAVA_OPTS -Xms${CMS_HEAP_SIZE} -Xmx${CMS_HEAP_SIZE}"
 
