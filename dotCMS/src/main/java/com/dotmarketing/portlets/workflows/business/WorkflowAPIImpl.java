@@ -2776,7 +2776,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			final String sanitizedQuery = LuceneQueryUtils.sanitizeBulkActionsQuery(luceneQuery);
 			//final long skipsCount = (inodes.size() - contentlets.size());
 			distributeWorkAndProcessNoReturn(action, user, sanitizedQuery, workflowAssociatedStepIds,
-					additionalParamsBean);
+					additionalParamsBean, inodes.size());
 		} catch (final Exception e) {
 			final String errorMsg = String.format("An error occurred when firing actions in bulk for Action '%s' " +
 					"[%s]: %s", action.getName(), action.getId(), e.getMessage());
@@ -2828,7 +2828,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					.sanitizeBulkActionsQuery(luceneQuery);
 			Logger.debug(getClass(), ()->"luceneQuery: " + sanitizedQuery);
 
-			distributeWorkAndProcessNoReturn(action, user, sanitizedQuery, workflowAssociatedStepsIds, additionalParamsBean);
+			distributeWorkAndProcessNoReturn(action, user, sanitizedQuery, workflowAssociatedStepsIds, additionalParamsBean, -1);
 		} catch (final Exception e) {
 			final String errorMsg = String.format("An error occurred when firing actions in bulk for Action '%s' " +
 					"[%s]: %s", action.getName(), action.getId(), e.getMessage());
@@ -2991,7 +2991,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	private void distributeWorkAndProcessNoReturn(final WorkflowAction action,
 			final User user, final String sanitizedQuery,
 			final Set<String> workflowAssociatedStepsIds,
-			final AdditionalParamsBean additionalParamsBean)
+			final AdditionalParamsBean additionalParamsBean,
+			final int totalCount)
 			throws DotDataException, DotSecurityException {
 		// We use a dedicated pool for bulk actions processing.
 		final DotSubmitter submitter = this.concurrentFactory
@@ -3081,32 +3082,40 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			offset += limit;
 		}
 
-		sendNotification(futures);
+		sendNotification(user, futures, totalCount);
 
 		Logger.debug(getClass(),String.format("A grand total of %d contentlets has been pulled from ES.",offset));
 	}
 
-	private void sendNotification(final List<Future> futures)
+	private void sendNotification(final User user, final List<Future> futures,
+			final int totalCount)
 			throws DotDataException {
-		final Role cmsAdminRole = this.roleAPI.loadCMSAdminRole();
-		final User systemUser = APILocator.systemUser();
 
-		DotConcurrentFactory.getInstance().getSubmitter().submit(()-> {
-			for (final Future future : futures) {
-				try {
-					future.get();
-				} catch (InterruptedException | ExecutionException e) {
-					Logger.error(this, e.getMessage(), e);
+		if(totalCount>Config.getIntProperty("WORKFLOW_BULK_SENDNOTIFICATIONAFTER", 250)) {
+
+			final Role cmsAdminRole = this.roleAPI.loadCMSAdminRole();
+
+			DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
+				for (final Future future : futures) {
+					try {
+						future.get();
+					} catch (InterruptedException | ExecutionException e) {
+						Logger.error(this, e.getMessage(), e);
+					}
 				}
-			}
 
-			Try.run(() -> {
-				APILocator.getNotificationAPI().generateNotification(new I18NMessage("Workflow-Bulk-Actions-Title"), // title = Reindex Notification
-						new I18NMessage("Workflow-Bulk-Actions-Finished", null, null), null, // no actions
-						NotificationLevel.INFO, NotificationType.GENERIC, Visibility.ROLE, cmsAdminRole.getId(), systemUser.getUserId(),
-						systemUser.getLocale());
+				Try.run(() -> {
+					APILocator.getNotificationAPI()
+							.generateNotification(new I18NMessage("Workflow-Bulk-Actions-Title"),
+									// title = Reindex Notification
+									new I18NMessage("Workflow-Bulk-Actions-Finished", null, null),
+									null, // no actions
+									NotificationLevel.INFO, NotificationType.GENERIC,
+									Visibility.ROLE, cmsAdminRole.getId(), user.getUserId(),
+									user.getLocale());
+				});
 			});
-		});
+		}
 	}
 
 
