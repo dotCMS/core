@@ -1,0 +1,22 @@
+# https://docs.docker.com/compose/compose-file/compose-versioning/
+version: "3.7"
+
+# https://docs.docker.com/compose/compose-file/
+networks:
+  default:
+    name: oracle_net
+
+services:
+
+  database:
+    image: "dotcms/oracle-xe-11g:latest"
+    shm_size: '2gb'
+    environment:
+      processes: 200
+      DATABASES: oracle
+      ORACLE_PWD: oracle
+    ports:
+      - "${SERVICE_HOST_PORT_PREFIX}1521:1521"
+      - "15080:8080"
+    volumes:
+      - ./setup/db/oracle:/u01/app/oracle

@@ -253,6 +253,11 @@
 		<class>com.dotcms.rendering.velocity.viewtools.WorkflowTool</class>
 	</tool>
 	<tool>
+		<key>messagetool</key>
+		<scope>request</scope>
+		<class>com.dotcms.rendering.velocity.viewtools.MessageTool</class>
+	</tool>
+	<tool>
 		<key>submitcontenttool</key>
 		<scope>request</scope>
 		<class>com.dotcms.rendering.velocity.viewtools.SubmitContentWebAPI</class>

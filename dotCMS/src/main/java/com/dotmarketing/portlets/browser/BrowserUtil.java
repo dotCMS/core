@@ -7,6 +7,7 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -23,7 +24,9 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -91,7 +94,7 @@ public class BrowserUtil {
             final com.dotcms.contenttype.model.field.Field hostFolderField = fields.get(0);
             final String hostFolderValue = contentlet.getStringProperty(hostFolderField.variable());
             try {
-                return Optional.of(
+                return Optional.ofNullable(
                     APILocator.getFolderAPI().find(hostFolderValue, user, false)
                 );
             } catch (DotSecurityException | DotDataException e) {
@@ -108,13 +111,12 @@ public class BrowserUtil {
             List<FieldVariable> fieldVariables = APILocator.getFieldAPI()
                     .getFieldVariablesForField(field.id(), user, true);
 
-            final List<FieldVariable> defaulPathVariable = fieldVariables.stream()
+            final Optional<FieldVariable> defaulPathVariable = fieldVariables.stream()
                     .filter(fieldVariable -> "defaultPath".equals(fieldVariable.getKey()))
-                    .limit(1)
-                    .collect(Collectors.toList());
+                    .findFirst();
 
-            if (UtilMethods.isSet(defaulPathVariable)) {
-                final FieldVariable defaultPathVariable = defaulPathVariable.get(0);
+            if (defaulPathVariable.isPresent()) {
+                final FieldVariable defaultPathVariable = defaulPathVariable.get();
                 final String fieldVariableValue = defaultPathVariable.getValue();
 
                 if (fieldVariableValue.startsWith(HOST_INDICATOR)) {
@@ -138,11 +140,13 @@ public class BrowserUtil {
                 } else {
                     final String currentHost = WebAPILocator.getHostWebAPI().getCurrentHost()
                             .getIdentifier();
-                    return Optional.of(
-                        APILocator.getFolderAPI()
+
+                    final Folder folderByPath = APILocator.getFolderAPI()
                             .findFolderByPath(fieldVariableValue, currentHost,
-                                    APILocator.systemUser(), false)
-                    );
+                                    APILocator.systemUser(), false);
+
+                    return UtilMethods.isSet(folderByPath) && UtilMethods.isSet(folderByPath.getIdentifier())
+                        ? Optional.of(folderByPath) : Optional.empty();
                 }
             } else {
                 Logger.warn(BrowserUtil.class, () -> "defaultPath variable not exists for field " + field.name());
@@ -155,7 +159,9 @@ public class BrowserUtil {
 
     private static Optional<Folder> resolveWithCurrentValue(
             final Contentlet contentlet, final Field field) {
-        final String value = contentlet.getStringProperty(field.variable());
+        final String value = WysiwygField.class.equals(field.type())
+                ? getValueFromWysiwygField(contentlet, field)
+                : contentlet.getStringProperty(field.variable());
 
         if (UtilMethods.isSet(value)) {
             final Identifier identifier;
@@ -171,6 +177,31 @@ public class BrowserUtil {
             }
         } else {
             return Optional.empty();
+        }
+    }
+
+    private static String getValueFromWysiwygField(final Contentlet contentlet, final Field field) {
+        if (!WysiwygField.class.equals(field.type()) ) {
+            return null;
+        }
+
+        final String value = contentlet.getStringProperty(field.variable());
+
+        if (UtilMethods.isSet(value) && value.contains("<img")) {
+            final String[] valueSplit = value.split(StringPool.SPACE);
+
+            final List<String> atributes = Arrays.stream(valueSplit)
+                    .filter(split -> split.startsWith("data-identifier"))
+                    .collect(Collectors.toList());
+
+            final String dataIdentifier = atributes.isEmpty() ? StringPool.BLANK : atributes.get(0);
+
+            final String[] dataIdentifierSplit = dataIdentifier.split("=");
+            return dataIdentifierSplit.length > 1
+                    ? dataIdentifierSplit[1].replace("\"", StringPool.BLANK)
+                    : null;
+        } else {
+            return null;
         }
     }
 

@@ -3,6 +3,8 @@ package com.dotcms.browser;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+
+import com.dotmarketing.exception.DotRuntimeException;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -122,7 +124,7 @@ public class BrowserAPITest extends IntegrationTestBase {
      *                  2) request items form 4 to 6
      *                  3) request items form 6 to 10
      *                  4) out of range
-     * ExpectedResult: Must have always 100 files as a total, and should retrieve the respective items per request
+     * ExpectedResult: Must have always 10 files as a total, and should retrieve the respective items per request
      *
      */
 
@@ -154,7 +156,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .build());
 
         assertNotNull(resultMap);
-        assertEquals(10l, resultMap.get("total"));
+        assertEquals(10, resultMap.get("total"));
 
         List<Map<String, Object>> results = (List<Map<String, Object>>)resultMap.get("list");
         assertNotNull(results);
@@ -173,7 +175,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .build());
 
         assertNotNull(resultMap);
-        assertEquals(10l, resultMap.get("total"));
+        assertEquals(10, resultMap.get("total"));
 
         results = (List<Map<String, Object>>)resultMap.get("list");
         assertNotNull(results);
@@ -192,7 +194,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .build());
 
         assertNotNull(resultMap);
-        assertEquals(10l, resultMap.get("total"));
+        assertEquals(10, resultMap.get("total"));
 
         results = (List<Map<String, Object>>)resultMap.get("list");
         assertNotNull(results);
@@ -211,7 +213,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .build());
 
         assertNotNull(resultMap);
-        assertEquals(10l, resultMap.get("total"));
+        assertEquals(10, resultMap.get("total"));
 
         results = (List<Map<String, Object>>)resultMap.get("list");
         assertNotNull(results);
@@ -225,7 +227,7 @@ public class BrowserAPITest extends IntegrationTestBase {
      *                  2) request items form 4 to 6
      *                  3) request items form 6 to 10
      *                  4) out of range
-     * ExpectedResult: Must have always 100 files as a total, and should retrieve the respective items per request
+     * ExpectedResult: Must have always 10 files as a total, and should retrieve the respective items per request
      *
      */
 
@@ -258,7 +260,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .build());
 
         assertNotNull(resultMap);
-        assertEquals(10l, resultMap.get("total"));
+        assertEquals(10, resultMap.get("total"));
 
         List<Map<String, Object>> results = (List<Map<String, Object>>)resultMap.get("list");
         assertNotNull(results);
@@ -278,7 +280,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .build());
 
         assertNotNull(resultMap);
-        assertEquals(10l, resultMap.get("total"));
+        assertEquals(10, resultMap.get("total"));
 
         results = (List<Map<String, Object>>)resultMap.get("list");
         assertNotNull(results);
@@ -298,7 +300,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .build());
 
         assertNotNull(resultMap);
-        assertEquals(10l, resultMap.get("total"));
+        assertEquals(10, resultMap.get("total"));
 
         results = (List<Map<String, Object>>)resultMap.get("list");
         assertNotNull(results);
@@ -318,7 +320,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .build());
 
         assertNotNull(resultMap);
-        assertEquals(10l, resultMap.get("total"));
+        assertEquals(10, resultMap.get("total"));
 
         results = (List<Map<String, Object>>)resultMap.get("list");
         assertNotNull(results);
@@ -327,7 +329,7 @@ public class BrowserAPITest extends IntegrationTestBase {
 
 
     
-    @Test(expected = NotFoundInDbException.class)
+    @Test(expected = DotRuntimeException.class)
     public void testGetFolderContentWithInvalidIdentifier() throws DotDataException, DotSecurityException { // https://github.com/dotCMS/core/issues/11829
 
         final String NOT_EXISTING_ID = "01234567-1234-1234-1234-123456789012";
@@ -396,7 +398,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                             BrowserQuery.builder()
                             .showDotAssets(true)
                             .showLinks(true)
-                            .inHostOrFolder(testFolder)
+                            .withHostOrFolderId(testFolder.getInode())
                             .showFolders(true)
                             .showPages(true)
                             .showFiles(true)
@@ -421,7 +423,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                         BrowserQuery.builder()
                         .showDotAssets(true)
                         .showFiles(true)
-                        .inHostOrFolder(testFolder)
+                        .withHostOrFolderId(testFolder.getInode())
                         .withLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
                         .build(),
                         
@@ -439,7 +441,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                         BrowserQuery.builder()
                         .showDotAssets(true)
                         .showFiles(true)
-                        .inHostOrFolder(testFolder)
+                        .withHostOrFolderId(testFolder.getInode())
                         .build(),
                         
                         ImmutableSet.of(
@@ -451,6 +453,23 @@ public class BrowserAPITest extends IntegrationTestBase {
         
         );
 
+        testCases.add(Tuple.of(
+                "only files, all langauges, no archived, no dotassets",
+
+                BrowserQuery.builder()
+                        .showDotAssets(false)
+                        .showFiles(true)
+                        .showPages(false)
+                        .withHostOrFolderId(testFolder.getInode())
+                        .build(),
+
+                ImmutableSet.of(
+                        testFileAsset.getName(),
+                        testFileAsset2.getName(),
+                        testFileAsset2MultiLingual.getName()
+                ))
+
+        );
         
         testCases.add(Tuple.of(
                         "show archived files, all langauges, no dotAssets",
@@ -458,7 +477,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                         BrowserQuery.builder()
                         .showFiles(true)
                         .showArchived(true)
-                        .inHostOrFolder(testFolder)
+                        .withHostOrFolderId(testFolder.getInode())
                         .build(),
                         
                         ImmutableSet.of(
@@ -477,7 +496,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                         
                         BrowserQuery.builder()
                         .showPages(true)
-                        .inHostOrFolder(testFolder)
+                        .withHostOrFolderId(testFolder.getInode())
                         .build(),
                         
                         ImmutableSet.of(
@@ -493,7 +512,8 @@ public class BrowserAPITest extends IntegrationTestBase {
                         
                         BrowserQuery.builder()
                         .showLinks(true)
-                        .inHostOrFolder(testFolder)
+                        .showContent(false)
+                        .withHostOrFolderId(testFolder.getInode())
                         .build(),
                         
                         ImmutableSet.of(
@@ -529,7 +549,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .showFolders(true)
                 .build());
         assertNotNull(parentFolderContent);
-        assertEquals(2L, parentFolderContent.get("total"));
+        assertEquals(2, parentFolderContent.get("total"));
         List<Map<String, Object>> results = (List<Map<String, Object>>)parentFolderContent.get("list");
         assertEquals(childFolder1.getIdentifier(),results.get(0).get("identifier"));
         assertEquals(childFolder2.getIdentifier(),results.get(1).get("identifier"));

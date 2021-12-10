@@ -36,6 +36,7 @@ import com.dotcms.rest.annotation.IncludePermissions;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.rest.api.v1.authentication.RequestUtil;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
@@ -1749,7 +1750,7 @@ public class WorkflowResource {
                 new DotConcurrentFactory.SubmitterConfigBuilder().poolSize(2).maxPoolSize(5).queueCapacity(CONTENTLETS_LIMIT).build());
         final CompletionService<Map<String, Object>> completionService = new ExecutorCompletionService<>(dotSubmitter);
         final List<Future<Map<String, Object>>> futures = new ArrayList<>();
-        final HttpServletRequest statelessRequest = this.createStatelessRequest(request);
+        final HttpServletRequest statelessRequest = RequestUtil.INSTANCE.createStatelessRequest(request);
 
         for (final Map<String, Object> contentMap : contentletsToSaveList) {
 
@@ -1797,26 +1798,6 @@ public class WorkflowResource {
         }
 
         printResponseEntityViewResult(outputStream, objectMapper, completionService, futures);
-    }
-
-    private HttpServletRequest createStatelessRequest(final HttpServletRequest request) {
-
-        final DotCMSMockRequest statelessRequest =
-                new DotCMSMockRequestWithSession(request.getSession(false), request.isSecure());
-
-        statelessRequest.setAttribute(WebKeys.USER, request.getAttribute(WebKeys.USER));
-        statelessRequest.setAttribute(WebKeys.USER_ID, request.getAttribute(WebKeys.USER_ID));
-        statelessRequest.addHeader("User-Agent", request.getHeader("User-Agent"));
-        statelessRequest.addHeader("Host", request.getHeader("Host"));
-        statelessRequest.addHeader("Accept-Language", request.getHeader("Accept-Language"));
-        statelessRequest.addHeader("Accept-Encoding", request.getHeader("Accept-Encoding"));
-        statelessRequest.addHeader("X-Forwarded-For", request.getHeader("X-Forwarded-For"));
-        statelessRequest.addHeader("Origin", request.getHeader("Origin"));
-        statelessRequest.addHeader("referer", request.getHeader("referer"));
-        statelessRequest.setRemoteAddr(request.getRemoteAddr());
-        statelessRequest.setRemoteHost(request.getRemoteHost());
-
-        return statelessRequest;
     }
 
     ////////////////////////////
