@@ -120,7 +120,7 @@ public class BrowserUtilTest {
 
         final Field field = (Field) map.get(FIELD);
 
-        final Folder defaultPathFolderValue = new FolderDataGen().nextPersisted();
+        final Folder defaultPathFolderValue = new FolderDataGen().site(host).nextPersisted();
         addDefaultPathFieldVariable(host, field, defaultPathFolderValue.getPath());
 
         final Optional<Folder> defaultPathFolder = BrowserUtil.getDefaultPathFolder(
