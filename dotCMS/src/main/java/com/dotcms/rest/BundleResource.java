@@ -161,7 +161,7 @@ public class BundleResource {
             if (UtilMethods.isSet(queueElements)) {
                 detailedAssets = publishQueueElementTransformer.transform(queueElements);
             } else {
-                final int limit = UtilMethods.isSet(limitParam) ? limitParam : NO_LIMIT_ASSETS;
+                final int limit = UtilMethods.isSetOrGet(limitParam, NO_LIMIT_ASSETS);
                 publishAuditStatus = PublishAuditAPI.getInstance()
                         .getPublishAuditStatus(bundleId, limit);
 
