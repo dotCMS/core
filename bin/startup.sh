@@ -73,6 +73,9 @@ JAVA_OPTS="$JAVA_OPTS -javaagent:$DOTCMS_HOME/WEB-INF/lib/byte-buddy-agent-1.6.1
 # Set encoding
 JAVA_OPTS="$JAVA_OPTS -Dsun.jnu.encoding=UTF-8"
 
+# CVE-2021-44228 mitigation https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+JAVA_OPTS="$JAVA_OPTS -Dlog4j2.formatMsgNoLookups=true"
+
 if [ "$1" = "debug" ] ; then
 
     DEBUG_PORT="8000"
