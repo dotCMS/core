@@ -67,6 +67,10 @@ JAVA_OPTS="$JAVA_OPTS -XX:MaxMetaspaceSize=512m -Xmx1G"
 # Set GC opts
 JAVA_OPTS="$JAVA_OPTS -XX:+UseG1GC"
 
+# CVE-2021-44228 mitigation https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+JAVA_OPTS="$JAVA_OPTS -Dlog4j2.formatMsgNoLookups=true"
+
+
 JAVA_VERSION="$(java -version 2>&1 | grep -i version | cut -d'"' -f2 | cut -d'.' -f1-2)"
 
 echo "JAVA_VERSION: $JAVA_VERSION"

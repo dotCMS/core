@@ -15,6 +15,10 @@ JAVA_OPTS="$JAVA_OPTS -javaagent:${TOMCAT_HOME}/webapps/ROOT/WEB-INF/lib/byte-bu
 # PDFbox cache location
 JAVA_OPTS="$JAVA_OPTS -Dpdfbox.fontcache=/data/local/dotsecure"
 
+# CVE-2021-44228 mitigation https://nvd.nist.gov/vuln/detail/CVE-2021-44228
+JAVA_OPTS="$JAVA_OPTS -Dlog4j2.formatMsgNoLookups=true"
+
+
 # Finally, add user-provided JAVA_OPTS
 JAVA_OPTS="$JAVA_OPTS ${CMS_JAVA_OPTS}"
 

@@ -98,3 +98,5 @@ This maintenance release includes the following code fixes:
 47. https://github.com/dotCMS/core/issues/21313 : Push publishing sometimes changes the order of contentlets in the multi-tree table on multilingual pages #21313
 
 48. https://github.com/dotCMS/core/issues/20995 : Use a different connection for PostgresPubSub.publish #20995
+
+49. https://github.com/dotCMS/core/issues/21393 : log4j2 zero day exploit #21393
