@@ -61,6 +61,12 @@ public class ManifestItemsMapTest {
         }
     }
 
+    public void add(final ManifestItem assetManifestItem, final List<String> reasons) {
+        for (final String reason : reasons) {
+            add(assetManifestItem, reason);
+        }
+    }
+
     public void add(final ManifestItem assetManifestItem, final String reason) {
         final String key = assetManifestItem.getManifestInfo().id();
 

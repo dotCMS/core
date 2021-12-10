@@ -175,10 +175,7 @@
                 }
 
                 block.editor.on('update', ({ editor }) => {
-                    field.value = JSON.stringify({
-                        ...editor.getJSON(),
-                        render: editor.getHTML()
-                    });
+                    field.value = JSON.stringify(editor.getJSON());
                 })
             </script>
         <% }
