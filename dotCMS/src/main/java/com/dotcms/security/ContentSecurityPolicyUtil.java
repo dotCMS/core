@@ -10,6 +10,8 @@ import com.dotmarketing.util.UtilMethods;
 import io.vavr.Lazy;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.function.Function;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang.RandomStringUtils;
@@ -86,11 +88,11 @@ public class ContentSecurityPolicyUtil {
         contentSecurityPolicyResolvers = map(
                 "{script-src nonce}", new ContentSecurityPolicyResolver(
                         (header) -> calculateNonceHeaderToScript(header),
-                        (headerConfig, htmlCode) -> calculateNonceToScript(headerConfig, htmlCode)
+                        (htmlCode) -> calculateNonceToScript(htmlCode)
                 ),
                 "{style-src nonce}", new ContentSecurityPolicyResolver(
                         (header) -> calculateNonceHeaderToStyle(header),
-                        (headerConfig, htmlCode) -> calculateNonceToStyle(headerConfig, htmlCode)
+                        (htmlCode) -> calculateNonceToStyle(htmlCode)
                 )
         );
     }
@@ -144,7 +146,7 @@ public class ContentSecurityPolicyUtil {
 
             for (final Entry<String, ContentSecurityPolicyResolver> entry : contentSecurityPolicyResolvers.entrySet()) {
                 if (contentSecurityPolicyHeader.contains(entry.getKey())) {
-                    contentSecurityPolicyHeader = entry.getValue().headerResolver.resolve(contentSecurityPolicyHeader);
+                    contentSecurityPolicyHeader = entry.getValue().headerResolver.apply(contentSecurityPolicyHeader);
                 }
             }
 
@@ -169,8 +171,7 @@ public class ContentSecurityPolicyUtil {
 
             for (final Entry<String, ContentSecurityPolicyResolver> entry : contentSecurityPolicyResolvers.entrySet()) {
                 if (contentSecurityPolicyHeader.contains(entry.getKey())) {
-                    htmlCodeResult = entry.getValue().htmlCodeResolver
-                            .resolve(contentSecurityPolicyHeader, htmlCodeResult);
+                    htmlCodeResult = entry.getValue().htmlCodeResolver.apply(htmlCodeResult);
                 }
             }
         }
@@ -178,53 +179,55 @@ public class ContentSecurityPolicyUtil {
         return htmlCodeResult;
     }
 
-    private static String calculateNonceToScript(final String contentSecurityPolicyConfig,
-            final String htmlCode) {
+    private static String calculateNonceToScript(final String htmlCode) {
 
-        final String nonce = getNonceFromCurrentRequest();
-        return htmlCode.replaceAll("<script", String.format("<script nonce='%s'",nonce));
+        final Optional<String> optionalNonce = getNonceFromCurrentRequest();
+        return optionalNonce.isPresent() ?
+                htmlCode.replaceAll(
+                "<script", String.format("<script nonce='%s'", optionalNonce.get()))
+                : htmlCode;
     }
 
     private static String calculateNonceHeaderToScript(final String header) {
-        final String nonce = getNonceFromCurrentRequest();
-        return header.replace("{script-src nonce}", String.format("'nonce-%s'",nonce));
+        final Optional<String> optionalNonce = getNonceFromCurrentRequest();
+        return optionalNonce.isPresent() ?
+                header.replace("{script-src nonce}", String.format("'nonce-%s'", optionalNonce.get()))
+                : header;
     }
 
-    private static String calculateNonceToStyle(final String contentSecurityPolicyConfig,
-            final String htmlCode) {
+    private static String calculateNonceToStyle(final String htmlCode) {
 
-        final String nonce = getNonceFromCurrentRequest();
-        return htmlCode.replaceAll("<style", String.format("<style nonce='%s'",nonce));
+        final Optional<String> optionalNonce = getNonceFromCurrentRequest();
+        return optionalNonce.isPresent() ?
+                htmlCode.replace("<style", String.format("<style nonce='%s'", optionalNonce.get()))
+                : htmlCode;
     }
 
     private static String calculateNonceHeaderToStyle(final String header) {
-        final String nonce = getNonceFromCurrentRequest();
-        return header.replace("{style-src nonce}", String.format("'nonce-%s'",nonce));
+        final Optional<String> optionalNonce = getNonceFromCurrentRequest();
+        return optionalNonce.isPresent() ?
+                header.replace("{style-src nonce}", String.format("'nonce-%s'", optionalNonce.get()))
+                : header;
     }
 
-    private static String getNonceFromCurrentRequest() {
+    private static Optional<String> getNonceFromCurrentRequest() {
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+
+        if (!UtilMethods.isSet(request)) {
+            return Optional.empty();
+        }
+
         final String nonce = (String) request.getAttribute(NONCE_REQUEST_ATTRIBUTE);
-        return nonce;
-    }
-
-    @FunctionalInterface
-    interface HeaderResolver {
-        String resolve(final String header);
-    }
-
-    @FunctionalInterface
-    interface HtmlCodeResolver {
-        String resolve(final String contentSecurityPolicyConfig, final String htmlCode);
+        return Optional.of(nonce);
     }
 
     private static class ContentSecurityPolicyResolver {
-        HeaderResolver headerResolver;
-        HtmlCodeResolver htmlCodeResolver;
+        Function<String, String> headerResolver;
+        Function<String, String> htmlCodeResolver;
 
         public ContentSecurityPolicyResolver(
-                HeaderResolver headerResolver,
-                HtmlCodeResolver htmlCodeResolver) {
+                final Function<String, String> headerResolver,
+                final Function<String, String> htmlCodeResolver) {
             this.headerResolver = headerResolver;
             this.htmlCodeResolver = htmlCodeResolver;
         }
