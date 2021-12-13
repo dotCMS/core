@@ -104,10 +104,10 @@ public abstract class VelocityModeHandler {
             serve(out);
 
             if (ContentSecurityPolicyUtil.isConfig()) {
-                final String htmlCode = new String(out.toByteArray());
+                final String htmlCode = new String(out.toByteArray(), StandardCharsets.UTF_8);
                 return ContentSecurityPolicyUtil.apply(htmlCode);
             } else {
-                return new String(out.toByteArray());
+                return new String(out.toByteArray(), StandardCharsets.UTF_8);
             }
         } catch (DotDataException | IOException | DotSecurityException e) {
             Logger.debug(VelocityModeHandler.class, e.getMessage(), e);
