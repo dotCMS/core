@@ -1,7 +1,11 @@
 package com.dotcms.util.network;
 
+import java.net.InetAddress;
 import java.util.Objects;
+import org.xbill.DNS.Address;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import io.vavr.control.Try;
 
@@ -38,4 +42,46 @@ public class IPUtils {
 
 
     }
+    
+    final static private String[] privateSubnets = {"10.0.0.0/8","172.16.0.0/12", "192.168.0.0/16"};
+    
+    
+    
+    
+    public static boolean isIpPrivateSubnet(final String ipOrHostName) {
+
+        if (ipOrHostName == null) {
+            return true;
+        }
+
+        try {
+            InetAddress addr = Address.getByName(ipOrHostName);
+
+            final String ip = addr.getHostAddress();
+
+            if ("127.0.0.1".equals(ip)) {
+                return true;
+            }
+
+            if ("localhost".equals(ip)) {
+                return true;
+            }
+            
+            for (String subnet : privateSubnets) {
+                if (isIpInCIDR(ip, subnet)) {
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            Logger.warn(IPUtils.class, "unable to resolve hostname");
+            throw new DotRuntimeException(e);
+        }
+        return false;
+
+
+
+    }
+
+    
+    
 }
