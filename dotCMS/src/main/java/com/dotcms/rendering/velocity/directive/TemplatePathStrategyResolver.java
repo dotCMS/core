@@ -119,14 +119,14 @@ public class TemplatePathStrategyResolver {
     private class PathTemplatePathStrategyImpl implements TemplatePathStrategy {
 
         @Override
-        public boolean test(final Context context, final RenderParams params, final String[] arguments) {
+        public boolean test(final Context context, final RenderParams params, final String... arguments) {
 
             final  String templatePath = arguments[0];
             return this.isPath(templatePath);
         }
 
         @Override
-        public String apply(final Context context, final RenderParams params, final String[] arguments) {
+        public String apply(final Context context, final RenderParams params, final String... arguments) {
 
             final String templatePath = arguments[0];
             final String uid          = (arguments.length > 1 && UtilMethods.isSet(arguments[1])) ? arguments[1] :  DEFAULT_UUID_VALUE;
@@ -170,14 +170,14 @@ public class TemplatePathStrategyResolver {
     private class IdentifierTemplatePathStrategyImpl implements TemplatePathStrategy {
 
         @Override
-        public boolean test(final Context context, final RenderParams params, final String[] arguments) {
+        public boolean test(final Context context, final RenderParams params, final String... arguments) {
 
             final String id = arguments[0];
             return this.isIdentifier(id);
         }
 
         @Override
-        public String apply(final Context context, final RenderParams params, final String[] arguments) {
+        public String apply(final Context context, final RenderParams params, final String... arguments) {
 
             final String id   = arguments[0];
             final String uid  = (arguments.length > 1 && UtilMethods.isSet(arguments[1])) ? arguments[1] :  DEFAULT_UUID_VALUE;
