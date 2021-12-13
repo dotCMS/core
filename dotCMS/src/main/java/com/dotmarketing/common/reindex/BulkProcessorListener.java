@@ -106,8 +106,6 @@ public class BulkProcessorListener implements BulkProcessor.Listener {
 
         try {
             if (!successful.isEmpty()) {
-                Logger.info(this, "connection exits: " + DbConnectionFactory.connectionExists());
-                Logger.info(this, "Is in transaction: " + DbConnectionFactory.inTransaction());
                 APILocator.getReindexQueueAPI().deleteReindexEntry(successful);
             }
         } catch (DotDataException e) {

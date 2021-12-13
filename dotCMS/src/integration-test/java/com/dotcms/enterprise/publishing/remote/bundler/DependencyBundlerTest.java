@@ -29,6 +29,7 @@ import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageDataGen;
@@ -87,7 +88,6 @@ public class DependencyBundlerTest {
     private static FilterDescriptor filterDescriptorNotDependenciesRelationship;
 
     public static void prepare() throws Exception {
-
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
 
@@ -522,11 +522,13 @@ public class DependencyBundlerTest {
                 .nextPersisted();
 
         final Contentlet contentletChild =  new ContentletDataGen(contentTypeChild.id())
+                .setPolicy(IndexPolicy.WAIT_FOR)
                 .languageId(language.getId())
                 .host(host)
                 .nextPersisted();
 
         final Contentlet contentletWithRelationship = new ContentletDataGen(contentTypeParent.id())
+                .setPolicy(IndexPolicy.WAIT_FOR)
                 .languageId(language.getId())
                 .host(host)
                 .setProperty(contentTypeParent.variable(), list(contentletChild))
@@ -670,12 +672,12 @@ public class DependencyBundlerTest {
                 new TestData(htmlPageAsset, htmlPageAssetIncludes, excludeSystemFolderAndSystemHost, filterDescriptorAllDependencies, "Page with filterDescriptorAllDependencies"),
                 new TestData(htmlPageAsset, map(), htmlPageAssetExcludes, filterDescriptorNotDependencies, "Page with filterDescriptorNotDependencies"),
                 new TestData(htmlPageAsset, htmlPageAssetIncludes, excludeSystemFolderAndSystemHost, filterDescriptorNotRelationship, "Page with filterDescriptorNotRelationship"),
-                new TestData(htmlPageAsset, map(), htmlPageAssetExcludes, filterDescriptorNotDependenciesRelationship, "Page with filterDescriptorNotDependenciesRelationship")/*,
+                new TestData(htmlPageAsset, map(), htmlPageAssetExcludes, filterDescriptorNotDependenciesRelationship, "Page with filterDescriptorNotDependenciesRelationship"),
 
                 new TestData(contentletWithImage, contentletWithImageIncludes, excludeSystemFolder, filterDescriptorAllDependencies, "Contentlet with Image and filterDescriptorAllDependencies"),
                 new TestData(contentletWithImage, map(), contentletWithImageExcludes, filterDescriptorNotDependencies, "Contentlet with Image and filterDescriptorNotDependencies"),
                 new TestData(contentletWithImage, contentletWithImageIncludes, excludeSystemFolder, filterDescriptorNotRelationship, "Contentlet with Image and filterDescriptorNotRelationship"),
-                new TestData(contentletWithImage, map(), contentletWithImageExcludes, filterDescriptorNotDependenciesRelationship, "Contentlet with Image and filterDescriptorNotDependenciesRelationship")*/
+                new TestData(contentletWithImage, map(), contentletWithImageExcludes, filterDescriptorNotDependenciesRelationship, "Contentlet with Image and filterDescriptorNotDependenciesRelationship")
         );
     }
 
@@ -1255,7 +1257,7 @@ public class DependencyBundlerTest {
         assertAll(config, dependencies);
     }
 
-    //@Test
+    @Test
     public void addLanguageVariableTestCaseInBundle()
             throws DotSecurityException, DotDataException, DotBundleException, IOException {
 
@@ -1314,7 +1316,7 @@ public class DependencyBundlerTest {
      * otherwise should include the content child and content child dependencies
      * - Create the Manifest File
      */
-    //@Test
+    @Test
     @UseDataProvider("configs")
     public void excludeContenletChildAssetByModDate(ModDateTestData modDateTestData)
             throws DotBundleException, DotDataException, DotSecurityException, IOException {
@@ -1413,7 +1415,7 @@ public class DependencyBundlerTest {
                 dependencies.add(contentletChild);
                 manifestLines.addDependencies(map(relationship, list(contentletChild)));
 
-                manifestLines.addDependencies(map(contentletChild, list(language)));
+                manifestLines.addDependencies(map(contentletChild, list(language, contentTypeChild)));
             } else if (modDateTestData.operation == Operation.PUBLISH) {
                 manifestLines.addExclude(contentletChild, "Excluded by mod_date");
 
@@ -1423,7 +1425,8 @@ public class DependencyBundlerTest {
             }
 
             manifestBuilder.close();
-            PublisherAPIImplTest.assertManifestFile(manifestBuilder.getManifestFile(), manifestLines);
+            PublisherAPIImplTest.assertManifestFile(manifestBuilder.getManifestFile(), manifestLines,
+                    list("#Filter:"));
         }
 
          assertAll(config, dependencies);
@@ -1440,7 +1443,7 @@ public class DependencyBundlerTest {
      * Should:
      * - The child contentlet should be include all the time that the operation is equals to PUBLISH
      */
-    //@Test
+    @Test
     @UseDataProvider("configs")
     public void includeContenletChildWithSeveralVersionAssetByModDate(ModDateTestData modDateTestData)
             throws DotBundleException, DotDataException, DotSecurityException, IOException {
@@ -1521,7 +1524,7 @@ public class DependencyBundlerTest {
      * Should:
      * - Include the child contentlet in the bundle
      */
-    //@Test
+    @Test
     @UseDataProvider("configs")
     public void notExcludeContenletChildAssetByModDate(ModDateTestData modDateTestData)
             throws DotBundleException, DotDataException, DotSecurityException, IOException {
@@ -1689,7 +1692,7 @@ public class DependencyBundlerTest {
      * - Add the page into a bundle.
      * Should: Exclude all the page's dependencies
      */
-    //@Test
+    @Test
     @UseDataProvider("configs")
     public void excludeHTMLDependenciesByModDate(ModDateTestData modDateTestData)
             throws DotBundleException, DotDataException, DotSecurityException, IOException {
@@ -1813,7 +1816,7 @@ public class DependencyBundlerTest {
      * - Add the Template, Containers, Host and Page into a bundle.
      * Should: Should include all the pages's dependencies
      */
-    //@Test
+    @Test
     @UseDataProvider("configs")
     public void includeHTMLDependenciesNoMatterModDate(ModDateTestData modDateTestData)
             throws DotBundleException, DotDataException, DotSecurityException, IOException {
@@ -1904,7 +1907,7 @@ public class DependencyBundlerTest {
      * - Add the Page into a bundle.
      * Should: Should exclude the template from the bundle but include all the templates's dependencies
      */
-    //@Test
+    @Test
     @UseDataProvider("configs")
     public void includeDependenciesEvenWhenAssetExcludeByModDate(ModDateTestData modDateTestData)
             throws DotBundleException, DotDataException, DotSecurityException, IOException {
@@ -1984,7 +1987,7 @@ public class DependencyBundlerTest {
      * - Add the Page into a bundle.
      * Should: Should exclude the template and all the templates's dependencies from the bundle
      */
-    //@Test
+    @Test
     @UseDataProvider("configs")
     public void excludeDependenciesWhenAssetExcludeByFilter(ModDateTestData modDateTestData)
             throws DotBundleException, DotDataException, DotSecurityException, IOException {
@@ -2051,7 +2054,7 @@ public class DependencyBundlerTest {
      * but exists another environment
      * should: the {@link Template} should be include in the bundle
      */
-    //@Test
+    @Test
     public void includeTemplateUsingTwoEnvironment()
             throws DotBundleException, DotDataException, DotSecurityException, IOException {
 

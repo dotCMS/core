@@ -2,8 +2,11 @@ package com.dotmarketing.business;
 
 import com.dotcms.config.DotInitializer;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.org.directwebremoting.proxy.ScriptProxy;
 import com.dotcms.util.pagination.OrderDirection;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -11,6 +14,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
@@ -18,7 +22,10 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
 import io.vavr.control.Try;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 
@@ -74,11 +81,10 @@ public class ThemeAPIImpl implements ThemeAPI, DotInitializer {
             return null;
         }
 
-        final StringBuilder query = new StringBuilder();
-        query.append("+conFolder:").append(folder.getInode()).append(" +title:").append(THEME_PNG)
-                .append(" +live:true +deleted:false");
-        final List<Contentlet> results = contentletAPI
-                .search(query.toString(), -1, 0, null, user, false);
+        final List<Contentlet> results = APILocator.getFileAssetAPI().
+                findFileAssetsByParentable(folder,null,false,false,user,false)
+                .stream().filter(fileAsset -> fileAsset.getFileName().equalsIgnoreCase(THEME_PNG))
+                .collect(Collectors.toList());
 
         return UtilMethods.isSet(results) ? results.get(0).getIdentifier() : null;
     }
@@ -131,13 +137,32 @@ public class ThemeAPIImpl implements ThemeAPI, DotInitializer {
             throws DotDataException, DotSecurityException {
 
         final PaginatedArrayList<Theme> result = new PaginatedArrayList();
-        final StringBuilder query = new StringBuilder();
 
-        query.append(BASE_LUCENE_QUERY);
-
+        //If themeId is sent, it's because a specific theme is wanted, so call the findThemeById
         if (UtilMethods.isSet(themeId)) {
-            query.append("+conFolder").append(StringPool.COLON).append(themeId);
+            result.add(findThemeById(themeId, user, respectFrontendRoles));
+            return result;
         }
+
+        //TODO: If we modify that the hostId is not required we need to add system theme is hostId is not set.
+        //This is because themes can not live under system_host
+        if (hostId.equals(this.systemTheme.getHostId())) {
+            result.add(this.systemTheme());
+            return result;
+        }
+
+        final StringBuilder sqlQuery = new StringBuilder("select cvi.working_inode as inode from contentlet_version_info cvi, identifier id where"
+                + " id.parent_path like ? and id.asset_name = ? and cvi.identifier = id.id");
+        final List<Object> parameters = new ArrayList<>();
+        if (UtilMethods.isSet(searchParams)) {
+            parameters.add(Constants.THEME_FOLDER_PATH + StringPool.FORWARD_SLASH +
+                    StringPool.PERCENT + searchParams + StringPool.PERCENT);
+        }else {
+            parameters.add(Constants.THEME_FOLDER_PATH + StringPool.FORWARD_SLASH
+                    + StringPool.PERCENT);
+        }
+        parameters.add(Constants.THEME_META_INFO_FILE_NAME);
+
 
         if (UtilMethods.isSet(hostId)) {
             Try.of(() -> APILocator.getHostAPI()
@@ -147,29 +172,33 @@ public class ThemeAPIImpl implements ThemeAPI, DotInitializer {
                     .find(hostId, user, false).getIdentifier())
                     .getOrElseThrow(() -> new DotSecurityException(
                             "User does not have Permissions over the host"));
-            query.append("+conhost").append(StringPool.COLON).append(hostId);
+
+            sqlQuery.append(" and id.host_inode = ?");
+            parameters.add(hostId);
         }
 
-        if (UtilMethods.isSet(searchParams)) {
-            query.append(" +catchall:*").append(searchParams).append("*");
-        }
+        //Don't include archived themes (template.vtl archived)
+        sqlQuery.append(" and cvi.deleted = " + DbConnectionFactory.getDBFalse());
 
-        final String sortBy = String.format("parentPath %s", direction.toString().toLowerCase());
+        final String sortBy = String.format("id.parent_path %s", direction.toString().toLowerCase());
+        sqlQuery.append(" order by " + sortBy);
 
-        final List<ContentletSearch> contentletSearches =
-                this.contentletAPI.searchIndex(query.toString(), limit, offset, sortBy, user,
-                        respectFrontendRoles);
-        //TODO: If we modify that the hostId is not required we need to add system theme is hostId is not set.
-        //Add system theme only if hostId is SYSTEM_HOST
-        if (hostId.equals(this.systemTheme.getHostId())) {
-            result.add(this.systemTheme());
-        }
+        final DotConnect dc = new DotConnect().setSQL(sqlQuery.toString())
+                .setMaxRows(limit).setStartRow(offset);
+        parameters.forEach(param -> dc.addParam(param));
+
         //List of inodes of the template.vtl files found
-        final List<String> inodes = contentletSearches.stream()
-                .map(ContentletSearch::getInode).collect(Collectors.toList());
+        final List<Map<String,String>> inodesMapList =  dc.loadResults();
+
+        final List<String> inodes = new ArrayList<>();
+        for (final Map<String, String> versionInfoMap : inodesMapList) {
+            inodes.add(versionInfoMap.get("inode"));
+        }
+
         //For each inode found, find the contentlet, get the folder were the contentlet live
         // and convert it to Theme and add to the list
-        for (final Contentlet contentlet : this.contentletAPI.findContentlets(inodes)) {
+        final List<Contentlet> contentletList  = APILocator.getContentletAPI().findContentlets(inodes);
+        for (final Contentlet contentlet : contentletList) {
             final Folder folder = folderAPI.find(contentlet.getFolder(), user, false);
             result.add(this.fromFolder(folder, user, respectFrontendRoles));
         }
