@@ -7,7 +7,7 @@ import { SuggestionsService } from '../../services/suggestions/suggestions.servi
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { SuggestionListComponent } from '../suggestion-list/suggestion-list.component';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
-import { headerIcons, pIcon, ulIcon, olIcon } from './suggestion-icons';
+import { headerIcons, pIcon, ulIcon, olIcon, quoteIcon, codeIcon, lineIcon } from './suggestion-icons';
 
 export interface SuggestionsCommandProps {
     payload?: DotCMSContentlet;
@@ -92,6 +92,43 @@ export class SuggestionsComponent implements OnInit {
                 }
             }
         ];
+
+        const block = [
+            {
+                label: 'Blockquote',
+                icon: this.sanitizeUrl(quoteIcon),
+                command: () => {
+                    this.onSelection({
+                        type: {
+                            name: 'blockQuote'
+                        }
+                    });
+                }
+            },
+            {
+                label: 'Code Block',
+                icon: this.sanitizeUrl(codeIcon),
+                command: () => {
+                    this.onSelection({
+                        type: {
+                            name: 'codeBlock'
+                        }
+                    });
+                }
+            },
+            {
+                label: 'Horizontal Line',
+                icon: this.sanitizeUrl(lineIcon),
+                command: () => {
+                    this.onSelection({
+                        type: {
+                            name: 'horizontalLine'
+                        }
+                    });
+                }
+            }
+        ];
+
         this.items = [
             {
                 label: 'Contentlets',
@@ -102,7 +139,8 @@ export class SuggestionsComponent implements OnInit {
             },
             ...headings,
             ...paragraph,
-            ...list
+            ...list,
+            ...block
         ];
     }
 

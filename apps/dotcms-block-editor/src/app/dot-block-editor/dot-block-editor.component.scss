@@ -32,6 +32,26 @@ dotcms-block-editor {
         min-height: 100%;
         outline: none;
         padding: $spacing-5 $spacing-8;
+
+        pre {
+            background: #0d0d0d;
+            border-radius: 0.5rem;
+            color: #fff;
+            padding: 0.75rem 1rem;
+
+            code {
+                font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+                background: none;
+                color: inherit;
+                font-size: 0.8rem;
+                padding: 0;
+            }
+        }
+
+        blockquote {
+            border-left: 3px solid rgba(#0d0d0d, 0.1);
+            padding-left: 1rem;
+        }
     }
 
 }
