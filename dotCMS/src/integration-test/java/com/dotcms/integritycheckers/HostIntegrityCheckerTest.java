@@ -45,7 +45,7 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
         user = APILocator.getUserAPI().getSystemUser();
         hostAPI = APILocator.getHostAPI();
         endpointId = UUID.randomUUID().toString();
-        testHost = "test_host_" + System.currentTimeMillis() + ".dotcms.com";
+        testHost = "test-host-" + System.currentTimeMillis() + ".dotcms.com";
     }
 
     /**
