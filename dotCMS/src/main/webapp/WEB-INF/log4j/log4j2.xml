@@ -2,7 +2,7 @@
 <Configuration status="INFO">
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{HH:mm:ss.SSS}  %-5level %logger{2} - %msg%n" />
+            <PatternLayout pattern="%d{HH:mm:ss.SSS}  %-5level %logger{2}{nolookups} - %msg{nolookups}%n" />
         </Console>
     </Appenders>
     <Loggers>
