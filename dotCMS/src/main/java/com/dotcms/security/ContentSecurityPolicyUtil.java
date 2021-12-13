@@ -76,7 +76,7 @@ public class ContentSecurityPolicyUtil {
     final static Map<String, ContentSecurityPolicyResolver> contentSecurityPolicyResolvers;
     public static final int RANDOM_STRING_LENGTH = 20;
 
-    private static String NONCE_REQUEST_ATTRIBUTE = "NONCE_REQUEST_ATTRIBUTE";
+    private static final String NONCE_REQUEST_ATTRIBUTE = "NONCE_REQUEST_ATTRIBUTE";
 
     static {
         contentSecurityPolicyResolvers = map(
