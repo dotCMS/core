@@ -432,6 +432,8 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     }
 
     private renderPage(pageState: DotPageRenderState): void {
+        this.dotEditContentHtmlService.setCurrentPage(pageState.page);
+
         if (this.shouldEditMode(pageState)) {
             if (this.isEnterpriseLicense) {
                 this.loadContentPallet(pageState);

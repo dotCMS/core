@@ -35,6 +35,7 @@ import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fi
 import { mockResponseView } from '@dotcms/app/test/response-view.mock';
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotPage } from '@dotcms/app/shared/models/dot-page/dot-page.model';
 
 @Injectable()
 class MockDotLicenseService {
@@ -384,6 +385,9 @@ xdescribe('DotEditContentHtmlService', () => {
                 }
             })
         );
+
+        service.setCurrentPage(pageState.page);
+
         service.initEditMode(pageState, {
             nativeElement: {
                 ...fakeIframeEl,
@@ -444,7 +448,8 @@ xdescribe('DotEditContentHtmlService', () => {
 
         expect(dotContainerContentletService.getContentletToContainer).toHaveBeenCalledWith(
             { identifier: '123', uuid: '456' },
-            { identifier: '456', inode: '456' }
+            { identifier: '456', inode: '456' },
+            pageState.page
         );
 
         expect(replaceChild).toHaveBeenCalledWith(
@@ -567,7 +572,8 @@ xdescribe('DotEditContentHtmlService', () => {
 
         expect(dotContainerContentletService.getContentletToContainer).toHaveBeenCalledWith(
             currentContainer,
-            contentlet
+            contentlet,
+            null
         );
 
         expect(service.currentContainer).toEqual(
@@ -617,7 +623,8 @@ xdescribe('DotEditContentHtmlService', () => {
 
         expect(dotContainerContentletService.getContentletToContainer).toHaveBeenCalledWith(
             currentContainer,
-            contentlet
+            contentlet,
+            null
         );
 
         expect(service.currentContainer).toEqual(
@@ -791,11 +798,13 @@ xdescribe('DotEditContentHtmlService', () => {
 
         expect(dotContainerContentletService.getContentletToContainer).toHaveBeenCalledWith(
             currentContainer,
-            contentlet
+            contentlet,
+            null
         );
         expect(dotContainerContentletService.getContentletToContainer).toHaveBeenCalledWith(
             anotherContainer,
-            contentlet
+            contentlet,
+            null
         );
         expect(window.top['changed']).toEqual(true);
     });

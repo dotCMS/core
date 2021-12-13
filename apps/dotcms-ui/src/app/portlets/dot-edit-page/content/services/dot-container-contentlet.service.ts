@@ -5,6 +5,7 @@ import { DotPageContainer } from '../../../../shared/models/dot-page-container/d
 import { DotPageContent } from '../../shared/models/dot-page-content.model';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { CoreWebService } from '@dotcms/dotcms-js';
+import { DotPage } from '@dotcms/app/shared/models/dot-page/dot-page.model';
 
 @Injectable()
 export class DotContainerContentletService {
@@ -15,16 +16,18 @@ export class DotContainerContentletService {
      *
      * @param DotPageContainer container
      * @param DotPageContent content
+     * @param DotPage page
      * @returns Observable<string>
      * @memberof DotContainerContentletService
      */
     getContentletToContainer(
         container: DotPageContainer,
-        content: DotPageContent
+        content: DotPageContent,
+        page: DotPage
     ): Observable<string> {
         return this.coreWebService
             .requestView({
-                url: `v1/containers/content/${content.identifier}?containerId=${container.identifier}`
+                url: `v1/containers/content/${content.identifier}?containerId=${container.identifier}&pageInode=${page.inode}`
             })
             .pipe(pluck('entity', 'render'));
     }
