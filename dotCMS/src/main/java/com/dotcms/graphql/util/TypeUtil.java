@@ -149,11 +149,11 @@ public class TypeUtil {
         private final List<GraphQLArgument> arguments;
 
         public TypeFetcher(GraphQLOutputType type) {
-            this(type, new FieldDataFetcher(), null);
+            this(type, new FieldDataFetcher(), (GraphQLArgument[]) null);
         }
 
         public TypeFetcher(final GraphQLOutputType type, final DataFetcher dataFetcher) {
-            this(type, dataFetcher, null);
+            this(type, dataFetcher, (GraphQLArgument[]) null);
         }
 
         public TypeFetcher(final GraphQLOutputType type, final DataFetcher dataFetcher,
