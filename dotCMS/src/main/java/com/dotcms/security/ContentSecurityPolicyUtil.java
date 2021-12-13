@@ -222,8 +222,8 @@ public class ContentSecurityPolicyUtil {
     }
 
     private static class ContentSecurityPolicyResolver {
-        Function<String, String> headerResolver;
-        Function<String, String> htmlCodeResolver;
+        final Function<String, String> headerResolver;
+        final Function<String, String> htmlCodeResolver;
 
         public ContentSecurityPolicyResolver(
                 final Function<String, String> headerResolver,
