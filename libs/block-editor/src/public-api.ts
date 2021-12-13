@@ -32,6 +32,9 @@ export * from './lib/extensions/bubble-link-form.extension';
 //Editor Blocks
 export * from './lib/extensions/blocks/contentlet-block/contentlet-block.extension';
 
+// Editor utils
+export * from './lib/utils/bubble-menu.utils';
+
 // Services
 export * from './lib/extensions/services/suggestions/suggestions.service';
 export * from './lib/extensions/services/dot-image/dot-image.service';

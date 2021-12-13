@@ -8,8 +8,15 @@ import {
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 
-import { ContentletBlock, ImageBlock, ImageUpload } from '@dotcms/block-editor';
-import { ActionsMenu, DragHandler, BubbleLinkFormExtension } from '@dotcms/block-editor';
+import {
+    ActionsMenu,
+    BubbleLinkFormExtension,
+    ContentletBlock,
+    DragHandler,
+    ImageBlock,
+    ImageUpload,
+    shouldShowBubbleMenu
+} from '@dotcms/block-editor';
 
 // Marks Extensions
 import { Highlight } from '@tiptap/extension-highlight';
@@ -43,6 +50,7 @@ export class DotBlockEditorComponent implements OnInit {
                 BubbleLinkFormExtension(this.injector, this.resolver),
                 BubbleMenu.configure({
                     element: document.querySelector('#bubbleMenu'),
+                    shouldShow: shouldShowBubbleMenu,
                     tippyOptions: {
                         duration: 500,
                         maxWidth: 'none',
