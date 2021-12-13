@@ -7,6 +7,7 @@ import com.dotcms.repackage.org.apache.axiom.om.util.Base64;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import io.vavr.Lazy;
 import java.util.Map;
 import java.util.Map.Entry;
 import javax.servlet.http.HttpServletRequest;
@@ -78,6 +79,9 @@ public class ContentSecurityPolicyUtil {
 
     private static final String NONCE_REQUEST_ATTRIBUTE = "NONCE_REQUEST_ATTRIBUTE";
 
+    private static final Lazy<String> CONTENT_SECURITY_POLICY_CONFIG = Lazy.of(()->Config
+            .getStringProperty("ContentSecurityPolicy.header", null));
+
     static {
         contentSecurityPolicyResolvers = map(
                 "{script-src nonce}", new ContentSecurityPolicyResolver(
@@ -105,8 +109,7 @@ public class ContentSecurityPolicyUtil {
     }
 
     private static String getContentSecurityPolicyHeader() {
-        return Config.getStringProperty(
-                "ContentSecurityPolicy.header", null);
+        return CONTENT_SECURITY_POLICY_CONFIG.get();
     }
 
     /**
