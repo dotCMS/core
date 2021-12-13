@@ -3599,4 +3599,16 @@ public class UtilMethods {
 
         return position;
     }
+
+    /**
+     * If <code>toEvaluate</code> is set then return it, otherwise return <code>defaultValue</code>
+     * 
+     * @param toEvaluate
+     * @param defaultValue
+     * @param <T>
+     * @return
+     */
+    public static <T> T isSetOrGet(final T toEvaluate, final T defaultValue){
+        return UtilMethods.isSet(toEvaluate) ? toEvaluate : defaultValue;
+    }
 }
