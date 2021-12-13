@@ -7,6 +7,13 @@ import io.vavr.Lazy;
 import java.io.IOException;
 import java.util.function.Supplier;
 
+/**
+ * This class is just a lazy wrapper of the content map used on the velocity context
+ * the idea is to have this lazy supplier to be user on the container velocity context
+ * so users can use the dotcontentmap on the container, but do not pay the price of requesting again to the system
+ * the content information if they do not need it.
+ * @author jsanca
+ */
 public class LazyLoaderContentMap {
 
     private final Lazy<ContentMap> contentMapSupplier;

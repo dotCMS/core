@@ -33,8 +33,7 @@ import java.util.Set;
  * Also, users can pass their own base path, in case the item render velocity template does not exists will fallbacks to the default one.
  * @author jsanca
  */
-class GenericRenderableImpl implements Renderable {  // refactor this to implement the renderable, will be created by a Factory and will receive
-    // the final Object item, final String type on the constructors, the rest of the parameters will be provided by the factory
+class GenericRenderableImpl implements Renderable { 
 
     private final String defaultPath;
     private final String templateName;
