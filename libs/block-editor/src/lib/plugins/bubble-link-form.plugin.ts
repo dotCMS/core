@@ -67,18 +67,19 @@ export class BubbleLinkFormView {
 
         this.editor.on('focus', this.focusHandler);
         this.setComponentEvents();
-        this.createTooltip();
     }
 
     update(view: EditorView, prevState?: EditorState): void {
-        const prePluginState = this.pluginKey.getState(view.state);
-        const currentPluginState = this.pluginKey.getState(prevState);
+        const next = this.pluginKey.getState(view.state);
+        const prev = this.pluginKey.getState(prevState);
 
         // Check that the current plugin state is different to previous plugin state.
-        if (prePluginState.toggle === currentPluginState.toggle) {
+        if (next.toggle === prev.toggle) {
             this.detectLinkFormChanges();
             return;
         }
+
+        this.createTooltip();
         
         this.tippy?.state.isVisible ? this.hide() : this.show();
         this.detectLinkFormChanges();
@@ -91,11 +92,14 @@ export class BubbleLinkFormView {
     };
 
     createTooltip() {
-        if (this.tippy) {
-            return;
+        const { element: editorElement } = this.editor.options
+        const editorIsAttached = !!editorElement.parentElement
+
+        if (this.tippy || !editorIsAttached) {
+            return
         }
 
-        this.tippy = tippy(this.editor.view.dom, {
+        this.tippy = tippy(editorElement, {
             duration: 250,
             getReferenceClientRect: null,
             content: this.element,
