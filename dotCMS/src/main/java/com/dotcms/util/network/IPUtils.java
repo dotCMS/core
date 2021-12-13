@@ -47,7 +47,14 @@ public class IPUtils {
     
     
     
-    
+    /**
+     * It is important when we allow calling to remote endpoints that we verify
+     * that the remote endpoint is not in our corprate or private network.
+     * This method checks if the ip or hostname passed in is on the private network
+     * which can be blocked if needed.
+     * @param ipOrHostName
+     * @return
+     */
     public static boolean isIpPrivateSubnet(final String ipOrHostName) {
 
         if (ipOrHostName == null) {
@@ -73,8 +80,8 @@ public class IPUtils {
                 }
             }
         } catch (Exception e) {
-            Logger.warn(IPUtils.class, "unable to resolve hostname");
-            throw new DotRuntimeException(e);
+            Logger.warn(IPUtils.class, "unable to resolve hostname, assuming the worst:" + ipOrHostName + " "+ e.getMessage());
+            return true;
         }
         return false;
 
