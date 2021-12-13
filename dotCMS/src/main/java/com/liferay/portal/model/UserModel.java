@@ -220,7 +220,6 @@ public class UserModel extends BaseModel {
 			_userId = userId;
 			setModified(true);
 			Logger.info(this, "User id has been modified");
-			Logger.info(this, "User id has bee modified");
 		} else {
 			Logger.info(this, "User id has not been modified");
 		}
