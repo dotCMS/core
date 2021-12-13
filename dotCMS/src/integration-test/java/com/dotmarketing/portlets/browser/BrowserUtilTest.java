@@ -142,10 +142,10 @@ public class BrowserUtilTest {
     public void defaultPathEqualsToWrongFieldVariable() throws DotDataException, DotSecurityException {
 
         final Map<String, Object> map = createContentletWithImageFieldWithoutValue();
-        addFolderHostField((ContentType) map.get(CONTENT_TYPE), (Contentlet) map.get(CONTENTLET));
+        final Folder folder = addFolderHostField((ContentType) map.get(CONTENT_TYPE),
+                (Contentlet) map.get(CONTENTLET));
 
         final Host host = (Host) map.get(HOST);
-        final Folder folder = (Folder) map.get(FOLDER);
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
