@@ -30,7 +30,6 @@ public class StoryBlockMap implements Renderable {
     final static RenderableFactory renderableFactory = new RenderableFactory();
 
     private final String type;
-    private final String render;
     private final String content;
     private final JSONObject jsonContFieldValue;
 
@@ -40,7 +39,6 @@ public class StoryBlockMap implements Renderable {
         final Object contFieldValue = APILocator.getContentletAPI().getFieldValue(contentlet,fieldTransformed);
         this.jsonContFieldValue = new JSONObject(contFieldValue.toString());
         type = jsonContFieldValue.get("type").toString();
-        render = jsonContFieldValue.get("render").toString();
         content = jsonContFieldValue.get("content").toString();
     }
 
@@ -48,7 +46,6 @@ public class StoryBlockMap implements Renderable {
 
         this.jsonContFieldValue = new JSONObject(contFieldValue.toString());
         type = jsonContFieldValue.get("type").toString();
-        render = jsonContFieldValue.get("render").toString();
         content = jsonContFieldValue.get("content").toString();
     }
 
