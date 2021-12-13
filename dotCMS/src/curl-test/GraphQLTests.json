@@ -5062,7 +5062,7 @@
 							"formdata": [
 								{
 									"key": "json",
-									"value": "{\n    \"contentlet\": {\n       \"contentType\":\"FileAsset\",\n       \"title\":\"Legioss\", \n       \"hostFolder\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"showOnMenu\":\"true\",\n       \"sortOrder\":\"2\"\n    }\n}",
+									"value": "{\n    \"contentlet\": {\n       \"contentType\":\"FileAsset\",\n       \"title\":\"Legioss\", \n       \"hostFolder\":\"default\",\n       \"indexPolicy\":\"FORCE\",\n       \"showOnMenu\":\"true\",\n       \"sortOrder\":\"2\"\n    }\n}",
 									"type": "text"
 								},
 								{
@@ -5539,7 +5539,7 @@
 									"",
 									"    // scalar values",
 									"    pm.expect(map.identifier, 'FAILED:[map.identifier]').equal(\"0edfee78-2a75-4f3d-bf20-813aae15d4e9\");",
-									"    pm.expect(map.inode, 'FAILED:[map.inode]').equal(\"1f4db79c-7ec6-4efe-9369-1ae2193a2d7f\");",
+									"    pm.expect(map.inode, 'FAILED:[map.inode]').equal(\"3d70dce9-0f85-4eea-bdfc-7904b6a53251\");",
 									"    pm.expect(map.locked, 'FAILED:[map.locked]').equal(false);",
 									"    pm.expect(map.stInode, 'FAILED:[map.stInode]').equal(\"799f176a-d32e-4844-a07c-1b5fcd107578\");",
 									"    pm.expect(map.contentType, 'FAILED:[map.contentType]').equal(\"Blog\");",
