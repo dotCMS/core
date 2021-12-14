@@ -1,4 +1,4 @@
-import { Component, Element, Listen, Prop, State, Watch, h, Host } from '@stencil/core';
+import { Component, Element, Listen, Prop, State, Watch, h, Host, Event, EventEmitter} from '@stencil/core';
 
 import { DotFieldStatus } from '../../../models';
 import { fieldCustomProcess, getFieldsFromLayout, getErrorMessage } from './utils';
@@ -49,6 +49,10 @@ export class DotFormComponent {
     errorMessage = '';
     @State()
     uploadFileInProgress = false;
+
+    /**Emit when submit the form */
+    @Event()
+    submit: EventEmitter<DotCMSContentlet>;
 
     private fieldsStatus: { [key: string]: { [key: string]: boolean } } = {};
     private value = {};
@@ -169,28 +173,12 @@ export class DotFormComponent {
             })
             .then((jsonResponse) => {
                 const contentlet = jsonResponse.entity;
-                this.runSuccessCallback(contentlet);
+
+                this.submit.emit(contentlet);
             })
             .catch(({ message, status }: DotHttpErrorResponse) => {
                 this.errorMessage = getErrorMessage(message) || fallbackErrorMessages[status];
             });
-    }
-
-    private runSuccessCallback(contentlet: DotCMSContentlet): void {
-        const successCallback = this.getSuccessCallback();
-        if (successCallback) {
-            return function () {
-                // tslint:disable-next-line:no-eval
-                return eval(successCallback);
-            }.call({ contentlet });
-        }
-    }
-
-    private getSuccessCallback(): string {
-        const successCallback = getFieldsFromLayout(this.layout).filter(
-            (field: DotCMSContentTypeField) => field.variable === 'formSuccessCallback'
-        )[0];
-        return successCallback.values;
     }
 
     private resetForm(): void {
