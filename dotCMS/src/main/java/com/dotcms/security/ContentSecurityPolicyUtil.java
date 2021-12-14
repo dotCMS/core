@@ -7,6 +7,7 @@ import com.dotcms.repackage.org.apache.axiom.om.util.Base64;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import io.vavr.Lazy;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -84,6 +85,8 @@ public class ContentSecurityPolicyUtil {
     private static final Lazy<String> CONTENT_SECURITY_POLICY_CONFIG = Lazy.of(()->Config
             .getStringProperty("ContentSecurityPolicy.header", null));
 
+    private static String overwriteContentSecurityPolicyConfig;
+
     static {
         contentSecurityPolicyResolvers = map(
                 "{script-src nonce}", new ContentSecurityPolicyResolver(
@@ -99,6 +102,11 @@ public class ContentSecurityPolicyUtil {
 
     private ContentSecurityPolicyUtil() {}
 
+    @VisibleForTesting
+    public static void overwriteConfigValue(final String value){
+        overwriteContentSecurityPolicyConfig = value;
+    }
+
     private static String calculateNonce() {
         final String randomAlphanumeric = RandomStringUtils.randomAlphanumeric(RANDOM_STRING_LENGTH);
         return Base64.encode(randomAlphanumeric.getBytes());
@@ -111,7 +119,8 @@ public class ContentSecurityPolicyUtil {
     }
 
     private static String getContentSecurityPolicyHeader() {
-        return CONTENT_SECURITY_POLICY_CONFIG.get();
+        return UtilMethods.isSet(overwriteContentSecurityPolicyConfig) ? overwriteContentSecurityPolicyConfig :
+                CONTENT_SECURITY_POLICY_CONFIG.get();
     }
 
     /**
