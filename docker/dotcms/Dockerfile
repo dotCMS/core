@@ -61,8 +61,8 @@ RUN groupadd -g $USER_GID $USER_NAME && \
 	useradd -l -d /srv -g $USER_GID -u $USER_UID $USER_NAME
 
 # Copy our build
-COPY --from=build-cms --chown=dotcms:dotcms /srv/ /srv/
-COPY --chown=dotcms:dotcms ROOT/ /
+COPY --from=build-cms /srv/ /srv/
+COPY ROOT/ /
 
 # Make scripts runable
  RUN find /srv/ -type f -name "*.sh" -exec chmod a+x {} \; && \
@@ -71,7 +71,7 @@ COPY --chown=dotcms:dotcms ROOT/ /
     # Make dotcms user owner
     mkdir -p /data/shared/assets && \
     mkdir -p /data/local/dotsecure/license && \
-    chown -R dotcms /data 
+
 
 # ----------------------------------------------
 # Stage 3:  Flatten everything to 1 layer
