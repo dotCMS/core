@@ -1,4 +1,5 @@
 export interface DotContentletItem {
+    contentTypeIcon?: string;
     language: string;
     typeVariable: string;
     modDate: string;

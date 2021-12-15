@@ -41,11 +41,20 @@ describe('dot-contentlet-thumbnail', () => {
             // TODO: find a way to avoid the onError with an invalid image.
             xit('should show image', async () => {});
 
-            it('should show dot-contentlet-icon', async () => {
+            it('should show dot-contentlet-icon with FileAsset icon', async () => {
                 element.setProperty('contentlet', { ...contentletMock, hasTitleImage: 'false' });
                 await page.waitForChanges();
                 const icon = await page.find('dot-contentlet-icon');
                 expect(await icon.getAttribute('icon')).toEqual(contentletMock.__icon__);
+                expect(await icon.getAttribute('size')).toEqual('30px');
+                expect(await icon.getAttribute('aria-label')).toEqual('Alt test');
+            });
+
+            it('should show dot-contentlet-icon with custom icon', async () => {
+                element.setProperty('contentlet', { ...contentletMock, hasTitleImage: 'false', baseType:'CONTENT', contentTypeIcon: '360' });
+                await page.waitForChanges();
+                const icon = await page.find('dot-contentlet-icon');
+                expect(await icon.getAttribute('icon')).toEqual('360');
                 expect(await icon.getAttribute('size')).toEqual('30px');
                 expect(await icon.getAttribute('aria-label')).toEqual('Alt test');
             });
