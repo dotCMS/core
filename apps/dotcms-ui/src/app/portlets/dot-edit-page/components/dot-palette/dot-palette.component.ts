@@ -19,22 +19,10 @@ import { DotPaletteContentletsComponent } from './dot-palette-contentlets/dot-pa
             state(
                 'contentlet:out',
                 style({
-                    transform: 'translateX(100%)'
+                    transform: 'translateX(0%)'
                 })
             ),
-            state(
-                'contentType:in',
-                style({
-                    transform: 'translateX(0)'
-                })
-            ),
-            state(
-                'contentType:out',
-                style({
-                    transform: 'translateX(-100%)'
-                })
-            ),
-            transition('* => *', animate('250ms')),
+            transition('* => *', animate('200ms ease-in')),
         ])
     ]
 })
@@ -43,7 +31,6 @@ export class DotPaletteComponent {
     @Input() languageId: string;
     contentTypeVariable = '';
     stateContentlet = 'contentlet:out';
-    stateContentType = 'contentType:in';
 
     @ViewChild('contentlets') contentlets: DotPaletteContentletsComponent;
     @ViewChild('contentTypes') contentTypes: DotPaletteContentTypeComponent;
@@ -57,7 +44,6 @@ export class DotPaletteComponent {
     switchView(variableName?: string): void {
         this.contentTypeVariable = variableName ? variableName : '';
         this.stateContentlet = variableName ? 'contentlet:in' : 'contentlet:out';
-        this.stateContentType = variableName ? 'contentType:out' : 'contentType:in';
     }
 
     /**
@@ -71,7 +57,7 @@ export class DotPaletteComponent {
             this.contentlets.focusInputFilter();
         }
 
-        if (event.toState === 'contentType:in') {
+        if (event.toState === 'contentlet:out') {
             this.contentTypes.focusInputFilter();
         }
     }

@@ -1,15 +1,13 @@
-<dot-palette-content-type
-    #contentTypes
-    (@inOut.done)="onAnimationDone($event)"
-    (selected)="switchView($event)"
-    [@inOut]="stateContentType"
-    [items]="items"
-></dot-palette-content-type>
-<dot-palette-contentlets
-    #contentlets
-    (@inOut.done)="onAnimationDone($event)"
-    (back)="switchView()"
-    [@inOut]="stateContentlet"
-    [contentTypeVariable]="contentTypeVariable"
-    [languageId]="languageId"
-></dot-palette-contentlets>
+<div [@inOut]="stateContentlet" (@inOut.done)="onAnimationDone($event)" data-testId="wrapper">
+    <dot-palette-content-type
+        #contentTypes
+        (selected)="switchView($event)"
+        [items]="items"
+    ></dot-palette-content-type>
+    <dot-palette-contentlets
+        #contentlets
+        (back)="switchView()"
+        [contentTypeVariable]="contentTypeVariable"
+        [languageId]="languageId"
+    ></dot-palette-contentlets>
+</div>

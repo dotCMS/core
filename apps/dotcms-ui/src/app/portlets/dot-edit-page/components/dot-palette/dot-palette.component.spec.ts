@@ -82,8 +82,10 @@ describe('DotPaletteComponent', () => {
         const contentContentletsComp = fixture.debugElement.query(
             By.css('dot-palette-contentlets')
         );
-        expect(contentTypeComp.nativeElement.style.transform).toEqual('translateX(-100%)');
-        expect(contentContentletsComp.nativeElement.style.transform).toEqual('translateX(-100%)');
+
+        const wrapper = fixture.debugElement.query(By.css('[data-testid="wrapper"]'));
+        expect(wrapper.nativeElement.style.transform).toEqual('translateX(-100%)');
+
         expect(contentContentletsComp.componentInstance.contentTypeVariable).toEqual('Blog');
     });
 
@@ -95,9 +97,10 @@ describe('DotPaletteComponent', () => {
         comp.languageId = '2';
         fixture.detectChanges();
         await fixture.whenStable();
-        const contentTypeComp = fixture.debugElement.query(By.css('dot-palette-content-type'));
-        expect(contentTypeComp.nativeElement.style.transform).toEqual('translateX(0px)');
+
+        const wrapper = fixture.debugElement.query(By.css('[data-testid="wrapper"]'));
+        expect(wrapper.nativeElement.style.transform).toEqual('translateX(0%)');
+
         expect(contentContentletsComp.componentInstance.languageId).toEqual('2');
-        expect(contentContentletsComp.nativeElement.style.transform).toEqual('translateX(100%)');
     });
 });
