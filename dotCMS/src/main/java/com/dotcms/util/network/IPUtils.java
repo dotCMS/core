@@ -1,12 +1,12 @@
 package com.dotcms.util.network;
 
-import java.net.InetAddress;
 import java.util.Objects;
 import org.xbill.DNS.Address;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
-import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 
 public class IPUtils {
@@ -43,8 +43,13 @@ public class IPUtils {
 
     }
     
-    final static private String[] privateSubnets = {"10.0.0.0/8","172.16.0.0/12", "192.168.0.0/16"};
+    final static private String[] REMOTE_CALL_SUBNET_BLACKLIST_DEFAULT = {"127.0.0.1/32","10.0.0.0/8","172.16.0.0/12", "192.168.0.0/16"};
     
+    
+    final static Lazy<String[]> disallowedSubnets = Lazy.of(() -> 
+                    Try.of(() -> Config.getStringArrayProperty("REMOTE_CALL_SUBNET_BLACKLIST", REMOTE_CALL_SUBNET_BLACKLIST_DEFAULT))
+                    .getOrElse(REMOTE_CALL_SUBNET_BLACKLIST_DEFAULT));
+
     
     
     /**
@@ -57,24 +62,18 @@ public class IPUtils {
      */
     public static boolean isIpPrivateSubnet(final String ipOrHostName) {
 
+        
+        
         if (ipOrHostName == null) {
             return true;
         }
 
         try {
-            InetAddress addr = Address.getByName(ipOrHostName);
 
-            final String ip = addr.getHostAddress();
+            final String ip = "localhost".equals(ipOrHostName) ? "127.0.0.1" : Address.getByName(ipOrHostName).getHostAddress();
 
-            if ("127.0.0.1".equals(ip)) {
-                return true;
-            }
 
-            if ("localhost".equals(ip)) {
-                return true;
-            }
-            
-            for (String subnet : privateSubnets) {
+            for (String subnet : disallowedSubnets.get()) {
                 if (isIpInCIDR(ip, subnet)) {
                     return true;
                 }
