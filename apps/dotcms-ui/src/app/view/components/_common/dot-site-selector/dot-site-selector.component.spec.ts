@@ -193,7 +193,7 @@ describe('SiteSelectorComponent', () => {
         comp.handleFilterChange(filter);
 
         expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
-        expect(paginatorService.filter).toEqual(filter);
+        expect(paginatorService.filter).toEqual(`*${filter}`);
     });
 
     it('should pass class name to searchable dropdown', () => {
@@ -220,7 +220,7 @@ describe('SiteSelectorComponent', () => {
 
         searchableDropdownComponent.filterChange.emit('');
 
-        expect(paginatorService.filter).toEqual('');
+        expect(paginatorService.filter).toEqual('*');
     });
 
     it('should emit change event', () => {
