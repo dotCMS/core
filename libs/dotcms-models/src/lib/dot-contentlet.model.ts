@@ -2,6 +2,7 @@ export interface DotCMSContentlet {
     archived: boolean;
     baseType: string;
     contentType: string;
+    file?: string;
     folder: string;
     hasTitleImage: boolean;
     host: string;

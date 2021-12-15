@@ -116,7 +116,7 @@ describe('DotcmsConfigService', () => {
     });
 
     it('should get timezone list', (done) => {
-        service.getTimeZone().subscribe((result) => {
+        service.getTimeZones().subscribe((result) => {
             const expectedResult = [...mockDotTimeZones];
             expectedResult.sort((a: DotTimeZone, b: DotTimeZone) => {
                 if (a.label < b.label) {

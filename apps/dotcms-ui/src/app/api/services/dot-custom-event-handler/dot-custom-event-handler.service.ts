@@ -10,6 +10,10 @@ import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-han
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotNavLogoService } from '@services/dot-nav-logo/dot-nav-logo.service';
 import { DotGenerateSecurePasswordService } from '@services/dot-generate-secure-password/dot-generate-secure-password.service';
+import { DotEventsService } from '@services/dot-events/dot-events.service';
+
+export const COMPARE_CUSTOM_EVENT = 'compare-contentlet';
+
 /**
  * Handle Custom events
  *
@@ -30,7 +34,8 @@ export class DotCustomEventHandlerService {
         private dotPushPublishDialogService: DotPushPublishDialogService,
         private dotDownloadBundleDialogService: DotDownloadBundleDialogService,
         private dotWorkflowEventHandlerService: DotWorkflowEventHandlerService,
-        private dotGenerateSecurePasswordService: DotGenerateSecurePasswordService
+        private dotGenerateSecurePasswordService: DotGenerateSecurePasswordService,
+        private dotEventsService: DotEventsService
     ) {
         if (!this.handlers) {
             this.handlers = {
@@ -42,7 +47,8 @@ export class DotCustomEventHandlerService {
                 'push-publish': this.pushPublishDialog.bind(this),
                 'download-bundle': this.downloadBundleDialog.bind(this),
                 'workflow-wizard': this.executeWorkflowWizard.bind(this),
-                'generate-secure-password': this.generateSecurePassword.bind(this)
+                'generate-secure-password': this.generateSecurePassword.bind(this),
+                'compare-contentlet': this.openCompareDialog.bind(this)
             };
         }
     }
@@ -60,7 +66,7 @@ export class DotCustomEventHandlerService {
     }
 
     private generateSecurePassword($event: CustomEvent): void {
-        this.dotGenerateSecurePasswordService.open($event.detail.data)
+        this.dotGenerateSecurePasswordService.open($event.detail.data);
     }
 
     private createContentlet($event: CustomEvent): void {
@@ -108,5 +114,9 @@ export class DotCustomEventHandlerService {
 
     private executeWorkflowWizard($event: CustomEvent): void {
         this.dotWorkflowEventHandlerService.open($event.detail.data);
+    }
+
+    private openCompareDialog($event: CustomEvent): void {
+        this.dotEventsService.notify(COMPARE_CUSTOM_EVENT, $event.detail.data);
     }
 }

@@ -1,0 +1,14 @@
+@use "variables" as *;
+:host {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+
+    img {
+        max-width: 250px;
+    }
+    a {
+        margin-top: $spacing-2
+    }
+}
+
