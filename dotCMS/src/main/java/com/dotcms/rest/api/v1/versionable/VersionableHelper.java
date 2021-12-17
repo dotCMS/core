@@ -35,6 +35,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -137,7 +138,8 @@ public class VersionableHelper {
     }
 
     public VersionableRestoreStrategy getDefaultVersionableRestoreVersionStrategy() {
-        return null;
+
+        return defaultVersionableRestoreStrategy;
     }
 
     public VersionableFinderStrategy getDefaultVersionableFindVersionStrategy() {
@@ -215,45 +217,26 @@ public class VersionableHelper {
 
             final Link linkVersion      = (Link)versionable;
             final WebAsset version      = (WebAsset) versionable;
-            final WebAsset workingLink = WebAssetFactory.getBackAssetVersion(version);
+            final WebAsset workingLink  = WebAssetFactory.getBackAssetVersion(version);
 
             // Get parents of the old version so you can update the working
             // information to this new version.
-            List<Inode> parents = new ArrayList<>();
-
-            APILocator.getCategoryAPI().getParents(linkVersion, user, respectFrontEndRoles);
-
-            APILocator.getMenuLinkAPI().getParentContentlets(
-                    linkVersion.getInode()).forEach(contentlet -> {
-                        final Inode inode = new Inode();
-                        inode.setInode(contentlet.getInode());
-                        parents.add(inode);
-                    });
-
-            final Iterator<?> parentsIterator = parents.iterator();
+            final List<Inode> parents = APILocator.getMenuLinkAPI()
+                    .getParentContentlets(linkVersion.getInode())
+                    .stream().map(this::getInode).collect(Collectors.toList());
 
             //update parents to new version delete old versions parents if not live.
-            while (parentsIterator.hasNext()) {
+            for (final Inode parentInode : parents) {
 
-                final Object obj = parentsIterator.next();
-                if(obj instanceof Inode){
-
-                    final Inode parentInode = (Inode) obj;
-                    if(!InodeUtils.isSet(parentInode.getInode())){
-
-                        continue;
-                    }
+                if(InodeUtils.isSet(parentInode.getInode())){
 
                     parentInode.addChild(workingLink);
 
                     //to keep relation types from parent only if it exists
-                    final Tree tree = com.dotmarketing.factories.TreeFactory.getTree(
-                            parentInode, linkVersion);
-                    if ((tree.getRelationType() != null)
-                            && (tree.getRelationType().length() != 0)) {
+                    final Tree tree = TreeFactory.getTree(parentInode, linkVersion);
+                    if ((tree.getRelationType() != null) && (tree.getRelationType().length() != 0)) {
 
-                        final Tree newTree = com.dotmarketing.factories.TreeFactory.getTree(
-                                parentInode, workingLink);
+                        final Tree newTree = TreeFactory.getTree(parentInode, workingLink);
                         newTree.setRelationType(tree.getRelationType());
                         newTree.setTreeOrder(0);
                         TreeFactory.saveTree(newTree);
@@ -262,29 +245,40 @@ public class VersionableHelper {
                     // checks type of parent and deletes child if not live version.
                     if (!linkVersion.isLive()) {
 
-                        if (parentInode instanceof Inode) {
-
-                            parentInode.deleteChild(linkVersion);
-                        }
+                        parentInode.deleteChild(linkVersion);
                     }
                 }
             }
 
             final ContentletLoader contentletLoader = new ContentletLoader();
             //Rewriting the parents contentlets of the link
-            APILocator.getMenuLinkAPI().getParentContentlets(
-                    workingLink.getInode()).stream().filter(contentlet -> {
-                        try {
-                            return contentlet.isWorking();
-                        } catch (DotDataException | DotSecurityException e) {
-                            throw new DotRuntimeException(e);
-                        }
-                    }).forEach( contentlet -> contentletLoader.invalidate(contentlet));
+            APILocator.getMenuLinkAPI().getParentContentlets
+                    (workingLink.getInode()).stream().filter(this::isWorking)
+                    .forEach(contentletLoader::invalidate);
 
             return new VersionableView(workingLink);
         } catch (Exception e) {
 
+            Logger.error(this, e.getMessage(), e);
             throw new DotDataException(e.getMessage(), e);
+        }
+    }
+
+    @NotNull
+    private Inode getInode(final Contentlet contentlet) {
+        
+        final Inode inode = new Inode();
+        inode.setInode(contentlet.getInode());
+        return inode;
+    }
+
+    private boolean isWorking(final Contentlet contentlet) {
+
+        try {
+
+            return contentlet.isWorking();
+        } catch (DotDataException | DotSecurityException e) {
+            throw new DotRuntimeException(e);
         }
     }
 
