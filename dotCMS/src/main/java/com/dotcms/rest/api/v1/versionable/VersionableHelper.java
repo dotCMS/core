@@ -233,14 +233,7 @@ public class VersionableHelper {
                     parentInode.addChild(workingLink);
 
                     //to keep relation types from parent only if it exists
-                    final Tree tree = TreeFactory.getTree(parentInode, linkVersion);
-                    if ((tree.getRelationType() != null) && (tree.getRelationType().length() != 0)) {
-
-                        final Tree newTree = TreeFactory.getTree(parentInode, workingLink);
-                        newTree.setRelationType(tree.getRelationType());
-                        newTree.setTreeOrder(0);
-                        TreeFactory.saveTree(newTree);
-                    }
+                    this.saveTree(linkVersion, workingLink, parentInode);
 
                     // checks type of parent and deletes child if not live version.
                     if (!linkVersion.isLive()) {
@@ -264,9 +257,22 @@ public class VersionableHelper {
         }
     }
 
+    private void saveTree(final Link linkVersion, final WebAsset workingLink,
+                          final Inode parentInode) {
+
+        final Tree tree = TreeFactory.getTree(parentInode, linkVersion);
+        if ((tree.getRelationType() != null) && (tree.getRelationType().length() != 0)) {
+
+            final Tree newTree = TreeFactory.getTree(parentInode, workingLink);
+            newTree.setRelationType(tree.getRelationType());
+            newTree.setTreeOrder(0);
+            TreeFactory.saveTree(newTree);
+        }
+    }
+
     @NotNull
     private Inode getInode(final Contentlet contentlet) {
-        
+
         final Inode inode = new Inode();
         inode.setInode(contentlet.getInode());
         return inode;
