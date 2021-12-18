@@ -273,3 +273,5 @@ This maintenance release includes the following code fixes:
 134. https://github.com/dotCMS/core/issues/21393 : log4j2 zero day exploit #21393
 
 135. https://github.com/dotCMS/core/issues/20519 : Class in rows are lost when you remove a row #20519
+
+136. https://github.com/dotCMS/core/issues/21198 : 200 redirects to external links are not rendering properly #21198
