@@ -269,3 +269,5 @@ This maintenance release includes the following code fixes:
 132. https://github.com/dotCMS/core/issues/21267 : ReindexThread dies with bad data #21267
 
 133. https://github.com/dotCMS/core/issues/21392 : Make userId immutable #21392
+
+134. https://github.com/dotCMS/core/issues/21393 : log4j2 zero day exploit #21393

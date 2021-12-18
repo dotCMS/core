@@ -18,10 +18,10 @@
         <Property name="PUSHPUBLISH_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/archive/dotcms-pushpublish-%i{BundleId}.log.gz</Property>
         <Property name="VELOCITY_LOG_FILE">${sys:DOTCMS_LOGGING_HOME}/dotcms-velocity.log</Property>
         <Property name="VELOCITY_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/archive/dotcms-velocity-%i.log.gz</Property>
-        <Property name="PATTERN">%-5level %d %c:%M(%L): %m%n</Property>
-        <Property name="CONSOLE_PATTERN">%-5level %d %c:%M(%L): %m%n</Property>
-        <Property name="MESSAGE_PATTERN">[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %c{2}: %m%n</Property>
-        <Property name="MDC_MESSAGE_PATTERN">[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %m - %X{EndpointName} %X{BundleId} %n</Property>
+        <Property name="PATTERN">%-5level %d %c:%M(%L): %m{nolookups}%n</Property>
+        <Property name="CONSOLE_PATTERN">%-5level %d %c:%M(%L): %m{nolookups}%n</Property>
+        <Property name="MESSAGE_PATTERN">[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %c{2}: %m{nolookups}%n</Property>
+        <Property name="MDC_MESSAGE_PATTERN">[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %m{nolookups} - %X{EndpointName} %X{BundleId} %n</Property>
         <Property name="VISITOR_LOG_FILE">${sys:catalina.base}/logs/visitors-v3.$${date:yyyy-MM-dd}.log</Property>
         <Property name="VISITOR_FILENAME_PATTERN">${sys:catalina.base}/logs/archive/visitors-v3-%i.log.gz</Property>
     </Properties>
@@ -138,7 +138,7 @@
         <RollingFile name="VISITOR-FILE"
             fileName="${VISITOR_LOG_FILE}"
             filePattern="${VISITOR_FILENAME_PATTERN}">
-            <PatternLayout pattern="%msg%n"/>
+            <PatternLayout pattern="%msg{nolookups}%n"/>
             <Policies>
                 <SizeBasedTriggeringPolicy size="20MB"/>
             </Policies>
