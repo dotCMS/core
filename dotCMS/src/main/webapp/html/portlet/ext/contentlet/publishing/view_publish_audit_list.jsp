@@ -23,9 +23,11 @@
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@ page import="com.dotcms.publisher.bundle.bean.Bundle"%>
+<%@ page import="java.util.stream.Collectors" %>
+<%@ page import="com.dotcms.publisher.business.PublishQueueElementTransformer" %>
 <%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
 <%
-
+	final int MAX_ASSETS_TO_SHOW = 3;
     ContentletAPI conAPI = APILocator.getContentletAPI();
     PublishAuditAPI publishAuditAPI = PublishAuditAPI.getInstance();
 
@@ -69,7 +71,7 @@
     int counter =  0;
 
     try{
-   		iresults =  publishAuditAPI.getAllPublishAuditStatus(new Integer(limit),new Integer(offset));
+   		iresults =  publishAuditAPI.getAllPublishAuditStatus(limit, offset, MAX_ASSETS_TO_SHOW);
    		counter =   publishAuditAPI.countAllPublishAuditStatus().intValue();
     }catch(DotPublisherException e){
     	iresults = new ArrayList();
@@ -101,26 +103,29 @@
 <script type="text/javascript">
    dojo.require("dijit.Tooltip");
 
-   function showDetail(bundleId) {
-		var dialog = new dijit.Dialog({
-			id: 'bundleDetail',
-	        title: "<%= LanguageUtil.get(pageContext, "publisher_Audit_Detail_Desc")%>",
-	        style: "width: 700px; ",
-	        content: new dojox.layout.ContentPane({
-	            href: "/html/portlet/ext/contentlet/publishing/view_publish_audit_detail.jsp?bundle="+bundleId
-	        }),
-	        onHide: function() {
-	        	var dialog=this;
-	        	setTimeout(function() {
-	        		dialog.destroyRecursive();
-	        	},200);
-	        },
-	        onLoad: function() {
+   function showDetail(bundleId, event) {
+	   if (!event || event.target.className !== 'view_link') {
+		   var dialog = new dijit.Dialog({
+			   id: 'bundleDetail',
+			   title: "<%= LanguageUtil.get(pageContext, "publisher_Audit_Detail_Desc")%>",
+			   style: "width: 700px; ",
+			   content: new dojox.layout.ContentPane({
+				   href: "/html/portlet/ext/contentlet/publishing/view_publish_audit_detail.jsp?bundle="
+						   + bundleId
+			   }),
+			   onHide: function () {
+				   var dialog = this;
+				   setTimeout(function () {
+					   dialog.destroyRecursive();
+				   }, 200);
+			   },
+			   onLoad: function () {
 
-	        }
-	    });
-	    dialog.show();
-	    dojo.style(dialog.domNode,'top','80px');
+			   }
+		   });
+		   dialog.show();
+		   dojo.style(dialog.domNode, 'top', '80px');
+	   }
 	}
 
    function doAuditPagination(offset,limit) {
@@ -343,32 +348,8 @@
 				<%--BundleTitle--%>
 				<%try{ %>
 					<% if(bundleAssets.keySet().size()>0){ %>
-						<td valign="top" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
-
-						    <%int count=0;for(String id : bundleAssets.keySet()) { %>
-							<%if(count > 0){%><br /><%} %>
-							<%if(count > 2){%>...<%=bundleAssets.keySet().size()-3%> <%=LanguageUtil.get(pageContext, "publisher_audit_more_assets") %><% break;} %>
-
-                            <%String assetType = bundleAssets.get(id); %>
-							<%String assetTitle = PublishAuditUtil.getInstance().getTitle(assetType, id); %>
-                            <%if (assetTitle.equals( assetType )) {%>
-                                <%=assetType %>
-                            <%} else {
-                            	if(assetType.equals("contentlet")) {
-                            		Contentlet con = PublishAuditUtil.getInstance().findContentletByIdentifier(id);
-                            		try {
-                            			APILocator.getHTMLPageAssetAPI().fromContentlet(con);
-                            			assetType = "htmlpage"; // content is an htmlpage
-                            		} catch(DotStateException e) {
-                            			// not an htmlpage 
-                            		}
-                            	}
-                            %>
-                            	
-                                <strong><%= assetType%></strong> : <%=StringEscapeUtils.escapeHtml(assetTitle)%>
-                            <%}%>
-
-						    <%count++;} %>
+						<td valign="top" style="cursor: pointer" onclick="showDetail('<%=c.getBundleId()%>', event)">
+							<table><tbody id="td_assets_<%=c.getBundleId()%>"></tbody></table>
 						</td>
 					<%}else{ %>
 
@@ -389,9 +370,10 @@
 				<%--BundleDateUpdated--%>
 			    <td valign="top" nowrap="nowrap" align="right"><%=DateUtil.prettyDateSince(c.getStatusUpdated()) %></td>
 			</tr>
-		<%
-			}
-		}%>
+		<%}%>
+	<%}%>
+	</table>
+
 <table width="97%" style="margin:10px;" >
 	<tr>
 		<%
@@ -426,3 +408,108 @@
 	</table>
 <%} %>
 
+<script>
+		<%
+            final PublishQueueElementTransformer publishQueueElementTransformer =
+                    new PublishQueueElementTransformer();
+
+            for(PublishAuditStatus publishAuditStatus : iresults) {
+                final Map<String,String> assets = publishAuditStatus.getStatusPojo().getAssets();
+
+                final List<Map<String,Object>> assetsTransformed = assets.entrySet().stream()
+                    .map(entry -> publishQueueElementTransformer.getMap(entry.getKey(), entry.getValue()))
+                    .collect(Collectors.toList());
+
+        %>
+		<%if (publishAuditStatus.getTotalNumberOfAssets() > MAX_ASSETS_TO_SHOW) {%>
+			addShowMoreMessage('<%=publishAuditStatus.getBundleId()%>', '<%=publishAuditStatus.getTotalNumberOfAssets()%>');
+		<%}%>
+
+		<%
+			for (final Map<String,Object> asset : assetsTransformed) {
+				final Object assetTypeAsObject = asset.get(PublishQueueElementTransformer.TYPE_KEY);
+				final String assetType = UtilMethods.isSet(assetTypeAsObject) ?
+					assetTypeAsObject.toString() : StringPool.BLANK;
+
+				final Object assetTitleAsObject = asset.get(PublishQueueElementTransformer.TITLE_KEY);
+				final String assetTitle = UtilMethods.isSet(assetTitleAsObject) ?
+					assetTitleAsObject.toString() : StringPool.BLANK;
+		%>
+				addRow({
+					title: '<%=StringEscapeUtils.escapeHtml(assetTitle)%>',
+					type: '<%=assetType%>',
+					bundleId: '<%=publishAuditStatus.getBundleId()%>',
+					isHtml: <%=asset.get(PublishQueueElementTransformer.HTML_PAGE_KEY)%>
+				});
+			<%}%>
+
+
+	<%}%>
+
+	function addRow(rowData) {
+		let tbody = document.getElementById("td_assets_" + rowData.bundleId);
+
+		let newRow = tbody.insertRow();
+		let newCell = newRow.insertCell();
+		newCell.style.borderBottomWidth = "0px";
+
+		let type = rowData.isHtml ? 'htmlpage' : rowData.type;
+		let html = '<div>' +
+				((rowData.title === rowData.type) ? type : '<strong>' + type + '</strong> : ' + rowData.title) + '</div>';
+		newCell.innerHTML = html;
+	}
+
+	function addShowMoreMessage(bundleId, nAssets){
+		let td = document.getElementById("td_assets_" + bundleId);
+
+		let newRow = td.insertRow();
+		let newCell = newRow.insertCell();
+
+		newCell.innerHTML += nAssets + ' <%=LanguageUtil.get(pageContext, "publisher_audit_more_assets") %>&nbsp;' +
+				"<a href=\"javascript:requestAssets('" + bundleId + "')\">" +
+				"<strong id='view_all_" + bundleId + "' class='view_link' style=\"text-decoration: underline;\"><%=LanguageUtil.get(pageContext, "bundles.view.all") %></strong>" +
+				"</a>";
+	}
+
+
+	function addShowLessMessage(bundleId){
+		let td = document.getElementById("td_assets_" + bundleId);
+		let newRow = td.insertRow();
+		let newCell = newRow.insertCell();
+		newCell.innerHTML +=  '<%=LanguageUtil.get(pageContext, "bundles.item.all.show") %>&nbsp;' +
+				"<a href=\"javascript:requestAssets('" + bundleId + "', 3)\">" +
+				"<strong id='view_less_" + bundleId + "' class='view_link' style=\"text-decoration: underline;\"><%=LanguageUtil.get(pageContext, "bundles.item.less.show")%></strong>" +
+				"</a>";
+	}
+
+	function requestAssets(bundleId, numberToShow = -1){
+		let viewAllNode = (numberToShow === -1) ? document.getElementById('view_all_' + bundleId) : document.getElementById('view_less_' + bundleId);
+
+		if (viewAllNode) {
+			viewAllNode.innerHTML = '<%= LanguageUtil.get(pageContext, "bundles.item.loading")  %>';
+		}
+
+		fetch('/api/bundle/' + bundleId + "/assets?limit=" + numberToShow).then((response) => response.json()).then((data) => {
+			let td = document.getElementById("td_assets_" + bundleId);
+			while (td.firstChild) {
+				td.removeChild(td.firstChild);
+			}
+
+			if (numberToShow !== -1) {
+				addShowMoreMessage(bundleId, data.length);
+				data = data.slice(0, numberToShow);
+			} else {
+				addShowLessMessage(bundleId);
+			}
+
+			data.forEach(asset => addRow({
+				title: asset.<%=PublishQueueElementTransformer.TITLE_KEY%>,
+				type: asset.<%=PublishQueueElementTransformer.TYPE_KEY%>,
+				bundleId: bundleId,
+				isHtml: asset.<%=PublishQueueElementTransformer.HTML_PAGE_KEY%>
+			}));
+		}).catch(function (err) {
+			console.warn('Something went wrong.', err);
+		});
+	}
+</script>

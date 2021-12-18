@@ -380,6 +380,10 @@ public class Logger{
 		}
 	}
 
+    public static void warn(Class clazz, final Supplier<String> message, Throwable ex) {
+        warn(clazz, message.get(), ex);
+    }
+
     public static void warn(Object ob, String message) {
     	warn(ob.getClass(), message);
     }

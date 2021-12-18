@@ -80,6 +80,16 @@ public abstract class PublishAuditAPI {
 	public abstract PublishAuditStatus getPublishAuditStatus(String bundleId) throws DotPublisherException;
 	
 	/**
+	 * Return the {@link PublishAuditStatus} for a bundle
+	 *
+	 * @param bundleId Bundle Id
+	 * @param assetsLimit Max number of assets to return
+	 * @return
+	 * @throws DotPublisherException
+	 */
+	public abstract PublishAuditStatus getPublishAuditStatus(String bundleId, int assetsLimit) throws DotPublisherException;
+
+	/**
 	 * Get all publish status
 	 * @param bundleId
 	 * @return
@@ -107,6 +117,8 @@ public abstract class PublishAuditAPI {
 	 */
 	public abstract List<PublishAuditStatus> getAllPublishAuditStatus(Integer limit, Integer offset) throws DotPublisherException;
 	
+	public abstract List<PublishAuditStatus> getAllPublishAuditStatus(int limit, int offset, int limitAssets) throws DotPublisherException;
+
 	/**
 	 * count all publish status
 	 * @param offset

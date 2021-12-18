@@ -275,3 +275,5 @@ This maintenance release includes the following code fixes:
 135. https://github.com/dotCMS/core/issues/20519 : Class in rows are lost when you remove a row #20519
 
 136. https://github.com/dotCMS/core/issues/21198 : 200 redirects to external links are not rendering properly #21198
+
+137. https://github.com/dotCMS/core/issues/20971 : Large Bundles make the viewing publishing queue slow #20971
