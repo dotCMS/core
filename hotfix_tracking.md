@@ -271,3 +271,5 @@ This maintenance release includes the following code fixes:
 133. https://github.com/dotCMS/core/issues/21392 : Make userId immutable #21392
 
 134. https://github.com/dotCMS/core/issues/21393 : log4j2 zero day exploit #21393
+
+135. https://github.com/dotCMS/core/issues/20519 : Class in rows are lost when you remove a row #20519
