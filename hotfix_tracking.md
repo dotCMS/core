@@ -267,3 +267,5 @@ This maintenance release includes the following code fixes:
 131. https://github.com/dotCMS/core/issues/21313 : Push publishing sometimes changes the order of contentlets in the multi-tree table on multilingual pages #21313
 
 132. https://github.com/dotCMS/core/issues/21267 : ReindexThread dies with bad data #21267
+
+133. https://github.com/dotCMS/core/issues/21392 : Make userId immutable #21392
