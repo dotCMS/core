@@ -285,3 +285,5 @@ This maintenance release includes the following code fixes:
 140. https://github.com/dotCMS/core/issues/20765 : Contentlets with future publish date prevent it from being Push Published #20765
 
 141. https://github.com/dotCMS/core/issues/20464 : Concurrency Issues with loadPermission #20464
+
+142. https://github.com/dotCMS/core/issues/20446 : Unable to load very large images #20446

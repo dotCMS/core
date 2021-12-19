@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.util.Map;
 
 import javax.imageio.ImageIO;
-
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotcms.repackage.com.dotmarketing.jhlabs.image.HSBAdjustFilter;
 
@@ -50,9 +50,9 @@ public class HsbImageFilter extends ImageFilter {
 			BufferedImage dst = filter.filter(src, null);
 			ImageIO.write(dst, "png", resultFile);
 			dst.flush();
-		} catch (IOException e) {
-			Logger.error(this.getClass(), e.getMessage());
-		}
+	    } catch (Exception e) {
+	        throw new DotRuntimeException("unable to convert file:" +file + " : " +  e.getMessage(),e);
+	    }
 
 		return resultFile;
 	}
