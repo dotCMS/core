@@ -277,3 +277,5 @@ This maintenance release includes the following code fixes:
 136. https://github.com/dotCMS/core/issues/21198 : 200 redirects to external links are not rendering properly #21198
 
 137. https://github.com/dotCMS/core/issues/20971 : Large Bundles make the viewing publishing queue slow #20971
+
+138. https://github.com/dotCMS/core/issues/19321 : Large bundles can take too long for load balancers #19321
