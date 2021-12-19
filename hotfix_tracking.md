@@ -279,3 +279,5 @@ This maintenance release includes the following code fixes:
 137. https://github.com/dotCMS/core/issues/20971 : Large Bundles make the viewing publishing queue slow #20971
 
 138. https://github.com/dotCMS/core/issues/19321 : Large bundles can take too long for load balancers #19321
+
+139. https://github.com/dotCMS/core/issues/20812 : Delete All Bundles does not really delete all bundles #20812

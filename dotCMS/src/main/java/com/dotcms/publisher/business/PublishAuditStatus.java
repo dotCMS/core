@@ -40,7 +40,10 @@ public class PublishAuditStatus implements Serializable {
 
 		BUNDLE_SAVED_SUCCESSFULLY(14),
 
-		SUCCESS_WITH_WARNINGS(17);
+		INVALID_TOKEN(15),
+		LICENSE_REQUIRED(16),
+
+        SUCCESS_WITH_WARNINGS(17);
 
 		private int code;
 		private Status(int code) {
@@ -138,4 +141,3 @@ public class PublishAuditStatus implements Serializable {
 		this.createDate = createDate;
 	}		
 }
-
