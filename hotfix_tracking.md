@@ -281,3 +281,5 @@ This maintenance release includes the following code fixes:
 138. https://github.com/dotCMS/core/issues/19321 : Large bundles can take too long for load balancers #19321
 
 139. https://github.com/dotCMS/core/issues/20812 : Delete All Bundles does not really delete all bundles #20812
+
+140. https://github.com/dotCMS/core/issues/20765 : Contentlets with future publish date prevent it from being Push Published #20765

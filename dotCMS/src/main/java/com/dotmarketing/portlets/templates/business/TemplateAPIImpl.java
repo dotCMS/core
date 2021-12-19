@@ -30,6 +30,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.templates.design.bean.*;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -58,17 +59,17 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 
 	@CloseDBIfOpened
-	public List<Template> findTemplatesAssignedTo(Host parentHost) throws DotDataException {
+	public List<Template> findTemplatesAssignedTo(final Host parentHost) throws DotDataException {
 		return FactoryLocator.getTemplateFactory().findTemplatesAssignedTo(parentHost, false);
 	}
 
 	@CloseDBIfOpened
-	public List<Template> findTemplatesAssignedTo(Host parentHost, boolean includeArchived) throws DotDataException {
+	public List<Template> findTemplatesAssignedTo(final Host parentHost, final boolean includeArchived) throws DotDataException {
 		return FactoryLocator.getTemplateFactory().findTemplatesAssignedTo(parentHost, includeArchived);
 	}
 
 	@CloseDBIfOpened
-	public List<Template> findTemplatesUserCanUse(User user, String hostId, String query, boolean searchHost,int offset, int limit) throws DotDataException, DotSecurityException {
+	public List<Template> findTemplatesUserCanUse(final User user, final String hostId, final String query, final boolean searchHost, final int offset, final int limit) throws DotDataException, DotSecurityException {
 		return FactoryLocator.getTemplateFactory().findTemplatesUserCanUse(user, hostId, query, searchHost, offset, limit);
 	}
 
@@ -89,16 +90,18 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 	@WrapInTransaction
 	@Override
-	public Template copy(Template sourceTemplate, Host destination, boolean forceOverwrite, List<ContainerRemapTuple> containerMappings, User user,
-			boolean respectFrontendRoles)
+	public Template copy(final Template sourceTemplate, final Host destination, final boolean forceOverwrite, final List<ContainerRemapTuple> containerMappings, final User user,
+			final boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
 
 		if (!permissionAPI.doesUserHavePermission(sourceTemplate, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-			throw new DotSecurityException("You don't have permission to read the source file.");
+			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to READ the source template");
+			throw new DotSecurityException("You don't have permission to read the source template");
 		}
 
 		if (!permissionAPI.doesUserHavePermission(destination, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
-			throw new DotSecurityException("You don't have permission to write in the destination folder.");
+			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to WRITE in the destination site");
+			throw new DotSecurityException("You don't have permission to write in the destination site.");
 		}
 
 		boolean isNew = false;
@@ -142,21 +145,26 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		// Copy permissions
 		permissionAPI.copyPermissions(sourceTemplate, newTemplate);
 
+		ActivityLogger.logInfo(this.getClass(), "Copied Template", "User " +
+				user.getPrimaryKey() + " copied template" + newTemplate.getTitle(), destination.getTitle() != null ? destination.getTitle() : "default");
+
 		return newTemplate;
 	}
 
 	@WrapInTransaction
-	public Template copy(Template sourceTemplate, Host destination, boolean forceOverwrite,
-			boolean copySourceContainers, User user, boolean respectFrontendRoles) throws DotDataException,
+	public Template copy(final Template sourceTemplate, final Host destination, final boolean forceOverwrite,
+			final boolean copySourceContainers, User user, final boolean respectFrontendRoles) throws DotDataException,
 			DotSecurityException {
 
 		if (!permissionAPI.doesUserHavePermission(sourceTemplate, PermissionAPI.PERMISSION_READ, user,
 				respectFrontendRoles)) {
-			throw new DotSecurityException("You don't have permission to read the source file.");
+			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to READ the source template");
+			throw new DotSecurityException("You don't have permission to read the source template");
 		}
 
 		if (!permissionAPI.doesUserHavePermission(destination, PermissionAPI.PERMISSION_WRITE, user,
 				respectFrontendRoles)) {
+			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to WRITE in the destination site");
 			throw new DotSecurityException("You don't have permission to write in the destination folder.");
 		}
 
@@ -173,7 +181,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		return copy(sourceTemplate, destination, forceOverwrite, remap, user, respectFrontendRoles);
 	}
 
-	private void save(Template template) throws DotDataException {
+	private void save(final Template template) throws DotDataException {
 		templateFactory.save(template);
 	}
 
@@ -260,6 +268,10 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 			Logger.warn(this, String.format("License required to save layout: template -> %s", template));
 			throw new InvalidLicenseException();
+		}
+
+		if (!UtilMethods.isSet(template.getTitle())){
+			throw new DotDataException("Title is required on templates");
 		}
 
 	    if(UtilMethods.isSet(template.getIdentifier())) {
@@ -370,33 +382,36 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 					containers.add(container);
 				}
 			}
-        }
-        // this is a light weight search for pages that use this template
-        List<ContentletSearch> pages =
-				APILocator.getContentletAPIImpl().searchIndex("+catchall:" + template.getIdentifier() + " +baseType:"
-                + BaseContentType.HTMLPAGE.getType(), 100, 0, null, user,respectFrontendRoles);
+        } else {//only do this if is not drawed
+			// this is a light weight search for pages that use this template
+			final List<ContentletSearch> pages =
+					APILocator.getContentletAPIImpl()
+							.searchIndex("+catchall:" + template.getIdentifier() + " +baseType:"
+											+ BaseContentType.HTMLPAGE.getType(), 100, 0, null, user,
+									respectFrontendRoles);
 
-        for (final ContentletSearch page : pages) {
-            final Set<String> containerIdSet =
-                    APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier())
-                    .stream()
-                    .map(MultiTree::getContainer)
-                    .collect(Collectors.toSet());
+			for (final ContentletSearch page : pages) {
+				final Set<String> containerIdSet =
+						APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier())
+								.stream()
+								.map(MultiTree::getContainer)
+								.collect(Collectors.toSet());
 
-
-            for (final String containerId : containerIdSet) {
-                final Container container = APILocator.getContainerAPI().getWorkingContainerById(containerId, user, false);
-                if(container==null) {
-                    continue;
-                }
-                containers.add(container);
-            }
-        }
+				for (final String containerId : containerIdSet) {
+					final Container container = APILocator.getContainerAPI()
+							.getWorkingContainerById(containerId, user, false);
+					if (container == null) {
+						continue;
+					}
+					containers.add(container);
+				}
+			}
+		}
         return new ArrayList<Container>(containers);
 
     }
 
-	public List<ContainerUUID> getContainersUUID(TemplateLayout layout) {
+	public List<ContainerUUID> getContainersUUID(final TemplateLayout layout) {
 		final List<ContainerUUID> containerUUIDS = new ArrayList<>();
 		final List<TemplateLayoutRow> rows = layout.getBody().getRows();
 
@@ -410,7 +425,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			}
 		}
 
-		Sidebar sidebar = layout.getSidebar();
+		final Sidebar sidebar = layout.getSidebar();
 
 		if (sidebar != null && sidebar.getContainers() != null) {
 			containerUUIDS.addAll(sidebar.getContainers());
@@ -430,14 +445,14 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		return templateFactory.getContainerUUIDFromHTML(drawTemplateBody);
 	}
 
-	private List<String> getContainersId(TemplateLayout layout) {
+	private List<String> getContainersId(final TemplateLayout layout) {
 
 		return this.getContainersUUID(layout).stream()
 				.map(ContainerUUID::getIdentifier)
 				.collect(Collectors.toList());
 	}
 
-	public Host getTemplateHost(Template template) throws DotDataException {
+	public Host getTemplateHost(final Template template) throws DotDataException {
 
 		try {
 			Host host = APILocator.getHostAPI().findParentHost(template, APILocator.getUserAPI().getSystemUser(), false);
@@ -450,7 +465,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	}
 
 	@WrapInTransaction
-	public boolean delete(Template template, User user, boolean respectFrontendRoles) throws DotSecurityException,
+	public boolean delete(final Template template, final User user, final boolean respectFrontendRoles) throws DotSecurityException,
 			Exception {
 		if(permissionAPI.doesUserHavePermission(template, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
 			return deleteAsset(template);
@@ -459,23 +474,24 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		}
 	}
 
-	public Template findWorkingTemplate(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+	@CloseDBIfOpened
+	public Template findWorkingTemplate(final String id, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(id);
 		return (!UtilMethods.isSet(info)) ? null : find(info.getWorkingInode(), user, respectFrontendRoles);
 
 	}
 
 	@CloseDBIfOpened
-	public List<Template> findTemplates(User user, boolean includeArchived,
-			Map<String, Object> params, String hostId, String inode, String identifier, String parent,
-			int offset, int limit, String orderBy) throws DotSecurityException,
+	public List<Template> findTemplates(final User user, final boolean includeArchived,
+			final Map<String, Object> params, final String hostId, final String inode, final String identifier, final String parent,
+			final int offset, final int limit, final String orderBy) throws DotSecurityException,
 			DotDataException {
 		return templateFactory.findTemplates(user, includeArchived, params, hostId, inode, identifier, parent, offset, limit, orderBy);
 	}
 
 	@CloseDBIfOpened
 	@Override
-	public Template find(String inode, User user,  boolean respectFrontEndRoles) throws DotSecurityException,
+	public Template find(final String inode, final User user, final boolean respectFrontEndRoles) throws DotSecurityException,
 			DotDataException {
 		Template t =  templateFactory.find(inode);
 		if(t!=null && InodeUtils.isSet(t.getInode()) &&
@@ -496,7 +512,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 	@CloseDBIfOpened
 	@Override
-	public String checkDependencies(String templateInode, User user, Boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+	public String checkDependencies(final String templateInode, final User user, final Boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		String result = null;
 		Template template = find(templateInode, user, respectFrontendRoles);
 		// checking if there are pages using this template
@@ -545,12 +561,12 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	}
 
     @Override
-    public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException {
+    public int deleteOldVersions(final Date assetsOlderThan) throws DotStateException, DotDataException {
         return deleteOldVersions(assetsOlderThan,"template");
     }
 
     @WrapInTransaction
-    public void updateThemeWithoutVersioning(String templateInode, String theme) throws DotDataException{
+    public void updateThemeWithoutVersioning(final String templateInode, final String theme) throws DotDataException{
     	templateFactory.updateThemeWithoutVersioning(templateInode, theme);
     }
 
@@ -564,7 +580,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	 * @throws DotSecurityException
 	 */
 	@WrapInTransaction
-	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException{
+	public void updateUserReferences(final String userId, final String replacementUserId)throws DotDataException, DotSecurityException{
 		templateFactory.updateUserReferences(userId, replacementUserId);
 	}
 }
