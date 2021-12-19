@@ -54,9 +54,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
@@ -73,7 +71,6 @@ import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.common.unit.TimeValue;
 import java.util.stream.Collectors;
-
 
 /**
  * This class upgrades the old permissionsfactoryimpl to handle the storage and retrieval of bit permissions from the database
@@ -1695,7 +1692,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
      * waiting, and if so, use it, otherwise we query the permission_reference table
      */
 
-    permissionList = Try.of(() -> lockManager.tryLock(LOCK_PREFIX + permissionKey, () -> {
+
+	final String lockKey = Config.getBooleanProperty("PERMISSION_LOCK_ON_READ", false) ? permissionKey : UUIDGenerator.uuid();
+
+    permissionList = Try.of(() -> lockManager.tryLock(LOCK_PREFIX + lockKey, () -> {
       List<Permission> bitPermissionsList = permissionCache.getPermissionsFromCache(permissionKey);
       if (bitPermissionsList != null) {
         return bitPermissionsList;

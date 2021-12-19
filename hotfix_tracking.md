@@ -283,3 +283,5 @@ This maintenance release includes the following code fixes:
 139. https://github.com/dotCMS/core/issues/20812 : Delete All Bundles does not really delete all bundles #20812
 
 140. https://github.com/dotCMS/core/issues/20765 : Contentlets with future publish date prevent it from being Push Published #20765
+
+141. https://github.com/dotCMS/core/issues/20464 : Concurrency Issues with loadPermission #20464
