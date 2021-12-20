@@ -4887,8 +4887,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 // can't remove it
                 CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
 
-                // Once saved the contetlet gets saved, it gets a refresh from the db. for which the incoming data gets lost.
-                // Therefore here we need to make sure there's something on the original contentlet that needs to be used to update the identifier.
+                // Once the contetlet is saved, it gets refresh from the db. for which the incoming data gets lost.
+                // Therefore here we need to make sure we use the original contentlet that comes with the info passed from the ui.
                 final String hostId = UtilMethods.isSet(contentletRaw.getHost()) ? contentletRaw.getHost() : contentlet.getHost();
                 identifier.setHostId(hostId);
                 if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET){
