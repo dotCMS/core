@@ -11,6 +11,3 @@ source /srv/utils/config-defaults.sh
 [[ ! -d /data/shared/felix/undeployed ]] && mkdir -p /data/shared/felix/undeployed
 
 
-
-
-mkdir -p /srv/home
