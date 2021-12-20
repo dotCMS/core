@@ -29,7 +29,7 @@ import io.vavr.control.Try;
  * This class provides access to the system configuration parameters that are
  * set through the {@code dotmarketing-config.properties}, and the
  * {@code dotcms-config-cluster.properties} files.
- * 
+ *
  * @author root
  * @version 1.0
  * @since Mar 22, 2012
@@ -130,7 +130,7 @@ public class Config {
 		}
 	}
 	/**
-	 * 
+	 *
 	 */
     private static void _loadProperties () {
 
@@ -153,10 +153,11 @@ public class Config {
 
         //Reading both property files
         readProperties( dotmarketingPropertiesUrl, clusterPropertiesUrl );
-        
+
         // Include ENV variables that start with DOT_
 
         readEnvironmentVariables();
+		readSystemProperties();
     }
 
 	/**
@@ -285,7 +286,7 @@ public class Config {
 	}
 
     /**
-     * 
+     *
      */
 	private static void _refreshProperties () {
 
@@ -307,8 +308,15 @@ public class Config {
 					.forEach(e -> props.setProperty(e.getKey(), e.getValue()));
 		}
 	}
-	
-	
+
+	private static void readSystemProperties() {
+		synchronized (Config.class) {
+			System.getProperties().entrySet().stream().filter(e -> e.getKey().toString().startsWith(ENV_PREFIX))
+					.forEach(e -> props.setProperty(e.getKey().toString(), e.getValue()));
+		}
+	}
+
+
 	private static String envKey(final String theKey) {
 
         String envKey = ENV_PREFIX + theKey.toUpperCase().replace(".", "_");
@@ -318,7 +326,7 @@ public class Config {
         return envKey.endsWith("_") ? envKey.substring(0, envKey.length() - 1) : envKey;
 
 	}
-	
+
 	/**
 	 * Returns a string property
 	 *
@@ -333,15 +341,15 @@ public class Config {
 
 		if (propsArr == null || propsArr.length == 0) {
 		    return defValue;
-		} 
-		
+		}
+
 		return String.join(",", propsArr);
-		
+
 	}
 
 	/**
 	 * this is only here so the old tests pass
-	 * 
+	 *
 	 * @param name
 	 * @param defValue
 	 * @param thing
@@ -352,12 +360,12 @@ public class Config {
     public static String getStringProperty(final String name, final String defValue, boolean thing) {
 
         return getStringProperty(name, defValue);
-        
+
     }
 
-	
-	
-	
+
+
+
 
 	/**
 	 * @deprecated  Use getStringProperty(String name, String default) and
@@ -371,7 +379,7 @@ public class Config {
     }
 
 	/**
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 */
@@ -413,7 +421,7 @@ public class Config {
 
     /**
      * If config value == null, returns the default
-     * 
+     *
      * @param name
      * @param defaultValue
      * @return
@@ -421,10 +429,10 @@ public class Config {
     public static String[] getStringArrayProperty(final String name, final String[] defaultValue) {
         _refreshProperties();
 
-        return props.containsKey(envKey(name)) 
+        return props.containsKey(envKey(name))
                 ? props.getStringArray(envKey(name))
-                : props.containsKey(name) 
-                    ? props.getStringArray(name) 
+                : props.containsKey(name)
+                    ? props.getStringArray(name)
                     : defaultValue;
     }
 	/**
@@ -434,13 +442,13 @@ public class Config {
 	@Deprecated
 	public static int getIntProperty (final String name) {
 	    _refreshProperties ();
-	    
+
         Integer value = Try.of(()->props.getInt(envKey(name))).getOrNull();
         if(value!=null) {
             return value;
         }
-	    
-	    
+
+
 	    return props.getInt(name);
 	}
 
@@ -454,7 +462,7 @@ public class Config {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param name
 	 * @param defaultVal
 	 * @return
@@ -465,7 +473,7 @@ public class Config {
         if(value!=null) {
             return value;
         }
-        
+
         return props.getInt(name, defaultVal);
 	}
 
@@ -476,18 +484,18 @@ public class Config {
 	@Deprecated
 	public static float getFloatProperty (final String name) {
 	    _refreshProperties ();
-	    
+
         Float value = Try.of(()->props.getFloat(envKey(name))).getOrNull();
         if(value!=null) {
             return value;
         }
-        
-	    
+
+
 	    return props.getFloat( name );
 	}
 
 	/**
-	 * 
+	 *
 	 * @param name
 	 * @param defaultVal
 	 * @return
@@ -516,7 +524,7 @@ public class Config {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param name
 	 * @param defaultVal
 	 * @return
@@ -531,7 +539,7 @@ public class Config {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param key
 	 * @param value
 	 */
@@ -542,7 +550,7 @@ public class Config {
 	}
 
 	/**
-	 * 
+	 *
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
@@ -552,7 +560,7 @@ public class Config {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param prefix
 	 * @return
 	 */
@@ -565,7 +573,7 @@ public class Config {
 
 	/**
 	 * Spindle Config
-	 * 
+	 *
 	 * @param myApp
 	 */
 	public static void setMyApp(javax.servlet.ServletContext myApp) {
@@ -576,7 +584,7 @@ public class Config {
 
 
 	/**
-	 * 
+	 *
 	 */
 	public static void forceRefresh(){
 		lastRefreshTime = new Date(0);
