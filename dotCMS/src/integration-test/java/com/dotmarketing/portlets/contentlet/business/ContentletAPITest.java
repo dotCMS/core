@@ -118,6 +118,7 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import io.vavr.API;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.BufferedReader;
@@ -7339,6 +7340,36 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertNotNull(fileAsContentOptional.get().getMap().get("fileName"));
         assertTrue(((String)fileAsContentOptional.get().getMap().get("fileName")).startsWith("testMissingProps"));
 
+    }
+
+
+    /**
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}
+     * Given scenario: We create a file asset under the default site then we update the site/folder then we call checkin again
+     * Expected result: After the checkin the contentlet should have been moved properly.
+     * @throws Exception
+     */
+    @Test
+    public void Test_Move_On_Host_Folder_Update_On_CheckIn()
+            throws DotDataException, DotSecurityException {
+
+        final Host nextSite = new SiteDataGen().nextPersisted();
+        final Folder nextFolder = new FolderDataGen().site(nextSite).name("any").nextPersisted();
+
+        //Create Contentlet
+        final Contentlet originalContentlet = TestDataUtils.getFileAssetContent(true,1L, TestFile.GIF );
+
+        final Contentlet checkout1 = contentletAPI
+                .checkout(originalContentlet.getInode(), user, false);
+
+        checkout1.setHost(nextSite.getIdentifier());
+        checkout1.setFolder(nextFolder.getInode());
+
+        Contentlet moved = contentletAPI.checkin(checkout1, user, false);
+        final Identifier identifier = APILocator.getIdentifierAPI().find(moved.getIdentifier());
+        assertEquals(nextSite.getIdentifier(),identifier.getHostId());
+        moved = APILocator.getContentletAPI().find(moved.getInode(),APILocator.systemUser(),false);
+        assertEquals(moved.getHost(),identifier.getHostId());
     }
 
 

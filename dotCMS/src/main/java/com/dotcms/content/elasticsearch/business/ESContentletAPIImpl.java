@@ -4758,7 +4758,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             User sysuser = APILocator.getUserAPI().getSystemUser();
 
-            Contentlet contentletRaw = populateHost(contentlet);
+            final Contentlet contentletRaw = populateHost(contentlet);
 
             if ( contentlet.getMap().get( "_use_mod_date" ) != null ) {
                     /*
@@ -4887,7 +4887,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 // can't remove it
                 CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
 
-                identifier.setHostId(contentlet.getHost());
+                // Once saved the contetlet gets saved, it gets a refresh from the db. for which the incoming data gets lost.
+                // Therefore here we need to make sure there's something on the original contentlet that needs to be used to update the identifier.
+                final String hostId = UtilMethods.isSet(contentletRaw.getHost()) ? contentletRaw.getHost() : contentlet.getHost();
+                identifier.setHostId(hostId);
                 if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET){
                     try {
                         if(contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD) == null){
