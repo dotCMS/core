@@ -287,3 +287,5 @@ This maintenance release includes the following code fixes:
 141. https://github.com/dotCMS/core/issues/20464 : Concurrency Issues with loadPermission #20464
 
 142. https://github.com/dotCMS/core/issues/20446 : Unable to load very large images #20446
+
+143. https://github.com/dotCMS/core/issues/21441 : Update log4j to 2.17 #21441
