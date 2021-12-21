@@ -56,4 +56,39 @@ public class IPUtilsTest {
         }
 
     }
+    
+    
+    final static String[] ipsOnPrivateSubnets= {
+            "192.168.1.255",
+            "10.0.0.4",
+            "127.0.0.1",
+            "172.16.3.5",
+            "172.16.3.0",
+            "localhost"
+    };
+    
+    final static String[] ipsOnPublicSubnets= {
+            "2.2.2.2",
+            "3.22.136.122",
+            "142.251.32.110",
+            "74.6.231.21",
+            "dotcms.com",
+            "193.252.133.20"
+    };
+    
+    @Test
+    public void test_ip_private_subnets() {
+        for(String testCase : ipsOnPrivateSubnets) {
+            assertTrue( IPUtils.isIpPrivateSubnet(testCase));
+        }
+    }
+    @Test
+    
+    public void test_ip_public_subnets() {
+        for(String testCase : ipsOnPublicSubnets) {
+            assertFalse( IPUtils.isIpPrivateSubnet(testCase));
+        }
+    }
+    
+    
 }
