@@ -7,11 +7,11 @@ import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.api.v1.template.TemplateForm;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.PaginationUtil;
@@ -20,15 +20,21 @@ import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -39,6 +45,8 @@ import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.structure.factories.StructureFactory;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.Constants;
@@ -47,10 +55,14 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.liferay.portal.model.User;
+import com.liferay.portal.struts.ActionException;
+import com.liferay.util.servlet.SessionMessages;
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ResourceNotFoundException;
@@ -75,9 +87,14 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * This resource provides all the different end-points associated to information and actions that
@@ -584,7 +601,7 @@ public class ContainerResource implements Serializable {
      *
      * @param request
      * @param response
-     * @param templateForm
+     * @param containerForm
      * @return
      * @throws DotDataException
      * @throws DotSecurityException
@@ -595,17 +612,43 @@ public class ContainerResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response saveNew(@Context final HttpServletRequest  request,
                                   @Context final HttpServletResponse response,
-                                  final TemplateForm templateForm) throws DotDataException, DotSecurityException {
+                                  final ContainerForm containerForm) throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+                .requestAndResponse(request, response).requiredBackendUser(true).rejectWhenNoUser(true).init();
         final User user         = initData.getUser();
-        final Host host         = this.hostWebAPI.getCurrentHostNoThrow(request);
+        final Host host         = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
         final PageMode pageMode = PageMode.get(request);
+        Container container     = new Container();
 
-        return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(
-                this.fillAndSaveTemplate(templateForm, user, host, pageMode, new Template()), user))).build();
+        if(!APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, pageMode.respectAnonPerms)
+                || !APILocator.getPermissionAPI().doesUserHavePermissions(PermissionAPI.PermissionableType.CONTAINERS, PermissionAPI.PERMISSION_EDIT, user)) {
+
+            throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
+        }
+
+        ActivityLogger.logInfo(this.getClass(), "Save Container action",
+                "User " + user.getPrimaryKey() + " saved " + container.getTitle(), host.getHostname());
+
+        container.setMaxContentlets(containerForm.getMaxContentlets());
+        container.setNotes(containerForm.getNotes());
+        container.setPreLoop(containerForm.getPreLoop());
+        container.setPostLoop(containerForm.getPostLoop());
+        container.setSortContentletsBy(containerForm.getSortContentletsBy());
+        container.setStaticify(containerForm.isStaticify());
+        container.setUseDiv(containerForm.isUseDiv());
+        container.setFriendlyName(containerForm.getFriendlyName());
+        container.setModDate(new Date());
+        container.setModUser(user.getUserId());
+        container.setOwner(user.getUserId());
+        container.setShowOnMenu(containerForm.isShowOnMenu());
+        container.setTitle(containerForm.getTitle());
+
+        this.containerAPI.save(container, containerForm.getContainerStructures(), host, user, pageMode.respectAnonPerms);
+
+        return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
     }
+
 
     /**
      * Return live version {@link com.dotmarketing.portlets.containers.model.Container} based on the id

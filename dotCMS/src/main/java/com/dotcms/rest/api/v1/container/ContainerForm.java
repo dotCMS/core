@@ -1,9 +1,6 @@
 package com.dotcms.rest.api.v1.container;
 
-import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.Validated;
-import com.dotcms.rest.api.v1.template.TemplateForm;
-import com.dotcms.rest.api.v1.template.TemplateLayoutView;
 import com.dotmarketing.beans.ContainerStructure;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -13,143 +10,114 @@ import java.util.List;
 @JsonDeserialize(builder = ContainerForm.Builder.class)
 public class ContainerForm  extends Validated {
 
-    private final String  identifier;
-    private final String  inode;
-    private final String  body;
-    private final String  selectedimage;
-    private final String  image;
-    private final boolean drawed;
+    private final String title;
+    // description
+    private final String friendlyName;
+    /** nullable persistent field */
+    private final int maxContentlets;
+    /** nullable persistent field */
+    private final String code;
+    private final String notes;
+    private final String preLoop;
+    private final String postLoop;
     private final boolean showOnMenu;
-    private final String  drawedBody;
-    private final int     countAddContainer;
-    private final int     countContainers;
-    private final String  headCode;
-    private final String  theme;
-    private final String  themeName;
-    private final String  footer;
-    private final String  friendlyName;
-    private final String  header;
-    private final String  name;
-    @NotNull
-    private final String  title;
-    private final int     sortOrder;
-    private final boolean headerCheck;
-    private final boolean footerCheck;
-    private final TemplateLayoutView layout;
+    private final int sortOrder;
+    private final String sortContentletsBy;
+    private final String structureInode;
+    private final List<ContainerStructure> containerStructures;
+    private final String owner; // dotcms 472
+    private final String hostId;
+    private final boolean staticify;
+    private final boolean useDiv;
+    private final boolean dynamic;
 
     private ContainerForm(final ContainerForm.Builder builder) {
 
-        this.identifier = builder.identifier;
-        this.inode = builder.inode;
-        this.body = builder.body;
-        this.selectedimage = builder.selectedimage;
-        this.image = builder.image;
-        this.drawed = builder.drawed;
-        this.showOnMenu = builder.showOnMenu;
-        this.drawedBody = builder.drawedBody;
-        this.countAddContainer = builder.countAddContainer;
-        this.countContainers = builder.countContainers;
-        this.headCode = builder.headCode;
-        this.theme = builder.theme;
-        this.themeName = builder.themeName;
-        this.footer = builder.footer;
+        this.title = builder. title;
         this.friendlyName = builder.friendlyName;
-        this.header = builder.header;
-        this.name = builder.name;
-        this.title = builder.title;
+        this.maxContentlets = builder.maxContentlets;
+        this.code = builder.code;
+        this.notes = builder.notes;
+        this.preLoop = builder.preLoop;
+        this.postLoop = builder.postLoop;
+        this.showOnMenu = builder.showOnMenu;
         this.sortOrder = builder.sortOrder;
-        this.headerCheck = builder.headerCheck;
-        this.footerCheck = builder.footerCheck;
-        this.layout      = builder.layout;
-
-    }
-
-    public TemplateLayoutView getLayout() {
-        return layout;
-    }
-
-    public String getIdentifier() {
-        return identifier;
-    }
-
-    public String getInode() {
-        return inode;
-    }
-
-    public String getBody() {
-        return body;
-    }
-
-    public String getSelectedimage() {
-        return selectedimage;
-    }
-
-    public String getImage() {
-        return image;
-    }
-
-    public boolean isDrawed() {
-        return drawed;
-    }
-
-    public boolean isShowOnMenu() {
-        return showOnMenu;
-    }
-
-    public String getDrawedBody() {
-        return drawedBody;
-    }
-
-    public int getCountAddContainer() {
-        return countAddContainer;
-    }
-
-    public int getCountContainers() {
-        return countContainers;
-    }
-
-    public String getHeadCode() {
-        return headCode;
-    }
-
-    public String getTheme() {
-        return theme;
-    }
-
-    public String getThemeName() {
-        return themeName;
-    }
-
-    public String getFooter() {
-        return footer;
-    }
-
-    public String getFriendlyName() {
-        return friendlyName;
-    }
-
-    public String getHeader() {
-        return header;
-    }
-
-    public String getName() {
-        return name;
+        this.sortContentletsBy = builder.sortContentletsBy;
+        this.structureInode = builder.structureInode;
+        this.containerStructures = builder.containerStructures;
+        this.owner = builder.owner;
+        this.hostId = builder.hostId;
+        this.staticify = builder.staticify;
+        this.useDiv = builder.useDiv;
+        this.dynamic = builder.dynamic;
     }
 
     public String getTitle() {
         return title;
     }
 
+    public String getFriendlyName() {
+        return friendlyName;
+    }
+
+    public int getMaxContentlets() {
+        return maxContentlets;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public String getPreLoop() {
+        return preLoop;
+    }
+
+    public String getPostLoop() {
+        return postLoop;
+    }
+
+    public boolean isShowOnMenu() {
+        return showOnMenu;
+    }
+
     public int getSortOrder() {
         return sortOrder;
     }
 
-    public boolean isHeaderCheck() {
-        return headerCheck;
+    public String getSortContentletsBy() {
+        return sortContentletsBy;
     }
 
-    public boolean isFooterCheck() {
-        return footerCheck;
+    public String getStructureInode() {
+        return structureInode;
+    }
+
+    public List<ContainerStructure> getContainerStructures() {
+        return containerStructures;
+    }
+
+    public String getOwner() {
+        return owner;
+    }
+
+    public String getHostId() {
+        return hostId;
+    }
+
+    public boolean isStaticify() {
+        return staticify;
+    }
+
+    public boolean isUseDiv() {
+        return useDiv;
+    }
+
+    public boolean isDynamic() {
+        return dynamic;
     }
 
     public static final class Builder {
@@ -157,7 +125,7 @@ public class ContainerForm  extends Validated {
         @JsonProperty
         private  String title;
 
-
+        // description
         @JsonProperty
         private  String friendlyName;
 
