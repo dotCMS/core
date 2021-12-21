@@ -91,7 +91,6 @@ COPY --from=container-base / /
 USER $USER_UID:$USER_GID
 ENV JAVA_HOME="/java"
 ENV PATH=$PATH:/java/bin
-ENV DOT_MAIL_SMTP_SSL_PROTOCOLS=TLSv1.2
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/srv/entrypoint.sh"]
 CMD ["dotcms"]
