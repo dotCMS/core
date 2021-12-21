@@ -7,104 +7,71 @@
 
 set -e
 
-
 ## Tomcat config
 
 # Auto-set Tomcat version from container build var, used for proper pathing
-[[ -f /srv/TOMCAT_VERSION ]] && TOMCAT_VERSION=$( cat /srv/TOMCAT_VERSION )
-TOMCAT_HOME=/srv/dotserver/tomcat-${TOMCAT_VERSION}
-
-# Java heap size used for Tomcat/dotCMS app
-: ${CMS_HEAP_SIZE:="1G"}
+TOMCAT_HOME=$( find /srv/ -type d -name "/srv/dotserver/tomcat-*" )
 
 # Extra JVM args to pass to the Tomcat JVM
-: ${CMS_JAVA_OPTS:=""}
+BASE_JAVA_OPTS=${BASE_JAVA_OPTS:"-Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -server -XX:+DisableExplicitGC -Dpdfbox.fontcache=/data/local/dotsecure"}
+AGENT_JAVA_OPTS=${AGENT_JAVA_OPS:"-javaagent:${TOMCAT_HOME}/webapps/ROOT/WEB-INF/lib/byte-buddy-agent-1.9.0.jar"}
+MEMORY_JAVA_OPTS=${MEMORY_JAVA_OPTS:"-Xmx1G"}
+JAVA_OPTS=${JAVA_OPTS:"$BASE_JAVA_OPTS $AGENT_JAVA_OPTS $MEMORY_JAVA_OPTS"}
+
 
 # Maximum number of Tomcat Connector threadpool threads (shared across Connectors)
-: ${CMS_CONNECTOR_THREADS:="600"}
+CMS_CONNECTOR_THREADS=${CMS_CONNECTOR_THREADS:"600"}
 
 # SMTP hostname for CMS
-: ${CMS_SMTP_HOST:="smtp"}
+CMS_SMTP_HOST=${CMS_SMTP_HOST:"smtp.dotcms.site"}
 
-## Plugins init (not implemented yet!!)
-: ${CMS_PLUGINS_OSGI_OVERWRITE_SHARED:="false"}
-: ${CMS_PLUGINS_OSGI_FIX_OWNER:="true"}
+# PATHS (SHOULD NOT CHANGE)
+DOT_ASSET_REAL_PATH=${DOT_ASSET_REAL_PATH:"/data/shared/assets"}
+DOT_DYNAMIC_CONTENT_PATH=${DOT_DYNAMIC_CONTENT_PATH:"/data/local/dotsecure"}
+
 
 ## Database config
 
-# IP or hostname of database server
-: ${PROVIDER_DB_DNSNAME:=""}
+# IP/hostname of database server
+PROVIDER_DB_DNSNAME=${PROVIDER_DB_DNSNAME:"db.dotcms.site"}
 
 # Database type, one of ["POSTGRES","MYSQL","ORACLE","MSSQL"]
-: ${PROVIDER_DB_DRIVER:="POSTGRES"}
+PROVIDER_DB_DRIVER=${PROVIDER_DB_DRIVER:"POSTGRES"}
 
-# JDBC-compliant URL to connect to DB (only needed to set custom options, PROVIDER_DB_DNSNAME & PROVIDER_DB_PORT must also be set or use defaults)
-: ${PROVIDER_DB_URL:=""}
+# Database name
+PROVIDER_DB_DBNAME=${PROVIDER_DB_DBNAME:"dotcms"}
 
 # Database tcp port number. If unset, will use default per database type
-: ${PROVIDER_DB_PORT:=""} 
+PROVIDER_DB_PORT=${PROVIDER_DB_PORT:"5432"} 
+
+# JDBC-compliant URL to connect to DB (only needed to set custom options, PROVIDER_DB_DNSNAME & PROVIDER_DB_PORT must also be set or use defaults)
+PROVIDER_DB_URL=${PROVIDER_DB_URL:""}
 
 # Database username
-: ${PROVIDER_DB_USERNAME:="dotcmsdbuser"}
+PROVIDER_DB_USERNAME=${PROVIDER_DB_USERNAME:"dotcmsdbuser"}
 
 # Database password
-: ${PROVIDER_DB_PASSWORD:="password"}
+PROVIDER_DB_PASSWORD=${PROVIDER_DB_PASSWORD:"password"}
 
 # Maximum number of database connections
-: ${PROVIDER_DB_MAXCONNS:="200"}
+PROVIDER_DB_MAXCONNS=${PROVIDER_DB_MAXCONNS:"200"}
 
-# dotCMS runas user UID
-: ${CMS_RUNAS_UID:="65001"}
+## Elasticsearch config
+DOT_ES_AUTH_TYPE=${DOT_ES_AUTH_TYPE:"BASIC"}
+DOT_ES_AUTH_BASIC_USER=${DOT_ES_AUTH_BASIC_USER:"admin"}
+DOT_ES_AUTH_BASIC_PASSWORD=${DOT_ES_AUTH_BASIC_PASSWORD:"admin"}
+DOT_ES_ENDPOINTS=${DOT_ES_ENDPOINTS:"https://es.dotcms.site:9200"}
 
-# dotCMS runas group GID
-: ${CMS_RUNAS_GID:="65001"}
-
-## Discovery note
-#   The following are defined per-image upstream in the build Dockerfile:
-#   - SERVICE_DELAY_DEFAULT_MIN
-#   - SERVICE_DELAY_DEFAULT_STEP
-#   - SERVICE_DELAY_DEFAULT_MAX
-
-
-## Hazelcast config
-
+## External Hazelcast service
 # IP or hostname of external Hazelcast service (can be multi-valued RR DNS record). Leave unset for embedded Hazelcast
-: ${PROVIDER_HAZELCAST_DNSNAMES:=""}
-: ${PROVIDER_HAZELCAST_SVC_DELAY_MIN:="${SERVICE_DELAY_DEFAULT_MIN}"}
-: ${PROVIDER_HAZELCAST_SVC_DELAY_STEP:="${SERVICE_DELAY_DEFAULT_STEP}"}
-: ${PROVIDER_HAZELCAST_SVC_DELAY_MAX:="${SERVICE_DELAY_DEFAULT_MAX}"}
-: ${PROVIDER_HAZELCAST_GROUPNAME:="dotCMS"}
-: ${PROVIDER_HAZELCAST_GROUPPASSWORD:=""}
-: ${PROVIDER_HAZELCAST_PORT:="5701"}
+PROVIDER_HAZELCAST_DNSNAMES=${PROVIDER_HAZELCAST_DNSNAMES:""}
+PROVIDER_HAZELCAST_GROUPNAME=${PROVIDER_HAZELCAST_GROUPNAME:"dotCMS"}
+PROVIDER_HAZELCAST_GROUPPASSWORD=${PROVIDER_HAZELCAST_GROUPPASSWORD:""}
+PROVIDER_HAZELCAST_PORT=${PROVIDER_HAZELCAST_PORT:"5701"}
 
-
-
-## Elasticsearch discovery
-
-# IP or hostname of external Elasticsearch service (can be multi-valued RR DNS record). Leave unset for embedded Elasticsearch
-: ${PROVIDER_ELASTICSEARCH_DNSNAMES:=""}
-: ${PROVIDER_ELASTICSEARCH_SVC_DELAY_MIN:="${SERVICE_DELAY_DEFAULT_MIN}"}
-: ${PROVIDER_ELASTICSEARCH_SVC_DELAY_STEP:="${SERVICE_DELAY_DEFAULT_STEP}"}
-: ${PROVIDER_ELASTICSEARCH_SVC_DELAY_MAX:="${SERVICE_DELAY_DEFAULT_MAX}"}
-# Background ES discovery refresh rate (in seconds)
-: ${PROVIDER_ELASTICSEARCH_SVC_REFRESH:='10'}
-: ${PROVIDER_ELASTICSEARCH_CLUSTER_NAME:="dotCMSContentIndex"}
-: ${PROVIDER_ELASTICSEARCH_PORT_TRANSPORT:="9300"}
-: ${PROVIDER_ELASTICSEARCH_PORT_HTTP:="9200"}
-# Elasticsearch HTTP server will be bound to localhost by default (this is not used by dotCMS). Change address binding to make accessible.
-: ${PROVIDER_ELASTICSEARCH_ADDR_HTTP:="127.0.0.1"}
-# Elasticsearch HTTP server is disabled by default. Set to "true" to enable.
-: ${PROVIDER_ELASTICSEARCH_ENABLE_HTTP:="false"}
-
-
-## Load balancer config
-
-# Default PORT 
-: ${PROVIDER_LOADBALANCER_DNSNAMES:=""}
-: ${PROVIDER_LOADBALANCER_PORT_HTTP:="80"}
-: ${PROVIDER_LOADBALANCER_SVC_DELAY_MIN:="${SERVICE_DELAY_DEFAULT_MIN}"}
-: ${PROVIDER_LOADBALANCER_SVC_DELAY_STEP:="${SERVICE_DELAY_DEFAULT_STEP}"}
-: ${PROVIDER_LOADBALANCER_SVC_DELAY_MAX:="${SERVICE_DELAY_DEFAULT_MAX}"}
+## if you want to provide a custom starter for the initial data load, specify
+# a url here and dotCMS will download it before starting up
+CUSTOM_STARTER_URL=${CUSTOM_STARTER_URL:""}
 
 
 
