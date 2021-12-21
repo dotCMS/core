@@ -12,7 +12,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 
 /** @author Hibernate CodeGenerator */
-public class  ContainerForm extends ValidatorForm {
+public class ContainerForm extends ValidatorForm {
 
 	private static final long serialVersionUID = 1L;
 
