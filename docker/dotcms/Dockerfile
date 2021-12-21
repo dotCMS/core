@@ -87,8 +87,8 @@ LABEL com.dotcms.contact "support@dotcms.com"
 LABEL com.dotcms.vendor "dotCMS LLC"
 LABEL com.dotcms.description "dotCMS Content Management System"
 
-ARG USER_UID="1000000000"
-ARG USER_GID="1000000000"
+ARG USER_UID="65001"
+ARG USER_GID="65001"
 
 COPY --from=container-base / /
 
