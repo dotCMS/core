@@ -10,6 +10,7 @@ import java.util.List;
 @JsonDeserialize(builder = ContainerForm.Builder.class)
 public class ContainerForm  extends Validated {
 
+    private final String identifier;
     private final String title;
     // description
     private final String friendlyName;
@@ -33,6 +34,7 @@ public class ContainerForm  extends Validated {
 
     private ContainerForm(final ContainerForm.Builder builder) {
 
+        this.identifier = builder.identifier;
         this.title = builder. title;
         this.friendlyName = builder.friendlyName;
         this.maxContentlets = builder.maxContentlets;
@@ -50,6 +52,10 @@ public class ContainerForm  extends Validated {
         this.staticify = builder.staticify;
         this.useDiv = builder.useDiv;
         this.dynamic = builder.dynamic;
+    }
+
+    public String getIdentifier() {
+        return identifier;
     }
 
     public String getTitle() {
@@ -122,6 +128,10 @@ public class ContainerForm  extends Validated {
 
     public static final class Builder {
 
+
+        @JsonProperty
+        private  String identifier;
+
         @JsonProperty
         private  String title;
 
@@ -172,6 +182,11 @@ public class ContainerForm  extends Validated {
         private boolean staticify;
         private boolean useDiv;
         private boolean dynamic;
+
+        public ContainerForm.Builder identifier (final String identifier) {
+            this.identifier = identifier;
+            return this;
+        }
 
         public ContainerForm.Builder title (final String title) {
             this.title = title;

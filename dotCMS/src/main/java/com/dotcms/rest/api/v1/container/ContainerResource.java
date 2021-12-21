@@ -627,7 +627,66 @@ public class ContainerResource implements Serializable {
             throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
         }
 
-        ActivityLogger.logInfo(this.getClass(), "Save Container action",
+        ActivityLogger.logInfo(this.getClass(), "Save Container",
+                "User " + user.getPrimaryKey() + " saved " + container.getTitle(), host.getHostname());
+
+        container.setMaxContentlets(containerForm.getMaxContentlets());
+        container.setNotes(containerForm.getNotes());
+        container.setPreLoop(containerForm.getPreLoop());
+        container.setPostLoop(containerForm.getPostLoop());
+        container.setSortContentletsBy(containerForm.getSortContentletsBy());
+        container.setStaticify(containerForm.isStaticify());
+        container.setUseDiv(containerForm.isUseDiv());
+        container.setFriendlyName(containerForm.getFriendlyName());
+        container.setModDate(new Date());
+        container.setModUser(user.getUserId());
+        container.setOwner(user.getUserId());
+        container.setShowOnMenu(containerForm.isShowOnMenu());
+        container.setTitle(containerForm.getTitle());
+
+        this.containerAPI.save(container, containerForm.getContainerStructures(), host, user, pageMode.respectAnonPerms);
+
+        return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
+    }
+
+    /**
+     * Updates a new working version of a container.
+     *
+     * @param request
+     * @param response
+     * @param containerForm
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @PUT
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response update(@Context final HttpServletRequest  request,
+                                  @Context final HttpServletResponse response,
+                                  final ContainerForm containerForm) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).requiredBackendUser(true).rejectWhenNoUser(true).init();
+        final User user         = initData.getUser();
+        final Host host         = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+        final PageMode pageMode = PageMode.get(request);
+
+        if(!APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, pageMode.respectAnonPerms)
+                || !APILocator.getPermissionAPI().doesUserHavePermissions(PermissionAPI.PermissionableType.CONTAINERS, PermissionAPI.PERMISSION_EDIT, user)) {
+
+            throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
+        }
+
+        final Container container = this.getContainerWorking(containerForm.getIdentifier(), user, host);
+
+        if (null == container || !InodeUtils.isSet(container.getInode())) {
+
+            new DoesNotExistException("The container: " + containerForm.getIdentifier() + " does not exists");
+        }
+
+        ActivityLogger.logInfo(this.getClass(), "Upate Container: " + containerForm.getIdentifier(),
                 "User " + user.getPrimaryKey() + " saved " + container.getTitle(), host.getHostname());
 
         container.setMaxContentlets(containerForm.getMaxContentlets());
