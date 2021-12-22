@@ -4,6 +4,7 @@
 <%@page import="com.dotcms.rendering.velocity.util.VelocityUtil"%>
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
+<%@ page import="com.dotmarketing.util.Logger" %>
 <%
 Host myHost =  WebAPILocator.getHostWebAPI().getCurrentHost(request); 
 Identifier id = APILocator.getIdentifierAPI().find(myHost, "/application/wysiwyg/tinymceprops.vtl");
@@ -20,7 +21,10 @@ if (hasDefaultConfig) {%>
     <%
         Context ctx = VelocityUtil.getWebContext(request, response);
         String props = VelocityUtil.eval("#set($dontShowIcon=true)#dotParse('//" + myHost.getHostname() + "/application/wysiwyg/tinymceprops.vtl')", ctx);
-        props = UtilMethods.isNotSet(props) ? "{}" : props;
+        if(UtilMethods.isNotSet(props)){
+            props = "{}";
+            Logger.warn(this.getClass()," Unable to set props on TinyMCE! No tinyMCE default props were loaded. check that the following file exist on your site.`/application/wysiwyg/tinymceprops.vtl`.");
+        }
     %>
   
     var dotCMSHasLicense = <%=dotCMSHasLicense%>;
