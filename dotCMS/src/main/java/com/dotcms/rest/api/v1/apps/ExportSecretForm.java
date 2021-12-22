@@ -16,7 +16,7 @@ import com.dotcms.repackage.javax.validation.constraints.NotNull;
 public class ExportSecretForm extends Validated {
 
     @NotNull
-    @Size(min = 14, max=32)
+    @Size(min = 14, max=32, message="The password must be a string with a length of 14 and 32")
     private final String password;
 
     @NotNull
