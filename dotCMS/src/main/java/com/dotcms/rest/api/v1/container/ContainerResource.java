@@ -708,7 +708,6 @@ public class ContainerResource implements Serializable {
         return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
     }
 
-
     /**
      * Return live version {@link com.dotmarketing.portlets.containers.model.Container} based on the id
      *
@@ -829,10 +828,10 @@ public class ContainerResource implements Serializable {
     }
 
     /**
-     * Unpublishes a Container
+     * UnPublishes a Container
      *
-     * This method receives an identifier and unpublish it
-     * To unpublish a template successfully the user needs to have Publish Permissions and the container
+     * This method receives an identifier and publish it
+     * To publish a container successfully the user needs to have Publish Permissions and the container
      * can not be archived.
      *
      * @param request            {@link HttpServletRequest}
@@ -848,10 +847,10 @@ public class ContainerResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response unpublish(@Context final HttpServletRequest  request,
-                                    @Context final HttpServletResponse response,
-                                    @QueryParam("containerId") final String containerId) throws DotSecurityException, DotDataException {
+                                  @Context final HttpServletResponse response,
+                                  @QueryParam("containerId") final String containerId) throws DotSecurityException, DotDataException {
 
-        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+        final InitDataObject initData = new WebResource.InitBuilder(webResource) // todo:
                 .requestAndResponse(request, response).rejectWhenNoUser(true).init();
         final User user         = initData.getUser();
         final PageMode pageMode = PageMode.get(request);
@@ -900,6 +899,149 @@ public class ContainerResource implements Serializable {
                                   @QueryParam("containerId") final String containerId) throws DotSecurityException, DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final User user         = initData.getUser();
+        final PageMode pageMode = PageMode.get(request);
+
+        if (!UtilMethods.isSet(containerId)) {
+
+            throw new IllegalArgumentException("The container id is required");
+        }
+
+        final Container container = this.getContainerWorking(containerId,user,
+                WebAPILocator.getHostWebAPI().getHost(request));
+        if (null != container && InodeUtils.isSet(container.getInode())) {
+
+            this.containerAPI.archive(container, user, pageMode.respectAnonPerms);
+            ActivityLogger.logInfo(this.getClass(), "Doing Archive Container Action", "User " +
+                    user.getPrimaryKey() + " archived container: " + container.getIdentifier());
+        } else {
+
+            Logger.error(this, "Container with Id: " + containerId + " does not exist");
+            throw new DoesNotExistException("Container with Id: " + containerId + " does not exist");
+        }
+
+        return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
+    }
+
+    /**
+     * UnArchives container
+     *
+     * This method receives a container id and archives it.
+     * To archive a container successfully the user needs to have Edit Permissions.
+     *
+     * @param request            {@link HttpServletRequest}
+     * @param response           {@link HttpServletResponse}
+     * @param containerId       containerId identifier to archive.
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @PUT
+    @Path("/_unarchive")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response unarchive(@Context final HttpServletRequest  request,
+                                  @Context final HttpServletResponse response,
+                                  @QueryParam("containerId") final String containerId) throws DotSecurityException, DotDataException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource) // todo:
+                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final User user         = initData.getUser();
+        final PageMode pageMode = PageMode.get(request);
+
+        if (!UtilMethods.isSet(containerId)) {
+
+            throw new IllegalArgumentException("The container id is required");
+        }
+
+        final Container container = this.getContainerWorking(containerId,user,
+                WebAPILocator.getHostWebAPI().getHost(request));
+        if (null != container && InodeUtils.isSet(container.getInode())) {
+
+            this.containerAPI.archive(container, user, pageMode.respectAnonPerms);
+            ActivityLogger.logInfo(this.getClass(), "Doing Archive Container Action", "User " +
+                    user.getPrimaryKey() + " archived container: " + container.getIdentifier());
+        } else {
+
+            Logger.error(this, "Container with Id: " + containerId + " does not exist");
+            throw new DoesNotExistException("Container with Id: " + containerId + " does not exist");
+        }
+
+        return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
+    }
+
+    /**
+     * UnArchives container
+     *
+     * This method receives a container id and archives it.
+     * To archive a container successfully the user needs to have Edit Permissions.
+     *
+     * @param request            {@link HttpServletRequest}
+     * @param response           {@link HttpServletResponse}
+     * @param containerId       containerId identifier to archive.
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @DELETE
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response delete(@Context final HttpServletRequest  request,
+                                    @Context final HttpServletResponse response,
+                                    @QueryParam("containerId") final String containerId) throws DotSecurityException, DotDataException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource) // todo:
+                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final User user         = initData.getUser();
+        final PageMode pageMode = PageMode.get(request);
+
+        if (!UtilMethods.isSet(containerId)) {
+
+            throw new IllegalArgumentException("The container id is required");
+        }
+
+        final Container container = this.getContainerWorking(containerId,user,
+                WebAPILocator.getHostWebAPI().getHost(request));
+        if (null != container && InodeUtils.isSet(container.getInode())) {
+
+            this.containerAPI.archive(container, user, pageMode.respectAnonPerms);
+            ActivityLogger.logInfo(this.getClass(), "Doing Archive Container Action", "User " +
+                    user.getPrimaryKey() + " archived container: " + container.getIdentifier());
+        } else {
+
+            Logger.error(this, "Container with Id: " + containerId + " does not exist");
+            throw new DoesNotExistException("Container with Id: " + containerId + " does not exist");
+        }
+
+        return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
+    }
+
+    /**
+     * UnArchives container
+     *
+     * This method receives a container id and archives it.
+     * To archive a container successfully the user needs to have Edit Permissions.
+     *
+     * @param request            {@link HttpServletRequest}
+     * @param response           {@link HttpServletResponse}
+     * @param containerId       containerId identifier to archive.
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @PUT
+    @Path("/_tofile")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response convert(@Context final HttpServletRequest  request,
+                                 @Context final HttpServletResponse response,
+                                 @QueryParam("containerId") final String containerId) throws DotSecurityException, DotDataException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource) // todo:
                 .requestAndResponse(request, response).rejectWhenNoUser(true).init();
         final User user         = initData.getUser();
         final PageMode pageMode = PageMode.get(request);
