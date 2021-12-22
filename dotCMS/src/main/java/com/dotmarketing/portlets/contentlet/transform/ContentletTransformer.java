@@ -24,6 +24,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -290,7 +291,7 @@ public class ContentletTransformer implements DBTransformer {
                 Logger.warn(ContentletTransformer.class, () -> String
                         .format("Failed to convert keyValue field `%s` to an actual json. An Empty will be returned instead. ",
                                 field.getVelocityVarName()));
-                value = new HashMap<>();
+                value = Collections.emptyMap();
             }
         }
 
