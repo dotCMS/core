@@ -20,7 +20,9 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.factories.InodeFactory;
+import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -46,6 +48,7 @@ import java.util.*;
 import java.util.function.Supplier;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_EDIT;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 
@@ -769,12 +772,48 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 
 	@WrapInTransaction
 	@Override
+	public void publish(final Container container, final User user, final boolean respectAnonPerms) throws DotDataException, DotSecurityException {
+
+		Logger.debug(this, ()-> "Doing publish of container: " + container.getIdentifier());
+
+		final Container containerWorkingVersion = this.getWorkingContainerById(
+				container.getIdentifier(), user, respectAnonPerms);
+		//Check write Permissions over container
+		if(!this.permissionAPI.doesUserHavePermission(container, PERMISSION_PUBLISH, user)) {
+
+			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to publish the container");
+			throw new DotSecurityException("User does not have Permissions to publish the Container");
+		}
+
+		try {
+
+			PublishFactory.publishAsset(container, user,respectAnonPerms);
+		} catch (WebAssetException e) {
+
+			Logger.error(this, e.getMessage(), e);
+			throw new DotDataException(e);
+		}
+
+		//Remove live version from version_info
+		containerWorkingVersion.setModDate(new Date());
+		containerWorkingVersion.setModUser(user.getUserId());
+		containerFactory.save(containerWorkingVersion);
+
+		//Clean-up the cache for this template
+		CacheLocator.getContainerCache().remove(container);
+		//remove template from the live directory
+		new ContainerLoader().invalidate(container);
+	}
+
+	@WrapInTransaction
+	@Override
 	public void unpublish(final Container container, final User user, final boolean respectAnonPerms) throws DotDataException, DotSecurityException {
 
 		Logger.debug(this, ()-> "Doing archive of container: " + container.getIdentifier());
 
 		//Check write Permissions over container
-		if(!this.permissionAPI.doesUserHavePermission(container, PERMISSION_WRITE, user)){
+		if(!this.permissionAPI.doesUserHavePermission(container, PERMISSION_WRITE, user)) {
+
 			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to write the container");
 			throw new DotSecurityException("User does not have Permissions to write the Container");
 		}

@@ -803,19 +803,20 @@ public class ContainerResource implements Serializable {
                                     @QueryParam("containerId") final String containerId) throws DotSecurityException, DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+                .requestAndResponse(request, response).requiredBackendUser(true).rejectWhenNoUser(true).init();
         final User user         = initData.getUser();
         final PageMode pageMode = PageMode.get(request);
 
         if (!UtilMethods.isSet(containerId)) {
 
+            Logger.error(this, "The Container with Id: " + containerId + " does not exist");
             throw new DoesNotExistException("The Container with Id: " + containerId + " does not exist");
         }
 
         final Container container = this.getContainerWorking(containerId, user, WebAPILocator.getHostWebAPI().getHost(request));
 
         if (null != container && InodeUtils.isSet(container.getInode())){
-            this.containerAPI.unpublish(container, user, pageMode.respectAnonPerms);
+            this.containerAPI.publish(container, user, pageMode.respectAnonPerms);
             ActivityLogger.logInfo(this.getClass(), "Unpublish Container Action", "User " +
                     user.getPrimaryKey() + " unpublished container: " + container.getIdentifier());
         } else {
@@ -851,8 +852,8 @@ public class ContainerResource implements Serializable {
                                   @Context final HttpServletResponse response,
                                   @QueryParam("containerId") final String containerId) throws DotSecurityException, DotDataException {
 
-        final InitDataObject initData = new WebResource.InitBuilder(webResource) // todo:
-                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).requiredBackendUser(true).rejectWhenNoUser(true).init();
         final User user         = initData.getUser();
         final PageMode pageMode = PageMode.get(request);
 
@@ -1033,7 +1034,7 @@ public class ContainerResource implements Serializable {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    @PUT
+    @POST
     @Path("/_tofile")
     @JSONP
     @NoCache
