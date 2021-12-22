@@ -2,4 +2,4 @@
 
 set -e
 
-cp /srv/templates/tomcat/OVERRIDE/conf/* $TOMCAT_HOME/conf/
+cp /srv/OVERRIDE/tomcat/conf/* $TOMCAT_HOME/conf/

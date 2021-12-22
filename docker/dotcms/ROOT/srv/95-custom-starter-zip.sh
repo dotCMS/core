@@ -8,7 +8,7 @@ CUSTOM_STARTER=custom_starter.zip
 
 ## if we have a custom starter
 if [ -z ${CUSTOM_STARTER_URL} ]; then
-	echo "Using default starter"; 
+	echo ""; 
 else 
 	if [[ ! -f /data/shared/$CUSTOM_STARTER ]]; then
 		touch /data/shared/$CUSTOM_STARTER
