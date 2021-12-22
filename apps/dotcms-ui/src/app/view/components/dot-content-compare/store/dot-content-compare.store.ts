@@ -120,7 +120,7 @@ export class DotContentCompareStore extends ComponentStore<DotContentCompareStat
         return value;
     }
 
-    private convertContentDates(
+    private formatSpecificTypesFields(
         contents: DotCMSContentlet[],
         fields: DotCMSContentTypeField[]
     ): DotCMSContentlet[] {
@@ -173,7 +173,7 @@ export class DotContentCompareStore extends ComponentStore<DotContentCompareStat
                             contents: DotCMSContentlet[];
                         }) => {
                             const fields = this.filterFields(value.contentType);
-                            const formattedContents = this.convertContentDates(
+                            const formattedContents = this.formatSpecificTypesFields(
                                 value.contents,
                                 fields
                             );

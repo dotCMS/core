@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotContentCompareTableData } from '@components/dot-content-compare/store/dot-content-compare.store';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
@@ -8,7 +8,7 @@ import { DotMessageService } from '@services/dot-message/dot-messages.service';
     templateUrl: './dot-content-compare-table.component.html',
     styleUrls: ['./dot-content-compare-table.component.scss']
 })
-export class DotContentCompareTableComponent implements OnInit {
+export class DotContentCompareTableComponent {
     @Input() data: DotContentCompareTableData;
     @Input() showDiff: boolean;
 
@@ -21,6 +21,4 @@ export class DotContentCompareTableComponent implements OnInit {
     ];
 
     constructor(private dotMessageService: DotMessageService) {}
-
-    ngOnInit(): void {}
 }

@@ -1,25 +1,403 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { DotContentCompareTableComponent } from './dot-content-compare-table.component';
+import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { Component, DebugElement, EventEmitter, Input } from '@angular/core';
+import { DotContentCompareTableData } from '@components/dot-content-compare/store/dot-content-compare.store';
+import { TableModule } from 'primeng/table';
+import { Dropdown, DropdownModule } from 'primeng/dropdown';
+import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';
+import { DotDiffPipeModule } from '@pipes/dot-diff/dot-diff.pipe.module';
+import { FormsModule } from '@angular/forms';
+import { DotContentComparePreviewFieldComponent } from '@components/dot-content-compare/components/fields/dot-content-compare-preview-field/dot-content-compare-preview-field.component';
+import { By } from '@angular/platform-browser';
+
+@Component({
+    selector: 'dot-test-host-component',
+    template:
+        '<dot-content-compare-table [data]="data" (changeDiff)="changeDiff.emit($event)" (changeVersion)="changeVersion.emit($event)" [showDiff]="showDiff"></dot-content-compare-table>'
+})
+class TestHostComponent {
+    @Input() data: DotContentCompareTableData;
+    @Input() showDiff: boolean;
+
+    changeDiff: EventEmitter<any> = new EventEmitter();
+    changeVersion: EventEmitter<any> = new EventEmitter();
+}
+
+export const dotContentCompareTableDataMock: DotContentCompareTableData = {
+    working: {
+        archived: false,
+        baseType: 'CONTENT',
+        binary: '/dA/2970221a3a51990039a81976db3b137f/binary/costarica.png',
+        binaryContentAsset: '2970221a3a51990039a81976db3b137f/binary',
+        binaryVersion: '/dA/21ae95f9-357d-4f1e-b677-1fc23ccde394/binary/costarica.png',
+        contentType: 'AllFields',
+        file: '186283d7-0e9d-454b-90a5-010410d96926',
+        folder: 'SYSTEM_FOLDER',
+        hasTitleImage: true,
+        host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+        hostName: 'demo.dotcms.com',
+        identifier: '2970221a3a51990039a81976db3b137f',
+        image: 'f0625f765ffc0aa98e66f07e96dc9e48',
+        inode: '21ae95f9-357d-4f1e-b677-1fc23ccde394',
+        languageId: 1,
+        live: true,
+        locked: false,
+        modDate: '12/15/2021 - 02:56 PM',
+        modUser: 'dotcms.org.1',
+        modUserName: 'Admin User',
+        owner: 'dotcms.org.1',
+        sortOrder: 0,
+        stInode: 'f778408c6c5454a26547b633b7d803d5',
+        text: 'Hi',
+        title: '2970221a3a51990039a81976db3b137f',
+        titleImage: 'binary',
+        url: '/content.dcd47b31-0682-448f-8ffb-c40350caab41',
+        working: true
+    },
+    compare: {
+        archived: false,
+        baseType: 'CONTENT',
+        binary: '/dA/2970221a3a51990039a81976db3b137f/binary/leon.png',
+        binaryContentAsset: '2970221a3a51990039a81976db3b137f/binary',
+        binaryVersion: '/dA/d094b42f-5ef8-4bcc-8783-73ff39a4c6e6/binary/leon.png',
+        contentType: 'AllFields',
+        file: 'new-one',
+        folder: 'SYSTEM_FOLDER',
+        hasTitleImage: true,
+        host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+        hostName: 'demo.dotcms.com',
+        identifier: '2970221a3a51990039a81976db3b137f',
+        image: 'f0625f765ffc0aa98e66f07e96dc9e48',
+        inode: 'd094b42f-5ef8-4bcc-8783-73ff39a4c6e6',
+        languageId: 1,
+        live: false,
+        locked: false,
+        modDate: '12/15/2021 - 02:56 PM',
+        modUser: 'dotcms.org.1',
+        modUserName: 'Admin User',
+        owner: 'dotcms.org.1',
+        sortOrder: 0,
+        stInode: 'f778408c6c5454a26547b633b7d803d5',
+        text: 'Hello',
+        title: '2970221a3a51990039a81976db3b137f',
+        titleImage: 'binary',
+        url: '/content.dcd47b31-0682-448f-8ffb-c40350caab41',
+        working: false
+    },
+    versions: [
+        {
+            archived: false,
+            baseType: 'CONTENT',
+            binary: '/dA/2970221a3a51990039a81976db3b137f/binary/leon.png',
+            binaryContentAsset: '2970221a3a51990039a81976db3b137f/binary',
+            binaryVersion: '/dA/d094b42f-5ef8-4bcc-8783-73ff39a4c6e6/binary/leon.png',
+            contentType: 'AllFields',
+            file: '186283d7-0e9d-454b-90a5-010410d96926',
+            folder: 'SYSTEM_FOLDER',
+            hasTitleImage: true,
+            host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+            hostName: 'demo.dotcms.com',
+            identifier: '2970221a3a51990039a81976db3b137f',
+            image: 'f0625f765ffc0aa98e66f07e96dc9e48',
+            inode: 'd094b42f-5ef8-4bcc-8783-73ff39a4c6e6',
+            languageId: 1,
+            live: false,
+            locked: false,
+            modDate: '1639601771470',
+            modUser: 'dotcms.org.1',
+            modUserName: 'Admin User',
+            owner: 'dotcms.org.1',
+            sortOrder: 0,
+            stInode: 'f778408c6c5454a26547b633b7d803d5',
+            text: 'just a simple text',
+            title: '2970221a3a51990039a81976db3b137f',
+            titleImage: 'binary',
+            url: '/content.dcd47b31-0682-448f-8ffb-c40350caab41',
+            working: false
+        },
+        {
+            archived: false,
+            baseType: 'CONTENT',
+            binary: '/dA/2970221a3a51990039a81976db3b137f/binary/leon.png',
+            binaryContentAsset: '2970221a3a51990039a81976db3b137f/binary',
+            binaryVersion: '/dA/dcd47b31-0682-448f-8ffb-c40350caab41/binary/leon.png',
+            contentType: 'AllFields',
+            file: '186283d7-0e9d-454b-90a5-010410d96926',
+            folder: 'SYSTEM_FOLDER',
+            hasTitleImage: true,
+            host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+            hostName: 'demo.dotcms.com',
+            identifier: '2970221a3a51990039a81976db3b137f',
+            image: 'f0625f765ffc0aa98e66f07e96dc9e48',
+            inode: 'dcd47b31-0682-448f-8ffb-c40350caab41',
+            languageId: 1,
+            live: false,
+            locked: false,
+            modDate: '1639601760776',
+            modUser: 'dotcms.org.1',
+            modUserName: 'Admin User',
+            owner: 'dotcms.org.1',
+            sortOrder: 0,
+            stInode: 'f778408c6c5454a26547b633b7d803d5',
+            text: 'just a simple text',
+            title: '2970221a3a51990039a81976db3b137f',
+            titleImage: 'binary',
+            url: '/content.dcd47b31-0682-448f-8ffb-c40350caab41',
+            working: false
+        }
+    ],
+    fields: [
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableBinaryField',
+            contentTypeId: 'f778408c6c5454a26547b633b7d803d5',
+            dataType: 'SYSTEM',
+            fieldType: 'Binary',
+            fieldTypeLabel: 'Binary',
+            fieldVariables: [],
+            fixed: false,
+            iDate: 1639601659000,
+            id: '080130cd48183bc6a458c3446f49ee69',
+            indexed: false,
+            listed: false,
+            modDate: 1639601659000,
+            name: 'binary',
+            readOnly: false,
+            required: false,
+            searchable: false,
+            sortOrder: 2,
+            unique: false,
+            variable: 'binary'
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableFileField',
+            contentTypeId: 'f778408c6c5454a26547b633b7d803d5',
+            dataType: 'TEXT',
+            fieldType: 'File',
+            fieldTypeLabel: 'File',
+            fieldVariables: [],
+            fixed: false,
+            iDate: 1639601664000,
+            id: '2d2fdfb8408a2eab8277464c6b250c96',
+            indexed: false,
+            listed: false,
+            modDate: 1639601664000,
+            name: 'file',
+            readOnly: false,
+            required: false,
+            searchable: false,
+            sortOrder: 3,
+            unique: false,
+            variable: 'file'
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableImageField',
+            contentTypeId: 'f778408c6c5454a26547b633b7d803d5',
+            dataType: 'TEXT',
+            fieldType: 'Image',
+            fieldTypeLabel: 'Image',
+            fieldVariables: [],
+            fixed: false,
+            iDate: 1639601679000,
+            id: '5b4e414b65d19e7cb05f11171500cc33',
+            indexed: false,
+            listed: false,
+            modDate: 1639601679000,
+            name: 'image',
+            readOnly: false,
+            required: false,
+            searchable: false,
+            sortOrder: 4,
+            unique: false,
+            variable: 'image'
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+            contentTypeId: 'f778408c6c5454a26547b633b7d803d5',
+            dataType: 'TEXT',
+            fieldType: 'Text',
+            fieldTypeLabel: 'Text',
+            fieldVariables: [],
+            fixed: false,
+            iDate: 1639601686000,
+            id: '98741e6e7d421475cf184370bebcaf71',
+            indexed: false,
+            listed: false,
+            modDate: 1639601686000,
+            name: 'text',
+            readOnly: false,
+            required: false,
+            searchable: false,
+            sortOrder: 5,
+            unique: false,
+            variable: 'text'
+        }
+    ]
+};
 
 describe('DotContentCompareTableComponent', () => {
-  let component: DotContentCompareTableComponent;
-  let fixture: ComponentFixture<DotContentCompareTableComponent>;
+    let hostComponent: TestHostComponent;
+    let hostFixture: ComponentFixture<TestHostComponent>;
+    let de: DebugElement;
+    const messageServiceMock = new MockDotMessageService({
+        diff: 'Diff',
+        plain: 'Plain'
+    });
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      declarations: [ DotContentCompareTableComponent ]
-    })
-    .compileComponents();
-  });
+    beforeEach(() => {
+        TestBed.configureTestingModule({
+            declarations: [
+                TestHostComponent,
+                DotContentCompareTableComponent,
+                DotContentComparePreviewFieldComponent
+            ],
+            imports: [
+                TableModule,
+                DropdownModule,
+                SelectButtonModule,
+                DotDiffPipeModule,
+                FormsModule
+            ],
+            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+        });
 
-  beforeEach(() => {
-    fixture = TestBed.createComponent(DotContentCompareTableComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
+        hostFixture = TestBed.createComponent(TestHostComponent);
+        hostComponent = hostFixture.componentInstance;
+        de = hostFixture.debugElement;
+        hostComponent.data = dotContentCompareTableDataMock;
+        hostFixture.detectChanges();
+    });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
+    describe('header', () => {
+        it('should show tittle correctly', () => {
+            expect(
+                de.query(By.css('[data-testId="table-tittle"]')).nativeElement.innerText
+            ).toEqual(dotContentCompareTableDataMock.working.identifier);
+        });
+        it('should show dropdown', () => {
+            const dropdown: Dropdown = de.query(By.css('p-dropdown')).componentInstance;
+            expect(dropdown.options).toEqual(dotContentCompareTableDataMock.versions);
+        });
+        it('should show selectButton', () => {
+            const select: SelectButton = de.query(By.css('p-selectButton')).componentInstance;
+            expect(select.options).toEqual([
+                { label: 'Diff', value: true },
+                { label: 'Plain', value: false }
+            ]);
+        });
+    });
+
+    describe('fields', () => {
+        it('should show image', () => {
+            const workingImage: HTMLImageElement = de.query(
+                By.css('[data-testId="table-image-working"]')
+            ).nativeElement;
+            const compareImage: HTMLImageElement = de.query(
+                By.css('[data-testId="table-image-compare"]')
+            ).nativeElement;
+            expect(workingImage.src).toContain(
+                `/dA/${dotContentCompareTableDataMock.working.image}/250w/20q`
+            );
+            expect(workingImage.alt).toContain(dotContentCompareTableDataMock.working.image);
+            expect(compareImage.src).toContain(
+                `/dA/${dotContentCompareTableDataMock.compare.image}/250w/20q`
+            );
+            expect(compareImage.alt).toContain(dotContentCompareTableDataMock.compare.image);
+        });
+        it('should show File', () => {
+            const workingFile: DotContentComparePreviewFieldComponent = de.query(
+                By.css('[data-testId="table-file-working"]')
+            ).componentInstance;
+            const compareIFile: DotContentComparePreviewFieldComponent = de.query(
+                By.css('[data-testId="table-file-compare"]')
+            ).componentInstance;
+            expect(workingFile.fileURL).toContain(
+                `/dA/${dotContentCompareTableDataMock.working.file}/fileAsset/`
+            );
+            expect(workingFile.label).toContain(
+                `/dA/${dotContentCompareTableDataMock.working.file}/fileAsset/`
+            );
+            expect(compareIFile.fileURL).toContain(
+                `/dA/${dotContentCompareTableDataMock.compare.file}/fileAsset/`
+            );
+            expect(compareIFile.label).toEqual(
+                '/dA/<del class="diffmod">186283d7</del><ins class="diffmod">new</ins>-<del class="diffmod">0e9d-454b-90a5-010410d96926</del><ins class="diffmod">one</ins>/fileAsset/'
+            );
+        });
+        it('should show Binary', () => {
+            const workingBinary: DotContentComparePreviewFieldComponent = de.query(
+                By.css('[data-testId="table-binary-working"]')
+            ).componentInstance;
+            const compareBinary: DotContentComparePreviewFieldComponent = de.query(
+                By.css('[data-testId="table-binary-compare"]')
+            ).componentInstance;
+            expect(workingBinary.fileURL).toContain(
+                dotContentCompareTableDataMock.working.binaryVersion
+            );
+            expect(workingBinary.label).toContain(
+                dotContentCompareTableDataMock.working.binaryVersion
+            );
+            expect(compareBinary.fileURL).toContain(
+                dotContentCompareTableDataMock.compare.binaryVersion
+            );
+            expect(compareBinary.label).toEqual(
+                '/dA/<del class="diffmod">21ae95f9</del><ins class="diffmod">d094b42f</ins>-<del class="diffmod">357d</del><ins class="diffmod">5ef8</ins>-<del class="diffmod">4f1e</del><ins class="diffmod">4bcc</ins>-<del class="diffmod">b677</del><ins class="diffmod">8783</ins>-<del class="diffmod">1fc23ccde394</del><ins class="diffmod">73ff39a4c6e6</ins>/binary/<del class="diffmod">costarica</del><ins class="diffmod">leon</ins>.png'
+            );
+        });
+        it('should show others fields', () => {
+            const workingField = de.query(By.css('[data-testId="table-field-working"]'))
+                .nativeElement.innerHTML;
+            const compareFiled = de.query(By.css('[data-testId="table-field-compare"]'))
+                .nativeElement.innerHTML;
+
+            expect(workingField).toEqual(dotContentCompareTableDataMock.working.text);
+            expect(compareFiled).toEqual(
+                '<del class="diffmod">Hi</del><ins class="diffmod">Hello</ins>'
+            );
+        });
+
+        describe('diff disable', () => {
+            beforeEach(() => {
+                hostComponent.showDiff = false;
+                hostFixture.detectChanges();
+            });
+            it('should show File', () => {
+                const compareIFile: DotContentComparePreviewFieldComponent = de.query(
+                    By.css('[data-testId="table-file-compare"]')
+                ).componentInstance;
+                expect(compareIFile.label).toEqual('/dA/new-one/fileAsset/');
+            });
+            it('should show Binary', () => {
+                const compareBinary: DotContentComparePreviewFieldComponent = de.query(
+                    By.css('[data-testId="table-binary-compare"]')
+                ).componentInstance;
+                expect(compareBinary.label).toEqual(
+                    dotContentCompareTableDataMock.compare.binaryVersion
+                );
+            });
+            it('should show others fields', () => {
+                const compareFiled = de.query(By.css('[data-testId="table-field-compare"]'))
+                    .nativeElement.innerHTML;
+                expect(compareFiled).toEqual(dotContentCompareTableDataMock.compare.text);
+            });
+        });
+    });
+
+    describe('events', () => {
+        it('should emit changeVersion', () => {
+            spyOn(hostComponent.changeVersion, 'emit');
+            const dropdown: Dropdown = de.query(By.css('p-dropdown')).componentInstance;
+            dropdown.onChange.emit({ value: 'test' });
+
+            expect(hostComponent.changeVersion.emit).toHaveBeenCalledOnceWith('test');
+        });
+        it('should emit changeDiff', () => {
+            spyOn(hostComponent.changeDiff, 'emit');
+            const select: SelectButton = de.query(By.css('p-selectButton')).componentInstance;
+            select.onChange.emit({ value: true });
+
+            expect(hostComponent.changeDiff.emit).toHaveBeenCalledOnceWith(true);
+        });
+    });
 });

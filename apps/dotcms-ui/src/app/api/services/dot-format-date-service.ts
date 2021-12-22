@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { isValid, format, formatDistanceToNowStrict, parse } from 'date-fns';
-import { utcToZonedTime, format as formatTZ, zonedTimeToUtc } from 'date-fns-tz';
+import { utcToZonedTime, format as formatTZ } from 'date-fns-tz';
 import { DotcmsConfigService, DotTimeZone } from '@dotcms/dotcms-js';
 interface DotLocaleOptions {
     locale: Locale;

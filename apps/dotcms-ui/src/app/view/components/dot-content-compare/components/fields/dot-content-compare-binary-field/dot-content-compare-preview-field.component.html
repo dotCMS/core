@@ -1,7 +1,0 @@
-<img [src]="fileURL" *ngIf='!imageError else fallback' (error)="handleError()"/>
-<ng-template #fallback>
-    <span [innerHTML]="label"></span>
-    <a [href]="fileURL" download  class="p-button p-button-secondary">
-        {{'Download' | dm}}
-    </a>
-</ng-template>

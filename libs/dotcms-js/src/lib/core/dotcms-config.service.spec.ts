@@ -52,6 +52,11 @@ describe('DotcmsConfigService', () => {
                 levelName: 'COMMUNITY EDITION',
                 isCommunity: true
             },
+            systemTimezone: {
+                id: 'America/Costa Rica',
+                label: 'Costa Rica',
+                offset: '360'
+            },
             timezones: [
                 {
                     id: 'America/Venezuela',
@@ -102,6 +107,7 @@ describe('DotcmsConfigService', () => {
                 emailRegex: configParams.config['emailRegex'],
                 license: configParams.config.license,
                 menu: undefined,
+                logos: undefined,
                 paginatorLinks: configParams.config['dotcms.paginator.links'],
                 paginatorRows: configParams.config['dotcms.paginator.rows'],
                 websocket: {
@@ -128,6 +134,13 @@ describe('DotcmsConfigService', () => {
                 return 0;
             });
             expect(result).toEqual(expectedResult);
+            done();
+        });
+    });
+
+    it('should get system timezone', (done) => {
+        service.getSystemTimeZone().subscribe((result) => {
+            expect(result).toEqual(configParams.config.systemTimezone);
             done();
         });
     });
