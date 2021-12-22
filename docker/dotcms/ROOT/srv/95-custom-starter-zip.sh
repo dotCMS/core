@@ -16,7 +16,7 @@ else
 		mkdir -p  /data/shared
 		curl -s -L -o /data/shared/$CUSTOM_STARTER $CUSTOM_STARTER_URL
 		if [[ -s /data/shared/$CUSTOM_STARTER ]] ; then
-			cp -af /data/shared/$CUSTOM_STARTER ${TOMCAT_HOME}/webapps/ROOT/starter.zip
+			export DOT_STARTER_DATA_LOAD=/data/shared/$CUSTOM_STARTER
 		else
 			rm /data/shared/$CUSTOM_STARTER
 			echo "No starter downloaded, skipping"
