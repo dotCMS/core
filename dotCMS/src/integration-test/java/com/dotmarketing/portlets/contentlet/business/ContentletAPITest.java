@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import static com.dotcms.content.business.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 import static com.dotcms.contenttype.model.type.BaseContentType.FILEASSET;
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.business.APILocator.getContentTypeFieldAPI;
@@ -7350,7 +7351,7 @@ public class ContentletAPITest extends ContentletBaseTest {
      * @throws Exception
      */
     @Test
-    public void Test_Move_On_Host_Folder_Update_On_CheckIn()
+    public void Test_Move_Content_Different_Host_And_Folder_On_CheckIn()
             throws DotDataException, DotSecurityException {
 
         final Host nextSite = new SiteDataGen().nextPersisted();
@@ -7372,5 +7373,88 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals(moved.getHost(),identifier.getHostId());
     }
 
+    /**
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}
+     * Given scenario: We create CT that holds a keyValue then we create two instances. First one takes a well-formed json second one is messed up.
+     * Expected result: This test validates that messed-up json dont break stuff. when keyValues are returned.
+     * @throws Exception
+     */
+    @Test
+    public void Test_Key_Value_As_Map_Test() throws DotDataException, DotSecurityException {
+
+        final Host nextSite = new SiteDataGen().nextPersisted();
+        final Folder nextFolder = new FolderDataGen().site(nextSite).name("any").nextPersisted();
+
+        final boolean defaultValue = Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
+        Config.setProperty(SAVE_CONTENTLET_AS_JSON, false);
+
+        try {
+            String contentTypeName = "KeyValueTest" + System.currentTimeMillis();
+
+            final List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
+
+            fields.add(
+                    new FieldDataGen()
+                            .name("hostFolder")
+                            .velocityVarName("hostFolder")
+                            .type(HostFolderField.class)
+                            .next()
+            );
+
+            fields.add(
+                    new FieldDataGen()
+                            .name("title")
+                            .velocityVarName("TitleField")
+                            .type(TextField.class)
+                            .next()
+            );
+
+            fields.add(
+                    new FieldDataGen()
+                            .name("keyValueField")
+                            .velocityVarName("keyValueField")
+                            .type(KeyValueField.class)
+                            .next()
+            );
+
+            ContentType contentType = new ContentTypeDataGen()
+                    .baseContentType(BaseContentType.CONTENT)
+                    .name(contentTypeName)
+                    .velocityVarName(contentTypeName)
+                    .fields(fields)
+                    .nextPersisted();
+
+            //This is a piece of content with valid json
+            Contentlet withValidKeyValue = new ContentletDataGen(contentType).host(nextSite)
+                    .languageId(1)
+                    .setProperty("title", "lol")
+                    .setProperty("hostFolder", nextFolder.getIdentifier())
+                    .setProperty("keyValueField", "{\"key1\":\"val1\"}")
+                    .nextPersisted();
+
+            Contentlet retrieved = APILocator.getContentletAPI()
+                    .find(withValidKeyValue.getInode(), APILocator.systemUser(), false);
+
+            assertTrue(retrieved.get("keyValueField") instanceof Map);
+            assertFalse(((Map) retrieved.get("keyValueField")).isEmpty());
+
+            //This is a piece of content with invalid json set on the keyValue
+            Contentlet withInvalidKeyValue = new ContentletDataGen(contentType).host(nextSite)
+                    .languageId(1)
+                    .setProperty("title", "lol")
+                    .setProperty("hostFolder", nextFolder.getIdentifier())
+                    .setProperty("keyValueField", "messed-up-json")
+                    .nextPersisted();
+
+            retrieved = APILocator.getContentletAPI()
+                    .find(withInvalidKeyValue.getInode(), APILocator.systemUser(), false);
+
+            assertTrue(retrieved.get("keyValueField") instanceof Map);
+            assertTrue(((Map) retrieved.get("keyValueField")).isEmpty());
+
+        } finally {
+            Config.setProperty(SAVE_CONTENTLET_AS_JSON, defaultValue);
+        }
+    }
 
 }
