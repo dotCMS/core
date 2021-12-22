@@ -17,10 +17,14 @@ if(!hasDefaultConfig){
 boolean dotCMSHasLicense = LicenseUtil.getLevel() > 100;
 
 if (hasDefaultConfig) {%>
-    <% Context ctx = VelocityUtil.getWebContext(request, response);%>
+    <%
+        Context ctx = VelocityUtil.getWebContext(request, response);
+        String props = VelocityUtil.eval("#set($dontShowIcon=true)#dotParse('//" + myHost.getHostname() + "/application/wysiwyg/tinymceprops.vtl')", ctx);
+        props = UtilMethods.isNotSet(props) ? "{}" : props;
+    %>
   
     var dotCMSHasLicense = <%=dotCMSHasLicense%>;
-    var tinyMCEProps = <%=VelocityUtil.eval("#set($dontShowIcon=true)#dotParse('//" + myHost.getHostname() + "/application/wysiwyg/tinymceprops.vtl')", ctx)%>
+    var tinyMCEProps = <%=props%>
 
 <%} else if (UtilMethods.isSet(Config.getStringProperty("TINY_MCE_CONFIG_LOCATION", null))) {%>
 
