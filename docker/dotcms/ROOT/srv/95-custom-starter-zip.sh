@@ -2,6 +2,8 @@
 
 set -e
 
+
+
 CUSTOM_STARTER=custom_starter.zip
 
 ## if we have a custom starter
