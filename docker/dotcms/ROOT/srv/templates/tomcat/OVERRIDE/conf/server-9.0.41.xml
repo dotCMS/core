@@ -8,7 +8,7 @@
     <Executor
         name="tomcatConnectorThreadPool"
         namePrefix="ConnectorThreadPool-"
-        maxThreads="{{ .Env.CMS_CONNECTOR_THREADS }}"
+        maxThreads="${CMS_CONNECTOR_THREADS}"
         minSpareThreads="25"
     />
 
@@ -25,9 +25,9 @@
         enableLookups="false"
         URIEncoding="UTF-8"
         bindOnInit="true"
-        compression="{{ .Env.CMS_COMPRESSION }}"
-        compressibleMimeType="{{ .Env.CMS_COMPRESSIBLEMIMETYPE }}"
-        noCompressionStrongETag="{{ .Env.CMS_NOCOMPRESSIONSTRONGETAG }}"
+        compression="${CMS_COMPRESSION}"
+        compressibleMimeType="${CMS_COMPRESSIBLEMIMETYPE}"
+        noCompressionStrongETag="${CMS_NOCOMPRESSIONSTRONGETAG}"
         compressionMinSize="128"
         useSendfile="false"
     />
@@ -46,9 +46,9 @@
         enableLookups="false"
         URIEncoding="UTF-8"
         bindOnInit="true"
-        compression="{{ .Env.CMS_COMPRESSION }}"
-        compressibleMimeType="{{ .Env.CMS_COMPRESSIBLEMIMETYPE }}"
-        noCompressionStrongETag="{{ .Env.CMS_NOCOMPRESSIONSTRONGETAG }}"
+        compression="${CMS_COMPRESSION}"
+        compressibleMimeType="${CMS_COMPRESSIBLEMIMETYPE}"
+        noCompressionStrongETag="${CMS_NOCOMPRESSIONSTRONGETAG}"
         compressionMinSize="128"
         useSendfile="false"
     />
@@ -68,9 +68,9 @@
         URIEncoding="UTF-8"
         bindOnInit="true"
         secure="true" 
-        compression="{{ .Env.CMS_COMPRESSION }}"
-        compressibleMimeType="{{ .Env.CMS_COMPRESSIBLEMIMETYPE }}"
-        noCompressionStrongETag="{{ .Env.CMS_NOCOMPRESSIONSTRONGETAG }}"
+        compression="${CMS_COMPRESSION}"
+        compressibleMimeType="${CMS_COMPRESSIBLEMIMETYPE}"
+        noCompressionStrongETag="${CMS_NOCOMPRESSIONSTRONGETAG}"
         compressionMinSize="128"
         useSendfile="false"
     />
@@ -93,9 +93,9 @@
         URIEncoding="UTF-8"
         bindOnInit="true"
         secure="true"
-        compression="{{ .Env.CMS_COMPRESSION }}"
-        compressibleMimeType="{{ .Env.CMS_COMPRESSIBLEMIMETYPE }}"
-        noCompressionStrongETag="{{ .Env.CMS_NOCOMPRESSIONSTRONGETAG }}"
+        compression="${CMS_COMPRESSION}"
+        compressibleMimeType="${CMS_COMPRESSIBLEMIMETYPE}"
+        noCompressionStrongETag="${CMS_NOCOMPRESSIONSTRONGETAG}"
         compressionMinSize="128"
         useSendfile="false"
         SSLEnabled="true"
@@ -112,8 +112,8 @@
       -->
         <Valve 
             className="org.apache.catalina.valves.RemoteIpValve" 
-             remoteIpHeader="{{ .Env.CMS_REMOTEIP_REMOTEIPHEADER }}" 
-             internalProxies="{{ .Env.CMS_REMOTEIP_INTERNALPROXIES }}" 
+             remoteIpHeader="${CMS_REMOTEIP_REMOTEIPHEADER}" 
+             internalProxies="${CMS_REMOTEIP_INTERNALPROXIES}" 
         />
 
         <!-- Access log processes all example.  Documentation at: /docs/config/valve.html -->
@@ -122,9 +122,9 @@
             directory="logs"
             prefix="dotcms_access" 
             suffix=".log"
-            pattern="{{ .Env.CMS_ACCESSLOG_PATTERN }}" 
-            fileDateFormat="{{ .Env.CMS_ACCESSLOG_FILEDATEFORMAT }}"
-            maxDays="{{ .Env.CMS_ACCESSLOG_MAXDAYS }}"
+            pattern="${CMS_ACCESSLOG_PATTERN}" 
+            fileDateFormat="${CMS_ACCESSLOG_FILEDATEFORMAT}"
+            maxDays="${CMS_ACCESSLOG_MAXDAYS}"
         />
 
       </Host>

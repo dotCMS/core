@@ -2,7 +2,8 @@
 
 ###
 ##   Configuration defaults for Docker container configuration
-##    Please do not alter this file, but set these as environment variables on the container launch if needed.
+##   Please do not alter this file, but set these as environment 
+##   variables on the container launch if needed.
 ###
 
 set -e
@@ -13,7 +14,7 @@ set -e
 TOMCAT_HOME=$( find /srv/dotserver/ -type d -name "tomcat-*" )
 
 # JAVA args to pass to the Tomcat JVM
-JAVA_OPTS_BASE=${JAVA_OPTS_BASE:-"-Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -server -XX:+DisableExplicitGC -Dpdfbox.fontcache=/data/local/dotsecure"}
+JAVA_OPTS_BASE=${JAVA_OPTS_BASE:-"-Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -server -XX:+DisableExplicitGC -Dpdfbox.fontcache=/data/local/dotsecure -Dlog4j2.formatMsgNoLookups=true"}
 JAVA_OPTS_AGENT=${JAVA_OPTS_AGENT:-"-javaagent:${TOMCAT_HOME}/webapps/ROOT/WEB-INF/lib/byte-buddy-agent-1.9.0.jar"}
 JAVA_OPTS_MEMORY=${JAVA_OPTS_MEMORY:-"-Xmx1G"}
 JAVA_OPTS=${JAVA_OPTS:-"$JAVA_OPTS_BASE $JAVA_OPTS_AGENT $JAVA_OPTS_MEMORY"}
@@ -77,3 +78,50 @@ DOT_ES_ENDPOINTS=${DOT_ES_ENDPOINTS:-"https://es.dotcms.site:9200"}
 # a url here and dotCMS will download it before starting up
 CUSTOM_STARTER_URL=${CUSTOM_STARTER_URL:-""}
 
+## This needs to be set in order for catalina to read environmental properties
+CATALINA_OPTS="$CATALINA_OPTS -Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
+
+
+
+## Exports
+export TOMCAT_HOME									
+export JAVA_OPTS_BASE								
+export JAVA_OPTS_AGENT							
+export JAVA_OPTS_MEMORY							
+export JAVA_OPTS									
+export CMS_CONNECTOR_THREADS					
+export CMS_SMTP_HOST								
+export DOT_MAIL_SMTP_SSL_PROTOCOLS			
+export CMS_COMPRESSION							
+export CMS_NOCOMPRESSIONSTRONGETAG			
+export CMS_COMPRESSIBLEMIMETYPE				
+export CMS_ACCESSLOG_PATTERN					
+export CMS_ACCESSLOG_FILEDATEFORMAT			
+export CMS_ACCESSLOG_MAXDAYS					
+export CMS_REMOTEIP_REMOTEIPHEADER			
+export CMS_REMOTEIP_INTERNALPROXIES			
+export DOT_ASSET_REAL_PATH						
+export DOT_DYNAMIC_CONTENT_PATH				
+export DOT_TAIL_LOG_LOG_FOLDER					
+export DOT_FELIX_FELIX_UNDEPLOYED_DIR		
+export DOT_FELIX_FELIX_FILE_INSTALL_DIR		
+export DOT_FELIX_FELIX_UPLOAD_DIR				
+export DOT_PREVENT_SESSION_FIXATION_ON_LOG
+export DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS
+export DB_DRIVER									
+export DB_BASE_URL									
+export DB_USERNAME									
+export DB_PASSWORD									
+export DB_MAX_WAIT									
+export DB_MAX_TOTAL								
+export DB_MIN_IDLE									
+export DB_VALIDATION_QUERY						
+export DB_LEAK_DETECTION_THRESHOLD			
+export DB_DEFAULT_TRANSACTION_ISOLATION							
+export DOT_ES_AUTH_TYPE							
+export DOT_ES_AUTH_BASIC_USER					
+export DOT_ES_AUTH_BASIC_PASSWORD				
+export DOT_ES_AUTH_JWT_TOKEN					
+export DOT_ES_ENDPOINTS							
+export CUSTOM_STARTER_URL						
+export CATALINA_OPTS								

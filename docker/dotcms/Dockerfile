@@ -40,7 +40,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Installing basic packages 
 RUN apt update && \
-    apt upgrade -y 
+    apt upgrade -y
 
 # Cleanup
 RUN apt purge --allow-remove-essential -y  && \
@@ -92,19 +92,24 @@ USER $USER_UID:$USER_GID
 ENV JAVA_HOME="/java"
 ENV PATH=$PATH:/java/bin
 
+
 ENTRYPOINT ["/usr/bin/tini", "--", "/srv/entrypoint.sh"]
 CMD ["dotcms"]
     
 ## Ports
+# Glowroot profiler - must be configured via CMS_JAVA_OPTS
+EXPOSE 4000
+# Java Debugging - must be configured via CMS_JAVA_OPTS
+EXPOSE 8000
 # Direct connect
 EXPOSE 8080
-# Direct connect for HTTPS, secure
-EXPOSE 8443
 # Connect from proxy, HTTP/80, non-secure
 EXPOSE 8081
 # Connect from proxy, HTTPS/443, secure
 EXPOSE 8082
-# Java Debugging - must be configured via CMS_JAVA_OPTS
-EXPOSE 8000
-# Glowroot profiler - must be configured via CMS_JAVA_OPTS
-EXPOSE 4000
+# Direct connect for HTTPS, secure
+EXPOSE 8443
+
+
+
+
