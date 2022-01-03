@@ -67,7 +67,7 @@ public class ResetPasswordResourceIntegrationTest{
         UserUtil.update(newUser);
 
         //Call Resource
-        final Response responseResource = resource.resetPassword(getHttpRequest(),getResetPasswordForm("n3wPa$$w0rD",token));
+        final Response responseResource = resource.resetPassword(getHttpRequest(),getResetPasswordForm("n3wPa@@wrDA",token));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         //Check password has changed
