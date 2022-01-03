@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.workflow;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
@@ -85,17 +86,17 @@ public class WorkflowResourceTest extends UnitTestBase {
         final WebResource webResource = mock(WebResource.class);
 
         if(throwWorkflowAPIException == 0) {
-            when(workflowHelper.saveOrUpdate(anyString(), any(WorkflowSchemeForm.class), eq(user))).thenReturn(this.toWorkflowScheme(workflowSchemeForm));
+            when(workflowHelper.saveOrUpdate(nullable(String.class), any(WorkflowSchemeForm.class), eq(user))).thenReturn(this.toWorkflowScheme(workflowSchemeForm));
         } else if(throwWorkflowAPIException == 1) {
-            doThrow(new DoesNotExistException("No exists workflow")).when(workflowHelper).saveOrUpdate(anyString(), any(WorkflowSchemeForm.class), eq(user));
+            doThrow(new DoesNotExistException("No exists workflow")).when(workflowHelper).saveOrUpdate(nullable(String.class), any(WorkflowSchemeForm.class), eq(user));
         } else {
-            doThrow(new AlreadyExistException("Error Saving workflow")).when(workflowHelper).saveOrUpdate(anyString(), any(WorkflowSchemeForm.class), eq(user));
+            doThrow(new AlreadyExistException("Error Saving workflow")).when(workflowHelper).saveOrUpdate(nullable(String.class), any(WorkflowSchemeForm.class), eq(user));
         }
 
 
         final InitDataObject dataObject = mock(InitDataObject.class);
         when(dataObject.getUser()).thenReturn(user);
-        when(webResource.init(anyString(), any(HttpServletRequest.class), any(HttpServletResponse.class), anyBoolean(), anyString())).thenReturn(dataObject);
+        when(webResource.init(nullable(String.class), any(HttpServletRequest.class), any(HttpServletResponse.class), anyBoolean(), nullable(String.class))).thenReturn(dataObject);
 
         final ResponseUtil responseUtil = mock(ResponseUtil.class);
         final WorkflowImportExportUtil exportUtil = mock(WorkflowImportExportUtil.class);
