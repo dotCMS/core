@@ -612,7 +612,7 @@ public class ContainerResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response saveNew(@Context final HttpServletRequest  request,
-                                  @Context final HttpServletResponse response,
+                                  @Context final HttpServletResponse response, // todo: support file containers as well
                                   final ContainerForm containerForm) throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -665,7 +665,7 @@ public class ContainerResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response update(@Context final HttpServletRequest  request,
-                                  @Context final HttpServletResponse response,
+                                  @Context final HttpServletResponse response, // todo: support file containers as well
                                   final ContainerForm containerForm) throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)

@@ -26,7 +26,9 @@ import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.ApplicationContainerFolderListener;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -819,11 +821,24 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		}
 
 		final Container containerWorkingVersion = getWorkingContainerById(container.getIdentifier(), user,false);
-		//Remove live version from version_info
-		APILocator.getVersionableAPI().removeLive(containerWorkingVersion.getIdentifier());
-		containerWorkingVersion.setModDate(new java.util.Date());
-		containerWorkingVersion.setModUser(user.getUserId());
-		containerFactory.save(containerWorkingVersion);
+
+		if(container instanceof FileAssetContainer) {
+
+			final FileAssetContainer fileAssetContainer = (FileAssetContainer) container;
+			final Host containerHost = fileAssetContainer.getHost();
+			final Identifier idPropertiesVTL = APILocator.getIdentifierAPI().find(containerHost, fileAssetContainer.getPath() + "container.vtl");
+			final Contentlet contentletVTL   = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(idPropertiesVTL.getId());
+			APILocator.getContentletAPI().unpublish(contentletVTL, user, respectAnonPerms);
+		} else {
+
+			//Remove live version from version_info
+			final String containerIdentifier = container.getIdentifier();
+			APILocator.getVersionableAPI().removeLive(containerIdentifier);
+			containerWorkingVersion.setModDate(new java.util.Date());
+			containerWorkingVersion.setModUser(user.getUserId());
+			containerFactory.save(containerWorkingVersion);
+		}
+
 		//remove template from the live directory
 		new ContainerLoader().invalidate(container);
 	}
