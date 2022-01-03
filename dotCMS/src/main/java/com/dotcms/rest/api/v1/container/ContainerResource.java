@@ -789,7 +789,7 @@ public class ContainerResource implements Serializable {
      *
      * @param request            {@link HttpServletRequest}
      * @param response           {@link HttpServletResponse}
-     * @param containerId        {@link Integer} container id to unpublish
+     * @param containerId        {@link Integer} container id to publish
      * @return Response
      * @throws DotDataException
      * @throws DotSecurityException
@@ -810,16 +810,17 @@ public class ContainerResource implements Serializable {
 
         if (!UtilMethods.isSet(containerId)) {
 
-            Logger.error(this, "The Container with Id: " + containerId + " does not exist");
-            throw new DoesNotExistException("The Container with Id: " + containerId + " does not exist");
+            throw new IllegalArgumentException("The container id is required");
         }
+
+        Logger.debug(this, ()-> "Publishing the container: " + containerId);
 
         final Container container = this.getContainerWorking(containerId, user, WebAPILocator.getHostWebAPI().getHost(request));
 
         if (null != container && InodeUtils.isSet(container.getInode())){
             this.containerAPI.publish(container, user, pageMode.respectAnonPerms);
-            ActivityLogger.logInfo(this.getClass(), "Unpublish Container Action", "User " +
-                    user.getPrimaryKey() + " unpublished container: " + container.getIdentifier());
+            ActivityLogger.logInfo(this.getClass(), "Publish Container", "User " +
+                    user.getPrimaryKey() + " Published container: " + container.getIdentifier());
         } else {
 
             Logger.error(this, "The Container with Id: " + containerId + " does not exist");
@@ -833,8 +834,8 @@ public class ContainerResource implements Serializable {
     /**
      * UnPublishes a Container
      *
-     * This method receives an identifier and publish it
-     * To publish a container successfully the user needs to have Publish Permissions and the container
+     * This method receives an identifier and unpublish it
+     * To unpublish a container successfully the user needs to have Write Permissions and the container
      * can not be archived.
      *
      * @param request            {@link HttpServletRequest}
@@ -860,14 +861,16 @@ public class ContainerResource implements Serializable {
 
         if (!UtilMethods.isSet(containerId)) {
 
-            throw new DoesNotExistException("The Container with Id: " + containerId + " does not exist");
+            throw new IllegalArgumentException("The container id is required");
         }
+
+        Logger.debug(this, ()-> "UnPublishing the container: " + containerId);
 
         final Container container = this.getContainerWorking(containerId, user, WebAPILocator.getHostWebAPI().getHost(request));
 
         if (null != container && InodeUtils.isSet(container.getInode())){
             this.containerAPI.unpublish(container, user, pageMode.respectAnonPerms);
-            ActivityLogger.logInfo(this.getClass(), "Unpublish Container Action", "User " +
+            ActivityLogger.logInfo(this.getClass(), "Unpublish Container", "User " +
                     user.getPrimaryKey() + " unpublished container: " + container.getIdentifier());
         } else {
 
@@ -924,7 +927,8 @@ public class ContainerResource implements Serializable {
             throw new DoesNotExistException("Container with Id: " + containerId + " does not exist");
         }
 
-        return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
+        return Response.ok(new ResponseEntityView(new ContainerView(this.getContainerWorking(containerId,user,
+                WebAPILocator.getHostWebAPI().getHost(request))))).build();
     }
 
     /**

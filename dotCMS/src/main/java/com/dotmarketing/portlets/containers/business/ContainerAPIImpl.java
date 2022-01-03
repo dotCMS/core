@@ -875,7 +875,16 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 			throw new DotStateException("Container must be unpublished before it can be archived");
 		}
 
-		archive(container, user);
+		if(container instanceof FileAssetContainer) {
+
+			final FileAssetContainer fileAssetContainer = (FileAssetContainer) container;
+			final Host containerHost = fileAssetContainer.getHost();
+			final Identifier idPropertiesVTL = APILocator.getIdentifierAPI().find(containerHost, fileAssetContainer.getPath() + "container.vtl");
+			final Contentlet contentletVTL   = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(idPropertiesVTL.getId());
+			APILocator.getContentletAPI().archive(contentletVTL, user, respectAnonPerms);
+		} else {
+			archive(container, user);
+		}
 	}
 
 	/**
