@@ -1,6 +1,10 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.util.UtilMethods" %>
+<script type="text/javascript" src="/html/js/sse.js"></script>
 <script language="Javascript">
+
+    var successCount = 0;
+    var failCount = 0;
 
     /**
      *
@@ -175,7 +179,7 @@
 
         var skipsCount = entity.skippedCount;
         var successCount = entity.successCount;
-        var failsCount = entity.fails.length;
+        var failsCount = entity.fails;
 
         var resultsLabel = '<%=LanguageUtil.get(pageContext, "Results")%>';
         var sucessLabel = '<%=LanguageUtil.get(pageContext, "Successul")%>';
@@ -194,15 +198,15 @@
             '</tr>' +
             '<tr>' +
               '<td> ' + sucessLabel + ':&nbsp;</td>' +
-              '<td> ' + successCount + ' </td>' +
+              '<td id="successCount" style="width: 100px"> ' + successCount + ' </td>' +
             '</tr>' +
             '<tr>' +
               '<td> ' + failsLabel + ':&nbsp;</td>' +
-              '<td><a href="#" onclick="toggleFailDetails();" > ' + failsCount + ' </a></td>' +
+              '<td id="failCount" style="width: 100px"><a href="#" onclick="toggleFailDetails();" > ' + failsCount + ' </a></td>' +
             '</tr>' +
             '<tr>' +
               '<td> ' + skipsLabel + ':&nbsp;</td>' +
-              '<td> ' + skipsCount + ' </td>' +
+              '<td id="skipsCount" style="width: 100px"> ' + skipsCount + ' </td>' +
             '</tr>' +
           '</table>' +
         '</div>';
@@ -332,23 +336,32 @@
         }
 
         var dataAsJson = dojo.toJson(data);
-        var xhrArgs = {
-            url: "/api/v1/workflow/contentlet/actions/bulk/fire",
-            postData: dataAsJson,
-            handleAs: "json",
-            headers : {
-                'Accept' : 'application/json',
-                'Content-Type' : 'application/json;charset=utf-8',
-            },
-            load: function(data) {
-                const entity = data ? data.entity : null; bulkWorkflowActionCallback(entity);
-            },
-            error: function(error){
-                dojo.byId('bulkActionsContainer').innerHTML = `<%=LanguageUtil.get(pageContext, "Available-actions-error")%>`;
-            }
-        };
 
-        dojo.xhrPut(xhrArgs);
+        var url = '/api/v1/workflow/contentlet/actions/_bulkfire'
+
+        var source = new SSE(url, {headers: {'Content-Type': 'application/json'},
+            payload: dataAsJson});
+
+        var entity = {skippedCount: 0, successCount: 0, fails: 0};
+
+        bulkWorkflowActionCallback(entity);
+        successCount = 0;
+        failCount = 0;
+
+        source.addEventListener('success', function(e) {
+            // Assuming we receive JSON-encoded data payloads:
+            var data = JSON.parse(e.data);
+            successCount = successCount + parseInt(data.success);
+            dojo.byId('successCount').innerHTML = successCount;
+        });
+
+        source.addEventListener('failure', function(e) {
+            // Assuming we receive JSON-encoded data payloads:
+            failCount = failCount + 1;
+            dojo.byId('failCount').innerHTML = failCount;
+        });
+
+        source.stream();
         return true;
     }
 
