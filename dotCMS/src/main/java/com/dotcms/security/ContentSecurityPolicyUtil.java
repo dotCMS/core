@@ -140,8 +140,11 @@ public class ContentSecurityPolicyUtil {
 
     private static boolean shouldCalculateNonce() {
         final String contentSecurityPolicyHeader = getContentSecurityPolicyHeader();
-        final PageMode pageMode = PageMode.get();
-        return pageMode == PageMode.LIVE && contentSecurityPolicyHeader.contains("nonce");
+        return shouldSetContentPolicyHeader() && contentSecurityPolicyHeader.contains("nonce");
+    }
+
+    private static boolean shouldSetContentPolicyHeader() {
+        return PageMode.get() == PageMode.LIVE;
     }
 
     /**
@@ -150,7 +153,7 @@ public class ContentSecurityPolicyUtil {
      * @param response
      */
     public static void addHeader(final HttpServletResponse response) {
-        if (isConfig()) {
+        if (isConfig() && shouldSetContentPolicyHeader()) {
             String contentSecurityPolicyHeader = getContentSecurityPolicyHeader();
 
             for (final Entry<String, ContentSecurityPolicyResolver> entry : contentSecurityPolicyResolvers.entrySet()) {
@@ -175,7 +178,7 @@ public class ContentSecurityPolicyUtil {
     public static String apply(final String htmlCodeParam) {
         String htmlCodeResult = htmlCodeParam;
 
-        if (isConfig()) {
+        if (isConfig() && shouldSetContentPolicyHeader()) {
             String contentSecurityPolicyHeader = getContentSecurityPolicyHeader();
 
             for (final Entry<String, ContentSecurityPolicyResolver> entry : contentSecurityPolicyResolvers.entrySet()) {
