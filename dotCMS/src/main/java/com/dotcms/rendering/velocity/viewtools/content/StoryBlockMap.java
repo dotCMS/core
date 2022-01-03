@@ -71,16 +71,9 @@ public class StoryBlockMap implements Renderable {
 
             final JSONArray items = this.jsonContFieldValue.getJSONArray("content");
             for (int i = 0; i < items.length(); ++i) {
-
-                try {
-                    // todo: do we have to catch this?
-                    final JSONObject jsonObjectItem = items.getJSONObject(i);
-                    final Renderable renderable = renderableFactory.create(jsonObjectItem, this.processType(jsonObjectItem));
-                    builder.append(renderable.toHtml());
-                } catch (JSONException | DotRuntimeException e) {
-                    Logger.error(this, e.getMessage(), e);
-                    this.addError (DEFAULT_TEMPLATE_STOCK_BLOCK_PATH, builder, e);
-                }
+                final JSONObject jsonObjectItem = items.getJSONObject(i);
+                final Renderable renderable = renderableFactory.create(jsonObjectItem, this.processType(jsonObjectItem));
+                builder.append(renderable.toHtml());
             }
         } catch (JSONException e) {
             Logger.error(this, e.getMessage(), e);
@@ -99,14 +92,9 @@ public class StoryBlockMap implements Renderable {
             final JSONArray items = this.jsonContFieldValue.getJSONArray("content");
 
             for (int i = 0; i < items.length(); ++i) {
-                try {
-                    final JSONObject jsonObjectItem = items.getJSONObject(i);
-                    final Renderable renderable = renderableFactory.create(jsonObjectItem, this.processType(jsonObjectItem));
-                    builder.append(renderable.toHtml(baseTemplatePath));
-                } catch (JSONException | DotRuntimeException e) {
-                    Logger.error(this, e.getMessage(), e);
-                    this.addError (baseTemplatePath, builder, e);
-                }
+                final JSONObject jsonObjectItem = items.getJSONObject(i);
+                final Renderable renderable = renderableFactory.create(jsonObjectItem, this.processType(jsonObjectItem));
+                builder.append(renderable.toHtml(baseTemplatePath));
             }
         } catch (JSONException e) {
             Logger.error(this, e.getMessage(), e);
