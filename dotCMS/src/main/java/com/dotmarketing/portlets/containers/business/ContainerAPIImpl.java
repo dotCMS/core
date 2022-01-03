@@ -778,8 +778,6 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 
 		Logger.debug(this, ()-> "Doing publish of container: " + container.getIdentifier());
 
-		final Container containerWorkingVersion = this.getWorkingContainerById(
-				container.getIdentifier(), user, respectAnonPerms);
 		//Check write Permissions over container
 		if(!this.permissionAPI.doesUserHavePermission(container, PERMISSION_PUBLISH, user)) {
 
@@ -787,19 +785,32 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 			throw new DotSecurityException("User does not have Permissions to publish the Container");
 		}
 
-		try {
+		if(container instanceof FileAssetContainer) {
 
-			PublishFactory.publishAsset(container, user,respectAnonPerms);
-		} catch (WebAssetException e) {
+			final FileAssetContainer fileAssetContainer = (FileAssetContainer) container;
+			final Host containerHost = fileAssetContainer.getHost();
+			final Identifier idPropertiesVTL = APILocator.getIdentifierAPI().find(containerHost, fileAssetContainer.getPath() + "container.vtl");
+			final Contentlet contentletVTL   = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(idPropertiesVTL.getId());
+			APILocator.getContentletAPI().publish(contentletVTL, user, respectAnonPerms);
+		} else {
 
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e);
+			final Container containerWorkingVersion = this.getWorkingContainerById(
+					container.getIdentifier(), user, respectAnonPerms);
+
+			try {
+
+				PublishFactory.publishAsset(container, user, respectAnonPerms);
+			} catch (WebAssetException e) {
+
+				Logger.error(this, e.getMessage(), e);
+				throw new DotDataException(e);
+			}
+
+			//Remove live version from version_info
+			containerWorkingVersion.setModDate(new Date());
+			containerWorkingVersion.setModUser(user.getUserId());
+			containerFactory.save(containerWorkingVersion);
 		}
-
-		//Remove live version from version_info
-		containerWorkingVersion.setModDate(new Date());
-		containerWorkingVersion.setModUser(user.getUserId());
-		containerFactory.save(containerWorkingVersion);
 
 		//Clean-up the cache for this template
 		CacheLocator.getContainerCache().remove(container);
@@ -811,7 +822,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	@Override
 	public void unpublish(final Container container, final User user, final boolean respectAnonPerms) throws DotDataException, DotSecurityException {
 
-		Logger.debug(this, ()-> "Doing archive of container: " + container.getIdentifier());
+		Logger.debug(this, ()-> "Doing unpublish of container: " + container.getIdentifier());
 
 		//Check write Permissions over container
 		if(!this.permissionAPI.doesUserHavePermission(container, PERMISSION_WRITE, user)) {
@@ -819,8 +830,6 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to write the container");
 			throw new DotSecurityException("User does not have Permissions to write the Container");
 		}
-
-		final Container containerWorkingVersion = getWorkingContainerById(container.getIdentifier(), user,false);
 
 		if(container instanceof FileAssetContainer) {
 
@@ -831,6 +840,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 			APILocator.getContentletAPI().unpublish(contentletVTL, user, respectAnonPerms);
 		} else {
 
+			final Container containerWorkingVersion = getWorkingContainerById(container.getIdentifier(), user,false);
 			//Remove live version from version_info
 			final String containerIdentifier = container.getIdentifier();
 			APILocator.getVersionableAPI().removeLive(containerIdentifier);
@@ -839,6 +849,8 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 			containerFactory.save(containerWorkingVersion);
 		}
 
+		//Clean-up the cache for this template
+		CacheLocator.getContainerCache().remove(container);
 		//remove template from the live directory
 		new ContainerLoader().invalidate(container);
 	}

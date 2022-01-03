@@ -747,7 +747,7 @@ public class ContainerResource implements Serializable {
     /**
      * Return working version {@link com.dotmarketing.portlets.containers.model.Container} based on the id
      *
-     * @param httpRequest
+     * @param request
      * @param httpResponse
      * @param containerId container identifier to get the working version.
      * @return
@@ -760,23 +760,24 @@ public class ContainerResource implements Serializable {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response getWorkingById(@Context final HttpServletRequest  httpRequest,
+    public final Response getWorkingById(@Context final HttpServletRequest  request,
                                          @Context final HttpServletResponse httpResponse,
                                          @QueryParam("containerId") final String containerId) throws DotSecurityException, DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
+                .requestAndResponse(request, httpResponse).rejectWhenNoUser(true).init();
         final User user     = initData.getUser();
         Logger.debug(this, ()-> "Getting the working container by id: " + containerId);
 
-        final Container container = this.getContainerWorking(containerId, user, WebAPILocator.getHostWebAPI().getHost(httpRequest));
+        final Container container = this.getContainerWorking(containerId, user, WebAPILocator.getHostWebAPI().getHost(request));
 
         if (null == container || UtilMethods.isNotSet(container.getIdentifier())) {
 
             throw new DoesNotExistException("Working Version of the Container with Id: " + containerId + " does not exist");
         }
 
-        return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
+        return Response.ok(new ResponseEntityView(new ContainerView(
+                this.getContainerWorking(containerId, user, WebAPILocator.getHostWebAPI().getHost(request))))).build();
     }
 
     /**
@@ -825,8 +826,8 @@ public class ContainerResource implements Serializable {
             throw new DoesNotExistException("The Container with Id: " + containerId + " does not exist");
         }
 
-        return Response.ok(new ResponseEntityView(container))
-                .build();
+        return Response.ok(new ResponseEntityView(new ContainerView(
+                this.getContainerLive(containerId, user, WebAPILocator.getHostWebAPI().getHost(request))))).build();
     }
 
     /**
