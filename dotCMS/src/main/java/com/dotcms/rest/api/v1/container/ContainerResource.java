@@ -6,7 +6,10 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
+import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.google.common.collect.Maps;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
@@ -196,7 +199,8 @@ public class ContainerResource implements Serializable {
     public final Response containerContent(@Context final HttpServletRequest req,
                                            @Context final HttpServletResponse res,
                                            @PathParam("containerId")  final String containerId,
-                                           @PathParam("contentletId") final String contentletId)
+                                           @PathParam("contentletId") final String contentletId,
+                                           @QueryParam("pageInode") final String pageInode)
             throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = this.webResource.init(req, res, true);
@@ -218,7 +222,7 @@ public class ContainerResource implements Serializable {
                             this.contentletAPI.findContentletByIdentifierAnyLanguage(contentShorty.longId):
                             this.contentletAPI.find(contentShorty.longId, user, mode.respectAnonPerms);
 
-            final String html = this.getHTML(req, res, containerId, user, contentlet);
+            final String html = this.getHTML(req, res, containerId, user, contentlet, pageInode);
 
             final Map<String, String> response = ImmutableMap.<String, String> builder().put("render", html).build();
 
@@ -229,7 +233,7 @@ public class ContainerResource implements Serializable {
     }
 
     /**
-     * This method is pretty much the same of {@link #containerContent(HttpServletRequest, HttpServletResponse, String, String)}
+     * This method is pretty much the same of {@link #containerContent(HttpServletRequest, HttpServletResponse, String, String, String)}
      * But there is a limitation on the vanity url for the rest call since the container id path parameter is a path itself
      * (for {@link com.dotmarketing.portlets.containers.model.FileAssetContainer)} so we need to pass it by query string
      *
@@ -254,10 +258,11 @@ public class ContainerResource implements Serializable {
     public final Response containerContentByQueryParam(@Context final HttpServletRequest req,
                                            @Context final HttpServletResponse res,
                                            @QueryParam("containerId") final String containerId,
+                                           @QueryParam("pageInode") final String pageInode,
                                            @PathParam("contentletId") final String contentletId)
             throws DotDataException, DotSecurityException {
 
-        return this.containerContent(req, res, containerId, contentletId);
+        return this.containerContent(req, res, containerId, contentletId, pageInode);
     }
 
 
@@ -338,28 +343,53 @@ public class ContainerResource implements Serializable {
 
     }
 
+    private String getHTML(final HttpServletRequest req,
+            final HttpServletResponse res,
+            final String containerId,
+            final User user,
+            final Contentlet contentlet) throws DotDataException, DotSecurityException {
+
+        return getHTML(req, res, containerId, user, contentlet, null);
+
+    }
 
     private String getHTML(final HttpServletRequest req,
                            final HttpServletResponse res,
                            final String containerId,
                            final User user,
-                           final Contentlet contentlet) throws DotDataException, DotSecurityException {
+                           final Contentlet contentlet,
+                           final String pageInode) throws DotDataException, DotSecurityException {
 
         final PageMode mode = PageMode.EDIT_MODE;
-        final Container container = getContainer(containerId, user, WebAPILocator.getHostWebAPI().getHost(req));
+        final Host host = WebAPILocator.getHostWebAPI().getHost(req);
+        final Container container = getContainer(containerId, user, host);
         ContainerResourceHelper.getInstance().setContainerLanguage(container, req);
 
         final org.apache.velocity.context.Context context = velocityUtil.getContext(req, res);
+
+        if (UtilMethods.isSet(pageInode)) {
+            loadPageContext(user, pageInode, mode, context);
+        } else {
+            context.put("dotPageContent", Boolean.TRUE);
+        }
 
         context.put(ContainerLoader.SHOW_PRE_POST_LOOP, false);
         context.put("contentletList" + container.getIdentifier() + Container.LEGACY_RELATION_TYPE,
                 Lists.newArrayList(contentlet.getIdentifier()));
         context.put(mode.name(), Boolean.TRUE);
-        context.put("dotPageContent",Boolean.TRUE);
 
         final VelocityResourceKey key = new VelocityResourceKey(container, Container.LEGACY_RELATION_TYPE, mode);
-
         return velocityUtil.merge(key.path, context);
+    }
+
+    private void loadPageContext(User user, String pageInode, PageMode mode,
+            org.apache.velocity.context.Context context)
+            throws DotDataException, DotSecurityException {
+        final IHTMLPage htmlPage =  APILocator.getHTMLPageAssetAPI().findPage(pageInode, user, false);
+        final long languageId = htmlPage.getLanguageId();
+
+        final VelocityResourceKey pageKey = new VelocityResourceKey((HTMLPageAsset) htmlPage, mode, languageId);
+        velocityUtil.merge(pageKey.path, context);
     }
 
 

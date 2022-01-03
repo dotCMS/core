@@ -1,6 +1,7 @@
 package com.dotcms.browser;
 
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.business.Theme;
 import com.dotmarketing.business.web.WebAPILocator;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -92,7 +93,8 @@ public class BrowserQuery {
         boolean respectFrontEndPermissions = PageMode.get().respectAnonPerms;
         //check if the parentId exists
         final Identifier identifier = Try.of(() -> APILocator.getIdentifierAPI().findFromInode(parentId)).getOrNull();
-        if (identifier == null || UtilMethods.isEmpty(identifier.getId())) {
+        if ((identifier == null || UtilMethods.isEmpty(identifier.getId())) && (!parentId.equalsIgnoreCase(
+                Theme.SYSTEM_THEME))) {
             Logger.error(this, "parentId doesn't belong to a Folder or a Host, id: " + parentId
                     + ", maybe the Folder was modified in the background. If using SystemFolder must send hostIdSystemFolder.");
             throw new DotRuntimeException("parentId doesn't belong to a Folder or a Host, id: " + parentId);

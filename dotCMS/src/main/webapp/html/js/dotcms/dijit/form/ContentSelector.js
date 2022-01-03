@@ -59,7 +59,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 	templatePath: dojo.moduleUrl("dotcms", isNg ? "dijit/form/ContentSelectorNoDialog.jsp" : "dijit/form/ContentSelector.jsp"),
     selectButtonTemplate: '<button id="{buttonInode}" dojoType="dijit.form.Button">{selectButtonLabel}</button>',
-	checkBoxTemplate: '<input value="{buttonInode}" class="contentCheckbox" dojoType="dijit.form.CheckBox"></input>',
+	checkBoxTemplate: '<input value="{buttonInode}" class="contentCheckbox" onClick="contentSelector.setSelectedInode(this)" dojoType="dijit.form.CheckBox"></input>',
 	widgetsInTemplate: true,
 	title: '',
 	structureInode: '',
@@ -92,6 +92,15 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	numberOfResults:20,
     selectButtonLabel:'Select',
     useRelateContentOnSelect: false,
+    selectedInodesSet: new Set(),
+
+    setSelectedInode: function (selectBtn) {
+        if (selectBtn.checked) {
+            this.selectedInodesSet.add(selectBtn.value);
+        } else {
+            this.selectedInodesSet.delete(selectBtn.value);
+        }
+    },
 
 	postCreate: function () {
         this.containerStructures = this._decodeQuoteChars(this.containerStructures);
@@ -522,10 +531,9 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		var inodes = new Array();
 
         if (!content.inode) {
-            var checkedNodes = dojo.query('input:checked');
-            dojo.forEach(checkedNodes,function(node, i) {
-                inodes[i] = node.value;
-            });
+            Array.from(this.selectedInodesSet).forEach(function(inode, index){
+                inodes[index] = inode;
+            })
         } else {
             inodes[0] = content.inode;
         }
@@ -973,6 +981,8 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		var inode = data["inode"];
 		var buttonInode = inode;
 		var button = dojo.replace(this.checkBoxTemplate,{buttonInode:buttonInode});
+        button = this.selectedInodesSet.has(inode) ? button.replace('></input>', ' checked="true"></input>') : button;
+
 		return button;
 	},
 
@@ -985,6 +995,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	_clearSearch: function () {
 
 		dojo.empty(this.results_table);
+        this.selectedInodesSet.clear();
 
 		if(dijit.byId("langcombo+"+this.dialogCounter))
 			dijit.byId("langcombo+"+this.dialogCounter).set('displayedValue','');
