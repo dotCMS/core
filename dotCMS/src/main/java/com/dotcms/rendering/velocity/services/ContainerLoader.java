@@ -273,6 +273,7 @@ public class ContainerLoader implements DotLoader {
 
             velocityCodeBuilder.append("#foreach ($contentletId in $CONTENTLETS )");
 
+              velocityCodeBuilder.append("#set($dotContentMap=$dotcontent.load($contentletId))");
               velocityCodeBuilder.append("#set($_show_working_=false)");
 
             //Time-machine block begin
@@ -380,7 +381,8 @@ public class ContainerLoader implements DotLoader {
             if (mode == PageMode.EDIT_MODE) {
                 velocityCodeBuilder.append("</div>");
             }
-                
+
+            velocityCodeBuilder.append("#set($dotContentMap='')");
                 // ##End of foreach loop
             velocityCodeBuilder.append("#end");
                 
