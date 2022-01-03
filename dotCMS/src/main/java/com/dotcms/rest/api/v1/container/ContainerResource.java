@@ -367,26 +367,29 @@ public class ContainerResource implements Serializable {
 
         final org.apache.velocity.context.Context context = velocityUtil.getContext(req, res);
 
+        if (UtilMethods.isSet(pageInode)) {
+            loadPageContext(user, pageInode, mode, context);
+        } else {
+            context.put("dotPageContent", Boolean.TRUE);
+        }
+
         context.put(ContainerLoader.SHOW_PRE_POST_LOOP, false);
         context.put("contentletList" + container.getIdentifier() + Container.LEGACY_RELATION_TYPE,
                 Lists.newArrayList(contentlet.getIdentifier()));
         context.put(mode.name(), Boolean.TRUE);
 
-        if (UtilMethods.isSet(pageInode)) {
-
-            final IHTMLPage htmlPage =  APILocator.getHTMLPageAssetAPI().findPage(pageInode, user, false);
-            final long languageId = htmlPage.getLanguageId();
-
-            final VelocityResourceKey pageKey = new VelocityResourceKey((HTMLPageAsset) htmlPage, mode, languageId);
-            velocityUtil.merge(pageKey.path, context);
-
-        } else {
-            context.put("dotPageContent", Boolean.TRUE);
-        }
-
         final VelocityResourceKey key = new VelocityResourceKey(container, Container.LEGACY_RELATION_TYPE, mode);
-
         return velocityUtil.merge(key.path, context);
+    }
+
+    private void loadPageContext(User user, String pageInode, PageMode mode,
+            org.apache.velocity.context.Context context)
+            throws DotDataException, DotSecurityException {
+        final IHTMLPage htmlPage =  APILocator.getHTMLPageAssetAPI().findPage(pageInode, user, false);
+        final long languageId = htmlPage.getLanguageId();
+
+        final VelocityResourceKey pageKey = new VelocityResourceKey((HTMLPageAsset) htmlPage, mode, languageId);
+        velocityUtil.merge(pageKey.path, context);
     }
 
 

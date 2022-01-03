@@ -67,6 +67,7 @@ import com.dotcms.rest.api.v1.system.ConfigurationHelperTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
 import com.dotcms.saml.SamlConfigurationServiceTest;
+import com.dotcms.security.ContentSecurityPolicyUtilTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotcms.security.apps.AppsCacheImplTest;
 import com.dotcms.storage.FileMetadataAPITest;
@@ -497,6 +498,8 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentletJsonAPITest.class,
         VelocityScriptActionletAbortTest.class,
         ContentletJsonAPITest.class,
+        Task211103RenameHostNameLabelTest.class,
+        ContentSecurityPolicyUtilTest.class,
         MessageToolTest.class,
         Task211103RenameHostNameLabelTest.class
 })

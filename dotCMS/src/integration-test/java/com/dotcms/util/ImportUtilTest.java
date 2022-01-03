@@ -749,7 +749,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
             assertTrue(results.get("warnings").size() == 2);
             assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
-            assertEquals("Line # 3 contains duplicate values for a unique Content Type field testTitle and will be ignored.", results.get("warnings").get(1));
+            assertEquals("Line #3: contains duplicate values for a unique Content Type field 'testTitle', and will be ignored.", results.get("warnings").get(1));
 
         } finally {
             try {
@@ -815,7 +815,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
             assertTrue(results.get("warnings").size() == 2);
             assertEquals("The Content Type field testNumber is unique.", results.get("warnings").get(0));
-            assertEquals("Line # 3 contains duplicate values for a unique Content Type field testNumber and will be ignored.", results.get("warnings").get(1));
+            assertEquals("Line #3: contains duplicate values for a unique Content Type field 'testNumber', and will be ignored.", results.get("warnings").get(1));
 
         } finally {
             try {
@@ -2114,7 +2114,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     }
 
     private void validateNoPermissionsWarning(String warning) {
-        assertTrue(warning.contains("User doesn't have permissions to execute"));
+        assertTrue(warning.contains("doesn't have permissions to execute"));
     }
 
     private HttpServletRequest getHttpRequest() {
