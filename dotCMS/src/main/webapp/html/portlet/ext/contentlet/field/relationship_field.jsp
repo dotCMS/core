@@ -363,8 +363,6 @@
 
 		//Invoked when a contentlet is selected to fill the contentlet data in the table
 		function <%= relationJsName %>_addRelationshipCallback(selectedData){
-			console.log("selectedData", selectedData);
-			
 			var data = new Array();
 			var dataToRelate = new Array();
             var entries = numberOfRows<%= relationJsName%>();
@@ -425,7 +423,15 @@
 				dataNoRep[i]['groupStart'] = true;
 			}
 
-			<%= relationJsName %>RelatedCons.insertNodes(false,dataNoRep);
+            if ('<%= isParent %>' === 'yes') {
+                <%= relationJsName %>RelatedCons.insertNodes(false,dataNoRep);
+            } else {
+                for(var j = 0; j < dataNoRep.length; j++ ) {
+                    var { node, data, type } = CreateRow<%= relationJsName %>(dataNoRep[j])
+                    <%= relationJsName %>RelatedCons.appendChild(node);
+                }
+            }
+
 			<%= relationJsName %>_Contents = <%= relationJsName %>_Contents.concat(dataNoRep);
 			renumberAndReorder<%= relationJsName %>();
 		}
@@ -523,11 +529,17 @@
 
 
 		function <%= relationJsName %>buildListing(nodeId,data){
+
 			var srcNode = document.getElementById(nodeId);
-			<%= relationJsName %>RelatedCons = new dojo.dnd.Source(srcNode,{creator: CreateRow<%= relationJsName %>});
-			<%= relationJsName %>RelatedCons.insertNodes(false,data);
-			//http://jira.dotmarketing.net/browse/DOTCMS-6465
-			<%= relationJsName %>RelatedCons.isDragging = false;
+
+            if ('<%= isParent %>' === 'yes') {
+                <%= relationJsName %>RelatedCons = new dojo.dnd.Source(srcNode,{creator: CreateRow<%= relationJsName %>});
+                <%= relationJsName %>RelatedCons.insertNodes(false,data);
+                // http://jira.dotmarketing.net/browse/DOTCMS-6465
+                <%= relationJsName %>RelatedCons.isDragging = false;
+            } else {
+                <%= relationJsName %>RelatedCons = srcNode;
+            }
 
 		}
 
@@ -689,7 +701,12 @@
  		}
 
  		function <%= relationJsName %>unrelateContent(contentletInode,inodeToUnrelate,identifierToUnrelate){
- 			<%= relationJsName %>RelatedCons.deleteSelectedNodes();
+            if ('<%= isParent %>' === 'yes') {
+                <%= relationJsName %>RelatedCons.deleteSelectedNodes();
+            } else {
+                var row = document.getElementById('<%= relationJsName %>_order_' + identifierToUnrelate).closest('tr');
+                row.remove();
+            }
  			<%= relationJsName %>_removeContentFromRelationship (identifierToUnrelate);		 			
  			renumberAndReorder<%= relationJsName %>();
  		}
