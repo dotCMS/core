@@ -234,7 +234,7 @@
 							"    var jsonData = pm.response.json();",
 							"    console.log(jsonData);",
 							"",
-							"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"form-resource-data-01FP89VBD0HKCDFTA469F8H7QX.tar.gz\");",
+							"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"contact_form.tar.gz\");",
 							"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
 							"});"
 						],
