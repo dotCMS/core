@@ -2747,7 +2747,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 							String.join(" wfstep:", workflowAssociatedStepIds));
 
 			final String sanitizedQuery = LuceneQueryUtils.sanitizeBulkActionsQuery(luceneQuery);
-			//final long skipsCount = (inodes.size() - contentlets.size());
 			return distributeWorkAndProcess(action, user, sanitizedQuery, workflowAssociatedStepIds,
                     additionalParamsBean);
 		} catch (final Exception e) {
@@ -2774,7 +2773,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 							String.join(" wfstep:", workflowAssociatedStepIds));
 
 			final String sanitizedQuery = LuceneQueryUtils.sanitizeBulkActionsQuery(luceneQuery);
-			//final long skipsCount = (inodes.size() - contentlets.size());
 			distributeWorkAndProcessNoReturn(action, user, sanitizedQuery, workflowAssociatedStepIds,
 					additionalParamsBean, inodes.size());
 		} catch (final Exception e) {
