@@ -17,7 +17,7 @@ import org.immutables.value.Value.Parameter;
 @JsonDeserialize(as = ListType.class)
 @JsonTypeName(value = AbstractListType.TYPENAME)
 @ValueTypeStyle
-public interface AbstractListType<T> extends FieldValue<List<?>> {
+public interface AbstractListType<T> extends FieldValue<List<T>> {
 
     String TYPENAME = "List";
 
@@ -34,6 +34,6 @@ public interface AbstractListType<T> extends FieldValue<List<?>> {
      */
     @JsonProperty("value")
     @Parameter
-    List<?> value();
+    List<T> value();
 
 }

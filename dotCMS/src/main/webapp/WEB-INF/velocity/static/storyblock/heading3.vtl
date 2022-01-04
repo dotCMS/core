@@ -1,0 +1,12 @@
+#parse( "static/storyblock/marks-macro.vtl" )
+<h3>
+
+    #set($start = 0)
+    #set($end = $item.content.length())
+    #set($end = $end - 1)
+    #set($range = [$start..$end])
+    #foreach($i in $range)
+        #set($content = $item.content.get($i))
+        #renderText($content)
+    #end
+</h3>

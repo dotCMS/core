@@ -84,7 +84,20 @@ public class ContentTool implements ViewTool {
 			Logger.error(this, "Error finding current host", e);
 		}
 	}
-	
+
+	/**
+	 * Will load a lazy version of the content map based on the inode or identifier. It will always
+	 * try to retrieve the live content unless in EDIT_MODE in the backend of dotCMS when passing in an
+	 * identifier.  If it is an inode this is ignored.
+	 * Will return NULL if not found
+	 * @param inodeOrIdentifier Can be either an Inode or Identifier of content.
+	 * @return NULL if not found
+	 */
+	public LazyLoaderContentMap load(final String inodeOrIdentifier) {
+
+		return new LazyLoaderContentMap(()-> find(inodeOrIdentifier));
+	}
+
 	/**
 	 * Will pull a single piece of content for you based on the inode or identifier. It will always
 	 * try to retrieve the live content unless in EDIT_MODE in the backend of dotCMS when passing in an

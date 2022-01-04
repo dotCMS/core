@@ -12,5 +12,5 @@
 <dot-form id="$formDOM" variable='$structure.velocityVarName'></dot-form>
  <script type="text/javascript">
      document.getElementById('$formDOM').layout = $structures.getLayoutAsJson($formId);
-     document.getElementById('$formDOM').addEventListener('submit', formSuccessCallback_$structure.inode);
+     document.getElementById('$formDOM').addEventListener('submit', formSuccessCallback_$structure.inode.replaceAll("-", ""));
  </script>
