@@ -209,7 +209,8 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 		this.tree.set('path',this.selectFolder);
 		this._selectFolder({
 			id: this.selectFolder[this.selectFolder.length - 1],
-			identifier: "SYSTEM_HOST"
+			identifier: "SYSTEM_HOST",
+			type: this.selectFolder.length == 2 ? 'host' : 'folder'
 		})
 	},
 
@@ -249,6 +250,7 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
     },
 
 	_selectFolder: function(item) {
+		console.log('item', item);
         this.dropzone.folder = item.id;
 
 		this.currentFolder = item;
