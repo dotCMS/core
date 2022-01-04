@@ -29,6 +29,7 @@ import com.dotcms.enterprise.publishing.remote.bundler.RuleBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.TemplateBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.WorkflowBundlerTest;
 import com.dotcms.enterprise.publishing.remote.handler.ContentHandlerTest;
+import com.dotcms.enterprise.publishing.remote.handler.HandlerUtilTest;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
@@ -500,6 +501,7 @@ import org.junit.runners.Suite.SuiteClasses;
         VelocityScriptActionletAbortTest.class,
         StoryBlockMapTest.class,
         ContentletJsonAPITest.class,
+        HandlerUtilTest.class,
         Task211103RenameHostNameLabelTest.class,
         ContentSecurityPolicyUtilTest.class,
         MessageToolTest.class,

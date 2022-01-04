@@ -27,13 +27,19 @@ public interface MultiTreeAPI {
     void saveMultiTrees(String pageId, List<MultiTree> mTrees) throws DotDataException;
 
     /**
-     * Saves a specific MultiTree
+     * Saves a specific MultiTree as it comes
      * 
      * @param multiTree
      * @throws DotDataException
      */
     void saveMultiTree(MultiTree multiTree) throws DotDataException;
 
+    /**
+     * Save the multi tree and does a reorder
+     * @param mTree
+     * @throws DotDataException
+     */
+    void saveMultiTreeAndReorder(final MultiTree mTree) throws DotDataException;
     /**
      * Deletes a specific MultiTree
      * 
