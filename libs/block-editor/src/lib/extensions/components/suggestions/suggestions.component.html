@@ -1,6 +1,7 @@
+<div (mousedown)="onMouseDownHandler($event)">
 <h3>{{title}}</h3>
 
-<dotcms-suggestion-list class="suggestion-list-container" (mousedown)="onMouseDownHandler($event)" #list>
+<dotcms-suggestion-list class="suggestion-list-container" #list>
     <dotcms-suggestions-list-item
         *ngFor="let item of items; let i = index"
         (mousedown)="onMouseDown($event, item)"
@@ -12,3 +13,4 @@
     >
     </dotcms-suggestions-list-item>
 </dotcms-suggestion-list>
+<div>

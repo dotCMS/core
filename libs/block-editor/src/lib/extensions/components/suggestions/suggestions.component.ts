@@ -162,6 +162,9 @@ export class SuggestionsComponent implements OnInit {
      */
     updateSelection(e: KeyboardEvent) {
         this.list.updateSelection(e);
+        this.selectionUpdated = true;
+        // Needs to wait until the item has been updated.
+        setTimeout(() => this.selectionUpdated = false, 0);
     }
 
     /**
@@ -180,9 +183,6 @@ export class SuggestionsComponent implements OnInit {
      */
     resetKeyManager() {
         this.list.resetKeyManager();
-        this.selectionUpdated = true;
-        // Needs to wait until the item has been updated
-        setTimeout(() => this.selectionUpdated = false, 0);
     }
 
 
@@ -203,7 +203,8 @@ export class SuggestionsComponent implements OnInit {
      * @memberof SuggestionsComponent
      */
     onMouseEnter(e: MouseEvent) {
-        // If it's called right after updateSelection, do not update active Item
+        // If it's called right after updateSelection, do not update active Item.
+        // Prevents this method to run after updateSelection to avoid unexpected behavior on scroll.
         if (this.selectionUpdated) {
             return;
         }

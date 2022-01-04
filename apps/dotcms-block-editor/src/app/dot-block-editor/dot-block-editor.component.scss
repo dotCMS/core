@@ -11,6 +11,7 @@ dotcms-block-editor {
     overflow-y: hidden;
     position: relative;
     outline: $gray-light solid 1px;
+    resize: vertical;
 
     // If a child is focused, set this style to the parent
     &:focus-within {
