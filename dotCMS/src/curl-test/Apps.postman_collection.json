@@ -890,7 +890,7 @@
 									"    var body = pm.response.json();",
 									"    ",
 									"    console.log(body[0]);",
-									"    pm.expect(body[0].message).to.equals(\"The password must be a string with a length of 14 and 32\");",
+									"    pm.expect(body[0].message).to.equals(\"The password must be a string with a length between 14 and 32\");",
 									"});"
 								],
 								"type": "text/javascript"
@@ -952,7 +952,7 @@
 					"response": []
 				},
 				{
-					"name": "export with a password with less greater than 14 characters Copy",
+					"name": "export with a password with longer than 32 character",
 					"event": [
 						{
 							"listen": "test",
@@ -964,7 +964,7 @@
 									"    var body = pm.response.json();",
 									"    ",
 									"    console.log(body[0]);",
-									"    pm.expect(body[0].message).to.equals(\"The password must be a string with a length of 14 and 32\");",
+									"    pm.expect(body[0].message).to.equals(\"The password must be a string with a length between 14 and 32\");",
 									"});"
 								],
 								"type": "text/javascript"
