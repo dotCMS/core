@@ -1,16 +1,27 @@
 package com.dotcms.rest.api.v1.versionable;
 
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.rendering.velocity.services.ContainerLoader;
+import com.dotcms.rendering.velocity.services.ContentletLoader;
+import com.dotcms.rendering.velocity.services.TemplateLoader;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
+import com.dotmarketing.beans.Tree;
+import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Versionable;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.InodeFactory;
+import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -24,6 +35,10 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -40,15 +55,17 @@ public class VersionableHelper {
     private final ContainerAPI   containerAPI;
     private final PermissionAPI  permissionAPI;
 
-
     private final Map<String, VersionableDeleteStrategy> assetTypeByVersionableDeleteMap;
     private final VersionableDeleteStrategy              defaultVersionableDeleteStrategy;
 
     private final Map<String, VersionableFinderStrategy> assetTypeByVersionableFindVersionMap;
     private final VersionableFinderStrategy defaultVersionableFindVersionStrategy;
 
-    private final Map<String, versionableFindAllStrategy> assetTypeByVersionableFindAllMap;
-    private final versionableFindAllStrategy defaultVersionableFindAllStrategy;
+    private final Map<String, VersionableRestoreStrategy> assetTypeByVersionableRestoreVersionMap;
+    private final VersionableRestoreStrategy              defaultVersionableRestoreStrategy;
+
+    private final Map<String, VersionableFindAllStrategy> assetTypeByVersionableFindAllMap;
+    private final VersionableFindAllStrategy defaultVersionableFindAllStrategy;
 
     public VersionableHelper(final TemplateAPI        templateAPI,
             final ContentletAPI      contentletAPI,
@@ -84,13 +101,23 @@ public class VersionableHelper {
 
         //Map to call the Find All Versions method of an element using the type as the key
         this.assetTypeByVersionableFindAllMap =
-                new ImmutableMap.Builder<String, versionableFindAllStrategy>()
+                new ImmutableMap.Builder<String, VersionableFindAllStrategy>()
                         .put(Inode.Type.CONTENTLET.getValue(), this::findAllVersionsByContentletId)
                         .put(Inode.Type.TEMPLATE.getValue(),   this::findAllVersionsByTemplateId)
                         .build();
         //Default Method to Find All Versions of an element
         this.defaultVersionableFindAllStrategy = this::findAllVersionsByVersionableId;
 
+        //Map to call the Restore Versions method of an element using the type as the key
+        this.assetTypeByVersionableRestoreVersionMap =
+                new ImmutableMap.Builder<String, VersionableRestoreStrategy>()
+                .put(Inode.Type.CONTENTLET.getValue(), this::restoreContentByInode)
+                .put(Inode.Type.TEMPLATE.getValue(),   this::restoreTemplateByInode)
+                .put(Inode.Type.CONTAINERS.getValue(), this::restoreContainerByInode)
+                .put(Inode.Type.LINKS.getValue(),      this::restoreLinkByInode)
+                        .build();
+        //Default Method to Restore All Versions of an element
+        this.defaultVersionableRestoreStrategy = this::restoreContentByInode;
     }
 
     public Map<String, VersionableDeleteStrategy> getAssetTypeByVersionableDeleteMap() {
@@ -105,17 +132,174 @@ public class VersionableHelper {
         return assetTypeByVersionableFindVersionMap;
     }
 
+    public Map<String, VersionableRestoreStrategy>  getAssetTypeByVersionableRestoreVersionMap() {
+
+        return assetTypeByVersionableRestoreVersionMap;
+    }
+
+    public VersionableRestoreStrategy getDefaultVersionableRestoreVersionStrategy() {
+
+        return defaultVersionableRestoreStrategy;
+    }
+
     public VersionableFinderStrategy getDefaultVersionableFindVersionStrategy() {
         return defaultVersionableFindVersionStrategy;
     }
 
-    public Map<String, versionableFindAllStrategy> getAssetTypeByVersionableFindAllMap() {
+    public Map<String, VersionableFindAllStrategy> getAssetTypeByVersionableFindAllMap() {
         return assetTypeByVersionableFindAllMap;
     }
 
-    public versionableFindAllStrategy getDefaultVersionableFindAllStrategy() {
+    public VersionableFindAllStrategy getDefaultVersionableFindAllStrategy() {
         return defaultVersionableFindAllStrategy;
     }
+
+    public void checkWritePermissions(final Permissionable permissionable, final User user) throws DotSecurityException {
+
+        this.permissionAPI.checkPermission(permissionable, PermissionLevel.WRITE, user);
+    }
+
+    // RESTORE VERSION
+    /**
+     * This interface is just a general encapsulation to restore versions for all kind of types
+     */
+    @FunctionalInterface
+    interface VersionableRestoreStrategy {
+
+        VersionableView restoreVersion (final Versionable versionable, final User user, final boolean respectFrontEndRoles)
+                throws DotDataException, DotSecurityException;
+    }
+
+    @WrapInTransaction
+    private VersionableView restoreTemplateByInode(final Versionable versionable, final User user,
+                                       final boolean respectFrontEndRoles)
+            throws DotDataException, DotSecurityException {
+
+        try {
+
+            final WebAsset version      = (WebAsset) versionable;
+            final WebAsset workingAsset = WebAssetFactory.getBackAssetVersion(version);
+
+            CacheLocator.getTemplateCache().remove(workingAsset.getInode());
+            HibernateUtil.addCommitListener("invalidate-template"+ versionable.getInode(),
+                    ()->new TemplateLoader().invalidate(versionable));
+
+            return new VersionableView(workingAsset);
+        } catch (Exception e) {
+            throw new DotDataException(e.getMessage(), e);
+        }
+    }
+
+    @WrapInTransaction
+    private VersionableView restoreContainerByInode (final Versionable versionable, final User user, final boolean respectFrontEndRoles)
+            throws DotSecurityException, DotDataException {
+
+        try {
+
+            final WebAsset version      = (WebAsset) versionable;
+            final WebAsset workingAsset = WebAssetFactory.getBackAssetVersion(version);
+
+            CacheLocator.getContainerCache().remove((Container)versionable);
+            HibernateUtil.addCommitListener("invalidate-container"+versionable.getInode(),
+                    ()->new ContainerLoader().invalidate(versionable));
+
+            return new VersionableView(workingAsset);
+        } catch (Exception e) {
+           throw new DotDataException(e.getMessage(), e);
+        }
+    }
+
+    @WrapInTransaction
+    private VersionableView restoreLinkByInode (final Versionable versionable, final User user, final boolean respectFrontEndRoles)
+            throws DotSecurityException, DotDataException {
+
+        try {
+
+            final Link linkVersion      = (Link)versionable;
+            final WebAsset version      = (WebAsset) versionable;
+            final WebAsset workingLink  = WebAssetFactory.getBackAssetVersion(version);
+
+            // Get parents of the old version so you can update the working
+            // information to this new version.
+            final List<Inode> parents = APILocator.getMenuLinkAPI()
+                    .getParentContentlets(linkVersion.getInode())
+                    .stream().map(this::getInode).collect(Collectors.toList());
+
+            //update parents to new version delete old versions parents if not live.
+            for (final Inode parentInode : parents) {
+
+                if(InodeUtils.isSet(parentInode.getInode())){
+
+                    parentInode.addChild(workingLink);
+
+                    //to keep relation types from parent only if it exists
+                    this.saveTree(linkVersion, workingLink, parentInode);
+
+                    // checks type of parent and deletes child if not live version.
+                    if (!linkVersion.isLive()) {
+
+                        parentInode.deleteChild(linkVersion);
+                    }
+                }
+            }
+
+            final ContentletLoader contentletLoader = new ContentletLoader();
+            //Rewriting the parents contentlets of the link
+            APILocator.getMenuLinkAPI().getParentContentlets
+                    (workingLink.getInode()).stream().filter(this::isWorking)
+                    .forEach(contentletLoader::invalidate);
+
+            return new VersionableView(workingLink);
+        } catch (Exception e) {
+
+            Logger.error(this, e.getMessage(), e);
+            throw new DotDataException(e.getMessage(), e);
+        }
+    }
+
+    private void saveTree(final Link linkVersion, final WebAsset workingLink,
+                          final Inode parentInode) {
+
+        final Tree tree = TreeFactory.getTree(parentInode, linkVersion);
+        if ((tree.getRelationType() != null) && (tree.getRelationType().length() != 0)) {
+
+            final Tree newTree = TreeFactory.getTree(parentInode, workingLink);
+            newTree.setRelationType(tree.getRelationType());
+            newTree.setTreeOrder(0);
+            TreeFactory.saveTree(newTree);
+        }
+    }
+
+    @NotNull
+    private Inode getInode(final Contentlet contentlet) {
+
+        final Inode inode = new Inode();
+        inode.setInode(contentlet.getInode());
+        return inode;
+    }
+
+    private boolean isWorking(final Contentlet contentlet) {
+
+        try {
+
+            return contentlet.isWorking();
+        } catch (DotDataException | DotSecurityException e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
+    @WrapInTransaction
+    private VersionableView restoreContentByInode(final Versionable versionable, final User user, final boolean respectFrontEndRoles)
+            throws DotSecurityException, DotDataException {
+
+        final Contentlet contentletVersionToRestore = (Contentlet) versionable;
+        this.contentletAPI.restoreVersion(contentletVersionToRestore, user, respectFrontEndRoles);
+
+        return new VersionableView(contentletVersionToRestore);
+    }
+    // END RESTORE VERSION METHODS
+
+
 
     // DELETE VERSION
     /**
@@ -251,7 +435,7 @@ public class VersionableHelper {
      * This interface is just a general encapsulation to get versiones for all kind of types
      */
     @FunctionalInterface
-    interface versionableFindAllStrategy {
+    interface VersionableFindAllStrategy {
 
         List<VersionableView> findAllVersions(Identifier identifier, User user, boolean respectFrontendRoles)
                 throws DotDataException, DotSecurityException;
