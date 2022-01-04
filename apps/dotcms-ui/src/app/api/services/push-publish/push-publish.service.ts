@@ -84,8 +84,8 @@ export class PushPublishService {
 
         let result = '';
         result += `assetIdentifier=${encodeURIComponent(assetIdentifier)}`;
-        result += `&remotePublishDate=${this.dotFormatDateService.format(new Date(publishDate), 'yyyy-MM-dd')}`;
-        result += `&remotePublishTime=${this.dotFormatDateService.format(new Date(publishDate), 'HH-mm')}`;
+        result += `&remotePublishDate=${this.dotFormatDateService.format(publishDate ? new Date(publishDate) : new Date(), 'yyyy-MM-dd')}`;
+        result += `&remotePublishTime=${this.dotFormatDateService.format(publishDate ? new Date(publishDate) : new Date(), 'HH-mm')}`;
         result += `&remotePublishExpireDate=${this.dotFormatDateService.format(expireDate ? new Date(expireDate) : new Date(), 'yyyy-MM-dd')}`;
         result += `&remotePublishExpireTime=${this.dotFormatDateService.format(expireDate ? new Date(expireDate) : new Date(), 'HH-mm')}`;
         result += `&timezoneId=${timezoneId}`;
