@@ -346,6 +346,14 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
     }
 
 	@CloseDBIfOpened
+	@Override
+	public Container getWorkingArchiveContainerByFolderPath(final String path, final Host host, final User user,
+													 final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
+
+		return this.containerFactory.getWorkingContainerByFolderPath(path, host, user, respectFrontEndPermissions);
+	}
+
+	@CloseDBIfOpened
     @Override
     public Container getContainerByFolder(final Folder folder, final User user, final boolean showLive) throws DotSecurityException, DotDataException {
 
@@ -906,8 +914,49 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		APILocator.getVersionableAPI().setDeleted(containerWorkingVersion, true);
 		this.containerFactory.save(containerWorkingVersion);
 	}
-    
-    @WrapInTransaction
+
+	@WrapInTransaction
+	@Override
+	public void unarchive(final Container container,
+						final User user, final boolean respectAnonPerms) throws DotDataException, DotSecurityException {
+
+		Logger.debug(this, ()-> "Doing unarchive of container: " + container.getIdentifier());
+
+		//Check write Permissions over container
+		if(!this.permissionAPI.doesUserHavePermission(container, PERMISSION_WRITE, user)){
+			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to write the container");
+			throw new DotSecurityException("User does not have Permissions to write the Container");
+		}
+
+		//Check that the template is Unpublished
+		if (!container.isArchived()) {
+			Logger.error(this, "The Container: " + container.getName() + " can not be unarchive. "
+					+ "Because it is not archived.");
+			throw new DotStateException("Container must be archived before it can be unarchived");
+		}
+
+		if(container instanceof FileAssetContainer) {
+
+			final FileAssetContainer fileAssetContainer = (FileAssetContainer) container;
+			final Host containerHost = fileAssetContainer.getHost();
+			final Identifier idPropertiesVTL = APILocator.getIdentifierAPI().find(containerHost, fileAssetContainer.getPath() + "container.vtl");
+			final Contentlet contentletVTL   = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(idPropertiesVTL.getId());
+			APILocator.getContentletAPI().unarchive(contentletVTL, user, respectAnonPerms);
+		} else {
+			unarchive(container, user);
+		}
+	}
+
+	private void unarchive(final Container container, final User user) throws DotSecurityException, DotDataException {
+		final Container containerWorkingVersion = getWorkingContainerById(container.getIdentifier(),APILocator.systemUser(),false);
+		containerWorkingVersion.setModDate(new java.util.Date());
+		containerWorkingVersion.setModUser(user.getUserId());
+		// sets deleted to false
+		APILocator.getVersionableAPI().setDeleted(containerWorkingVersion, false);
+		this.containerFactory.save(containerWorkingVersion);
+	}
+
+	@WrapInTransaction
 	@Override
 	public void deleteContainerStructuresByContainer(final Container container)
 			throws DotStateException, DotDataException, DotSecurityException {

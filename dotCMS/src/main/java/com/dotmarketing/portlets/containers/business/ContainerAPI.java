@@ -114,6 +114,18 @@ public interface ContainerAPI {
 	 */
 	Container getWorkingContainerByFolderPath(final String path, final Host host, final User user, final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException;
 
+	/**
+	 * Returns the working (including archive) container by path and host; this method is mostly used when the container is file asset based.
+	 * @param path
+	 * @param host
+	 * @param user
+	 * @param respectFrontEndPermissions
+	 * @return Container
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	Container getWorkingArchiveContainerByFolderPath(final String path, final Host host, final User user, final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException;
+
 	/***
 	 * Similar to the {@link #getWorkingContainerByFolderPath(String, Host, User, boolean)} but the host will be figured out from the path, it is particular useful when you
 	 * have the  full path such as //demo.dotcms.com/application/containers/large-column/
@@ -402,8 +414,19 @@ public interface ContainerAPI {
 	 * @param container {@link Container}
 	 * @param user {@link User}
 	 * @param respectAnonPerms {@link Boolean}
+	 * @throws DotDataException
+	 * @throws DotSecurityException
 	 */
     void archive(Container container, User user, boolean respectAnonPerms) throws DotDataException, DotSecurityException;
 
+	/**
+	 * Unarchive a container
+	 * @param container {@link Container}
+	 * @param user {@link User}
+	 * @param respectAnonPerms  {@link Boolean}
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	void unarchive(Container container, User user, boolean respectAnonPerms) throws DotDataException, DotSecurityException;
 
 }

@@ -914,6 +914,8 @@ public class ContainerResource implements Serializable {
             throw new IllegalArgumentException("The container id is required");
         }
 
+        Logger.debug(this, ()-> "Archive the container: " + containerId);
+
         final Container container = this.getContainerWorking(containerId,user,
                 WebAPILocator.getHostWebAPI().getHost(request));
         if (null != container && InodeUtils.isSet(container.getInode())) {
@@ -953,7 +955,7 @@ public class ContainerResource implements Serializable {
                                   @Context final HttpServletResponse response,
                                   @QueryParam("containerId") final String containerId) throws DotSecurityException, DotDataException {
 
-        final InitDataObject initData = new WebResource.InitBuilder(webResource) // todo:
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response).rejectWhenNoUser(true).init();
         final User user         = initData.getUser();
         final PageMode pageMode = PageMode.get(request);
@@ -963,11 +965,13 @@ public class ContainerResource implements Serializable {
             throw new IllegalArgumentException("The container id is required");
         }
 
+        Logger.debug(this, ()-> "Unarchive the container: " + containerId);
+
         final Container container = this.getContainerWorking(containerId,user,
                 WebAPILocator.getHostWebAPI().getHost(request));
         if (null != container && InodeUtils.isSet(container.getInode())) {
 
-            this.containerAPI.archive(container, user, pageMode.respectAnonPerms);
+            this.containerAPI.unarchive(container, user, pageMode.respectAnonPerms);
             ActivityLogger.logInfo(this.getClass(), "Doing Archive Container Action", "User " +
                     user.getPrimaryKey() + " archived container: " + container.getIdentifier());
         } else {
@@ -976,7 +980,8 @@ public class ContainerResource implements Serializable {
             throw new DoesNotExistException("Container with Id: " + containerId + " does not exist");
         }
 
-        return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
+        return Response.ok(new ResponseEntityView(new ContainerView(this.getContainerWorking(containerId,user,
+                WebAPILocator.getHostWebAPI().getHost(request))))).build();
     }
 
     /**
@@ -1026,52 +1031,5 @@ public class ContainerResource implements Serializable {
         return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
     }
 
-    /**
-     * UnArchives container
-     *
-     * This method receives a container id and archives it.
-     * To archive a container successfully the user needs to have Edit Permissions.
-     *
-     * @param request            {@link HttpServletRequest}
-     * @param response           {@link HttpServletResponse}
-     * @param containerId       containerId identifier to archive.
-     * @return Response
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    @POST
-    @Path("/_tofile")
-    @JSONP
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response convert(@Context final HttpServletRequest  request,
-                                 @Context final HttpServletResponse response,
-                                 @QueryParam("containerId") final String containerId) throws DotSecurityException, DotDataException {
-
-        final InitDataObject initData = new WebResource.InitBuilder(webResource) // todo:
-                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
-        final User user         = initData.getUser();
-        final PageMode pageMode = PageMode.get(request);
-
-        if (!UtilMethods.isSet(containerId)) {
-
-            throw new IllegalArgumentException("The container id is required");
-        }
-
-        final Container container = this.getContainerWorking(containerId,user,
-                WebAPILocator.getHostWebAPI().getHost(request));
-        if (null != container && InodeUtils.isSet(container.getInode())) {
-
-            this.containerAPI.archive(container, user, pageMode.respectAnonPerms);
-            ActivityLogger.logInfo(this.getClass(), "Doing Archive Container Action", "User " +
-                    user.getPrimaryKey() + " archived container: " + container.getIdentifier());
-        } else {
-
-            Logger.error(this, "Container with Id: " + containerId + " does not exist");
-            throw new DoesNotExistException("Container with Id: " + containerId + " does not exist");
-        }
-
-        return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
-    }
-
+   
 }
