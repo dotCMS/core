@@ -6,8 +6,18 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
+import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.portlet.ActionRequest;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.google.common.collect.Maps;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import com.dotmarketing.util.*;
+import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -22,79 +32,36 @@ import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.containers.model.ContainerView;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.form.business.FormAPI;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.structure.factories.StructureFactory;
-import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.ActivityLogger;
-import com.dotmarketing.util.Constants;
-import com.dotmarketing.util.HostUtil;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.liferay.portal.model.User;
-import com.liferay.portal.struts.ActionException;
-import com.liferay.util.servlet.SessionMessages;
-import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ResourceNotFoundException;
-import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * This resource provides all the different end-points associated to information and actions that
@@ -128,13 +95,13 @@ public class ContainerResource implements Serializable {
 
     @VisibleForTesting
     public ContainerResource(final WebResource    webResource,
-                             final PaginationUtil paginationUtil,
-                             final FormAPI        formAPI,
-                             final ContainerAPI   containerAPI,
-                             final VersionableAPI versionableAPI,
-                             final VelocityUtil   velocityUtil,
-                             final ShortyIdAPI    shortyAPI,
-                             final ContentletAPI  contentletAPI) {
+            final PaginationUtil paginationUtil,
+            final FormAPI        formAPI,
+            final ContainerAPI   containerAPI,
+            final VersionableAPI versionableAPI,
+            final VelocityUtil   velocityUtil,
+            final ShortyIdAPI    shortyAPI,
+            final ContentletAPI  contentletAPI) {
 
         this.webResource    = webResource;
         this.paginationUtil = paginationUtil;
@@ -230,10 +197,10 @@ public class ContainerResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/{containerId}/content/{contentletId}")
     public final Response containerContent(@Context final HttpServletRequest req,
-                                           @Context final HttpServletResponse res,
-                                           @PathParam("containerId")  final String containerId,
-                                           @PathParam("contentletId") final String contentletId,
-                                           @QueryParam("pageInode") final String pageInode)
+            @Context final HttpServletResponse res,
+            @PathParam("containerId")  final String containerId,
+            @PathParam("contentletId") final String contentletId,
+            @QueryParam("pageInode") final String pageInode)
             throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = this.webResource.init(req, res, true);
@@ -243,10 +210,10 @@ public class ContainerResource implements Serializable {
         PageMode.setPageMode(req, PageMode.EDIT_MODE);
 
         final ShortyId contentShorty = this.shortyAPI
-            .getShorty(contentletId)
-            .orElseGet(() -> {
-                throw new ResourceNotFoundException("Can't find contentlet:" + contentletId);
-            });
+                .getShorty(contentletId)
+                .orElseGet(() -> {
+                    throw new ResourceNotFoundException("Can't find contentlet:" + contentletId);
+                });
 
         try {
 
@@ -289,10 +256,10 @@ public class ContainerResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/content/{contentletId}")
     public final Response containerContentByQueryParam(@Context final HttpServletRequest req,
-                                           @Context final HttpServletResponse res,
-                                           @QueryParam("containerId") final String containerId,
-                                           @QueryParam("pageInode") final String pageInode,
-                                           @PathParam("contentletId") final String contentletId)
+            @Context final HttpServletResponse res,
+            @QueryParam("containerId") final String containerId,
+            @QueryParam("pageInode") final String pageInode,
+            @PathParam("contentletId") final String contentletId)
             throws DotDataException, DotSecurityException {
 
         return this.containerContent(req, res, containerId, contentletId, pageInode);
@@ -323,9 +290,9 @@ public class ContainerResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/form/{formId}")
     public final Response containerFormByQueryParam(@Context final HttpServletRequest req,
-                                                       @Context final HttpServletResponse res,
-                                                       @QueryParam("containerId") final String containerId,
-                                                       @PathParam("formId") final String formId)
+            @Context final HttpServletResponse res,
+            @QueryParam("containerId") final String containerId,
+            @PathParam("formId") final String formId)
             throws DotDataException, DotSecurityException {
 
         return this.containerForm(req, res, containerId, formId);
@@ -349,9 +316,9 @@ public class ContainerResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/{containerId}/form/{formId}")
     public final Response containerForm(@Context final HttpServletRequest req,
-                                        @Context final HttpServletResponse res,
-                                        @PathParam("containerId") final String containerId,
-                                        @PathParam("formId") final String formId)
+            @Context final HttpServletResponse res,
+            @PathParam("containerId") final String containerId,
+            @PathParam("formId") final String formId)
             throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = webResource.init(req, res, true);
@@ -367,9 +334,9 @@ public class ContainerResource implements Serializable {
         final String html = getHTML(req, res, containerId, user, formContent);
 
         final Map<String, Object> response = ImmutableMap.<String, Object> builder()
-            .put("render", html)
-            .put("content", formContent.getMap())
-            .build();
+                .put("render", html)
+                .put("content", formContent.getMap())
+                .build();
 
         return Response.ok(new ResponseEntityView(response))
                 .build();
@@ -387,14 +354,15 @@ public class ContainerResource implements Serializable {
     }
 
     private String getHTML(final HttpServletRequest req,
-                           final HttpServletResponse res,
-                           final String containerId,
-                           final User user,
-                           final Contentlet contentlet,
-                           final String pageInode) throws DotDataException, DotSecurityException {
+            final HttpServletResponse res,
+            final String containerId,
+            final User user,
+            final Contentlet contentlet,
+            final String pageInode) throws DotDataException, DotSecurityException {
 
         final PageMode mode = PageMode.EDIT_MODE;
-        final Container container = getContainerWorking(containerId, user, WebAPILocator.getHostWebAPI().getHost(req));
+        final Host host = WebAPILocator.getHostWebAPI().getHost(req);
+        final Container container = getContainer(containerId, user, host);
         ContainerResourceHelper.getInstance().setContainerLanguage(container, req);
 
         final org.apache.velocity.context.Context context = velocityUtil.getContext(req, res);
@@ -424,19 +392,10 @@ public class ContainerResource implements Serializable {
         velocityUtil.merge(pageKey.path, context);
     }
 
-    private Container getContainerWorking(final String containerId, final User user, final Host host) throws DotDataException, DotSecurityException {
 
-        final PageMode mode = PageMode.EDIT_MODE;
-        return this.getContainer(containerId, user, host, mode);
-    }
+    private Container getContainer(final String containerId, final User user, final Host host) throws DotDataException, DotSecurityException {
 
-    private Container getContainerLive(final String containerId, final User user, final Host host) throws DotDataException, DotSecurityException {
-
-        final PageMode mode = PageMode.LIVE;
-        return this.getContainer(containerId, user, host, mode);
-    }
-
-    private Container getContainer(final String containerId, final User user, final Host host, final PageMode mode) throws DotDataException, DotSecurityException {
+        final PageMode mode = PageMode.EDIT_MODE; // todo: ask for this, does not make sense ask for mode.showLive
 
         if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerId)) {
 
@@ -444,7 +403,7 @@ public class ContainerResource implements Serializable {
             final Host   containerHost   = hostOpt.isPresent()? hostOpt.get():host;
             final String relativePath    = FileAssetContainerUtil.getInstance().getPathFromFullPath(containerHost.getHostname(), containerId);
             try {
-                
+
                 return mode.showLive ?
                         this.containerAPI.getLiveContainerByFolderPath(relativePath, containerHost, user, mode.respectAnonPerms) :
                         this.containerAPI.getWorkingContainerByFolderPath(relativePath, containerHost, user, mode.respectAnonPerms);
@@ -466,10 +425,10 @@ public class ContainerResource implements Serializable {
                 });
 
         return (containerShorty.type != ShortType.IDENTIFIER)
-                    ? this.containerAPI.find(containerId, user, mode.showLive)
-                    : (mode.showLive) ?
-                            this.containerAPI.getLiveContainerById(containerShorty.longId, user, mode.respectAnonPerms) :
-                            this.containerAPI.getWorkingContainerById(containerShorty.longId, user, mode.respectAnonPerms);
+                ? this.containerAPI.find(containerId, user, mode.showLive)
+                : (mode.showLive) ?
+                        this.containerAPI.getLiveContainerById(containerShorty.longId, user, mode.respectAnonPerms) :
+                        this.containerAPI.getWorkingContainerById(containerShorty.longId, user, mode.respectAnonPerms);
     }
 
     @DELETE
@@ -490,7 +449,7 @@ public class ContainerResource implements Serializable {
         final PageMode mode = PageMode.get(req);
         try {
             final Language id = WebAPILocator.getLanguageWebAPI()
-                .getLanguage(req);
+                    .getLanguage(req);
 
             return removeContentletFromContainer(id, containerId, contentletId, uid, user, mode);
         } catch (DotSecurityException e) {
@@ -500,8 +459,8 @@ public class ContainerResource implements Serializable {
 
     @WrapInTransaction
     private Response removeContentletFromContainer(final Language id, final String containerId,
-                                                   final String contentletId, final String uid,
-                                                   final User user, final PageMode mode) throws DotDataException, DotSecurityException {
+            final String contentletId, final String uid,
+            final User user, final PageMode mode) throws DotDataException, DotSecurityException {
 
 
         final ShortyId contentShorty = APILocator.getShortyAPI()
@@ -593,336 +552,5 @@ public class ContainerResource implements Serializable {
         }
     }
 
-
-    ///////
-
-    /**
-     * Saves a new working version of a container.
-     *
-     * @param request
-     * @param response
-     * @param containerForm
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    @POST
-    @JSONP
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response saveNew(@Context final HttpServletRequest  request,
-                                  @Context final HttpServletResponse response,
-                                  final ContainerForm containerForm) throws DotDataException, DotSecurityException {
-
-        final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .requestAndResponse(request, response).requiredBackendUser(true).rejectWhenNoUser(true).init();
-        final User user         = initData.getUser();
-        final Host host         = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-        final PageMode pageMode = PageMode.get(request);
-        Container container     = new Container();
-
-        if(!APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, pageMode.respectAnonPerms)
-                || !APILocator.getPermissionAPI().doesUserHavePermissions(PermissionAPI.PermissionableType.CONTAINERS, PermissionAPI.PERMISSION_EDIT, user)) {
-
-            throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
-        }
-
-        ActivityLogger.logInfo(this.getClass(), "Save Container",
-                "User " + user.getPrimaryKey() + " saved " + container.getTitle(), host.getHostname());
-
-        container.setMaxContentlets(containerForm.getMaxContentlets());
-        container.setNotes(containerForm.getNotes());
-        container.setPreLoop(containerForm.getPreLoop());
-        container.setPostLoop(containerForm.getPostLoop());
-        container.setSortContentletsBy(containerForm.getSortContentletsBy());
-        container.setStaticify(containerForm.isStaticify());
-        container.setUseDiv(containerForm.isUseDiv());
-        container.setFriendlyName(containerForm.getFriendlyName());
-        container.setModDate(new Date());
-        container.setModUser(user.getUserId());
-        container.setOwner(user.getUserId());
-        container.setShowOnMenu(containerForm.isShowOnMenu());
-        container.setTitle(containerForm.getTitle());
-
-        this.containerAPI.save(container, containerForm.getContainerStructures(), host, user, pageMode.respectAnonPerms);
-
-        return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
-    }
-
-    /**
-     * Updates a new working version of a container.
-     *
-     * @param request
-     * @param response
-     * @param containerForm
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    @PUT
-    @JSONP
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response update(@Context final HttpServletRequest  request,
-                                  @Context final HttpServletResponse response,
-                                  final ContainerForm containerForm) throws DotDataException, DotSecurityException {
-
-        final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .requestAndResponse(request, response).requiredBackendUser(true).rejectWhenNoUser(true).init();
-        final User user         = initData.getUser();
-        final Host host         = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-        final PageMode pageMode = PageMode.get(request);
-
-        if(!APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, pageMode.respectAnonPerms)
-                || !APILocator.getPermissionAPI().doesUserHavePermissions(PermissionAPI.PermissionableType.CONTAINERS, PermissionAPI.PERMISSION_EDIT, user)) {
-
-            throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
-        }
-
-        final Container container = this.getContainerWorking(containerForm.getIdentifier(), user, host);
-
-        if (null == container || !InodeUtils.isSet(container.getInode())) {
-
-            new DoesNotExistException("The container: " + containerForm.getIdentifier() + " does not exists");
-        }
-
-        ActivityLogger.logInfo(this.getClass(), "Upate Container: " + containerForm.getIdentifier(),
-                "User " + user.getPrimaryKey() + " saved " + container.getTitle(), host.getHostname());
-
-        container.setMaxContentlets(containerForm.getMaxContentlets());
-        container.setNotes(containerForm.getNotes());
-        container.setPreLoop(containerForm.getPreLoop());
-        container.setPostLoop(containerForm.getPostLoop());
-        container.setSortContentletsBy(containerForm.getSortContentletsBy());
-        container.setStaticify(containerForm.isStaticify());
-        container.setUseDiv(containerForm.isUseDiv());
-        container.setFriendlyName(containerForm.getFriendlyName());
-        container.setModDate(new Date());
-        container.setModUser(user.getUserId());
-        container.setOwner(user.getUserId());
-        container.setShowOnMenu(containerForm.isShowOnMenu());
-        container.setTitle(containerForm.getTitle());
-
-        this.containerAPI.save(container, containerForm.getContainerStructures(), host, user, pageMode.respectAnonPerms);
-
-        return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
-    }
-
-
-    /**
-     * Return live version {@link com.dotmarketing.portlets.containers.model.Container} based on the id
-     *
-     * @param httpRequest
-     * @param httpResponse
-     * @param containerId container identifier to get the live version.
-     * @return
-     * @throws DotSecurityException
-     * @throws DotDataException
-     */
-    @GET
-    @Path("/live")
-    @JSONP
-    @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response getLiveById(@Context final HttpServletRequest  httpRequest,
-                                      @Context final HttpServletResponse httpResponse,
-                                      @QueryParam("containerId")  final String containerId) throws DotSecurityException, DotDataException {
-
-        final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
-        final User user     = initData.getUser();
-        Logger.debug(this, ()-> "Getting the live container by id: " + containerId);
-
-        final Container container = this.getContainerLive(containerId, user, WebAPILocator.getHostWebAPI().getHost(httpRequest));
-
-        if (null == container || UtilMethods.isNotSet(container.getIdentifier())) {
-
-            throw new DoesNotExistException("Live Version of the Container with Id: " + containerId + " does not exist");
-        }
-
-        return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
-    }
-
-    /**
-     * Return working version {@link com.dotmarketing.portlets.containers.model.Container} based on the id
-     *
-     * @param httpRequest
-     * @param httpResponse
-     * @param containerId container identifier to get the working version.
-     * @return
-     * @throws DotSecurityException
-     * @throws DotDataException
-     */
-    @GET
-    @Path("/working")
-    @JSONP
-    @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response getWorkingById(@Context final HttpServletRequest  httpRequest,
-                                         @Context final HttpServletResponse httpResponse,
-                                         @QueryParam("containerId") final String containerId) throws DotSecurityException, DotDataException {
-
-        final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
-        final User user     = initData.getUser();
-        Logger.debug(this, ()-> "Getting the working container by id: " + containerId);
-
-        final Container container = this.getContainerWorking(containerId, user, WebAPILocator.getHostWebAPI().getHost(httpRequest));
-
-        if (null == container || UtilMethods.isNotSet(container.getIdentifier())) {
-
-            throw new DoesNotExistException("Working Version of the Container with Id: " + containerId + " does not exist");
-        }
-
-        return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
-    }
-
-    /**
-     * Publishes a Container
-     *
-     * This method receives an identifier and publish it
-     * To publish a container successfully the user needs to have Publish Permissions and the container
-     * can not be archived.
-     *
-     * @param request            {@link HttpServletRequest}
-     * @param response           {@link HttpServletResponse}
-     * @param containerId        {@link Integer} container id to unpublish
-     * @return Response
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    @PUT
-    @Path("/_publish")
-    @JSONP
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response publish(@Context final HttpServletRequest  request,
-                                    @Context final HttpServletResponse response,
-                                    @QueryParam("containerId") final String containerId) throws DotSecurityException, DotDataException {
-
-        final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
-        final User user         = initData.getUser();
-        final PageMode pageMode = PageMode.get(request);
-
-        if (!UtilMethods.isSet(containerId)) {
-
-            throw new DoesNotExistException("The Container with Id: " + containerId + " does not exist");
-        }
-
-        final Container container = this.getContainerWorking(containerId, user, WebAPILocator.getHostWebAPI().getHost(request));
-
-        if (null != container && InodeUtils.isSet(container.getInode())){
-            this.containerAPI.unpublish(container, user, pageMode.respectAnonPerms);
-            ActivityLogger.logInfo(this.getClass(), "Unpublish Container Action", "User " +
-                    user.getPrimaryKey() + " unpublished container: " + container.getIdentifier());
-        } else {
-
-            Logger.error(this, "The Container with Id: " + containerId + " does not exist");
-            throw new DoesNotExistException("The Container with Id: " + containerId + " does not exist");
-        }
-
-        return Response.ok(new ResponseEntityView(container))
-                .build();
-    }
-
-    /**
-     * Unpublishes a Container
-     *
-     * This method receives an identifier and unpublish it
-     * To unpublish a template successfully the user needs to have Publish Permissions and the container
-     * can not be archived.
-     *
-     * @param request            {@link HttpServletRequest}
-     * @param response           {@link HttpServletResponse}
-     * @param containerId        {@link Integer} container id to unpublish
-     * @return Response
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    @PUT
-    @Path("/_unpublish")
-    @JSONP
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response unpublish(@Context final HttpServletRequest  request,
-                                    @Context final HttpServletResponse response,
-                                    @QueryParam("containerId") final String containerId) throws DotSecurityException, DotDataException {
-
-        final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
-        final User user         = initData.getUser();
-        final PageMode pageMode = PageMode.get(request);
-
-        if (!UtilMethods.isSet(containerId)) {
-
-            throw new DoesNotExistException("The Container with Id: " + containerId + " does not exist");
-        }
-
-        final Container container = this.getContainerWorking(containerId, user, WebAPILocator.getHostWebAPI().getHost(request));
-
-        if (null != container && InodeUtils.isSet(container.getInode())){
-            this.containerAPI.unpublish(container, user, pageMode.respectAnonPerms);
-            ActivityLogger.logInfo(this.getClass(), "Unpublish Container Action", "User " +
-                    user.getPrimaryKey() + " unpublished container: " + container.getIdentifier());
-        } else {
-
-            Logger.error(this, "The Container with Id: " + containerId + " does not exist");
-            throw new DoesNotExistException("The Container with Id: " + containerId + " does not exist");
-        }
-
-        return Response.ok(new ResponseEntityView(container))
-                .build();
-    }
-
-    /**
-     * Archives container
-     *
-     * This method receives a container id and archives it.
-     * To archive a container successfully the user needs to have Edit Permissions.
-     *
-     * @param request            {@link HttpServletRequest}
-     * @param response           {@link HttpServletResponse}
-     * @param containerId       containerId identifier to archive.
-     * @return Response
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    @PUT
-    @Path("/_archive")
-    @JSONP
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response archive(@Context final HttpServletRequest  request,
-                                  @Context final HttpServletResponse response,
-                                  @QueryParam("containerId") final String containerId) throws DotSecurityException, DotDataException {
-
-        final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
-        final User user         = initData.getUser();
-        final PageMode pageMode = PageMode.get(request);
-
-        if (!UtilMethods.isSet(containerId)) {
-
-            throw new IllegalArgumentException("The container id is required");
-        }
-
-        final Container container = this.getContainerWorking(containerId,user,
-                WebAPILocator.getHostWebAPI().getHost(request));
-        if (null != container && InodeUtils.isSet(container.getInode())) {
-
-            this.containerAPI.archive(container, user, pageMode.respectAnonPerms);
-            ActivityLogger.logInfo(this.getClass(), "Doing Archive Container Action", "User " +
-                    user.getPrimaryKey() + " archived container: " + container.getIdentifier());
-        } else {
-
-            Logger.error(this, "Container with Id: " + containerId + " does not exist");
-            throw new DoesNotExistException("Container with Id: " + containerId + " does not exist");
-        }
-
-        return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
-    }
 
 }

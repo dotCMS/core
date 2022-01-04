@@ -8,7 +8,6 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
-import com.dotcms.rendering.velocity.services.TemplateLoader;
 import com.dotcms.system.event.local.model.Subscriber;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.transform.TransformerLocator;
@@ -20,9 +19,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.TreeFactory;
-import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.ApplicationContainerFolderListener;
@@ -33,7 +30,6 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.HostUtil;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
@@ -44,9 +40,6 @@ import io.vavr.control.Try;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.function.Supplier;
-
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_EDIT;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 
 /**
@@ -766,71 +759,6 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
     public List<Container> findContainersForStructure(final String structureInode) throws DotDataException {
         return containerFactory.findContainersForStructure(structureInode);
     }
-
-	@WrapInTransaction
-	@Override
-	public void unpublish(final Container container, final User user, final boolean respectAnonPerms) throws DotDataException, DotSecurityException {
-
-		Logger.debug(this, ()-> "Doing archive of container: " + container.getIdentifier());
-
-		//Check write Permissions over container
-		if(!this.permissionAPI.doesUserHavePermission(container, PERMISSION_WRITE, user)){
-			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to write the container");
-			throw new DotSecurityException("User does not have Permissions to write the Container");
-		}
-
-		final Container containerWorkingVersion = getWorkingContainerById(container.getIdentifier(), user,false);
-		//Remove live version from version_info
-		APILocator.getVersionableAPI().removeLive(containerWorkingVersion.getIdentifier());
-		containerWorkingVersion.setModDate(new java.util.Date());
-		containerWorkingVersion.setModUser(user.getUserId());
-		containerFactory.save(containerWorkingVersion);
-		//remove template from the live directory
-		new ContainerLoader().invalidate(container);
-	}
-
-	@WrapInTransaction
-	@Override
-	public void archive(final Container container,
-						final User user, final boolean respectAnonPerms) throws DotDataException, DotSecurityException {
-
-		Logger.debug(this, ()-> "Doing archive of container: " + container.getIdentifier());
-
-		//Check write Permissions over container
-		if(!this.permissionAPI.doesUserHavePermission(container, PERMISSION_WRITE, user)){
-			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to write the container");
-			throw new DotSecurityException("User does not have Permissions to write the Container");
-		}
-
-		//Check that the template is Unpublished
-		if (container.isLive()) {
-			Logger.error(this, "The Container: " + container.getName() + " can not be archive. "
-					+ "Because it is live.");
-			throw new DotStateException("Container must be unpublished before it can be archived");
-		}
-
-		archive(container, user);
-	}
-
-	/**
-	 * This method was extracted from {@link WebAssetFactory#archiveAsset(WebAsset, String)} }
-	 * @param container
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
-	private void archive(final Container container, final User user) throws DotSecurityException, DotDataException {
-		final Container containerLiveVersion    = getLiveContainerById(container.getIdentifier(),APILocator.systemUser(),false);
-		final Container containerWorkingVersion = getWorkingContainerById(container.getIdentifier(),APILocator.systemUser(),false);
-		if(containerLiveVersion!=null) {
-			
-			APILocator.getVersionableAPI().removeLive(container.getIdentifier());
-		}
-		containerWorkingVersion.setModDate(new java.util.Date());
-		containerWorkingVersion.setModUser(user.getUserId());
-		// sets deleted to true
-		APILocator.getVersionableAPI().setDeleted(containerWorkingVersion, true);
-		this.containerFactory.save(containerWorkingVersion);
-	}
     
     @WrapInTransaction
 	@Override
