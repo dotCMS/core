@@ -297,11 +297,11 @@ describe('DotContentCompareTableComponent', () => {
                 By.css('[data-testId="table-image-compare"]')
             ).nativeElement;
             expect(workingImage.src).toContain(
-                `/dA/${dotContentCompareTableDataMock.working.image}/250w/20q`
+                `/dA/${dotContentCompareTableDataMock.working.image}/20q`
             );
             expect(workingImage.alt).toContain(dotContentCompareTableDataMock.working.image);
             expect(compareImage.src).toContain(
-                `/dA/${dotContentCompareTableDataMock.compare.image}/250w/20q`
+                `/dA/${dotContentCompareTableDataMock.compare.image}/20q`
             );
             expect(compareImage.alt).toContain(dotContentCompareTableDataMock.compare.image);
         });

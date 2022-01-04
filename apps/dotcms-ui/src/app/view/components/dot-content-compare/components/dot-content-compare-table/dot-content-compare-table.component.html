@@ -30,10 +30,10 @@
 
     <ng-template pTemplate="body" let-field >
         <tr [ngSwitch]="field?.fieldType" >
-           <td>{{field.variable}}</td>
+           <td>{{field.name}}</td>
             <ng-container *ngSwitchCase="'Image'">
-               <td><img data-testId="table-image-working" *ngIf="data.working[field.variable]" [alt]="data.working[field.variable]" [src]="'/dA/'+data.working[field.variable]+'/250w/20q'"></td>
-               <td><img data-testId="table-image-compare" *ngIf="data.compare[field.variable]" [alt]="data.compare[field.variable]" [src]="'/dA/'+data.compare[field.variable]+'/250w/20q'"></td>
+               <td><img data-testId="table-image-working" *ngIf="data.working[field.variable]" [alt]="data.working[field.variable]" [src]="'/dA/'+data.working[field.variable]+'/20q'"></td>
+               <td><img data-testId="table-image-compare" *ngIf="data.compare[field.variable]" [alt]="data.compare[field.variable]" [src]="'/dA/'+data.compare[field.variable]+'/20q'"></td>
             </ng-container>
             <ng-container *ngSwitchCase="'File'" >
                 <td>
