@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, Input, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnInit, ViewChild, HostListener } from '@angular/core';
 
 import { map, take } from 'rxjs/operators';
 import { MenuItem } from 'primeng/api';
@@ -30,7 +30,12 @@ export class SuggestionsComponent implements OnInit {
     items: DotMenuItem[] = [];
 
     title = 'Select a block';
-    selectionUpdated = false;
+    mouseMove = true;
+
+    @HostListener('mousemove', ['$event'])
+    onMousemove() { 
+        this.mouseMove = true;
+    }
 
     constructor(
         private suggestionsService: SuggestionsService,
@@ -162,9 +167,7 @@ export class SuggestionsComponent implements OnInit {
      */
     updateSelection(e: KeyboardEvent) {
         this.list.updateSelection(e);
-        this.selectionUpdated = true;
-        // Needs to wait until the item has been updated.
-        setTimeout(() => this.selectionUpdated = false, 0);
+        this.mouseMove = false;
     }
 
     /**
@@ -203,9 +206,8 @@ export class SuggestionsComponent implements OnInit {
      * @memberof SuggestionsComponent
      */
     onMouseEnter(e: MouseEvent) {
-        // If it's called right after updateSelection, do not update active Item.
-        // Prevents this method to run after updateSelection to avoid unexpected behavior on scroll.
-        if (this.selectionUpdated) {
+        // If mouse does not move then leave the function.
+        if (!this.mouseMove) {
             return;
         }
         e.preventDefault();
