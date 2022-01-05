@@ -626,7 +626,7 @@ public class ContainerResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response saveNew(@Context final HttpServletRequest  request,
-                                  @Context final HttpServletResponse response, // todo: support file containers as well
+                                  @Context final HttpServletResponse response,
                                   final ContainerForm containerForm) throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -679,7 +679,7 @@ public class ContainerResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response update(@Context final HttpServletRequest  request,
-                                  @Context final HttpServletResponse response, // todo: support file containers as well
+                                  @Context final HttpServletResponse response,
                                   final ContainerForm containerForm) throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -783,15 +783,15 @@ public class ContainerResource implements Serializable {
         final User user     = initData.getUser();
         Logger.debug(this, ()-> "Getting the working container by id: " + containerId);
 
-        final Container container = this.getContainerWorking(containerId, user, WebAPILocator.getHostWebAPI().getHost(request));
+        final Host      host      =  WebAPILocator.getHostWebAPI().getHost(request);
+        final Container container = this.getContainerWorking(containerId, user, host);
 
         if (null == container || UtilMethods.isNotSet(container.getIdentifier())) {
 
             throw new DoesNotExistException("Working Version of the Container with Id: " + containerId + " does not exist");
         }
 
-        return Response.ok(new ResponseEntityView(new ContainerView(
-                this.getContainerWorking(containerId, user, WebAPILocator.getHostWebAPI().getHost(request))))).build();
+        return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
     }
 
     /**
@@ -829,9 +829,11 @@ public class ContainerResource implements Serializable {
 
         Logger.debug(this, ()-> "Publishing the container: " + containerId);
 
-        final Container container = this.getContainerWorking(containerId, user, WebAPILocator.getHostWebAPI().getHost(request));
+        final Host      host      = WebAPILocator.getHostWebAPI().getHost(request);
+        final Container container = this.getContainerWorking(containerId, user, host);
 
-        if (null != container && InodeUtils.isSet(container.getInode())){
+        if (null != container && InodeUtils.isSet(container.getInode())) {
+
             this.containerAPI.publish(container, user, pageMode.respectAnonPerms);
             ActivityLogger.logInfo(this.getClass(), "Publish Container", "User " +
                     user.getPrimaryKey() + " Published container: " + container.getIdentifier());
@@ -842,7 +844,7 @@ public class ContainerResource implements Serializable {
         }
 
         return Response.ok(new ResponseEntityView(new ContainerView(
-                this.getContainerLive(containerId, user, WebAPILocator.getHostWebAPI().getHost(request))))).build();
+                this.getContainerLive(containerId, user, host)))).build();
     }
 
     /**
@@ -880,7 +882,8 @@ public class ContainerResource implements Serializable {
 
         Logger.debug(this, ()-> "UnPublishing the container: " + containerId);
 
-        final Container container = this.getContainerWorking(containerId, user, WebAPILocator.getHostWebAPI().getHost(request));
+        final Host      host      = WebAPILocator.getHostWebAPI().getHost(request);
+        final Container container = this.getContainerWorking(containerId, user, host);
 
         if (null != container && InodeUtils.isSet(container.getInode())){
             this.containerAPI.unpublish(container, user, pageMode.respectAnonPerms);
@@ -892,8 +895,8 @@ public class ContainerResource implements Serializable {
             throw new DoesNotExistException("The Container with Id: " + containerId + " does not exist");
         }
 
-        return Response.ok(new ResponseEntityView(container))
-                .build();
+        return Response.ok(new ResponseEntityView(
+                this.getContainerWorking(containerId, user, host))).build();
     }
 
     /**
@@ -930,8 +933,8 @@ public class ContainerResource implements Serializable {
 
         Logger.debug(this, ()-> "Archive the container: " + containerId);
 
-        final Container container = this.getContainerWorking(containerId,user,
-                WebAPILocator.getHostWebAPI().getHost(request));
+        final Host      host      = WebAPILocator.getHostWebAPI().getHost(request);
+        final Container container = this.getContainerWorking(containerId, user, host);
         if (null != container && InodeUtils.isSet(container.getInode())) {
 
             this.containerAPI.archive(container, user, pageMode.respectAnonPerms);
@@ -943,8 +946,8 @@ public class ContainerResource implements Serializable {
             throw new DoesNotExistException("Container with Id: " + containerId + " does not exist");
         }
 
-        return Response.ok(new ResponseEntityView(new ContainerView(this.getContainerWorking(containerId,user,
-                WebAPILocator.getHostWebAPI().getHost(request))))).build();
+        return Response.ok(new ResponseEntityView(new ContainerView(this.getContainerWorking(
+                containerId, user, host)))).build();
     }
 
     /**
@@ -981,8 +984,8 @@ public class ContainerResource implements Serializable {
 
         Logger.debug(this, ()-> "Unarchive the container: " + containerId);
 
-        final Container container = this.getContainerArchiveWorking(containerId,user,
-                WebAPILocator.getHostWebAPI().getHost(request));
+        final Host      host      = WebAPILocator.getHostWebAPI().getHost(request);
+        final Container container = this.getContainerArchiveWorking(containerId, user, host);
         if (null != container && InodeUtils.isSet(container.getInode())) {
 
             this.containerAPI.unarchive(container, user, pageMode.respectAnonPerms);
@@ -994,8 +997,8 @@ public class ContainerResource implements Serializable {
             throw new DoesNotExistException("Container with Id: " + containerId + " does not exist");
         }
 
-        return Response.ok(new ResponseEntityView(new ContainerView(this.getContainerWorking(containerId,user,
-                WebAPILocator.getHostWebAPI().getHost(request))))).build();
+        return Response.ok(new ResponseEntityView(new ContainerView(this.getContainerWorking(
+                containerId, user, host)))).build();
     }
 
     /**
@@ -1019,7 +1022,7 @@ public class ContainerResource implements Serializable {
                                     @Context final HttpServletResponse response,
                                     @QueryParam("containerId") final String containerId) throws Exception {
 
-        final InitDataObject initData = new WebResource.InitBuilder(webResource) // todo:
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response).rejectWhenNoUser(true).init();
         final User user         = initData.getUser();
         final PageMode pageMode = PageMode.get(request);
@@ -1029,7 +1032,7 @@ public class ContainerResource implements Serializable {
             throw new IllegalArgumentException("The container id is required");
         }
 
-        final Container container = this.getContainerWorking(containerId,user,
+        final Container container = this.getContainerWorking(containerId, user,
                 WebAPILocator.getHostWebAPI().getHost(request));
         if (null != container && InodeUtils.isSet(container.getInode())) {
 

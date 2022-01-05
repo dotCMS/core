@@ -7,6 +7,10 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import java.util.List;
 
+/**
+ * Form to create a Container
+ * @author jsanca
+ */
 @JsonDeserialize(builder = ContainerForm.Builder.class)
 public class ContainerForm  extends Validated {
 
