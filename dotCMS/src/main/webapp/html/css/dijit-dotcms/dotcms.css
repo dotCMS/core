@@ -11674,13 +11674,6 @@ a.category_higlighted, a.tag_higlighted {
   text-align: center;
 }
 
-.file-selector-tree__main {
-  display: flex;
-  height: 84vh !important;
-  width: calc(100% - 200px) !important;
-  overflow: inherit;
-}
-
 .file-selector-tree__sidebar {
   padding: 16px 0 16px 16px;
 }

@@ -2,7 +2,9 @@ package com.dotcms.rest.api.v1.contenttype;
 
 import static com.dotcms.util.CollectionsUtils.list;
 
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -17,6 +19,7 @@ import com.liferay.util.LocaleUtil;
 import java.io.Serializable;
 import java.util.*;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * Contentlet helper.

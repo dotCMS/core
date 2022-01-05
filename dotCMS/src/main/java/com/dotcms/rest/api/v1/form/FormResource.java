@@ -46,8 +46,34 @@ public class FormResource {
     }
 
     /**
-     * Response with the successCallback field value to the form with the ID or variable name equals to
-     * <code>idOrVar</code>
+     * Response with the <b>successCallback function</b> for a FORM with the ID or variable name equals to
+     * <code>idOrVar</code>.
+     *
+     * The <b>successCallback function</b> has the follow sintax:
+     * <code>
+     *     const formSuccessCallback_[Content Type ID] = function(contentlet){
+     *         [Content Type formSuccessCallback field value]
+     *     };
+     * </code>
+     *
+     * If we have a form with the follow value in the formSuccessCallback field:
+     *
+     * <code>
+     *     window.location='/contact-us/thank-you?id=' + contentlet.identifier
+     * </code>
+     *
+     * ... and with id equals to:  897cf4a9171a4204accbc1b498c813fe
+     * Then this end point is going to response with the follow code:
+     *
+     * <code>
+     *     const formSuccessCallback_897cf4a9171a4204accbc1b498c813fe = function(contentlet){
+     *         window.location='/contact-us/thank-you?id=' + contentlet.identifier
+     *     };
+     * </code>
+     *
+     * If the Content type's id include '-' character like: 897cf4a9-171a-4204-accb-c1b498c813fe, then
+     * the '-' are remove for the <b>successCallback function</b> name.
+     *
      *
      * @param req
      * @param res
@@ -60,7 +86,7 @@ public class FormResource {
     @Path("/{idOrVar}/successCallback")
     @NoCache
     @Produces({"application/javascript"})
-    public final Response createType(@Context final HttpServletRequest req,
+    public final Response getSuccessCallbackFunction(@Context final HttpServletRequest req,
             @Context final HttpServletResponse res,
             @PathParam("idOrVar") final String idOrVar)
             throws DotDataException, DotSecurityException {
@@ -81,7 +107,8 @@ public class FormResource {
         }
 
         final String formSuccessCallback = fieldOptional.get().values();
-        final String functionSuccessCallback = String.format(SUCCESS_CALLBACK_FUNCTION_TEMPLATE, idOrVar,
+        final String functionSuccessCallback = String.format(SUCCESS_CALLBACK_FUNCTION_TEMPLATE,
+                contentType.id().replaceAll("-", ""),
                 formSuccessCallback);
         return Response.ok(functionSuccessCallback).build();
 
