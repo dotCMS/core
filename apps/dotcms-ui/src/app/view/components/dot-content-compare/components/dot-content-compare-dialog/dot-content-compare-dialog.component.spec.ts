@@ -6,7 +6,7 @@ import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { COMPARE_CUSTOM_EVENT } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { By } from '@angular/platform-browser';
 import cleanUpDialog from '@tests/clean-up-dialog';
@@ -18,6 +18,7 @@ import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component'
 })
 class TestDotContentCompareComponent {
     @Input() data: any;
+    @Output() close = new EventEmitter<boolean>();
 }
 
 describe('DotContentCompareDialogComponent', () => {
@@ -61,6 +62,16 @@ describe('DotContentCompareDialogComponent', () => {
         const dotDialog: DotDialogComponent = fixture.debugElement.query(By.css('dot-dialog'))
             .componentInstance;
         expect(dotDialog.visible).toEqual(false);
+    });
+
+    it('should hide dialog on close event from DotConentCompare', () => {
+        const contentCompare: TestDotContentCompareComponent = fixture.debugElement.query(
+            By.css('dot-content-compare')
+        ).componentInstance;
+        component.show = true;
+        contentCompare.close.emit(true);
+
+        expect(component.show).toEqual(false);
     });
 
     it('should have the correct header', () => {

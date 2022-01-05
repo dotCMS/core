@@ -2,7 +2,16 @@
 
 .dot-content-compare-table__controls{
     display: flex;
-    justify-content: space-between;
+    align-items: center;
+
+    p-dropdown {
+        margin-right: $spacing-4;
+    }
+
+    button {
+        margin-left: auto;
+        display: none;
+    }
 }
 
 .dot-content-compare-table__title {

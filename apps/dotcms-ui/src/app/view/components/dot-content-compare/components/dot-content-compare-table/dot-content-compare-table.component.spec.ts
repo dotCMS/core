@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotContentCompareTableComponent } from './dot-content-compare-table.component';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { Component, DebugElement, EventEmitter, Input } from '@angular/core';
+import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { DotContentCompareTableData } from '@components/dot-content-compare/store/dot-content-compare.store';
 import { TableModule } from 'primeng/table';
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
@@ -11,15 +11,17 @@ import { DotDiffPipeModule } from '@pipes/dot-diff/dot-diff.pipe.module';
 import { FormsModule } from '@angular/forms';
 import { DotContentComparePreviewFieldComponent } from '@components/dot-content-compare/components/fields/dot-content-compare-preview-field/dot-content-compare-preview-field.component';
 import { By } from '@angular/platform-browser';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
 @Component({
     selector: 'dot-test-host-component',
     template:
-        '<dot-content-compare-table [data]="data" (changeDiff)="changeDiff.emit($event)" (changeVersion)="changeVersion.emit($event)" [showDiff]="showDiff"></dot-content-compare-table>'
+        '<dot-content-compare-table [data]="data" (bringBack)="bringBack.emit($event)" (changeDiff)="changeDiff.emit($event)" (changeVersion)="changeVersion.emit($event)" [showDiff]="showDiff"></dot-content-compare-table>'
 })
 class TestHostComponent {
     @Input() data: DotContentCompareTableData;
     @Input() showDiff: boolean;
+    @Output() bringBack = new EventEmitter<string>();
 
     changeDiff: EventEmitter<any> = new EventEmitter();
     changeVersion: EventEmitter<any> = new EventEmitter();
@@ -257,6 +259,7 @@ describe('DotContentCompareTableComponent', () => {
                 DropdownModule,
                 SelectButtonModule,
                 DotDiffPipeModule,
+                DotMessagePipeModule,
                 FormsModule
             ],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
@@ -398,6 +401,17 @@ describe('DotContentCompareTableComponent', () => {
             select.onChange.emit({ value: true });
 
             expect(hostComponent.changeDiff.emit).toHaveBeenCalledOnceWith(true);
+        });
+
+        xit('should emit bring back', () => {
+            spyOn(hostComponent.bringBack, 'emit');
+            const button = de.query(By.css('[data-testId="table-bring-back"]'));
+
+            button.triggerEventHandler('click', '');
+
+            expect(hostComponent.bringBack.emit).toHaveBeenCalledOnceWith(
+                dotContentCompareTableDataMock.compare.inode
+            );
         });
     });
 });

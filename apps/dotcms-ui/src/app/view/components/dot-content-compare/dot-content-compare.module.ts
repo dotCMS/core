@@ -12,6 +12,8 @@ import { DotDiffPipeModule } from '@pipes/dot-diff/dot-diff.pipe.module';
 import { FormsModule } from '@angular/forms';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotContentComparePreviewFieldComponent } from '@components/dot-content-compare/components/fields/dot-content-compare-preview-field/dot-content-compare-preview-field.component';
+import { ButtonModule } from 'primeng/button';
+import { DotVersionableService } from '@services/dot-verionable/dot-versionable.service';
 
 @NgModule({
     declarations: [
@@ -29,8 +31,9 @@ import { DotContentComparePreviewFieldComponent } from '@components/dot-content-
         SelectButtonModule,
         FormsModule,
         DotMessagePipeModule,
-        DotDiffPipeModule
+        DotDiffPipeModule,
+        ButtonModule
     ],
-    providers: [DotContentletService]
+    providers: [DotContentletService, DotVersionableService]
 })
 export class DotContentCompareModule {}

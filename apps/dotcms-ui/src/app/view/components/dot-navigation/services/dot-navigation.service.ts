@@ -64,7 +64,7 @@ function isMenuActive(menus: DotMenu[]): boolean {
 }
 
 function isEditPageFromSiteBrowser(menuId: string, previousUrl: string): boolean {
-    return menuId === 'edit-page' && previousUrl === '/c/site-browser'
+    return menuId === 'edit-page' && previousUrl === '/c/site-browser';
 }
 
 const setActiveItems = ({ url, collapsed, menuId, previousUrl }: DotActiveItemsProps) => (
@@ -77,7 +77,10 @@ const setActiveItems = ({ url, collapsed, menuId, previousUrl }: DotActiveItemsP
             const menus: DotMenu[] = [...m];
             let isActive = false;
 
-            if (isEditPageFromSiteBrowser(menuId, previousUrl) || isDetailPage(urlId, url) && isMenuActive(menus)) {
+            if (
+                isEditPageFromSiteBrowser(menuId, previousUrl) ||
+                (isDetailPage(urlId, url) && isMenuActive(menus))
+            ) {
                 return null;
             }
 

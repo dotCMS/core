@@ -31,7 +31,6 @@ describe('DotContentletService', () => {
     });
 
     it('should be created', () => {
-        expect(service).toBeTruthy();
         service.getContentletVersions('123', 'en').subscribe((res) => {
             expect(res).toEqual(mockResponse.entity.versions.en);
         });

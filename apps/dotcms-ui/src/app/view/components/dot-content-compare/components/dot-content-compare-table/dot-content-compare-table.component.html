@@ -23,6 +23,7 @@
                        class="p-button-tabbed"
                        (onChange)="changeDiff.emit($event.value)" >
                    </p-selectButton>
+                   <button data-testId="table-bring-back" pButton class="p-button-sm p-button" [label]="'Bring-Back' | dm" (click)='bringBack.emit(data.compare.inode)'></button>
                </div>
             </th>
         </tr>

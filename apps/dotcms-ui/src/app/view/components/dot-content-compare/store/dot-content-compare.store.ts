@@ -148,7 +148,6 @@ export class DotContentCompareStore extends ComponentStore<DotContentCompareStat
     }
 
     //Effects
-
     readonly loadData = this.effect((data$: Observable<DotContentCompareEvent>) => {
         return data$.pipe(
             map((data) => {
