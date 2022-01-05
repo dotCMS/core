@@ -350,7 +350,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	public Container getWorkingArchiveContainerByFolderPath(final String path, final Host host, final User user,
 													 final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
 
-		return this.containerFactory.getWorkingContainerByFolderPath(path, host, user, respectFrontEndPermissions);
+		return this.containerFactory.getWorkingArchiveContainerByFolderPath(path, host, user, respectFrontEndPermissions);
 	}
 
 	@CloseDBIfOpened
@@ -940,7 +940,8 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 			final FileAssetContainer fileAssetContainer = (FileAssetContainer) container;
 			final Host containerHost = fileAssetContainer.getHost();
 			final Identifier idPropertiesVTL = APILocator.getIdentifierAPI().find(containerHost, fileAssetContainer.getPath() + "container.vtl");
-			final Contentlet contentletVTL   = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(idPropertiesVTL.getId());
+			// todo: find here archived
+			final Contentlet contentletVTL   = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(idPropertiesVTL.getId(), true);
 			APILocator.getContentletAPI().unarchive(contentletVTL, user, respectAnonPerms);
 		} else {
 			unarchive(container, user);

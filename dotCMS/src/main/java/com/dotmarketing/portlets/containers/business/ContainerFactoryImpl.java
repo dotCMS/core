@@ -209,8 +209,71 @@ public class ContainerFactoryImpl implements ContainerFactory {
         return this.getContainerByFolder(host, this.folderAPI.findFolderByPath(path, host, user, respectFrontEndPermissions), user,live, includeHostOnPath);
     }
 
+	public Container getWorkingArchiveContainerByFolderPath(String path, Host host, User user,
+													 boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
 
-    @Override
+		final boolean live					= false;
+		final String folderHostId           = host.getIdentifier();
+		final Optional<Host> currentHostOpt = HostUtil.tryToFindCurrentHost(user);
+		boolean includeHostOnPath           = false;
+
+		if (currentHostOpt.isPresent()) {
+
+			includeHostOnPath = !folderHostId.equals(currentHostOpt.get().getIdentifier());
+		}
+
+		return this.getContainerArchiveByFolder(host, this.folderAPI.findFolderByPath(path, host, user, respectFrontEndPermissions), user,live, includeHostOnPath);
+	}
+
+	@Override
+	public Container getContainerArchiveByFolder(final Host host, final Folder folder, final User user, final boolean showLive, final boolean includeHostOnPath) throws DotSecurityException, DotDataException {
+
+		if (!this.isValidContainerPath (folder)) {
+
+			throw new NotFoundInDbException("On getting the container by folder, the folder: " + (folder != null ? folder.getPath() : "Unknown" ) +
+					" is not valid, it must be under: " + Constants.CONTAINER_FOLDER_PATH + " and must have a child file asset called: " +
+					Constants.CONTAINER_META_INFO_FILE_NAME);
+		}
+		final Identifier identifier = getContainerAsset(host, folder);
+		if(identifier==null) {
+
+			throw new NotFoundInDbException("no container found under: " + folder.getPath() );
+		}
+
+		final Optional<ContentletVersionInfo> contentletVersionInfo = APILocator.getVersionableAPI().
+				getContentletVersionInfo(identifier.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
+
+		if(!contentletVersionInfo.isPresent()) {
+			throw new DotDataException("Can't find ContentletVersionInfo. Identifier:"
+					+ identifier.getId() + ". Lang:"
+					+ APILocator.getLanguageAPI().getDefaultLanguage().getId());
+		}
+
+		final String inode = showLive && UtilMethods.isSet(contentletVersionInfo.get().getLiveInode()) ?
+				contentletVersionInfo.get().getLiveInode() : contentletVersionInfo.get().getWorkingInode();
+		Container container = containerCache.get(inode);
+
+		if(container==null || !InodeUtils.isSet(container.getInode())) {
+
+			synchronized (identifier) {
+
+				if(container==null || !InodeUtils.isSet(container.getInode())) {
+
+					container = FileAssetContainerUtil.getInstance().fromAssets (host, folder,
+							this.fileAssetAPI.findFileAssetsByParentable(folder, null , !showLive,true, user, false),
+							showLive, includeHostOnPath);
+					if(container != null && InodeUtils.isSet(container.getInode())) {
+
+						containerCache.add(container);
+					}
+				}
+			}
+		}
+
+		return container;
+	}
+
+	@Override
 	public Container getContainerByFolder(final Host host, final Folder folder, final User user, final boolean showLive, final boolean includeHostOnPath) throws DotSecurityException, DotDataException {
 
         if (!this.isValidContainerPath (folder)) {

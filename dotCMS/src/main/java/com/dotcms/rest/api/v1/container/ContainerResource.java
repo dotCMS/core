@@ -431,6 +431,12 @@ public class ContainerResource implements Serializable {
         return this.getContainer(containerId, user, host, mode);
     }
 
+    private Container getContainerArchiveWorking(final String containerId, final User user, final Host host) throws DotDataException, DotSecurityException {
+
+        final PageMode mode = PageMode.EDIT_MODE;
+        return this.getContainer(containerId, user, host, mode, true);
+    }
+
     private Container getContainerLive(final String containerId, final User user, final Host host) throws DotDataException, DotSecurityException {
 
         final PageMode mode = PageMode.LIVE;
@@ -438,6 +444,11 @@ public class ContainerResource implements Serializable {
     }
 
     private Container getContainer(final String containerId, final User user, final Host host, final PageMode mode) throws DotDataException, DotSecurityException {
+
+        return  this.getContainer(containerId, user, host, mode, false);
+    }
+
+    private Container getContainer(final String containerId, final User user, final Host host, final PageMode mode, final boolean archive) throws DotDataException, DotSecurityException {
 
         if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerId)) {
 
@@ -448,7 +459,9 @@ public class ContainerResource implements Serializable {
                 
                 return mode.showLive ?
                         this.containerAPI.getLiveContainerByFolderPath(relativePath, containerHost, user, mode.respectAnonPerms) :
-                        this.containerAPI.getWorkingContainerByFolderPath(relativePath, containerHost, user, mode.respectAnonPerms);
+                        (archive?
+                                this.containerAPI.getWorkingArchiveContainerByFolderPath(relativePath, containerHost, user, mode.respectAnonPerms):
+                                this.containerAPI.getWorkingContainerByFolderPath(relativePath, containerHost, user, mode.respectAnonPerms));
             } catch (NotFoundInDbException e) {
 
                 // if does not found in the host path or current host, tries the default one if it is not the same
@@ -967,7 +980,7 @@ public class ContainerResource implements Serializable {
 
         Logger.debug(this, ()-> "Unarchive the container: " + containerId);
 
-        final Container container = this.getContainerWorking(containerId,user,
+        final Container container = this.getContainerArchiveWorking(containerId,user,
                 WebAPILocator.getHostWebAPI().getHost(request));
         if (null != container && InodeUtils.isSet(container.getInode())) {
 
