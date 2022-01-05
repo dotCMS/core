@@ -24,6 +24,7 @@ import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -1016,7 +1017,7 @@ public class ContainerResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response delete(@Context final HttpServletRequest  request,
                                     @Context final HttpServletResponse response,
-                                    @QueryParam("containerId") final String containerId) throws DotSecurityException, DotDataException {
+                                    @QueryParam("containerId") final String containerId) throws Exception {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource) // todo:
                 .requestAndResponse(request, response).rejectWhenNoUser(true).init();
@@ -1032,17 +1033,23 @@ public class ContainerResource implements Serializable {
                 WebAPILocator.getHostWebAPI().getHost(request));
         if (null != container && InodeUtils.isSet(container.getInode())) {
 
-            this.containerAPI.archive(container, user, pageMode.respectAnonPerms);
-            ActivityLogger.logInfo(this.getClass(), "Doing Archive Container Action", "User " +
-                    user.getPrimaryKey() + " archived container: " + container.getIdentifier());
+            Logger.debug(this,()->"Calling Delete Container");
+
+            if(this.containerAPI.delete(container, user, pageMode.respectAnonPerms)) {
+
+                ActivityLogger.logInfo(this.getClass(), "Done Delete Container", "User " +
+                        user.getPrimaryKey() + " deleted container: " + container.getIdentifier());
+                return Response.ok(new ResponseEntityView(true)).build();
+            }
+
+            ActivityLogger.logInfo(this.getClass(), "Can not Delete Container", "User " +
+                    user.getPrimaryKey() + " container: " + container.getIdentifier());
+            return Response.ok(new ResponseEntityView(false)).build();
         } else {
 
             Logger.error(this, "Container with Id: " + containerId + " does not exist");
             throw new DoesNotExistException("Container with Id: " + containerId + " does not exist");
         }
-
-        return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
     }
 
-   
 }
