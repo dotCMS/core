@@ -37,7 +37,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
@@ -55,6 +58,9 @@ public interface WorkflowAPI {
 	 * Default show on
 	 */
 	public static final Set<WorkflowState> DEFAULT_SHOW_ON = EnumSet.of(WorkflowState.LOCKED, WorkflowState.UNLOCKED);
+
+	String SUCCESS_ACTION_CALLBACK = "successActionCallback";
+	String FAIL_ACTION_CALLBACK = "failActionCallback";
 
 	/**
 	 * Return true if the license is valid for the workflows
@@ -862,6 +868,16 @@ public interface WorkflowAPI {
 	BulkActionsResultView fireBulkActions(WorkflowAction action, User user,  String luceneQuery, AdditionalParamsBean additionalParamsBean) throws DotDataException;
 
 	/**
+	 * Fires a list of contentlets returned by the luceneQuery and using an action.
+	 * @param action {@link WorkflowAction}
+	 * @param user  {@link User}
+	 * @param luceneQuery luceneQuery
+	 * @param additionalParamsBean
+	 * @return
+	 */
+	void fireBulkActionsNoReturn(WorkflowAction action, User user,  String luceneQuery, AdditionalParamsBean additionalParamsBean) throws DotDataException;
+
+	/**
 	 * Fires a list of contentlets by using an action.
 	 * It returns a list of a success, failed and skipped contentlets
 	 * @param action {@link WorkflowAction}
@@ -871,6 +887,16 @@ public interface WorkflowAPI {
 	 * @return Future BulkActionsResultView
 	 */
 	BulkActionsResultView fireBulkActions(WorkflowAction action, User user, List<String> contentletIds, AdditionalParamsBean additionalParamsBean) throws DotDataException ;
+
+	/**
+	 * Fires a list of contentlets by using an action.
+	 * It returns a list of a success, failed and skipped contentlets
+	 * @param action {@link WorkflowAction}
+	 * @param user   {@link User}
+	 * @param contentletIds {@link List}
+	 * @param additionalParamsBean
+	 */
+	void fireBulkActionsNoReturn(WorkflowAction action, User user, List<String> contentletIds, AdditionalParamsBean additionalParamsBean) throws DotDataException ;
 
 	/**
 	 * Finds the available {@link WorkflowAction} for the contentlet to a user on any give
@@ -1079,7 +1105,14 @@ public interface WorkflowAPI {
 	Map<String, List<WorkflowScheme>> findSchemesMapForContentType(List<ContentType> contentTypes)  throws DotDataException;
 
 
-
+	void fireBulkActionTasks(final WorkflowAction action,
+			final User user,
+			final List<Contentlet> contentlets,
+			final AdditionalParamsBean additionalParamsBean,
+			final Consumer<Long> successConsumer,
+			final BiConsumer<String,Exception> failConsumer,
+			final ConcurrentMap<String,Object> context,
+			final int sleep);
 
 	/**
 	 * Render mode for the available actions

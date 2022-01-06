@@ -154,6 +154,10 @@ dependencies {
     compile (group: 'org.glassfish.jersey.connectors', name: 'jersey-apache-connector', version: '2.22.1'){
         transitive = false
     }
+
+    compile (group: 'org.glassfish.jersey.media', name: 'jersey-media-sse', version: '2.22.1'){
+        transitive = false
+    }
     compile group: 'io.swagger', name: 'swagger-jersey2-jaxrs', version: '1.5.22'
     compile group: 'com.dotcms.lib', name: 'dot.jettison', version:'1.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.jfreechart', version:'1.0.13_2'

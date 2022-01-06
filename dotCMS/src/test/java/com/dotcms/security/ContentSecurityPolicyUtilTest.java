@@ -6,11 +6,16 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.mock.request.DotCMSMockRequestWithSession;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.model.User;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -90,6 +95,53 @@ public class ContentSecurityPolicyUtilTest {
 
             assertEquals(hmlCodeExpected, htmlCodeResult);
             verify(response)
+                    .addHeader(
+                            "Content-Security-Policy", String.format("style-src 'nonce-%s'", nonce));
+        }  finally {
+            ContentSecurityPolicyUtil.overwriteConfigValue( previousValue);
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(previousRequest);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentSecurityPolicyUtil#addHeader(HttpServletResponse)} and {@link ContentSecurityPolicyUtil#apply(String)}
+     * When: a html has a style and script blocks but the PageMODE is equals to {@link com.dotmarketing.util.PageMode#PREVIEW_MODE},
+     * the ContentSecurityPolicy.header is set to style-src script-src {script-src nonce} {style-src nonce}
+     * Should: not calculate a new nonce nor set the Content-Secutiry-Policy header neither
+     */
+    @Test
+    public void noCalculateContentSecurityPolicyWHenPageModeIsDifferentThanLIVE(){
+        final String previousValue = Config.getStringProperty("ContentSecurityPolicy.header");
+        ContentSecurityPolicyUtil.overwriteConfigValue("style-src script-src {script-src nonce} {style-src nonce}");
+        final HttpServletRequest previousRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+
+        try{
+            final HttpServletResponse response = mock(HttpServletResponse.class);
+            final HttpSession session = mock(HttpSession.class);
+            final DotCMSMockRequestWithSession request = new DotCMSMockRequestWithSession(session, false);
+            request.setAttribute(WebKeys.PAGE_MODE_PARAMETER, PageMode.PREVIEW_MODE);
+
+            final User user = mock(User.class);
+            when(user.isBackendUser()).thenReturn(true);
+
+            request.setAttribute(com.liferay.portal.util.WebKeys.USER, user);
+
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+
+            ContentSecurityPolicyUtil.init(request);
+
+            final String hmlCode = "<style>.h1{background-color: red;}</style><script>console.log('Test')</script><h1>This is a example</h1>";
+            final String htmlCodeResult = ContentSecurityPolicyUtil.apply(hmlCode);
+            ContentSecurityPolicyUtil.addHeader(response);
+
+            final String nonce = (String) request.getAttribute("NONCE_REQUEST_ATTRIBUTE");
+
+            final String hmlCodeExpected = String.format(
+                    "<style>.h1{background-color: red;}</style><script>console.log('Test')</script><h1>This is a example</h1>"
+                    , nonce);
+
+            assertEquals(hmlCodeExpected, htmlCodeResult);
+            verify(response, never())
                     .addHeader(
                             "Content-Security-Policy", String.format("style-src 'nonce-%s'", nonce));
         }  finally {

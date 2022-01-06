@@ -7,6 +7,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.Date;
 
@@ -16,6 +17,11 @@ public class VersionableView implements Versionable {
 
     public VersionableView(final Versionable versionable) {
         this.versionable = versionable;
+    }
+
+    @JsonIgnore
+    public Versionable getVersionable() {
+        return versionable;
     }
 
     @Override

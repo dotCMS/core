@@ -88,6 +88,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -433,6 +435,31 @@ public class WorkflowHelper {
         }
     }
 
+    /**
+     *
+     * @param form
+     * @param user
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @CloseDBIfOpened
+    public void fireBulkActionsNoReturn(final FireBulkActionsForm form,
+            final User user) throws DotSecurityException, DotDataException {
+
+        final WorkflowAction action = this.workflowAPI.findAction(form.getWorkflowActionId(), user);
+        if(null != action) {
+
+            this.checkActionLicense(action);
+
+            if(UtilMethods.isSet(form.getQuery())){
+                this.workflowAPI.fireBulkActionsNoReturn(action, user, form.getQuery(), form.getPopupParamsBean());
+            }
+            this.workflowAPI.fireBulkActionsNoReturn(action, user, form.getContentletIds(), form.getPopupParamsBean());
+        } else {
+            throw new DoesNotExistException("Workflow-does-not-exists-action");
+        }
+    }
 
     private void checkActionLicense(final WorkflowAction action) {
 
