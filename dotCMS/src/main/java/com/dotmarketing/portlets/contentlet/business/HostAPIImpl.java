@@ -406,7 +406,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
 
     @Override
     public List<Host> findAllFromCache(final User user,
-            final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+            final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {//TODO: revisar esta cache creo que se puede eliminar y usar la normal
         Set<Host> cachedSites = hostCache.getAllSites();
         if(null == cachedSites){
             final List<Host> allFromDB = findAllFromDB(user, respectFrontendRoles);
@@ -424,7 +424,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     @WrapInTransaction
     public Host save(final Host hostToBeSaved, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
         if(hostToBeSaved != null){
-            hostCache.remove(hostToBeSaved);
+            hostCache.clearCache();
         }
 
         Contentlet contentletHost;
@@ -468,7 +468,6 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         Host savedHost =  new Host(contentletHost);
 
         updateDefaultHost(savedHost, user, respectFrontendRoles);
-        hostCache.clearAliasCache();
         return savedHost;
 
     }
@@ -491,7 +490,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
                     boolean isHostRunning = h.isLive();
                     otherHostContentlet = APILocator.getContentletAPI().checkout(h.getInode(), user, respectFrontendRoles);
                     otherHost =  new Host(otherHostContentlet);
-                    hostCache.remove(otherHost);
+                    hostCache.clearCache();
                     otherHost.setDefault(false);
                     if(host.getMap().containsKey(Contentlet.DONT_VALIDATE_ME))
                         otherHost.setProperty(Contentlet.DONT_VALIDATE_ME, true);
@@ -697,7 +696,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
 
             public void deleteHost() throws Exception {
                 if(host != null){
-                    hostCache.remove(host);
+                    hostCache.clearCache();
                 }
 
                 final DotConnect dc = new DotConnect();
@@ -810,8 +809,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
                 }catch (Exception e){
                     Logger.error(HostAPIImpl.class, "Error removing secrets for site",  e);
                 }
-                hostCache.remove(host);
-                hostCache.clearAliasCache();
+                hostCache.clearCache();
             }
         }
         final DeleteHostThread deleteHostThread = new DeleteHostThread();
@@ -835,8 +833,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             DotContentletStateException {
 
         if(host != null) {
-
-            hostCache.remove(host);
+            hostCache.clearCache();
         }
 
         final Contentlet contentlet = APILocator.getContentletAPI().find
@@ -860,7 +857,6 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         contentlet.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
         APILocator.getContentletAPI().archive(contentlet, user, respectFrontendRoles);
         host.setModDate(new Date ());
-        hostCache.clearAliasCache();
 
         HibernateUtil.addCommitListener(() -> this.sendArchiveSiteSystemEvent(contentlet), 1000);
     }
@@ -882,15 +878,13 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             DotContentletStateException {
 
         if(host != null) {
-
-            hostCache.remove(host);
+            hostCache.clearCache();
         }
 
         final Contentlet contentlet = APILocator.getContentletAPI()
                 .find(host.getInode(), user, respectFrontendRoles);
         APILocator.getContentletAPI().unarchive(contentlet, user, respectFrontendRoles);
         host.setModDate(new Date ());
-        hostCache.clearAliasCache();
         HibernateUtil.addCommitListener(() -> this.sendUnArchiveSiteSystemEvent(contentlet), 1000);
     }
 
@@ -1030,14 +1024,13 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     public void publish(Host host, User user, boolean respectFrontendRoles) throws DotContentletStateException, DotDataException, DotSecurityException {
 
         if(host != null){
-            hostCache.remove(host);
+            hostCache.clearCache();
         }
 
         final Contentlet contentletHost = APILocator.getContentletAPI().find(host.getInode(), user, respectFrontendRoles);
         contentletHost.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
         APILocator.getContentletAPI().publish(contentletHost, user, respectFrontendRoles);
         hostCache.add(host);
-        hostCache.clearAliasCache();
 
     }
 
@@ -1045,12 +1038,11 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     @Override
     public void unpublish(Host host, User user, boolean respectFrontendRoles) throws DotContentletStateException, DotDataException, DotSecurityException {
         if(host != null){
-            hostCache.remove(host);
+            hostCache.clearCache();
         }
         Contentlet c = APILocator.getContentletAPI().find(host.getInode(), user, respectFrontendRoles);
         APILocator.getContentletAPI().unpublish(c, user, respectFrontendRoles);
         hostCache.add(host);
-        hostCache.clearAliasCache();
     }
 
     @WrapInTransaction
@@ -1104,8 +1096,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
 
     @Override
     public void updateCache(Host host) {
-        hostCache.remove(host);
-        hostCache.clearAliasCache();
+        hostCache.clearCache();
         hostCache.add(new Host(host));
     }
 
@@ -1267,6 +1258,6 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
 
     @Override
     public void flush(Host host) {
-        hostCache.remove(host);
+        hostCache.clearCache();
     }
 }

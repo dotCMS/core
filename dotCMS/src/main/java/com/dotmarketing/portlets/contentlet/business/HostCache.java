@@ -15,7 +15,7 @@ public abstract class HostCache implements Cachable{
 
 	abstract public void clearCache();
 
-	abstract protected void remove(Host host);
+//	abstract protected void remove(Host host);
 
 	abstract protected void addAll(final Iterable<Host> hosts);
 
@@ -26,5 +26,5 @@ public abstract class HostCache implements Cachable{
 	abstract protected Host getHostByAlias(String alias);
 	
 	abstract protected void addHostAlias(String alias, Host host);
-	abstract protected  void clearAliasCache() ;
+//	abstract protected  void clearAliasCache() ;
 }
