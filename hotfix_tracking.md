@@ -289,3 +289,5 @@ This maintenance release includes the following code fixes:
 142. https://github.com/dotCMS/core/issues/20446 : Unable to load very large images #20446
 
 143. https://github.com/dotCMS/core/issues/21441 : Update log4j to 2.17 #21441
+
+144. https://github.com/dotCMS/core/issues/21485 : Upgrade log4j2 to 2.17.1 #21485 (already added)
