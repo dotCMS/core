@@ -30,7 +30,8 @@ describe('DotDevicesService', () => {
             `content/respectFrontendRoles/false/render/false/query/+contentType:previewDevice `,
             `+live:true `,
             `+deleted:false `,
-            `+working:true`
+            `+working:true`,
+            `/limit/40/orderby/title`
         ].join('');
 
         dotDevicesService.get().subscribe((devices: DotDevice[]) => {
