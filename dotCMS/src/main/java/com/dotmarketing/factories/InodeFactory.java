@@ -41,7 +41,7 @@ import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
  */
 public class InodeFactory {
 
-	public static java.util.List getChildrenClassByConditionAndOrderBy(String p, Class c, String condition,
+	public static java.util.List getChildrenClassByConditionAndOrderBy(String p, Class<? extends Inode> c, String condition,
 			String orderby, int limit, int offset) {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
@@ -60,7 +60,7 @@ public class InodeFactory {
 		}
 
 		try {
-			final String tableName = ((Inode) c.newInstance()).getType();
+			final String tableName = c.newInstance().getType();
 			final HibernateUtil dh = new HibernateUtil(c);
 
 			String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
