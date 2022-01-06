@@ -1,16 +1,6 @@
 package com.dotmarketing.util;
 
-import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.cms.factories.PublicCompanyFactory;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.liferay.portal.language.LanguageUtil;
-import com.liferay.portal.model.Company;
-import com.liferay.util.StringPool;
-import io.vavr.Function0;
-import io.vavr.Lazy;
-import org.apache.commons.lang.StringUtils;
-
+import static com.dotcms.util.DotPreconditions.checkNotNull;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -19,13 +9,23 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.TemporalField;
 import java.util.Calendar;
-import java.util.*;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static com.dotcms.util.DotPreconditions.checkNotNull;
-import static java.time.temporal.ChronoField.INSTANT_SECONDS;
+import org.apache.commons.lang.StringUtils;
+import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.Company;
+import com.liferay.util.StringPool;
+import io.vavr.Function0;
 
 /**
  * Provides utility methods to interact with {@link Date} objects, date formats,
@@ -59,6 +59,7 @@ public class DateUtil {
 	public static final String DIFF_DAYS = "diffDays";
 	public static final String DIFF_HOURS = "diffHours";
 	public static final String DIFF_MINUTES = "diffMinutes";
+	public static final String DIFF_SECONDS = "diffSeconds";
 	public static final String LUCENE_DATE_TIME_PATTERN = "yyyy-MM-dd't'HH:mm:ss";
 	public static final SimpleDateFormat LUCENE_DATE_TIME_FORMAT = new SimpleDateFormat(
             LUCENE_DATE_TIME_PATTERN);
@@ -171,10 +172,12 @@ public class DateUtil {
 			final long diffHours = milliSecondDiff / (3600 * 1000);
 			final long timeLeft = milliSecondDiff % (3600 * 1000);
 			final long diffMinutes = timeLeft / (60 * 1000);
-
+			final long diffSeconds = timeLeft / 1000;
 			result.put(DIFF_DAYS, diffDays);
 			result.put(DIFF_HOURS, diffHours);
 			result.put(DIFF_MINUTES, diffMinutes);
+			result.put(DIFF_SECONDS, diffSeconds);
+			
 		} catch (Exception e) {
 			Logger.warn(DateUtil.class, e.toString());
 		}
@@ -303,7 +306,7 @@ public class DateUtil {
 										 final Date toDate) {
 
 		if (locale == null) {
-			Company company = PublicCompanyFactory.getDefaultCompany();
+			Company company = APILocator.getCompanyAPI().getDefaultCompany();
 			locale = company.getLocale();
 		}
 		String sinceMessage = null;
@@ -335,10 +338,10 @@ public class DateUtil {
 				sinceMessage =  LanguageUtil.format(locale, "x-hours-ago", diffDates.get(DateUtil.DIFF_HOURS) );
 			} else if (1 == diffDates.get(DateUtil.DIFF_HOURS)) {
 				sinceMessage = LanguageUtil.get(locale, "an-hour-ago");
-			} else if (diffDates.get(DateUtil.DIFF_MINUTES) > 1) {
+			} else if (diffDates.get(DateUtil.DIFF_MINUTES) >= 1) {
 				sinceMessage =  LanguageUtil.format(locale, "x-minutes-ago", diffDates.get(DateUtil.DIFF_MINUTES) );
 			} else {
-				sinceMessage = LanguageUtil.get(locale, "seconds-ago");
+				sinceMessage = LanguageUtil.format(locale, "x-seconds-ago", diffDates.get(DateUtil.DIFF_SECONDS) );
 			}
 		} catch (Exception e) {
 
@@ -363,7 +366,7 @@ public class DateUtil {
 	 */
 	public static String prettyDateSinceWithDate(Date date, Locale locale) {
 		if (locale == null) {
-			Company company = PublicCompanyFactory.getDefaultCompany();
+		    Company company = APILocator.getCompanyAPI().getDefaultCompany();
 			locale = company.getLocale();
 		}
 		SimpleDateFormat sdf = new SimpleDateFormat("h:mm aa, MMMM d?, yyyy", locale);
