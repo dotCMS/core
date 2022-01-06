@@ -104,3 +104,5 @@ This maintenance release includes the following code fixes:
 50. https://github.com/dotCMS/core/issues/20793 : Upgrade log4j version to permit JsonLayout custom key-value pairs #20793
 
 51. https://github.com/dotCMS/core/issues/21392 : Make userId immutable #21392
+
+52. https://github.com/dotCMS/core/issues/21485 : Upgrade log4j2 to 2.17.1 #21485
