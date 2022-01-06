@@ -47,6 +47,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.*;
@@ -252,7 +253,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             }
             
             host = new Host(list.get(0));
-            hostCache.add(host);
+            findAllFromCache(APILocator.systemUser(),false);
 
             return host;
             
@@ -387,12 +388,10 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         final List<Host> hosts = new ArrayList<Host>();
 
         final String sql = "select  c.title, c.inode from contentlet_version_info clvi, contentlet c, structure s  " +
-                " where c.structure_inode = s.inode and  s.name = 'Host' and c.identifier <> ? and clvi.working_inode = c.inode ";
+                " where c.structure_inode = s.inode and  s.name = 'Host' and clvi.working_inode = c.inode ";
 
         final DotConnect dc = new DotConnect();
         dc.setSQL(sql);
-        dc.addParam(Host.SYSTEM_HOST);
-        @SuppressWarnings("unchecked")
         final List<Map<String,String>> ret = dc.loadResults();
 
         for(Map<String,String> m : ret) {
@@ -406,14 +405,14 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
 
     @Override
     public List<Host> findAllFromCache(final User user,
-            final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {//TODO: revisar esta cache creo que se puede eliminar y usar la normal
+            final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         Set<Host> cachedSites = hostCache.getAllSites();
         if(null == cachedSites){
             final List<Host> allFromDB = findAllFromDB(user, respectFrontendRoles);
             hostCache.addAll(allFromDB);
             cachedSites = hostCache.getAllSites();
         }
-        return ImmutableList.copyOf(cachedSites);
+        return ImmutableList.copyOf(cachedSites);//TODO: check that the cache is the updated one
     }
 
     /**
@@ -928,7 +927,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         if(UtilMethods.isSet(inode)) {
 
             defaultHost = new Host(APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false));
-            hostCache.add(defaultHost);
+            findAllFromCache(APILocator.systemUser(),false);
         } else {
 
             defaultHost.setDefault(true);
@@ -1030,7 +1029,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         final Contentlet contentletHost = APILocator.getContentletAPI().find(host.getInode(), user, respectFrontendRoles);
         contentletHost.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
         APILocator.getContentletAPI().publish(contentletHost, user, respectFrontendRoles);
-        hostCache.add(host);
+        findAllFromCache(APILocator.systemUser(),false);
 
     }
 
@@ -1042,7 +1041,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         }
         Contentlet c = APILocator.getContentletAPI().find(host.getInode(), user, respectFrontendRoles);
         APILocator.getContentletAPI().unpublish(c, user, respectFrontendRoles);
-        hostCache.add(host);
+        findAllFromCache(APILocator.systemUser(),false);
     }
 
     @WrapInTransaction
@@ -1087,7 +1086,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
                     .find(Host.HOST_VELOCITY_VAR_NAME);
             if (cont.getStructureInode().equals(type.inode())) {
                 host = new Host(cont);
-                hostCache.add(host);
+                findAllFromCache(APILocator.systemUser(),false);
             }
         }
 
@@ -1095,9 +1094,9 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     }
 
     @Override
-    public void updateCache(Host host) {
+    public void updateCache(Host host) {//TODO: remove host param?
         hostCache.clearCache();
-        hostCache.add(new Host(host));
+        Try.of(() -> findAllFromCache(APILocator.systemUser(),false)).getOrNull();
     }
 
     @Override
@@ -1257,7 +1256,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     }
 
     @Override
-    public void flush(Host host) {
+    public void flush(Host host) {//TODO: remove method?
         hostCache.clearCache();
     }
 }
