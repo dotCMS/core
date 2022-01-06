@@ -564,4 +564,71 @@ public class VersionableResourceTest {
         resource.findVersionable(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,
                 UUIDGenerator.generateUuid());
     }
+
+
+    /**
+     * Method to test: restoreVersion in the VersionableResource
+     * Given Scenario: Create and edit a container, this will create an old version of,
+     *                  using the endpoint restore the version (the old one).
+     * ExpectedResult: The endpoint should return 200.
+     *
+     */
+    @Test
+    public void test_restoreVersion_container_success() throws DotSecurityException, DotDataException {
+        final Host newHost = new SiteDataGen().nextPersisted();
+        //Create container and a new version
+        Container container = new ContainerDataGen().site(newHost).nextPersisted();
+        final String oldContainerInode = container.getInode();
+        container.setInode(UUIDGenerator.generateUuid());
+        container = APILocator.getContainerAPI().save(container, Collections.emptyList(),newHost,adminUser,false);
+        //Call Resource
+        final Response responseResource = resource.bringBack(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,
+                oldContainerInode);
+        //Check that the response is 200
+        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+    }
+
+    /**
+     * Method to test: restoreVersion in the VersionableResource
+     * Given Scenario: Create and edit a container, this will create an old version of,
+     *                   using the endpoint restore the version (the old one) but as a limited user
+     *                   that only have view permissions.
+     * ExpectedResult: The endpoint should return 403, because the user needs Edit Permission to
+     *                   restore a version.
+     *
+     */
+    @Test (expected = DotSecurityException.class)
+    public void test_restoreVersion_limitedUserWithoutEditPermission_container_return403() throws DotSecurityException, DotDataException {
+        final Host newHost = new SiteDataGen().nextPersisted();
+        //Create container and a new version
+        final Container container = new ContainerDataGen().site(newHost).nextPersisted();
+        //Create the limited user
+        final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
+        final String password = "admin";
+        limitedUser.setPassword(password);
+        APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
+        //Give Permissions Over the Container
+        Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                container.getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                PermissionAPI.PERMISSION_READ, true);
+        APILocator.getPermissionAPI().save(permissions, container, APILocator.systemUser(), false);
+        //Call Resource
+        resource.bringBack(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,
+                container.getInode());
+    }
+
+    /**
+     * Method to test: restoreVersion in the VersionableResource
+     * Given Scenario: restore a version of a non-existent uuid
+     * ExpectedResult: The endpoint should return 404, because the uuid does not belong to any element.
+     *
+     */
+    @Test(expected = DoesNotExistException.class)
+    public void test_restoreVersion_inodeDoesNotExist_return404()
+            throws DotSecurityException, DotDataException {
+        //Call Resource
+        resource.bringBack(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,
+                UUIDGenerator.generateUuid());
+    }
 }

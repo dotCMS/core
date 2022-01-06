@@ -29,6 +29,7 @@ import com.dotcms.enterprise.publishing.remote.bundler.RuleBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.TemplateBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.WorkflowBundlerTest;
 import com.dotcms.enterprise.publishing.remote.handler.ContentHandlerTest;
+import com.dotcms.enterprise.publishing.remote.handler.HandlerUtilTest;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
@@ -56,6 +57,7 @@ import com.dotcms.rendering.velocity.viewtools.FileToolTest;
 import com.dotcms.rendering.velocity.viewtools.JSONToolTest;
 import com.dotcms.rendering.velocity.viewtools.MessageToolTest;
 import com.dotcms.rendering.velocity.viewtools.XmlToolTest;
+import com.dotcms.rendering.velocity.viewtools.content.StoryBlockMapTest;
 import com.dotcms.rest.BundlePublisherResourceIntegrationTest;
 import com.dotcms.rest.BundleResourceTest;
 import com.dotcms.rest.IntegrityResourceIntegrationTest;
@@ -498,7 +500,9 @@ import org.junit.runners.Suite.SuiteClasses;
         Task211101AddContentletAsJsonColumnTest.class,
         ContentletJsonAPITest.class,
         VelocityScriptActionletAbortTest.class,
+        StoryBlockMapTest.class,
         ContentletJsonAPITest.class,
+        HandlerUtilTest.class,
         Task211103RenameHostNameLabelTest.class,
         ContentSecurityPolicyUtilTest.class,
         MessageToolTest.class,

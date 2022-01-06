@@ -95,13 +95,13 @@ public class ContainerResource implements Serializable {
 
     @VisibleForTesting
     public ContainerResource(final WebResource    webResource,
-                             final PaginationUtil paginationUtil,
-                             final FormAPI        formAPI,
-                             final ContainerAPI   containerAPI,
-                             final VersionableAPI versionableAPI,
-                             final VelocityUtil   velocityUtil,
-                             final ShortyIdAPI    shortyAPI,
-                             final ContentletAPI  contentletAPI) {
+            final PaginationUtil paginationUtil,
+            final FormAPI        formAPI,
+            final ContainerAPI   containerAPI,
+            final VersionableAPI versionableAPI,
+            final VelocityUtil   velocityUtil,
+            final ShortyIdAPI    shortyAPI,
+            final ContentletAPI  contentletAPI) {
 
         this.webResource    = webResource;
         this.paginationUtil = paginationUtil;
@@ -197,10 +197,10 @@ public class ContainerResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/{containerId}/content/{contentletId}")
     public final Response containerContent(@Context final HttpServletRequest req,
-                                           @Context final HttpServletResponse res,
-                                           @PathParam("containerId")  final String containerId,
-                                           @PathParam("contentletId") final String contentletId,
-                                           @QueryParam("pageInode") final String pageInode)
+            @Context final HttpServletResponse res,
+            @PathParam("containerId")  final String containerId,
+            @PathParam("contentletId") final String contentletId,
+            @QueryParam("pageInode") final String pageInode)
             throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = this.webResource.init(req, res, true);
@@ -210,10 +210,10 @@ public class ContainerResource implements Serializable {
         PageMode.setPageMode(req, PageMode.EDIT_MODE);
 
         final ShortyId contentShorty = this.shortyAPI
-            .getShorty(contentletId)
-            .orElseGet(() -> {
-                throw new ResourceNotFoundException("Can't find contentlet:" + contentletId);
-            });
+                .getShorty(contentletId)
+                .orElseGet(() -> {
+                    throw new ResourceNotFoundException("Can't find contentlet:" + contentletId);
+                });
 
         try {
 
@@ -256,10 +256,10 @@ public class ContainerResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/content/{contentletId}")
     public final Response containerContentByQueryParam(@Context final HttpServletRequest req,
-                                           @Context final HttpServletResponse res,
-                                           @QueryParam("containerId") final String containerId,
-                                           @QueryParam("pageInode") final String pageInode,
-                                           @PathParam("contentletId") final String contentletId)
+            @Context final HttpServletResponse res,
+            @QueryParam("containerId") final String containerId,
+            @QueryParam("pageInode") final String pageInode,
+            @PathParam("contentletId") final String contentletId)
             throws DotDataException, DotSecurityException {
 
         return this.containerContent(req, res, containerId, contentletId, pageInode);
@@ -290,9 +290,9 @@ public class ContainerResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/form/{formId}")
     public final Response containerFormByQueryParam(@Context final HttpServletRequest req,
-                                                       @Context final HttpServletResponse res,
-                                                       @QueryParam("containerId") final String containerId,
-                                                       @PathParam("formId") final String formId)
+            @Context final HttpServletResponse res,
+            @QueryParam("containerId") final String containerId,
+            @PathParam("formId") final String formId)
             throws DotDataException, DotSecurityException {
 
         return this.containerForm(req, res, containerId, formId);
@@ -316,9 +316,9 @@ public class ContainerResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/{containerId}/form/{formId}")
     public final Response containerForm(@Context final HttpServletRequest req,
-                                        @Context final HttpServletResponse res,
-                                        @PathParam("containerId") final String containerId,
-                                        @PathParam("formId") final String formId)
+            @Context final HttpServletResponse res,
+            @PathParam("containerId") final String containerId,
+            @PathParam("formId") final String formId)
             throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = webResource.init(req, res, true);
@@ -334,9 +334,9 @@ public class ContainerResource implements Serializable {
         final String html = getHTML(req, res, containerId, user, formContent);
 
         final Map<String, Object> response = ImmutableMap.<String, Object> builder()
-            .put("render", html)
-            .put("content", formContent.getMap())
-            .build();
+                .put("render", html)
+                .put("content", formContent.getMap())
+                .build();
 
         return Response.ok(new ResponseEntityView(response))
                 .build();
@@ -354,11 +354,11 @@ public class ContainerResource implements Serializable {
     }
 
     private String getHTML(final HttpServletRequest req,
-                           final HttpServletResponse res,
-                           final String containerId,
-                           final User user,
-                           final Contentlet contentlet,
-                           final String pageInode) throws DotDataException, DotSecurityException {
+            final HttpServletResponse res,
+            final String containerId,
+            final User user,
+            final Contentlet contentlet,
+            final String pageInode) throws DotDataException, DotSecurityException {
 
         final PageMode mode = PageMode.EDIT_MODE;
         final Host host = WebAPILocator.getHostWebAPI().getHost(req);
@@ -403,7 +403,7 @@ public class ContainerResource implements Serializable {
             final Host   containerHost   = hostOpt.isPresent()? hostOpt.get():host;
             final String relativePath    = FileAssetContainerUtil.getInstance().getPathFromFullPath(containerHost.getHostname(), containerId);
             try {
-                
+
                 return mode.showLive ?
                         this.containerAPI.getLiveContainerByFolderPath(relativePath, containerHost, user, mode.respectAnonPerms) :
                         this.containerAPI.getWorkingContainerByFolderPath(relativePath, containerHost, user, mode.respectAnonPerms);
@@ -425,10 +425,10 @@ public class ContainerResource implements Serializable {
                 });
 
         return (containerShorty.type != ShortType.IDENTIFIER)
-                    ? this.containerAPI.find(containerId, user, mode.showLive)
-                    : (mode.showLive) ?
-                            this.containerAPI.getLiveContainerById(containerShorty.longId, user, mode.respectAnonPerms) :
-                            this.containerAPI.getWorkingContainerById(containerShorty.longId, user, mode.respectAnonPerms);
+                ? this.containerAPI.find(containerId, user, mode.showLive)
+                : (mode.showLive) ?
+                        this.containerAPI.getLiveContainerById(containerShorty.longId, user, mode.respectAnonPerms) :
+                        this.containerAPI.getWorkingContainerById(containerShorty.longId, user, mode.respectAnonPerms);
     }
 
     @DELETE
@@ -449,7 +449,7 @@ public class ContainerResource implements Serializable {
         final PageMode mode = PageMode.get(req);
         try {
             final Language id = WebAPILocator.getLanguageWebAPI()
-                .getLanguage(req);
+                    .getLanguage(req);
 
             return removeContentletFromContainer(id, containerId, contentletId, uid, user, mode);
         } catch (DotSecurityException e) {
@@ -459,8 +459,8 @@ public class ContainerResource implements Serializable {
 
     @WrapInTransaction
     private Response removeContentletFromContainer(final Language id, final String containerId,
-                                                   final String contentletId, final String uid,
-                                                   final User user, final PageMode mode) throws DotDataException, DotSecurityException {
+            final String contentletId, final String uid,
+            final User user, final PageMode mode) throws DotDataException, DotSecurityException {
 
 
         final ShortyId contentShorty = APILocator.getShortyAPI()

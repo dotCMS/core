@@ -7,6 +7,7 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -27,6 +28,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -164,4 +166,66 @@ public class VersionableResource {
         return Response.ok(new ResponseEntityView(versionable)).build();
     }
 
+    /**
+     * Finds the versionable for the passed inode and sets this version as a working
+     *
+     * User executing the action needs to have Edit Permissions over the element.
+     *
+     * If the UUID does not exists, 404 is returned. If exists set the version and returns it
+     *
+     * @param versionableInode {@link String} UUID of the element inode
+     * @return {@link VersionableView} versionable view object
+     */
+    @PUT
+    @Path("/{versionableInode}/_bringback")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response bringBack(@Context final HttpServletRequest httpRequest,
+                              @Context final HttpServletResponse httpResponse,
+                              @PathParam("versionableInode") final String versionableInode)
+            throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true)
+                .requiredBackendUser(true).init();
+
+        final User user     = initData.getUser();
+        final PageMode mode = PageMode.get(httpRequest);
+        Logger.debug(this, () -> "Finding the version: " + versionableInode);
+
+        //Check if is an inode
+        final String type = Try
+                .of(() -> InodeUtils.getAssetTypeFromDB(versionableInode)).getOrNull();
+
+        if (null == type) {
+
+            throw new DoesNotExistException(
+                    "The versionable with uuid: " + versionableInode + " does not exists");
+        }
+
+        final VersionableView versionable = this.versionableHelper
+                .getAssetTypeByVersionableFindVersionMap().getOrDefault(type,
+                        this.versionableHelper.getDefaultVersionableFindVersionStrategy())
+                .findVersion(versionableInode, user, mode.respectAnonPerms);
+
+        if (versionable.getVersionable() instanceof Permissionable) {
+
+            this.versionableHelper.checkWritePermissions((Permissionable)versionable.getVersionable(), user);
+        } else {
+
+            throw new DotSecurityException(
+                    "Can not use versionable with uuid: " + versionableInode);
+        }
+
+        Logger.debug(this, () -> "Restoring to the version: " + versionableInode);
+
+        final VersionableView newVersionable = this.versionableHelper
+                .getAssetTypeByVersionableRestoreVersionMap().getOrDefault(type,
+                    this.versionableHelper.getDefaultVersionableRestoreVersionStrategy())
+                .restoreVersion(versionable.getVersionable(), user, false);
+
+        return Response.ok(new ResponseEntityView(newVersionable)).build();
+    }
 }

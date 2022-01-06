@@ -1,8 +1,10 @@
 package com.dotcms.workflow.form;
 
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.HashMap;
 import java.util.Map;
 
 
@@ -23,7 +25,8 @@ public class AdditionalParamsBean {
             @JsonProperty("additionalParamsMap") final Map<String, Object> additionalParamsMap) {
         this.pushPublishBean = pushPublishBean;
         this.assignCommentBean = assignCommentBean;
-        this.additionalParamsMap = additionalParamsMap;
+        this.additionalParamsMap = UtilMethods.isSet(additionalParamsMap)
+                ? additionalParamsMap : new HashMap<>();
     }
 
     public PushPublishBean getPushPublishBean() {
