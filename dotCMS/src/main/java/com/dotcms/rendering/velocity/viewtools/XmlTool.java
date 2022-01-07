@@ -500,7 +500,7 @@ public class XmlTool implements ViewTool {
 		List<Node> kids = new ArrayList<Node>();
 		for (Node n : nodes) {
 			if (n instanceof Element) {
-				kids.addAll((List<Node>) ((Element) n).elements());
+				kids.addAll(((Element) n).elements());
 			}
 		}
 		return new XmlTool(kids);

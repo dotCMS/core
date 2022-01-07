@@ -163,21 +163,21 @@ public class ImportUtil {
     public static HashMap<String, List<String>> importFile(Long importId, String currentSiteId, String contentTypeInode, String[] keyfields, boolean preview, boolean isMultilingual, User user, long language, String[] csvHeaders, CsvReader csvreader, int languageCodeHeaderColumn, int countryCodeHeaderColumn, Reader reader, String wfActionId, final HttpServletRequest request)
             throws DotRuntimeException, DotDataException {
 
-        HashMap<String, List<String>> results = new HashMap<String, List<String>>();
-        results.put("warnings", new ArrayList<String>());
-        results.put("errors", new ArrayList<String>());
-        results.put("messages", new ArrayList<String>());
-        results.put("results", new ArrayList<String>());
-        results.put("counters", new ArrayList<String>());
-        results.put("identifiers", new ArrayList<String>());
-        results.put("updatedInodes", new ArrayList<String>());
-        results.put("lastInode", new ArrayList<String>());
-        results.put(Contentlet.WORKFLOW_ACTION_KEY, new ArrayList<String>());
+        HashMap<String, List<String>> results = new HashMap<>();
+        results.put("warnings", new ArrayList<>());
+        results.put("errors", new ArrayList<>());
+        results.put("messages", new ArrayList<>());
+        results.put("results", new ArrayList<>());
+        results.put("counters", new ArrayList<>());
+        results.put("identifiers", new ArrayList<>());
+        results.put("updatedInodes", new ArrayList<>());
+        results.put("lastInode", new ArrayList<>());
+        results.put(Contentlet.WORKFLOW_ACTION_KEY, new ArrayList<>());
 
         Structure contentType = CacheLocator.getContentTypeCache().getStructureByInode (contentTypeInode);
         List<Permission> contentTypePermissions = permissionAPI.getPermissions(contentType);
-        List<UniqueFieldBean> uniqueFieldBeans = new ArrayList<UniqueFieldBean>();
-        List<Field> uniqueFields = new ArrayList<Field>();
+        List<UniqueFieldBean> uniqueFieldBeans = new ArrayList<>();
+        List<Field> uniqueFields = new ArrayList<>();
 
         //Initializing variables
         int lines = 1;
@@ -185,12 +185,12 @@ public class ImportUtil {
         int lineNumber = 0;
 
         Counters counters = new Counters();
-        HashSet<String> keyContentUpdated = new HashSet<String>();
+        HashSet<String> keyContentUpdated = new HashSet<>();
         StringBuffer choosenKeyField = new StringBuffer();
 
-        HashMap<Integer, Field> headers = new HashMap<Integer, Field>();
-        HashMap<Integer, Field> keyFields = new HashMap<Integer, Field>();
-        HashMap<Integer, Relationship> relationships = new HashMap<Integer, Relationship>();
+        HashMap<Integer, Field> headers = new HashMap<>();
+        HashMap<Integer, Field> keyFields = new HashMap<>();
+        HashMap<Integer, Relationship> relationships = new HashMap<>();
 
         //Get unique fields for structure
         for(Field field : FieldsCache.getFieldsByStructureInode(contentType.getInode())){
@@ -203,15 +203,16 @@ public class ImportUtil {
         try {
             if ((csvHeaders != null) || (csvreader.readHeaders())) {
                 //Importing headers from the first file line
-                HashMap<Integer,Boolean> onlyParent=new HashMap<Integer,Boolean>();
-                HashMap<Integer,Boolean> onlyChild=new HashMap<Integer,Boolean>();
+                HashMap<Integer,Boolean> onlyParent=new HashMap<>();
+                HashMap<Integer,Boolean> onlyChild=new HashMap<>();
                 if (csvHeaders != null) {
                     importHeaders(csvHeaders, contentType, keyfields, isMultilingual, user, results, headers, keyFields, uniqueFields,relationships,onlyChild,onlyParent);
                 } else {
                     importHeaders(csvreader.getHeaders(), contentType, keyfields, isMultilingual, user, results, headers, keyFields, uniqueFields,relationships,onlyChild,onlyParent);
                 }
                 lineNumber++;
-
+                // Log preview/import status every 100 processed records
+                int loggingPoint = 100;
                 //Reading the whole file
                 if (headers.size() > 0) {
                     if (!preview) {
@@ -223,6 +224,10 @@ public class ImportUtil {
                             break;
                         }
                         lineNumber++;
+                        if (lineNumber % loggingPoint == 0) {
+                            final String action = preview ? "previewed." : "imported.";
+                            Logger.info(ImportUtil.class, String.format("-> %d entries have been %s", lineNumber, action));
+                        }
                         csvLine = csvreader.getValues();
                         try {
                             lines++;
@@ -274,14 +279,14 @@ public class ImportUtil {
                                 Thread.sleep( sleepTime );
                                 HibernateUtil.startTransaction();
                             }
-                        } catch ( DotRuntimeException ex ) {
-                            String errorMessage = LanguageUtil.get(user, ex.getMessage());
+                        } catch (final DotRuntimeException ex) {
+                            String errorMessage = getErrorMsgFromException(user, ex);
                             if(errorMessage.indexOf("Line #") == -1){
-                                errorMessage = "Line #"+lineNumber+" "+errorMessage;
+                                errorMessage = "Line #" + lineNumber + ": " + errorMessage;
                             }
                             results.get("errors").add(errorMessage);
                             errors++;
-                            Logger.info(ImportUtil.class, "Error line: " + lines + " (" + csvreader.getRawRecord()
+                            Logger.warn(ImportUtil.class, "Error line: " + lines + " (" + csvreader.getRawRecord()
                                     + "). Line Ignored.");
                         }
                     }
@@ -318,9 +323,9 @@ public class ImportUtil {
                     results.get("errors").add(LanguageUtil.get(user, "No-headers-found-on-the-file-nothing-will-be-imported"));
                 }
             }
-        } catch (Exception e) {
-            Logger.error(ImportContentletsAction.class, e.getMessage(), e);
-
+        } catch (final Exception e) {
+            Logger.error(ImportContentletsAction.class, String.format("An error occurred when parsing CSV file in " +
+                    "line #%s: %s", lineNumber, e.getMessage()), e);
         } finally {
             if (reader != null) {
                 try {
@@ -330,7 +335,10 @@ public class ImportUtil {
                 }
             }
         }
-        Logger.info(ImportUtil.class, lines + " lines read correctly. " + errors + " errors found.");
+        final String action = preview ? "Content preview" : "Content import";
+        String statusMsg = String.format("%s has finished, %d lines were read correctly.", action, lines);
+        statusMsg = errors > 0 ? statusMsg + String.format(" However, %d errors were found.", errors) : StringPool.BLANK;
+        Logger.info(ImportUtil.class, statusMsg);
         return results;
     }
 
@@ -413,22 +421,21 @@ public class ImportUtil {
                 if (field.getVelocityVarName().equalsIgnoreCase(header)) {
                     if (field.getFieldType().equals(Field.FieldType.BUTTON.toString())){
                         found = true;
-
                         results.get("warnings").add(
-                                LanguageUtil.get(user, "Header")+": \"" + header
+                                LanguageUtil.get(user, "Header")+" \"" + header
 
                                 +"\" "+ LanguageUtil.get(user, "matches-a-field-of-type-button-this-column-of-data-will-be-ignored"));
                     }
                     else if (field.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString())){
                         found = true;
                         results.get("warnings").add(
-                                LanguageUtil.get(user, "Header")+": \"" + header
+                                LanguageUtil.get(user, "Header")+" \"" + header
                                 + "\" "+LanguageUtil.get(user, "matches-a-field-of-type-line-divider-this-column-of-data-will-be-ignored"));
                     }
                     else if (field.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())){
                         found = true;
                         results.get("warnings").add(
-                                LanguageUtil.get(user, "Header")+": \"" + header
+                                LanguageUtil.get(user, "Header")+" \"" + header
                                 + "\" "+LanguageUtil.get(user, "matches-a-field-of-type-tab-divider-this-column-of-data-will-be-ignored"));
                     }
                     else {
@@ -493,7 +500,7 @@ public class ImportUtil {
 
             if ((!found) && !(isMultilingual && (header.equals(languageCodeHeader) || header.equals(countryCodeHeader)))) {
                 results.get("warnings").add(
-                        LanguageUtil.get(user, "Header")+": \"" + header
+                        LanguageUtil.get(user, "Header")+" \"" + header
                         + "\""+ " "+ LanguageUtil.get(user, "doesn-t-match-any-structure-field-this-column-of-data-will-be-ignored"));
             }
         }
@@ -685,8 +692,7 @@ public class ImportUtil {
             for ( Integer column : headers.keySet() ) {
                 Field field = headers.get( column );
                 if ( line.length < column ) {
-                    throw new DotRuntimeException( "Incomplete line found, the line #" + lineNumber +
-                            " doesn't contain all the required columns." );
+                    throw new DotRuntimeException("Line #" + lineNumber + "doesn't contain all the required columns.");
                 }
                 String value = line[column];
                 Object valueObj = value;
@@ -703,8 +709,8 @@ public class ImportUtil {
                         for(String catKey : categoryKeys) {
                             Category cat = catAPI.findByKey(catKey.trim(), user, false);
                             if(cat == null)
-                                throw new DotRuntimeException("Line #" + lineNumber + " contains errors, Column: " + field.getVelocityVarName() +
-                                        ", value: " + value + ", invalid category key found, line will be ignored.");
+                                throw new DotRuntimeException("Line #" + lineNumber + " contains errors. Column: '" + field.getVelocityVarName() +
+                                        "', value: '" + value + "', invalid category key found. Line will be ignored.");
                             categories.add(cat);
                         }
                     }
@@ -728,8 +734,8 @@ public class ImportUtil {
                             }
                         }
                         if (!found) {
-                            throw new DotRuntimeException("Line #" + lineNumber + " contains errors, Column: " + field.getVelocityVarName() +
-                                    ", value: " + value + ", invalid value found, line will be ignored.");
+                            throw new DotRuntimeException("Line #" + lineNumber + " contains errors. Column: '" + field.getVelocityVarName() +
+                                    "', value: '" + value + "', invalid value found. Line will be ignored.");
                         }
                     } else {
                         valueObj = null;
@@ -783,12 +789,12 @@ public class ImportUtil {
                     }
 
                     if(valueObj ==null){
-                        throw new DotRuntimeException("Line #" + lineNumber + " contains errors, Column: " + field.getVelocityVarName() +
-                                ", value: " + value + ", invalid host/folder inode found, line will be ignored.");
+                        throw new DotRuntimeException("Line #" + lineNumber + " contains errors. Column: '" + field.getVelocityVarName() +
+                                "', value: '" + value + "', invalid site/folder inode found. Line will be ignored.");
                     }
                 } else if (new LegacyFieldTransformer(field).from().typeName().equals(BinaryField.class.getName())){
                     if(UtilMethods.isSet(value) && !APILocator.getTempFileAPI().validUrl(value)){
-                        throw new DotRuntimeException("Line #" + lineNumber + " contains errors, URL is malformed or Response is not 200");
+                        throw new DotRuntimeException("Line #" + lineNumber + " contains errors. URL is malformed or Response is not 200");
                     }
                 }else if(field.getFieldType().equals(Field.FieldType.IMAGE.toString()) || field.getFieldType().equals(Field.FieldType.FILE.toString())) {
                     String filePath = value;
@@ -797,8 +803,8 @@ public class ImportUtil {
                         //Add Warning the File isn't is an image
                         if(UtilMethods.isSet(filePath)){
                             String localLineMessage = LanguageUtil.get(user, "Line--");
-                            String noImageFileMessage = LanguageUtil.get(user, "the-file-is-not-an-image");
-                            results.get("warnings").add(localLineMessage + lineNumber + ". " + noImageFileMessage);
+                            String noImageFileMessage = LanguageUtil.get(user, "the-file-is-not-an-image", field.getVelocityVarName());
+                            results.get("warnings").add(localLineMessage + lineNumber + ": " + noImageFileMessage);
                         }
                         valueObj = null;
                     } else {
@@ -821,7 +827,7 @@ public class ImportUtil {
                             }else{
                                 String localLineMessage = LanguageUtil.get(user, "Line--");
                                 String noFileMessage = LanguageUtil.get(user, "The-file-has-not-been-found");
-                                results.get("warnings").add(localLineMessage + lineNumber + ". " + noFileMessage + ": " + fileHost.getHostname() + ":" + filePath);
+                                results.get("warnings").add(localLineMessage + lineNumber + ": " + noFileMessage + " in " + fileHost.getHostname() + ":" + filePath);
                                 valueObj = null;
                             }
                         }
@@ -867,12 +873,19 @@ public class ImportUtil {
                     } else{
                         csvRelationshipRecords.put(relationship, relatedContentlets);
                     }
-                } catch(DotDataValidationException e){
+                } catch (final DotDataValidationException e) {
                     //add the error message
-                    Logger.warn(ImportUtil.class, e.getMessage(), e);
+                    if (null != relationship) {
+                        Logger.warn(ImportUtil.class, String.format("A validation error occurred with Relationship " +
+                                "'%s'[%s]: e.getMessage()", relationship.getRelationTypeValue(), relationship.getInode(), e
+                                .getMessage()), e);
+                    } else {
+                        Logger.warn(ImportUtil.class, String.format("A null relationship in column '%s' was found",
+                                column));
+                    }
                     String localLineMessage = LanguageUtil.get(user, "Line--");
                     String structureDoesNoMatchMessage = LanguageUtil.get(user, "the-structure-does-not-match-the-relationship");
-                    results.get("warnings").add(localLineMessage + lineNumber + ". " + structureDoesNoMatchMessage);
+                    results.get("warnings").add(localLineMessage + lineNumber + ": " + structureDoesNoMatchMessage);
                 }
             }
 
@@ -887,7 +900,7 @@ public class ImportUtil {
                 Logger.debug(ImportUtil.class, e.getMessage(), e);
             }
 
-            Logger.info(ImportUtil.class, "identifierFieldIndex: " + identifierFieldIndex);
+            Logger.debug(ImportUtil.class, "identifierFieldIndex: " + identifierFieldIndex);
 
             String identifier = null;
             if ( -1 < identifierFieldIndex ) {
@@ -898,8 +911,8 @@ public class ImportUtil {
             buffy.append("+structureName:").append(contentType.getVelocityVarName())
                     .append(" +working:true +deleted:false");
 
-            Logger.info(ImportUtil.class,"Identifier is set: " + UtilMethods.isSet( identifier ));
-            Logger.info(ImportUtil.class,"Keyfields size: " + keyFields.size());
+            Logger.debug(ImportUtil.class,"Identifier is set: " + UtilMethods.isSet( identifier ));
+            Logger.debug(ImportUtil.class,"Keyfields size: " + keyFields.size());
             if ( UtilMethods.isSet( identifier ) ) {
                 buffy.append(" +identifier:").append(identifier);
 
@@ -989,9 +1002,9 @@ public class ImportUtil {
                     buffy.append( " +languageId:" ).append( language );
                 }
 
-                Logger.info(ImportUtil.class, "buffy: " + buffy.toString());
+                Logger.debug(ImportUtil.class, "buffy: " + buffy.toString());
                 List<ContentletSearch> cons = conAPI.searchIndex( buffy.toString(), 0, -1, null, user, true );
-                Logger.info(ImportUtil.class,"Cons: " + cons.size());
+                Logger.debug(ImportUtil.class,"Cons: " + cons.size());
                 /*
                 We need to handle the case when keys are used, we could have a contentlet already saved with the same keys but different language
                 so the above query is not going to find it.
@@ -1004,7 +1017,7 @@ public class ImportUtil {
                         }
                     }
                 }
-                Logger.info(ImportUtil.class,"Cons: " + cons.size());
+                Logger.debug(ImportUtil.class,"Cons: " + cons.size());
                 Contentlet con;
                 for (ContentletSearch contentletSearch: cons) {
                     con = conAPI.find(contentletSearch.getInode(), user, true);
@@ -1039,8 +1052,8 @@ public class ImportUtil {
                                     break;
                                 }
                             }else{
-                                Logger.info(ImportUtil.class,"conValue: " + conValue.toString());
-                                Logger.info(ImportUtil.class,"Value: " + value.toString());
+                                Logger.debug(ImportUtil.class,"conValue: " + conValue.toString());
+                                Logger.debug(ImportUtil.class,"Value: " + value.toString());
                                 if(conValue.toString().equalsIgnoreCase(value.toString())){
                                     columnExists = true;
                                 }else{
@@ -1049,7 +1062,7 @@ public class ImportUtil {
                                 }
                             }
                         }
-                        Logger.info(ImportUtil.class, "column exists: " + columnExists);
+                        Logger.debug(ImportUtil.class, "column exists: " + columnExists);
                         if(columnExists) {//aca entra
                             contentlets.add(con);
                             //Keep a register of all contentlets to be updated
@@ -1101,7 +1114,7 @@ public class ImportUtil {
             //Creating/updating content
             boolean isNew = false;
             Long existingMultilingualLanguage = null;//For multilingual batch imports we need the language of an existing contentlet if there is any
-            Logger.info(ImportUtil.class,"Contentlets Size: " + contentlets.size());
+            Logger.debug(ImportUtil.class,"Contentlets Size: " + contentlets.size());
             if ( contentlets.size() == 0 ) {
                 counters.setNewContentCounter( counters.getNewContentCounter() + 1 );
                 isNew = true;
@@ -1140,7 +1153,7 @@ public class ImportUtil {
 
                     contentlets = multilingualContentlets;
                 }
-                Logger.info(ImportUtil.class,"isNew: " + isNew);
+                Logger.debug(ImportUtil.class,"isNew: " + isNew);
 
                 if ( !isNew ) {
                     if ( conditionValues.equals( "" ) || !keyContentUpdated.contains( conditionValues ) || isMultilingual ) {
@@ -1149,7 +1162,7 @@ public class ImportUtil {
                             keyContentUpdated.add( conditionValues );
                         }
                     }
-                    Logger.info(ImportUtil.class,"Contentlets size: " + contentlets.size());
+                    Logger.debug(ImportUtil.class,"Contentlets size: " + contentlets.size());
                     if ( contentlets.size() == 1 ) {
                         results.get( "warnings" ).add(
                                 LanguageUtil.get( user, "Line--" ) + lineNumber + ". " + LanguageUtil.get( user, "The-key-fields-chosen-match-one-existing-content(s)" ) + " - "
@@ -1399,7 +1412,7 @@ public class ImportUtil {
                         if (userCanExecuteAction) {
                           cont.setIndexPolicy(IndexPolicy.DEFER);
 
-                          Logger.info(ImportUtil.class, "fireContentWorkflow: " + executeWfAction.getName() + ", id: " + executeWfAction.getId());
+                          Logger.debug(ImportUtil.class, "fireContentWorkflow: " + executeWfAction.getName() + ", id: " + executeWfAction.getId());
                             cont = workflowAPI.fireContentWorkflow(cont,
                                     new ContentletDependencies.Builder()
                                             .respectAnonymousPermissions(Boolean.FALSE)
@@ -1411,7 +1424,7 @@ public class ImportUtil {
                                             .categories(new ArrayList<>(categories))
                                             .generateSystemEvent(Boolean.FALSE).build());
                         } else {
-                            Logger.info(ImportUtil.class, "runWorkflowIfCould");
+                            Logger.debug(ImportUtil.class, "runWorkflowIfCould");
                             cont = runWorkflowIfCould(user, contentTypePermissions,
                                     categories, cont, contentletRelationships);
                         }
@@ -1480,9 +1493,10 @@ public class ImportUtil {
                     }
                 }
             }
-        } catch (Exception e) {
-            Logger.warn(ImportUtil.class,e.getMessage());
-            throw new DotRuntimeException(e.getMessage(),e);
+        } catch (final Exception e) {
+            Logger.error(ImportUtil.class, String.format("An error occurred when importing line # %s: %s",
+                    lineNumber, e.getMessage()), e);
+            throw new DotRuntimeException(e.getMessage(), e);
         }
     }
 
@@ -1648,11 +1662,12 @@ public class ImportUtil {
 
             //Validate if the action we want to execute is in the right step
             workflowAPI.validateActionStepAndWorkflow(contentlet, user);
-        } catch (DotSecurityException e) {
-            throw new DotDataException("User doesn't have permissions to execute wfActionId:"
-                    + actionId + ". " + e.getMessage(), e);
-        } catch (DotDataException | IllegalArgumentException e) {
-            throw new DotDataException(e.getMessage(), e);
+        } catch (final DotSecurityException e) {
+            throw new DotDataException(String.format("User '%s' doesn't have permissions to execute Workflow Action " +
+                    "'%s': %s", user.getUserId(), actionId, e.getMessage()), e);
+        } catch (final DotDataException | IllegalArgumentException e) {
+            throw new DotDataException(String.format("An error occurred when validating Workflow Action '%s' on " +
+                    "content '%s': %s", actionId, contentlet.getIdentifier(), e.getMessage()), e);
         }
 
         return executeWfAction;
@@ -1727,9 +1742,9 @@ public class ImportUtil {
                         counters.setNewContentCounter(counters.getNewContentCounter() - 1);
                         ignoreLine = true;
                         results.get("warnings").add(
-                            LanguageUtil.get(user, "Line--") + " " + lineNumber + " " + LanguageUtil
-                                .get(user, "contains-duplicate-values-for-structure-unique-field") + " " + f
-                                .getVelocityVarName() + " " + LanguageUtil.get(user, "and-will-be-ignored"));
+                            LanguageUtil.get(user, "Line--") + lineNumber + ": " + LanguageUtil
+                                .get(user, "contains-duplicate-values-for-structure-unique-field") + " '" + f
+                                .getVelocityVarName() + "', " + LanguageUtil.get(user, "and-will-be-ignored"));
                     }
                     value = bean.getValue();
                     count++;
@@ -1998,6 +2013,26 @@ public class ImportUtil {
             this.languageId = languageId;
         }
 
+    }
+
+    /**
+     * Utility method that retrieves the appropriate error message from an exception stack trace. This error might come
+     * from either the Content Preview, or the Content Import step.
+     *
+     * @param user      The {@link User} calling the CSV Content Import tool.
+     * @param exception The exception that was thrown because of the error.
+     *
+     * @return The appropriate error message that will be displayed to the user.
+     *
+     * @throws LanguageException An error occurred when accessing the i18n resource files.
+     */
+    private static String getErrorMsgFromException(final User user, final DotRuntimeException exception) throws
+            LanguageException {
+        if (!UtilMethods.isSet(exception.getMessage())) {
+            return exception.getCause().getClass().getSimpleName();
+        } else {
+            return LanguageUtil.get(user, exception.getMessage());
+        }
     }
 
 }

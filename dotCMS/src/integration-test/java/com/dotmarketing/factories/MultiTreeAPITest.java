@@ -145,10 +145,10 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         buildInitalData() ;
         MultiTree tree = APILocator.getMultiTreeAPI().getMultiTree(PAGE, CONTAINER+0, CONTENTLET +0, RELATION_TYPE+0);
         assertTrue("multiTree reorders", tree.getTreeOrder()==0 );
-        APILocator.getMultiTreeAPI().saveMultiTree(tree.setTreeOrder(7));
+        APILocator.getMultiTreeAPI().saveMultiTreeAndReorder(tree.setTreeOrder(7));
         tree = APILocator.getMultiTreeAPI().getMultiTree(PAGE, CONTAINER+ 0, CONTENTLET + 0, RELATION_TYPE+0);
         assertTrue("multiTree reorders", tree.getTreeOrder()==4 );
-        APILocator.getMultiTreeAPI().saveMultiTree(tree.setTreeOrder(2));
+        APILocator.getMultiTreeAPI().saveMultiTreeAndReorder(tree.setTreeOrder(2));
         List<MultiTree> list = APILocator.getMultiTreeAPI().getMultiTrees(PAGE, CONTAINER+0, RELATION_TYPE+0);
         assertTrue("multiTree reorders", list.get(2).equals(tree));
 

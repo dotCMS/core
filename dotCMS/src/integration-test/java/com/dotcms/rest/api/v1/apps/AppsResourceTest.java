@@ -1326,7 +1326,7 @@ public class AppsResourceTest extends IntegrationTestBase {
              final Response createSecretResponse1 = appsResource.createAppSecrets(request, response, key, siteId, secretForm1);
              Assert.assertEquals(HttpStatus.SC_OK, createSecretResponse1.getStatus());
 
-             final String password = "123456789";
+             final String password = "12345678901234";
              ExportSecretForm form = new ExportSecretForm(password,false, ImmutableMap.of(siteId, ImmutableSet.of(key)));
              final OutboundJaxrsResponse exportResponse = (OutboundJaxrsResponse)appsResource.exportSecrets(request, response, form);
              final String json = String.format("{ password: \"%s\" }",password);

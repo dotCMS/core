@@ -52,7 +52,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
-import org.eclipse.persistence.internal.oxm.schema.model.Content;
 
 
 public class PushPublishigDependencyProcesor implements DependencyProcessor{
@@ -429,7 +428,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor{
                 // Relationships Dependencies
                 final Map<Relationship, List<Contentlet>> contentRelationships = APILocator
                         .getContentletAPI().findContentRelationships(contentletVersion, user);
-
+                
                 tryToAddAllAndProcessDependencies(PusheableAsset.RELATIONSHIP,
                         contentRelationships.keySet(), ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(contentlet));
 

@@ -3,6 +3,7 @@ package com.dotcms.rendering.velocity.viewtools.navigation;
 
 
 import com.dotmarketing.portlets.browser.ajax.BrowserAjax;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.google.common.annotations.VisibleForTesting;
 
 
@@ -145,8 +146,25 @@ public class NavTool implements ViewTool {
                     if(!folders.contains(itemFolder)) {
                         addFolderToNav(host, languageId, folder, children, folderIds, itemFolder);
                     }
-                } else if (item instanceof IHTMLPage) {
-                    IHTMLPage itemPage = (IHTMLPage) item;
+                } else if (item instanceof Link) {
+                    Link itemLink = (Link) item;
+                    NavResult nav = new NavResult(folder.getInode(), host.getIdentifier(), languageId);
+
+                    if (itemLink.getLinkType()
+                            .equals(LinkType.CODE.toString()) && LinkType.CODE.toString() != null) {
+                        nav.setCodeLink(itemLink.getLinkCode());
+                    } else {
+                        nav.setHref(itemLink.getWorkingURL());
+                    }
+                    nav.setTitle(itemLink.getTitle());
+                    nav.setOrder(itemLink.getSortOrder());
+                    nav.setType("link");
+                    nav.setTarget(itemLink.getTarget());
+                    nav.setPermissionId(itemLink.getPermissionId());
+                    nav.setShowOnMenu(itemLink.isShowOnMenu());
+                    children.add(nav);
+                } else if ((Contentlet.class.cast(item)).isHTMLPage()) {
+                    final IHTMLPage itemPage = APILocator.getHTMLPageAssetAPI().fromContentlet(Contentlet.class.cast(item));
 
                     if (itemPage.getLanguageId() == languageId || shouldAddHTMLPageInAnotherLang(menuItems, itemPage, languageId)){
                         final String httpProtocol = "http://";
@@ -178,25 +196,8 @@ public class NavTool implements ViewTool {
                         nav.setShowOnMenu(itemPage.isShowOnMenu());
                         children.add(nav);
                     }
-                } else if (item instanceof Link) {
-                    Link itemLink = (Link) item;
-                    NavResult nav = new NavResult(folder.getInode(), host.getIdentifier(), languageId);
-
-                    if (itemLink.getLinkType()
-                        .equals(LinkType.CODE.toString()) && LinkType.CODE.toString() != null) {
-                        nav.setCodeLink(itemLink.getLinkCode());
-                    } else {
-                        nav.setHref(itemLink.getWorkingURL());
-                    }
-                    nav.setTitle(itemLink.getTitle());
-                    nav.setOrder(itemLink.getSortOrder());
-                    nav.setType("link");
-                    nav.setTarget(itemLink.getTarget());
-                    nav.setPermissionId(itemLink.getPermissionId());
-                    nav.setShowOnMenu(itemLink.isShowOnMenu());
-                    children.add(nav);
-                } else if (item instanceof IFileAsset) {
-                    IFileAsset itemFile = (IFileAsset) item;
+                } else if ((Contentlet.class.cast(item)).isFileAsset()) {
+                    final IFileAsset itemFile = APILocator.getFileAssetAPI().fromContentlet(Contentlet.class.cast(item));
 
                     if ( itemFile.getLanguageId() == languageId || shouldAddFileInAnotherLang(menuItems, itemFile, languageId)) {
                         ident = APILocator.getIdentifierAPI()

@@ -171,13 +171,11 @@
 
                 if (data) {
                     block.editor.commands.setContent(data);
+                    field.value = JSON.stringify(data);
                 }
 
                 block.editor.on('update', ({ editor }) => {
-                    field.value = JSON.stringify({
-                        ...editor.getJSON(),
-                        render: editor.getHTML()
-                    });
+                    field.value = JSON.stringify(editor.getJSON());
                 })
             </script>
         <% }

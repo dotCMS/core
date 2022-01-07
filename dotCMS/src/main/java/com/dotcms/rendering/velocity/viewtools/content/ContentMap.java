@@ -125,7 +125,7 @@ public class ContentMap {
 		return get(fieldVariableName, false);
 	}
 
-	
+
 	private Object get(String fieldVariableName, Boolean parseVelocity) {
 		try {
 			final boolean respectFrontEndRoles = PageMode.get(Try.of(()->(HttpServletRequest)context.get("request")).getOrNull()).respectAnonPerms;
