@@ -5178,7 +5178,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final Structure hostStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
             if ((contentlet != null) && InodeUtils.isSet(contentlet.getIdentifier()) && contentlet.getStructureInode().equals(hostStructure.getInode())) {
                 final HostAPI hostAPI = APILocator.getHostAPI();
-                hostAPI.updateCache(new Host(contentlet));
+                hostAPI.updateCache();
 
                 final ContentletCache cc = CacheLocator.getContentletCache();
                 final Identifier ident=APILocator.getIdentifierAPI().find(contentlet);

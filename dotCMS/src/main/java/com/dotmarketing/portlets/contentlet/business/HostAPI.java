@@ -269,11 +269,10 @@ public interface HostAPI {
 	public Host DBSearch(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
-	 * Update the Host cache with the specified host
+	 * Update the Host cache (cleans the whole cache and populate it)
 	 *
-	 * @param host
 	 */
-	public void updateCache(Host host);
+	public void updateCache();
 
 	/**
 	 * Updates the MenuLinks of the host with the new hostname

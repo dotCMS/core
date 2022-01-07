@@ -16,10 +16,9 @@ import java.util.Set;
 public class HostCacheImpl extends HostCache {
 	
 	final String DEFAULT_HOST = "_dotCMSDefaultHost_";
-	final String SITES = "_dotSites_";//TODO: revisar idea de esta cache, creo que no es necesaria
+	final String SITES = "_dotSites_";
 
 	private DotCacheAdministrator cache;
-	
 
     // region's name for the cache
     private String[] groupNames = {PRIMARY_GROUP, ALIAS_GROUP};
@@ -28,8 +27,7 @@ public class HostCacheImpl extends HostCache {
         cache = CacheLocator.getCacheAdministrator();
 	}
 
-	@Override
-	protected Host add(Host host) {
+	private Host add(Host host) {
 		if(host == null){
 			return null;
 		}
@@ -45,16 +43,18 @@ public class HostCacheImpl extends HostCache {
         	cache.put(key3,host,PRIMARY_GROUP);
         }
 
+		final String[] aliases = host.getAliases().split("\n");
+        for(final String alias : aliases ){
+			addHostAlias(alias,host);
+		}
 
 		return host;
-		
 	}
 
 	protected void addAll(final Iterable<Host> hosts){
         for(final Host host:hosts){
            add(host);
         }
-
 		cache.put(SITES, ImmutableSet.copyOf(hosts), PRIMARY_GROUP);
     }
 
@@ -62,10 +62,6 @@ public class HostCacheImpl extends HostCache {
 	protected Set<Host> getAllSites(){
 		return (Set<Host>) cache.getNoThrow(SITES, PRIMARY_GROUP);
 	}
-
-//	private void clearSitesList(){
-//		cache.remove(SITES, PRIMARY_GROUP);
-//	}
 
 	protected Host getHostByAlias(String key) {
 		Host host = null;
@@ -100,41 +96,7 @@ public class HostCacheImpl extends HostCache {
         // clear the cache
         cache.flushGroup(PRIMARY_GROUP);
         cache.flushGroup(ALIAS_GROUP);
-		cache.remove(SITES, PRIMARY_GROUP);
     }
-
-//    /* (non-Javadoc)
-//	 * @see com.dotmarketing.business.PermissionCache#remove(java.lang.String)
-//	 */
-//    protected void remove(Host host){
-//
-//    	// always remove default host
-//    	String _defaultHost =PRIMARY_GROUP +DEFAULT_HOST;
-//    	cache.remove(_defaultHost,PRIMARY_GROUP);
-//
-//    	//remove aliases from host in cache
-//    	Host h = get(host.getIdentifier());
-//
-//
-//    	String key = host.getIdentifier();
-//    	String key2 = host.getHostname();
-//
-//    	try{
-//    		cache.remove(key,PRIMARY_GROUP);
-//    	}catch (Exception e) {
-//			Logger.debug(this, "Cache not able to be removed", e);
-//		}
-//
-//    	try{
-//    		cache.remove(key2,PRIMARY_GROUP);
-//    	}catch (Exception e) {
-//			Logger.debug(this, "Cache not able to be removed", e);
-//    	}
-//
-////    	clearAliasCache();
-//    	clearSitesList();
-//
-//    }
 
     public String[] getGroups() {
     	return groupNames;
@@ -148,15 +110,9 @@ public class HostCacheImpl extends HostCache {
     	return get(DEFAULT_HOST);
     }
 
-    protected void addHostAlias(String alias, Host host){
+    private void addHostAlias(String alias, Host host){
     	if(alias != null && host != null && UtilMethods.isSet(host.getIdentifier())){
     		cache.put(alias, host.getIdentifier(),ALIAS_GROUP);
     	}
     }
-    
-    
-//	protected void clearAliasCache() {
-//        // clear the alias cache
-//        cache.flushGroup(ALIAS_GROUP);
-//    }
 }
