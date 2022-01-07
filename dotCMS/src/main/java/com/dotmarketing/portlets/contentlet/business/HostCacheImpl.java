@@ -1,12 +1,14 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -43,7 +45,7 @@ public class HostCacheImpl extends HostCache {
         	cache.put(key3,host,PRIMARY_GROUP);
         }
 
-		final String[] aliases = host.getAliases().split("\n");
+		final List<String> aliases = APILocator.getHostAPI().parseHostAliases(host);
         for(final String alias : aliases ){
 			addHostAlias(alias,host);
 		}
