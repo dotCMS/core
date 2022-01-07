@@ -64,7 +64,8 @@ public class IPUtilsTest {
             "127.0.0.1",
             "172.16.3.5",
             "172.16.3.0",
-            "localhost"
+            "localhost",
+            "127.0.0.1"
     };
     
     final static String[] ipsOnPublicSubnets= {
