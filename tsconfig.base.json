@@ -34,7 +34,8 @@
             "@dotcms/dotcms": ["libs/dotcms/src/index.ts"],
             "@dotcms/dotcms-models": ["libs/dotcms-models/src/index.ts"],
             "@dotcms/ui": ["libs/ui/src/index.ts"],
-            "@dotcms/block-editor": ["libs/block-editor/src/public-api.ts"]
+            "@dotcms/block-editor": ["libs/block-editor/src/public-api.ts"],
+            "@dotcms/utils": ["libs/utils/src/index.ts"]
         }
     },
     "exclude": ["node_modules", "tmp"]

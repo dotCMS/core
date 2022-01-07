@@ -16,6 +16,13 @@
 | `variable`     | `variable`       | Content type variable name                                               | `string`                       | `''`        |
 
 
+## Events
+
+| Event    | Description               | Type                            |
+| -------- | ------------------------- | ------------------------------- |
+| `submit` | Emit when submit the form | `CustomEvent<DotCMSContentlet>` |
+
+
 ## Dependencies
 
 ### Depends on

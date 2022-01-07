@@ -29,15 +29,13 @@ import { HttpClientModule } from '@angular/common/http';
     entryComponents: [DotBlockEditorComponent]
 })
 export class AppModule {
-
     constructor(private injector: Injector) {}
 
     ngDoBootstrap() {
         const element = createCustomElement(DotBlockEditorComponent, {
-          injector: this.injector
+            injector: this.injector
         });
-     
+
         customElements.define('dotcms-block-editor', element);
     }
-
 }

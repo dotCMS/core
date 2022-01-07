@@ -33,6 +33,7 @@
         "dotcdn-e2e": { "tags": [], "implicitDependencies": ["dotcdn"] },
         "block-editor": { "tags": [] },
         "dotcms-block-editor": { "tags": [] },
-        "dotcms-block-editor-e2e": { "tags": [], "implicitDependencies": ["dotcms-block-editor"] }
+        "dotcms-block-editor-e2e": { "tags": [], "implicitDependencies": ["dotcms-block-editor"] },
+        "utils": { "tags": [] }
     }
 }

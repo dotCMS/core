@@ -1,7 +1,10 @@
-import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
-import { DotHttpErrorResponse } from '../../models/dot-http-error-response.model';
+import {
+    DotAssetCreateOptions,
+    DotCMSContentlet,
+    DotCMSTempFile,
+    DotHttpErrorResponse
+} from '@dotcms/dotcms-models';
 import { fallbackErrorMessages } from '../../components/contenttypes-fields/dot-form/services/dot-upload.service';
-import { DotAssetCreateOptions } from '../../models/dot-asset-create-options.model';
 
 export class DotAssetService {
     constructor() {}
@@ -46,7 +49,7 @@ export class DotAssetService {
             const errors: DotHttpErrorResponse[] = [];
             const data: DotCMSContentlet[] = [];
             for (const res of response) {
-                const responseData = (await res.json());
+                const responseData = await res.json();
                 data.push(responseData.entity);
                 if (res.status !== 200) {
                     let message = '';

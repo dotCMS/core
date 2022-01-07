@@ -7,6 +7,7 @@ import { TestBed, getTestBed } from '@angular/core/testing';
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { DotPage } from '@dotcms/app/shared/models/dot-page/dot-page.model';
 
 describe('DotContainerContentletService', () => {
     let injector: TestBed;
@@ -38,10 +39,31 @@ describe('DotContainerContentletService', () => {
             type: 'content_type'
         };
 
+        const dotPage: DotPage = {
+            canEdit: true,
+            canRead: true,
+            canLock: true,
+            identifier: '1',
+            pageURI: '/page_test',
+            shortyLive: 'shortyLive',
+            shortyWorking: 'shortyWorking',
+            workingInode: '2',
+            contentType: undefined,
+            fileAsset: false,
+            friendlyName: '',
+            host: '',
+            inode: '2',
+            name: '',
+            systemHost: false,
+            type: '',
+            uri: '',
+            versionType: ''
+        };
+
         dotContainerContentletService
-            .getContentletToContainer(pageContainer, pageContent)
+            .getContentletToContainer(pageContainer, pageContent, dotPage)
             .subscribe();
-        httpMock.expectOne(`v1/containers/content/2?containerId=1`);
+        httpMock.expectOne(`v1/containers/content/2?containerId=1&pageInode=2`);
     });
 
     it('should do a request for get the form html code', () => {
@@ -64,6 +86,7 @@ describe('DotContainerContentletService', () => {
             baseType: 'form',
             id: formId
         };
+
 
         dotContainerContentletService.getFormToContainer(pageContainer, form).subscribe();
         httpMock.expectOne(`v1/containers/form/2?containerId=1`);

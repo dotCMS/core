@@ -11,6 +11,7 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ToolbarModule } from 'primeng/toolbar';
+import { DotGlobalMessageModule } from '@dotcms/app/view/components/_common/dot-global-message/dot-global-message.module';
 
 @NgModule({
     imports: [
@@ -24,7 +25,8 @@ import { ToolbarModule } from 'primeng/toolbar';
         DotSecondaryToolbarModule,
         FormsModule,
         ToolbarModule,
-        DotPipesModule
+        DotPipesModule,
+        DotGlobalMessageModule
     ],
     exports: [DotEditPageToolbarComponent],
     declarations: [DotEditPageToolbarComponent]

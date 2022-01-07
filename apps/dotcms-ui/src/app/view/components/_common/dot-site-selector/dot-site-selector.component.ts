@@ -148,7 +148,7 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
      * @memberof SiteSelectorComponent
      */
     getSitesList(filter = '', offset = 0): void {
-        this.paginationService.filter = filter;
+        this.paginationService.filter = `*${filter}`;
         this.paginationService
             .getWithOffset(offset)
             .pipe(take(1))

@@ -1,0 +1,13 @@
+<div [@inOut]="stateContentlet" (@inOut.done)="onAnimationDone($event)" data-testId="wrapper">
+    <dot-palette-content-type
+        #contentTypes
+        (selected)="switchView($event)"
+        [items]="items"
+    ></dot-palette-content-type>
+    <dot-palette-contentlets
+        #contentlets
+        (back)="switchView()"
+        [contentTypeVariable]="contentTypeVariable"
+        [languageId]="languageId"
+    ></dot-palette-contentlets>
+</div>

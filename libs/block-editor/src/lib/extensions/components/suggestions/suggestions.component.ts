@@ -1,20 +1,20 @@
-import { ChangeDetectorRef, Component, Input, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnInit, ViewChild, HostListener } from '@angular/core';
 
 import { map, take } from 'rxjs/operators';
 import { MenuItem } from 'primeng/api';
 
-import { SuggestionsService } from '../../services/suggestions.service';
+import { SuggestionsService } from '../../services/suggestions/suggestions.service';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { SuggestionListComponent } from '../suggestion-list/suggestion-list.component';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
-import { headerIcons, pIcon, ulIcon, olIcon } from './suggestion-icons';
+import { headerIcons, pIcon, ulIcon, olIcon, quoteIcon, codeIcon, lineIcon } from './suggestion-icons';
 
 export interface SuggestionsCommandProps {
     payload?: DotCMSContentlet;
     type: { name: string; level?: number };
 }
 
-export interface DotMenuItem  extends Omit<MenuItem, 'icon'> {
+export interface DotMenuItem extends Omit<MenuItem, 'icon'> {
     icon: string | SafeUrl;
 }
 
@@ -30,6 +30,12 @@ export class SuggestionsComponent implements OnInit {
     items: DotMenuItem[] = [];
 
     title = 'Select a block';
+    mouseMove = true;
+
+    @HostListener('mousemove', ['$event'])
+    onMousemove() { 
+        this.mouseMove = true;
+    }
 
     constructor(
         private suggestionsService: SuggestionsService,
@@ -92,6 +98,43 @@ export class SuggestionsComponent implements OnInit {
                 }
             }
         ];
+
+        const block = [
+            {
+                label: 'Blockquote',
+                icon: this.sanitizeUrl(quoteIcon),
+                command: () => {
+                    this.onSelection({
+                        type: {
+                            name: 'blockQuote'
+                        }
+                    });
+                }
+            },
+            {
+                label: 'Code Block',
+                icon: this.sanitizeUrl(codeIcon),
+                command: () => {
+                    this.onSelection({
+                        type: {
+                            name: 'codeBlock'
+                        }
+                    });
+                }
+            },
+            {
+                label: 'Horizontal Line',
+                icon: this.sanitizeUrl(lineIcon),
+                command: () => {
+                    this.onSelection({
+                        type: {
+                            name: 'horizontalLine'
+                        }
+                    });
+                }
+            }
+        ];
+
         this.items = [
             {
                 label: 'Contentlets',
@@ -102,7 +145,8 @@ export class SuggestionsComponent implements OnInit {
             },
             ...headings,
             ...paragraph,
-            ...list
+            ...list,
+            ...block
         ];
     }
 
@@ -123,6 +167,7 @@ export class SuggestionsComponent implements OnInit {
      */
     updateSelection(e: KeyboardEvent) {
         this.list.updateSelection(e);
+        this.mouseMove = false;
     }
 
     /**
@@ -143,6 +188,17 @@ export class SuggestionsComponent implements OnInit {
         this.list.resetKeyManager();
     }
 
+
+    /**
+     * Avoid closing the suggestions on manual scroll
+     *
+     * @param {MouseEvent} e
+     * @memberof SuggestionsComponent
+     */
+    onMouseDownHandler(e: MouseEvent) {
+        e.preventDefault();
+    }
+
     /**
      * Handle the active item on menu events
      *
@@ -150,6 +206,10 @@ export class SuggestionsComponent implements OnInit {
      * @memberof SuggestionsComponent
      */
     onMouseEnter(e: MouseEvent) {
+        // If mouse does not move then leave the function.
+        if (!this.mouseMove) {
+            return;
+        }
         e.preventDefault();
         const index = Number((e.target as HTMLElement).dataset.index);
         this.list.updateActiveItem(index);
@@ -214,7 +274,7 @@ export class SuggestionsComponent implements OnInit {
             });
     }
 
-    private sanitizeUrl( url: string ): SafeUrl {
+    private sanitizeUrl(url: string): SafeUrl {
         return this.domSanitizer.bypassSecurityTrustUrl(url);
     }
 }

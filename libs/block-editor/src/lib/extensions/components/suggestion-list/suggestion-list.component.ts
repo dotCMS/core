@@ -28,6 +28,7 @@ export class SuggestionListComponent implements AfterContentInit {
         }
 
         this.keyManager.onKeydown(event);
+        this.keyManager.activeItem.scrollIntoView();
     }
 
     /**

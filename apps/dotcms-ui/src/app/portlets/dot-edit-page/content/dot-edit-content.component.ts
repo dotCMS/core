@@ -297,9 +297,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
             .pipe(
                 take(1),
                 tap(() => {
-                    this.dotGlobalMessageService.success(
-                        this.dotMessageService.get('dot.common.message.saved')
-                    );
+                    this.dotGlobalMessageService.success();
                 }),
                 catchError((error: HttpErrorResponse) => {
                     this.httpErrorManagerService.handle(error);
@@ -434,6 +432,8 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     }
 
     private renderPage(pageState: DotPageRenderState): void {
+        this.dotEditContentHtmlService.setCurrentPage(pageState.page);
+
         if (this.shouldEditMode(pageState)) {
             if (this.isEnterpriseLicense) {
                 this.loadContentPallet(pageState);
@@ -516,7 +516,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     private subscribeDraggedContentType(): void {
         this.dotContentletEditorService.draggedContentType$
             .pipe(takeUntil(this.destroy$))
-            .subscribe((contentType: DotCMSContentType) => {
+            .subscribe((contentType: DotCMSContentType | DotCMSContentlet) => {
                 const iframeWindow: any = (this.iframe.nativeElement as HTMLIFrameElement)
                     .contentWindow;
                 iframeWindow.draggedContent = contentType;

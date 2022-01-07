@@ -1,19 +1,32 @@
-import { 
-  Component,
-  OnInit,
-  ComponentFactoryResolver,
-  Injector,
-  ViewEncapsulation
+import {
+    Component,
+    OnInit,
+    ComponentFactoryResolver,
+    Injector,
+    ViewEncapsulation
 } from '@angular/core';
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 
-import { ContentletBlock } from '@dotcms/block-editor';
-import { ActionsMenu } from '@dotcms/block-editor';
+import {
+    ActionsMenu,
+    BubbleLinkFormExtension,
+    ContentletBlock,
+    DragHandler,
+    ImageBlock,
+    ImageUpload,
+    shouldShowBubbleMenu
+} from '@dotcms/block-editor';
+
+// Marks Extensions
+import { Highlight } from '@tiptap/extension-highlight';
+import { Link } from '@tiptap/extension-link';
+import { TextAlign } from '@tiptap/extension-text-align';
+import { Underline } from '@tiptap/extension-underline';
+import BubbleMenu from '@tiptap/extension-bubble-menu';
 
 @Component({
-    // eslint-disable-next-line
-    selector: 'dot-block-editor',
+    selector: 'dotcms-block-editor',
     templateUrl: './dot-block-editor.component.html',
     styleUrls: ['./dot-block-editor.component.scss'],
     encapsulation: ViewEncapsulation.None
@@ -30,7 +43,26 @@ export class DotBlockEditorComponent implements OnInit {
             extensions: [
                 StarterKit,
                 ContentletBlock(this.injector),
+                ImageBlock(this.injector),
                 ActionsMenu(this.injector, this.resolver),
+                DragHandler(this.injector, this.resolver),
+                ImageUpload(this.injector, this.resolver),
+                BubbleLinkFormExtension(this.injector, this.resolver),
+                BubbleMenu.configure({
+                    element: document.querySelector('#bubbleMenu'),
+                    shouldShow: shouldShowBubbleMenu,
+                    tippyOptions: {
+                        duration: 500,
+                        maxWidth: 'none',
+                        placement: 'top-start',
+                        trigger: 'manual'
+                    }
+                }),
+                // Marks Extensions
+                Underline,
+                TextAlign.configure({ types: ['heading', 'paragraph', 'listItem'] }),
+                Highlight.configure({ HTMLAttributes: { class: 'highlighted '} }),
+                Link.configure({ openOnClick: true })
             ]
         });
     }

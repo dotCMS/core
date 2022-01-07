@@ -3,7 +3,7 @@ import { of as observableOf, of, throwError } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
-import { ComponentFixture, tick, fakeAsync, TestBed } from '@angular/core/testing';
+import { ComponentFixture, tick, fakeAsync, TestBed, discardPeriodicTasks, flush } from '@angular/core/testing';
 import {
     Component,
     DebugElement,
@@ -81,8 +81,8 @@ import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotPageContainer } from '@models/dot-page-container/dot-page-container.model';
 import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
 import { DotContentTypeService } from '@services/dot-content-type';
-import { DotContentPaletteModule } from '@portlets/dot-edit-page/components/dot-content-palette/dot-content-palette.module';
-import { DotContentPaletteComponent } from '@portlets/dot-edit-page/components/dot-content-palette/dot-content-palette.component';
+import { DotPaletteModule } from '@dotcms/app/portlets/dot-edit-page/components/dot-palette/dot-palette.module';
+import { DotPaletteComponent } from '@dotcms/app/portlets/dot-edit-page/components/dot-palette/dot-palette.component';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DotGenerateSecurePasswordService } from '@services/dot-generate-secure-password/dot-generate-secure-password.service';
 import { DotPropertiesService } from '@services/dot-properties/dot-properties.service';
@@ -250,7 +250,7 @@ describe('DotEditContentComponent', () => {
                 DotEditPageWorkflowsActionsModule,
                 DotOverlayMaskModule,
                 DotWizardModule,
-                DotContentPaletteModule,
+                DotPaletteModule,
                 RouterTestingModule.withRoutes([
                     {
                         component: DotEditContentComponent,
@@ -647,6 +647,7 @@ describe('DotEditContentComponent', () => {
                 beforeEach(() => {
                     spyOn(dotEditContentHtmlService, 'renderPage');
                     spyOn(dotEditContentHtmlService, 'initEditMode');
+                    spyOn(dotEditContentHtmlService, 'setCurrentPage');
                 });
 
                 it('should render in preview mode', fakeAsync(() => {
@@ -657,6 +658,7 @@ describe('DotEditContentComponent', () => {
                         jasmine.any(ElementRef)
                     );
                     expect(dotEditContentHtmlService.initEditMode).not.toHaveBeenCalled();
+                    expect(dotEditContentHtmlService.setCurrentPage).toHaveBeenCalledWith(mockRenderedPageState.page);
                 }));
 
                 it('should render in edit mode', fakeAsync(() => {
@@ -683,6 +685,7 @@ describe('DotEditContentComponent', () => {
                         jasmine.any(ElementRef)
                     );
                     expect(dotEditContentHtmlService.renderPage).not.toHaveBeenCalled();
+                    expect(dotEditContentHtmlService.setCurrentPage).toHaveBeenCalledWith(state.page);
                 }));
 
                 it('should show/hide content palette in edit mode with correct content', fakeAsync(() => {
@@ -707,18 +710,21 @@ describe('DotEditContentComponent', () => {
                     detectChangesForIframeRender(fixture);
                     fixture.detectChanges();
                     const contentPaletteWrapper = de.query(By.css('.dot-edit-content__palette'));
-                    const contentPalette: DotContentPaletteComponent = de.query(
-                        By.css('dot-content-palette')
+                    const contentPalette: DotPaletteComponent = de.query(
+                        By.css('dot-palette')
                     ).componentInstance;
                     const paletteController = de.query(
                         By.css('.dot-edit-content__palette-visibility')
                     );
                     const classList = contentPaletteWrapper.nativeElement.classList;
                     expect(contentPalette.items).toEqual(responseData.slice(0, 3));
+                    expect(parseInt(contentPalette.languageId)).toEqual(mockDotRenderedPage().page.languageId);
                     expect(classList.contains('editMode')).toEqual(true);
                     paletteController.triggerEventHandler('click', '');
                     fixture.detectChanges();
                     expect(classList.contains('collapsed')).toEqual(true);
+
+                    expect(dotEditContentHtmlService.setCurrentPage).toHaveBeenCalledWith(state.page);
                 }));
 
                 it('should not display palette when is not enterprise', fakeAsync(() => {
@@ -744,6 +750,7 @@ describe('DotEditContentComponent', () => {
                     fixture.detectChanges();
                     const contentPaletteWrapper = de.query(By.css('.dot-edit-content__palette'));
                     expect(contentPaletteWrapper).toBeNull();
+                    expect(dotEditContentHtmlService.setCurrentPage).toHaveBeenCalledWith(state.page);
                 }));
 
                 it('should reload the page because of EMA', fakeAsync(() => {
@@ -775,10 +782,13 @@ describe('DotEditContentComponent', () => {
                     });
 
                     expect(dotPageStateService.reload).toHaveBeenCalledTimes(1);
+
+                    flush();
                 }))
 
                 it('should NOT reload the page', fakeAsync(() => {
                     spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
+
                     const state = new DotPageRenderState(
                         mockUser(),
                         new DotPageRender({
@@ -793,10 +803,13 @@ describe('DotEditContentComponent', () => {
                             }
                         })
                     );
+
                     route.parent.parent.data = of({
                         content: state
                     });
+
                     detectChangesForIframeRender(fixture);
+
                     fixture.detectChanges();
 
                     dotEditContentHtmlService.pageModel$.next({
@@ -805,6 +818,8 @@ describe('DotEditContentComponent', () => {
                     });
 
                     expect(dotPageStateService.reload).toHaveBeenCalledTimes(0);
+
+                    flush();
                 }))
             });
 
@@ -1379,8 +1394,8 @@ describe('DotEditContentComponent', () => {
             detectChangesForIframeRender(fixture);
             fixture.detectChanges();
             const contentPaletteWrapper = de.query(By.css('.dot-edit-content__palette'));
-            const contentPalette: DotContentPaletteComponent = de.query(
-                By.css('dot-content-palette')
+            const contentPalette: DotPaletteComponent = de.query(
+                By.css('dot-palette')
             ).componentInstance;
             expect(contentPalette.items).toEqual(responseData.slice(0, 5));
         }));

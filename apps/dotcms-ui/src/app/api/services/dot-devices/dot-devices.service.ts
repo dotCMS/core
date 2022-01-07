@@ -26,7 +26,8 @@ export class DotDevicesService {
                     'content',
                     'respectFrontendRoles/false',
                     'render/false',
-                    'query/+contentType:previewDevice +live:true +deleted:false +working:true'
+                    'query/+contentType:previewDevice +live:true +deleted:false +working:true',
+                    'limit/40/orderby/title'
                 ].join('/')
             })
             .pipe(pluck('contentlets'));

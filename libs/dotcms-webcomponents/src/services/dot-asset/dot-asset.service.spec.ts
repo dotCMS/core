@@ -1,5 +1,5 @@
 import { DotAssetService } from './dot-asset.service';
-import { DotAssetCreateOptions } from '../../models/dot-asset-create-options.model';
+import { DotAssetCreateOptions } from '@dotcms/dotcms-models';
 
 describe('DotAssetService', () => {
     const fetchMock = jest.fn();
@@ -67,15 +67,15 @@ describe('DotAssetService', () => {
     it('test', () => {
         assetService
             .create(mockOptions)
-            .then(x => {
+            .then((x) => {
                 console.log('fetchMock: ', fetchMock);
 
-               // const params = fetchMock.mock.calls[0];
-              //  expect(fetchMock.mock.calls.length).toBe(2);
-               // expect(params[0]).toBe('/test/url');
+                // const params = fetchMock.mock.calls[0];
+                //  expect(fetchMock.mock.calls.length).toBe(2);
+                // expect(params[0]).toBe('/test/url');
                 console.log('error: ', x);
             })
-            .catch(x => {
+            .catch((x) => {
                 expect(window.fetch).toHaveBeenCalledTimes(3);
                 //expect(window.fetch).toBeCalledWith(2);
 
@@ -88,6 +88,5 @@ describe('DotAssetService', () => {
         //     });
         //
         // expect(window.fetch).toHaveBeenCalledTimes(3);
-
     });
 });

@@ -87,6 +87,15 @@ function execCommand({
         },
         listUnordered: () => {
             editor.chain().deleteRange(range).toggleBulletList().focus().run();
+        },
+        blockQuote: () => {
+            editor.chain().deleteRange(range).setBlockquote().focus().run();
+        },
+        codeBlock: () => {
+            editor.chain().deleteRange(range).setCodeBlock().focus().run();
+        },
+        horizontalLine: () => {
+            editor.chain().deleteRange(range).setHorizontalRule().focus().run();
         }
     };
 
