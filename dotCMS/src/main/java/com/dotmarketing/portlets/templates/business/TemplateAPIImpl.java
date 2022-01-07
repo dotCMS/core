@@ -5,6 +5,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.config.DotInitializer;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.enterprise.license.LicenseManager;
@@ -61,12 +62,18 @@ import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import org.apache.commons.io.IOUtils;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -79,7 +86,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 
-public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
+public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, DotInitializer {
+
+	private static final String SYSTEM_TEMPLATE_NAME = "System Template";
+	private static final String LAYOUT_FILE_NAME     = "com/dotmarketing/portlets/templates/business/layout.json";
 
 	private final  PermissionAPI    permissionAPI          = APILocator.getPermissionAPI();
 	private final  IdentifierAPI    identifierAPI          = APILocator.getIdentifierAPI();
@@ -88,26 +98,163 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	private final  Lazy<VersionableAPI> versionableAPI     = Lazy.of(()->APILocator.getVersionableAPI());
 	private final  Lazy<HTMLPageAssetAPI> htmlPageAssetAPI = Lazy.of(()->APILocator.getHTMLPageAssetAPI());
 	private final  HostAPI          hostAPI                = APILocator.getHostAPI();
+	private final  Template         systemTemplate         = new Template();
 
+	@Override
+	public Template systemTemplate() {
+
+		return this.systemTemplate;
+	}
+
+	@Override
+	public void init() {
+
+		final String userId         = APILocator.systemUser().getUserId();
+		this.systemTemplate.setIdentifier(Template.SYSTEM_TEMPLATE);
+		this.systemTemplate.setInode(Template.SYSTEM_TEMPLATE);
+		this.systemTemplate.setOwner(userId);
+		this.systemTemplate.setModDate(new Date());
+		this.systemTemplate.setTheme(Theme.SYSTEM_THEME);
+		this.systemTemplate.setTitle(SYSTEM_TEMPLATE_NAME);
+		this.systemTemplate.setFriendlyName(SYSTEM_TEMPLATE_NAME);
+		this.systemTemplate.setDrawed(true);
+		this.systemTemplate.setDrawedBody(this.readLayout());
+
+		//this.checkSystemTemplateVersionInfo(userId);
+	}
+
+	private String readLayout () {
+
+		final ClassLoader loader = Thread.currentThread().getContextClassLoader();
+		final URL resourceURL    = loader.getResource(LAYOUT_FILE_NAME);
+		try {
+			return IOUtils.toString(resourceURL, UtilMethods.getCharsetConfiguration());
+		} catch (Exception e) {
+
+			Logger.error(this, e.getMessage(), e);
+			return "{\n" +
+					"  \"body\":{\n" +
+					"    \"rows\":[\n" +
+					"      {\n" +
+					"        \"styleClass\":\"\",\n" +
+					"        \"columns\":[\n" +
+					"          {\n" +
+					"            \"styleClass\":\"\",\n" +
+					"            \"leftOffset\":1,\n" +
+					"            \"width\":12,\n" +
+					"            \"containers\":[\n" +
+					"              {\n" +
+					"                \"identifier\":\"//default/application/containers/system/\",\n" +
+					"                \"uuid\":\"1\"\n" +
+					"              }\n" +
+					"            ]\n" +
+					"          }\n" +
+					"        ]\n" +
+					"      }\n" +
+					"    ]\n" +
+					"  },\n" +
+					"  \"header\":true,\n" +
+					"  \"footer\":true,\n" +
+					"  \"sidebar\":null\n" +
+					"}\n";
+		}
+	}
+
+	// todo: this did not work, b/c the template version info, needs a reference to the template table
+	// we are mocking the template
+	private void checkSystemTemplateVersionInfo(final String userId) {
+
+		VersionInfo info = null;
+
+		try {
+
+			info = this.versionableAPI.get().getVersionInfo(Template.SYSTEM_TEMPLATE);
+		} catch (DotDataException e) {
+
+			Logger.error(this, e.getMessage(), e);
+		}
+
+		if (null == info) {
+
+			try {
+				this.createSystemTemplate(userId);
+			} catch (DotDataException e) {
+
+				Logger.error(this, e.getMessage(), e);
+			}
+		}
+	}
+
+	@WrapInTransaction
+	private void createSystemTemplate (final String userId) throws DotDataException {
+
+		final Date now = new Date();
+		final String hostIdentifier = APILocator.systemHost().getIdentifier();
+		final Identifier identifier = new Identifier();
+		identifier.setId(Template.SYSTEM_TEMPLATE);
+		identifier.setAssetName(SYSTEM_TEMPLATE_NAME);
+		identifier.setCreateDate(now);
+		identifier.setAssetType("template");
+		identifier.setOwner(userId);
+		identifier.setParentPath("/");
+		identifier.setHostId(hostIdentifier);
+
+		this.identifierAPI.save(identifier);
+
+		final VersionInfo info = new VersionInfo();
+		info.setLiveInode(Template.SYSTEM_TEMPLATE);
+		info.setWorkingInode(Template.SYSTEM_TEMPLATE);
+		info.setVersionTs(now);
+		info.setIdentifier(Template.SYSTEM_TEMPLATE);
+
+		this.versionableAPI.get().saveVersionInfo(info);
+	}
+
+	private List<Template> includeSystemTemplate (final List<Template> inTemplates) {
+
+		final PaginatedArrayList<Template> templates = new PaginatedArrayList<>();
+		if (inTemplates instanceof PaginatedArrayList) {
+			templates.setQuery(PaginatedArrayList.class.cast(inTemplates).getQuery());
+			templates.setTotalResults(PaginatedArrayList.class.cast(inTemplates).getTotalResults());
+		}
+		templates.add(systemTemplate());
+		templates.addAll(inTemplates);
+		return templates;
+
+	}
 
 	@CloseDBIfOpened
 	public List<Template> findTemplatesAssignedTo(final Host parentHost) throws DotDataException {
-		return FactoryLocator.getTemplateFactory().findTemplatesAssignedTo(parentHost, false);
+
+		return Host.SYSTEM_HOST.equals(parentHost.getIdentifier())?
+				includeSystemTemplate(FactoryLocator.getTemplateFactory().findTemplatesAssignedTo(parentHost, false)):
+				FactoryLocator.getTemplateFactory().findTemplatesAssignedTo(parentHost, false);
 	}
 
 	@CloseDBIfOpened
 	public List<Template> findTemplatesAssignedTo(final Host parentHost, final boolean includeArchived) throws DotDataException {
-		return FactoryLocator.getTemplateFactory().findTemplatesAssignedTo(parentHost, includeArchived);
+
+		return Host.SYSTEM_HOST.equals(parentHost.getIdentifier())?
+				includeSystemTemplate(FactoryLocator.getTemplateFactory().findTemplatesAssignedTo(parentHost, includeArchived)):
+				FactoryLocator.getTemplateFactory().findTemplatesAssignedTo(parentHost, includeArchived);
 	}
 
 	@CloseDBIfOpened
 	public List<Template> findTemplatesUserCanUse(final User user, final String hostId, final String query, final boolean searchHost, final int offset, final int limit) throws DotDataException, DotSecurityException {
-		return FactoryLocator.getTemplateFactory().findTemplatesUserCanUse(user, hostId, query, searchHost, offset, limit);
+
+		return Host.SYSTEM_HOST.equals(searchHost)?
+				includeSystemTemplate(FactoryLocator.getTemplateFactory().findTemplatesUserCanUse(user, hostId, query, searchHost, offset, limit)):
+				FactoryLocator.getTemplateFactory().findTemplatesUserCanUse(user, hostId, query, searchHost, offset, limit);
 	}
 
 	@WrapInTransaction
 	@Override
 	public Template copy(final Template sourceTemplate, final User user) throws DotDataException, DotSecurityException {
+
+		if(Template.SYSTEM_TEMPLATE.equals(sourceTemplate.getIdentifier())) {
+
+			throw new IllegalArgumentException("System template can not be copied");
+		}
 
 		final Identifier identifier = APILocator.getIdentifierAPI().find(sourceTemplate.getIdentifier());
 		final Host  host = APILocator.getHostAPI().find(identifier.getHostId(), user, false);
@@ -120,6 +267,11 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	public Template copy(final Template sourceTemplate, final Host destination, final boolean forceOverwrite, final List<ContainerRemapTuple> containerMappings, final User user,
 			final boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
+
+		if(Template.SYSTEM_TEMPLATE.equals(sourceTemplate.getIdentifier())) {
+
+			throw new IllegalArgumentException("System template can not be copied");
+		}
 
 		if (!permissionAPI.doesUserHavePermission(sourceTemplate, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
 			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to READ the source template");
@@ -183,6 +335,11 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			final boolean copySourceContainers, User user, final boolean respectFrontendRoles) throws DotDataException,
 			DotSecurityException {
 
+		if(Template.SYSTEM_TEMPLATE.equals(sourceTemplate.getIdentifier())) {
+
+			throw new IllegalArgumentException("System template can not be copied");
+		}
+
 		if (!permissionAPI.doesUserHavePermission(sourceTemplate, PermissionAPI.PERMISSION_READ, user,
 				respectFrontendRoles)) {
 			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to READ the source template");
@@ -209,6 +366,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	}
 
 	private void save(final Template template) throws DotDataException {
+
 		templateFactory.save(template);
 	}
 
@@ -219,6 +377,11 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	@WrapInTransaction
 	public void publishTemplate(final Template template, final User user, final boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException, WebAssetException {
+
+		if(Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
+
+			throw new IllegalArgumentException("System template can not be published");
+		}
 
 		Logger.debug(this, ()-> "Publishing the template: " + template.getIdentifier());
 
@@ -286,6 +449,11 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	public void unpublishTemplate(final Template template, final User user, final boolean respectFrontendRoles)
 			throws DotSecurityException, DotDataException {
 
+		if(Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
+
+			throw new IllegalArgumentException("System template can not be unpublished");
+		}
+
 		Logger.debug(this, ()-> "Unpublishing the template: " + template.getIdentifier());
 
 		//Check Edit Permissions over Template
@@ -326,6 +494,11 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	@WrapInTransaction
 	public void archive (final Template template, final User user, final boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
+
+		if(Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
+
+			throw new IllegalArgumentException("System template can not be archived");
+		}
 
 		Logger.debug(this, ()-> "Doing archive of the template: " + template.getIdentifier());
 
@@ -369,6 +542,12 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	@WrapInTransaction
 	public void unarchive (final Template template, final User user)
 			throws DotDataException, DotSecurityException {
+
+		if(Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
+
+			throw new IllegalArgumentException("System template can not be unarchived");
+		}
+
 		Logger.debug(this, ()-> "Doing unarchive of the template: " + template.getIdentifier());
 
 		//Check Edit Permissions over Template
@@ -388,7 +567,14 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		templateFactory.save(template);
 	}
 
+	@Override
 	public boolean isArchived(final Template template) throws DotDataException, DotStateException,DotSecurityException {
+
+		if(Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
+			// System template is never archived
+			return false;
+		}
+
 		return template instanceof FileAssetTemplate ?
 				FileAssetTemplate.class.cast(template).isDeleted() :
 				this.versionableAPI.get().isDeleted(template);
@@ -397,6 +583,11 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	@WrapInTransaction
 	public void deleteTemplate(final Template template, final User user, final boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
+
+		if(Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
+
+			throw new IllegalArgumentException("System template can not be deleted");
+		}
 
 		Logger.debug(this, ()-> "Doing delete of the template: " + template.getIdentifier());
 
@@ -462,6 +653,11 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	@WrapInTransaction
 	public void deleteVersionByInode(final String inode) {
 
+		if(Template.SYSTEM_TEMPLATE.equals(inode)) {
+
+			throw new IllegalArgumentException("System template can not be deleted");
+		}
+
 		Logger.debug(this, ()-> "Deleting template inode: " + inode);
 		Try.run(()->FactoryLocator.getTemplateFactory().deleteTemplateByInode(inode)).onFailure(e -> new RuntimeException(e));
 	}
@@ -474,6 +670,11 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	@WrapInTransaction
 	public Template saveDraftTemplate(final Template template, final Host host, final User user,
                                       final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+		if(Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
+
+			throw new IllegalArgumentException("System template can not be modified");
+		}
 
 		if (UtilMethods.isSet(template.getInode()) && UtilMethods.isSet(template.getIdentifier())) {
 
@@ -538,6 +739,11 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	@WrapInTransaction
 	public Template saveTemplate(final Template template, final Host host, final User user, final boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
+
+		if(Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
+
+			throw new IllegalArgumentException("System template can not be modified");
+		}
 
 		boolean existingId=false;
 
@@ -611,7 +817,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	@CloseDBIfOpened
     @Override
     public List<Container> getContainersInTemplate(final Template template, final User user, final boolean respectFrontendRoles)
-            throws DotDataException, DotSecurityException {
+            throws DotDataException, DotSecurityException { // todo: do something here for the system template
 
 
         final List<Container> containers = new ArrayList<>();
@@ -647,6 +853,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
     }
 
+	@CloseDBIfOpened
+    @Override
 	public List<ContainerUUID> getContainersUUID(final TemplateLayout layout) {
 		final List<ContainerUUID> containerUUIDS = new ArrayList<>();
 		final List<TemplateLayoutRow> rows = layout.getBody().getRows();
@@ -688,9 +896,17 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 				.collect(Collectors.toList());
 	}
 
+	@CloseDBIfOpened
+	@Override
 	public Host getTemplateHost(final Template template) throws DotDataException {
 
 		try {
+
+			if (Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
+
+				return APILocator.systemHost();
+			}
+
 			if(template instanceof FileAssetTemplate){
 				return FileAssetTemplateUtil.getInstance().getHost(template.getIdentifier());
 			}
@@ -705,6 +921,12 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	@WrapInTransaction
 	public boolean delete(final Template template, final User user, final boolean respectFrontendRoles) throws DotSecurityException,
 			Exception {
+
+		if(Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
+
+			throw new IllegalArgumentException("System template can not be deleted");
+		}
+
 		if(permissionAPI.doesUserHavePermission(template, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
 			return deleteAsset(template);
 		} else {
@@ -714,6 +936,12 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 	@CloseDBIfOpened
 	public Template findWorkingTemplate(final String id, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+		if(Template.SYSTEM_TEMPLATE.equals(id)) {
+
+			return systemTemplate();
+		}
+
 		if (FileAssetTemplateUtil.getInstance().isFolderAssetTemplateId(id)) {//Check if the id is a path
 			return this.findTemplateByPath(id,null, user, respectFrontendRoles, false);
 		}
@@ -735,24 +963,42 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 			final Map<String, Object> params, final String hostId, final String inode, final String identifier, final String parent,
 			final int offset, final int limit, final String orderBy) throws DotSecurityException,
 			DotDataException {
-		return templateFactory.findTemplates(user, includeArchived, params, hostId, inode, identifier, parent, offset, limit, orderBy);
+
+		return  offset == 0?//Host.SYSTEM_HOST.equals(hostId) || Template.SYSTEM_TEMPLATE.equals(inode)?
+				this.includeSystemTemplate(templateFactory.findTemplates(user, includeArchived, params, hostId, inode, identifier, parent, offset, limit, orderBy)):
+				this.templateFactory.findTemplates(user, includeArchived, params, hostId, inode, identifier, parent, offset, limit, orderBy);
 	}
 
 	@CloseDBIfOpened
 	@Override
 	public Template find(final String inode, final User user, final boolean respectFrontEndRoles) throws DotSecurityException,
 			DotDataException {
-		Template t =  templateFactory.find(inode);
-		if(t!=null && InodeUtils.isSet(t.getInode()) &&
-		      !permissionAPI.doesUserHavePermission(t, PermissionAPI.PERMISSION_READ, user, respectFrontEndRoles)){
+
+		if(Template.SYSTEM_TEMPLATE.equals(inode)) {
+
+			return systemTemplate();
+		}
+
+		final Template template =  templateFactory.find(inode);
+
+		if(template!=null && InodeUtils.isSet(template.getInode()) &&
+		      !permissionAPI.doesUserHavePermission(template, PermissionAPI.PERMISSION_READ, user, respectFrontEndRoles)){
 			throw new DotSecurityException("User does not have access to template:" + inode);
 		}
-		return t;
+
+		return template;
 
 	}
 
 	@CloseDBIfOpened
+	@Override
 	public Template findLiveTemplate(final String id, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+		if(Template.SYSTEM_TEMPLATE.equals(id)) {
+
+			return systemTemplate();
+		}
+
 		if (FileAssetTemplateUtil.getInstance().isFolderAssetTemplateId(id)) {//Check if the id is a path
 			return this.findTemplateByPath(id,null, user, respectFrontendRoles, true);
 		}
@@ -771,6 +1017,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	@CloseDBIfOpened
 	@Override
 	public String checkDependencies(final String templateInode, final User user, final Boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+		// todo: do something for the system template
 		String result = null;
 		Template template = find(templateInode, user, respectFrontendRoles);
 		// checking if there are pages using this template
@@ -796,6 +1044,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	@CloseDBIfOpened
 	@Override
 	public Map<String, String> checkPageDependencies(final Template template, final User user, final boolean respectFrontendRoles) {
+
+		// todo: do something for the system template
 
 		final ImmutableMap.Builder<String, String> resultMapBuilder = new ImmutableMap.Builder<>();
 
@@ -824,6 +1074,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
     }
 
     @WrapInTransaction
+	@Override
     public void updateThemeWithoutVersioning(final String templateInode, final String theme) throws DotDataException{
     	templateFactory.updateThemeWithoutVersioning(templateInode, theme);
     }
@@ -838,6 +1089,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	 * @throws DotSecurityException
 	 */
 	@WrapInTransaction
+	@Override
 	public void updateUserReferences(final String userId, final String replacementUserId)throws DotDataException, DotSecurityException{
 		templateFactory.updateUserReferences(userId, replacementUserId);
 	}
@@ -846,17 +1098,26 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	@Override
 	public List<Template> findAllVersions(final Identifier identifier, final User user, final boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
-		return findAllVersions(identifier,user,respectFrontendRoles,true);
+		return Template.SYSTEM_TEMPLATE.equals(identifier.getId())?
+				includeSystemTemplate(Collections.emptyList()):
+				findAllVersions(identifier,user,respectFrontendRoles,true);
 	}
 
 	@CloseDBIfOpened
 	@Override
 	public List<Template> findAllVersions(final Identifier identifier, final User user, final boolean respectFrontendRoles, final boolean bringOldVersions)
 			throws DotDataException, DotSecurityException {
+
+		if (Template.SYSTEM_TEMPLATE.equals(identifier.getId())) {
+			return includeSystemTemplate(Collections.emptyList());
+		}
+
 		final List<Template> templateAllVersions = templateFactory.findAllVersions(identifier,bringOldVersions);
+
 		if(!templateAllVersions.isEmpty() && !permissionAPI.doesUserHavePermission(templateAllVersions.get(0), PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
 			throw new DotSecurityException("User does not have READ permissions over the Template, so unable to view Versions");
 		}
+
 		return templateAllVersions;
 	}
 
@@ -864,18 +1125,33 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	@CloseDBIfOpened
 	public List<Template> findTemplatesByContainerInode(final String containerInode)
 			throws DotDataException {
-		return templateFactory.findTemplatesByContainerInode(containerInode);
+
+		return Template.SYSTEM_TEMPLATE.equals(containerInode)?
+				includeSystemTemplate(Collections.emptyList()):
+				templateFactory.findTemplatesByContainerInode(containerInode);
 	}
 
 	@Override
 	public boolean isLive(final Template template) throws DotDataException, DotStateException,DotSecurityException {
+
+		if(Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
+			// system template is always live
+			return true;
+		}
+
 		return template instanceof FileAssetTemplate ?
 				FileAssetTemplate.class.cast(template).isLive() :
 				this.versionableAPI.get().isLive(template);
 	}
 
 	@Override
-	public void setLive(final Template template) throws DotDataException, DotStateException,DotSecurityException{
+	public void setLive(final Template template) throws DotDataException, DotStateException,DotSecurityException {
+
+		if(Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
+
+			throw new IllegalArgumentException("System template can not be set to live");
+		}
+
 		this.versionableAPI.get().setLive(template instanceof FileAssetTemplate ?
 				FileAssetTemplate.class.cast(template).toContentlet() :
 				template);
@@ -889,6 +1165,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	@CloseDBIfOpened
 	public Template getTemplateByFolder(final Folder folder, final Host host, final User user,
 			final boolean showLive) throws DotSecurityException, DotDataException {
+
 		return templateFactory.getTemplateByFolder(host,folder,user,showLive);
 	}
 
@@ -949,4 +1226,6 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		APILocator.getFolderAPI().subscribeFolderListener(appTemplateFolder, new ApplicationTemplateFolderListener(),
 				childName -> null != childName && (childName.endsWith(Constants.VELOCITY_FILE_EXTENSION) || childName.endsWith(Constants.JSON_FILE_EXTENSION)));
 	}
+
+
 }

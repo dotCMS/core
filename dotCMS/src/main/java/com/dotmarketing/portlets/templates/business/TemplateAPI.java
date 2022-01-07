@@ -25,6 +25,12 @@ import java.util.Map;
 public interface TemplateAPI {
 
 	/**
+	 * Returns the system template
+	 * System template is a read only template with a minimal structure with the system container itself
+	 * @return Template
+	 */
+	Template systemTemplate();
+	/**
 	 * Retrieves all non-archived templates assigned to the given host. It uses DB directly.
 	 * @param parentHost host where the template lives.
 	 * @return list of templates that lives in the host
