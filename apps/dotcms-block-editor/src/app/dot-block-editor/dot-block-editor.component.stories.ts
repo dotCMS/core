@@ -61,32 +61,47 @@ export const primary = () => ({
                     getContentTypes() {
                         return of([
                             {
+                                name: 'Empty Content',
+                                icon: 'hourglass_disabled',
+                                variable: 'empty'
+                            },
+                            {
                                 name: 'Blog',
-                                icon: 'article'
+                                icon: 'article',
+                                variable: 'blog'
                             },
                             {
                                 name: 'Persona',
-                                icon: 'face'
+                                icon: 'face',
+                                variable: 'persona'
                             },
                             {
                                 name: 'News Item',
-                                icon: 'mic'
+                                icon: 'mic',
+                                variable: 'news_item'
                             },
                             {
                                 name: 'Banner',
-                                icon: 'view_carousel'
+                                icon: 'view_carousel',
+                                variable: 'banner'
                             },
                             {
                                 name: 'Product in the store',
-                                icon: 'inventory_2'
+                                icon: 'inventory_2',
+                                variable: 'inventory'
                             },
                             {
                                 name: 'Reatil information',
-                                icon: 'storefront'
+                                icon: 'storefront',
+                                variable: 'retail'
                             }
                         ]);
                     },
-                    getContentlets() {
+                    getContentlets(type) {
+                        if (type === 'empty') {
+                            return of([]).pipe(delay(800));
+                        }
+
                         return of([
                             {
                                 title: 'Lorem ipsum dolor sit amet, consectetuer adipiscing elit.',
@@ -183,8 +198,8 @@ export const primary = () => ({
                             {
                                 title: 'Vivamus vestibulum ntulla nec ante.',
                                 inode: '1415'
-                            },
-                        ]);
+                            }
+                        ]).pipe(delay(800));
                     }
                 }
             }

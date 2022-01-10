@@ -118,7 +118,6 @@ export const ActionsMenu = (injector: Injector, resolver: ComponentFactoryResolv
         suggestionsComponent.instance.onSelection = (item) => {
             execCommand({ editor: editor, range: range, props: item });
         };
-        suggestionsComponent.instance.setFirstItemActive();
 
         myTippy = getTippyInstance({
             element: editor.view.dom,

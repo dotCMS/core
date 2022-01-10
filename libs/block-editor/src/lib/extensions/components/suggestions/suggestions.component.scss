@@ -1,17 +1,19 @@
+@use "libs/dot-primeng-theme-styles/src/scss/variables" as *;
+
 :host {
     display: block;
     min-width: 240px;
     box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1);
     padding: 0.5rem 0;
     background: #ffffff;
-    font-family: 'Roboto', Helvetica, sans-serif, Arial;
+    font-family: "Roboto", Helvetica, sans-serif, Arial;
 }
 
 h3 {
     text-transform: uppercase;
     font-size: 1rem;
     margin: 0.5rem 1rem;
-    color: #999999
+    color: #999999;
 }
 
 .suggestion-list-container {
@@ -23,7 +25,7 @@ h3 {
 }
 
 .material-icons {
-    font-family: 'Material Icons';
+    font-family: "Material Icons";
     font-weight: normal;
     font-style: normal;
     font-size: 24px;
@@ -34,6 +36,37 @@ h3 {
     white-space: nowrap;
     word-wrap: normal;
     direction: ltr;
-    -webkit-font-feature-settings: 'liga';
+    -webkit-font-feature-settings: "liga";
     -webkit-font-smoothing: antialiased;
 }
+
+.empty {
+    align-items: center;
+    flex-direction: column;
+    display: flex;
+    justify-content: center;
+    padding: 1rem;
+    height: 15rem;
+}
+
+button {
+    background: none;
+    border-radius: $border-radius;
+    border: 0;
+    border: 1px solid $brand-secondary;
+    color: $brand-secondary;
+    cursor: pointer;
+    font-size: $font-size-medium;
+    font-weight: $font-weight-semi-bold;
+    line-height: normal;
+    padding: $spacing-2 $spacing-5;
+    text-transform: uppercase;
+}
+
+.empty button:hover,
+.empty button:active,
+.empty button:focus {
+    border-color: $brand-primary;
+    color: $brand-primary;
+}
+
