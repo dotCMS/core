@@ -65,6 +65,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
@@ -113,6 +114,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 		this.systemTemplate.setIdentifier(Template.SYSTEM_TEMPLATE);
 		this.systemTemplate.setInode(Template.SYSTEM_TEMPLATE);
 		this.systemTemplate.setOwner(userId);
+		this.systemTemplate.setModUser(userId);
 		this.systemTemplate.setModDate(new Date());
 		this.systemTemplate.setTheme(Theme.SYSTEM_THEME);
 		this.systemTemplate.setTitle(SYSTEM_TEMPLATE_NAME);
@@ -242,7 +244,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 	@CloseDBIfOpened
 	public List<Template> findTemplatesUserCanUse(final User user, final String hostId, final String query, final boolean searchHost, final int offset, final int limit) throws DotDataException, DotSecurityException {
 
-		return Host.SYSTEM_HOST.equals(searchHost)?
+		return 0 == offset? // Host.SYSTEM_HOST.equals(searchHost)?
 				includeSystemTemplate(FactoryLocator.getTemplateFactory().findTemplatesUserCanUse(user, hostId, query, searchHost, offset, limit)):
 				FactoryLocator.getTemplateFactory().findTemplatesUserCanUse(user, hostId, query, searchHost, offset, limit);
 	}
@@ -380,7 +382,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 		if(Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
 
-			throw new IllegalArgumentException("System template can not be published");
+			Logger.info(this, "System template can not be published");
+			return;
 		}
 
 		Logger.debug(this, ()-> "Publishing the template: " + template.getIdentifier());
@@ -819,6 +822,12 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
     public List<Container> getContainersInTemplate(final Template template, final User user, final boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException { // todo: do something here for the system template
 
+		if (Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
+
+			return new ImmutableList.Builder<Container>().add(
+					this.containerAPI.getWorkingContainerByFolderPath("/application/containers/system", this.hostAPI.findDefaultHost(user, respectFrontendRoles) , user, respectFrontendRoles))
+					.build();
+		}
 
         final List<Container> containers = new ArrayList<>();
         if(template.isDrawed()) {
