@@ -49,6 +49,7 @@ public class HostCacheImpl extends HostCache {
         for(final String alias : aliases ){
 			addHostAlias(alias,host);
 		}
+        addHostAlias(key2,host);
 
 		return host;
 	}
