@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Config;
 import com.liferay.util.StringPool;
 import graphql.AssertException;
 import java.io.File;
@@ -40,34 +41,42 @@ public class XmlToolTest {
      */
     @Test
     public void read() throws Exception {
+        final boolean allowAccessToPrivateSubnets = Config.getBooleanProperty(
+                "ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false);
 
-        final XmlTool xmlTool = new XmlTool();
-        final File xmlFile = new File(Thread.currentThread()
-                .getContextClassLoader().getResource("xml/test.xml").getFile());
-        xmlTool.read(xmlFile.getAbsolutePath());
+        try {
+            Config.setProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", true);
 
-        final Iterator<XmlTool> xmlToolIterator = xmlTool.children().iterator();
+            final XmlTool xmlTool = new XmlTool();
+            final File xmlFile = new File(Thread.currentThread()
+                    .getContextClassLoader().getResource("xml/test.xml").getFile());
+            xmlTool.read(xmlFile.getAbsolutePath());
 
-        assertTrue(xmlToolIterator.hasNext());
+            final Iterator<XmlTool> xmlToolIterator = xmlTool.children().iterator();
 
-        final String expected_1 = "<CD><TITLE>EmpireBurlesque</TITLE><ARTIST>BobDylan</ARTIST><COUNTRY>USA</COUNTRY><COMPANY>Columbia</COMPANY><PRICE>10.90</PRICE><YEAR>1985</YEAR></CD>";
-        final String expected_2 = "<CD><TITLE>Hide_your_heart</TITLE><ARTIST>Bonnie_Tyler</ARTIST><COUNTRY>UK</COUNTRY><COMPANY>CBSRecords</COMPANY><PRICE>9.90</PRICE><YEAR>1988</YEAR></CD>";
+            assertTrue(xmlToolIterator.hasNext());
 
-        int i = 0;
+            final String expected_1 = "<CD><TITLE>EmpireBurlesque</TITLE><ARTIST>BobDylan</ARTIST><COUNTRY>USA</COUNTRY><COMPANY>Columbia</COMPANY><PRICE>10.90</PRICE><YEAR>1985</YEAR></CD>";
+            final String expected_2 = "<CD><TITLE>Hide_your_heart</TITLE><ARTIST>Bonnie_Tyler</ARTIST><COUNTRY>UK</COUNTRY><COMPANY>CBSRecords</COMPANY><PRICE>9.90</PRICE><YEAR>1988</YEAR></CD>";
 
-        for(; xmlToolIterator.hasNext(); i++) {
-            final XmlTool node = xmlToolIterator.next();
-            final String xmlContent = node.toString()
-                    .replaceAll(StringPool.SPACE, "")
-                    .replaceAll("\n", "");
+            int i = 0;
 
-            if (i == 0) {
-                assertEquals(expected_1, xmlContent);
-            } else if (i == 1) {
-                assertEquals(expected_2, xmlContent);
-            } else {
-                throw  new AssertException("Should have just two lines");
+            for (; xmlToolIterator.hasNext(); i++) {
+                final XmlTool node = xmlToolIterator.next();
+                final String xmlContent = node.toString()
+                        .replaceAll(StringPool.SPACE, "")
+                        .replaceAll("\n", "");
+
+                if (i == 0) {
+                    assertEquals(expected_1, xmlContent);
+                } else if (i == 1) {
+                    assertEquals(expected_2, xmlContent);
+                } else {
+                    throw new AssertException("Should have just two lines");
+                }
             }
+        } finally {
+            Config.setProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", allowAccessToPrivateSubnets);
         }
     }
 }
