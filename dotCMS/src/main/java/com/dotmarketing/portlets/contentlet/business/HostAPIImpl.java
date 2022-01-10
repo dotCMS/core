@@ -139,6 +139,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
 
             if(host != null){
                 updateCache();
+                hostCache.addHostAlias(serverName,host);
             }
         }
 
@@ -162,6 +163,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
 
             if(host != null){
                 updateCache();
+                hostCache.addHostAlias(serverName,host);
             }
         }
 

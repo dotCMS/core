@@ -20,4 +20,6 @@ public abstract class HostCache implements Cachable{
 	abstract protected Host getDefaultHost();
 	
 	abstract protected Host getHostByAlias(String alias);
+
+	abstract protected void addHostAlias(String alias, Host host);
 }

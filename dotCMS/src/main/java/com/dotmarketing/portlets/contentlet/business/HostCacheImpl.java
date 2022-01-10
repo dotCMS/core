@@ -112,7 +112,7 @@ public class HostCacheImpl extends HostCache {
     	return get(DEFAULT_HOST);
     }
 
-    private void addHostAlias(String alias, Host host){
+    protected void addHostAlias(String alias, Host host){
     	if(alias != null && host != null && UtilMethods.isSet(host.getIdentifier())){
     		cache.put(alias, host.getIdentifier(),ALIAS_GROUP);
     	}
