@@ -63,10 +63,6 @@ public class HostCacheImpl extends HostCache {
 		return (Set<Host>) cache.getNoThrow(SITES, PRIMARY_GROUP);
 	}
 
-	private void clearSitesList(){
-		cache.remove(SITES, PRIMARY_GROUP);
-	}
-
 	protected Host getHostByAlias(String key) {
 		Host host = null;
     	try{
@@ -102,39 +98,6 @@ public class HostCacheImpl extends HostCache {
         cache.flushGroup(ALIAS_GROUP);
     }
 
-    /* (non-Javadoc)
-	 * @see com.dotmarketing.business.PermissionCache#remove(java.lang.String)
-	 */
-    protected void remove(Host host){
-    	
-    	// always remove default host
-    	String _defaultHost =PRIMARY_GROUP +DEFAULT_HOST;
-    	cache.remove(_defaultHost,PRIMARY_GROUP);
-
-    	//remove aliases from host in cache
-    	Host h = get(host.getIdentifier());
-
-    	
-    	String key = host.getIdentifier();
-    	String key2 = host.getHostname();
-    	
-    	try{
-    		cache.remove(key,PRIMARY_GROUP);
-    	}catch (Exception e) {
-			Logger.debug(this, "Cache not able to be removed", e);
-		} 
-    	
-    	try{
-    		cache.remove(key2,PRIMARY_GROUP);
-    	}catch (Exception e) {
-			Logger.debug(this, "Cache not able to be removed", e);
-    	} 
-    		        	
-    	clearAliasCache();
-    	clearSitesList();
-    	 
-    }
-
     public String[] getGroups() {
     	return groupNames;
     }
@@ -151,11 +114,5 @@ public class HostCacheImpl extends HostCache {
     	if(alias != null && host != null && UtilMethods.isSet(host.getIdentifier())){
     		cache.put(alias, host.getIdentifier(),ALIAS_GROUP);
     	}
-    }
-    
-    
-	protected void clearAliasCache() {
-        // clear the alias cache
-        cache.flushGroup(ALIAS_GROUP);
     }
 }

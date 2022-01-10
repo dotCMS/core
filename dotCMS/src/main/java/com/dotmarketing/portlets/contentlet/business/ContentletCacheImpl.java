@@ -137,7 +137,7 @@ public class ContentletCacheImpl extends ContentletCache {
 
 		final Host host = CacheLocator.getHostCache().get(key);
 		if(host != null){
-			CacheLocator.getHostCache().remove(host);
+			CacheLocator.getHostCache().clearCache();
 		}
 
 		if (content != null && content.getIdentifier() != null)
