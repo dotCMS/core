@@ -12,6 +12,9 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.dotpubsub.DotPubSubEvent;
+import com.dotcms.dotpubsub.DotPubSubProvider;
+import com.dotcms.dotpubsub.DotPubSubProviderLocator;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.rest.exception.BadRequestException;
@@ -27,6 +30,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.business.HostCacheTopic.EventType;
 import com.dotmarketing.portlets.contentlet.business.web.UpdateContainersPathsJob;
 import com.dotmarketing.portlets.contentlet.business.web.UpdatePageTemplatePathJob;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -47,6 +51,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+import io.vavr.API;
 import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
 
@@ -70,6 +75,9 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     private static final String CONTENT_TYPE_CONDITION = "+contentType";
     private final DotConcurrentFactory concurrentFactory = DotConcurrentFactory.getInstance();
     private LanguageAPI languageAPI;
+    private final static  String TOPIC_NAME = HostCacheTopic.HOST_CACHE_TOPIC;
+    private final DotPubSubProvider pubsub;
+    private final HostCacheTopic hostCacheTopic;
 
     public HostAPIImpl() {
         this(APILocator.getSystemEventsAPI(),APILocator.getLanguageAPI());
@@ -79,6 +87,12 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     HostAPIImpl(final SystemEventsAPI systemEventsAPI, final LanguageAPI languageAPI) {
         this.systemEventsAPI = systemEventsAPI;
         this.languageAPI = languageAPI;
+        this.pubsub                = DotPubSubProviderLocator.provider.get();
+        this.hostCacheTopic = new HostCacheTopic();
+        Logger.debug(this.getClass(), "Starting hook with PubSub");
+
+        this.pubsub.start();
+        this.pubsub.subscribe(this.hostCacheTopic);
     }
 
     private ContentType hostType() throws DotDataException, DotSecurityException{
@@ -138,6 +152,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             }
 
             if(host != null){
+                this.updateCache();
                 hostCache.addHostAlias(serverName, host);
             }
         }
@@ -161,6 +176,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             }
 
             if(host != null){
+                this.updateCache();
                 hostCache.addHostAlias(serverName, host);
             }
         }
@@ -253,7 +269,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             }
             
             host = new Host(list.get(0));
-            hostCache.add(host);
+            this.updateCache();
 
             return host;
             
@@ -387,20 +403,20 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
                                     final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         final List<Host> hosts = new ArrayList<Host>();
 
-        final String sql = "select  c.title, c.inode from contentlet_version_info clvi, contentlet c, structure s  " +
-                " where c.structure_inode = s.inode and  s.name = 'Host' and clvi.working_inode = c.inode ";
+        final StringBuilder sqlQuery = new StringBuilder("select cvi.working_inode as inode from contentlet_version_info cvi, identifier id where"
+                +" id.asset_subtype = 'Host' and cvi.identifier = id.id");
 
-        final DotConnect dc = new DotConnect();
-        dc.setSQL(sql);
-        final List<Map<String,String>> ret = dc.loadResults();
+        final DotConnect dc = new DotConnect().setSQL(sqlQuery.toString());
+        final List<Map<String,String>> inodesMapList =  dc.loadResults();
 
-        for(Map<String,String> m : ret) {
-            String inode=m.get("inode");
-            final Contentlet con=APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false);
-            hosts.add(new Host(con));
+        final List<String> inodes = new ArrayList<>();
+        for (final Map<String, String> versionInfoMap : inodesMapList) {
+            inodes.add(versionInfoMap.get("inode"));
         }
 
-        return hosts;
+        final List<Contentlet> contentletList  = APILocator.getContentletAPI().findContentlets(inodes);
+
+        return convertToHostList(contentletList);
     }
 
     @Override
@@ -856,7 +872,6 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         contentlet.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
         APILocator.getContentletAPI().archive(contentlet, user, respectFrontendRoles);
         host.setModDate(new Date ());
-        hostCache.clearCache();
 
         HibernateUtil.addCommitListener(() -> this.sendArchiveSiteSystemEvent(contentlet), 1000);
     }
@@ -885,7 +900,6 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
                 .find(host.getInode(), user, respectFrontendRoles);
         APILocator.getContentletAPI().unarchive(contentlet, user, respectFrontendRoles);
         host.setModDate(new Date ());
-        hostCache.clearCache();
         HibernateUtil.addCommitListener(() -> this.sendUnArchiveSiteSystemEvent(contentlet), 1000);
     }
 
@@ -929,7 +943,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         if(UtilMethods.isSet(inode)) {
 
             defaultHost = new Host(APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false));
-            hostCache.add(defaultHost);
+            this.updateCache();
         } else {
 
             defaultHost.setDefault(true);
@@ -1031,7 +1045,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         final Contentlet contentletHost = APILocator.getContentletAPI().find(host.getInode(), user, respectFrontendRoles);
         contentletHost.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
         APILocator.getContentletAPI().publish(contentletHost, user, respectFrontendRoles);
-        hostCache.add(host);
+        this.updateCache();
 
     }
 
@@ -1043,7 +1057,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         }
         Contentlet c = APILocator.getContentletAPI().find(host.getInode(), user, respectFrontendRoles);
         APILocator.getContentletAPI().unpublish(c, user, respectFrontendRoles);
-        hostCache.add(host);
+        this.updateCache();
     }
 
     @WrapInTransaction
@@ -1084,11 +1098,9 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             final String hostInode = versionInfo.getWorkingInode();
             final Contentlet cont = APILocator.getContentletAPI()
                     .find(hostInode, systemUser, respectFrontendRoles);
-            final ContentType type = APILocator.getContentTypeAPI(systemUser, respectFrontendRoles)
-                    .find(Host.HOST_VELOCITY_VAR_NAME);
-            if (cont.getStructureInode().equals(type.inode())) {
+            if (cont.isHost()) {
                 host = new Host(cont);
-                hostCache.add(host);
+                this.updateCache();
             }
         }
 
@@ -1097,8 +1109,31 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
 
     @Override
     public void updateCache(Host host) {
-        hostCache.clearCache();
-        hostCache.add(host);
+        this.updateCache(null!=host);
+    }
+
+    private void updateCache(final boolean sendEvent) {
+        if(sendEvent) {
+            Logger.debug(this, () -> "Host cache updated");
+
+            final DotPubSubEvent event = new DotPubSubEvent.Builder()
+                    .withTopic(TOPIC_NAME)
+                    .withType(EventType.HOST_CACHE_REQUEST.name())
+                    .build();
+            this.pubsub.publish(event);
+        }
+
+        DotConcurrentFactory.getInstance().getSubmitter("updateHostCache").submit(
+                () -> {
+                        hostCache.clearCache();
+        final List<Host> hostList = Try.of(() -> findAllFromDB(APILocator.systemUser(), false))
+                .getOrElse(Collections.emptyList());
+        hostCache.addAll(hostList);
+        });
+    }
+
+    private void updateCache(){
+        updateCache(true);
     }
 
     @Override
