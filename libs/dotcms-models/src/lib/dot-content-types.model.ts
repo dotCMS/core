@@ -5,6 +5,7 @@ export interface DotCMSContentType {
     icon?: string;
     clazz: string;
     defaultType: boolean;
+    contentType?: string;
     description?: string;
     detailPage?: string;
     expireDateVar?: string;

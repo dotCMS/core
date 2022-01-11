@@ -155,8 +155,10 @@ export class DotContentletWrapperComponent {
 
     private shouldRefresh(data: any): boolean {
         // is not new content
-        return this.dotRouterService.currentPortlet.url.includes(
-            data?.detail?.payload?.contentletInode
+        return (
+            this.dotRouterService.currentPortlet.url.includes(
+                data?.detail?.payload?.contentletInode
+            ) && data?.detail?.payload?.isMoveAction
         );
     }
 }

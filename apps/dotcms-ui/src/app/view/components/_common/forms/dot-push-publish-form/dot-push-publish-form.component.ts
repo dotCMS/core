@@ -116,7 +116,7 @@ export class DotPushPublishFormComponent
 
     private setPreviousDayToMinDate() {
         const today = new Date();
-        this.dateFieldMinDate.setDate(today.getDate()-1);
+        this.dateFieldMinDate.setDate(today.getDate() - 1);
     }
 
     private loadData(data: DotPushPublishDialogData): void {
@@ -157,7 +157,7 @@ export class DotPushPublishFormComponent
 
     private loadTimezones(): void {
         this.dotcmsConfigService
-            .getTimeZone()
+            .getTimeZones()
             .pipe(take(1))
             .subscribe((timezones: DotTimeZone[]) => {
                 this.timeZoneOptions = timezones.map((item: DotTimeZone) => {

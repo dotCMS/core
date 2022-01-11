@@ -1,6 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import { DotTemplateListResolver } from './dot-template-list-resolver.service';
-import { ApiRoot, CoreWebService, LoggerService, StringUtils, UserModel } from '@dotcms/dotcms-js';
+import {
+    ApiRoot,
+    CoreWebService,
+    DotcmsConfigService,
+    LoggerService,
+    StringUtils,
+    UserModel
+} from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { of } from 'rxjs';
@@ -28,7 +35,18 @@ describe('DotTemplateListResolverService', () => {
                 DotCurrentUserService,
                 DotTemplateListResolver,
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotFormatDateService
+                DotFormatDateService,
+                {
+                    provide: DotcmsConfigService,
+                    useValue: {
+                        getSystemTimeZone: () =>
+                            of({
+                                id: 'America/Costa_Rica',
+                                label: 'Central Standard Time (America/Costa_Rica)',
+                                offset: -21600000
+                            })
+                    }
+                }
             ]
         });
         service = TestBed.inject(DotTemplateListResolver);

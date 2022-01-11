@@ -50,6 +50,7 @@ describe('DotCustomEventHandlerService', () => {
     let dotContentletEditorService: DotContentletEditorService;
     let dotDownloadBundleDialogService: DotDownloadBundleDialogService;
     let dotWorkflowEventHandlerService: DotWorkflowEventHandlerService;
+    let dotEventsService: DotEventsService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -101,6 +102,7 @@ describe('DotCustomEventHandlerService', () => {
         dotGenerateSecurePasswordService = TestBed.inject(DotGenerateSecurePasswordService);
         dotDownloadBundleDialogService = TestBed.inject(DotDownloadBundleDialogService);
         dotWorkflowEventHandlerService = TestBed.inject(DotWorkflowEventHandlerService);
+        dotEventsService = TestBed.inject(DotEventsService);
     });
 
     it('should show loading indicator and go to edit page when event is emited by iframe', () => {
@@ -262,5 +264,18 @@ describe('DotCustomEventHandlerService', () => {
             })
         );
         expect<any>(dotWorkflowEventHandlerService.open).toHaveBeenCalledWith('testData');
+    });
+
+    it('should notify to open contnt compare dialog', () => {
+        spyOn(dotEventsService, 'notify');
+        service.handle(
+            new CustomEvent('ng-event', {
+                detail: {
+                    name: 'compare-contentlet',
+                    data: 'testData'
+                }
+            })
+        );
+        expect<any>(dotEventsService.notify).toHaveBeenCalledWith('compare-contentlet', 'testData');
     });
 });

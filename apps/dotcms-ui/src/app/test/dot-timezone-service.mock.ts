@@ -19,7 +19,7 @@ export const mockDotTimeZones = [
     }
 ];
 export class DotcmsConfigServiceMock {
-    getTimeZone(): Observable<DotTimeZone[]> {
+    getTimeZones(): Observable<DotTimeZone[]> {
         return of(mockDotTimeZones);
     }
 }

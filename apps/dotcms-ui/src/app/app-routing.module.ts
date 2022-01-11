@@ -114,7 +114,10 @@ const PORTLETS_IFRAME = [
                             import('@portlets/dot-porlet-detail/dot-portlet-detail.module').then(
                                 (m) => m.DotPortletDetailModule
                             ),
-                        path: ':asset'
+                        path: ':asset',
+                        data: {
+                            reuseRoute: false
+                        }
                     }
                 ],
                 resolve: {

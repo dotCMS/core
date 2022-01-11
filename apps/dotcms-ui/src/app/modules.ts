@@ -41,7 +41,7 @@ import { TabViewModule } from 'primeng/tabview';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TreeTableModule } from 'primeng/treetable';
 import { DotGenerateSecurePasswordModule } from './view/components/_common/dot-generate-secure-password/dot-generate-secure-password.module';
-
+import { DotContentCompareModule } from '@components/dot-content-compare/dot-content-compare.module';
 
 export const CUSTOM_MODULES = [
     DotToolbarModule,
@@ -60,6 +60,7 @@ export const CUSTOM_MODULES = [
     DotSiteSelectorModule,
     DotLargeMessageDisplayModule,
     DotPushPublishDialogModule,
+    DotContentCompareModule,
     DotDownloadBundleDialogModule,
     DotWizardModule,
     DotGenerateSecurePasswordModule

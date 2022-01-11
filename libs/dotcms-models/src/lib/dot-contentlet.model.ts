@@ -1,13 +1,18 @@
 export interface DotCMSContentlet {
     archived: boolean;
     baseType: string;
+    binary?: string;
+    binaryContentAsset?: string;
+    binaryVersion?: string;
     contentType: string;
+    file?: string;
     folder: string;
     hasTitleImage: boolean;
     host: string;
     hostName: string;
     identifier: string;
     inode: string;
+    image?: string;
     languageId: number;
     live: boolean;
     locked: boolean;
@@ -19,6 +24,7 @@ export interface DotCMSContentlet {
     stInode: string;
     title: string;
     titleImage: string;
+    text?: string;
     url: string;
     working: boolean;
 }

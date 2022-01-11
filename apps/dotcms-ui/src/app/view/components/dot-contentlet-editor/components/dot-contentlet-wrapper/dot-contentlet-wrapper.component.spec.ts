@@ -286,7 +286,8 @@ describe('DotContentletWrapperComponent', () => {
                             name: 'save-page',
                             payload: {
                                 hello: 'world',
-                                contentletInode: 'inode123'
+                                contentletInode: 'inode123',
+                                isMoveAction: true
                             }
                         }
                     };

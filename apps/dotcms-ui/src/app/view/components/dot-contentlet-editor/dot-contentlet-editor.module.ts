@@ -9,9 +9,10 @@ import { DotContentletWrapperComponent } from './components/dot-contentlet-wrapp
 import { DotReorderMenuComponent } from './components/dot-reorder-menu/dot-reorder-menu.component';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotCreateContentletResolver } from './components/dot-create-contentlet/dot-create-contentlet.resolver.service';
+import { DotContentCompareModule } from '@components/dot-content-compare/dot-content-compare.module';
 
 @NgModule({
-    imports: [CommonModule, DotIframeDialogModule, DotPipesModule],
+    imports: [CommonModule, DotIframeDialogModule, DotPipesModule, DotContentCompareModule],
     declarations: [
         DotAddContentletComponent,
         DotContentletWrapperComponent,
