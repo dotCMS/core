@@ -572,7 +572,7 @@ public class PublishFactory {
 	private static void sendMessage(final User user, final String messageKey, String... arguments) {
 		try {
 
-			final String  message = LanguageUtil.get(messageKey, arguments);
+			final String  message = LanguageUtil.get(messageKey, (Object[]) arguments);
 
 			final SystemMessageBuilder messageBuilder = new SystemMessageBuilder()
 					.setMessage(message)
