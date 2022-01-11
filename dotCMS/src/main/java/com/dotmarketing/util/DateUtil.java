@@ -1,9 +1,19 @@
 package com.dotmarketing.util;
 
-import static com.dotcms.util.DotPreconditions.checkNotNull;
+import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cms.factories.PublicCompanyFactory;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.Company;
+import com.liferay.util.StringPool;
+import io.vavr.Function0;
+import org.apache.commons.lang.StringUtils;
+
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -18,14 +28,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.commons.lang.StringUtils;
-import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.liferay.portal.language.LanguageUtil;
-import com.liferay.portal.model.Company;
-import com.liferay.util.StringPool;
-import io.vavr.Function0;
+
+import static com.dotcms.util.DotPreconditions.checkNotNull;
 
 /**
  * Provides utility methods to interact with {@link Date} objects, date formats,
@@ -74,6 +78,27 @@ public class DateUtil {
 	private static Function0<TimeZone> companyTimeZone = Function0.of(()-> APILocator.systemTimeZone());
 
 	public static final String UTC = "UTC";
+
+	private static final String EXPORTING_DATE_FORMAT_KEY = "exportingDateFormat";
+	private static final String EXPORTING_DATE_FORMAT_DEFAULT = "yyyy-MM-dd_hh-mm-ss";
+	public static final SimpleDateFormat EXPORTING_DATE_FORMAT = createExportingDateFormat();
+
+	private static SimpleDateFormat createExportingDateFormat() {
+		final String pattern = Config.getStringProperty(EXPORTING_DATE_FORMAT_KEY, EXPORTING_DATE_FORMAT_DEFAULT);
+		try {
+			return new SimpleDateFormat(pattern);
+		} catch (Exception e) {
+			// in case pattern is invalid, falling back to default
+			Logger.warn(
+					DateUtil.class,
+					String.format(
+							"Could not create exporting date format from %s, falling back to %s",
+							pattern,
+							EXPORTING_DATE_FORMAT_DEFAULT),
+					e);
+			return new SimpleDateFormat(EXPORTING_DATE_FORMAT_DEFAULT);
+		}
+	}
 
 	/**
 	 * This method allows you to add to a java.util.Date returning a Date
@@ -709,5 +734,18 @@ public class DateUtil {
 	public static Date toDate (final Instant instant) {
 
 		return new Date(instant.toEpochMilli());
+	}
+
+	/**
+	 * Formats duration to a friendly format.
+	 *
+	 * @param duration duration object
+	 * @return formatted date text
+	 */
+	public static String humanReadableFormat(final Duration duration) {
+		return duration.toString()
+				.substring(2)
+				.replaceAll("(\\d[HMS])(?!$)", "$1 ")
+				.toLowerCase();
 	}
 }
