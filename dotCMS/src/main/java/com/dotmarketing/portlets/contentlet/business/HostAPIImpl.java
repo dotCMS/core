@@ -253,7 +253,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             }
             
             host = new Host(list.get(0));
-            findAllFromCache(APILocator.systemUser(),false);
+            hostCache.add(host);
 
             return host;
             
@@ -929,7 +929,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         if(UtilMethods.isSet(inode)) {
 
             defaultHost = new Host(APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false));
-            findAllFromCache(APILocator.systemUser(),false);
+            hostCache.add(defaultHost);
         } else {
 
             defaultHost.setDefault(true);
@@ -1031,7 +1031,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         final Contentlet contentletHost = APILocator.getContentletAPI().find(host.getInode(), user, respectFrontendRoles);
         contentletHost.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
         APILocator.getContentletAPI().publish(contentletHost, user, respectFrontendRoles);
-        findAllFromCache(APILocator.systemUser(),false);
+        hostCache.add(host);
 
     }
 
@@ -1043,7 +1043,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         }
         Contentlet c = APILocator.getContentletAPI().find(host.getInode(), user, respectFrontendRoles);
         APILocator.getContentletAPI().unpublish(c, user, respectFrontendRoles);
-        findAllFromCache(APILocator.systemUser(),false);
+        hostCache.add(host);
     }
 
     @WrapInTransaction
@@ -1088,7 +1088,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
                     .find(Host.HOST_VELOCITY_VAR_NAME);
             if (cont.getStructureInode().equals(type.inode())) {
                 host = new Host(cont);
-                findAllFromCache(APILocator.systemUser(),false);
+                hostCache.add(host);
             }
         }
 
@@ -1098,7 +1098,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     @Override
     public void updateCache(Host host) {
         hostCache.clearCache();
-        Try.of(()->findAllFromCache(APILocator.systemUser(),false)).getOrNull();
+        hostCache.add(host);
     }
 
     @Override
