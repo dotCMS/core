@@ -1989,7 +1989,7 @@ public class TestDataUtils {
                 .getFileAssetContent(true, languageId, TestFile.JPG);
 
         return persistBinaries(persist, languageId, contentTypeId, ImmutableMap
-                .of(FILE_ASSET_1, TestFile.JPG, FILE_ASSET_2, TestFile.PNG, FILE_ASSET_3, TestFile.GIF,"image1",
+                .of(FILE_ASSET_1, TestFile.JPG, FILE_ASSET_2, TestFile.PNG, "image1",
                         fileAssetJpgContent.getIdentifier()));
 
     }

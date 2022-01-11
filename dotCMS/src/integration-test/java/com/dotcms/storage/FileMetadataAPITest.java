@@ -378,9 +378,9 @@ public class FileMetadataAPITest {
             assertNotNull(fileAsset2BasicMeta);
             validateBasic(fileAsset2BasicMeta);
 
+            //the filed does exist but it was not set
             final Metadata fileAsset3BasicMeta = basicMetadataMap.get(FILE_ASSET_3);
-            assertNotNull(fileAsset3BasicMeta);
-            validateBasic(fileAsset3BasicMeta);
+            assertNull(fileAsset3BasicMeta);
 
             final Map<String, Set<String>> metadataInfo = fileMetadataAPI.removeMetadata(multipleBinariesContent);
             assertFalse(metadataInfo.isEmpty());
