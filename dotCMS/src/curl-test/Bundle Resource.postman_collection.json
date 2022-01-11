@@ -1214,14 +1214,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"function pausecomp(millis)",
-											" {",
-											"  var date = new Date();",
-											"  var curDate = null;",
-											"  do { curDate = new Date(); }",
-											"  while(curDate-date < millis);",
-											"}",
-											"",
 											"pm.test(\"Bundle uploaded sucessfully\", function () {",
 											"    pm.response.to.have.status(200);",
 											"",
@@ -1230,12 +1222,7 @@
 											"",
 											"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"get_asset_test.tar.gz\");",
 											"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
-											"",
-											"    pausecomp(10000);",
-											"});",
-											"",
-											"",
-											""
+											"});"
 										],
 										"type": "text/javascript"
 									}
