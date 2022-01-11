@@ -35,6 +35,14 @@ public class PermissionCacheImpl extends PermissionCache {
 	 * @see com.dotmarketing.business.PermissionCache#addToPermissionCache(java.lang.String, java.util.List)
 	 */
 	protected List<Permission> addToPermissionCache(String key, List<Permission> permissions) {
+	    if(permissions!=null && permissions.isEmpty()) {
+		Logger.warn(this.getClass(), ()->" !!! Putting an empty list of permissions in the cache for asset:" + key +". Every asset should have at least 1 permission (or inherited permission) associated with it");
+	    	return null;
+	    }
+		
+		
+		
+		
         key = primaryGroup + key;
         // Add the key to the cache
         cache.put(key, permissions,primaryGroup);
