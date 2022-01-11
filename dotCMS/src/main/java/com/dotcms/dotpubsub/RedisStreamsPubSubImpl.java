@@ -4,10 +4,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-
-import com.dotcms.cache.lettuce.LettuceAdapter;
 import com.dotcms.cache.lettuce.RedisClient;
-import com.dotcms.cache.lettuce.MasterReplicaLettuceClient;
+import com.dotcms.cache.lettuce.RedisClientFactory;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.business.APILocator;
@@ -23,33 +21,44 @@ import io.lettuce.core.StreamMessage;
 import io.lettuce.core.XAddArgs;
 import io.lettuce.core.XGroupCreateArgs;
 import io.lettuce.core.XReadArgs;
-import io.lettuce.core.XReadArgs.StreamOffset;
-import io.lettuce.core.api.async.RedisAsyncCommands;
+import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.api.sync.RedisCommands;
 import io.vavr.control.Try;
 
 /**
  * Redis groups Pub and sub
  * @author jsanca
  */
-public class RedisGroupsPubSubImpl implements DotPubSubProvider {
+public class RedisStreamsPubSubImpl implements DotPubSubProvider {
 
     private final boolean testing;
     private final String clusterId;
     private final String serverId;
-    private final RedisClient<String, String> lettuce;
     private final Map<Comparable<String>, DotPubSubTopic> topicMap = new ConcurrentHashMap<>();
 
+    private final RedisClient<String, Object> redisClient = RedisClientFactory.getClient("pubsub");
+    
+    
+    
     private final long PUBSUB_THREAD_PAUSE_MS=Config.getLongProperty("PUBSUB_THREAD_PAUSE_MS", 200);
-    public RedisGroupsPubSubImpl(String serverId, String clusterId, boolean testing) {
+    public RedisStreamsPubSubImpl(String serverId, String clusterId, boolean testing) {
         super();
         this.testing = testing;
         this.serverId = serverId;
         this.clusterId = clusterId;
-        this.lettuce = new MasterReplicaLettuceClient<>();
+    }
+    
+    
+    
+    
+    StatefulRedisConnection<String, String> getConn(){
+        
+        return (StatefulRedisConnection<String, String>) redisClient.getConnection();
+        
     }
 
 
-    public RedisGroupsPubSubImpl() {
+    public RedisStreamsPubSubImpl() {
         this(APILocator.getServerAPI().readServerId(), ClusterFactory.getClusterId(), false);
 
     }
@@ -60,13 +69,16 @@ public class RedisGroupsPubSubImpl implements DotPubSubProvider {
 
     private boolean startListening() {
         if (this.listener != null) {
-            Logger.info(RedisGroupsPubSubImpl.class, "Restarting our listener");
+            Logger.info(RedisStreamsPubSubImpl.class, "Restarting our listener");
             this.listener.stop();
         }
-
+        if (topicMap.isEmpty()) {
+            Logger.info(RedisStreamsPubSubImpl.class, "No topics, nothing to listen for");
+            return false;
+        }
         this.listener = new StreamListener(topicMap, serverId);
 
-        DotConcurrentFactory.getInstance().getSingleSubmitter(RedisGroupsPubSubImpl.class.getSimpleName())
+        DotConcurrentFactory.getInstance().getSingleSubmitter(RedisStreamsPubSubImpl.class.getSimpleName())
                         .submit(this.listener);
 
         return true;
@@ -96,16 +108,21 @@ public class RedisGroupsPubSubImpl implements DotPubSubProvider {
 
                 final String redisTopic = redisTopic(topic);
 
-                try {
-                    RedisAsyncCommands<String, String> asyncCommands = LettuceAdapter.getStatefulRedisConnection(lettuce).async();
-                    Logger.info(RedisGroupsPubSubImpl.class, "Creating Redis Stream : " + redisTopic);
-                    asyncCommands.xgroupCreate(StreamOffset.lastConsumed(redisTopic), serverId,
-                                    XGroupCreateArgs.Builder.mkstream(true));
+                try (StatefulRedisConnection<String, String> conn = getConn()){
+                    
+                    RedisCommands<String, String> commands = conn.sync();
+
+                    
+                    commands.xgroupCreate( XReadArgs.StreamOffset.from(redisTopic, "0-0"), serverId ,
+                                    XGroupCreateArgs.Builder.mkstream(true) );
+                    Logger.info(RedisStreamsPubSubImpl.class, "Creating/Connecting to Redis Stream : " + redisTopic);
+
+ 
 
                 } catch (RedisBusyException redisBusyException) {
-                    Logger.info(RedisGroupsPubSubImpl.class, "Redis Stream already exists: " + redisTopic);
+                    Logger.info(RedisStreamsPubSubImpl.class, "Redis Stream already exists: " + redisTopic);
                 } catch (Exception e) {
-                    Logger.warnAndDebug(RedisGroupsPubSubImpl.class, e);
+                    Logger.warn(RedisStreamsPubSubImpl.class, e.getMessage(), e);
                     throw new DotRuntimeException(e);
                 }
             }
@@ -116,53 +133,59 @@ public class RedisGroupsPubSubImpl implements DotPubSubProvider {
         @Override
         public void run() {
 
-            if (topics.isEmpty()) {
-                Logger.info(RedisGroupsPubSubImpl.class, "No topics, nothing to listen for");
-                return;
-            }
-
             buildTopicStreams();
 
             while (running) {
 
                 // sub the pub
-                topics.values().forEach(v->eventsIn(v));
-
+                topics.values().forEach(v -> eventsIn(v));
                 Try.run(() -> Thread.sleep(PUBSUB_THREAD_PAUSE_MS));
+
             }
 
         }
 
         void eventsIn(DotPubSubTopic topic) {
             final String redisTopic = redisTopic(topic);
-            List<StreamMessage<String, String>> messages = LettuceAdapter.getStatefulRedisConnection(lettuce).sync().xreadgroup(
-                            Consumer.from(serverId, serverId), XReadArgs.StreamOffset.lastConsumed(redisTopic));
-            // ACK Attack
-            messages.forEach(m -> LettuceAdapter.getStatefulRedisConnection(lettuce).async().xack(redisTopic, serverId, m.getId()));
 
-            for (final StreamMessage<String, String> messageIn : messages) {
-                List<DotPubSubEvent> bodyEvents = Try.of(() -> messageIn.getBody().entrySet().stream()
-                                .map(e -> new DotPubSubEvent(e.getValue()))
-                                .filter(e -> !serverId.startsWith(e.getOrigin())).collect(Collectors.toList()))
-                                .onFailure(e -> Logger.warnAndDebug(RedisGroupsPubSubImpl.class, e))
-                                .getOrElse(ImmutableList.of());
+            try (StatefulRedisConnection<String, String> conn = getConn()) {
+                RedisCommands<String, String> commands = conn.sync();
+                
+                //we are a consumer group of 1
+                final Consumer<String> consumer = Consumer.from(serverId, serverId);
 
-                for (DotPubSubEvent event : bodyEvents) {
-                    if (testing) {
-                        Logger.info(this.getClass(), "server:" + serverId + " got message:" + event);
+                List<StreamMessage<String, String>> messages = commands.xreadgroup(consumer,
+                                XReadArgs.StreamOffset.lastConsumed(redisTopic));
+                // ACK Attack
+                messages.forEach(m -> conn.async().xack(redisTopic, serverId, m.getId()));
+
+                for (final StreamMessage<String, String> messageIn : messages) {
+                    final List<DotPubSubEvent> bodyEvents = Try
+                                    .of(() -> messageIn.getBody().entrySet().stream().map(e -> new DotPubSubEvent(e.getValue()))
+                                                    .filter(e -> !serverId.startsWith(e.getOrigin()))
+                                                    .collect(Collectors.toList()))
+                                    .onFailure(e -> Logger.warnAndDebug(RedisStreamsPubSubImpl.class, e))
+                                    .getOrElse(ImmutableList.of());
+
+                    for (DotPubSubEvent event : bodyEvents) {
+                        if (testing) {
+                            Logger.info(this.getClass(), "server:" + serverId + " got message:" + event);
+                        }
+
+                        final DotPubSubTopic pubSubTopic = topicMap.get(redisTopic);
+
+                        if (topic == null) {
+                            continue;
+                        }
+
+                        pubSubTopic.incrementReceivedCounters(event);
+                        pubSubTopic.notify(event);
+
                     }
-
-                    DotPubSubTopic pubSubTopic = topicMap.get(redisTopic);
-                    
-                    if (topic == null) {
-                        continue;
-                    }
-
-                    pubSubTopic.incrementReceivedCounters(event);
-                    pubSubTopic.notify(event);
 
                 }
-
+            } catch (Exception e) {
+                Logger.warn(RedisStreamsPubSubImpl.class, e.getMessage(),e);
             }
         }
 
@@ -209,7 +232,7 @@ public class RedisGroupsPubSubImpl implements DotPubSubProvider {
     @Override
     public void stop() {
         if (this.listener != null) {
-            Logger.info(RedisGroupsPubSubImpl.class, "Stopping our listener");
+            Logger.info(RedisStreamsPubSubImpl.class, "Stopping our listener");
             this.listener.stop();
         }
 
@@ -218,10 +241,10 @@ public class RedisGroupsPubSubImpl implements DotPubSubProvider {
     @Override
     public boolean publish(final DotPubSubEvent eventIn) {
         final DotPubSubEvent eventOut = new DotPubSubEvent.Builder(eventIn).withOrigin(serverId).build();
-
-        LettuceAdapter.getStatefulRedisConnection(lettuce).async().xadd(redisTopic(eventOut.getTopic()), XAddArgs.Builder.maxlen(maxStreamSize), "e",
-                        eventOut.toString());
-
+        try (StatefulRedisConnection<String, String> conn = getConn()) {
+            conn.async().xadd(redisTopic(eventOut.getTopic()), XAddArgs.Builder.maxlen(maxStreamSize), "e",
+                            eventOut.toString());
+        }
         return true;
     }
 

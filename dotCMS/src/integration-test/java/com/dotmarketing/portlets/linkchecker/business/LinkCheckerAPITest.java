@@ -75,12 +75,12 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
             sysuser = APILocator.getUserAPI().getSystemUser();
 
             host = new Host();
-            host.setHostname("lickcheckertesthost"+uuid.replaceAll("-", "_")+".demo.dotcms.com");
+            host.setHostname("linkcheckertesthost"+uuid.replaceAll("-", ".")+".demo.dotcms.com");
             host.setIndexPolicy(IndexPolicy.FORCE);
             host=APILocator.getHostAPI().save(host, sysuser, false);
 
             host2 = new Host();
-            host2.setHostname("lickcheckertesthost_2_"+uuid.replaceAll("-", "_")+".demo.dotcms.com");
+            host2.setHostname("linkcheckertesthost-2-"+uuid.replaceAll("-", ".")+".demo.dotcms.com");
             host2.setIndexPolicy(IndexPolicy.FORCE);
             host2=APILocator.getHostAPI().save(host2, sysuser, false);
             APILocator.getContentletAPI().isInodeIndexed(host2.getInode());

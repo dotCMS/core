@@ -69,7 +69,7 @@ public class CMSUsersWebAPI implements ViewTool {
 			return APILocator.getUserAPI().loadByUserByEmail(email, APILocator.getUserAPI().getSystemUser(), false);
 		} catch (Exception e) {
 			Logger.error(CMSUsersWebAPI.class,e.getMessage(), e);
-			return new User();
+			return null;
 		}
 	}
 

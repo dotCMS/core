@@ -76,6 +76,7 @@ public class ConfigurationHelper implements Serializable {
 	public static final String COLORS = "colors";
 	public static final String LANGUAGES = "languages";
 	public static final String TIMEZONES = "timezones";
+	public static final String TIMEZONE  = "systemTimezone";
 	public static final String CLUSTER = "cluster";
 	public static final String CLUSTER_ID = "clusterId";
 	public static final String KEY_DIGEST = "companyKeyDigest";
@@ -169,7 +170,20 @@ public class ConfigurationHelper implements Serializable {
 
 	    map.put(LANGUAGES, APILocator.getLanguageAPI().getLanguages());
 	    map.put(TIMEZONES, getTimeZones(locale));
+		map.put(TIMEZONE,  getTimeZone(TimeZone.getDefault(), locale));
 	    return map;
+	}
+
+	/**
+	 * Returns a list of all available timezones
+	 * @param timeZone
+	 * @return
+	 */
+	private Map getTimeZone(final TimeZone timeZone, final Locale locale){
+
+		return CollectionsUtils.map("id", timeZone.getID(), "label",
+					timeZone.getDisplayName(locale) + " (" + timeZone
+							.getID() + ")", "offset", timeZone.getRawOffset());
 	}
 
     /**

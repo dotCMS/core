@@ -59,22 +59,36 @@ public abstract class SelectField extends SelectableValuesField {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Optional<FieldValue<?>> fieldValue(Object value) {
-		if (value instanceof String) {
-			return Optional.of(SelectFieldType.of((String) value));
+	public Optional<FieldValue<?>> fieldValue(final Object value) {
+
+		if (value != null) {
+			if (value instanceof String) {
+				return Optional.of(SelectFieldType.of((String) value));
+			}
+			if (value instanceof Boolean) {
+				return Optional.of(BoolSelectFieldType.of((Boolean) value));
+			}
+			if (value instanceof Float) {
+				return Optional.of(FloatSelectFieldType.of((Float) value));
+			}
+			if (value instanceof Long) {
+				return Optional.of(LongSelectFieldType.of((Long) value));
+			}
+			if (value instanceof Integer) {
+				return Optional.of(LongSelectFieldType.of(((Integer) value).longValue()));
+			}
+		} else {
+			final DataTypes dataType = dataType();
+			switch (dataType) {
+				case BOOL:
+					return Optional.of(BoolSelectFieldType.of(false));
+				case FLOAT:
+					return Optional.of(FloatSelectFieldType.of(0F));
+				case INTEGER:
+					return Optional.of(LongSelectFieldType.of(0L));
+			}
 		}
-		if (value instanceof Boolean) {
-			return Optional.of(BoolSelectFieldType.of((Boolean) value));
-		}
-		if (value instanceof Float) {
-			return Optional.of(FloatSelectFieldType.of((Float) value));
-		}
-		if (value instanceof Long) {
-			return Optional.of(LongSelectFieldType.of((Long) value));
-		}
-		if (value instanceof Integer) {
-			return Optional.of(LongSelectFieldType.of(((Integer) value).longValue()));
-		}
+
 		return Optional.empty();
 	}
 
