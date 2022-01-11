@@ -820,11 +820,11 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 	@CloseDBIfOpened
     @Override
     public List<Container> getContainersInTemplate(final Template template, final User user, final boolean respectFrontendRoles)
-            throws DotDataException, DotSecurityException { // todo: do something here for the system template
+            throws DotDataException, DotSecurityException {
 
 		if (Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
 
-			return new ImmutableList.Builder<Container>().add(
+			return new ImmutableList.Builder<Container>().add( // todo: do replace this with the system container as soon as it gets migrate to the velocity
 					this.containerAPI.getWorkingContainerByFolderPath("/application/containers/system", this.hostAPI.findDefaultHost(user, respectFrontendRoles) , user, respectFrontendRoles))
 					.build();
 		}
