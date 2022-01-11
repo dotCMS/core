@@ -73,8 +73,8 @@ jobs:
           docker_hub_username: ${{ secrets.DOCKER_USERNAME }}
           docker_hub_token: ${{ secrets.DOCKER_TOKEN }}
           dry_run: ${{ env.DRY_RUN }}
+        if: success()
       - name: Slack Notification
-        if: success() && env.jobRun == 'true'
         uses: rtCamp/action-slack-notify@master
         env:
           SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}
@@ -85,3 +85,5 @@ jobs:
           SLACK_FOOTER: ""
           SLACK_ICON: https://avatars.slack-edge.com/temp/2021-12-08/2830145934625_e4e464d502865ff576e4.png
           SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of dotCMS - dotCMS ${{ env.BUILD_ID }} :rocket:"
+#       For testing purposes remember to switch webhook channel to an account that can be used for testing
+        if: success()
