@@ -5,6 +5,7 @@ import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.portlets.rules.actionlet.SendRedirectActionlet.REDIRECT_METHOD;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.RuleAction;
+import com.dotmarketing.util.Logger;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -68,9 +69,10 @@ public class SendRedirectActionletTest extends UnitTestBase {
 
     @Test
     public void testExecuteAction() throws Exception {
+        Logger.info(this,"EXECUTE ACTION");
         HttpServletResponse response = mock(HttpServletResponse.class);
         HttpServletRequest request = mock(HttpServletRequest.class);
-
+        Logger.info(this,"EXECUTE ACTION_1");
         when(request.getAttribute(CMS_FILTER_URI_OVERRIDE)).thenReturn("/index");
         String url = "//foo";
         ParameterModel paramURL = new ParameterModel(URL_KEY, url);
@@ -78,11 +80,11 @@ public class SendRedirectActionletTest extends UnitTestBase {
         Map<String, ParameterModel> params = new HashMap<>();
         params.put(URL_KEY, paramURL);
         params.put(INPUT_REDIRECT_METHOD, paramRedirectMethod);
-
+        Logger.info(this,"EXECUTE ACTION_2");
         SendRedirectActionlet actionlet = new SendRedirectActionlet();
         SendRedirectActionlet.Instance instance = actionlet.instanceFrom(params);
         actionlet.evaluate(request, response, instance);
-
+        Logger.info(this,"EXECUTE ACTION_3");
         Mockito.verify(response).setStatus(301);
         Mockito.verify(response).setHeader("Location",url);
 
