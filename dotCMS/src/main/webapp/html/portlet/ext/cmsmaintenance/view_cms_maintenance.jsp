@@ -1446,17 +1446,13 @@ dd.leftdl {
                     </tr>
                 <% } %>
                 <tr>
-                    <td><%= LanguageUtil.get(pageContext,"Download-Zip-file") %></td>
+                    <td><%= LanguageUtil.get(pageContext,"Download-Assets") %></td>
                     <td style="text-align:center;white-space:nowrap;">
-						<div class="inline-form">
-							<button dojoType="dijit.form.Button" onClick="location.href='/api/v1/maintenance/_downloadStarter'" iconClass="downloadIcon">
-							   <%= LanguageUtil.get(pageContext,"Download-Data-Only") %>
-							</button>
-
-							<button dojoType="dijit.form.Button" onClick="location.href='/api/v1/maintenance/_downloadStarterWithAssets'" iconClass="downloadIcon">
-							  <%= LanguageUtil.get(pageContext,"Download-Data/Assets") %>
-							</button>
-						</div>
+                        <div class="inline-form">
+                            <button dojoType="dijit.form.Button" onclick="location.href='/api/v1/maintenance/_downloadAssets'" iconClass="downloadIcon">
+                                <%= LanguageUtil.get(pageContext,"Download-Assets") %>
+                            </button>
+                        </div>
                     </td>
                 </tr>
                 <% if (DbConnectionFactory.isPostgres()) { %>
@@ -1472,11 +1468,15 @@ dd.leftdl {
                     </tr>
                 <% } %>
                 <tr>
-                    <td><%= LanguageUtil.get(pageContext,"Download-Assets") %></td>
+                    <td><%= LanguageUtil.get(pageContext,"Download-Starter-ZIP") %></td>
                     <td style="text-align:center;white-space:nowrap;">
                         <div class="inline-form">
-                            <button dojoType="dijit.form.Button" onclick="location.href='/api/v1/maintenance/_downloadAssets'" iconClass="downloadIcon">
-                                <%= LanguageUtil.get(pageContext,"Download-Assets") %>
+                            <button dojoType="dijit.form.Button" onClick="location.href='/api/v1/maintenance/_downloadStarter'" iconClass="downloadIcon">
+                                <%= LanguageUtil.get(pageContext,"Download-Data-Only") %>
+                            </button>
+
+                            <button dojoType="dijit.form.Button" onClick="location.href='/api/v1/maintenance/_downloadStarterWithAssets'" iconClass="downloadIcon">
+                                <%= LanguageUtil.get(pageContext,"Download-Data/Assets") %>
                             </button>
                         </div>
                     </td>
