@@ -76,8 +76,8 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     private final DotConcurrentFactory concurrentFactory = DotConcurrentFactory.getInstance();
     private LanguageAPI languageAPI;
     private final static  String TOPIC_NAME = HostCacheTopic.HOST_CACHE_TOPIC;
-    private final DotPubSubProvider pubsub;
-    private final HostCacheTopic hostCacheTopic;
+//    private final DotPubSubProvider pubsub;
+//    private final HostCacheTopic hostCacheTopic;
 
     public HostAPIImpl() {
         this(APILocator.getSystemEventsAPI(),APILocator.getLanguageAPI());
@@ -87,12 +87,12 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     HostAPIImpl(final SystemEventsAPI systemEventsAPI, final LanguageAPI languageAPI) {
         this.systemEventsAPI = systemEventsAPI;
         this.languageAPI = languageAPI;
-        this.pubsub                = DotPubSubProviderLocator.provider.get();
-        this.hostCacheTopic = new HostCacheTopic();
-        Logger.debug(this.getClass(), "Starting hook with PubSub");
-
-        this.pubsub.start();
-        this.pubsub.subscribe(this.hostCacheTopic);
+//        this.pubsub                = DotPubSubProviderLocator.provider.get();
+//        this.hostCacheTopic = new HostCacheTopic();
+//        Logger.debug(this.getClass(), "Starting hook with PubSub");
+//
+//        this.pubsub.start();
+//        this.pubsub.subscribe(this.hostCacheTopic);
     }
 
     private ContentType hostType() throws DotDataException, DotSecurityException{
@@ -1115,15 +1115,15 @@ hostCache.add(host);
     }
 
     private void updateCache(final boolean sendEvent) {
-        if(sendEvent) {
-            Logger.debug(this, () -> "Host cache updated");
-
-            final DotPubSubEvent event = new DotPubSubEvent.Builder()
-                    .withTopic(TOPIC_NAME)
-                    .withType(EventType.HOST_CACHE_REQUEST.name())
-                    .build();
-            this.pubsub.publish(event);
-        }
+//        if(sendEvent) {
+//            Logger.debug(this, () -> "Host cache updated");
+//
+//            final DotPubSubEvent event = new DotPubSubEvent.Builder()
+//                    .withTopic(TOPIC_NAME)
+//                    .withType(EventType.HOST_CACHE_REQUEST.name())
+//                    .build();
+//            this.pubsub.publish(event);
+//        }
 
         DotConcurrentFactory.getInstance().getSubmitter("updateHostCache").submit(
                 () -> {
