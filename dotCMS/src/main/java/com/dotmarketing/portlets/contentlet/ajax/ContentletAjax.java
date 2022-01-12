@@ -40,6 +40,7 @@ import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
+import com.dotmarketing.portlets.contentlet.util.ActionletUtil;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
@@ -1814,6 +1815,15 @@ public class ContentletAjax {
 		  // if it is save and publish, the save event must be not generated
 		  newInode = contentletWebAPI
 				  .saveContent(contentletFormData, isAutoSave, isCheckin, user, !publish);
+		
+		final String workflowActionId = (String)contentletFormData.get("wfActionId");
+		callbackData.put("isMoveAction", false);
+		if(UtilMethods.isSet(workflowActionId)){
+			final WorkflowAction workflowAction = APILocator.getWorkflowAPI().findAction(workflowActionId, APILocator.systemUser());
+			if(null != workflowAction){
+				callbackData.put("isMoveAction", ActionletUtil.isMoveableActionlet(workflowAction));
+			}
+		}
 
 		  Contentlet contentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
 		  if (null != contentlet) {

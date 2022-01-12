@@ -36,13 +36,23 @@ import com.liferay.portal.ejb.ImageLocalManagerUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.output.TeeOutputStream;
+
+import javax.servlet.ServletException;
+import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
-import javax.servlet.ServletException;
+import java.util.zip.ZipOutputStream;
+
+import static java.io.File.separator;
 
 public class ExportStarterUtil {
 
@@ -54,26 +64,60 @@ public class ExportStarterUtil {
         
         outputDirectory = new File(ConfigUtils.getBackupPath() + File.separator + "backup_" + System.currentTimeMillis());
         outputDirectory.mkdirs();
-       
-        
     }
     
-    public File createStarterWithAssets() throws FileNotFoundException, IOException {
-        
+    public File createStarterWithAssets() throws IOException {
         moveAssetsToBackupDir();
         return createStarterData() ;
-        
     }
     
     public File createStarterData() {
         createXMLFiles() ;
-        
         return outputDirectory;
-        
-        
     }
-    
-    
+
+    /**
+     * Manipulates contents of a directory and put them through a given output stream not without first compressing them
+     * to a generated zip file.
+     *
+     * @param output given output stream
+     * @param withAssets flag telling to include assets or not
+     * @param download flag telling to download as a file or as a stream
+     * @return file zip file
+     * @throws IOException
+     */
+    public Optional<File> zipStarter(final OutputStream output, final boolean withAssets, final boolean download)
+            throws IOException {
+        final File outputDir = withAssets
+                ? new ExportStarterUtil().createStarterWithAssets()
+                : new ExportStarterUtil().createStarterData();
+        final File zipFile = new File(
+                outputDir + UtilMethods
+                        .dateToJDBC(new Date())
+                        .replace(':', '-')
+                        .replace(' ', '_') + ".zip");
+        Logger.info(this, "Zipping up to file:" + zipFile.getAbsolutePath());
+
+        try (final OutputStream outStream = download
+                ? new TeeOutputStream(new BufferedOutputStream(Files.newOutputStream(zipFile.toPath())), output)
+                : new BufferedOutputStream(Files.newOutputStream(zipFile.toPath()));
+             final ZipOutputStream zipOutput = new ZipOutputStream(outStream)) {
+            ZipUtil.zipDirectory(outputDir.getAbsolutePath(), zipOutput);
+        }
+
+        Logger.info(this, "Wrote starter to : " + zipFile.toPath());
+        new TrashUtils().moveFileToTrash(outputDir, "starter");
+
+        final File newLocation = new File(ConfigUtils.getAbsoluteAssetsRootPath()
+                + separator
+                + "bundles"
+                + separator
+                + zipFile.getName());
+        FileUtils.moveFile(zipFile, newLocation);
+
+        return Optional.of(newLocation);
+    }
+
     /**
      * This method will pull a list of all tables /classed being managed by
      * hibernate and export them, one class per file to the backupTempFilePath
@@ -327,7 +371,7 @@ public class ExportStarterUtil {
     }
     
     
-    private void moveAssetsToBackupDir() throws FileNotFoundException, IOException{
+    private void moveAssetsToBackupDir() throws IOException{
         String assetDir = ConfigUtils.getAbsoluteAssetsRootPath();
 
         Logger.info(this, "Moving assets to back up directory: " + outputDirectory);

@@ -4,7 +4,6 @@ import static com.dotmarketing.portlets.languagesmanager.business.LanguageFactor
 import static com.dotmarketing.portlets.languagesmanager.business.LanguageFactoryImpl.DEFAULT_LANGUAGE_COUNTRY_CODE;
 
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.image.filter.ImageFilter;
 import com.liferay.util.FileUtil;
 import io.vavr.Lazy;
 import io.vavr.Tuple;
@@ -14,7 +13,7 @@ import java.io.File;
 
 /**
  * Generic class to get return configuration parameters, and any logic required
- * for those paramenters. This is different from the Config class, which only
+ * for those parameters. This is different from the Config class, which only
  * reads from the config file.
  *
  * @author andres

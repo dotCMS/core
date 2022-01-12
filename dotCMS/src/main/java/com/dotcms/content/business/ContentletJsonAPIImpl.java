@@ -18,6 +18,10 @@ import com.dotcms.content.model.Contentlet;
 import com.dotcms.content.model.FieldValue;
 import com.dotcms.content.model.ImmutableContentlet;
 import com.dotcms.content.model.ImmutableContentlet.Builder;
+import com.dotcms.content.model.type.hidden.BoolHiddenFieldType;
+import com.dotcms.content.model.type.radio.BoolRadioFieldType;
+import com.dotcms.content.model.type.text.FloatTextFieldType;
+import com.dotcms.content.model.type.text.LongTextFieldType;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -27,6 +31,9 @@ import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.HiddenField;
 import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImmutableHiddenField;
+import com.dotcms.contenttype.model.field.ImmutableRadioField;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.LineDividerField;
 import com.dotcms.contenttype.model.field.PermissionTabField;
@@ -45,6 +52,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -54,8 +62,11 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.File;
 import java.time.Instant;
@@ -159,7 +170,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
         builder.folder(contentlet.getFolder());
 
         //These two are definitively mandatory but..
-        //intenralCheckIn calls "save" twice and the first time it is called these two aren't already set
+        //internalCheckIn calls "save" twice and the first time it is called these two aren't already set
         //At that moment we have to fake it to make it. Second save should provide the actual identifiers.
         //We'll have to use empty strings to prevent breaking the execution.
         builder.identifier(UtilMethods.isNotSet(contentlet.getIdentifier()) ? StringPool.BLANK : contentlet.getIdentifier() );
@@ -171,19 +182,14 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
                 continue;
             }
             final Object value = contentlet.get(field.variable());
-            if (null != value) {
-                final Optional<FieldValue<?>> fieldValue = getFieldValue(value, field);
-                if (!fieldValue.isPresent()) {
-                    Logger.warn(ContentletJsonAPIImpl.class,
+            final Optional<FieldValue<?>> fieldValue = getFieldValue(value, field);
+            if (!fieldValue.isPresent()) {
+                    Logger.debug(ContentletJsonAPIImpl.class,()->
                             String.format("Unable to set field `%s` with the given value %s.",
                                     field.name(), value));
                 } else {
                     builder.putFields(field.variable(), fieldValue.get());
                 }
-            } else {
-                Logger.debug(ContentletJsonAPIImpl.class,
-                        String.format("Unable to set field `%s` as it wasn't set on the source contentlet", field.name()));
-            }
         }
         return builder.build();
     }

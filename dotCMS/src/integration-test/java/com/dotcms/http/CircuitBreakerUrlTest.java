@@ -1,6 +1,8 @@
 package com.dotcms.http;
 
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Config;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Map;
@@ -54,27 +56,51 @@ public class CircuitBreakerUrlTest {
 
 
     @Test
-    public void testBadBreaker() throws ExecutionException {
+    public void testBadBreaker() {
 
+        try {
+            final NullOutputStream nos = new NullOutputStream();
 
-        final NullOutputStream nos = new NullOutputStream();
+            final String key = "testBadBreaker";
+            final int timeout = 2000;
 
-        final String key = "testBadBreaker";
-        final int timeout = 2000;
+            CircuitBreaker breaker = CurcuitBreakerPool.getBreaker(key);
+            assert (breaker.isClosed());
 
-        CircuitBreaker breaker = CurcuitBreakerPool.getBreaker(key);
-        assert (breaker.isClosed());
+            Config.setProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", true);
 
-        for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 10; i++) {
+                try {
+                    new CircuitBreakerUrl(badUrl, timeout, breaker).doOut(nos);
+                } catch (Exception e) {
+                    assert (e instanceof CircuitBreakerOpenException);
+                }
+            }
+            breaker = CurcuitBreakerPool.getBreaker(key);
+
+            assert (breaker.isOpen());
+        }finally {
+            Config.setProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false);
+        }
+    }
+
+    @Test
+    public void test_breaker_url_using_private_ip_throws_an_exception()  {
+            final NullOutputStream nos = new NullOutputStream();
+
+            final String key = "testPrivateIP";
+            final int timeout = 2000;
+
+            CircuitBreaker breaker = CurcuitBreakerPool.getBreaker(key);
+            assert (breaker.isClosed());
+
             try {
                 new CircuitBreakerUrl(badUrl, timeout, breaker).doOut(nos);
             } catch (Exception e) {
-                assert (e instanceof CircuitBreakerOpenException);
+                assert (e instanceof DotRuntimeException);
+                assert (e.getMessage().contains("Remote HttpRequests cannot access private subnets"));
             }
-        }
-        breaker = CurcuitBreakerPool.getBreaker(key);
 
-        assert (breaker.isOpen());
     }
 
     /*
@@ -86,7 +112,7 @@ public class CircuitBreakerUrlTest {
 
 
     //@Test
-    public void testHeaders() throws ExecutionException, CircuitBreakerOpenException, IOException {
+    public void testHeaders() throws CircuitBreakerOpenException, IOException {
         Map<String, String> headers = ImmutableMap.of(HEADER, HEADER_VALUE);
 
         CircuitBreakerUrl cburl = CircuitBreakerUrl.builder().setMethod(Method.GET).setUrl("http://localhost/get").setTimeout(1000)
@@ -108,7 +134,7 @@ public class CircuitBreakerUrlTest {
      * docker run -p 80:80 kennethreitz/httpbin
      */
     //@Test
-    public void testPost() throws ExecutionException, CircuitBreakerOpenException, IOException {
+    public void testPost() throws CircuitBreakerOpenException, IOException {
         Map<String, String> params = ImmutableMap.of(PARAM, PARAM_VALUE);
 
         CircuitBreakerUrl cburl = CircuitBreakerUrl.builder().setMethod(Method.POST).setUrl("http://localhost/post").setTimeout(1000)
@@ -127,66 +153,68 @@ public class CircuitBreakerUrlTest {
      */
     @Test
     public void testRecovery() throws  InterruptedException, IOException {
-
-
-        final NullOutputStream nos = new NullOutputStream();
-
-
-        final String key = "testRecoveryBreaker";
-        final int timeout = 2000;
-
-        CircuitBreaker breaker = CurcuitBreakerPool.getBreaker(key);
-        breaker.withDelay(5, TimeUnit.SECONDS);
-        assert (breaker.isClosed());
-
-
-        for (int i = 0; i < breaker.getSuccessThreshold().denominator; i++) {
-            try {
-                new CircuitBreakerUrl(goodUrl, timeout, breaker).doOut(nos);
-            } catch (Exception e) {
-                // shoud not be here
-                assert (false);
-            }
-        }
-
-        assert (breaker.isClosed());
-
-        for (int i = 0; i < breaker.getFailureThreshold().denominator; i++) {
-            try {
-                new CircuitBreakerUrl(badUrl, timeout, breaker).doOut(nos);
-            } catch (Exception e) {
-                assert (e instanceof CircuitBreakerOpenException);
-            }
-        }
-        assert (breaker.isOpen());
-        for (int i = 0; i < breaker.getFailureThreshold().denominator; i++) {
-            try {
-                new CircuitBreakerUrl(badUrl, timeout, breaker).doOut(nos);
-            } catch (CircuitBreakerOpenException e) {
-                assert (e instanceof CircuitBreakerOpenException);
-            }
-        }
-        Thread.sleep(breaker.getDelay().toMillis() + 1000);
+        Config.setProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", true);
 
         try {
-            new CircuitBreakerUrl(goodUrl, timeout, breaker).doOut(nos);
-        } catch (Exception e) {
-            // shoud not be here
-            assert (false);
-        }
+            final NullOutputStream nos = new NullOutputStream();
 
-        assert (breaker.isHalfOpen());
+            final String key = "testRecoveryBreaker";
+            final int timeout = 2000;
 
-        for (int i = 0; i < breaker.getSuccessThreshold().denominator; i++) {
+            CircuitBreaker breaker = CurcuitBreakerPool.getBreaker(key);
+            breaker.withDelay(5, TimeUnit.SECONDS);
+            assert (breaker.isClosed());
+
+            for (int i = 0; i < breaker.getSuccessThreshold().denominator; i++) {
+                try {
+                    new CircuitBreakerUrl(goodUrl, timeout, breaker).doOut(nos);
+                } catch (Exception e) {
+                    // shoud not be here
+                    assert (false);
+                }
+            }
+
+            assert (breaker.isClosed());
+
+            for (int i = 0; i < breaker.getFailureThreshold().denominator; i++) {
+                try {
+                    new CircuitBreakerUrl(badUrl, timeout, breaker).doOut(nos);
+                } catch (Exception e) {
+                    assert (e instanceof CircuitBreakerOpenException);
+                }
+            }
+            assert (breaker.isOpen());
+            for (int i = 0; i < breaker.getFailureThreshold().denominator; i++) {
+                try {
+                    new CircuitBreakerUrl(badUrl, timeout, breaker).doOut(nos);
+                } catch (CircuitBreakerOpenException e) {
+                    assert (e instanceof CircuitBreakerOpenException);
+                }
+            }
+            Thread.sleep(breaker.getDelay().toMillis() + 1000);
+
             try {
                 new CircuitBreakerUrl(goodUrl, timeout, breaker).doOut(nos);
             } catch (Exception e) {
                 // shoud not be here
                 assert (false);
             }
-        }
 
-        assert (breaker.isClosed());
+            assert (breaker.isHalfOpen());
+
+            for (int i = 0; i < breaker.getSuccessThreshold().denominator; i++) {
+                try {
+                    new CircuitBreakerUrl(goodUrl, timeout, breaker).doOut(nos);
+                } catch (Exception e) {
+                    // shoud not be here
+                    assert (false);
+                }
+            }
+
+            assert (breaker.isClosed());
+        }finally {
+            Config.setProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false);
+        }
     }
 
     @Test

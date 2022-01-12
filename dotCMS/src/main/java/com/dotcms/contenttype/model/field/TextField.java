@@ -54,17 +54,27 @@ public abstract class TextField extends Field {
 	 */
 	@Override
 	public Optional<FieldValue<?>> fieldValue(final Object value) {
-		if (value instanceof String) {
-			return Optional.of(TextFieldType.of((String) value));
-		}
-		if (value instanceof Float) {
-			return Optional.of(FloatTextFieldType.of((Float) value));
-		}
-		if (value instanceof Long) {
-			return Optional.of(LongTextFieldType.of((Long) value));
-		}
-		if (value instanceof Integer) {
-			return Optional.of(LongTextFieldType.of(((Integer) value).longValue()));
+		if (null != value) {
+			if (value instanceof String) {
+				return Optional.of(TextFieldType.of((String) value));
+			}
+			if (value instanceof Float) {
+				return Optional.of(FloatTextFieldType.of((Float) value));
+			}
+			if (value instanceof Long) {
+				return Optional.of(LongTextFieldType.of((Long) value));
+			}
+			if (value instanceof Integer) {
+				return Optional.of(LongTextFieldType.of(((Integer) value).longValue()));
+			}
+		} else {
+			final DataTypes dataType = dataType();
+			switch (dataType) {
+				case FLOAT:
+					return Optional.of(FloatTextFieldType.of(0F));
+				case INTEGER:
+					return Optional.of(LongTextFieldType.of(0L));
+			}
 		}
 		return Optional.empty();
 	}
