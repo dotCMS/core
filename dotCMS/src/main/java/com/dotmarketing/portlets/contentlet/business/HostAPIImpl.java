@@ -152,7 +152,6 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             }
 
             if(host != null){
-                this.updateCache();
                 hostCache.addHostAlias(serverName, host);
             }
         }
@@ -176,7 +175,6 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             }
 
             if(host != null){
-                this.updateCache();
                 hostCache.addHostAlias(serverName, host);
             }
         }
@@ -422,7 +420,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     public List<Host> findAllFromCache(final User user,
             final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         Set<Host> cachedSites = hostCache.getAllSites();
-        if(null == cachedSites){
+        if(cachedSites.isEmpty()){
             final List<Host> allFromDB = findAllFromDB(user, respectFrontendRoles);
             hostCache.addAll(allFromDB);
             cachedSites = hostCache.getAllSites();
