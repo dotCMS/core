@@ -401,7 +401,6 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     @CloseDBIfOpened
     public List<Host> findAllFromDB(final User user,
                                     final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        final List<Host> hosts = new ArrayList<Host>();
 
         final StringBuilder sqlQuery = new StringBuilder("select cvi.working_inode as inode from contentlet_version_info cvi, identifier id where"
                 +" id.asset_subtype = 'Host' and cvi.identifier = id.id");
