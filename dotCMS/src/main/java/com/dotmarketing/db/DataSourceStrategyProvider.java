@@ -13,16 +13,16 @@ import javax.sql.DataSource;
  */
 public class DataSourceStrategyProvider {
 
-    static final String CONNECTION_DB_DRIVER = "DB_DRIVER";
-    static final String CONNECTION_DB_BASE_URL = "DB_BASE_URL";
-    static final String CONNECTION_DB_USERNAME = "DB_USERNAME";
-    static final String CONNECTION_DB_PASSWORD = "DB_PASSWORD";
-    static final String CONNECTION_DB_MAX_WAIT = "DB_MAXWAIT";
-    static final String CONNECTION_DB_MAX_TOTAL = "DB_MAX_TOTAL";
-    static final String CONNECTION_DB_MIN_IDLE = "DB_MIN_IDLE";
-    static final String CONNECTION_DB_VALIDATION_QUERY = "DB_VALIDATION_QUERY";
-    static final String CONNECTION_DB_LEAK_DETECTION_THRESHOLD = "DB_LEAK_DETECTION_THRESHOLD";
-    static final String CONNECTION_DB_DEFAULT_TRANSACTION_ISOLATION = "DB_DEFAULT_TRANSACTION_ISOLATION";
+    static final String CONNECTION_DB_DRIVER = "connection_db_driver";
+    static final String CONNECTION_DB_BASE_URL = "connection_db_base_url";
+    static final String CONNECTION_DB_USERNAME = "connection_db_username";
+    static final String CONNECTION_DB_PASSWORD = "connection_db_password";
+    static final String CONNECTION_DB_MAX_WAIT = "connection_db_max_wait";
+    static final String CONNECTION_DB_MAX_TOTAL = "connection_db_max_total";
+    static final String CONNECTION_DB_MAX_IDLE = "connection_db_max_idle";
+    static final String CONNECTION_DB_VALIDATION_QUERY = "connection_db_validation_query";
+    static final String CONNECTION_DB_LEAK_DETECTION_THRESHOLD = "connection_db_leak_detection_threshold";
+    static final String CONNECTION_DB_DEFAULT_TRANSACTION_ISOLATION = "connection_db_default_transaction_isolation";
     private static SystemEnvironmentProperties systemEnvironmentProperties;
 
     @VisibleForTesting
@@ -68,7 +68,7 @@ public class DataSourceStrategyProvider {
                             .apply();
                     Logger.info(DataSourceStrategyProvider.class,
                             "Datasource loaded from db.properties file");
-                } else if (systemEnvironmentProperties.getVariable(CONNECTION_DB_BASE_URL)
+                } else if (systemEnvironmentProperties.getVariable("connection_db_base_url")
                         != null) {
                     defaultDataSource = getSystemEnvDataSourceInstance()
                             .apply();

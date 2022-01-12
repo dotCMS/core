@@ -4,14 +4,44 @@ set -e
 
 umask 007
 
-source /srv/00-config-defaults.sh
-source /srv/20-copy-overriden-files.sh
-source /srv/40-custom-starter-zip.sh
+source /srv/config.sh
 
+if [[ "${1}" == "dotcms" || -z "${1}" ]]; then
 
-echo ""
-echo "Starting dotCMS ..."
-echo "-------------------"
-echo ""
+    echo "Starting dotCMS ..."
 
-exec -- ${TOMCAT_HOME}/bin/catalina.sh run
+    [[ -f /srv/TOMCAT_VERSION ]] && TOMCAT_VERSION=$( cat /srv/TOMCAT_VERSION )
+    TOMCAT_HOME=/srv/dotserver/tomcat-${TOMCAT_VERSION}
+
+    export CATALINA_PID="/tmp/dotcms.pid"
+    if [ -e "$CATALINA_PID" ]; then
+            echo
+            echo "Pid file $CATALINA_PID exists! Are you sure dotCMS is not running?"
+            echo
+            exit 1
+    fi
+
+    [[ -n "${WAIT_DB_FOR}" ]] \
+      && echo "Waiting ${WAIT_DB_FOR} for Database to start up nicely" \
+      && sleep ${WAIT_DB_FOR}
+
+    cd /srv/home
+
+    DB_CONNECT_TEST="$(cat /tmp/DB_CONNECT_TEST | tr -d [:space:])"
+    echo "DB Connect Test: ${DB_CONNECT_TEST}"
+
+    if [[ -n "$DB_CONNECT_TEST" ]]; then
+        exec -- \
+          /usr/local/bin/dockerize -wait tcp://${DB_CONNECT_TEST} -timeout 60s \
+          ${TOMCAT_HOME}/bin/catalina.sh run
+    else
+        exec -- \
+          /usr/local/bin/dockerize \
+          ${TOMCAT_HOME}/bin/catalina.sh run
+    fi
+
+else
+
+    echo "Running user CMD..."
+    exec -- "$@"
+fi
