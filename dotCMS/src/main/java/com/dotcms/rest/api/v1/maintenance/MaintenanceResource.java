@@ -207,7 +207,7 @@ public class MaintenanceResource implements Serializable {
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response downloadStarter(@Context final HttpServletRequest request,
                                           @Context final HttpServletResponse response) throws IOException {
-        return downloadStarter(request, response, false, true);
+        return downloadStarter(request, response, false, false);
     }
 
     /**

@@ -273,10 +273,11 @@ public class DbExporterUtil {
                 .build();
 
         Process processHolder = null;
+        Logger.info(DbExporterUtil.class, String.format("Executing commands %s", String.join(" ", commands)));
+        final ProcessBuilder pb = new ProcessBuilder(commands);
+        pb.redirectErrorStream(true);
+
         try {
-            Logger.info(DbExporterUtil.class, String.format("Executing commands %s", String.join(" ", commands)));
-            final ProcessBuilder pb = new ProcessBuilder(commands);
-            pb.redirectErrorStream(true);
             final Process process = Try.of(pb::start).getOrElseThrow(DotRuntimeException::new);
             processHolder = process;
             String input = Try.of(() -> IOUtils
