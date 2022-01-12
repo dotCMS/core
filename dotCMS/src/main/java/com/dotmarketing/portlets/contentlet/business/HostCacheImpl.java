@@ -29,7 +29,7 @@ public class HostCacheImpl extends HostCache {
 	}
 
 	@Override
-	protected Host add(Host host) {
+	protected Host add(final Host host) {
 		if(host == null){
 			return null;
 		}
