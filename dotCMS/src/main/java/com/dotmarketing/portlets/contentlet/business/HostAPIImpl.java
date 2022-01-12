@@ -267,8 +267,8 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             }
             
             host = new Host(list.get(0));
-//            this.updateCache();
-hostCache.add(host);
+            this.updateCache();
+//hostCache.add(host);
             return host;
             
         }  catch (Exception e) {
@@ -940,8 +940,8 @@ hostCache.add(host);
         if(UtilMethods.isSet(inode)) {
 
             defaultHost = new Host(APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false));
-//            this.updateCache();
-            hostCache.add(defaultHost);
+            this.updateCache();
+//            hostCache.add(defaultHost);
         } else {
 
             defaultHost.setDefault(true);
@@ -1043,8 +1043,8 @@ hostCache.add(host);
         final Contentlet contentletHost = APILocator.getContentletAPI().find(host.getInode(), user, respectFrontendRoles);
         contentletHost.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
         APILocator.getContentletAPI().publish(contentletHost, user, respectFrontendRoles);
-//        this.updateCache();
-hostCache.add(host);
+        this.updateCache();
+//hostCache.add(host);
     }
 
     @WrapInTransaction
@@ -1055,8 +1055,8 @@ hostCache.add(host);
         }
         Contentlet c = APILocator.getContentletAPI().find(host.getInode(), user, respectFrontendRoles);
         APILocator.getContentletAPI().unpublish(c, user, respectFrontendRoles);
-//        this.updateCache();
-        hostCache.add(host);
+        this.updateCache();
+//        hostCache.add(host);
     }
 
     @WrapInTransaction
@@ -1099,8 +1099,8 @@ hostCache.add(host);
                     .find(hostInode, systemUser, respectFrontendRoles);
             if (cont.isHost()) {
                 host = new Host(cont);
-//                this.updateCache();
-                hostCache.add(host);
+                this.updateCache();
+//                hostCache.add(host);
             }
         }
 
@@ -1110,8 +1110,7 @@ hostCache.add(host);
     @Override
     public void updateCache(Host host) {
         hostCache.clearCache();
-        hostCache.add(host);
-        //this.updateCache(null!=host);
+        this.updateCache(null!=host);
     }
 
     private void updateCache(final boolean sendEvent) {
