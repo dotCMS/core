@@ -14,37 +14,27 @@ import static com.dotcms.storage.model.BasicMetadataFields.WIDTH_META_KEY;
 
 import com.dotcms.tika.TikaUtils;
 import com.dotcms.util.MimeTypeUtils;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.Config;
+import com.dotmarketing.image.filter.ImageFilterAPI;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.util.StringPool;
-import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.awt.Dimension;
 import java.io.File;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.stream.FileImageInputStream;
-import javax.imageio.stream.ImageInputStream;
 
 /**
  * Tika based metadata generator.
  */
 class MetadataGeneratorImpl implements MetadataGenerator {
-
-    private static final String IMAGE_DIMENSIONS_CALCULATOR_IMPL = "IMAGE_DIMENSIONS_CALCULATOR_IMPL";
 
     /**
      * {@inheritDoc}
@@ -101,87 +91,12 @@ class MetadataGeneratorImpl implements MetadataGenerator {
     }
 
     /**
-     * Compute the dimensions of a given image binary
+     * Compute the dimensions of a given image binary through our image api
      * @param binary
      * @return
      */
     private Dimension calculateDimensions(final File binary) {
-        return dimensionsCalculators.get().calculateDimensions(binary);
-    }
-
-    /**
-     * Lazy loaded DimensionCalculator instance
-     * The calc implementation can be changed based on a property name.
-     */
-    Lazy<StandAloneDimensionCalculator> dimensionsCalculators = Lazy.of(()->{
-        final String className = Config.getStringProperty(IMAGE_DIMENSIONS_CALCULATOR_IMPL, SuffixBasedDimensionCalcImpl.class.getName());
-        final StandAloneDimensionCalculator instance = (StandAloneDimensionCalculator) (UtilMethods.isSet(className)
-                ? Try.of(() -> Class.forName(className).newInstance()).getOrElseThrow(
-                DotRuntimeException::new) : new SuffixBasedDimensionCalcImpl());
-        Logger.info(MetadataGeneratorImpl.class, "Image dimensions stand-alone calculator instance is "+instance.getClass());
-        return instance;
-    });
-
-    /**
-     * This leaves open the possibility to change the implementation on how we calculate the dimension for a given image
-     */
-    @FunctionalInterface
-    interface StandAloneDimensionCalculator {
-
-        /**
-         * Implement to load the Dimensions of the given image
-         * @param image {@link File} binary to generate the metadata
-         * @return dimensions {@link Dimension} width and height
-         */
-        Dimension calculateDimensions(File image);
-    }
-
-    /**
-     * This implementation is reliable as long as the file has an extension
-     * It does not read the whole file into memory for the purpose of getting the dimensions
-     * An alternative would be to use  ImageIO.read like this
-     * final BufferedImage bufferedImage = ImageIO.read(image);
-     *   width = bufferedImage.getWidth();
-     *   height = bufferedImage.getHeight();
-     * But this has the implication that loads the whole file into memory
-     * see https://stackoverflow.com/questions/672916/how-to-get-image-height-and-width-using-java#9083914
-     */
-    static class SuffixBasedDimensionCalcImpl implements StandAloneDimensionCalculator {
-
-        /**
-         * This method still uses ImageIO to get the readers based on the given file name
-         * It relies on the file extension to get the proper reader
-         * The advantage here is that we do not read the whole file into memory
-         * @param image
-         * @return
-         */
-        @Override
-        public Dimension calculateDimensions(final File image) {
-            final int pos = image.getName().lastIndexOf(".");
-            if (pos > 0) {
-                final String suffix = image.getName().substring(pos + 1);
-                final Iterator<ImageReader> iter = ImageIO.getImageReadersBySuffix(suffix);
-                while (iter.hasNext()) {
-                    final ImageReader reader = iter.next();
-                    try {
-                        final ImageInputStream stream = new FileImageInputStream(image);
-                        reader.setInput(stream);
-                        final int width = reader.getWidth(reader.getMinIndex());
-                        final int height = reader.getHeight(reader.getMinIndex());
-                        return new Dimension(width, height);
-                    } catch (IOException e) {
-                        Logger.warn(MetadataGeneratorImpl.class,
-                                "Error reading: " + image.getAbsolutePath(), e);
-                    } finally {
-                        reader.dispose();
-                    }
-                }
-            }
-            Logger.warn(MetadataGeneratorImpl.class, String.format(
-                    "Can't calculate dimensions for the given image '%s' with unknown file extension.",
-                    image.getName()));
-            return new Dimension(0, 0);
-        }
+       return ImageFilterAPI.apiInstance.get().getWidthHeight(binary);
     }
 
 }
