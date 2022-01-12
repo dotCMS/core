@@ -1110,7 +1110,8 @@ hostCache.add(host);
     @Override
     public void updateCache(Host host) {
         hostCache.clearCache();
-        this.updateCache(null!=host);
+        hostCache.add(host);
+        //this.updateCache(null!=host);
     }
 
     private void updateCache(final boolean sendEvent) {
