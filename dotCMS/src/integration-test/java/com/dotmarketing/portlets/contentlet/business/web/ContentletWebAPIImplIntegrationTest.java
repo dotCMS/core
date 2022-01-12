@@ -113,7 +113,7 @@ public class ContentletWebAPIImplIntegrationTest extends IntegrationTestBase {
 
         final ContentletWebAPIImpl contentletWebAPI = new ContentletWebAPIImpl();
         final Map<String, Object> hostMap = host.getMap();
-        final String newHostname = "newHostName_" + System.currentTimeMillis();
+        final String newHostname = "newHostName-" + System.currentTimeMillis();
         hostMap.put("text1", newHostname);
         hostMap.put("contentletInode", hostMap.get("inode"));
 
@@ -159,7 +159,7 @@ public class ContentletWebAPIImplIntegrationTest extends IntegrationTestBase {
 
         final ContentletWebAPIImpl contentletWebAPI = new ContentletWebAPIImpl();
         final Map<String, Object> hostMap = host.getMap();
-        final String newHostname = "newHostName_" + System.currentTimeMillis();
+        final String newHostname = "newHostName-" + System.currentTimeMillis();
         hostMap.put("text1", newHostname);
         hostMap.put("contentletInode", hostMap.get("inode"));
 
@@ -249,7 +249,7 @@ public class ContentletWebAPIImplIntegrationTest extends IntegrationTestBase {
         final ContentletWebAPIImpl contentletWebAPI = new ContentletWebAPIImpl();
         final Map<String, Object> hostMap = host.getMap();
         final String oldHostName = host.getHostname();
-        final String newHostname = oldHostName + "_new";
+        final String newHostname = oldHostName + "-new";
         hostMap.put("text1", newHostname);
         hostMap.put("contentletInode", hostMap.get("inode"));
 
@@ -310,7 +310,7 @@ public class ContentletWebAPIImplIntegrationTest extends IntegrationTestBase {
 
         final ContentletWebAPIImpl contentletWebAPI = new ContentletWebAPIImpl();
         final Map<String, Object> hostMap = host.getMap();
-        final String newHostname = "newHostName_" + System.currentTimeMillis();
+        final String newHostname = "newHostName-" + System.currentTimeMillis();
         hostMap.put("text1", newHostname);
         hostMap.put("contentletInode", hostMap.get("inode"));
 

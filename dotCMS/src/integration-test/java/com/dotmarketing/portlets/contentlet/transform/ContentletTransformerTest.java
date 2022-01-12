@@ -27,12 +27,16 @@ import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
+import com.dotcms.datagen.CategoryDataGen;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.repackage.com.google.common.io.Files;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.MapToContentletPopulator;
+import com.dotcms.security.apps.AppsAPIImpl;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -41,6 +45,7 @@ import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.struts.ContentletForm;
@@ -62,17 +67,22 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+import com.liferay.util.EncryptorException;
 import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import io.vavr.API;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.nio.file.Path;
+import java.security.Key;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -156,6 +166,47 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
             }
         }
 
+    }
+
+    /**
+     * Method to test {@link DotContentletTransformer#toMaps()} {@link com.dotmarketing.portlets.contentlet.transform.strategy.CategoryViewStrategy#transform(Contentlet, Map, Set, User)}
+     * Given Scenario: We create categories. One of the categories has a null value preset on the keywords. Simply we want to test that the Transformers can handle null values on the Categories map.
+     * Expected Result: We should be able to retrieve categories set them through the Transformer and validate that the null values remain there.
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Test_Null_Value_On_Category() throws DotDataException, DotSecurityException {
+
+        final Host defaultHost = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(),false);
+
+        //Create Categories setting Null values on the keywords
+        final CategoryDataGen rootCategoryDataGen = new CategoryDataGen().setCategoryName("Bikes-"+System.currentTimeMillis()).setKey("Bikes").setKeywords(null).setCategoryVelocityVarName("bikes");
+        final Category child1 = new CategoryDataGen().setCategoryName("RoadBike-"+System.currentTimeMillis()).setKey("RoadBike").setKeywords(null).setCategoryVelocityVarName("roadBike").next();
+
+        final Category rootCategory = rootCategoryDataGen.children(child1).nextPersisted();
+
+        // Get "News" content-type
+        final ContentType contentType = TestDataUtils
+                .getNewsLikeContentType("newsCategoriesTest" + System.currentTimeMillis(),
+                        rootCategory.getInode());
+
+        // Create dummy "News" content
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.inode())
+                .host(defaultHost).setProperty("title", "Bicycle").setProperty("byline", "Bicycle")
+                .setProperty("story", "BicycleBicycleBicycle")
+                .setProperty("sysPublishDate", new Date()).setProperty("urlTitle", "/news/bicycle")
+                //Set the categories
+                .addCategory(child1);
+
+            final Contentlet original = contentletDataGen.nextPersisted();
+            //Create a Transformer set to process Categories
+            final List<Map<String, Object>> transformedList = new DotTransformerBuilder().categoryToMapTransformer().content(original).build().toMaps();
+            final Map<String,Object> transformed = transformedList.get(0);
+            final Map<String,Map<String,Object>>  map = (Map<String,Map<String,Object>>)transformed.get("categories");
+            final List<Map<String,Object>> categories = (List<Map<String,Object>>)map.get("categories");
+            final Map<String,Object>  category = categories.get(0);
+            assertNull(category.get("keywords"));
     }
 
     @Test

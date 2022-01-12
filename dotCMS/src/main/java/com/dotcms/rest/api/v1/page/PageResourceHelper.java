@@ -146,7 +146,7 @@ public class PageResourceHelper implements Serializable {
                 .setTreeOrder(order)
                 .setHtmlPage(page.getIdentifier());
 
-        multiTreeAPI.saveMultiTree(multiTree);
+        multiTreeAPI.saveMultiTreeAndReorder(multiTree);
     }
 
 

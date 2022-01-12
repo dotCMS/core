@@ -63,4 +63,15 @@ public interface DotPubSubProvider {
         return null;
     }
 
+    /**
+     * Returns the display name for PubSub Provider
+     * @return
+     */
+    default String getProviderName() {
+        return getClass().getSimpleName();
+    }
+    
+    
+    
+    
 }

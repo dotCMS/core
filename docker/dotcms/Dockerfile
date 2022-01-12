@@ -71,7 +71,7 @@ COPY --chown=$USER_NAME:$USER_NAME ROOT/ /
     mkdir -p /data/shared/felix/load && \
     mkdir -p /data/shared/felix/undeployed && \
     mkdir -p /data/local/dotsecure/license && \
-    chown -R $USER_NAME.$USER_NAME /data 
+    chown -R $USER_NAME.$USER_NAME /data
 
 # ----------------------------------------------
 # Stage 3:  Flatten everything to 1 layer
