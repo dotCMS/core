@@ -18,6 +18,10 @@ import java.util.Map;
 
 /**
  * Interceptor that adds meta info to the dotcms response
+ *
+ * includes:
+ *  - x-dot-server header, contains the node name + server id (this helps to identified on a cluster context which node has committed the response)
+ *
  * @author jsanca
  */
 public class MetaWebInterceptor implements WebInterceptor {
