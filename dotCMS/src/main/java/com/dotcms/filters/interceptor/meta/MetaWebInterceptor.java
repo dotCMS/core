@@ -22,10 +22,13 @@ import java.util.Map;
  */
 public class MetaWebInterceptor implements WebInterceptor {
 
-    private static final String X_DOT_SERVER_HEADER = "x-dot-server";
+    public static final String RESPONSE_HEADER_ADD_NODE_ID = "RESPONSE_HEADER_ADD_NODE_ID";
+    public static final String X_DOT_SERVER_HEADER = "x-dot-server";
+
     private static final String FRIENDLY_NAME = "friendlyName";
     private static final String UNKNOWN = "unknown";
-    private final Lazy<Boolean> responseHeaderAddNodeId = Lazy.of(()-> Config.getBooleanProperty("RESPONSE_HEADER_ADD_NODE_ID", true));
+
+    private final Lazy<Boolean> responseHeaderAddNodeId = Lazy.of(()-> Config.getBooleanProperty(RESPONSE_HEADER_ADD_NODE_ID, true));
     private final Lazy<String>  serverId                = Lazy.of(()-> StringUtils.shortify(APILocator.getServerAPI().readServerId(), 10));
     private final Lazy<Map<String, Serializable>> cacheInfoMap = Lazy.of(() -> Try.of(() -> ClusterUtilProxy.getNodeInfo()).getOrElse(Collections.emptyMap()));
 
