@@ -400,7 +400,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     public List<Host> findAllFromDB(final User user,
                                     final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
-        final StringBuilder sqlQuery = new StringBuilder("select cvi.working_inode as inode from contentlet_version_info cvi, identifier id where"
+        final StringBuilder sqlQuery = new StringBuilder("select cvi.live_inode as inode from contentlet_version_info cvi, identifier id where"
                 +" id.asset_subtype = 'Host' and cvi.identifier = id.id");
 
         final DotConnect dc = new DotConnect().setSQL(sqlQuery.toString());
@@ -1122,7 +1122,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
 
         DotConcurrentFactory.getInstance().getSubmitter("updateHostCache").submit(
                 () -> {
-                        hostCache.clearCache();
+//                        hostCache.clearCache();
         final List<Host> hostList = Try.of(() -> findAllFromDB(APILocator.systemUser(), false))
                 .getOrElse(Collections.emptyList());
         hostCache.addAll(hostList);
