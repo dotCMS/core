@@ -1106,6 +1106,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
 
     @Override
     public void updateCache(Host host) {
+        hostCache.clearCache();
         this.updateCache(null!=host);
     }
 
