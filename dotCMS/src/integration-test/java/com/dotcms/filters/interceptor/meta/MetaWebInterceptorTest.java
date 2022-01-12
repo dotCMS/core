@@ -1,8 +1,13 @@
 package com.dotcms.filters.interceptor.meta;
 
+import com.dotcms.enterprise.ClusterUtilProxy;
 import com.dotcms.mock.response.MockHeaderResponse;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.StringUtils;
+import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -10,6 +15,9 @@ import org.junit.Test;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.Map;
 
 import static org.mockito.Mockito.mock;
 
@@ -44,6 +52,12 @@ public class MetaWebInterceptorTest {
 
         final String header = mockHeaderResponse.getHeader(MetaWebInterceptor.X_DOT_SERVER_HEADER);
         Assert.assertNotNull(header);
+
+        final Object nodeName =  Try.of(() -> ClusterUtilProxy.getNodeInfo()).
+                getOrElse(Collections.emptyMap()).getOrDefault("friendlyName", "unknown");
+        String tokenHeader = nodeName + StringPool.PIPE + StringUtils.shortify(APILocator.getServerAPI().readServerId(), 10);
+
+        Assert.assertEquals(tokenHeader, header);
     }
 
 
