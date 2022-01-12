@@ -21,7 +21,7 @@ import java.util.*;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
-import org.elasticsearch.common.Nullable;
+import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Derived;
 
