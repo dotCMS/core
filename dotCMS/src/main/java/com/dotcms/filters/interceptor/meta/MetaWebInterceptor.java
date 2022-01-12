@@ -23,6 +23,7 @@ import java.util.Map;
 public class MetaWebInterceptor implements WebInterceptor {
 
     public static final String RESPONSE_HEADER_ADD_NODE_ID = "RESPONSE_HEADER_ADD_NODE_ID";
+    public static final String RESPONSE_HEADER_ADD_NODE_ID_INCLUDE_NODE_NAME = "RESPONSE_HEADER_ADD_NODE_ID_INCLUDE_NODE_NAME";
     public static final String X_DOT_SERVER_HEADER = "x-dot-server";
 
     private static final String FRIENDLY_NAME = "friendlyName";
@@ -30,7 +31,18 @@ public class MetaWebInterceptor implements WebInterceptor {
 
     private final Lazy<Boolean> responseHeaderAddNodeId = Lazy.of(()-> Config.getBooleanProperty(RESPONSE_HEADER_ADD_NODE_ID, true));
     private final Lazy<String>  serverId                = Lazy.of(()-> StringUtils.shortify(APILocator.getServerAPI().readServerId(), 10));
-    private final Lazy<Map<String, Serializable>> cacheInfoMap = Lazy.of(() -> Try.of(() -> ClusterUtilProxy.getNodeInfo()).getOrElse(Collections.emptyMap()));
+    private final Lazy<String>  nodeName                = Lazy.of(this::getNodeName);
+
+    private final String getNodeName () {
+
+        if (Config.getBooleanProperty(RESPONSE_HEADER_ADD_NODE_ID_INCLUDE_NODE_NAME, true)) {
+
+            final Map<String, Serializable> nodeInfoMap = Try.of(() -> ClusterUtilProxy.getNodeInfo()).getOrElse(Collections.emptyMap());
+            return nodeInfoMap.getOrDefault(FRIENDLY_NAME, UNKNOWN).toString();
+        }
+
+        return UNKNOWN;
+    }
 
     @Override
     public Result intercept(final HttpServletRequest request, final HttpServletResponse response) {
@@ -38,7 +50,7 @@ public class MetaWebInterceptor implements WebInterceptor {
         if (responseHeaderAddNodeId.get()) {
 
             response.addHeader(X_DOT_SERVER_HEADER,
-                    cacheInfoMap.get().getOrDefault(FRIENDLY_NAME, UNKNOWN)
+                            nodeName.get()
                             + StringPool.PIPE
                             + serverId.get()
             );

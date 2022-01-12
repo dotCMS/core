@@ -65,4 +65,25 @@ public class MetaWebInterceptorTest {
         Assert.assertNull(header);
         Config.setProperty(MetaWebInterceptor.RESPONSE_HEADER_ADD_NODE_ID, true);
     }
+
+
+    /**
+     * Method to test: {@link MetaWebInterceptor#intercept(HttpServletRequest, HttpServletResponse)}
+     * Given Scenario: calling it adds the header x-dot-server, but do not includes the node name (unknown instead)
+     * ExpectedResult: the header is added without node name
+     * @throws IOException
+     */
+    @Test
+    public void check_header_x_dot_server_config_disable_node_name()  {
+
+        Config.setProperty(MetaWebInterceptor.RESPONSE_HEADER_ADD_NODE_ID_INCLUDE_NODE_NAME, false);
+        final MetaWebInterceptor metaWebInterceptor = new MetaWebInterceptor();
+        final MockHeaderResponse mockHeaderResponse = new MockHeaderResponse(response);
+        metaWebInterceptor.intercept(request, mockHeaderResponse);
+
+        final String header = mockHeaderResponse.getHeader(MetaWebInterceptor.X_DOT_SERVER_HEADER);
+        Assert.assertNotNull(header);
+        Assert.assertTrue(header.startsWith("unknown|"));
+        Config.setProperty(MetaWebInterceptor.RESPONSE_HEADER_ADD_NODE_ID_INCLUDE_NODE_NAME, true);
+    }
 }
