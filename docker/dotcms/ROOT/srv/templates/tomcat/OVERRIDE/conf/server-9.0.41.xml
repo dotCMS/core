@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Server port="8005" shutdown="SHUTDOWN">
+  <Listener className="org.apache.catalina.startup.VersionLoggerListener" />
+  <Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="on" />
+  <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
+
+  <Service name="Catalina">
+
+    <Executor
+            name="tomcatConnectorThreadPool"
+            namePrefix="ConnectorThreadPool-"
+            maxThreads="{{ .Env.CMS_CONNECTOR_THREADS }}"
+            minSpareThreads="25"
+    />
+
+    <!-- HTTP Connector -->
+    <Connector
+            executor="tomcatConnectorThreadPool"
+            port="8080"
+            protocol="org.apache.coyote.http11.Http11Nio2Protocol"
+            connectionTimeout="3000"
+            enableLookups="false"
+            redirectPort="8443"
+            URIEncoding="UTF-8"
+            bindOnInit="true"
+            scheme="http"
+            compression="on"
+            compressionMinSize="128"
+            compressableMimeType="text/html,text/xml,text/csv,text/css,text/javascript,text/json,application/javascript,application/json,application/xml,application/x-javascript"
+            useSendfile="false"
+    />
+
+    <!-- HTTP Connector from upstream proxy -->
+    <Connector executor="tomcatConnectorThreadPool" port="8081" protocol="org.apache.coyote.http11.Http11Nio2Protocol"
+                connectionTimeout="3000" enableLookups="false" redirectPort="443" URIEncoding="UTF-8" bindOnInit="false"
+                scheme="http" proxyPort="80" />
+
+    <!-- HTTPS (SSL) Connector from upstream proxy -->
+    <Connector executor="tomcatConnectorThreadPool" port="8082" protocol="org.apache.coyote.http11.Http11Nio2Protocol"
+                connectionTimeout="3000" enableLookups="false" redirectPort="443" URIEncoding="UTF-8" bindOnInit="false"
+                scheme="https" proxyPort="443" secure="true" />
+
+
+    <!-- HTTPS (SSL) Connector
+      To use APR and native openssl for https, add:
+      sslImplementationName="org.apache.tomcat.util.net.openssl.OpenSSLImplementation"
+    -->
+    <Connector
+            executor="tomcatConnectorThreadPool"
+            port="8443"
+            protocol="org.apache.coyote.http11.Http11Nio2Protocol"
+            connectionTimeout="3000"
+            enableLookups="false"
+            redirectPort="8443"
+            URIEncoding="UTF-8"
+            bindOnInit="true"
+            scheme="https"
+            proxyPort="443"
+            secure="true"
+            compression="on"
+            compressionMinSize="128"
+            compressableMimeType="text/html,text/xml,text/csv,text/css,text/javascript,text/json,application/javascript,application/json,application/xml,application/x-javascript"
+            useSendfile="false"
+            SSLEnabled="true"
+            keystoreFile="conf/server.keystore"
+            keystorePass="dotcms"
+    />
+
+
+    <Engine name="Catalina" defaultHost="localhost">
+
+      <Host name="localhost"  appBase="webapps">
+        <!-- The remote IP valve picks up the X-FORWARDED-FOR header and uses it as the source ip -->
+        <Valve className="org.apache.catalina.valves.RemoteIpValve" remoteIpHeader="x-forwarded-for" proxiesHeader="x-forwarded-by" protocolHeader="x-forwarded-proto" />
+
+        <!-- Access log processes all example.
+              Documentation at: /docs/config/valve.html
+              Note: The pattern used is equivalent to using pattern="common" -->
+
+        <Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs"
+               prefix="dotcms_access" suffix=".log"
+               pattern="%{org.apache.catalina.AccessLog.RemoteAddr}r {{ .Env.CMS_VALVE_IP }} %l %u %t %r %H %v%U%q %s %b %{Referer}i %{User-Agent}i" />
+
+      </Host>
+    </Engine>
+  </Service>
+</Server>
