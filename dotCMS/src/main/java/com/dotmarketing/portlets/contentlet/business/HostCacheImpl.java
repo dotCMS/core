@@ -71,7 +71,7 @@ public class HostCacheImpl extends HostCache {
 	}
 
 	protected Host get(final String key) {
-		return null != hostCacheMap.get(key) ? new Host(hostCacheMap.get(key)) : null;
+		return null != key && null != hostCacheMap.get(key) ? new Host(hostCacheMap.get(key)) : null;
 	}
 
 	protected Host getHostByAlias(final String key) {
