@@ -621,7 +621,7 @@ public class HostAPITest extends IntegrationTestBase  {
         final HostCache hostCache = CacheLocator.getHostCache();
         final Host hostByAlias = hostCache.getHostByAlias(hostName);
 
-        assertEquals(hostByAlias.getIdentifier(), defaultHost.getIdentifier());
+        assertEquals(hostCache.getAllSites().toString(),hostByAlias.getIdentifier(), defaultHost.getIdentifier());
     }
 
     /**
