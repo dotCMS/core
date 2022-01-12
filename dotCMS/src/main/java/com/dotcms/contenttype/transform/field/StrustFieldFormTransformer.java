@@ -3,7 +3,7 @@ package com.dotcms.contenttype.transform.field;
 import java.util.Date;
 import java.util.List;
 
-import org.elasticsearch.common.Nullable;
+import javax.annotation.Nullable;
 
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
