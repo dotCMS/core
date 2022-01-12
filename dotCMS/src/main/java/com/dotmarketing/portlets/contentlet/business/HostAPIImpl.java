@@ -267,8 +267,8 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             }
             
             host = new Host(list.get(0));
-            this.updateCache();
-
+//            this.updateCache();
+hostCache.add(host);
             return host;
             
         }  catch (Exception e) {
@@ -940,7 +940,8 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         if(UtilMethods.isSet(inode)) {
 
             defaultHost = new Host(APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false));
-            this.updateCache();
+//            this.updateCache();
+            hostCache.add(defaultHost);
         } else {
 
             defaultHost.setDefault(true);
@@ -1042,8 +1043,8 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         final Contentlet contentletHost = APILocator.getContentletAPI().find(host.getInode(), user, respectFrontendRoles);
         contentletHost.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
         APILocator.getContentletAPI().publish(contentletHost, user, respectFrontendRoles);
-        this.updateCache();
-
+//        this.updateCache();
+hostCache.add(host);
     }
 
     @WrapInTransaction
@@ -1054,7 +1055,8 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         }
         Contentlet c = APILocator.getContentletAPI().find(host.getInode(), user, respectFrontendRoles);
         APILocator.getContentletAPI().unpublish(c, user, respectFrontendRoles);
-        this.updateCache();
+//        this.updateCache();
+        hostCache.add(host);
     }
 
     @WrapInTransaction
@@ -1097,7 +1099,8 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
                     .find(hostInode, systemUser, respectFrontendRoles);
             if (cont.isHost()) {
                 host = new Host(cont);
-                this.updateCache();
+//                this.updateCache();
+                hostCache.add(host);
             }
         }
 
