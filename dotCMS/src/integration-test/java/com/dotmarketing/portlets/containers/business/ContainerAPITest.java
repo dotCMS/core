@@ -39,6 +39,12 @@ public class ContainerAPITest extends ContentletBaseTest {
         c.setPreLoop("preloop code");
         c.setPostLoop("postloop code");
 
+        // here comes the existing inode/identifier
+        String existingInode=UUIDGenerator.generateUuid();
+        String existingIdentifier=UUIDGenerator.generateUuid();
+        c.setInode(existingInode);
+        c.setIdentifier(existingIdentifier);
+
         Container cc = new Container();
         BeanUtils.copyProperties(cc, c);
 
