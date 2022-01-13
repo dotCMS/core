@@ -30,7 +30,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.business.HostCacheTopic.EventType;
+//import com.dotmarketing.portlets.contentlet.business.HostCacheTopic.EventType;
 import com.dotmarketing.portlets.contentlet.business.web.UpdateContainersPathsJob;
 import com.dotmarketing.portlets.contentlet.business.web.UpdatePageTemplatePathJob;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
