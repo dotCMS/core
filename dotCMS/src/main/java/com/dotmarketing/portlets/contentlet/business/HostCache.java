@@ -24,4 +24,5 @@ public abstract class HostCache implements Cachable{
 	abstract protected Set<Host> getAllSites();
 
 	abstract public void clearCache();
+	abstract protected void remove(Host host);
 }

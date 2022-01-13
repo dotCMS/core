@@ -92,10 +92,24 @@ public class HostCacheImpl extends HostCache {
         hostCacheMap.clear();
     }
 
-    public String[] getGroups() {
+	@Override
+	protected void remove(Host host) {
+		// always remove default host
+		hostCacheMap.remove(DEFAULT_HOST);
+
+		String key = host.getIdentifier();
+		String key2 = host.getHostname();
+
+			hostCacheMap.remove(key);
+			hostCacheMap.remove(key2);
+	}
+
+	public String[] getGroups() {
     	return groupNames;
     }
     public String getPrimaryGroup() {
     	return PRIMARY_GROUP;
     }
+
+
 }

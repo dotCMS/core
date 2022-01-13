@@ -459,7 +459,8 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     @WrapInTransaction
     public Host save(final Host hostToBeSaved, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
         if(hostToBeSaved != null){
-            hostCache.clearCache();
+//            hostCache.clearCache();
+            hostCache.remove(hostToBeSaved);
         }
 
         Contentlet contentletHost;
@@ -526,7 +527,8 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
                     boolean isHostRunning = h.isLive();
                     otherHostContentlet = APILocator.getContentletAPI().checkout(h.getInode(), user, respectFrontendRoles);
                     otherHost =  new Host(otherHostContentlet);
-                    hostCache.clearCache();
+//                    hostCache.clearCache();
+                    hostCache.remove(otherHost);
                     otherHost.setDefault(false);
                     if(host.getMap().containsKey(Contentlet.DONT_VALIDATE_ME))
                         otherHost.setProperty(Contentlet.DONT_VALIDATE_ME, true);
@@ -732,7 +734,8 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
 
             public void deleteHost() throws Exception {
                 if(host != null){
-                    hostCache.clearCache();
+//                    hostCache.clearCache();
+                    hostCache.remove(host);
                 }
 
                 final DotConnect dc = new DotConnect();
@@ -845,7 +848,8 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
                 }catch (Exception e){
                     Logger.error(HostAPIImpl.class, "Error removing secrets for site",  e);
                 }
-                hostCache.clearCache();
+//                hostCache.clearCache();
+                hostCache.remove(host);
             }
         }
         final DeleteHostThread deleteHostThread = new DeleteHostThread();
@@ -869,7 +873,8 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             DotContentletStateException {
 
         if(host != null) {
-            hostCache.clearCache();
+//            hostCache.clearCache();
+            hostCache.remove(host);
         }
 
         final Contentlet contentlet = APILocator.getContentletAPI().find
@@ -914,7 +919,8 @@ hostCache.clearCache();
             DotContentletStateException {
 
         if(host != null) {
-            hostCache.clearCache();
+//            hostCache.clearCache();
+            hostCache.remove(host);
         }
 
         final Contentlet contentlet = APILocator.getContentletAPI()
@@ -1062,7 +1068,8 @@ hostCache.clearCache();
     public void publish(Host host, User user, boolean respectFrontendRoles) throws DotContentletStateException, DotDataException, DotSecurityException {
 
         if(host != null){
-            hostCache.clearCache();
+//            hostCache.clearCache();
+            hostCache.remove(host);
         }
 
         final Contentlet contentletHost = APILocator.getContentletAPI().find(host.getInode(), user, respectFrontendRoles);
@@ -1077,7 +1084,8 @@ hostCache.clearCache();
     @Override
     public void unpublish(Host host, User user, boolean respectFrontendRoles) throws DotContentletStateException, DotDataException, DotSecurityException {
         if(host != null){
-            hostCache.clearCache();
+//            hostCache.clearCache();
+            hostCache.remove(host);
         }
         Contentlet c = APILocator.getContentletAPI().find(host.getInode(), user, respectFrontendRoles);
         APILocator.getContentletAPI().unpublish(c, user, respectFrontendRoles);
@@ -1139,7 +1147,8 @@ hostCache.clearCache();
     @Override
     public void updateCache(Host host) {
 //        this.updateCache(null!=host);
-        hostCache.clearCache();
+//        hostCache.clearCache();
+        hostCache.remove(host);
         hostCache.add(new Host(host));
     }
 
@@ -1326,6 +1335,7 @@ hostCache.clearCache();
 
     @Override
     public void flush(Host host) {
-        hostCache.clearCache();
+//        hostCache.clearCache();
+        hostCache.remove(host);
     }
 }
