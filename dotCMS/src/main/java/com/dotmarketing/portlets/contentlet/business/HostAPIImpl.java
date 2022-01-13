@@ -399,7 +399,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
      */
     @Override
     @CloseDBIfOpened
-    public List<Host> findAllFromDB(final User user,//TODO: probar con revert de este metodo
+    public List<Host> findAllFromDB(final User user,
                                     final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 //
 //        final StringBuilder sqlQuery = new StringBuilder("select cvi.working_inode as inode from contentlet_version_info cvi, identifier id where"
@@ -416,7 +416,9 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
 //        final List<Contentlet> contentletList  = APILocator.getContentletAPI().findContentlets(inodes);
 //
 //        return convertToHostList(contentletList);
-        final List<Host> hosts = new ArrayList<Host>();
+        final List<Host> hosts = new ArrayList<Host>();//TODO: se puede decir que solo hay estos cambios: logica del cache nueva, usando clear en lugar de remove a nivel de cache,
+        // logica del update pero no tiene usos
+        //Pasos a seguir: 1) agregar clean donde habia cleanAlias 1) comentar logica de alias en cache 2) comentar codigo updateCache 3) crear metodo remove y usarlo en vez de clear
 
         final String sql = "select  c.title, c.inode from contentlet_version_info clvi, contentlet c, structure s  " +
                 " where c.structure_inode = s.inode and  s.name = 'Host' and c.identifier <> ? and clvi.working_inode = c.inode ";
@@ -1134,8 +1136,8 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         hostCache.add(host);
     }
 
-    private void updateCache(final boolean sendEvent) {
-        Logger.info(this,"updating cache");
+//    private void updateCache(final boolean sendEvent) {
+//        Logger.info(this,"updating cache");
 //        if(sendEvent) {
 //            Logger.debug(this, () -> "Host cache updated");
 //
@@ -1146,18 +1148,18 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
 //            this.pubsub.publish(event);
 //        }
 
-        DotConcurrentFactory.getInstance().getSubmitter("updateHostCache").submit(
-                () -> {
-                        hostCache.clearCache();
-        final List<Host> hostList = Try.of(() -> findAllFromDB(APILocator.systemUser(), false))
-                .getOrElse(Collections.emptyList());
-        hostCache.addAll(hostList);
-        });
-    }
+//        DotConcurrentFactory.getInstance().getSubmitter("updateHostCache").submit(
+//                () -> {
+//                        hostCache.clearCache();
+//        final List<Host> hostList = Try.of(() -> findAllFromDB(APILocator.systemUser(), false))
+//                .getOrElse(Collections.emptyList());
+//        hostCache.addAll(hostList);
+//        });
+//    }
 
-    private void updateCache(){
-        updateCache(true);
-    }
+//    private void updateCache(){
+//        updateCache(true);
+//    }
 
     @Override
     public List<String> parseHostAliases(Host host) {
