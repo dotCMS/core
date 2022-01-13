@@ -8,7 +8,7 @@ import java.io.Serializable;
 import java.util.Calendar;
 import java.util.Date;
 import org.apache.commons.lang.time.DateUtils;
-import org.elasticsearch.common.Nullable;
+import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
 @JsonTypeInfo(
