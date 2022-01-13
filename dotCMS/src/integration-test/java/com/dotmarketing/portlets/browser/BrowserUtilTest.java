@@ -93,7 +93,7 @@ public class BrowserUtilTest {
 
     /**
      * Method to test: {@link BrowserUtil#getDefaultPathFolder(Contentlet, Field, User)}
-     * When: The {@link Field} has a defaultPath's Field Variable
+     * When: The {@link Field} has a defaultPath's Field Variable with a relative path
      * Should: Return the folder set in the defaultPath
      *
      * @throws DotDataException
@@ -132,7 +132,7 @@ public class BrowserUtilTest {
     /**
      * Method to test: {@link BrowserUtil#getDefaultPathFolder(Contentlet, Field, User)}
      * When: The {@link Field} has a wrong defaultPath's Field Variable
-     * Should: Return the folder set in the defaultPath
+     * Should: Return a {@link Optional#empty()}
      *
      * @throws DotDataException
      * @throws IOException
@@ -142,8 +142,6 @@ public class BrowserUtilTest {
     public void defaultPathEqualsToWrongFieldVariable() throws DotDataException, DotSecurityException {
 
         final Map<String, Object> map = createContentletWithImageFieldWithoutValue();
-        final Folder folder = addFolderHostField((ContentType) map.get(CONTENT_TYPE),
-                (Contentlet) map.get(CONTENTLET));
 
         final Host host = (Host) map.get(HOST);
 
@@ -154,16 +152,14 @@ public class BrowserUtilTest {
         when(request.getSession(false)).thenReturn(httpSession);
         when(request.getAttribute(Host.HOST_VELOCITY_VAR_NAME)).thenReturn(host.getIdentifier());
 
-        final Folder selectAsLastFolder = selectAsLastFolder(httpSession);
-
         final Field field = (Field) map.get(FIELD);
 
         addDefaultPathFieldVariable(host, field, "wrong_path");
 
-        final Optional<Folder> defaultPathFolder = BrowserUtil.getDefaultPathFolder(
+        final Optional<Folder> addFolderHostField = BrowserUtil.getDefaultPathFolder(
                 (Contentlet) map.get(CONTENTLET), field, APILocator.systemUser());
 
-        assertEquals(folder.getIdentifier(), defaultPathFolder.get().getIdentifier());
+        assertFalse(addFolderHostField.isPresent());
     }
 
     /**

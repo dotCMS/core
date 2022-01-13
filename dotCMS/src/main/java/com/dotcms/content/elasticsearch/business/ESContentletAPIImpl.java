@@ -4758,7 +4758,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             User sysuser = APILocator.getUserAPI().getSystemUser();
 
-            Contentlet contentletRaw = populateHost(contentlet);
+            final Contentlet contentletRaw = populateHost(contentlet);
 
             if ( contentlet.getMap().get( "_use_mod_date" ) != null ) {
                     /*
@@ -4887,7 +4887,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 // can't remove it
                 CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
 
-                identifier.setHostId(contentlet.getHost());
+                // Once the contetlet is saved, it gets refresh from the db. for which the incoming data gets lost.
+                // Therefore here we need to make sure we use the original contentlet that comes with the info passed from the ui.
+                final String hostId = UtilMethods.isSet(contentletRaw.getHost()) ? contentletRaw.getHost() : contentlet.getHost();
+                identifier.setHostId(hostId);
                 if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET){
                     try {
                         if(contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD) == null){
@@ -5069,7 +5072,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             binaryFieldFolder.mkdirs();
 
                             // we move files that have been newly uploaded or edited
-                            if(oldFile==null || !oldFile.equals(incomingFile)){
+                            if(oldFile==null || !oldFile.getAbsolutePath().equals(incomingFile.getAbsolutePath())){
                                 if(!createNewVersion){
                                     // If we're calling a checkinWithoutVersioning method,
                                     // then folder needs to be cleaned up in order to add the new file in it.
@@ -6806,7 +6809,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param contentlet
      */
     private void validateSite(Contentlet contentlet) {
-        if (Config.getBooleanProperty("site.key.dns.validation", false)) {
+        if (Config.getBooleanProperty("site.key.dns.validation", true)) {
             final String siteKey = (String) contentlet.get(Host.HOST_NAME_KEY);
             if (!UtilMethods.isSet(siteKey) || !dnsPattern.matcher(siteKey).find()) {
                 throw new DotContentletValidationException(

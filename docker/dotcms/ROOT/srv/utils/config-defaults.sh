@@ -26,12 +26,6 @@ TOMCAT_HOME=/srv/dotserver/tomcat-${TOMCAT_VERSION}
 # SMTP hostname for CMS
 : ${CMS_SMTP_HOST:="smtp"}
 
-# dotCMS runas user UID
-: ${CMS_RUNAS_UID:="1000000000"}
-
-# dotCMS runas group GID
-: ${CMS_RUNAS_GID:="1000000000"}
-
 ## Plugins init (not implemented yet!!)
 : ${CMS_PLUGINS_OSGI_OVERWRITE_SHARED:="false"}
 : ${CMS_PLUGINS_OSGI_FIX_OWNER:="true"}
@@ -59,7 +53,11 @@ TOMCAT_HOME=/srv/dotserver/tomcat-${TOMCAT_VERSION}
 # Maximum number of database connections
 : ${PROVIDER_DB_MAXCONNS:="200"}
 
+# dotCMS runas user UID
+: ${CMS_RUNAS_UID:="65001"}
 
+# dotCMS runas group GID
+: ${CMS_RUNAS_GID:="65001"}
 
 ## Discovery note
 #   The following are defined per-image upstream in the build Dockerfile:
