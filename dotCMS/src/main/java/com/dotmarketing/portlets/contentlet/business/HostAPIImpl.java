@@ -397,7 +397,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
      *
      */
     @Override
-    @CloseDBIfOpened
+    @WrapInTransaction
     public List<Host> findAllFromDB(final User user,
                                     final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
