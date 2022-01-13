@@ -291,3 +291,5 @@ This maintenance release includes the following code fixes:
 143. https://github.com/dotCMS/core/issues/21441 : Update log4j to 2.17 #21441
 
 144. https://github.com/dotCMS/core/issues/21485 : Upgrade log4j2 to 2.17.1 #21485 (already added)
+
+145. COMMIT REVERT: https://github.com/dotCMS/core-web/commit/ed88e1ab786fcea58fec7cf4a2004a7731c88520
