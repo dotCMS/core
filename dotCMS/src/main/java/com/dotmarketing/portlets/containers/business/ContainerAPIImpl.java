@@ -30,6 +30,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.HostUtil;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
@@ -254,7 +255,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
         final Container container = this.isContainerFile(identifier) ?
 				this.getWorkingContainerByFolderPath(identifier.getParentPath(), identifier.getHostId(), user, respectFrontendRoles):
                 containerFactory.find(inode);
-
+Logger.info(this,"CONTAINERAPITEST_FINDFACTORY: " + container==null?"null":container.getIdentifier());
         if (container == null) {
             return null;
         }
@@ -369,6 +370,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
     private Container getWorkingVersionInfoContainerById(final String containerId, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
         final  VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(containerId);
+		Logger.info(this,"CONTAINERAPITEST_VERSIONINFO: " + info !=null?"null":info.getWorkingInode());
         return info !=null? find(info.getWorkingInode(), user, respectFrontendRoles): null;
     }
 

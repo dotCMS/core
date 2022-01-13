@@ -18,6 +18,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.AssetUtil;
 import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import java.util.ArrayList;
@@ -48,10 +49,10 @@ public class ContainerAPITest extends ContentletBaseTest {
         csList.add(cs);
 
         cc = containerAPI.save(cc, csList, defaultHost, user, false);
-
+        Logger.info(this,"CONTAINERAPITEST: " + cc.getInode());
         assertTrue(UtilMethods.isSet(cc.getInode()));
         assertTrue(UtilMethods.isSet(cc.getIdentifier()));
-
+        Logger.info(this,"CONTAINERAPITEST: " + cc.getIdentifier());
         cc = containerAPI.getWorkingContainerById(cc.getIdentifier(), user, false);
 
         assertTrue(UtilMethods.isSet(cc.getInode()));
