@@ -24,7 +24,7 @@ import java.util.Map;
  *
  * @author jsanca
  */
-public class MetaWebInterceptor implements WebInterceptor {
+public class ResponseMetaDataWebInterceptor implements WebInterceptor {
 
     public static final String RESPONSE_HEADER_ADD_NODE_ID = "RESPONSE_HEADER_ADD_NODE_ID";
     public static final String RESPONSE_HEADER_ADD_NODE_ID_INCLUDE_NODE_NAME = "RESPONSE_HEADER_ADD_NODE_ID_INCLUDE_NODE_NAME";
@@ -32,6 +32,8 @@ public class MetaWebInterceptor implements WebInterceptor {
 
     private static final String FRIENDLY_NAME = "friendlyName";
     private static final String UNKNOWN = "unknown";
+    private static final String NODEID_PARAM = "nodeid";
+    private static final String TRUE_VALUE = "true";
 
     private final Lazy<Boolean> responseHeaderAddNodeId = Lazy.of(()-> Config.getBooleanProperty(RESPONSE_HEADER_ADD_NODE_ID, true));
     private final Lazy<String>  serverId                = Lazy.of(()-> StringUtils.shortify(APILocator.getServerAPI().readServerId(), 10));
@@ -51,7 +53,8 @@ public class MetaWebInterceptor implements WebInterceptor {
     @Override
     public Result intercept(final HttpServletRequest request, final HttpServletResponse response) {
 
-        if (responseHeaderAddNodeId.get()) {
+        if (responseHeaderAddNodeId.get() ||
+                TRUE_VALUE.equals(request.getParameter(NODEID_PARAM))) {
 
             response.addHeader(X_DOT_SERVER_HEADER,
                             nodeName.get()

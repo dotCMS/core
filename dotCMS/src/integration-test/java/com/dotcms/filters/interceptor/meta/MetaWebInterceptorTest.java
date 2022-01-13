@@ -15,14 +15,12 @@ import org.junit.Test;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.Collections;
-import java.util.Map;
 
 import static org.mockito.Mockito.mock;
 
 /**
- * Unit test for {@link MetaWebInterceptor}
+ * Unit test for {@link ResponseMetaDataWebInterceptor}
  * @author jsanca
  */
 public class MetaWebInterceptorTest {
@@ -38,7 +36,7 @@ public class MetaWebInterceptorTest {
     }
 
     /**
-     * Method to test: {@link MetaWebInterceptor#intercept(HttpServletRequest, HttpServletResponse)}
+     * Method to test: {@link ResponseMetaDataWebInterceptor#intercept(HttpServletRequest, HttpServletResponse)}
      * Given Scenario: calling it adds the header x-dot-server
      * ExpectedResult: the header is added
      * @throws IOException
@@ -46,11 +44,11 @@ public class MetaWebInterceptorTest {
     @Test
     public void check_header_x_dot_server()  {
 
-        final MetaWebInterceptor metaWebInterceptor = new MetaWebInterceptor();
+        final ResponseMetaDataWebInterceptor metaWebInterceptor = new ResponseMetaDataWebInterceptor();
         final MockHeaderResponse mockHeaderResponse = new MockHeaderResponse(response);
         metaWebInterceptor.intercept(request, mockHeaderResponse);
 
-        final String header = mockHeaderResponse.getHeader(MetaWebInterceptor.X_DOT_SERVER_HEADER);
+        final String header = mockHeaderResponse.getHeader(ResponseMetaDataWebInterceptor.X_DOT_SERVER_HEADER);
         Assert.assertNotNull(header);
 
         final Object nodeName =  Try.of(() -> ClusterUtilProxy.getNodeInfo()).
@@ -62,7 +60,7 @@ public class MetaWebInterceptorTest {
 
 
     /**
-     * Method to test: {@link MetaWebInterceptor#intercept(HttpServletRequest, HttpServletResponse)}
+     * Method to test: {@link ResponseMetaDataWebInterceptor#intercept(HttpServletRequest, HttpServletResponse)}
      * Given Scenario: calling it does not adds the header x-dot-server
      * ExpectedResult: the header is not added
      * @throws IOException
@@ -70,19 +68,19 @@ public class MetaWebInterceptorTest {
     @Test
     public void check_header_x_dot_server_config_disable()  {
 
-        Config.setProperty(MetaWebInterceptor.RESPONSE_HEADER_ADD_NODE_ID, false);
-        final MetaWebInterceptor metaWebInterceptor = new MetaWebInterceptor();
+        Config.setProperty(ResponseMetaDataWebInterceptor.RESPONSE_HEADER_ADD_NODE_ID, false);
+        final ResponseMetaDataWebInterceptor metaWebInterceptor = new ResponseMetaDataWebInterceptor();
         final MockHeaderResponse mockHeaderResponse = new MockHeaderResponse(response);
         metaWebInterceptor.intercept(request, mockHeaderResponse);
 
-        final String header = mockHeaderResponse.getHeader(MetaWebInterceptor.X_DOT_SERVER_HEADER);
+        final String header = mockHeaderResponse.getHeader(ResponseMetaDataWebInterceptor.X_DOT_SERVER_HEADER);
         Assert.assertNull(header);
-        Config.setProperty(MetaWebInterceptor.RESPONSE_HEADER_ADD_NODE_ID, true);
+        Config.setProperty(ResponseMetaDataWebInterceptor.RESPONSE_HEADER_ADD_NODE_ID, true);
     }
 
 
     /**
-     * Method to test: {@link MetaWebInterceptor#intercept(HttpServletRequest, HttpServletResponse)}
+     * Method to test: {@link ResponseMetaDataWebInterceptor#intercept(HttpServletRequest, HttpServletResponse)}
      * Given Scenario: calling it adds the header x-dot-server, but do not includes the node name (unknown instead)
      * ExpectedResult: the header is added without node name
      * @throws IOException
@@ -90,14 +88,14 @@ public class MetaWebInterceptorTest {
     @Test
     public void check_header_x_dot_server_config_disable_node_name()  {
 
-        Config.setProperty(MetaWebInterceptor.RESPONSE_HEADER_ADD_NODE_ID_INCLUDE_NODE_NAME, false);
-        final MetaWebInterceptor metaWebInterceptor = new MetaWebInterceptor();
+        Config.setProperty(ResponseMetaDataWebInterceptor.RESPONSE_HEADER_ADD_NODE_ID_INCLUDE_NODE_NAME, false);
+        final ResponseMetaDataWebInterceptor metaWebInterceptor = new ResponseMetaDataWebInterceptor();
         final MockHeaderResponse mockHeaderResponse = new MockHeaderResponse(response);
         metaWebInterceptor.intercept(request, mockHeaderResponse);
 
-        final String header = mockHeaderResponse.getHeader(MetaWebInterceptor.X_DOT_SERVER_HEADER);
+        final String header = mockHeaderResponse.getHeader(ResponseMetaDataWebInterceptor.X_DOT_SERVER_HEADER);
         Assert.assertNotNull(header);
         Assert.assertTrue(header.startsWith("unknown|"));
-        Config.setProperty(MetaWebInterceptor.RESPONSE_HEADER_ADD_NODE_ID_INCLUDE_NODE_NAME, true);
+        Config.setProperty(ResponseMetaDataWebInterceptor.RESPONSE_HEADER_ADD_NODE_ID_INCLUDE_NODE_NAME, true);
     }
 }
