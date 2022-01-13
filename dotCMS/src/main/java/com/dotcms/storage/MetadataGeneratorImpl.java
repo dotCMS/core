@@ -15,6 +15,7 @@ import static com.dotcms.storage.model.BasicMetadataFields.WIDTH_META_KEY;
 import com.dotcms.tika.TikaUtils;
 import com.dotcms.util.MimeTypeUtils;
 import com.dotmarketing.image.filter.ImageFilterAPI;
+import com.dotmarketing.image.filter.ImageFilterApiImpl;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
@@ -90,13 +91,23 @@ class MetadataGeneratorImpl implements MetadataGenerator {
         return metadataMap;
     }
 
+    static ImageFilterApiImpl imageApi = ImageFilterAPI.apiInstance.apply();
+
     /**
      * Compute the dimensions of a given image binary through our image api
      * @param binary
      * @return
      */
     private Dimension calculateDimensions(final File binary) {
-       return ImageFilterAPI.apiInstance.get().getWidthHeight(binary);
+            try {
+                return imageApi.getWidthHeight(binary);
+            } catch (Throwable throwable) {
+                Logger.warnAndDebug(MetadataGeneratorImpl.class,
+                        String.format("Unable to calculate dimensions for the given binary %s.",
+                                binary),
+                        throwable);
+            }
+        return new Dimension(0, 0);
     }
 
 }
