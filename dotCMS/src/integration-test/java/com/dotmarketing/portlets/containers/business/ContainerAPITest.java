@@ -31,7 +31,7 @@ public class ContainerAPITest extends ContentletBaseTest {
 
     @Test
     public void save() throws Exception {
-    	HibernateUtil.startTransaction();
+
         Container c = new Container();
         c.setFriendlyName("test container");
         c.setTitle("this is the title");
@@ -66,7 +66,7 @@ public class ContainerAPITest extends ContentletBaseTest {
         assertTrue(cc.getMaxContentlets()==c.getMaxContentlets());
         assertTrue(cc.getPreLoop().equals(c.getPreLoop()));
         assertTrue(cc.getPostLoop().equals(c.getPostLoop()));
-        HibernateUtil.closeAndCommitTransaction();
+
     }
 
     @Test

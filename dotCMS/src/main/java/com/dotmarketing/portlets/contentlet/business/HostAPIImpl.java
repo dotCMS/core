@@ -1109,7 +1109,6 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         this.updateCache(null!=host);
     }
 
-    @WrapInTransaction
     private void updateCache(final boolean sendEvent) {
         Logger.info(this,"updating cache");
 //        if(sendEvent) {
