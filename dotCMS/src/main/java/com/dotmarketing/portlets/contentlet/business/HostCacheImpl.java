@@ -7,7 +7,9 @@ import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Jason Tesser
@@ -19,13 +21,14 @@ public class HostCacheImpl extends HostCache {
 	final String SITES = "_dotSites_";
 
 	private DotCacheAdministrator cache;
-	
+	private Map<String,Host> hostCacheMap;
 
     // region's name for the cache
     private String[] groupNames = {PRIMARY_GROUP, ALIAS_GROUP};
 
 	public HostCacheImpl() {
         cache = CacheLocator.getCacheAdministrator();
+        hostCacheMap = new ConcurrentHashMap<>();
 	}
 
 	@Override
@@ -37,12 +40,12 @@ public class HostCacheImpl extends HostCache {
 		String key2 =host.getHostname();
 
         // Add the key to the cache
-        cache.put(key, host,PRIMARY_GROUP);
-        cache.put(key2, host,PRIMARY_GROUP);
+		hostCacheMap.put(key, host);
+		hostCacheMap.put(key2, host);
         
         if(host.isDefault()){
     		String key3 =DEFAULT_HOST;
-        	cache.put(key3,host,PRIMARY_GROUP);
+			hostCacheMap.put(key3,host);
         }
 
 
@@ -55,42 +58,36 @@ public class HostCacheImpl extends HostCache {
            add(host);
         }
 
-		cache.put(SITES, ImmutableSet.copyOf(hosts), PRIMARY_GROUP);
+//		cache.put(SITES, ImmutableSet.copyOf(hosts), PRIMARY_GROUP);
     }
 
 
 	protected Set<Host> getAllSites(){
-		return (Set<Host>) cache.getNoThrow(SITES, PRIMARY_GROUP);
+//		return (Set<Host>) cache.getNoThrow(SITES, PRIMARY_GROUP);
+		return (Set<Host>) this.hostCacheMap.values();
 	}
 
 	private void clearSitesList(){
-		cache.remove(SITES, PRIMARY_GROUP);
+		hostCacheMap.remove(SITES);
 	}
 
 	protected Host getHostByAlias(String key) {
 		Host host = null;
-    	try{
-    		String hostId = (String) cache.get(key,ALIAS_GROUP);
-    		host = get(hostId);
-    		if(host == null){
-    			cache.remove(key, ALIAS_GROUP);
-    		}
-    	}catch (DotCacheException e) {
-			Logger.debug(this, "Cache Entry not found", e);
+		//    		String hostId = (String) cache.get(key,ALIAS_GROUP);
+//    		host = get(hostId);
+		host = hostCacheMap.get(key);
+		if(host == null){
+			hostCacheMap.remove(key);
 		}
 
-        return host;
+		return host;
 	}
 	
 	protected Host get(String key) {
     	Host host = null;
-    	try{
-    		host = (Host) cache.get(key,PRIMARY_GROUP);
-    	}catch (DotCacheException e) {
-			Logger.debug(this, "Cache Entry not found", e);
-		}
+		host = (Host) hostCacheMap.get(key);
 
-        return host;	
+		return host;
 	}
 
     /* (non-Javadoc)
@@ -98,8 +95,9 @@ public class HostCacheImpl extends HostCache {
 	 */
 	public void clearCache() {
         // clear the cache
-        cache.flushGroup(PRIMARY_GROUP);
-        cache.flushGroup(ALIAS_GROUP);
+//        cache.flushGroup(PRIMARY_GROUP);
+//        cache.flushGroup(ALIAS_GROUP);
+		hostCacheMap.clear();
     }
 
     /* (non-Javadoc)
@@ -108,8 +106,7 @@ public class HostCacheImpl extends HostCache {
     protected void remove(Host host){
     	
     	// always remove default host
-    	String _defaultHost =PRIMARY_GROUP +DEFAULT_HOST;
-    	cache.remove(_defaultHost,PRIMARY_GROUP);
+		hostCacheMap.remove(DEFAULT_HOST);
 
     	//remove aliases from host in cache
     	Host h = get(host.getIdentifier());
@@ -119,13 +116,13 @@ public class HostCacheImpl extends HostCache {
     	String key2 = host.getHostname();
     	
     	try{
-    		cache.remove(key,PRIMARY_GROUP);
+    		hostCacheMap.remove(key);
     	}catch (Exception e) {
 			Logger.debug(this, "Cache not able to be removed", e);
 		} 
     	
     	try{
-    		cache.remove(key2,PRIMARY_GROUP);
+			hostCacheMap.remove(key2);
     	}catch (Exception e) {
 			Logger.debug(this, "Cache not able to be removed", e);
     	} 
@@ -149,13 +146,14 @@ public class HostCacheImpl extends HostCache {
 
     protected void addHostAlias(String alias, Host host){
     	if(alias != null && host != null && UtilMethods.isSet(host.getIdentifier())){
-    		cache.put(alias, host.getIdentifier(),ALIAS_GROUP);
+			hostCacheMap.put(alias, host);
     	}
     }
     
     
 	protected void clearAliasCache() {
         // clear the alias cache
-        cache.flushGroup(ALIAS_GROUP);
+//        cache.flushGroup(ALIAS_GROUP);
+		hostCacheMap.clear();
     }
 }
