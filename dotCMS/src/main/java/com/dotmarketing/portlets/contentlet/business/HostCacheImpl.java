@@ -89,7 +89,7 @@ public class HostCacheImpl extends HostCache {
 
 	public void clearCache() {
 		Logger.info(this,"cleaning cache");
-        hostCacheMap.clear();
+//        hostCacheMap.clear();
     }
 
 	@Override
