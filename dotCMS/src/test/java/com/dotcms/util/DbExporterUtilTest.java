@@ -10,9 +10,10 @@ import java.util.Optional;
 /**
  * Tests for {@link DbExporterUtil} class.
  *
- * @author vic
+ * @author vico
  */
 public class DbExporterUtilTest {
+
     /**
      * Tests executable finding.
      *
@@ -59,4 +60,5 @@ public class DbExporterUtilTest {
         assert(new File(pgDumpPath).exists());
         assert(new File(pgDumpPath).canExecute());
     }
+
 }

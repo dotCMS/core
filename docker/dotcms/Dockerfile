@@ -2,7 +2,7 @@
 # ----------------------------------------------
 # Stage 1:  Build dotCMS from our builder image
 # ----------------------------------------------
-FROM dotcms/dotcms-seed:21.12 as build-cms
+FROM dotcms/dotcms-seed:22.01 as build-cms
 
 LABEL com.dotcms.contact "support@dotcms.com"
 LABEL com.dotcms.vendor "dotCMS LLC"
@@ -32,7 +32,7 @@ RUN chmod -R 666 /srv && find /srv/ -type d -exec chmod a+x {} \;
 # Stage 2:  Construct our container using the minimal-java image
 #           and copying the prebuilt dotcms
 # ----------------------------------------------
-FROM dotcms/java-base:latest as container-base
+FROM dotcms/java-base:20651 as container-base
 
 WORKDIR /srv
 
@@ -59,11 +59,11 @@ ARG USER_NAME="dotcms"
 # Creating default non-user 
 # the useradd 
 RUN groupadd -g $USER_GID $USER_NAME && \
-	useradd -l -d /srv -g $USER_GID -u $USER_UID $USER_NAME
+    useradd -l -d /srv -g $USER_GID -u $USER_UID $USER_NAME
 
 # Copy our build
-COPY --from=build-cms --chown=dotcms:dotcms /srv/ /srv/
-COPY --chown=dotcms:dotcms ROOT/ /
+COPY --from=build-cms --chown=$USER_NAME:$USER_NAME /srv/ /srv/
+COPY --chown=$USER_NAME:$USER_NAME ROOT/ /
 
 # Make scripts runable
  RUN find /srv/ -type f -name "*.sh" -exec chmod a+x {} \; && \
@@ -72,7 +72,11 @@ COPY --chown=dotcms:dotcms ROOT/ /
     # Make dotcms user owner
     mkdir -p /data/shared/assets && \
     mkdir -p /data/local/dotsecure/license && \
-    chown -R dotcms /data 
+    chown -R $USER_NAME:$USER_NAME /data
+
+FROM dotcms/pg-base:20651 as composed-base
+
+COPY --from=container-base / /
 
 # ----------------------------------------------
 # Stage 3:  Flatten everything to 1 layer
@@ -90,7 +94,7 @@ LABEL com.dotcms.description "dotCMS Content Management System"
 ARG USER_UID="65001"
 ARG USER_GID="65001"
 
-COPY --from=container-base / /
+COPY --from=composed-base / /
 
 # Switching to non-root user to install SDKMAN! 
 USER $USER_UID:$USER_GID
@@ -99,7 +103,7 @@ ENV PATH=$PATH:/java/bin
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/srv/entrypoint.sh"]
 CMD ["dotcms"]
-    
+
 ## Ports
 # Direct connect
 EXPOSE 8080
