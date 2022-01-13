@@ -21,13 +21,15 @@ import java.util.concurrent.ConcurrentHashMap;
 public class HostCacheImpl extends HostCache {
 
 	//Use only one to alias and primary
-	final Map<String,Host> hostCacheMap = new ConcurrentHashMap<>();
+	private Map<String,Host> hostCacheMap;
 	final String DEFAULT_HOST = "_dotCMSDefaultHost_";
 
     // region's name for the cache
     private String[] groupNames = {PRIMARY_GROUP};
 
-	public HostCacheImpl() {}
+	public HostCacheImpl() {
+		hostCacheMap = new ConcurrentHashMap<>();
+	}
 
 	@Override
 	protected Host add(final Host host) {
