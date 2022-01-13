@@ -418,7 +418,8 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
 //        return convertToHostList(contentletList);
         final List<Host> hosts = new ArrayList<Host>();//TODO: se puede decir que solo hay estos cambios: logica del cache nueva, usando clear en lugar de remove a nivel de cache,
         // logica del update pero no tiene usos
-        //Pasos a seguir: 1) agregar clean donde habia cleanAlias(listo) 1) comentar logica de alias en cache 2) comentar codigo updateCache(listo) 3) crear metodo remove y usarlo en vez de clear
+        //Pasos a seguir: 1) agregar clean donde habia cleanAlias(listo) 1) comentar logica de alias en cache(listo) 2) comentar codigo updateCache(listo)
+        // 2) mover init de hashmap a constructor(listo) 3) revert isHost(listo) 3) crear metodo remove y usarlo en vez de clear
 
         final String sql = "select  c.title, c.inode from contentlet_version_info clvi, contentlet c, structure s  " +
                 " where c.structure_inode = s.inode and  s.name = 'Host' and c.identifier <> ? and clvi.working_inode = c.inode ";
@@ -1123,7 +1124,9 @@ hostCache.clearCache();
             final String hostInode = versionInfo.getWorkingInode();
             final Contentlet cont = APILocator.getContentletAPI()
                     .find(hostInode, systemUser, respectFrontendRoles);
-            if (cont.isHost()) {
+            final ContentType type = APILocator.getContentTypeAPI(systemUser, respectFrontendRoles)
+                    .find(Host.HOST_VELOCITY_VAR_NAME);
+            if (cont.getStructureInode().equals(type.inode())) {
                 host = new Host(cont);
 //                this.updateCache();
                 hostCache.add(host);
