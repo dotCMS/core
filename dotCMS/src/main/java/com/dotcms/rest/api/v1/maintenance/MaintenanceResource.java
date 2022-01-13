@@ -11,6 +11,7 @@ import com.dotcms.util.DbExporterUtil;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ExportStarterUtil;
 import com.dotmarketing.util.FileUtil;
@@ -35,6 +36,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 
@@ -138,6 +140,24 @@ public class MaintenanceResource implements Serializable {
 
         response.setHeader( "Content-Disposition", "attachment; filename=" + fileName );
         return Response.ok(logFile, MediaType.APPLICATION_OCTET_STREAM).build();
+    }
+
+    /**
+     * Returns a text/plain response flag telling whether the pg_dump binary is available (and callable) or not.
+     *
+     * @param request http request
+     * @param response http response
+     * @return a text/plain boolean response
+     */
+    @Path("/_pgDumpAvailable")
+    @GET
+    @JSONP
+    @NoCache
+    @Produces({MediaType.TEXT_PLAIN})
+    public final Response isPgDumpAvailable(@Context final HttpServletRequest request,
+                                            @Context final HttpServletResponse response) {
+        assertBackendUser(request, response);
+        return Response.ok(DbExporterUtil.isPgDumpAvailable().isPresent(), MediaType.TEXT_PLAIN).build();
     }
 
     /**
