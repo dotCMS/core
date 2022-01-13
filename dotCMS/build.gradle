@@ -636,7 +636,7 @@ compileAspect {
 task immutables() {
     doLast {
         println "\nChecking immutables..."
-        def generatedFolder = new File("$generatedSourceFolder");
+        def generatedFolder = project.file("$generatedSourceFolder");
         if (!generatedFolder.exists()) {
 
             println "Generating immutables...\n"
@@ -687,7 +687,7 @@ task buildPlugins(dependsOn: 'jar') {
         def pluginsFolder = file('src/main/plugins')
 
         if (!pluginsFolder.exists()) {
-            pluginsFolder = new File("../plugins");
+            pluginsFolder = project.file("../plugins");
         }
 
         pluginsFolder.eachDir() {
@@ -716,7 +716,7 @@ task deployConfig(type: Copy) {
 
     def webAppFolder = 'src/main/webapp'
 
-    if (new File('src/main/resources').exists()){
+    if (project.file('src/main/resources').exists()){
         from 'src/main/resources'
     }else{
         webAppFolder = "$dotcmsDistBase$webAppRootFolder"
@@ -742,11 +742,11 @@ task deployPlugins(dependsOn: ['buildPlugins']) {
 
     doLast {
 
-        def pluginsFolder = new File("src/main/plugins")
+        def pluginsFolder = project.file("src/main/plugins")
         def webAppFolder = 'src/main/webapp'
 
         if (!pluginsFolder.exists()) {
-            pluginsFolder = new File("../plugins");
+            pluginsFolder = project.file("../plugins");
             webAppFolder = "$dotcmsDistBase$webAppRootFolder"
         }
 
@@ -789,7 +789,7 @@ task undeployPlugins() {
     doLast {
         def webAppFolder = 'src/main/webapp'
 
-        if( !new File("$webAppFolder").exists() ) {
+        if( !project.file("$webAppFolder").exists() ) {
             webAppFolder = "$dotcmsDistBase$webAppRootFolder"
         }
 
@@ -878,7 +878,7 @@ task restoreBackupWarTomcatData() {
             include "*.db"
         }
 
-        FileUtils.cleanDirectory(new File("$tomcatInstallLocation/temp"));
+        FileUtils.cleanDirectory(project.file("$tomcatInstallLocation/temp"));
         delete "$tomcatInstallLocation$webAppRootFolder/WEB-INF/classes/com"
     }
 }
@@ -917,10 +917,9 @@ def getDate() {
 }
 
 //Util method that replaces the occurrence of a string in a specified file
-static def replaceText(filePath, fromString, toString) {
-    def sourceFile = filePath
-    def updatedContent = new File(sourceFile).getText('UTF-8').replaceAll(fromString, toString)
-    new File(sourceFile).write(updatedContent, 'UTF-8')
+def replaceText(filePath, fromString, toString) {
+    def updatedContent = project.file(filePath.toString()).getText('UTF-8').replaceAll(fromString, toString)
+    project.file(filePath.toString()).write(updatedContent, 'UTF-8')
 }
 
 // Clones dotCMS's tomcat repo following tomcatInstall under gradle.properties.
@@ -1014,7 +1013,7 @@ class NpmArtifactExtractTask extends DefaultTask {
         String versionUrl = "$artifactUrl/-/$artifact-${artifactVersion}.tgz"
         println "Downloading from $versionUrl"
         String downloadArtifact = "$artifactFolder/${artifact}.tgz"
-        def downloadFile = new File(downloadArtifact)
+        def downloadFile = project.file(downloadArtifact)
         new URL(versionUrl).withInputStream { i -> downloadFile.withOutputStream { it << i } }
 
         project.copy {
