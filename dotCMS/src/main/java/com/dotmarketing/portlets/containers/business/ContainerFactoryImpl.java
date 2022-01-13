@@ -152,6 +152,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
     @SuppressWarnings("unchecked")
     public Container find(final String inode) throws DotDataException, DotSecurityException {
       Container container = CacheLocator.getContainerCache().get(inode);
+		Logger.info(this,"find containerfactoryimpl" + container);
       //If it is not in cache.
       if(container == null){
           
