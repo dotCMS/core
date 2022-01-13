@@ -418,7 +418,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
 //        return convertToHostList(contentletList);
         final List<Host> hosts = new ArrayList<Host>();//TODO: se puede decir que solo hay estos cambios: logica del cache nueva, usando clear en lugar de remove a nivel de cache,
         // logica del update pero no tiene usos
-        //Pasos a seguir: 1) agregar clean donde habia cleanAlias 1) comentar logica de alias en cache 2) comentar codigo updateCache 3) crear metodo remove y usarlo en vez de clear
+        //Pasos a seguir: 1) agregar clean donde habia cleanAlias(listo) 1) comentar logica de alias en cache 2) comentar codigo updateCache(listo) 3) crear metodo remove y usarlo en vez de clear
 
         final String sql = "select  c.title, c.inode from contentlet_version_info clvi, contentlet c, structure s  " +
                 " where c.structure_inode = s.inode and  s.name = 'Host' and c.identifier <> ? and clvi.working_inode = c.inode ";
@@ -502,6 +502,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         Host savedHost =  new Host(contentletHost);
 
         updateDefaultHost(savedHost, user, respectFrontendRoles);
+        hostCache.clearCache();
         return savedHost;
 
     }
@@ -891,7 +892,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         contentlet.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
         APILocator.getContentletAPI().archive(contentlet, user, respectFrontendRoles);
         host.setModDate(new Date ());
-
+hostCache.clearCache();
         HibernateUtil.addCommitListener(() -> this.sendArchiveSiteSystemEvent(contentlet), 1000);
     }
 
@@ -919,6 +920,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
                 .find(host.getInode(), user, respectFrontendRoles);
         APILocator.getContentletAPI().unarchive(contentlet, user, respectFrontendRoles);
         host.setModDate(new Date ());
+        hostCache.clearCache();
         HibernateUtil.addCommitListener(() -> this.sendUnArchiveSiteSystemEvent(contentlet), 1000);
     }
 
@@ -1067,6 +1069,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         APILocator.getContentletAPI().publish(contentletHost, user, respectFrontendRoles);
 //        this.updateCache();
         hostCache.add(host);
+        hostCache.clearCache();
     }
 
     @WrapInTransaction
@@ -1079,6 +1082,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         APILocator.getContentletAPI().unpublish(c, user, respectFrontendRoles);
 //        this.updateCache();
         hostCache.add(host);
+        hostCache.clearCache();
     }
 
     @WrapInTransaction
