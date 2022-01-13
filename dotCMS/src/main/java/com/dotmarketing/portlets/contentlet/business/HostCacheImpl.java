@@ -31,6 +31,7 @@ public class HostCacheImpl extends HostCache {
 
 	@Override
 	protected Host add(final Host host) {
+		Logger.info(this,"adding to cache");
 		if(host == null){
 			return null;
 		}
@@ -62,6 +63,7 @@ public class HostCacheImpl extends HostCache {
 
 	protected void addHostAlias(final String alias, final Host host){
 		if(alias != null && host != null && UtilMethods.isSet(host.getIdentifier())){
+			Logger.info(this,"adding alias cache");
 			hostCacheMap.put(alias, host);
 		}
 	}
@@ -71,6 +73,7 @@ public class HostCacheImpl extends HostCache {
 	}
 
 	protected Host get(final String key) {
+		Logger.info(this,"getting from cache " + key);
 		return null != key && null != hostCacheMap.get(key) ? new Host(hostCacheMap.get(key)) : null;
 	}
 
@@ -83,6 +86,7 @@ public class HostCacheImpl extends HostCache {
 	}
 
 	public void clearCache() {
+		Logger.info(this,"cleaning cache");
         hostCacheMap.clear();
     }
 

@@ -250,12 +250,11 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
     @Override
     @SuppressWarnings("unchecked")
     public Container find(final String inode, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-
+Logger.info(this,"find containerapiimpl" + inode);
 	      final  Identifier  identifier = Try.of(()->APILocator.getIdentifierAPI().findFromInode(inode)).getOrNull();
         final Container container = this.isContainerFile(identifier) ?
 				this.getWorkingContainerByFolderPath(identifier.getParentPath(), identifier.getHostId(), user, respectFrontendRoles):
                 containerFactory.find(inode);
-Logger.info(this,"CONTAINERAPITEST_FINDFACTORY: " + container==null?"null":container.getIdentifier());
         if (container == null) {
             return null;
         }
@@ -370,7 +369,7 @@ Logger.info(this,"CONTAINERAPITEST_FINDFACTORY: " + container==null?"null":conta
     private Container getWorkingVersionInfoContainerById(final String containerId, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
         final  VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(containerId);
-		Logger.info(this,"CONTAINERAPITEST_VERSIONINFO: " + info !=null?"null":info.getWorkingInode());
+		Logger.info(this,"CONTAINERAPITEST_VERSIONINFO: " + info.getWorkingInode());
         return info !=null? find(info.getWorkingInode(), user, respectFrontendRoles): null;
     }
 
