@@ -75,7 +75,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     private static final String CONTENT_TYPE_CONDITION = "+contentType";
     private final DotConcurrentFactory concurrentFactory = DotConcurrentFactory.getInstance();
     private LanguageAPI languageAPI;
-    private final static  String TOPIC_NAME = HostCacheTopic.HOST_CACHE_TOPIC;
+//    private final static  String TOPIC_NAME = HostCacheTopic.HOST_CACHE_TOPIC;
 //    private final DotPubSubProvider pubsub;
 //    private final HostCacheTopic hostCacheTopic;
 
