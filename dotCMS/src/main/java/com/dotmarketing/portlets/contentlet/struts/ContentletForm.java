@@ -2,7 +2,6 @@ package com.dotmarketing.portlets.contentlet.struts;
 
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.rendering.velocity.viewtools.util.ConversionUtils;
 import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.apache.struts.validator.ValidatorForm;
@@ -539,7 +538,7 @@ public class ContentletForm extends ValidatorForm {
 				if (null != contentlet && contentlet.isFileAsset()) {
 					return Optional.ofNullable(
 					     Try.of(()->
-							APILocator.getFileMetadataAPI().getFullMetadataNoCacheForceGenerate(contentlet,FileAssetAPI.BINARY_FIELD).getMap()
+							APILocator.getFileMetadataAPI().getOrGenerateFullMetadataNoCache(contentlet,FileAssetAPI.BINARY_FIELD).getMap()
 					       ).getOrNull()
 					);
 				}

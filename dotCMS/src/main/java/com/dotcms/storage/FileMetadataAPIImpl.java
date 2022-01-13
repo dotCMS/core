@@ -286,21 +286,21 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     public Metadata getMetadata(final Contentlet contentlet, final Field field)
             throws DotDataException {
 
-        return getMetadata(contentlet, field.variable(), false);
+        return internalGetMetadata(contentlet, field.variable(), false);
     }
 
     /**
      * {@inheritDoc}
      * @param contentlet  {@link Contentlet}
      * @param field       {@link Field}
-     * @param forceGenerate @boolean
+     * @param generateIfAbsent @boolean
      * @return
      */
     @Override
-    public Metadata getMetadata(final Contentlet contentlet, final Field field, final boolean forceGenerate)
+    public Metadata getMetadata(final Contentlet contentlet, final Field field, final boolean generateIfAbsent)
             throws DotDataException {
 
-        return this.getMetadata(contentlet, field.variable(), forceGenerate);
+        return this.internalGetMetadata(contentlet, field.variable(), generateIfAbsent);
     }
 
     /**
@@ -313,7 +313,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     public Metadata getMetadata(final Contentlet contentlet,final  String fieldVariableName)
             throws DotDataException {
 
-        return getMetadata(contentlet, fieldVariableName, false);
+        return internalGetMetadata(contentlet, fieldVariableName, false);
     }
 
     /**
@@ -323,19 +323,19 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @return
      */
     @Override
-    public Metadata getMetadataForceGenerate(final Contentlet contentlet, final String fieldVariableName)
+    public Metadata getOrGenerateMetadata(final Contentlet contentlet, final String fieldVariableName)
             throws DotDataException {
-        return getMetadata(contentlet, fieldVariableName, true);
+        return internalGetMetadata(contentlet, fieldVariableName, true);
     }
 
     /**
      * {@inheritDoc}
      * @param contentlet          {@link Contentlet}
      * @param fieldVariableName  {@link String}
-     * @param forceGenerate  @boolean
+     * @param generateIfAbsent  @boolean
      * @return
      */
-    private Metadata getMetadata(final Contentlet contentlet, final String fieldVariableName, final boolean forceGenerate)
+    private Metadata internalGetMetadata(final Contentlet contentlet, final String fieldVariableName, final boolean generateIfAbsent)
             throws DotDataException {
 
         if(null != contentlet.get(fieldVariableName) && UtilMethods.isSet(contentlet.getInode())) {
@@ -344,7 +344,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                     .getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
             final String metadataPath = getFileName(contentlet, fieldVariableName);
 
-            Map<String, Serializable> metadataMap = fileStorageAPI.retrieveMetaData(
+            final Map<String, Serializable> metadataMap = fileStorageAPI.retrieveMetaData(
                     new FetchMetadataParams.Builder()
                             .projectionMapForCache(this::filterNonBasicMetadataFields)
                             .cache(() -> contentlet.getInode() + StringPool.COLON
@@ -355,16 +355,19 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
             );
 
             if (null != metadataMap) {
+                //check version if lower then re-generate
+                if(getBinaryMetadataVersion() > (int)metadataMap.getOrDefault("version", 0) ){
+                    //TODO Fix me cuz this will cause an endless loop and therefore a stackoverflow
+                     return Try.of (()->generateContentletMetadata(contentlet).getFullMetadataMap().get(fieldVariableName)).getOrElseThrow(
+                             DotDataException::new);
+                }
+                //version is fine return whatever we got from storage/cache
                 return new Metadata(fieldVariableName, metadataMap);
             }
 
-            if (forceGenerate) {
-                try {
-                    return generateContentletMetadata(contentlet).getFullMetadataMap()
-                            .get(fieldVariableName);
-                } catch (IOException e) {
-                    throw new DotDataException(e);
-                }
+            if (generateIfAbsent) {
+                return Try.of (()->generateContentletMetadata(contentlet).getFullMetadataMap().get(fieldVariableName)).getOrElseThrow(
+                        DotDataException::new);
             }
         }
         return null;
@@ -392,7 +395,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @return
      */
     @Override
-    public Metadata getFullMetadataNoCacheForceGenerate(final Contentlet contentlet,
+    public Metadata getOrGenerateFullMetadataNoCache(final Contentlet contentlet,
             final String fieldVariableName) throws DotDataException{
         return getFullMetadataNoCache(contentlet, fieldVariableName, true);
     }
@@ -526,7 +529,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
         final String first = binaryFields._1().first();
 
         try {
-            return Optional.ofNullable(getMetadata(contentlet, first, forceGenerate));
+            return Optional.ofNullable(internalGetMetadata(contentlet, first, forceGenerate));
         } catch (DotDataException e) {
             Logger.error(FileMetadataAPIImpl.class, e);
         }

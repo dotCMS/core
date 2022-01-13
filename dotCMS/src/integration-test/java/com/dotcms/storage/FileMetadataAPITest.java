@@ -52,7 +52,6 @@ import java.util.SortedSet;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -467,7 +466,7 @@ public class FileMetadataAPITest {
     }
 
     /**
-     *  Method to test: {@link FileMetadataAPIImpl#getFullMetadataNoCacheForceGenerate(Contentlet, String)}
+     *  Method to test: {@link FileMetadataAPIImpl#getOrGenerateFullMetadataNoCache(Contentlet, String)}
      *  Given scenario: We create a new piece of content then we call getMetadataNoCache. The new piece of content isn't expected to have any previously generated metadata
      *  Expected Result: Calling again the method with the force param set to true must take care of the MD generation
      * @param storageType
@@ -493,7 +492,7 @@ public class FileMetadataAPITest {
             assertNull(fileAssetMD);
 
             fileAssetMD = fileMetadataAPI
-                    .getFullMetadataNoCacheForceGenerate(fileAssetContent, FILE_ASSET);
+                    .getOrGenerateFullMetadataNoCache(fileAssetContent, FILE_ASSET);
             assertFalse(fileAssetMD.getFieldsMeta().isEmpty());
 
             //This might seem a little unnecessary but by doing this we verify the fields in the resulting map are the ones allowed to be preset in the metadata generation
@@ -566,7 +565,7 @@ public class FileMetadataAPITest {
     }
 
     /**
-     * Method to test: {@link FileMetadataAPIImpl#getMetadataForceGenerate(Contentlet, String)}
+     * Method to test: {@link FileMetadataAPIImpl#getOrGenerateMetadata(Contentlet, String)}
      * Given scenario: We create a new piece of content then we call getMetadata. Which isn't expected to have any previously generated metadata
      * Expected Result: Calling again the method with the force param set to true must take care of the MD generation
      * @param storageType
@@ -594,7 +593,7 @@ public class FileMetadataAPITest {
             Metadata fileAssetMD = fileMetadataAPI.getMetadata(fileAssetContent, FILE_ASSET);
             assertNull(fileAssetMD);
             ///Now we should be getting the generated md
-            final Metadata meta = fileMetadataAPI.getMetadataForceGenerate(fileAssetContent, FILE_ASSET);
+            final Metadata meta = fileMetadataAPI.getOrGenerateMetadata(fileAssetContent, FILE_ASSET);
             assertNotNull(meta);
 
             final Map<String, Serializable> metadataMap = meta.getFieldsMeta();
