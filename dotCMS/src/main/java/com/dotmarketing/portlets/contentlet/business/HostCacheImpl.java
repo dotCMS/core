@@ -47,10 +47,10 @@ public class HostCacheImpl extends HostCache {
         	hostCacheMap.put(key3,host);
         }
 
-		final List<String> aliases = APILocator.getHostAPI().parseHostAliases(host);
-		for(final String alias : aliases ){
-			addHostAlias(alias,host);
-		}
+//		final List<String> aliases = APILocator.getHostAPI().parseHostAliases(host);
+//		for(final String alias : aliases ){
+//			addHostAlias(alias,host);
+//		}
 
 		return host;
 	}
