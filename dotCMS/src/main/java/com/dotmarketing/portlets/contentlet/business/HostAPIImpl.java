@@ -1140,7 +1140,7 @@ hostCache.clearCache();
     public void updateCache(Host host) {
 //        this.updateCache(null!=host);
         hostCache.clearCache();
-        hostCache.add(host);
+        hostCache.add(new Host(host));
     }
 
 //    private void updateCache(final boolean sendEvent) {
