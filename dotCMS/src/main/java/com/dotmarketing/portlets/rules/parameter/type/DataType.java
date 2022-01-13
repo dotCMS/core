@@ -11,7 +11,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.util.Collections;
 import java.util.Map;
 import org.apache.commons.lang.StringUtils;
-import org.elasticsearch.common.Nullable;
+import javax.annotation.Nullable;
 
 /**
  * @author Geoff M. Granum
