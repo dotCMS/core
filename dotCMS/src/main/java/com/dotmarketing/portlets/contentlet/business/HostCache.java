@@ -2,7 +2,6 @@ package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.Cachable;
-import java.util.List;
 import java.util.Set;
 
 //This interface should have default package access
@@ -20,7 +19,7 @@ public abstract class HostCache implements Cachable{
 
 	abstract protected void addAll(final Iterable<Host> hosts);
 
-	abstract protected List<Host> getAllSites();
+	abstract protected Set<Host> getAllSites();
 
 	abstract protected Host getDefaultHost();
 	

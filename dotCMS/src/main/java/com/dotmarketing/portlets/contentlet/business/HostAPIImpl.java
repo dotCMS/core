@@ -407,7 +407,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     @Override
     public List<Host> findAllFromCache(final User user,
             final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        List<Host> cachedSites = hostCache.getAllSites();
+        Set<Host> cachedSites = hostCache.getAllSites();
         if(cachedSites.isEmpty()){
             final List<Host> allFromDB = findAllFromDB(user, respectFrontendRoles);
             hostCache.addAll(allFromDB);

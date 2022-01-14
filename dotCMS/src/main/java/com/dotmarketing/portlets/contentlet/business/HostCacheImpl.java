@@ -8,7 +8,7 @@ import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableSet;
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -70,9 +70,9 @@ public class HostCacheImpl extends HostCache {
     }
 
 
-	protected List<Host> getAllSites(){
+	protected Set<Host> getAllSites(){
 //		return (Set<Host>) cache.getNoThrow(SITES, PRIMARY_GROUP);
-		return new ArrayList<>(this.hostCacheMap.values());
+		return new HashSet<>(hostCacheMap.values());
 	}
 
 //	private void clearSitesList(){
