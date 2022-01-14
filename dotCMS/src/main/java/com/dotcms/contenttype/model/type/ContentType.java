@@ -1,6 +1,5 @@
 package com.dotcms.contenttype.model.type;
 
-import static com.dotcms.util.CollectionsUtils.map;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.publisher.util.PusheableAsset;
