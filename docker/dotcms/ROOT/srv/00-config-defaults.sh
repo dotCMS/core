@@ -47,7 +47,7 @@ export DOT_TAIL_LOG_LOG_FOLDER=${DOT_TAIL_LOG_LOG_FOLDER:-"$TOMCAT_HOME/logs"}
 
 # OSGi felix install directory 
 export DOT_FELIX_FELIX_UNDEPLOYED_DIR=${DOT_FELIX_FELIX_UNDEPLOYED_DIR:-"/data/shared/felix/undeployed"}
-export DOT_FELIX_FELIX_FILE_INSTALL_DIR=${DOT_FELIX_FELIX_FILE_INSTALL_DIR:-"/data/shared/felix/load"}
+export DOT_FELIX_FELIX_FILEINSTALL_DIR=${DOT_FELIX_FELIX_FILEINSTALL_DIR:-"/data/shared/felix/load"}
 export DOT_FELIX_FELIX_UPLOAD_DIR=${DOT_FELIX_FELIX_UPLOAD_DIR:-"/data/shared/felix/upload"}
 
 # MISC
