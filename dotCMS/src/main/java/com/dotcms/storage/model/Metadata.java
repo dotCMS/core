@@ -12,6 +12,7 @@ import static com.dotcms.storage.model.BasicMetadataFields.SIZE_META_KEY;
 import static com.dotcms.storage.model.BasicMetadataFields.TITLE_META_KEY;
 import static com.dotcms.storage.model.BasicMetadataFields.WIDTH_META_KEY;
 
+import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
 import io.vavr.control.Try;
@@ -81,11 +82,23 @@ public class Metadata implements Serializable {
     }
 
     public int getLength(){
-        return Try.of(()->(int)getFieldsMeta().get(LENGTH_META_KEY.key())).getOrElse(0);
+        final Object value = getFieldsMeta().get(LENGTH_META_KEY.key());
+        if(value instanceof Number){
+            final Number numericValue = (Number) value;
+            return numericValue.intValue();
+        }
+        Logger.debug(Metadata.class, ()->String.format("Invalid non numeric value found on metadata.length `%s` returning 0 ",value));
+        return 0;
     }
 
     public int getSize(){
-        return Try.of(()->(int)getFieldsMeta().get(SIZE_META_KEY.key())).getOrElse(0);
+        final Object value = getFieldsMeta().get(SIZE_META_KEY.key());
+        if(value instanceof Number){
+            final Number numericValue = (Number) value;
+            return numericValue.intValue();
+        }
+        Logger.debug(Metadata.class, ()->String.format("Invalid non numeric value found on metadata.size `%s` returning 0 ",value));
+        return 0;
     }
 
     public String getPath(){
@@ -113,15 +126,33 @@ public class Metadata implements Serializable {
     }
 
     public int getWidth(){
-        return Try.of(()->(int)getFieldsMeta().get(WIDTH_META_KEY.key())).getOrElse(0);
+        final Object value = getFieldsMeta().get(WIDTH_META_KEY.key());
+        if(value instanceof Number){
+           final Number numericValue = (Number) value;
+           return numericValue.intValue();
+        }
+        Logger.debug(Metadata.class, ()->String.format("Invalid non numeric value found on metadata.width `%s` returning 0 ",value));
+        return 0;
     }
 
     public int getHeight(){
-        return Try.of(()->(int)getFieldsMeta().get(HEIGHT_META_KEY.key())).getOrElse(0);
+        final Object value = getFieldsMeta().get(HEIGHT_META_KEY.key());
+        if(value instanceof Number){
+            final Number numericValue = (Number) value;
+            return numericValue.intValue();
+        }
+        Logger.debug(Metadata.class, ()->String.format("Invalid non numeric value found on metadata.height `%s` returning 0 ",value));
+        return 0;
     }
 
     public long getModDate(){
-        return Try.of(()->(long)getFieldsMeta().get(MOD_DATE_META_KEY.key())).getOrElse(0L);
+        final Object value = getFieldsMeta().get(MOD_DATE_META_KEY.key());
+        if(value instanceof Number){
+            final Number numericValue = (Number) value;
+            return numericValue.longValue();
+        }
+        Logger.debug(Metadata.class, ()->String.format("Invalid non numeric value found on metadata.modDate `%s` returning 0 ",value));
+        return 0;
     }
 
     @Override
