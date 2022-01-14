@@ -729,7 +729,7 @@ public class HostAPITest extends IntegrationTestBase  {
         final HostAPI hostAPI = APILocator.getHostAPI();
         final List<Host> allFromDB1 = hostAPI.findAllFromDB(systemUser, false);
         final List<Host> allFromCache1 = hostAPI.findAllFromCache(systemUser, false);
-        Assert.assertEquals(allFromDB1, allFromCache1);
+        Assert.assertEquals(allFromDB1.size(), allFromCache1.size());
         final Host host1 = new SiteDataGen().aliases("any.client.dotcms.com").nextPersisted();
         final List<Host> allFromCache2 = hostAPI.findAllFromCache(systemUser, false);
         assertTrue(allFromCache1.size() < allFromCache2.size());
