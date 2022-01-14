@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
@@ -50,6 +51,11 @@ public class HostCacheImpl extends HostCache {
 			hostCacheMap.put(key3,host);
         }
 
+        //All known aliases to the cache
+		final List<String> aliases = APILocator.getHostAPI().parseHostAliases(host);
+		for(final String alias : aliases ){
+			addHostAlias(alias,host);
+		}
 
 		return host;
 		
@@ -77,12 +83,12 @@ public class HostCacheImpl extends HostCache {
 //		Host host = null;
 		//    		String hostId = (String) cache.get(key,ALIAS_GROUP);
 //    		host = get(hostId);
-		Host host = hostCacheMap.get(key);
-		if(host == null){
-			hostCacheMap.remove(key);
-		}
+//		Host host = hostCacheMap.get(key);
+//		if(host == null){
+//			hostCacheMap.remove(key);
+//		}
 
-		return host;
+		return get(key);
 	}
 	
 	protected Host get(String key) {
