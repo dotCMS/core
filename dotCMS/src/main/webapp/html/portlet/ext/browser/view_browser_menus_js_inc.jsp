@@ -918,9 +918,9 @@
 		}
 
 		// HTML code is empty by default.
-        var htmlCode = '';
+		var htmlCode = '';
 
-        // Add HTML code for addNewDropDownButtonDiv only if MenuOption are enabled
+		// Add HTML code for addNewDropDownButtonDiv only if MenuOption are enabled
 		if (menuOptions) {
 			htmlCode += '<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props=\'iconClass:"fa-plus", class:"dijitDropDownActionButton"\'>';
 			htmlCode += '<span></span>';
@@ -931,7 +931,7 @@
 		}
 
 		dojo.byId("addNewDropDownButtonDiv").innerHTML = htmlCode;
-        dojo.parser.parse("addNewDropDownButtonDiv");
+		dojo.parser.parse("addNewDropDownButtonDiv");
 	}
 
 	//*************************************
