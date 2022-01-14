@@ -219,9 +219,8 @@ if(!hasPermissions) {
 			<td style="display: flex; align-items: center; justify-content: space-between;">
 				<%= content.getTitle()%>
                 <button dojoType="dijit.form.Button" type="button" 
-                    onclick="emmitCompareEvent('<%= vinode %>', '<%= videntifier %>', '<%=lang.getLanguageCode() %>-<%=lang.getCountryCode().toLowerCase()%>');return false;"
-                    >
-                    <%= LanguageUtil.get(pageContext, "compare") %>
+                    onclick="emmitCompareEvent('<%= vinode %>', '<%= videntifier %>', '<%=lang.getLanguageCode() %>-<%=lang.getCountryCode().toLowerCase()%>');return false;" >
+                    <%= LanguageUtil.get(pageContext, "compare.to.previous.versions") %>
                 </button>
 
 			</td>
