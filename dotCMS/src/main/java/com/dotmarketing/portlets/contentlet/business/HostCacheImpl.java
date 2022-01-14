@@ -7,6 +7,8 @@ import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class HostCacheImpl extends HostCache {
 	
 	final String DEFAULT_HOST = "_dotCMSDefaultHost_";
-	final String SITES = "_dotSites_";
+//	final String SITES = "_dotSites_";
 
 	private DotCacheAdministrator cache;
 	private Map<String,Host> hostCacheMap;
@@ -62,20 +64,20 @@ public class HostCacheImpl extends HostCache {
     }
 
 
-	protected Set<Host> getAllSites(){
+	protected List<Host> getAllSites(){
 //		return (Set<Host>) cache.getNoThrow(SITES, PRIMARY_GROUP);
-		return (Set<Host>) this.hostCacheMap.values();
+		return new ArrayList<>(this.hostCacheMap.values());
 	}
 
-	private void clearSitesList(){
-		hostCacheMap.remove(SITES);
-	}
+//	private void clearSitesList(){
+//		hostCacheMap.remove(SITES);
+//	}
 
 	protected Host getHostByAlias(String key) {
-		Host host = null;
+//		Host host = null;
 		//    		String hostId = (String) cache.get(key,ALIAS_GROUP);
 //    		host = get(hostId);
-		host = hostCacheMap.get(key);
+		Host host = hostCacheMap.get(key);
 		if(host == null){
 			hostCacheMap.remove(key);
 		}
@@ -84,10 +86,7 @@ public class HostCacheImpl extends HostCache {
 	}
 	
 	protected Host get(String key) {
-    	Host host = null;
-		host = (Host) hostCacheMap.get(key);
-
-		return host;
+		return null != key && null != hostCacheMap.get(key) ? new Host(hostCacheMap.get(key)) : null;
 	}
 
     /* (non-Javadoc)
@@ -106,29 +105,30 @@ public class HostCacheImpl extends HostCache {
     protected void remove(Host host){
     	
     	// always remove default host
-		hostCacheMap.remove(DEFAULT_HOST);
-
-    	//remove aliases from host in cache
-    	Host h = get(host.getIdentifier());
-
-    	
-    	String key = host.getIdentifier();
-    	String key2 = host.getHostname();
-    	
-    	try{
-    		hostCacheMap.remove(key);
-    	}catch (Exception e) {
-			Logger.debug(this, "Cache not able to be removed", e);
-		} 
-    	
-    	try{
-			hostCacheMap.remove(key2);
-    	}catch (Exception e) {
-			Logger.debug(this, "Cache not able to be removed", e);
-    	} 
-    		        	
-    	clearAliasCache();
-    	clearSitesList();
+//		hostCacheMap.remove(DEFAULT_HOST);
+//
+//    	//remove aliases from host in cache
+//    	Host h = get(host.getIdentifier());
+//
+//
+//    	String key = host.getIdentifier();
+//    	String key2 = host.getHostname();
+//
+//    	try{
+//    		hostCacheMap.remove(key);
+//    	}catch (Exception e) {
+//			Logger.debug(this, "Cache not able to be removed", e);
+//		}
+//
+//    	try{
+//			hostCacheMap.remove(key2);
+//    	}catch (Exception e) {
+//			Logger.debug(this, "Cache not able to be removed", e);
+//    	}
+//
+//    	clearAliasCache();
+//    	clearSitesList();
+		hostCacheMap.clear();
     	 
     }
 
