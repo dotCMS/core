@@ -116,6 +116,8 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
         response = response == null ? HttpServletResponseThreadLocal.INSTANCE.getResponse()
                 : response;
 
+        if(request==null || response==null) return null;
+
         final org.apache.velocity.context.Context context = (request!=null && response!=null)
                 ? VelocityUtil.getInstance().getContext(request, response)
                 : VelocityUtil.getBasicContext();

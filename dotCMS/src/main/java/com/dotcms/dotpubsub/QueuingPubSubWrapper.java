@@ -52,6 +52,12 @@ public class QueuingPubSubWrapper implements DotPubSubProvider {
         
     }
 
+    @Override
+    public String getProviderName() {
+        return wrappedProvider.getProviderName();
+    }
+    
+    
     public QueuingPubSubWrapper() {
         this(DotPubSubProviderLocator.provider.get());
     }
