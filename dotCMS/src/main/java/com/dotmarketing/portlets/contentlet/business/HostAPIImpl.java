@@ -385,20 +385,24 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     @CloseDBIfOpened
     public List<Host> findAllFromDB(final User user,
                                     final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        final StringBuilder sqlQuery = new StringBuilder("select cvi.working_inode as inode from contentlet_version_info cvi, identifier id where"
-                +" id.asset_subtype = 'Host' and cvi.identifier = id.id");
+        final List<Host> hosts = new ArrayList<Host>();
 
-        final DotConnect dc = new DotConnect().setSQL(sqlQuery.toString());
-        final List<Map<String,String>> inodesMapList =  dc.loadResults();
+        final String sql = "select  c.title, c.inode from contentlet_version_info clvi, contentlet c, structure s  " +
+                " where c.structure_inode = s.inode and  s.name = 'Host' and c.identifier <> ? and clvi.working_inode = c.inode ";
 
-        final List<String> inodes = new ArrayList<>();
-        for (final Map<String, String> versionInfoMap : inodesMapList) {
-            inodes.add(versionInfoMap.get("inode"));
+        final DotConnect dc = new DotConnect();
+        dc.setSQL(sql);
+        dc.addParam(Host.SYSTEM_HOST);
+        @SuppressWarnings("unchecked")
+        final List<Map<String,String>> ret = dc.loadResults();
+
+        for(Map<String,String> m : ret) {
+            String inode=m.get("inode");
+            final Contentlet con=APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false);
+            hosts.add(new Host(con));
         }
 
-        final List<Contentlet> contentletList  = APILocator.getContentletAPI().findContentlets(inodes);
-
-        return convertToHostList(contentletList);
+        return hosts;
     }
 
     @Override
