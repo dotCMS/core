@@ -253,7 +253,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             }
             
             host = new Host(list.get(0));
-            hostCache.add(host);
+            this.updateCache(true);
 
             return host;
             
@@ -935,7 +935,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         if(UtilMethods.isSet(inode)) {
 
             defaultHost = new Host(APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false));
-            hostCache.add(defaultHost);
+            this.updateCache(true);
         } else {
 
             defaultHost.setDefault(true);
@@ -1037,8 +1037,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         final Contentlet contentletHost = APILocator.getContentletAPI().find(host.getInode(), user, respectFrontendRoles);
         contentletHost.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
         APILocator.getContentletAPI().publish(contentletHost, user, respectFrontendRoles);
-        hostCache.add(host);
-        hostCache.clearAliasCache();
+        this.updateCache(true);
 
     }
 
@@ -1050,8 +1049,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         }
         Contentlet c = APILocator.getContentletAPI().find(host.getInode(), user, respectFrontendRoles);
         APILocator.getContentletAPI().unpublish(c, user, respectFrontendRoles);
-        hostCache.add(host);
-        hostCache.clearAliasCache();
+        this.updateCache(true);
     }
 
     @WrapInTransaction
@@ -1096,7 +1094,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
                     .find(Host.HOST_VELOCITY_VAR_NAME);
             if (cont.getStructureInode().equals(type.inode())) {
                 host = new Host(cont);
-                hostCache.add(host);
+                this.updateCache(true);
             }
         }
 
@@ -1130,10 +1128,6 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
                             .getOrElse(Collections.emptyList());
                     hostCache.addAll(hostList);
                 });
-    }
-
-    private void updateCache(){
-        updateCache(true);
     }
 
     @Override
