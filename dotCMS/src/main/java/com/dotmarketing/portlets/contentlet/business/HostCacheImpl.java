@@ -21,7 +21,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class HostCacheImpl extends HostCache {
 	
 	final String DEFAULT_HOST = "_dotCMSDefaultHost_";
-//	final String SITES = "_dotSites_";
 
 	private DotCacheAdministrator cache;
 	private Map<String,Host> hostCacheMap;
@@ -65,29 +64,14 @@ public class HostCacheImpl extends HostCache {
         for(final Host host:hosts){
            add(host);
         }
-
-//		cache.put(SITES, ImmutableSet.copyOf(hosts), PRIMARY_GROUP);
     }
 
 
 	protected Set<Host> getAllSites(){
-//		return (Set<Host>) cache.getNoThrow(SITES, PRIMARY_GROUP);
 		return new HashSet<>(hostCacheMap.values());
 	}
 
-//	private void clearSitesList(){
-//		hostCacheMap.remove(SITES);
-//	}
-
 	protected Host getHostByAlias(String key) {
-//		Host host = null;
-		//    		String hostId = (String) cache.get(key,ALIAS_GROUP);
-//    		host = get(hostId);
-//		Host host = hostCacheMap.get(key);
-//		if(host == null){
-//			hostCacheMap.remove(key);
-//		}
-
 		return get(key);
 	}
 	
@@ -100,8 +84,6 @@ public class HostCacheImpl extends HostCache {
 	 */
 	public void clearCache() {
         // clear the cache
-//        cache.flushGroup(PRIMARY_GROUP);
-//        cache.flushGroup(ALIAS_GROUP);
 		hostCacheMap.clear();
     }
 
@@ -109,33 +91,7 @@ public class HostCacheImpl extends HostCache {
 	 * @see com.dotmarketing.business.PermissionCache#remove(java.lang.String)
 	 */
     protected void remove(Host host){
-    	
-    	// always remove default host
-//		hostCacheMap.remove(DEFAULT_HOST);
-//
-//    	//remove aliases from host in cache
-//    	Host h = get(host.getIdentifier());
-//
-//
-//    	String key = host.getIdentifier();
-//    	String key2 = host.getHostname();
-//
-//    	try{
-//    		hostCacheMap.remove(key);
-//    	}catch (Exception e) {
-//			Logger.debug(this, "Cache not able to be removed", e);
-//		}
-//
-//    	try{
-//			hostCacheMap.remove(key2);
-//    	}catch (Exception e) {
-//			Logger.debug(this, "Cache not able to be removed", e);
-//    	}
-//
-//    	clearAliasCache();
-//    	clearSitesList();
 		hostCacheMap.clear();
-    	 
     }
 
     public String[] getGroups() {
@@ -158,8 +114,6 @@ public class HostCacheImpl extends HostCache {
     
     
 	protected void clearAliasCache() {
-        // clear the alias cache
-//        cache.flushGroup(ALIAS_GROUP);
 		hostCacheMap.clear();
     }
 }
