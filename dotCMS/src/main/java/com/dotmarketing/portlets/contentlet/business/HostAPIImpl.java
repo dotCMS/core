@@ -47,6 +47,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.*;
@@ -1104,9 +1105,35 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
 
     @Override
     public void updateCache(Host host) {
-        hostCache.remove(host);
-        hostCache.clearAliasCache();
-        hostCache.add(new Host(host));
+//        hostCache.remove(host);
+//        hostCache.clearAliasCache();
+//        hostCache.add(new Host(host));
+        this.updateCache(null!=host);
+    }
+
+    private void updateCache(final boolean sendEvent) {
+//        if(sendEvent) {
+//            Logger.debug(this, () -> "Host cache updated");
+//
+//            final DotPubSubEvent event = new DotPubSubEvent.Builder()
+//                    .withTopic(TOPIC_NAME)
+//                    .withType(EventType.HOST_CACHE_REQUEST.name())
+//                    .build();
+//            this.pubsub.publish(event);
+//        }
+
+        DotConcurrentFactory.getInstance().getSubmitter("updateHostCache").submit(
+                () -> {
+                    hostCache.clearCache();
+                    final List<Host> hostList = Try
+                            .of(() -> findAllFromDB(APILocator.systemUser(), false))
+                            .getOrElse(Collections.emptyList());
+                    hostCache.addAll(hostList);
+                });
+    }
+
+    private void updateCache(){
+        updateCache(true);
     }
 
     @Override
