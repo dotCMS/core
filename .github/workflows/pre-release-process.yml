@@ -13,16 +13,20 @@ on:
         description: 'Node version to use when building core-web'
         required: true
         default: '12'
+      skip_core_web:
+        description: 'Excludes core-web from code-freeze process'
+        required: false
+        default: 'false'
       dry_run:
         description: 'Dry-run flag to undo everything we do'
         required: false
         default: 'true'
 jobs:
   pre-release-process:
-    name: Automation of pre-release process
+    name: Automated Code Freeze process
     runs-on: ubuntu-latest
     env:
-      DOT_CICD_BRANCH: master
+      DOT_CICD_BRANCH: release-22.02
       RELEASE_VERSION: ${{ github.event.inputs.release_version }}
       DRY_RUN: ${{ github.event.inputs.dry_run }}
       DEBUG: true
@@ -58,6 +62,7 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           FROM_BRANCH: ${{ github.event.inputs.from_branch }}
           NODE_VERSION: ${{ github.event.inputs.node_version }}
+          SKIP_CORE_WEB: ${{ github.event.inputs.skip_core_web }}
       - name: Discover docker tags
         id: discover-docker-tags
         uses: dotcms/discover-docker-tags-action@main
@@ -77,3 +82,17 @@ jobs:
           docker_hub_username: ${{ secrets.DOCKER_USERNAME }}
           docker_hub_token: ${{ secrets.DOCKER_TOKEN }}
           dry_run: ${{ env.DRY_RUN }}
+        if: env.DRY_RUN != 'true'
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@master
+        env:
+          SLACK_WEBHOOK: ${{ secrets.CODE_FREEZE_SLACK_WEBHOOK }}
+          SLACK_USERNAME: dotcms-bot
+          SLACK_TITLE: "Attention dotters: New pre-release created!"
+          SLACK_MSG_AUTHOR: " "
+          MSG_MINIMAL: true
+          SLACK_FOOTER: ""
+          SLACK_ICON: https://avatars.githubusercontent.com/u/1005263?s=200&v=4
+          SLACK_MESSAGE: "<!channel> A code freeze for ${{ env.RELEASE_VERSION }} has successfully run :hatching_chick:"
+#       For testing purposes remember to switch webhook channel to an account that can be used for testing
+        if: success()
