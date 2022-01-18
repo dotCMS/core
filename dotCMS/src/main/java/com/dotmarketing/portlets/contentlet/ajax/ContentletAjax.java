@@ -1912,7 +1912,7 @@ public class ContentletAjax {
 						if(!vars.isEmpty()){
 							String[] refererVars =referer.split("/");
 							for(String var: vars.keySet()){
-								String contVar = contentlet.get(var)!=null?(String)contentlet.get(var):"";
+								String contVar = contentlet.get(var)!=null?contentlet.get(var).toString():"";
 								String refererVar = refererVars[vars.get(var)];
 								if(UtilMethods.isSet(contVar) && !contVar.equals(refererVar)){
 									refererVars[vars.get(var)] = contVar;
