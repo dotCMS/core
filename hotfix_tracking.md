@@ -106,3 +106,5 @@ This maintenance release includes the following code fixes:
 51. https://github.com/dotCMS/core/issues/21392 : Make userId immutable #21392
 
 52. https://github.com/dotCMS/core/issues/21485 : Upgrade log4j2 to 2.17.1 #21485
+
+53. https://github.com/dotCMS/core/issues/21537 : [Static Publishing] : Problem with multi-language contents #21537
