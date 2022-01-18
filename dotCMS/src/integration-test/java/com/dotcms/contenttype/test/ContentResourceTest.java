@@ -72,7 +72,6 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.StringPool;
-import com.sun.org.apache.xerces.internal.dom.DeferredElementImpl;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -435,14 +434,13 @@ public class ContentResourceTest extends IntegrationTestBase {
             final Document doc = dBuilder.parse(inputSource);
             doc.getDocumentElement().normalize();
 
-            final DeferredElementImpl contentlet = (DeferredElementImpl) doc.getFirstChild().getFirstChild();
+            final Element contentlet = (Element) doc.getFirstChild().getFirstChild();
 
             //Validate parent identifier
             assertEquals(parent.getInode(), contentlet.getElementsByTagName("inode").item(0).getTextContent());
 
             //Validate child of the first relationship
-            NodeList items = ((DeferredElementImpl) (contentlet).getElementsByTagName(field1.variable()).item(0));
-
+            NodeList items = (contentlet.getElementsByTagName(field1.variable()).item(0)).getChildNodes();
             int j= 0;
             for (int i=0;i<items.getLength();i++){
                 String textContent = items.item(i).getTextContent();
@@ -455,7 +453,7 @@ public class ContentResourceTest extends IntegrationTestBase {
             assertEquals(1, j);
 
             //Validate children of the second relationship
-            items = ((DeferredElementImpl) (contentlet).getElementsByTagName(field2.variable()).item(0));
+            items = ((contentlet).getElementsByTagName(field2.variable()).item(0)).getChildNodes();
 
             j= 0;
             for (int i=0;i<items.getLength();i++){
@@ -480,7 +478,7 @@ public class ContentResourceTest extends IntegrationTestBase {
             throws Exception {
 
         final long language = languageAPI.getDefaultLanguage().getId();
-        final Map<String, Contentlet> contentlets = new HashMap();
+        final Map<String, Contentlet> contentlets = new HashMap<>();
 
         ContentType parentContentType = null;
         ContentType childContentType  = null;
@@ -786,8 +784,8 @@ public class ContentResourceTest extends IntegrationTestBase {
         final Document doc = dBuilder.parse(inputSource);
         doc.getDocumentElement().normalize();
 
-        final DeferredElementImpl contentletFromXML = (DeferredElementImpl) doc.getFirstChild().getFirstChild();
-        
+        final Element contentletFromXML = (Element) doc.getFirstChild().getFirstChild();
+
         assertNotNull(contentletFromXML.getElementsByTagName("__icon__"));
         assertNotNull(contentletFromXML.getElementsByTagName("contentTypeIcon"));
     }
@@ -1035,7 +1033,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         final Document doc = dBuilder.parse(inputSource);
         doc.getDocumentElement().normalize();
 
-        final DeferredElementImpl contentlet = (DeferredElementImpl) doc.getFirstChild().getFirstChild();
+        final Element contentlet = (Element) doc.getFirstChild().getFirstChild();
 
         final Contentlet parent = contentletMap.get("parent");
         final Contentlet child = contentletMap.get("child");
@@ -1066,27 +1064,27 @@ public class ContentResourceTest extends IntegrationTestBase {
     }
 
     private void validateChildrenXML(final Map<String, Contentlet> contentletMap,
-            final DeferredElementImpl contentlet, final Contentlet parent,
+            final Element contentlet, final Contentlet parent,
             final Contentlet child, final int depth) {
 
         //Verifies self related case
         if (depth == 3 && contentletMap.containsKey("sibling")){
             assertEquals(contentletMap.get("sibling").getIdentifier(),
-                    ((DeferredElementImpl) contentlet
+                    ((Element) contentlet
                             .getElementsByTagName(
                                     parent.getContentType().fields().get(0).variable())
                             .item(0)).getElementsByTagName(IDENTIFIER).item(0)
                             .getTextContent());
 
             assertEquals(child.getIdentifier(),
-                    ((DeferredElementImpl) contentlet
+                    ((Element) contentlet
                             .getElementsByTagName(
                                     parent.getContentType().fields().get(0).variable())
                             .item(0)).getElementsByTagName(IDENTIFIER).item(1)
                             .getTextContent());
         } else{
             assertEquals(child.getIdentifier(),
-                    ((DeferredElementImpl) contentlet
+                    ((Element) contentlet
                             .getElementsByTagName(
                                     parent.getContentType().fields().get(0).variable())
                             .item(0)).getElementsByTagName(IDENTIFIER).item(0)
@@ -1095,14 +1093,14 @@ public class ContentResourceTest extends IntegrationTestBase {
 
         if (depth > 1) {
             //validates grandchildren
-            final NodeList items = ((DeferredElementImpl) (contentlet)
+            final NodeList items = ((Element) (contentlet)
                     .getElementsByTagName(child.getContentType().fields().get(0).variable())
                     .item(0)).getElementsByTagName("item");
 
             assertEquals(2, items.getLength());
 
             CollectionsUtils.list(items.item(0), items.item(1)).stream()
-                    .map(elem -> depth == 2 ? elem: DeferredElementImpl.class.cast(elem)
+                    .map(elem -> depth == 2 ? elem: Element.class.cast(elem)
                             .getElementsByTagName(IDENTIFIER).item(0).getTextContent())
                     .allMatch(grandChild -> grandChild
                             .equals(contentletMap.get("grandChild1").getIdentifier())
@@ -1111,7 +1109,7 @@ public class ContentResourceTest extends IntegrationTestBase {
 
             //parent relationship was not added back again
             assertEquals(0,
-                    ((DeferredElementImpl) contentlet
+                    ((Element) contentlet
                             .getElementsByTagName(
                                     parent.getContentType().fields().get(0).variable())
                             .item(0)).getElementsByTagName(child.getContentType().fields().get(1).variable()).getLength());
