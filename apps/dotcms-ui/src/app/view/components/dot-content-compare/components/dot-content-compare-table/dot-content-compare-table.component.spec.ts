@@ -403,7 +403,7 @@ describe('DotContentCompareTableComponent', () => {
             expect(hostComponent.changeDiff.emit).toHaveBeenCalledOnceWith(true);
         });
 
-        xit('should emit bring back', () => {
+        it('should emit bring back', () => {
             spyOn(hostComponent.bringBack, 'emit');
             const button = de.query(By.css('[data-testId="table-bring-back"]'));
 
