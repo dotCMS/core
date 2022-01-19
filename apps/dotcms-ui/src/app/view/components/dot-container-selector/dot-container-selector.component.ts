@@ -9,7 +9,6 @@ import { Observable } from 'rxjs';
 import { map, take } from 'rxjs/operators';
 
 @Component({
-    providers: [PaginatorService],
     selector: 'dot-container-selector',
     templateUrl: './dot-container-selector.component.html',
     styleUrls: ['./dot-container-selector.component.scss']
