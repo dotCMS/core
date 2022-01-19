@@ -123,9 +123,10 @@ public class FileStorageAPIImpl implements FileStorageAPI {
             if (!metaDataKeyFilter.test(CONTENT_TYPE_META_KEY.key())) {
                 standAloneMetadata.remove(CONTENT_TYPE_META_KEY.key());
             }
-            return ensureTypes(standAloneMetadata);
 
-            mapBuilder.put("version", APILocator.getFileMetadataAPI().getBinaryMetadataVersion());
+            standAloneMetadata.put(VERSION_KEY.key(), APILocator.getFileMetadataAPI().getBinaryMetadataVersion());
+
+            return ensureTypes(standAloneMetadata);
         }
 
         return ImmutableMap.of();

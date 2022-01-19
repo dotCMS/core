@@ -8,11 +8,11 @@ import static com.dotcms.datagen.TestDataUtils.getMultipleBinariesContent;
 import static com.dotcms.datagen.TestDataUtils.getMultipleImageBinariesContent;
 import static com.dotcms.datagen.TestDataUtils.removeAnyMetadata;
 import static com.dotcms.rest.api.v1.temp.TempFileAPITest.mockHttpServletRequest;
+import static com.dotcms.storage.FileMetadataAPI.BINARY_METADATA_VERSION;
 import static com.dotcms.storage.StoragePersistenceProvider.DEFAULT_STORAGE_TYPE;
 import static com.dotcms.storage.model.Metadata.CUSTOM_PROP_PREFIX;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -99,7 +99,6 @@ public class FileMetadataAPITest {
      * Expected Results: we should get full and basic md for every type. Basic metadata must be included within the fm
      * @throws IOException
      */
-    
     @Test
     @UseDataProvider("getFileAssetMetadataTestCases")
     public void Test_Generate_Metadata_From_FileAssets(final TestCase testCase) throws Exception {
@@ -149,7 +148,6 @@ public class FileMetadataAPITest {
      * @param testCase
      * @throws Exception
      */
-    
     @Test
     @UseDataProvider("getFileAssetMetadataTestCases")
     public void Test_Force_Set_Metadata(final TestCase testCase) throws Exception {
@@ -310,6 +308,7 @@ public class FileMetadataAPITest {
         assertNotNull(metaData.getFieldName());
         assertNotNull(metaData.getContentType());
         assertNotNull(metaData.getFieldName());
+        assertEquals(metaData.getVersion(), fileMetadataAPI.getBinaryMetadataVersion());
     }
 
     private static final Set<String> basicMetadataFields = new HashSet<>(BasicMetadataFields.keyMap().keySet());
@@ -336,7 +335,6 @@ public class FileMetadataAPITest {
      * Expected Results:
      * @throws IOException
      */
-    
     @Test
     @UseDataProvider("getStorageType")
     public void Test_Generate_Metadata_From_ContentType_With_Multiple_Binary_Fields(final StorageType storageType) throws Exception {
@@ -406,7 +404,6 @@ public class FileMetadataAPITest {
      * Expected Results: After calling findBinaryFields I should get a tuple with one file
      * candidate for the full MD generation and the rest in the second component of the tuple
      */
-    
     @Test
     public void Test_Get_First_Indexed_Binary_Field() throws Exception {
         prepareIfNecessary();
@@ -437,7 +434,6 @@ public class FileMetadataAPITest {
      * @param storageType
      * @throws IOException
      */
-    
     @Test
     @UseDataProvider("getStorageType")
     public void Test_Get_Metadata_No_Cache(final StorageType storageType) throws Exception {
@@ -473,7 +469,7 @@ public class FileMetadataAPITest {
                     .getMetadataFields(fieldMap.get(FILE_ASSET).id());
 
             fileAssetMeta.getFieldsMeta().forEach((key, value) -> {
-                assertTrue(metadataFields.contains(key) || basicMetadataFields.contains(key));
+                assertTrue(String.format(" key `%s` isn't recognized ",key),metadataFields.contains(key) || basicMetadataFields.contains(key));
             });
 
         } finally {
@@ -489,7 +485,6 @@ public class FileMetadataAPITest {
      * @param storageType
      * @throws IOException
      */
-    
     @Test
     @UseDataProvider("getStorageType")
     public void Test_Get_Metadata_No_Cache_Force_Generate(final StorageType storageType) throws Exception {
@@ -521,7 +516,7 @@ public class FileMetadataAPITest {
                     .getMetadataFields(fieldMap.get(FILE_ASSET).id());
 
             fileAssetMD.getFieldsMeta().forEach((key, value) -> {
-                assertTrue(metadataFields.contains(key) || basicMetadataFields.contains(key));
+                assertTrue(String.format(" key `%s` isn't recognized ",key),metadataFields.contains(key) || basicMetadataFields.contains(key));
             });
 
         } finally {
@@ -538,7 +533,6 @@ public class FileMetadataAPITest {
      * @param storageType
      * @throws IOException
      */
-    
     @Test
     @UseDataProvider("getStorageType")
     public void Test_GetMetadata(final StorageType storageType) throws Exception {
@@ -588,7 +582,6 @@ public class FileMetadataAPITest {
      * @param storageType
      * @throws IOException
      */
-    
     @Test
     @UseDataProvider("getStorageType")
     public void Test_GetMetadata_ForceGenerate(final StorageType storageType) throws Exception {
@@ -636,7 +629,6 @@ public class FileMetadataAPITest {
      * @param storageType
      * @throws IOException
      */
-    
     @Test
     @UseDataProvider("getStorageType")
     public void Test_Add_Custom_Attributes_FileAssets(final StorageType storageType)
@@ -701,7 +693,6 @@ public class FileMetadataAPITest {
      * @param storageType
      * @throws Exception
      */
-    
     @Test
     @UseDataProvider("getStorageType")
     public void Test_Copy_Metadata(final StorageType storageType) throws Exception {
@@ -742,7 +733,7 @@ public class FileMetadataAPITest {
             fileMetadataAPI.putCustomMetadataAttributes(dest,ImmutableMap.of(FILE_ASSET_1, ImmutableMap.of("foo","bar", "bar","foo","lol", "kek")));
             validateCustomMetadata(dest.getBinaryMetadata(FILE_ASSET_1).getCustomMeta());
             assertEquals(dest.getBinaryMetadata(FILE_ASSET_1).getCustomMeta().get("lol"),"kek");
-            //Now lets try setting an empty map and verify the're gone.
+            //Now lets try setting an empty map and verify they're gone.
             fileMetadataAPI.putCustomMetadataAttributes(dest,ImmutableMap.of(FILE_ASSET_1, ImmutableMap.of()));
             assertTrue(dest.getBinaryMetadata(FILE_ASSET_1).getMap().isEmpty());
             //And last
@@ -765,7 +756,6 @@ public class FileMetadataAPITest {
      * @param storageType
      * @throws Exception
      */
-    
     @Test
     @UseDataProvider("getStorageType")
     public void Test_Generate_Metadata_Should_Not_Override_Custom_Attributes(final StorageType storageType) throws Exception {
@@ -877,7 +867,7 @@ public class FileMetadataAPITest {
      * Expected result: When we request such info using the same id the results we get must match the originals
      * @throws Exception
      */
-    
+
     @Test
     public void Test_Add_Then_Recover_Temp_Resource_Metadata() throws Exception {
         prepareIfNecessary();
@@ -900,6 +890,53 @@ public class FileMetadataAPITest {
         }
     }
 
+    /**
+     *
+     * Method to test: {@link FileMetadataAPIImpl#generateContentletMetadata(Contentlet)}
+     * Internally we test the version coming back from the stored metadata. This test should tell us
+     * if we encounter any lower version than the present version used to compile this FileMetadataAPI
+     * The md needs to be regenerated and therefore new attributes can be injected lazily
+     * Given scenario: First generate a fresh contentlet from from any MD then temporarily change the current version.
+     * Expected result: when requested the md should be regenerated and come back with the new version we're mocking
+     * @throws Exception
+     */
+    @Test
+    @UseDataProvider("getStorageType")
+    public void Test_Metadata_Gets_Updated_When_Lower_Version_Found(final StorageType storageType) throws Exception {
+        prepareIfNecessary();
+        //Disconnect the md generation on the reindex
+        final boolean defaultValue = Config.getBooleanProperty(WRITE_METADATA_ON_REINDEX, true);
+        Config.setProperty(WRITE_METADATA_ON_REINDEX, false);
+        final String savedStorageType = Config.getStringProperty(DEFAULT_STORAGE_TYPE);
+        //Then set the storage type of use
+        Config.setProperty(DEFAULT_STORAGE_TYPE, storageType.name());
+        final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        try{
+            ///Create the content
+            final Contentlet source = getFileAssetContent(true, langId, TestFile.GIF);
+            assertNull(fileMetadataAPI.getMetadata(source, FILE_ASSET));
+            //Mock an Old version prior to metadata generation
+            Config.setProperty(BINARY_METADATA_VERSION,100);
+            //Generate metadata
+            final ContentletMetadata contentletMetadata = fileMetadataAPI.generateContentletMetadata(source);
+            final Metadata metadata = contentletMetadata.getFullMetadataMap().get(FILE_ASSET);
+            //Verify it was generated with the version we just mocked
+            assertEquals(100, metadata.getVersion());
+            //Now lets mock a newer version
+            Config.setProperty(BINARY_METADATA_VERSION,101);
+            //And request the Metadata
+            final Metadata binaryMetadata = source.getBinaryMetadata(FILE_ASSET);
+            //Since the version has changed we should expect the metadata coming back with the newer version
+            assertNotNull(binaryMetadata);
+            assertEquals(101, binaryMetadata.getVersion());
+
+        }finally {
+            Config.setProperty(DEFAULT_STORAGE_TYPE, savedStorageType);
+            Config.setProperty(WRITE_METADATA_ON_REINDEX, defaultValue);
+        }
+    }
+
+
     private void validateCustomMetadata(final Map<String, Serializable> customMeta){
         assertEquals("bar", customMeta.get("foo"));
         assertEquals("foo", customMeta.get("bar"));
@@ -912,7 +949,7 @@ public class FileMetadataAPITest {
          StorageType.DB
         };
     }
-    
+
     @Test
     public void TestMetadataModel() {
 

@@ -94,26 +94,21 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @param fullBinaryFieldNameSet  {@link SortedSet} fields to generate full metadata
      * @return ContentletMetadata
      */
-    private ContentletMetadata generateContentletMetadata(final Contentlet contentlet,
-                                                         final SortedSet<String> basicBinaryFieldNameSet,
-                                                         final SortedSet<String> fullBinaryFieldNameSet)
+    private ContentletMetadata internalGenerateContentletMetadata(final Contentlet contentlet,
+                                                          final SortedSet<String> basicBinaryFieldNameSet,
+                                                          final SortedSet<String> fullBinaryFieldNameSet,
+                                                          final boolean overrideMetadata)
             throws IOException, DotDataException {
         final  Map<String, Field> fieldMap = contentlet.getContentType().fieldMap();
-        /*
-		Verify if it is enabled the option to always regenerate metadata files on reindex,
-		enabling this could affect greatly the performance of a reindex process.
-		 */
-        final boolean alwaysRegenerateMetadata = Config
-                .getBooleanProperty(ALWAYS_REGENERATE_METADATA_ON_REINDEX, false);
 
         Logger.debug(this, ()-> "Generating the metadata for contentlet, id = " + contentlet.getIdentifier());
 
         // Full MD is stored in disc (FS or DB)
         final Map<String, Metadata> fullMetadata = generateFullMetadata(contentlet,
-                fullBinaryFieldNameSet, fieldMap, alwaysRegenerateMetadata);
+                fullBinaryFieldNameSet, fieldMap, overrideMetadata);
         //Basic MD is also stored in disc but it also lives in cache
         final Map<String, Metadata> basicMetadata = generateBasicMetadata(contentlet,
-                basicBinaryFieldNameSet, fullMetadata, fieldMap, alwaysRegenerateMetadata);
+                basicBinaryFieldNameSet, fullMetadata, fieldMap, overrideMetadata);
 
         return new ContentletMetadata(fullMetadata, basicMetadata);
     }
@@ -124,14 +119,14 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @param basicBinaryFieldNameSet
      * @param fullMetadata
      * @param fieldMap
-     * @param alwaysRegenerateMetadata
+     * @param overrideMetadata
      * @throws IOException
      */
     private Map<String, Metadata> generateBasicMetadata(final Contentlet contentlet,
                                        final Set<String> basicBinaryFieldNameSet,
                                        final Map<String, Metadata> fullMetadata,
                                        final Map<String, Field> fieldMap,
-                                       final boolean alwaysRegenerateMetadata)
+                                       final boolean overrideMetadata)
             throws IOException, DotDataException {
 
 
@@ -161,13 +156,13 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                 } else {
 
                     //get Old metadata from cache so we don't loose any custom attributes
-                    final Metadata mergeWithMetadata = getMetadata(contentlet,binaryFieldName);
+                    final Metadata mergeWithMetadata = internalGetGenerateMetadata(contentlet, binaryFieldName,false, false);
                     final String cacheKey = contentlet.getInode() + StringPool.COLON + binaryFieldName;
 
                     metadataMap = this.fileStorageAPI.generateMetaData(file,
                             new GenerateMetadataConfig.Builder()
                                     .full(false)
-                                    .override(alwaysRegenerateMetadata)
+                                    .override(overrideMetadata)
                                     .store(true)
                                     .cache(true)
                                     .cache(()-> cacheKey)
@@ -193,7 +188,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @param contentlet
      * @param fullBinaryFieldNameSet
      * @param fieldMap
-     * @param alwaysRegenerateMetadata
+     * @param overrideMetadata
      * @return
      * @throws IOException
      * @throws DotDataException
@@ -201,7 +196,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     private Map<String, Metadata> generateFullMetadata(final Contentlet contentlet,
                                       final Set<String> fullBinaryFieldNameSet,
                                       final Map<String, Field> fieldMap,
-                                      final boolean alwaysRegenerateMetadata)
+                                      final boolean overrideMetadata)
             throws IOException, DotDataException {
 
         final ImmutableMap.Builder<String, Metadata> builder  = new ImmutableMap.Builder<>();
@@ -213,13 +208,13 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
             final String metadataPath = getFileName(contentlet, binaryFieldName);
             if (null != file && file.exists() && file.canRead()) {
 
-                final Metadata mergeWithMetadata = getMetadata(contentlet,binaryFieldName);
+                final Metadata mergeWithMetadata = internalGetGenerateMetadata(contentlet, binaryFieldName, false, false);
 
                 final Set<String> metadataFields = getMetadataFields(fieldMap.get(binaryFieldName).id());
                 final Map<String, Serializable> metadataMap = fileStorageAPI.generateMetaData(file,
                         new GenerateMetadataConfig.Builder()
                             .full(true)
-                            .override(alwaysRegenerateMetadata)
+                            .override(overrideMetadata)
                             .cache(false)  // do not want cache on full meta
                             .store(true)
                             .metaDataKeyFilter(metadataKey -> metadataFields.isEmpty()
@@ -271,36 +266,29 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     @Override
     public ContentletMetadata generateContentletMetadata(final Contentlet contentlet)
             throws IOException, DotDataException {
+        /*
+		Verify if it is enabled the option to always regenerate metadata files on reindex,
+		enabling this could affect greatly the performance of a reindex process.
+		 */
+        final boolean alwaysRegenerateMetadata = Config
+                .getBooleanProperty(ALWAYS_REGENERATE_METADATA_ON_REINDEX, false);
 
+        return generateContentletMetadata(contentlet, alwaysRegenerateMetadata);
+    }
+
+
+    /**
+     * This version is for internal use and makes sure we can force overriding the generated md
+     * @param contentlet
+     * @param overrideMetadata
+     * @return
+     * @throws IOException
+     * @throws DotDataException
+     */
+    private ContentletMetadata generateContentletMetadata(final Contentlet contentlet, final boolean overrideMetadata)
+            throws IOException, DotDataException {
         final Tuple2<SortedSet<String>, SortedSet<String>> binaryFields = findBinaryFields(contentlet);
-        return generateContentletMetadata(contentlet, binaryFields._1(), binaryFields._2());
-    }
-
-    /**
-     * {@inheritDoc}
-     * @param contentlet  {@link Contentlet}
-     * @param field       {@link Field}
-     * @return
-     */
-    @Override
-    public Metadata getMetadata(final Contentlet contentlet, final Field field)
-            throws DotDataException {
-
-        return internalGetMetadata(contentlet, field.variable(), false);
-    }
-
-    /**
-     * {@inheritDoc}
-     * @param contentlet  {@link Contentlet}
-     * @param field       {@link Field}
-     * @param generateIfAbsent @boolean
-     * @return
-     */
-    @Override
-    public Metadata getMetadata(final Contentlet contentlet, final Field field, final boolean generateIfAbsent)
-            throws DotDataException {
-
-        return this.internalGetMetadata(contentlet, field.variable(), generateIfAbsent);
+        return internalGenerateContentletMetadata(contentlet, binaryFields._1(), binaryFields._2(), overrideMetadata);
     }
 
     /**
@@ -313,7 +301,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     public Metadata getMetadata(final Contentlet contentlet,final  String fieldVariableName)
             throws DotDataException {
 
-        return internalGetMetadata(contentlet, fieldVariableName, false);
+        return internalGetGenerateMetadata(contentlet, fieldVariableName, false, false);
     }
 
     /**
@@ -325,7 +313,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     @Override
     public Metadata getOrGenerateMetadata(final Contentlet contentlet, final String fieldVariableName)
             throws DotDataException {
-        return internalGetMetadata(contentlet, fieldVariableName, true);
+        return internalGetGenerateMetadata(contentlet, fieldVariableName, true, true);
     }
 
     /**
@@ -335,7 +323,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @param generateIfAbsent  @boolean
      * @return
      */
-    private Metadata internalGetMetadata(final Contentlet contentlet, final String fieldVariableName, final boolean generateIfAbsent)
+    private Metadata internalGetGenerateMetadata(final Contentlet contentlet, final String fieldVariableName, final boolean generateIfAbsent, final boolean checkVersion)
             throws DotDataException {
 
         if(null != contentlet.get(fieldVariableName) && UtilMethods.isSet(contentlet.getInode())) {
@@ -355,11 +343,19 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
             );
 
             if (null != metadataMap) {
-                //check version if lower then re-generate
-                if(getBinaryMetadataVersion() > (int)metadataMap.getOrDefault("version", 0) ){
-                    //TODO Fix me cuz this will cause an endless loop and therefore a stackoverflow
-                     return Try.of (()->generateContentletMetadata(contentlet).getFullMetadataMap().get(fieldVariableName)).getOrElseThrow(
-                             DotDataException::new);
+                //if check version and the stored ver is lower than current version then re-generate
+                if (checkVersion) {
+                    //We only do the regeneration if we're not looking at custom metadata or an empty map
+                    final boolean onlyHasCustom = (!filterNonCustomMetadataFields(metadataMap).isEmpty());
+                    if (!onlyHasCustom && !metadataMap.isEmpty()) {
+                        //Now verify versions
+                        if (getBinaryMetadataVersion() > (int) metadataMap
+                                .getOrDefault(BasicMetadataFields.VERSION_KEY.key(), 0)) {
+                            return Try.of(() -> generateContentletMetadata(contentlet, true)
+                                    .getFullMetadataMap().get(fieldVariableName)).getOrElseThrow(
+                                    DotDataException::new);
+                        }
+                    }
                 }
                 //version is fine return whatever we got from storage/cache
                 return new Metadata(fieldVariableName, metadataMap);
@@ -512,24 +508,25 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @param contentlet
      * @return
      */
-    public Optional<Metadata> getDefaultMetadataForceGenerate(final Contentlet contentlet) {
+    public Optional<Metadata> getOrGenerateDefaultMetadata(final Contentlet contentlet) {
        return getDefaultMetadata(contentlet, true);
     }
 
     /**
      * Finds the first indexed binary and returns the metadata
      * @param contentlet
-     * @param forceGenerate if true the md will be generated in case it is still missing
+     * @param generateIfAbsent if true the md will be generated in case it is still missing
      * @return
      */
-    private Optional<Metadata> getDefaultMetadata(final Contentlet contentlet, final boolean forceGenerate) {
+    private Optional<Metadata> getDefaultMetadata(final Contentlet contentlet, final boolean generateIfAbsent) {
 
         final Tuple2<SortedSet<String>, SortedSet<String>> binaryFields = findBinaryFields(
                 contentlet);
         final String first = binaryFields._1().first();
 
         try {
-            return Optional.ofNullable(internalGetMetadata(contentlet, first, forceGenerate));
+            return Optional.ofNullable(
+                    internalGetGenerateMetadata(contentlet, first, generateIfAbsent, false));
         } catch (DotDataException e) {
             Logger.error(FileMetadataAPIImpl.class, e);
         }

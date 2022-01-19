@@ -60,25 +60,6 @@ public interface FileMetadataAPI {
      */
     ContentletMetadata generateContentletMetadata (Contentlet contentlet)
             throws IOException, DotDataException;
-
-    /**
-     * Retrieves the basic metadata projection for the contentlet
-     * @param contentlet  {@link Contentlet}
-     * @param field       {@link Field}
-     * @return Map
-     */
-    Metadata getMetadata(Contentlet contentlet, Field field) throws DotDataException;
-
-    /**
-     * Retrieves the basic metadata projection for the contentlet
-     * @param contentlet
-     * @param field
-     * @param forceGenerate
-     * @return
-     * @throws DotDataException
-     */
-    Metadata getMetadata(Contentlet contentlet, Field field, boolean forceGenerate) throws DotDataException;
-
     /**
      * Retrieves the basic metadata for the contentlet (a projection over the full MD)
      * @param contentlet          {@link Contentlet}
@@ -142,7 +123,7 @@ public interface FileMetadataAPI {
      * @param contentlet
      * @return
      */
-    Optional<Metadata> getDefaultMetadataForceGenerate(final Contentlet contentlet);
+    Optional<Metadata> getOrGenerateDefaultMetadata(final Contentlet contentlet);
 
     /**
      * Removes All metadata for a given Contentlet
