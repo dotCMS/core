@@ -7,7 +7,6 @@ import { FormsModule } from '@angular/forms';
 import { DotSiteSelectorModule } from '@components/_common/dot-site-selector/dot-site-selector.module';
 import { DotIconModule } from '@dotcms/ui';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { PaginatorService } from '@services/paginator';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DropdownModule } from 'primeng/dropdown';
 import { ButtonModule } from 'primeng/button';
@@ -31,6 +30,6 @@ import { DataViewModule } from 'primeng/dataview';
         DotPipesModule
     ],
     exports: [DotThemeSelectorComponent],
-    providers: [DotThemesService, PaginatorService]
+    providers: [DotThemesService]
 })
 export class DotThemeSelectorModule {}

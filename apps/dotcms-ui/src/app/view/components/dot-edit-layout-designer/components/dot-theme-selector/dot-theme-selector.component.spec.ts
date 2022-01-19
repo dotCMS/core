@@ -80,7 +80,7 @@ describe('DotThemeSelectorComponent', () => {
         de = fixture.debugElement;
         dialog = de.query(By.css('dot-dialog')).componentInstance;
         component.value = { ...mockDotThemes[0] };
-        paginatorService = TestBed.inject(PaginatorService);
+        paginatorService = de.injector.get(PaginatorService);
     });
 
     afterEach(() => {
