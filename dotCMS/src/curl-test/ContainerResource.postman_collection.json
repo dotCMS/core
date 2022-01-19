@@ -102,6 +102,8 @@
 							"    console.log(jsonData);",
 							"",
 							"    pm.expect(jsonData[\"entity\"]['render']).to.contains('dotPageContent object has the expected values');",
+							"",
+							"        pm.expect(jsonData[\"entity\"]['render']).to.not.contains('data-dot-object=\"container\"');",
 							"});"
 						],
 						"type": "text/javascript"

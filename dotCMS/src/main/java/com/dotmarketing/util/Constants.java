@@ -154,6 +154,16 @@ public final class Constants {
 	 */
 	public static final String TEMPLATE_META_INFO_FILE_NAME   = "properties.vtl";
 
+	/**
+	 * Base path that contains the folder theme definitions
+	 */
+	public static final String THEME_FOLDER_PATH   = "/application/themes";
+
+	/**
+	 * This is the name of the meta info for a file based theme.
+	 */
+	public static final String THEME_META_INFO_FILE_NAME   = "template.vtl";
+
 
 	/**
 	 * Extension for the velocity file: .vtl

@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.workflows.business;
 
 import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isHost;
 
+import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -12,11 +13,12 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.event.ContentTypeDeletedEvent;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.rekognition.actionlet.RekognitionActionlet;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.api.v1.workflow.ActionFail;
-import com.dotcms.rest.api.v1.workflow.ActionInputView;
 import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.model.Subscriber;
@@ -24,6 +26,7 @@ import com.dotcms.util.AnnotationUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.FriendClass;
+import com.dotcms.util.I18NMessage;
 import com.dotcms.util.LicenseValiditySupplier;
 import com.dotcms.util.ThreadContext;
 import com.dotcms.util.ThreadContextUtil;
@@ -65,8 +68,53 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageDeletedEvent;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.LargeMessageActionlet;
 import com.dotmarketing.portlets.workflows.MessageActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.*;
-import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.portlets.workflows.actionlet.Actionlet;
+import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.BatchAction;
+import com.dotmarketing.portlets.workflows.actionlet.CheckURLAccessibilityActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CheckoutContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CommentOnWorkflowActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CopyActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.DestroyContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.EmailActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.FourEyeApproverActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.MultipleApproverActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.NotifyUsersActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.PushNowActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.ReindexContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.ResetApproversActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.ResetTaskActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SendFormEmailActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SetValueActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.TranslationActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.TwitterActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
+import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
+import com.dotmarketing.portlets.workflows.model.WorkflowComment;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistoryState;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistoryType;
+import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
+import com.dotmarketing.portlets.workflows.model.WorkflowState;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.WorkflowTimelineItem;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.InodeUtils;
@@ -85,6 +133,7 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -113,8 +162,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.Nullable;
-
-import io.vavr.control.Try;
 import org.apache.commons.lang.time.StopWatch;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.elasticsearch.search.query.QueryPhaseExecutionException;
@@ -179,9 +226,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private static final int MAX_EXCEPTIONS_REPORTED_ON_BULK_ACTIONS_DEFAULT = 1000;
 
-	private static final int BULK_ACTIONS_SLEEP_THRESHOLD_DEFAULT = 400;
+	public static final int BULK_ACTIONS_SLEEP_THRESHOLD_DEFAULT = 400;
 
-	private static final String BULK_ACTIONS_SLEEP_THRESHOLD = "workflow.action.bulk.sleep";
+	public static final String BULK_ACTIONS_SLEEP_THRESHOLD = "workflow.action.bulk.sleep";
 
 	private static final int BULK_ACTIONS_CONTENTLET_FETCH_STEP_DEFAULT = 350;
 
@@ -2513,6 +2560,25 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				additionalParamsBean);
 	}
 
+	/**
+	 * Entry point that fires up the actions associated with the contentles. Expects a lucene query
+	 * that holds the logic to retrive a large selection of items performed on the UI.
+	 *  @param action {@link WorkflowAction}
+	 * @param user {@link User}
+	 * @param luceneQuery luceneQuery
+	 * @param additionalParamsBean
+	 */
+	@CloseDBIfOpened
+	public void fireBulkActionsNoReturn(final WorkflowAction action,
+			final User user, final String luceneQuery, final AdditionalParamsBean additionalParamsBean) throws DotDataException {
+
+		final Set<String> workflowAssociatedStepsIds = workFlowFactory.findProxiesSteps(action)
+				.stream().map(WorkflowStep::getId).collect(Collectors.toSet());
+
+		fireBulkActionsTaskForQueryNoReturn(action, user, luceneQuery, workflowAssociatedStepsIds,
+				additionalParamsBean);
+	}
+
     /**
      * This method will return the list of workflows actions available to a user on any give
      * piece of content, based on how and who has the content locked and what workflow step the content
@@ -2596,6 +2662,24 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	/**
+	 * Entry point that fires up the actions associated with the contentles. Expects a list of ids
+	 * selected on the UI.
+	 *  @param action {@link WorkflowAction}
+	 * @param user {@link User}
+	 * @param contentletIds {@link List}
+	 * @param additionalParamsBean
+	 */
+	@CloseDBIfOpened
+	public void fireBulkActionsNoReturn(final WorkflowAction action,
+			final User user, final List<String> contentletIds, final AdditionalParamsBean additionalParamsBean) throws DotDataException {
+
+		final Set<String> workflowAssociatedStepsIds = workFlowFactory.findProxiesSteps(action)
+				.stream().map(WorkflowStep::getId).collect(Collectors.toSet());
+		fireBulkActionsTaskForSelectedInodesNoReturn(action, user, contentletIds, workflowAssociatedStepsIds,
+				additionalParamsBean);
+	}
+
+	/**
 	 * This version of the method expects to work with a larg set of contentlets, But instead of
 	 * having all the ids set a lucene query is used.
 	 */
@@ -2663,7 +2747,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 							String.join(" wfstep:", workflowAssociatedStepIds));
 
 			final String sanitizedQuery = LuceneQueryUtils.sanitizeBulkActionsQuery(luceneQuery);
-			//final long skipsCount = (inodes.size() - contentlets.size());
 			return distributeWorkAndProcess(action, user, sanitizedQuery, workflowAssociatedStepIds,
                     additionalParamsBean);
 		} catch (final Exception e) {
@@ -2671,6 +2754,32 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
                     "[%s]: %s", action.getName(), action.getId(), e.getMessage());
             Logger.error(getClass(), errorMsg, e);
             throw new DotDataException(errorMsg, e);
+		}
+	}
+
+	/**
+	 * This version of the method deals with inodes selected directly on the UI
+	 */
+	private void fireBulkActionsTaskForSelectedInodesNoReturn(final WorkflowAction action,
+			final User user,
+			final List<String> inodes, final Set<String> workflowAssociatedStepIds,
+			final AdditionalParamsBean additionalParamsBean)
+			throws DotDataException {
+
+		try {
+
+			final String luceneQuery = String
+					.format("+inode:( %s ) +(wfstep:%s )", String.join(StringPool.SPACE, inodes),
+							String.join(" wfstep:", workflowAssociatedStepIds));
+
+			final String sanitizedQuery = LuceneQueryUtils.sanitizeBulkActionsQuery(luceneQuery);
+			distributeWorkAndProcessNoReturn(action, user, sanitizedQuery, workflowAssociatedStepIds,
+					additionalParamsBean, inodes.size());
+		} catch (final Exception e) {
+			final String errorMsg = String.format("An error occurred when firing actions in bulk for Action '%s' " +
+					"[%s]: %s", action.getName(), action.getId(), e.getMessage());
+			Logger.error(getClass(), errorMsg, e);
+			throw new DotDataException(errorMsg, e);
 		}
 	}
 
@@ -2697,6 +2806,32 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
                     "[%s]: %s", action.getName(), action.getId(), e.getMessage());
             Logger.error(getClass(), errorMsg, e);
             throw new DotDataException(errorMsg, e);
+		}
+
+	}
+
+	/**
+	 * This version of the method deals with a large selection of items which gets translated into a
+	 * lucene query
+	 */
+	private void fireBulkActionsTaskForQueryNoReturn(final WorkflowAction action,
+			final User user,
+			final String luceneQuery, final Set<String> workflowAssociatedStepsIds,
+			final AdditionalParamsBean additionalParamsBean)
+			throws DotDataException {
+
+		try {
+
+			final String sanitizedQuery = LuceneQueryUtils
+					.sanitizeBulkActionsQuery(luceneQuery);
+			Logger.debug(getClass(), ()->"luceneQuery: " + sanitizedQuery);
+
+			distributeWorkAndProcessNoReturn(action, user, sanitizedQuery, workflowAssociatedStepsIds, additionalParamsBean, -1);
+		} catch (final Exception e) {
+			final String errorMsg = String.format("An error occurred when firing actions in bulk for Action '%s' " +
+					"[%s]: %s", action.getName(), action.getId(), e.getMessage());
+			Logger.error(getClass(), errorMsg, e);
+			throw new DotDataException(errorMsg, e);
 		}
 
 	}
@@ -2763,6 +2898,34 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			final List<List<Contentlet>> partitions = partitionContentletInput(contentlets);
 
+			final Consumer<Long> sucessCallback = UtilMethods.isSet(additionalParamsBean
+					.getAdditionalParamsMap().get(SUCCESS_ACTION_CALLBACK))
+					? (Consumer<Long>) additionalParamsBean
+							.getAdditionalParamsMap().get(SUCCESS_ACTION_CALLBACK)
+					: successCount::addAndGet;
+
+			additionalParamsBean.getAdditionalParamsMap().remove(SUCCESS_ACTION_CALLBACK);
+
+			final BiConsumer<String,Exception> failCallback = UtilMethods.isSet(additionalParamsBean
+					.getAdditionalParamsMap().get(FAIL_ACTION_CALLBACK))
+					? (BiConsumer<String,Exception>) additionalParamsBean
+					.getAdditionalParamsMap().get(FAIL_ACTION_CALLBACK)
+					: (inode, e) -> {
+						//if not accepting exceptions no need to lock and process. We're simply not accepting more.
+						if (acceptingExceptions.get()) {
+							lock.lock();
+							try {
+								fails.add(ActionFail.newInstance(user, inode, e));
+								acceptingExceptions
+										.set(fails.size() < maxExceptions);
+							} finally {
+								lock.unlock();
+							}
+						}
+					};
+
+			additionalParamsBean.getAdditionalParamsMap().remove(FAIL_ACTION_CALLBACK);
+
 			for (final List<Contentlet> partition : partitions) {
 				futures.add(
 						submitter.submit(() -> {
@@ -2773,20 +2936,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 							}
 
 								fireBulkActionTasks(action, user, partition,
-										additionalParamsBean,
-										successCount::addAndGet, (inode, e) -> {
-											//if not accepting exceptions no need to lock and process. We're simply not accepting more.
-											if (acceptingExceptions.get()) {
-												lock.lock();
-												try {
-													fails.add(ActionFail.newInstance(user, inode, e));
-													acceptingExceptions
-															.set(fails.size() < maxExceptions);
-												} finally {
-													lock.unlock();
-												}
-											}
-										}, actionsContext, sleepThreshold);
+										additionalParamsBean,sucessCallback, failCallback,
+										actionsContext, sleepThreshold);
 								}
 						)
 				);
@@ -2809,7 +2960,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		//Actions which implement the interface BatchAction are shared between threads using the actionsContext
 		executeBatchActions(user, action, actionsContext, (list, e) -> {
-
 			list.forEach(o -> {
 						fails.add(ActionFail.newInstance(user, o.toString(), e));
 					}
@@ -2825,6 +2975,146 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				skipsCount,
 				ImmutableList.copyOf(fails)
 		);
+	}
+
+	/**
+	 * This method takes the contentlets that are the result of a selection made on the UI or the
+	 * product of a lucene Query The list then gets partitioned and distributed between the list of
+	 * available workers (threads).
+	 * @param action
+	 * @param user
+	 * @param additionalParamsBean
+	 * @return
+	 */
+	private void distributeWorkAndProcessNoReturn(final WorkflowAction action,
+			final User user, final String sanitizedQuery,
+			final Set<String> workflowAssociatedStepsIds,
+			final AdditionalParamsBean additionalParamsBean,
+			final int totalCount)
+			throws DotDataException, DotSecurityException {
+		// We use a dedicated pool for bulk actions processing.
+		final DotSubmitter submitter = this.concurrentFactory
+				.getSubmitter(DotConcurrentFactory.BULK_ACTIONS_THREAD_POOL);
+
+		//Max number of exceptions we desire to capture
+		final int maxExceptions = Config.getIntProperty(MAX_EXCEPTIONS_REPORTED_ON_BULK_ACTIONS,
+				MAX_EXCEPTIONS_REPORTED_ON_BULK_ACTIONS_DEFAULT);
+
+		//The long we want to sleep to avoid threads starvation.
+		final int sleepThreshold = Config
+				.getIntProperty(BULK_ACTIONS_SLEEP_THRESHOLD, BULK_ACTIONS_SLEEP_THRESHOLD_DEFAULT);
+
+		//This defines the number of contentlets that gets pulled from ES on each iteration.
+		final int limit = Config
+				.getIntProperty(BULK_ACTIONS_CONTENTLET_FETCH_STEP, BULK_ACTIONS_CONTENTLET_FETCH_STEP_DEFAULT);
+
+		//Actions Shared context.
+		final ConcurrentMap<String, Object> actionsContext = new ConcurrentHashMap<>();
+
+		final AtomicLong successCount = new AtomicLong();
+
+		final List<ActionFail> fails = new ArrayList<>();
+
+		final ReentrantLock lock = new ReentrantLock();
+
+		final AtomicBoolean acceptingExceptions = new AtomicBoolean(true);
+
+		final List<Future> futures = new ArrayList<>();
+
+		int offset = 0;
+
+		while (!submitter.isAborting()) {
+			final List<Contentlet> contentlets = findContentletsToProcess(sanitizedQuery,
+					workflowAssociatedStepsIds,
+					user, limit, offset
+			);
+
+			if (contentlets.isEmpty()) {
+				///We're done let's get out of here.
+				break;
+			}
+
+			final List<List<Contentlet>> partitions = partitionContentletInput(contentlets);
+
+			final Consumer<Long> sucessCallback = UtilMethods.isSet(additionalParamsBean
+					.getAdditionalParamsMap().get(SUCCESS_ACTION_CALLBACK))
+					? (Consumer<Long>) additionalParamsBean
+					.getAdditionalParamsMap().get(SUCCESS_ACTION_CALLBACK)
+					: successCount::addAndGet;
+
+			final BiConsumer<String,Exception> failCallback = UtilMethods.isSet(additionalParamsBean
+					.getAdditionalParamsMap().get(FAIL_ACTION_CALLBACK))
+					? (BiConsumer<String,Exception>) additionalParamsBean
+					.getAdditionalParamsMap().get(FAIL_ACTION_CALLBACK)
+					: (inode, e) -> {
+						//if not accepting exceptions no need to lock and process. We're simply not accepting more.
+						if (acceptingExceptions.get()) {
+							lock.lock();
+							try {
+								fails.add(ActionFail.newInstance(user, inode, e));
+								acceptingExceptions
+										.set(fails.size() < maxExceptions);
+							} finally {
+								lock.unlock();
+							}
+						}
+					};
+
+			for (final List<Contentlet> partition : partitions) {
+				futures.add(
+						submitter.submit(() -> {
+
+									if(submitter.isAborting()){
+										Logger.info(getClass(),()->"Bulk Actions Halted!");
+										return;
+									}
+
+									fireBulkActionTasks(action, user, partition,
+											additionalParamsBean,sucessCallback, failCallback,
+											actionsContext, sleepThreshold);
+								}
+						)
+				);
+			}
+
+			offset += limit;
+		}
+
+		sendNotification(user, futures, totalCount);
+
+		Logger.debug(getClass(),String.format("A grand total of %d contentlets has been pulled from ES.",offset));
+	}
+
+	private void sendNotification(final User user, final List<Future> futures,
+			final int totalCount)
+			throws DotDataException {
+
+		if(totalCount>Config.getIntProperty("WORKFLOW_BULK_SENDNOTIFICATIONAFTER", 250)) {
+
+			final Role cmsAdminRole = this.roleAPI.loadCMSAdminRole();
+
+			DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
+				for (final Future future : futures) {
+					try {
+						future.get();
+					} catch (InterruptedException | ExecutionException e) {
+						Logger.error(this, e.getMessage(), e);
+					}
+				}
+
+				Try.run(() -> {
+					APILocator.getNotificationAPI()
+							.generateNotification(new I18NMessage("Workflow-Bulk-Actions-Title"),
+									// title = Reindex Notification
+									new I18NMessage("Workflow-Bulk-Actions-Finished", null,
+											(Object) null),
+									null, // no actions
+									NotificationLevel.INFO, NotificationType.GENERIC,
+									Visibility.ROLE, cmsAdminRole.getId(), user.getUserId(),
+									user.getLocale());
+				});
+			});
+		}
 	}
 
 
@@ -2854,9 +3144,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					this.executeBatchAction(user, actionsContext, actionClass, params, batchAction);
 				} catch (final Exception e) {
 					failsConsumer.accept(objects, e);
-                    Logger.error(getClass(), String.format("Exception while trying to execute action '%s' [%s] in " +
-                            "batch: %s", actionClass.getName(), actionClass.getActionId(), e.getMessage()), e);
-                    // We assume the entire batch is has failed. So break;
+					Logger.error(getClass(), String.format("Exception while trying to execute action '%s' [%s] in " +
+							"batch: %s", actionClass.getName(), actionClass.getActionId(), e.getMessage()), e);
+					// We assume the entire batch is has failed. So break;
 					break;
 				}
 			}
@@ -2911,6 +3201,73 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	/**
+	 * This process a batch of Contents all within the same Thread
+	 * @param action
+	 * @param user
+	 * @param contentlets
+	 * @param additionalParamsBean
+	 * @param successConsumer
+	 * @param failConsumer
+	 * @param context
+	 * @param sleep
+	 */
+	public void fireBulkActionTasks(final WorkflowAction action,
+			final User user,
+			final List<Contentlet> contentlets,
+			final AdditionalParamsBean additionalParamsBean,
+			final Consumer<Long> successConsumer,
+			final BiConsumer<String,Exception> failConsumer,
+			final ConcurrentMap<String,Object> context,
+			final int sleep) {
+
+		ContentletDependencies.Builder dependenciesBuilder = new ContentletDependencies.Builder();
+		dependenciesBuilder = dependenciesBuilder
+				.respectAnonymousPermissions(false)
+				.generateSystemEvent(false)
+				.modUser(user)
+				.workflowActionId(action.getId());
+
+		final boolean requiresAdditionalParams = ActionletUtil.requiresPopupAdditionalParams(action);
+
+		if(requiresAdditionalParams){
+			// additional params applied through the builder
+			dependenciesBuilder = applyAdditionalParams(additionalParamsBean, dependenciesBuilder);
+		}
+
+		final ContentletDependencies dependencies = dependenciesBuilder.build();
+
+		for (Contentlet contentlet : contentlets) {
+			try {
+				try {
+					if (requiresAdditionalParams) {
+						// additional params applied directly to the contentlet.
+						contentlet = applyAdditionalParams(additionalParamsBean, contentlet);
+					}
+
+					if (UtilMethods.isSet(additionalParamsBean) && UtilMethods.isSet(additionalParamsBean.getAdditionalParamsMap())) {
+
+						for (Map.Entry<String, Object> entry : additionalParamsBean.getAdditionalParamsMap().entrySet()) {
+							if(entry.getKey().equals(SUCCESS_ACTION_CALLBACK)
+									|| entry.getKey().equals(FAIL_ACTION_CALLBACK)) {
+								continue;
+							}
+							contentlet.setProperty(entry.getKey(), entry.getValue());
+						}
+					}
+
+					fireBulkActionTask(action, contentlet, dependencies, successConsumer,
+							failConsumer, context);
+				} catch (Exception e) {
+					// Additional catch block to handle any exceptions when processing the Transactional Annotation.
+					Logger.error(getClass(), "Error processing fire Action Task", e);
+				}
+			} finally {
+				DateUtil.sleep(sleep);
+			}
+		}
+	}
+
+	/**
 	 * Applies the values captured via pop-up on the UI (If any) And gets them applied directly to the contentlet.
 	 * @param additionalParamsBean
 	 * @param contentlet
@@ -2930,69 +3287,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 
 		return contentlet;
-	}
-
-	/**
-	 * This process a batch of Contents all within the same Thread
-	 * @param action
-	 * @param user
-	 * @param contentlets
-	 * @param additionalParamsBean
-	 * @param successConsumer
-	 * @param failConsumer
-	 * @param context
-	 * @param sleep
-	 */
-	private void fireBulkActionTasks(final WorkflowAction action,
-			final User user,
-			final List<Contentlet> contentlets,
-			final AdditionalParamsBean additionalParamsBean,
-			final Consumer<Long> successConsumer,
-			final BiConsumer<String,Exception> failConsumer,
-			final ConcurrentMap<String,Object> context,
-			final int sleep) {
-
-		ContentletDependencies.Builder dependenciesBuilder = new ContentletDependencies.Builder();
-		dependenciesBuilder = dependenciesBuilder
-				.respectAnonymousPermissions(false)
-				.generateSystemEvent(false)
-				.modUser(user)
-				.workflowActionId(action.getId());
-
-		final boolean requiresAdditionalParams = ActionletUtil.requiresPopupAdditionalParams(action);
-
-		if(requiresAdditionalParams){
-		// additional params applied through the builder
-           dependenciesBuilder = applyAdditionalParams(additionalParamsBean, dependenciesBuilder);
-		}
-
-		final ContentletDependencies dependencies = dependenciesBuilder.build();
-
-		for (Contentlet contentlet : contentlets) {
-			try {
-				try {
-					if (requiresAdditionalParams) {
-						// additional params applied directly to the contentlet.
-						contentlet = applyAdditionalParams(additionalParamsBean, contentlet);
-					}
-
-					if (UtilMethods.isSet(additionalParamsBean) && UtilMethods.isSet(additionalParamsBean.getAdditionalParamsMap())) {
-
-						for (Map.Entry<String, Object> entry : additionalParamsBean.getAdditionalParamsMap().entrySet()) {
-							contentlet.setProperty(entry.getKey(), entry.getValue());
-						}
-					}
-
-					fireBulkActionTask(action, contentlet, dependencies, successConsumer,
-							failConsumer, context);
-				} catch (Exception e) {
-					// Additional catch block to handle any exceptions when processing the Transactional Annotation.
-					Logger.error(getClass(), "Error processing fire Action Task", e);
-				}
-			} finally {
-				DateUtil.sleep(sleep);
-			}
-		}
 	}
 
 	@WrapInTransaction
@@ -3022,7 +3316,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 				Logger.debug(this, () -> "Successfully fired the contentlet: " + contentlet.getInode() +
 						", success inode: " + successInode);
-				successConsumer.accept(1L);
+				try {
+					successConsumer.accept(1L);
+				} catch(Exception e) {
+					throw new DotRuntimeException(e);
+				}
 			}finally{
 				// This tends to stick around in cache. So.. get rid of it.
 				contentlet.getMap().remove(Contentlet.WORKFLOW_BULK_KEY);

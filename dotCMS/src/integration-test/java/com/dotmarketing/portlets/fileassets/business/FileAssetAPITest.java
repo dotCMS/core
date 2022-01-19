@@ -3,6 +3,11 @@ package com.dotmarketing.portlets.fileassets.business;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertNotEquals;
+
+import com.dotcms.api.tree.Parentable;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -328,6 +333,194 @@ public class FileAssetAPITest extends IntegrationTestBase {
             assert (assetNames.contains(f));
         });
 
+    }
+
+    /**
+     * Method to test: {@link FileAssetAPIImpl#findFileAssetsByParentable(Parentable, String, boolean, boolean, User, boolean)}
+     * Given Scenario: Finds all fileAssets that are live under the parent send.
+     * ExpectedResult: list of fileAssets that live under it
+     */
+    @Test
+    public void test_findFileAssetsByParentable_liveFileAssets_success()
+            throws Exception {
+
+        final User user = APILocator.systemUser();
+        final Folder parentFolder = new FolderDataGen().nextPersisted();
+
+        List<String> fileNames = new ArrayList<>();
+        final int fileAssetSize=3;
+
+        for(int i=0;i<fileAssetSize;i++) {
+            final java.io.File file = java.io.File.createTempFile("blah" + i, ".txt");
+            fileNames.add(file.getName());
+            FileUtil.write(file, "helloworld");
+            final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(parentFolder, file);
+            fileAssetDataGen.setPolicy(IndexPolicy.DEFER);
+            fileAssetDataGen.nextPersistedAndPublish();
+        }
+
+        List<FileAsset> assets = APILocator.getFileAssetAPI().findFileAssetsByParentable(parentFolder,null,false,false,user,false);
+        assertEquals(fileAssetSize,assets.size());
+        assets.forEach(a-> {
+            assert(fileNames.contains(a.getFileName()));
+        });
+    }
+
+    /**
+     * Method to test: {@link FileAssetAPIImpl#findFileAssetsByParentable(Parentable, String, boolean, boolean, User, boolean)}
+     * Given Scenario: Finds all fileAssets that are working under the parent send.
+     * ExpectedResult: list of fileAssets that working under it
+     */
+    @Test
+    public void test_findFileAssetsByParentable_workingFileAssets_success()
+            throws Exception {
+
+        final User user = APILocator.systemUser();
+        final Folder parentFolder = new FolderDataGen().nextPersisted();
+
+        List<String> fileNames = new ArrayList<>();
+        final int fileAssetSize=3;
+
+        for(int i=0;i<fileAssetSize;i++) {
+            final java.io.File file = java.io.File.createTempFile("blah" + i, ".txt");
+            fileNames.add(file.getName());
+            FileUtil.write(file, "helloworld");
+            final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(parentFolder, file);
+            fileAssetDataGen.setPolicy(IndexPolicy.DEFER);
+            fileAssetDataGen.nextPersisted();
+        }
+
+        List<FileAsset> assets = APILocator.getFileAssetAPI().findFileAssetsByParentable(parentFolder,null,true,false,user,false);
+        assertEquals(fileAssetSize,assets.size());
+        assets.forEach(a-> {
+            assert(fileNames.contains(a.getFileName()));
+        });
+    }
+
+    /**
+     * Method to test: {@link FileAssetAPIImpl#findFileAssetsByParentable(Parentable, String, boolean, boolean, User, boolean)}
+     * Given Scenario: Finds all fileAssets that are archived under the parent send.
+     * ExpectedResult: list of fileAssets that archived under it
+     */
+    @Test
+    public void test_findFileAssetsByParentable_archivedFileAssets_success()
+            throws Exception {
+
+        final User user = APILocator.systemUser();
+        final Folder parentFolder = new FolderDataGen().nextPersisted();
+
+        List<String> fileNames = new ArrayList<>();
+        final int fileAssetSize=3;
+
+        for(int i=0;i<fileAssetSize;i++) {
+            final java.io.File file = java.io.File.createTempFile("blah" + i, ".txt");
+            fileNames.add(file.getName());
+            FileUtil.write(file, "helloworld");
+            final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(parentFolder, file);
+            fileAssetDataGen.setPolicy(IndexPolicy.DEFER);
+            final Contentlet fileAsset = fileAssetDataGen.nextPersisted();
+            APILocator.getContentletAPI().archive(fileAsset,user,false);
+        }
+
+        List<FileAsset> assets = APILocator.getFileAssetAPI().findFileAssetsByParentable(parentFolder,null,false,true,user,false);
+        assertEquals(fileAssetSize,assets.size());
+        assets.forEach(a-> {
+            assert(fileNames.contains(a.getFileName()));
+        });
+    }
+
+    /**
+     * Method to test: {@link FileAssetAPIImpl#findFileAssetsByHost(Host, User, boolean, boolean, boolean, boolean)}
+     * Given Scenario: Finds all fileAssets that are live under the host send.
+     * ExpectedResult: list of fileAssets that live under the host
+     */
+    @Test
+    public void test_findFileAssetsByHost_liveFileAssets_success()
+            throws Exception {
+
+        final User user = APILocator.systemUser();
+        final Host site = new SiteDataGen().nextPersisted();
+
+        List<String> fileNames = new ArrayList<>();
+        final int fileAssetSize=3;
+
+        for(int i=0;i<fileAssetSize;i++) {
+            final java.io.File file = java.io.File.createTempFile("blah" + i, ".txt");
+            fileNames.add(file.getName());
+            FileUtil.write(file, "helloworld");
+            final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(site, file);
+            fileAssetDataGen.setPolicy(IndexPolicy.DEFER);
+            fileAssetDataGen.nextPersistedAndPublish();
+        }
+
+        List<FileAsset> assets = APILocator.getFileAssetAPI().findFileAssetsByHost(site,user,true,false,false,false);
+        assertEquals(fileAssetSize,assets.size());
+        assets.forEach(a-> {
+            assert(fileNames.contains(a.getFileName()));
+        });
+    }
+
+    /**
+     * Method to test: {@link FileAssetAPIImpl#findFileAssetsByHost(Host, User, boolean, boolean, boolean, boolean)}
+     * Given Scenario: Finds all fileAssets that are working under the host send.
+     * ExpectedResult: list of fileAssets that working under the host
+     */
+    @Test
+    public void test_findFileAssetsByHost_workingFileAssets_success()
+            throws Exception {
+
+        final User user = APILocator.systemUser();
+        final Host site = new SiteDataGen().nextPersisted();
+
+        List<String> fileNames = new ArrayList<>();
+        final int fileAssetSize=3;
+
+        for(int i=0;i<fileAssetSize;i++) {
+            final java.io.File file = java.io.File.createTempFile("blah" + i, ".txt");
+            fileNames.add(file.getName());
+            FileUtil.write(file, "helloworld");
+            final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(site, file);
+            fileAssetDataGen.setPolicy(IndexPolicy.DEFER);
+            fileAssetDataGen.nextPersisted();
+        }
+
+        List<FileAsset> assets = APILocator.getFileAssetAPI().findFileAssetsByHost(site,user,false,true,false,false);
+        assertEquals(fileAssetSize,assets.size());
+        assets.forEach(a-> {
+            assert(fileNames.contains(a.getFileName()));
+        });
+    }
+
+    /**
+     * Method to test: {@link FileAssetAPIImpl#findFileAssetsByHost(Host, User, boolean, boolean, boolean, boolean)}
+     * Given Scenario: Finds all fileAssets that are archived under the host send.
+     * ExpectedResult: list of fileAssets that archived under the host
+     */
+    @Test
+    public void test_findFileAssetsByHost_archivedFileAssets_success()
+            throws Exception {
+
+        final User user = APILocator.systemUser();
+        final Host site = new SiteDataGen().nextPersisted();
+
+        List<String> fileNames = new ArrayList<>();
+        final int fileAssetSize=3;
+
+        for(int i=0;i<fileAssetSize;i++) {
+            final java.io.File file = java.io.File.createTempFile("blah" + i, ".txt");
+            fileNames.add(file.getName());
+            FileUtil.write(file, "helloworld");
+            final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(site, file);
+            fileAssetDataGen.setPolicy(IndexPolicy.DEFER);
+            final Contentlet fileAsset = fileAssetDataGen.nextPersisted();
+            APILocator.getContentletAPI().archive(fileAsset,user,false);
+        }
+
+        List<FileAsset> assets = APILocator.getFileAssetAPI().findFileAssetsByHost(site,user,false,false,true,false);
+        assertEquals(fileAssetSize,assets.size());
+        assets.forEach(a-> {
+            assert(fileNames.contains(a.getFileName()));
+        });
     }
 
 }

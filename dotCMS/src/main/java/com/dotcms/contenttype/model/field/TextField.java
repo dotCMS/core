@@ -1,7 +1,6 @@
 package com.dotcms.contenttype.model.field;
 
 import static com.dotcms.util.CollectionsUtils.list;
-
 import com.dotcms.content.model.FieldValueBuilder;
 import com.dotcms.content.model.type.text.FloatTextFieldType;
 import com.dotcms.content.model.type.text.LongTextFieldType;
@@ -51,21 +50,30 @@ public abstract class TextField extends Field {
 
 	/**
 	 * {@inheritDoc}
-     * @return
-     */
+	 */
 	@Override
 	public Optional<FieldValueBuilder> fieldValue(final Object value) {
-		if (value instanceof String) {
-			return Optional.of(TextFieldType.builder().value((String) value));
-		}
-		if (value instanceof Float) {
-			return Optional.of(FloatTextFieldType.builder().value((Float) value));
-		}
-		if (value instanceof Long) {
-			return Optional.of(LongTextFieldType.builder().value((Long) value));
-		}
-		if (value instanceof Integer) {
-			return Optional.of(LongTextFieldType.builder().value(((Integer) value).longValue()));
+		if (null != value) {
+			if (value instanceof String) {
+				return Optional.of(TextFieldType.builder().value((String) value));
+			}
+			if (value instanceof Float) {
+				return Optional.of(FloatTextFieldType.builder().value((Float) value));
+			}
+			if (value instanceof Long) {
+				return Optional.of(LongTextFieldType.builder().value((Long) value));
+			}
+			if (value instanceof Integer) {
+				return Optional.of(LongTextFieldType.builder().value(((Integer) value).longValue()));
+			}
+		} else {
+			final DataTypes dataType = dataType();
+			switch (dataType) {
+				case FLOAT:
+					return Optional.of(FloatTextFieldType.builder().value(0F));
+				case INTEGER:
+					return Optional.of(LongTextFieldType.builder().value(0L));
+			}
 		}
 		return Optional.empty();
 	}

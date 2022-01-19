@@ -71,7 +71,7 @@ public class ContainerBundlerTest {
                 .clearContentTypes()
                 .nextPersisted();
         containerWithDifferentVersions.setInode("");
-        ContainerDataGen.publish(containerLive);
+        ContainerDataGen.publish(containerWithDifferentVersions);
 
         return new TestCase[]{
                new TestCase(containerWithoutContentType,

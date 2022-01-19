@@ -60,21 +60,33 @@ public abstract class SelectField extends SelectableValuesField {
      * @return
      */
 	@Override
-	public Optional<FieldValueBuilder> fieldValue(Object value) {
-		if (value instanceof String) {
-			return Optional.of(SelectFieldType.builder().value((String) value));
-		}
-		if (value instanceof Boolean) {
-			return Optional.of(BoolSelectFieldType.builder().value((Boolean) value));
-		}
-		if (value instanceof Float) {
-			return Optional.of(FloatSelectFieldType.builder().value((Float) value));
-		}
-		if (value instanceof Long) {
-			return Optional.of(LongSelectFieldType.builder().value((Long) value));
-		}
-		if (value instanceof Integer) {
-			return Optional.of(LongSelectFieldType.builder().value(((Integer) value).longValue()));
+	public Optional<FieldValueBuilder> fieldValue(final Object value) {
+		if (value != null) {
+			if (value instanceof String) {
+				return Optional.of(SelectFieldType.builder().value((String) value));
+			}
+			if (value instanceof Boolean) {
+				return Optional.of(BoolSelectFieldType.builder().value((Boolean) value));
+			}
+			if (value instanceof Float) {
+				return Optional.of(FloatSelectFieldType.builder().value((Float) value));
+			}
+			if (value instanceof Long) {
+				return Optional.of(LongSelectFieldType.builder().value((Long) value));
+			}
+			if (value instanceof Integer) {
+				return Optional.of(LongSelectFieldType.builder().value(((Integer) value).longValue()));
+			}
+		} else {
+			final DataTypes dataType = dataType();
+			switch (dataType) {
+				case BOOL:
+					return Optional.of(BoolSelectFieldType.builder().value(false));
+				case FLOAT:
+					return Optional.of(FloatSelectFieldType.builder().value(0F));
+				case INTEGER:
+					return Optional.of(LongSelectFieldType.builder().value(0L));
+			}
 		}
 		return Optional.empty();
 	}

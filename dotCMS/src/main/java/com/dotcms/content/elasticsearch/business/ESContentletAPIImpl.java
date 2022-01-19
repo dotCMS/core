@@ -171,6 +171,7 @@ import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -4753,7 +4754,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             User sysuser = APILocator.getUserAPI().getSystemUser();
 
-            Contentlet contentletRaw = populateHost(contentlet);
+            final Contentlet contentletRaw = populateHost(contentlet);
 
             if ( contentlet.getMap().get( "_use_mod_date" ) != null ) {
                     /*
@@ -4871,7 +4872,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 contentlet = contentFactory.save(contentlet);
                 contentlet.setIndexPolicy(indexPolicy);
                 contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
-
             } else {
 
                 Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
@@ -4883,8 +4883,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 // can't remove it
                 CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
 
-                identifier.setHostId(contentlet.getHost());
-                if(contentlet.isFileAsset()){
+                // Once the contetlet is saved, it gets refresh from the db. for which the incoming data gets lost.
+                // Therefore here we need to make sure we use the original contentlet that comes with the info passed from the ui.
+                final String hostId = UtilMethods.isSet(contentletRaw.getHost()) ? contentletRaw.getHost() : contentlet.getHost();
+                identifier.setHostId(hostId);
+                    if(contentlet.isFileAsset()){
                     try {
                         if(contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD) == null){
                             final String binaryIdentifier = contentletRaw.getIdentifier() != null ? contentletRaw.getIdentifier() : StringPool.BLANK;
@@ -6000,12 +6003,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         if(checkIsUnique && field.isUnique())
                         {
                             value = value +
-                                new StringBuilder(" (COPY_")
-                                        .append(System.currentTimeMillis()).append(')').toString();
+                                    " (COPY_"
+                                    + System.currentTimeMillis() + ')';
                         }
 
                         if (value instanceof CharSequence) {
-                            contentlet.setStringProperty(conVariable, value != null ? value.toString() : null);
+                            contentlet.setStringProperty(conVariable, value.toString());
                         } else {
                             contentlet.setProperty(conVariable, value);
                         }
@@ -6512,7 +6515,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 final boolean isDataTypeNumber = field.getDataType().contains(DataTypes.INTEGER.toString())
                         || field.getDataType().contains(DataTypes.FLOAT.toString());
                 try{
-                    StringBuilder buffy = new StringBuilder(UUIDGenerator.generateUuid());
+                    final StringBuilder buffy = new StringBuilder(UUIDGenerator.generateUuid());
                     buffy.append(" +structureInode:" + contentlet.getStructureInode());
                     if(UtilMethods.isSet(contentlet.getIdentifier())){
                         buffy.append(" -(identifier:" + contentlet.getIdentifier() + ")");
@@ -6527,24 +6530,30 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                     + StringPool.PERIOD + field.getVelocityVarName(), fieldValue,
                             contentlet.getLanguageId()));
 
-                    List<ContentletSearch> contentlets = new ArrayList<>();
+                    final List<ContentletSearch> contentlets = new ArrayList<>();
                     try {
                         contentlets.addAll(searchIndex(buffy.toString() + " +working:true", -1, 0, "inode", APILocator.getUserAPI().getSystemUser(), false));
                         contentlets.addAll(searchIndex(buffy.toString() + " +live:true", -1, 0, "inode", APILocator.getUserAPI().getSystemUser(), false));
-                    } catch (Exception e) {
-                    	final String errorMsg = "Unique field [" + field.getVelocityVarName() + "] could not be validated: " + e.getMessage();
+                    } catch (final Exception e) {
+                        final String errorMsg = "Unique field [" + field.getVelocityVarName() + "] with value '" +
+                                fieldValue + "' could not be validated: " + e.getMessage();
                         Logger.warn(this, errorMsg, e);
                         throw new DotContentletValidationException(errorMsg, e);
                     }
                     int size = contentlets.size();
                     if(size > 0 && !hasError){
-
                         Boolean unique = true;
-                        for (ContentletSearch contentletSearch : contentlets) {
-                            Contentlet c = contentFactory.find(contentletSearch.getInode());
-                            Map<String, Object> cMap = c.getMap();
-                            Object obj = cMap.get(field.getVelocityVarName());
-
+                        for (final ContentletSearch contentletSearch : contentlets) {
+                            final Contentlet uniqueContent = contentFactory.find(contentletSearch.getInode());
+                            if (null == uniqueContent) {
+                                final String errorMsg = String.format("Unique field [%s] could not be validated, as " +
+                                                "unique content Inode '%s' was not found. ES Index might need to be reindexed.",
+                                        field.getVelocityVarName(), contentletSearch.getInode());
+                                Logger.warn(this, errorMsg);
+                                throw new DotContentletValidationException(errorMsg);
+                            }
+                            final Map<String, Object> uniqueContentMap = uniqueContent.getMap();
+                            final Object obj = uniqueContentMap.get(field.getVelocityVarName());
                             if ( ( isDataTypeNumber && fieldValue.equals(obj) ) ||
                                     ( !isDataTypeNumber && ((String) obj).equalsIgnoreCase(((String) fieldValue)) ) )  {
                                 unique = false;
@@ -6561,14 +6570,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                     {
                                         cve.addUniqueField(field);
                                         hasError = true;
-                                        Logger.warn(this, "Field [" + field.getVelocityVarName() + "] must be unique");
+                                        Logger.warn(this, "Field [" + field.getVelocityVarName() + "] with value '" +
+                                                fieldValue + "'must be unique");
                                         break;
                                     }
                                 }
                             }else{
                                 cve.addUniqueField(field);
                                 hasError = true;
-                                Logger.warn(this, "Field [" + field.getVelocityVarName() + "] must be unique");
+                                Logger.warn(this, "Field [" + field.getVelocityVarName() + "] with value '" +
+                                        fieldValue + "'must be unique");
                                 break;
                             }
                         }
@@ -6825,7 +6836,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param contentlet
      */
     private void validateSite(Contentlet contentlet) {
-        if (Config.getBooleanProperty("site.key.dns.validation", false)) {
+        if (Config.getBooleanProperty("site.key.dns.validation", true)) {
             final String siteKey = (String) contentlet.get(Host.HOST_NAME_KEY);
             if (!UtilMethods.isSet(siteKey) || !dnsPattern.matcher(siteKey).find()) {
                 throw new DotContentletValidationException(

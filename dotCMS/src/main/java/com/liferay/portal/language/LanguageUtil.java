@@ -190,6 +190,33 @@ public class LanguageUtil {
 				i18nMessage;
 	} // get
 
+    /**
+     * Gets the i18n message based on the locale and the key (the message should be in the Language.properties, or the
+     * specific language file). In addition, if you have placeholders such as {0}, {1}, etc in order to interpolate
+     * arguments. You can use the arguments parameter in order to send as much as you need.
+     *
+     * @param user      The {@link User} that determines the localization settings.
+     * @param key       The message key in the properties file.
+     * @param arguments The value(s) for the message placeholders.
+     *
+     * @return The i18n'ed message.
+     *
+     * @throws LanguageException An error occurred when accessing the i18n resource files.
+     */
+    public static String get(User user, final String key, final Object... arguments) throws LanguageException {
+        if (null == user) {
+            try {
+                user = PublicCompanyFactory.getDefaultCompany().getDefaultUser();
+            } catch (final Exception e) {
+                Logger.error(LanguageUtil.class, "Cannot find default user.");
+            }
+        }
+        final String companyId = (user.getCompanyId() == null || user.getCompanyId().equals(User.DEFAULT)) ?
+                PublicCompanyFactory.getDefaultCompanyId() : user.getCompanyId();
+        final String i18nMessage = get(companyId, user.getLocale(), key);
+        return (null != arguments && arguments.length > 0) ? MessageFormat.format(i18nMessage, arguments) : i18nMessage;
+    }
+
 	/**
 	 * Get the i18n message based on the locale and the key (the message should be in the Language.properties, or the specific language file)
 	 * In addition if you have placeholders such as {0}, {1}, etc in order to interpolate arguments, you can use the arguments parameter in order to

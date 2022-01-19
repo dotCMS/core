@@ -8,9 +8,10 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMap.Builder;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -96,13 +97,13 @@ class CategoryViewStrategy extends AbstractTransformStrategy<Contentlet> {
      * @return
      */
     private Map<String, Object> transform(final Category cat) {
-        final Builder<String,Object> builder = new Builder<>();
-        builder.put("inode", cat.getInode());
-        builder.put("active", cat.isActive());
-        builder.put("name", cat.getCategoryName());
-        builder.put("key", cat.getKey());
-        builder.put("keywords", cat.getKeywords());
-        builder.put("velocityVar", cat.getCategoryVelocityVarName());
-        return builder.build();
+        final Map<String,Object> map = new HashMap<>();
+        map.put("inode", cat.getInode());
+        map.put("active", cat.isActive());
+        map.put("name", cat.getCategoryName());
+        map.put("key", cat.getKey());
+        map.put("keywords", cat.getKeywords());
+        map.put("velocityVar", cat.getCategoryVelocityVarName());
+        return Collections.unmodifiableMap(map);
     }
 }

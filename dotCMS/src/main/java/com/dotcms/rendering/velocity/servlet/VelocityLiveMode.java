@@ -4,10 +4,10 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
+import com.dotcms.security.ContentSecurityPolicyUtil;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.BlockPageCache;
 import com.dotmarketing.business.BlockPageCache.PageCacheParameters;
@@ -27,6 +27,7 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import java.nio.charset.StandardCharsets;
 import org.apache.velocity.context.Context;
 
 import javax.servlet.http.HttpServletRequest;
@@ -166,8 +167,13 @@ public class VelocityLiveMode extends VelocityModeHandler {
             
             try (final Writer tmpOut = (cacheKey != null) ? stringWriterLocal.get() : new BufferedWriter(new OutputStreamWriter(out))) {
 
+                if (ContentSecurityPolicyUtil.isConfig()) {
+                    ContentSecurityPolicyUtil.init(request);
+                    ContentSecurityPolicyUtil.addHeader(response);
+                }
+
                 HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
-                this.getTemplate(htmlPage, mode).merge(context, tmpOut);
+                    this.getTemplate(htmlPage, mode).merge(context, tmpOut);
 
                 if (cacheKey != null) {
                     final String trimmedPage = tmpOut.toString().trim();
@@ -183,6 +189,8 @@ public class VelocityLiveMode extends VelocityModeHandler {
         }
     }
 
+
+
     User getUser() {
         User user = null;
         final HttpSession session = request.getSession(false);
@@ -193,5 +201,4 @@ public class VelocityLiveMode extends VelocityModeHandler {
 
         return user;
     }
-
 }

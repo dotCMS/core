@@ -6,7 +6,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import org.elasticsearch.common.Nullable;
+import javax.annotation.Nullable;
 
 public class MapWrapper<K,V> implements Map<K,V>, Serializable {
 

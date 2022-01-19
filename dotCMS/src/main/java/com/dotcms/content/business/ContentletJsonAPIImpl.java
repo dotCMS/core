@@ -182,7 +182,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
             if (null != value) {
                 final Optional<FieldValue<?>> fieldValue = hydrateThenGetFieldValue(value, field, contentlet);
                 if (!fieldValue.isPresent()) {
-                    Logger.warn(ContentletJsonAPIImpl.class,
+                    Logger.debug(ContentletJsonAPIImpl.class,
                             String.format("Unable to set field `%s` with the given value %s.",
                                     field.name(), value));
                 } else {
