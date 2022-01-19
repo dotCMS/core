@@ -80,7 +80,7 @@ describe('DotThemeSelectorComponent', () => {
         de = fixture.debugElement;
         dialog = de.query(By.css('dot-dialog')).componentInstance;
         component.value = { ...mockDotThemes[0] };
-        paginatorService = TestBed.inject(PaginatorService);
+        paginatorService = de.injector.get(PaginatorService);
     });
 
     afterEach(() => {
@@ -140,7 +140,7 @@ describe('DotThemeSelectorComponent', () => {
     });
 
     describe('On Init', () => {
-        it('should set url, the page size and hostid for the pagination service', () => {
+       it('should set url, the page size and hostid for the pagination service', () => {
             paginatorService.searchParam = 'test';
             spyOn(paginatorService, 'setExtraParams');
             spyOn(paginatorService, 'deleteExtraParams');

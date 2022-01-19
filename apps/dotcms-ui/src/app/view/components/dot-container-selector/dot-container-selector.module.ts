@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { DotContainerSelectorComponent } from './dot-container-selector.component';
 import { NgModule } from '@angular/core';
-import { PaginatorService } from '@services/paginator';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 
@@ -18,7 +17,6 @@ import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-i
         SearchableDropDownModule,
         DotPipesModule,
         UiDotIconButtonModule
-    ],
-    providers: [PaginatorService]
+    ]
 })
 export class DotContainerSelectorModule {}

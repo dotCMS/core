@@ -30,6 +30,7 @@ import { DotSiteSelectorComponent } from '@components/_common/dot-site-selector/
  * @class DotThemeSelectorComponent
  */
 @Component({
+    providers: [PaginatorService],
     selector: 'dot-theme-selector',
     templateUrl: './dot-theme-selector.component.html',
     styleUrls: ['./dot-theme-selector.component.scss']
