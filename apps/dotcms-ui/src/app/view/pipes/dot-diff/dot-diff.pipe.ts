@@ -6,6 +6,7 @@ import HtmlDiff from 'htmldiff-js';
 })
 export class DotDiffPipe implements PipeTransform {
     transform(oldValue: string, newValue: string, showDiff = true): string {
-        return showDiff ? HtmlDiff.execute(oldValue, newValue) : newValue;
+        newValue = newValue || '';
+        return showDiff ? HtmlDiff.execute(oldValue ? oldValue : '', newValue) : newValue;
     }
 }

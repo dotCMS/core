@@ -20,6 +20,8 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { DotVersionableService } from '@services/dot-verionable/dot-versionable.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotcmsConfigService } from '@dotcms/dotcms-js';
+import { DotFormatDateService } from '@services/dot-format-date-service';
 
 const DotContentCompareEventMOCK = {
     inode: '1',
@@ -86,6 +88,18 @@ describe('DotContentCompareComponent', () => {
                                 }
                             })
                         )
+                    }
+                },
+                DotFormatDateService,
+                {
+                    provide: DotcmsConfigService,
+                    useValue: {
+                        getSystemTimeZone: () =>
+                            of({
+                                id: 'America/Costa_Rica',
+                                label: 'Central Standard Time (America/Costa_Rica)',
+                                offset: -21600000
+                            })
                     }
                 }
             ]
