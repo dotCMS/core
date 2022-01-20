@@ -333,7 +333,10 @@ public class ReindexThread {
         return getInstance().STATE.get() == ThreadState.RUNNING;
     }
 
-
+    public static void pauseExistingInstance() {
+        pause();
+    }
+    
     /**
      * Generates a new notification displayed at the top left side of the back-end page in dotCMS. This
      * utility method allows you to send reports to the user regarding the operations performed during
