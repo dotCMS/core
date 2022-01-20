@@ -2,9 +2,16 @@ package com.dotcms.rest.api.v1.page;
 
 
 
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.rendering.velocity.services.PageLoader;
+import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.ConversionUtils;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DoesNotExistException;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.*;
@@ -16,12 +23,16 @@ import com.dotcms.rest.api.v1.personalization.PersonalizationPersonaPageViewPagi
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRendered;
+import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRenderedBuilder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import io.vavr.control.Try;
 import org.apache.commons.collections.keyvalue.MultiKey;
 import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
@@ -57,6 +68,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 /**
@@ -603,6 +616,69 @@ public class PageResource {
         return Response.ok(new ResponseEntityView(contentletMaps)).build();
     }
 
+    /**
+     * Returns the page render version for live and preview working version
+     * In addition returns a boolean flag "diff" if the live and preview are different or not (this is just a simple equals)
+     * @param request
+     * @param response
+     * @param pageId
+     * @param languageId
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @GET
+    @Path("/{pageId}/render/versions")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response getHtmlVersionsPage (@Context final HttpServletRequest  request,
+                                   @Context final HttpServletResponse response,
+                                   @PathParam("pageId")  final String  pageId,
+                                   @QueryParam("langId") final String languageId) throws DotSecurityException, DotDataException, ExecutionException, InterruptedException {
+
+        final User user = this.webResource.init(request, response, true).getUser();
+        final long finalLanguageId = ConversionUtils.toLong(languageId, ()->APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        final HTMLPageAsset page   = (HTMLPageAsset) APILocator.getHTMLPageAssetAPI().
+                findByIdLanguageFallback(pageId, finalLanguageId, false, user, false);
+
+        if (!APILocator.getPermissionAPI().doesUserHavePermission(page, PermissionAPI.PERMISSION_EDIT, user)) {
+
+            throw new DotSecurityException("User " + user.getFullName() + " id " + user.getUserId()
+                    + " does not have read perms on page :" + page.getIdentifier());
+        }
+
+        Logger.debug(this, ()-> "Getting the html for the live and working version of the page: " + pageId);
+
+        final String pageURI = page.getURI();
+        final Identifier pageIdentfier = APILocator.getIdentifierAPI().find(page.getIdentifier());
+        new PageLoader().invalidate(page, PageMode.EDIT_MODE, PageMode.PREVIEW_MODE);
+        final Host host = APILocator.getHostAPI().find(pageIdentfier.getHostId(), user, false);
+        final DotSubmitter dotSubmitter = DotConcurrentFactory.getInstance().getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+
+        final Future<String> renderLiveFuture = dotSubmitter.submit(()->
+            Try.of(()->HTMLPageAssetRendered.class.cast(new HTMLPageAssetRenderedBuilder()
+                    .setHtmlPageAsset(page).setUser(user)
+                    .setRequest(request).setResponse(response)
+                    .setSite(host).setURLMapper(pageURI)
+                    .setLive(true).build(true, PageMode.LIVE)).getHtml())
+                    .getOrElseThrow(DotRuntimeException::new));
+
+        final Future<String> renderWorkingFuture = dotSubmitter.submit(()->
+            Try.of(()->HTMLPageAssetRendered.class.cast(new HTMLPageAssetRenderedBuilder()
+                    .setHtmlPageAsset(page).setUser(user)
+                    .setRequest(request).setResponse(response)
+                    .setSite(host).setURLMapper(pageURI)
+                    .setLive(false).build(true, PageMode.PREVIEW_MODE)).getHtml())
+                    .getOrElseThrow(DotRuntimeException::new));
+
+        final String renderLive    = renderLiveFuture.get();
+        final String renderWorking = renderWorkingFuture.get();
+        return Response.ok(new ResponseEntityView(
+                CollectionsUtils.map("renderLive", renderLive,
+                "renderWorking", renderWorking,
+                        "diff", !renderLive.equals(renderWorking)))).build();
+    }
     /**
      * Returns the list of personas with a flag that determine if the persona has been customized on a page or not.
      * { persona:Persona, personalized:boolean, pageId:String  }
