@@ -1,14 +1,7 @@
 package com.dotcms.rest.api.v1.template;
 
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.Validated;
-import com.dotcms.rest.exception.BadRequestException;
-import com.dotcms.rest.exception.ValidationException;
-import com.dotcms.util.HttpRequestDataUtil;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
-import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
@@ -19,6 +12,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 @JsonDeserialize(builder = TemplateForm.Builder.class)
 public class TemplateForm  extends Validated {
 
+    private final String siteId;
     private final String  identifier;
     private final String  inode;
     private final String  body;
@@ -45,6 +39,7 @@ public class TemplateForm  extends Validated {
 
     private TemplateForm(final Builder builder) {
 
+        this.siteId = builder.siteId;
         this.identifier = builder.identifier;
         this.inode = builder.inode;
         this.body = builder.body;
@@ -68,6 +63,10 @@ public class TemplateForm  extends Validated {
         this.footerCheck = builder.footerCheck;
         this.layout      = builder.layout;
 
+    }
+
+    public String getSiteId() {
+        return siteId;
     }
 
     public TemplateLayoutView getLayout() {
@@ -161,6 +160,8 @@ public class TemplateForm  extends Validated {
     public static final class Builder {
 
         @JsonProperty
+        private String siteId;
+        @JsonProperty
         private  String identifier;
         @JsonProperty
         private  String inode;
@@ -204,6 +205,13 @@ public class TemplateForm  extends Validated {
         private  boolean footerCheck;
         @JsonProperty
         private TemplateLayoutView layout;
+
+
+        public Builder siteId (final String  siteId) {
+
+            this.siteId = siteId;
+            return this;
+        }
 
         public Builder layout (final TemplateLayoutView layout) {
 
