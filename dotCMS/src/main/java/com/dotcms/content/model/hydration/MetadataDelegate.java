@@ -1,6 +1,6 @@
 package com.dotcms.content.model.hydration;
 
-import static com.dotcms.content.model.hydration.HydrationUtils.*;
+import static com.dotcms.content.model.hydration.HydrationUtils.findLinkedBinary;
 import static com.dotcms.util.ReflectionUtils.setValue;
 
 import com.dotcms.content.model.FieldValueBuilder;
@@ -13,9 +13,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import io.vavr.control.Try;
 import java.io.File;
 import java.io.Serializable;
 import java.util.Map;

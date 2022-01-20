@@ -4846,7 +4846,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             contentlet.setIndexPolicy(indexPolicy);
             contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
 
-
             if (!InodeUtils.isSet(contentlet.getIdentifier())) {
 
                 //Adding back temporarily the page URL to the contentlet, is needed in order to create a proper Identifier
@@ -4859,7 +4858,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     parent = APILocator.getHostAPI().find( contentlet.getHost(), sysuser, false );
                 }
 
-                final Contentlet contPar=contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET?contentletRaw:contentlet;
+                final Contentlet contPar = contentlet.isFileAsset() ? contentletRaw : contentlet;
                 final Identifier identifier = existingIdentifier != null ?
                         APILocator.getIdentifierAPI().createNew(contPar, parent, existingIdentifier) :
                         APILocator.getIdentifierAPI().createNew(contPar, parent);
@@ -4926,29 +4925,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 changedURI = ! oldURI.equals(identifier.getURI());
             }
 
-            //Relate the tags with the saved contentlet
-            for (final Entry<String, String> tagEntry : tagsValues.entrySet() ) {
-                //From the given CSV tags names list search for the tag objects and if does not exist create them
-                final List<Tag> tagList = tagAPI.getTagsInText(tagEntry.getValue(), tagsHost);
-
-                // empty string for tag field value wipes out existing tags
-                if(UtilMethods.isSet(tagList) || StringPool.BLANK.equals(tagEntry.getValue())) {
-                    tagAPI.deleteTagInodesByInodeAndFieldVarName(contentlet.getInode(),
-                            tagEntry.getKey());
-                }
-
-                for (final Tag tag : tagList ) {
-                    //Relate the found/created tag with this contentlet
-                    tagAPI.addContentletTagInode(tag, contentlet.getInode(), tagEntry.getKey());
-                }
-                //Adding tags back as field to be returned (they're returned as a List)
-                if (tagEntry.getValue()!=null && !StringPool.BLANK.equals(tagEntry.getValue())) {
-                    contentlet.setProperty(tagEntry.getKey(), Stream.of(tagEntry.getValue().split(",")).collect(
-                            Collectors.toList()));
-                } else{
-                    contentlet.setProperty(tagEntry.getKey(), null);
-                }
-            }
+            relateTags(contentlet, tagsValues, tagsHost);
 
             APILocator.getVersionableAPI().setWorking(contentlet);
 
@@ -5221,15 +5198,40 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentlet;
     }
 
+    private void relateTags(final Contentlet contentlet, final Map<String, String> tagsValues,
+            String tagsHost) throws DotSecurityException, DotDataException {
+        //Relate the tags with the saved contentlet
+        for (final Entry<String, String> tagEntry : tagsValues.entrySet() ) {
+            //From the given CSV tags names list search for the tag objects and if does not exist create them
+            final List<Tag> tagList = tagAPI.getTagsInText(tagEntry.getValue(), tagsHost);
+
+            // empty string for tag field value wipes out existing tags
+            if(UtilMethods.isSet(tagList) || StringPool.BLANK.equals(tagEntry.getValue())) {
+                tagAPI.deleteTagInodesByInodeAndFieldVarName(contentlet.getInode(),
+                        tagEntry.getKey());
+            }
+
+            for (final Tag tag : tagList ) {
+                //Relate the found/created tag with this contentlet
+                tagAPI.addContentletTagInode(tag, contentlet.getInode(), tagEntry.getKey());
+            }
+            //Adding tags back as field to be returned (they're returned as a List)
+            if (tagEntry.getValue()!=null && !StringPool.BLANK.equals(tagEntry.getValue())) {
+                contentlet.setProperty(tagEntry.getKey(), Stream.of(tagEntry.getValue().split(",")).collect(
+                        Collectors.toList()));
+            } else{
+                contentlet.setProperty(tagEntry.getKey(), null);
+            }
+        }
+    }
+
     private boolean handleBinaries(final Contentlet contentlet, final boolean createNewVersion, final ContentType contentType, final Contentlet workingContentlet, final Contentlet contentletRaw) throws DotDataException {
 
         // http://jira.dotmarketing.net/browse/DOTCMS-1073
         // storing binary files in file system.
         Logger.debug(this, "ContentletAPIImpl : storing binary files in file system.");
 
-        final boolean validateEmptyFile =
-                contentlet.getMap().containsKey(Contentlet.VALIDATE_EMPTY_FILE)?
-                        contentlet.getBoolProperty(Contentlet.VALIDATE_EMPTY_FILE):true;
+        final boolean validateEmptyFile = UtilMethods.isSetOrGet(contentlet.getBoolProperty(Contentlet.VALIDATE_EMPTY_FILE), true);
 
         // Binary Files
         final String newInode = contentlet.getInode();
