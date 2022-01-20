@@ -298,11 +298,6 @@
             </dl>
         </div>
         <div style="text-align: center;">
-            <span class="showScheduler">
-                <button dojoType="dijit.form.Button" class="dijitButtonFlat" id="disableButton" onClick="disableJob();" iconClass="deleteIcon">
-                    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "TIMEMACHINE-DISABLE")) %>
-                </button>
-            </span>
             <span class="showRunNow">
                 <button dojoType="dijit.form.Button" id="runButton" onClick="runNow();" iconClass="republishIcon">
                     <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "TIMEMACHINE-RUN")) %>
@@ -314,7 +309,13 @@
                 </button>
             </span>
         </div>
-
+        <div style="text-align: center;">
+            <span class="showScheduler">
+                <button dojoType="dijit.form.Button" class="dijitButtonFlat" id="disableButton" onClick="disableJob();" iconClass="deleteIcon">
+                    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "TIMEMACHINE-DISABLE")) %>
+                </button>
+            </span>
+        </div>
     </form>
 </div>
 <%@include file="/html/common/bottom_inc.jsp"%>
