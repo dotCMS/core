@@ -68,14 +68,18 @@ public class MetaWebInterceptorTest {
     @Test
     public void check_header_x_dot_server_config_disable()  {
 
-        Config.setProperty(ResponseMetaDataWebInterceptor.RESPONSE_HEADER_ADD_NODE_ID, false);
-        final ResponseMetaDataWebInterceptor metaWebInterceptor = new ResponseMetaDataWebInterceptor();
-        final MockHeaderResponse mockHeaderResponse = new MockHeaderResponse(response);
-        metaWebInterceptor.intercept(request, mockHeaderResponse);
+        try {
+            Config.setProperty(ResponseMetaDataWebInterceptor.RESPONSE_HEADER_ADD_NODE_ID, false);
+            final ResponseMetaDataWebInterceptor metaWebInterceptor = new ResponseMetaDataWebInterceptor();
+            final MockHeaderResponse mockHeaderResponse = new MockHeaderResponse(response);
+            metaWebInterceptor.intercept(request, mockHeaderResponse);
 
-        final String header = mockHeaderResponse.getHeader(ResponseMetaDataWebInterceptor.X_DOT_SERVER_HEADER);
-        Assert.assertNull(header);
-        Config.setProperty(ResponseMetaDataWebInterceptor.RESPONSE_HEADER_ADD_NODE_ID, true);
+            final String header = mockHeaderResponse.getHeader(ResponseMetaDataWebInterceptor.X_DOT_SERVER_HEADER);
+            Assert.assertNull(header);
+        } finally {
+
+            Config.setProperty(ResponseMetaDataWebInterceptor.RESPONSE_HEADER_ADD_NODE_ID, true);
+        }
     }
 
 
@@ -88,14 +92,18 @@ public class MetaWebInterceptorTest {
     @Test
     public void check_header_x_dot_server_config_disable_node_name()  {
 
-        Config.setProperty(ResponseMetaDataWebInterceptor.RESPONSE_HEADER_ADD_NODE_ID_INCLUDE_NODE_NAME, false);
-        final ResponseMetaDataWebInterceptor metaWebInterceptor = new ResponseMetaDataWebInterceptor();
-        final MockHeaderResponse mockHeaderResponse = new MockHeaderResponse(response);
-        metaWebInterceptor.intercept(request, mockHeaderResponse);
+        try {
+            Config.setProperty(ResponseMetaDataWebInterceptor.RESPONSE_HEADER_ADD_NODE_ID_INCLUDE_NODE_NAME, false);
+            final ResponseMetaDataWebInterceptor metaWebInterceptor = new ResponseMetaDataWebInterceptor();
+            final MockHeaderResponse mockHeaderResponse = new MockHeaderResponse(response);
+            metaWebInterceptor.intercept(request, mockHeaderResponse);
 
-        final String header = mockHeaderResponse.getHeader(ResponseMetaDataWebInterceptor.X_DOT_SERVER_HEADER);
-        Assert.assertNotNull(header);
-        Assert.assertTrue(header.startsWith("unknown|"));
-        Config.setProperty(ResponseMetaDataWebInterceptor.RESPONSE_HEADER_ADD_NODE_ID_INCLUDE_NODE_NAME, true);
+            final String header = mockHeaderResponse.getHeader(ResponseMetaDataWebInterceptor.X_DOT_SERVER_HEADER);
+            Assert.assertNotNull(header);
+            Assert.assertTrue(header.startsWith("unknown|"));
+        } finally {
+
+            Config.setProperty(ResponseMetaDataWebInterceptor.RESPONSE_HEADER_ADD_NODE_ID, true);
+        }
     }
 }
