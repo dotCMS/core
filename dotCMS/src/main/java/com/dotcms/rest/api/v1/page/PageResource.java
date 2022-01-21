@@ -25,6 +25,7 @@ import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.htmlpageasset.business.render.PageLivePreviewVersionBean;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRendered;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRenderedBuilder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -639,38 +640,11 @@ public class PageResource {
 
         final User user = this.webResource.init(request, response, true).getUser();
         final long finalLanguageId = ConversionUtils.toLong(languageId, ()->APILocator.getLanguageAPI().getDefaultLanguage().getId());
-        final HTMLPageAsset page   = (HTMLPageAsset) APILocator.getHTMLPageAssetAPI().
-                findByIdLanguageFallback(pageId, finalLanguageId, false, user, false);
 
-        if (!APILocator.getPermissionAPI().doesUserHavePermission(page, PermissionAPI.PERMISSION_EDIT, user)) {
+        final PageLivePreviewVersionBean pageLivePreviewVersionBean =
+                this.htmlPageAssetRenderedAPI.getPageRenderedLivePreviewVersion(pageId, user, finalLanguageId, request, response);
 
-            throw new DotSecurityException("User " + user.getFullName() + " id " + user.getUserId()
-                    + " does not have read perms on page :" + page.getIdentifier());
-        }
-
-        Logger.debug(this, ()-> "Getting the html for the live and working version of the page: " + pageId);
-
-        final String pageURI = page.getURI();
-        final Identifier pageIdentfier = APILocator.getIdentifierAPI().find(page.getIdentifier());
-        new PageLoader().invalidate(page, PageMode.EDIT_MODE, PageMode.PREVIEW_MODE);
-        final Host host = APILocator.getHostAPI().find(pageIdentfier.getHostId(), user, false);
-
-        final String renderLive    = HTMLPageAssetRendered.class.cast(new HTMLPageAssetRenderedBuilder()
-                .setHtmlPageAsset(page).setUser(user)
-                .setRequest(request).setResponse(response)
-                .setSite(host).setURLMapper(pageURI)
-                .setLive(true).build(true, PageMode.LIVE)).getHtml();
-
-        final String renderWorking =  HTMLPageAssetRendered.class.cast(new HTMLPageAssetRenderedBuilder()
-                .setHtmlPageAsset(page).setUser(user)
-                .setRequest(request).setResponse(response)
-                .setSite(host).setURLMapper(pageURI)
-                .setLive(false).build(true, PageMode.PREVIEW_MODE)).getHtml();
-
-        return Response.ok(new ResponseEntityView(
-                CollectionsUtils.map("renderLive", renderLive,
-                "renderWorking", renderWorking,
-                        "diff", !renderLive.equals(renderWorking)))).build();
+        return Response.ok(new ResponseEntityView(pageLivePreviewVersionBean)).build();
     }
     /**
      * Returns the list of personas with a flag that determine if the persona has been customized on a page or not.
