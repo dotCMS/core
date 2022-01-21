@@ -2,7 +2,7 @@ package com.dotcms.contenttype.model.field;
 
 import static com.dotcms.util.CollectionsUtils.list;
 
-import com.dotcms.content.model.FieldValue;
+import com.dotcms.content.model.FieldValueBuilder;
 import com.dotcms.content.model.type.keyvalue.Entry;
 import com.dotcms.content.model.type.keyvalue.KeyValueType;
 import com.dotcms.contenttype.util.KeyValueFieldUtil;
@@ -67,9 +67,10 @@ public abstract class KeyValueField extends Field {
 
 	/**
 	 * {@inheritDoc}
-	 */
+     * @return
+     */
 	@Override
-	public Optional<FieldValue<?>> fieldValue(final Object value) {
+	public Optional<FieldValueBuilder> fieldValue(final Object value) {
 		if (value instanceof String) {
 			final Map<String, Object> map = KeyValueFieldUtil
 					.JSONValueToHashMap((String) value);
@@ -78,7 +79,7 @@ public abstract class KeyValueField extends Field {
 					.map(entry -> Entry.of(entry.getKey(), entry.getValue()))
 					.collect(Collectors.toList());
 
-			return Optional.of(KeyValueType.of(asList));
+			return Optional.of(KeyValueType.builder().value(asList));
 		}
 
 		if (value instanceof Map) {
@@ -88,7 +89,7 @@ public abstract class KeyValueField extends Field {
 					.map(entry -> Entry.of(entry.getKey(), entry.getValue()))
 					.collect(Collectors.toList());
 
-			return Optional.of(KeyValueType.of(asList));
+			return Optional.of(KeyValueType.builder().value(asList));
 		}
 		return Optional.empty();
 	}

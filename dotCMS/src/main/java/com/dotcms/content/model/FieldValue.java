@@ -1,7 +1,7 @@
 package com.dotcms.content.model;
 
 
-import com.dotcms.content.model.annotation.ValueTypeStyle;
+import com.dotcms.content.model.annotation.ValueType;
 import com.dotcms.content.model.type.AbstractCheckBoxFieldType;
 import com.dotcms.content.model.type.AbstractCustomFieldType;
 import com.dotcms.content.model.type.AbstractFileFieldType;
@@ -10,7 +10,7 @@ import com.dotcms.content.model.type.hidden.AbstractBoolHiddenFieldType;
 import com.dotcms.content.model.type.hidden.AbstractDateHiddenFieldType;
 import com.dotcms.content.model.type.hidden.AbstractFloatHiddenFieldType;
 import com.dotcms.content.model.type.hidden.AbstractHiddenFieldType;
-import com.dotcms.content.model.type.AbstractImageType;
+import com.dotcms.content.model.type.AbstractImageFieldType;
 import com.dotcms.content.model.type.AbstractTextAreaType;
 import com.dotcms.content.model.type.AbstractWysiwygType;
 import com.dotcms.content.model.type.date.AbstractDateFieldType;
@@ -28,7 +28,6 @@ import com.dotcms.content.model.type.select.AbstractMultiSelectFieldType;
 import com.dotcms.content.model.type.select.AbstractSelectFieldType;
 import com.dotcms.content.model.type.text.AbstractFloatTextFieldType;
 import com.dotcms.content.model.type.keyvalue.AbstractKeyValueType;
-import com.dotcms.content.model.type.AbstractListType;
 import com.dotcms.content.model.type.text.AbstractLongTextFieldType;
 import com.dotcms.content.model.type.text.AbstractTextFieldType;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -50,7 +49,7 @@ import org.immutables.value.Value.Parameter;
 @JsonSubTypes({
 
         //Image
-        @JsonSubTypes.Type(name = AbstractImageType.TYPENAME, value = AbstractImageType.class),
+        @JsonSubTypes.Type(name = AbstractImageFieldType.TYPENAME, value = AbstractImageFieldType.class),
         //File
         @JsonSubTypes.Type(name = AbstractFileFieldType.TYPENAME, value = AbstractFileFieldType.class),
 
@@ -83,7 +82,6 @@ import org.immutables.value.Value.Parameter;
 
         //Key Values and List
         @JsonSubTypes.Type(name = AbstractKeyValueType.TYPENAME, value = AbstractKeyValueType.class),
-        @JsonSubTypes.Type(name = AbstractListType.TYPENAME, value = AbstractListType.class),
 
         //Wysiwyg
         @JsonSubTypes.Type(name = AbstractWysiwygType.TYPENAME, value = AbstractWysiwygType.class),
@@ -105,7 +103,7 @@ import org.immutables.value.Value.Parameter;
         @JsonSubTypes.Type(name = AbstractStoryBlockFieldType.TYPENAME, value = AbstractStoryBlockFieldType.class),
 
 })
-@ValueTypeStyle
+@ValueType
 @JsonDeserialize(as = FieldValue.class)
 public interface FieldValue<T> {
 

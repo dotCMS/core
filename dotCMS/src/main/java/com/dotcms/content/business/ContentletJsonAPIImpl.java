@@ -16,12 +16,12 @@ import static com.dotmarketing.util.UtilMethods.isSet;
 
 import com.dotcms.content.model.Contentlet;
 import com.dotcms.content.model.FieldValue;
+import com.dotcms.content.model.FieldValueBuilder;
 import com.dotcms.content.model.ImmutableContentlet;
 import com.dotcms.content.model.ImmutableContentlet.Builder;
-import com.dotcms.content.model.type.hidden.BoolHiddenFieldType;
-import com.dotcms.content.model.type.radio.BoolRadioFieldType;
-import com.dotcms.content.model.type.text.FloatTextFieldType;
-import com.dotcms.content.model.type.text.LongTextFieldType;
+import com.dotcms.content.model.annotation.HydrateWith;
+import com.dotcms.content.model.annotation.Hydration;
+import com.dotcms.content.model.hydration.HydrationDelegate;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -31,9 +31,6 @@ import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.HiddenField;
 import com.dotcms.contenttype.model.field.HostFolderField;
-import com.dotcms.contenttype.model.field.ImmutableHiddenField;
-import com.dotcms.contenttype.model.field.ImmutableRadioField;
-import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.LineDividerField;
 import com.dotcms.contenttype.model.field.PermissionTabField;
@@ -43,6 +40,7 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
+import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -52,7 +50,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -62,7 +59,7 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableList;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.Tuple;
@@ -182,14 +179,19 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
                 continue;
             }
             final Object value = contentlet.get(field.variable());
-            final Optional<FieldValue<?>> fieldValue = getFieldValue(value, field);
-            if (!fieldValue.isPresent()) {
-                    Logger.debug(ContentletJsonAPIImpl.class,()->
+            if (null != value) {
+                final Optional<FieldValue<?>> fieldValue = hydrateThenGetFieldValue(value, field, contentlet);
+                if (!fieldValue.isPresent()) {
+                    Logger.debug(ContentletJsonAPIImpl.class,
                             String.format("Unable to set field `%s` with the given value %s.",
                                     field.name(), value));
                 } else {
                     builder.putFields(field.variable(), fieldValue.get());
                 }
+            } else {
+                Logger.debug(ContentletJsonAPIImpl.class,
+                        String.format("Unable to set field `%s` as it wasn't set on the source contentlet", field.name()));
+            }
         }
         return builder.build();
     }
@@ -272,6 +274,15 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
     }
 
     /**
+     * These basically tells what system fields are accepted in the generate contentlet-json
+     * @param field
+     * @return
+     */
+    private boolean isAllowedSystemField(final Field field){
+        return (field instanceof BinaryField || field instanceof HiddenField || field instanceof CategoryField || field instanceof TagField || field instanceof ConstantField);
+    }
+
+    /**
      * Determine if we're looking at File-Asset.
      * @param contentType
      * @param field
@@ -290,11 +301,10 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
     private boolean isSettable(final Field field) {
         return !(
                 field instanceof LineDividerField ||
-                        field instanceof TabDividerField ||
-                        field instanceof ColumnField ||
-                        field instanceof CategoryField ||
-                        field instanceof PermissionTabField ||
-                        field instanceof RelationshipsTabField
+                field instanceof TabDividerField ||
+                field instanceof ColumnField ||
+                field instanceof PermissionTabField ||
+                field instanceof RelationshipsTabField
         );
     }
 
@@ -305,7 +315,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
      */
     private boolean isNoneMappableSystemField(final Field field) {
         return (field.dataType() == DataTypes.SYSTEM &&
-                  !(field instanceof BinaryField) && !(field instanceof HiddenField)
+                  !(isAllowedSystemField(field))
         );
     }
 
@@ -324,9 +334,23 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
      * @return
      */
     private boolean isNotMappable(final Field field) {
-        return (!isSettable(field) || (field instanceof HostFolderField)
-                || (field instanceof TagField) || isNoneMappableSystemField(field) || isMetadataField(field)
-        );
+        return (!isSettable(field) ||
+               (field instanceof HostFolderField) ||
+                isNoneMappableSystemField(field) ||
+                isMetadataField(field));
+    }
+
+    /**
+     * Sometimes just isn't the right moment to process system fields
+     * @param field
+     * @param contentlet
+     * @return
+     */
+    private boolean skipSystemField(final Field field, final com.dotmarketing.portlets.contentlet.model.Contentlet contentlet){
+        if(isAllowedSystemField(field)){
+           return UtilMethods.isNotSet(contentlet.getIdentifier()) || UtilMethods.isNotSet(contentlet.getInode());
+        }
+        return false;
     }
 
     /**
@@ -385,11 +409,68 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
      * Meaning this converts the field to a json representation
      * @param value
      * @param field
+     * @param contentlet
      * @return
      */
-    private Optional<FieldValue<?>> getFieldValue(final Object value, final Field field) {
-        return field.fieldValue(value);
+    private Optional<FieldValue<?>> hydrateThenGetFieldValue(final Object value, final Field field,
+            final com.dotmarketing.portlets.contentlet.model.Contentlet contentlet) {
+
+        Optional<FieldValueBuilder> fieldValueBuilder = field.fieldValue(value);
+        if (fieldValueBuilder.isPresent()) {
+            FieldValueBuilder builder = fieldValueBuilder.get();
+            final List<Tuple2<HydrationDelegate,String>> delegateAndFields = getHydrationDelegatesFromAnnotations(builder.getClass());
+            for (Tuple2<HydrationDelegate,String> delegateAndField : delegateAndFields) {
+                final HydrationDelegate delegate = delegateAndField._1();
+                final String propertyName = delegateAndField._2();
+                try {
+                    builder = delegate.hydrate(builder, field, contentlet, propertyName);
+                } catch (Exception e) {
+                    Logger.error(ContentletJsonAPIImpl.class,
+                            String.format(
+                                    "An error occurred while hydrating FieldValue with Builder: %s, field: %s, contentlet: %s , propertyName %s ",
+                                    builder, field, contentlet.getIdentifier(), propertyName), e);
+                }
+            }
+            return Optional.of(builder.build());
+        }
+        return Optional.empty();
     }
+
+    /**
+     * FieldValue descendant's Builders are annotated so the builder class is instructed on how the properties need to be fetched and set into the Builder
+     * This method takes the
+     * @param builderClass
+     * @return
+     */
+    private List<Tuple2<HydrationDelegate,String>> getHydrationDelegatesFromAnnotations(final Class<? extends FieldValueBuilder> builderClass){
+
+        final ImmutableList.Builder<Hydration> annotations = new ImmutableList.Builder<>();
+        Optional<Hydration> hydrateWith = annotations
+                .add(builderClass.getAnnotationsByType(Hydration.class))
+                .add(builderClass.getSuperclass().getAnnotationsByType(Hydration.class))
+                .build().stream().findFirst();
+
+        final ImmutableList.Builder<Tuple2<HydrationDelegate,String>> delegates = new ImmutableList.Builder<>();
+        if(hydrateWith.isPresent()) {
+            final HydrateWith [] hydrateWiths = hydrateWith.get().properties();
+            for (final HydrateWith with : hydrateWiths) {
+                final HydrationDelegate instance = ReflectionUtils.newInstance(with.delegate());
+                if(null == instance){
+                    Logger.error(ContentletJsonAPIImpl.class,String.format("Unable to instantiate hydration delegate %s.",with.delegate()));
+                    continue;
+                }
+                if(UtilMethods.isNotSet(with.propertyName())){
+                    Logger.error(ContentletJsonAPIImpl.class,String.format("HydrateWith Annotation is missing required param 'field' %s.",with.propertyName()));
+                    continue;
+                }
+                delegates.add(Tuple.of(instance, with.propertyName()));
+            }
+        }
+
+
+        return delegates.build();
+    }
+
 
     /**
      * Json read to immutable
@@ -397,7 +478,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
      * @return
      * @throws JsonProcessingException
      */
-    Contentlet immutableFromJson(final String json) throws JsonProcessingException {
+    public Contentlet immutableFromJson(final String json) throws JsonProcessingException {
         return objectMapper.get().readValue(json, Contentlet.class);
     }
 
