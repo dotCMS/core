@@ -327,7 +327,7 @@
                 List<FieldVariable> fieldVariables=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, true);
                     for(FieldVariable fv : fieldVariables){
                         if (fv.getKey().equals("drag-and-drop")) {
-                            dragAndDrop = fv.getValue().toUpperCase().equals("FALSE") ? false : true;
+                            dragAndDrop = !"false".equalsIgnoreCase(fv.getValue());
                         }
                     }
             %>
