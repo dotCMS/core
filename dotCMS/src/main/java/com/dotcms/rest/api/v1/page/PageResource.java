@@ -654,26 +654,19 @@ public class PageResource {
         final Identifier pageIdentfier = APILocator.getIdentifierAPI().find(page.getIdentifier());
         new PageLoader().invalidate(page, PageMode.EDIT_MODE, PageMode.PREVIEW_MODE);
         final Host host = APILocator.getHostAPI().find(pageIdentfier.getHostId(), user, false);
-        final DotSubmitter dotSubmitter = DotConcurrentFactory.getInstance().getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
 
-        final Future<String> renderLiveFuture = dotSubmitter.submit(()->
-            Try.of(()->HTMLPageAssetRendered.class.cast(new HTMLPageAssetRenderedBuilder()
-                    .setHtmlPageAsset(page).setUser(user)
-                    .setRequest(request).setResponse(response)
-                    .setSite(host).setURLMapper(pageURI)
-                    .setLive(true).build(true, PageMode.LIVE)).getHtml())
-                    .getOrElseThrow(DotRuntimeException::new));
+        final String renderLive    = HTMLPageAssetRendered.class.cast(new HTMLPageAssetRenderedBuilder()
+                .setHtmlPageAsset(page).setUser(user)
+                .setRequest(request).setResponse(response)
+                .setSite(host).setURLMapper(pageURI)
+                .setLive(true).build(true, PageMode.LIVE)).getHtml();
 
-        final Future<String> renderWorkingFuture = dotSubmitter.submit(()->
-            Try.of(()->HTMLPageAssetRendered.class.cast(new HTMLPageAssetRenderedBuilder()
-                    .setHtmlPageAsset(page).setUser(user)
-                    .setRequest(request).setResponse(response)
-                    .setSite(host).setURLMapper(pageURI)
-                    .setLive(false).build(true, PageMode.PREVIEW_MODE)).getHtml())
-                    .getOrElseThrow(DotRuntimeException::new));
+        final String renderWorking =  HTMLPageAssetRendered.class.cast(new HTMLPageAssetRenderedBuilder()
+                .setHtmlPageAsset(page).setUser(user)
+                .setRequest(request).setResponse(response)
+                .setSite(host).setURLMapper(pageURI)
+                .setLive(false).build(true, PageMode.PREVIEW_MODE)).getHtml();
 
-        final String renderLive    = renderLiveFuture.get();
-        final String renderWorking = renderWorkingFuture.get();
         return Response.ok(new ResponseEntityView(
                 CollectionsUtils.map("renderLive", renderLive,
                 "renderWorking", renderWorking,
