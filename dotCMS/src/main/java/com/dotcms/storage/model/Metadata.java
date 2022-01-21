@@ -10,6 +10,7 @@ import static com.dotcms.storage.model.BasicMetadataFields.PATH_META_KEY;
 import static com.dotcms.storage.model.BasicMetadataFields.SHA256_META_KEY;
 import static com.dotcms.storage.model.BasicMetadataFields.SIZE_META_KEY;
 import static com.dotcms.storage.model.BasicMetadataFields.TITLE_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.VERSION_KEY;
 import static com.dotcms.storage.model.BasicMetadataFields.WIDTH_META_KEY;
 
 import com.dotmarketing.util.Logger;
@@ -152,6 +153,16 @@ public class Metadata implements Serializable {
             return numericValue.longValue();
         }
         Logger.debug(Metadata.class, ()->String.format("Invalid non numeric value found on metadata.modDate `%s` returning 0 ",value));
+        return 0;
+    }
+
+    public int getVersion(){
+        final Object value = getFieldsMeta().get(VERSION_KEY.key());
+        if(value instanceof Number){
+            final Number numericValue = (Number) value;
+            return numericValue.intValue();
+        }
+        Logger.debug(Metadata.class, ()->"No metadata version was specified defaulting to 0. ");
         return 0;
     }
 

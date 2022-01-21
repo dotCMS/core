@@ -1,6 +1,7 @@
 package com.dotmarketing.servlets.ajax;
 
 import static junit.framework.TestCase.assertTrue;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyObject;
@@ -217,7 +218,7 @@ public class AjaxDirectorServletIntegrationTest {
         final WebResource webResource = mock(WebResource.class);
         final InitDataObject dataObject = mock(InitDataObject.class);
         when(dataObject.getUser()).thenReturn(APILocator.systemUser());
-        when(webResource.init(anyString(), anyBoolean(), any(HttpServletRequest.class),
+        when(webResource.init(nullable(String.class), anyBoolean(), any(HttpServletRequest.class),
                 anyBoolean(), anyObject()))
                 .thenReturn(dataObject);
 
