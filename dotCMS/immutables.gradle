@@ -1,7 +1,7 @@
 buildscript {
     repositories {
         maven { url "https://repo.dotcms.com/artifactory/libs-release" }
-        jcenter()
+
     }
     dependencies {
         classpath 'org.ajoberstar:grgit:1.7.0'
