@@ -1184,38 +1184,6 @@ describe('DotEditContentComponent', () => {
                         ).toHaveBeenCalledWith(container);
                     });
 
-                    it('should display Form Selector when handle add content event of form Type', () => {
-                        
-                        spyOn( dotEditContentHtmlService, 'setContainterToAppendContentlet' ).and.callFake(() => {});
-                        spyOn( dotEditContentHtmlService, 'removeContentletPlaceholder' ).and.callFake(() => {});
-                        spyOn( component, 'addFormContentType' ).and.callThrough();
-
-                        fixture.detectChanges();
-
-                        const data = {
-                            container: {
-                                dotIdentifier: 'identifier',
-                                dotUuid: 'uuid'
-                            },
-                            contentType: { variable: 'forms' }
-                        };
-
-                        dotEditContentHtmlService.iframeActions$.next({
-                            name: 'add-content',
-                            data: data
-                        });
-
-                        const container: DotPageContainer = {
-                            identifier: data.container.dotIdentifier,
-                            uuid: data.container.dotUuid
-                        };
-
-                        expect( dotEditContentHtmlService.setContainterToAppendContentlet ).toHaveBeenCalledWith(container);
-                        expect( dotEditContentHtmlService.removeContentletPlaceholder ).toHaveBeenCalled();
-                        expect( component.addFormContentType ).toHaveBeenCalled();
-                        expect( component.editForm ).toBeTruthy();
-                    });
-
                     it('should handle remove event', (done) => {
                         spyOn(dotEditContentHtmlService, 'removeContentlet').and.callFake(() => {});
                         spyOn(dotDialogService, 'confirm').and.callFake((param) => {
