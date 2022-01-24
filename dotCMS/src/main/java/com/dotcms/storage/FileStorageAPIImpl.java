@@ -7,6 +7,7 @@ import static com.dotmarketing.util.UtilMethods.isSet;
 import com.dotcms.storage.model.BasicMetadataFields;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.util.MimeTypeUtils;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.MetadataCache;
@@ -122,8 +123,10 @@ public class FileStorageAPIImpl implements FileStorageAPI {
             if (!metaDataKeyFilter.test(CONTENT_TYPE_META_KEY.key())) {
                 standAloneMetadata.remove(CONTENT_TYPE_META_KEY.key());
             }
-            return ensureTypes(standAloneMetadata);
 
+            standAloneMetadata.put(VERSION_KEY.key(), APILocator.getFileMetadataAPI().getBinaryMetadataVersion());
+
+            return ensureTypes(standAloneMetadata);
         }
 
         return ImmutableMap.of();

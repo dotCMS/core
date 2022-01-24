@@ -321,9 +321,20 @@
                         contentlet, LegacyFieldTransformer.from(field),
                         user);
                 defaultPathFolderPathIds.add(0, "root");
+                
+                boolean dragAndDrop = true;
+
+                List<FieldVariable> fieldVariables=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, true);
+                    for(FieldVariable fv : fieldVariables){
+                        if (fv.getKey().equals("drag-and-drop")) {
+                            dragAndDrop = !"false".equalsIgnoreCase(fv.getValue());
+                        }
+                    }
             %>
                 <div class="wysiwyg-container" data-select-folder="<%=String.join(", ", defaultPathFolderPathIds)%>" >
+            <% if (dragAndDrop) {  %>
                   <dot-asset-drop-zone id="dot-asset-drop-zone-<%=field.getVelocityVarName()%>" class="wysiwyg__dot-asset-drop-zone"></dot-asset-drop-zone>
+            <% }  %>
                   <textarea <%= isReadOnly?"readonly=\"readonly\"":"" %>
                       class="editWYSIWYGField aceText aceTall"
                       name="<%=field.getFieldContentlet()%>"

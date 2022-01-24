@@ -1250,7 +1250,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public Metadata getBinaryMetadata (final String fieldVariableName)
 			throws DotDataException {
 
-		return APILocator.getFileMetadataAPI().getMetadataForceGenerate(this, fieldVariableName);
+		return APILocator.getFileMetadataAPI().getOrGenerateMetadata(this, fieldVariableName);
 	}
 
 
