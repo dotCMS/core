@@ -1,19 +1,15 @@
 package com.dotcms.util;
 
-import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.tika.TikaUtils;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
-
-import java.util.function.Supplier;
-import javax.activation.MimeType;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import javax.activation.MimeType;
 
 /**
  * Mime Type Utils
@@ -33,11 +29,11 @@ public class MimeTypeUtils {
             return FileAsset.UNKNOWN_MIME_TYPE;
         }
         final Path path = binary.toPath();
-        String mimeType = Sneaky.sneak(() -> Files.probeContentType(path));
+        String mimeType = Try.of(() -> Files.probeContentType(path)).getOrNull();
 
         if  (!UtilMethods.isSet(mimeType)) {
 
-            mimeType    = Config.CONTEXT.getMimeType(binary.getAbsolutePath());
+            mimeType = Try.of(()->Config.CONTEXT.getMimeType(binary.getAbsolutePath())).getOrNull();
 
             if( !UtilMethods.isSet(mimeType)){
                 try {
