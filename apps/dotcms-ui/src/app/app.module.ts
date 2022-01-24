@@ -9,9 +9,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
 
-/*
- * Custom Components
- */
+// Custom Components
 import { COMPONENTS } from './components';
 import { ENV_PROVIDERS } from './providers';
 import { CUSTOM_MODULES, NGFACES_MODULES } from './modules';
@@ -22,9 +20,7 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { MonacoEditorModule } from 'ngx-monaco-editor';
 import { MarkdownModule } from 'ngx-markdown';
 
-/**
- * `AppModule` is the main entry point into Angular2's bootstraping process
- */
+// `AppModule` is the main entry point into Angular2's bootstraping process
 @NgModule({
     bootstrap: [AppComponent],
     declarations: [AppComponent, ...COMPONENTS],
@@ -48,4 +44,3 @@ import { MarkdownModule } from 'ngx-markdown';
     schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class AppModule {}
-
