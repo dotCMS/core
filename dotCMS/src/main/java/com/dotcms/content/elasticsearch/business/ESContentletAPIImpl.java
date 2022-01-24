@@ -4746,7 +4746,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 contentlet.setLanguageId(defaultLanguage.getId());
             }
 
-            contentlet.setModUser(user != null ? user.getUserId() : "");
+            contentlet.setModUser(user.getUserId());
 
             if (contentlet.getOwner() == null || contentlet.getOwner().length() < 1) {
                 contentlet.setOwner(user.getUserId());
@@ -4893,7 +4893,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 changedURI = ! oldURI.equals(identifier.getURI());
             }
 
-            relateTags(contentlet, tagsValues, tagsHost);
+            contentlet = relateTags(contentlet, tagsValues, tagsHost);
 
             APILocator.getVersionableAPI().setWorking(contentlet);
 
@@ -5006,6 +5006,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentlet;
     }
 
+    /**
+     * Invalidate the respective caches depending on the type of contentlet passed down
+     * And call the reindex
+     * @param contentlet
+     * @param createNewVersion
+     * @param user
+     * @param changedURI
+     * @param isNewContent
+     * @param structureHasAHostField
+     * @param movedContentDependencies
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     private void invalidateThenReindex(final Contentlet contentlet, final boolean createNewVersion, final User user,
             final boolean changedURI, final boolean isNewContent, final boolean structureHasAHostField,
             final boolean movedContentDependencies) throws DotDataException, DotSecurityException {
@@ -5034,30 +5047,28 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             if (movedContentDependencies) {
-                final Contentlet newContentlet = contentlet;
                 ThreadContextUtil.ifReindex(
-                        () -> indexAPI.addContentToIndex(newContentlet, INCLUDE_DEPENDENCIES),
+                        () -> indexAPI.addContentToIndex(contentlet, INCLUDE_DEPENDENCIES),
                         INCLUDE_DEPENDENCIES);
             } else if (ThreadContextUtil.isReindex()) {
                 indexAPI.addContentToIndex(contentlet, false);
             }
         }
 
-        if(contentlet != null && contentlet.isVanityUrl()){
+        if(contentlet.isVanityUrl()){
             //remove from cache
             APILocator.getVanityUrlAPI().invalidateVanityUrl(contentlet);
         }
 
-        if(contentlet != null && contentlet.isKeyValue()){
+        if(contentlet.isKeyValue()){
             //remove from cache
             CacheLocator.getKeyValueCache().remove(contentlet);
         }
 
         //If the URI changed and we're looking at FileAsset we need to evict all other language instances
-        if (contentlet != null && contentlet.isFileAsset() && changedURI) {
-            final Contentlet contentletRef = contentlet;
+        if (contentlet.isFileAsset() && changedURI) {
             HibernateUtil.addCommitListener(() -> {
-                cleanupCacheOnChangedURI(contentletRef);
+                cleanupCacheOnChangedURI(contentlet);
             });
         }
 
@@ -5238,8 +5249,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
-    private void relateTags(Contentlet contentlet, HashMap<String, String> tagsValues,
-            String tagsHost) throws DotSecurityException, DotDataException {
+    /**
+     * Takes the original contentlet passed down from internalCheckin
+     * Relate the tags using the respective api and add the related tags back into the original contentlet that was passed down
+     * @param contentlet contetlet reference
+     * @param tagsValues prepared tags
+     * @param tagsHost prepared
+     * @return mutated contentlet
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    private Contentlet relateTags(final Contentlet contentlet, final Map<String, String> tagsValues,
+            final String tagsHost) throws DotSecurityException, DotDataException {
         //Relate the tags with the saved contentlet
         for (final Entry<String, String> tagEntry : tagsValues.entrySet() ) {
             //From the given CSV tags names list search for the tag objects and if does not exist create them
@@ -5262,6 +5283,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 contentlet.setProperty(tagEntry.getKey(), null);
             }
         }
+        return contentlet;
     }
 
 
