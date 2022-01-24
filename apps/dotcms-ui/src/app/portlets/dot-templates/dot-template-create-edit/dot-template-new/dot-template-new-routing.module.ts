@@ -12,7 +12,7 @@ const routes: Routes = [
         path: ':type',
         loadChildren: () =>
             import(
-                '@portlets/dot-templates/dot-template-create-edit/dot-template-create-edit.module.ts'
+                '@portlets/dot-templates/dot-template-create-edit/dot-template-create-edit.module'
             ).then((m) => m.DotTemplateCreateEditModule),
         canLoad: [DotTemplateGuard]
     }

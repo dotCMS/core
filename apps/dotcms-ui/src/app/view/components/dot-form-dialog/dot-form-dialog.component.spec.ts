@@ -80,8 +80,7 @@ describe('DotFormDialogComponent', () => {
         it('should have save button', () => {
             const saveButton = de.query(By.css('[data-testId="dotFormDialogSave"]'));
 
-            expect(saveButton.attributes.class).toBe('p-button p-component');
-            expect(saveButton.attributes['ng-reflect-label']).toBe('Save');
+            expect(saveButton.nativeNode.innerText).toBe('Save');
             expect(saveButton.attributes.pButton).toBeDefined();
         });
 
@@ -96,8 +95,7 @@ describe('DotFormDialogComponent', () => {
         it('should have cancel button', () => {
             const cancelButton = de.query(By.css('[data-testId="dotFormDialogCancel"]'));
 
-            expect(cancelButton.attributes.class).toBe('p-button-secondary p-button p-component');
-            expect(cancelButton.attributes['ng-reflect-label']).toBe('Cancel');
+            expect(cancelButton.nativeNode.innerText).toBe('Cancel');
             expect(cancelButton.attributes.pButton).toBeDefined();
         });
 

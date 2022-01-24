@@ -1,0 +1,10 @@
+{
+    "name": "DotCMS Models",
+    "out": "../../docs/dotcms-models",
+    "entryPoints": ["./src/index.ts"],
+    "readme": "./libs/dotcms/README.md",
+    "excludePrivate": true,
+    "tsconfig": "./tsconfig.lib.json",
+    "excludeExternals": true,
+    "exclude": ["**/*.spec.ts"]
+}

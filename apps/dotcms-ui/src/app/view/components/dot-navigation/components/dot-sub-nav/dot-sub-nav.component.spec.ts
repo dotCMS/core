@@ -61,7 +61,7 @@ describe('DotSubNavComponent', () => {
         links.forEach((link: DebugElement, index) => {
             expect(link.nativeElement.classList.contains('dot-nav-sub__link')).toBe(true);
             expect(link.nativeElement.textContent.trim()).toBe(`Label ${index + 1}`);
-            expect(link.properties.href).toBe(`/url/link${index + 1}`);
+            expect(link.properties.href).toContain(`/url/link${index + 1}`);
 
             if (index === 1) {
                 expect(link.nativeElement.classList.contains('dot-nav-sub__link--active')).toBe(
@@ -76,7 +76,7 @@ describe('DotSubNavComponent', () => {
 
         component.itemClick.subscribe((event) => {
             expect(event).toEqual({
-                originalEvent: ({ hello: 'world' } as unknown) as MouseEvent,
+                originalEvent: { hello: 'world' } as unknown as MouseEvent,
                 data: data.menuItems[0]
             });
         });

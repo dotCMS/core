@@ -6,7 +6,6 @@ import { NgGrid } from './../directives/NgGrid';
 
 @NgModule({
     declarations: [NgGrid, NgGridItem, NgGridPlaceholder],
-    entryComponents: [NgGridPlaceholder],
     exports: [NgGrid, NgGridItem]
 })
 export class NgGridModule {}

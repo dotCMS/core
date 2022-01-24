@@ -1,10 +1,10 @@
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
-import { DotTemplateListComponent } from '@portlets/dot-templates/dot-template-list/dot-template-list.component';
-import { DotTemplateListResolver } from '@portlets/dot-templates/dot-template-list/dot-template-list-resolver.service';
+import { DotTemplateListComponent } from './dot-template-list/dot-template-list.component';
+import { DotTemplateListResolver } from './dot-template-list/dot-template-list-resolver.service';
 import { DotTemplateCreateEditResolver } from './dot-template-create-edit/resolvers/dot-template-create-edit.resolver';
 import { LayoutEditorCanDeactivateGuardService } from '@services/guards/layout-editor-can-deactivate-guard.service';
- 
+
 const routes: Routes = [
     {
         path: '',
@@ -20,7 +20,7 @@ const routes: Routes = [
         path: 'new',
         loadChildren: () =>
             import(
-                '@portlets/dot-templates/dot-template-create-edit/dot-template-new/dot-template-new.module.ts'
+                '@portlets/dot-templates/dot-template-create-edit/dot-template-new/dot-template-new.module'
             ).then((m) => m.DotTemplateNewModule)
     },
     {
@@ -28,7 +28,7 @@ const routes: Routes = [
         canDeactivate: [LayoutEditorCanDeactivateGuardService],
         loadChildren: () =>
             import(
-                '@portlets/dot-templates/dot-template-create-edit/dot-template-create-edit.module.ts'
+                '@portlets/dot-templates/dot-template-create-edit/dot-template-create-edit.module'
             ).then((m) => m.DotTemplateCreateEditModule),
         resolve: {
             template: DotTemplateCreateEditResolver
@@ -38,7 +38,7 @@ const routes: Routes = [
         path: 'edit/:id/inode/:inode',
         loadChildren: () =>
             import(
-                '@portlets/dot-templates/dot-template-create-edit/dot-template-create-edit.module.ts'
+                '@portlets/dot-templates/dot-template-create-edit/dot-template-create-edit.module'
             ).then((m) => m.DotTemplateCreateEditModule),
         data: {
             reuseRoute: false

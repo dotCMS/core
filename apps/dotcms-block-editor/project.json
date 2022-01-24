@@ -1,0 +1,138 @@
+{
+    "projectType": "application",
+    "root": "apps/dotcms-block-editor",
+    "sourceRoot": "apps/dotcms-block-editor/src",
+    "prefix": "dotcms",
+    "targets": {
+        "build": {
+            "executor": "@angular-devkit/build-angular:browser",
+            "options": {
+                "outputPath": "dist/apps/dotcms-block-editor",
+                "index": "apps/dotcms-block-editor/src/index.html",
+                "main": "apps/dotcms-block-editor/src/main.ts",
+                "polyfills": "apps/dotcms-block-editor/src/polyfills.ts",
+                "tsConfig": "apps/dotcms-block-editor/tsconfig.app.json",
+                "assets": [
+                    "apps/dotcms-block-editor/src/favicon.ico",
+                    "apps/dotcms-block-editor/src/assets"
+                ],
+                "styles": ["apps/dotcms-block-editor/src/styles.scss"],
+                "scripts": [
+                    {
+                        "bundleName": "generator-runtime",
+                        "input": "node_modules/regenerator-runtime/runtime.js"
+                    }
+                ],
+                "vendorChunk": true,
+                "extractLicenses": false,
+                "buildOptimizer": false,
+                "sourceMap": true,
+                "optimization": false,
+                "namedChunks": true
+            },
+            "configurations": {
+                "production": {
+                    "fileReplacements": [
+                        {
+                            "replace": "apps/dotcms-block-editor/src/environments/environment.ts",
+                            "with": "apps/dotcms-block-editor/src/environments/environment.prod.ts"
+                        }
+                    ],
+                    "optimization": true,
+                    "outputHashing": "all",
+                    "sourceMap": false,
+                    "namedChunks": false,
+                    "extractLicenses": true,
+                    "vendorChunk": false,
+                    "buildOptimizer": true,
+                    "budgets": [
+                        {
+                            "type": "initial",
+                            "maximumWarning": "2mb",
+                            "maximumError": "5mb"
+                        },
+                        {
+                            "type": "anyComponentStyle",
+                            "maximumWarning": "6kb",
+                            "maximumError": "10kb"
+                        }
+                    ]
+                }
+            },
+            "defaultConfiguration": ""
+        },
+        "serve": {
+            "executor": "@angular-devkit/build-angular:dev-server",
+            "options": {
+                "browserTarget": "dotcms-block-editor:build"
+            },
+            "configurations": {
+                "production": {
+                    "browserTarget": "dotcms-block-editor:build:production"
+                }
+            }
+        },
+        "extract-i18n": {
+            "executor": "@angular-devkit/build-angular:extract-i18n",
+            "options": {
+                "browserTarget": "dotcms-block-editor:build"
+            }
+        },
+        "lint": {
+            "executor": "@nrwl/linter:eslint",
+            "options": {
+                "lintFilePatterns": [
+                    "apps/dotcms-block-editor/src/**/*.ts",
+                    "apps/dotcms-block-editor/src/**/*.html"
+                ]
+            },
+            "outputs": ["{options.outputFile}"]
+        },
+        "test": {
+            "executor": "@angular-devkit/build-angular:karma",
+            "options": {
+                "main": "apps/dotcms-block-editor/src/test.ts",
+                "tsConfig": "apps/dotcms-block-editor/tsconfig.spec.json",
+                "karmaConfig": "apps/dotcms-block-editor/karma.conf.js",
+                "polyfills": "apps/dotcms-block-editor/src/polyfills.ts",
+                "styles": [],
+                "scripts": [],
+                "assets": []
+            }
+        },
+        "storybook": {
+            "executor": "@nrwl/storybook:storybook",
+            "options": {
+                "uiFramework": "@storybook/angular",
+                "port": 6600,
+                "config": {
+                    "configFolder": "apps/dotcms-block-editor/.storybook"
+                },
+                "projectBuildConfig": "dotcms-block-editor"
+            },
+            "configurations": {
+                "ci": {
+                    "quiet": true
+                }
+            }
+        },
+        "build-storybook": {
+            "executor": "@nrwl/storybook:build",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "uiFramework": "@storybook/angular",
+                "outputPath": "dist/storybook/dotcms-block-editor",
+                "config": {
+                    "configFolder": "apps/dotcms-block-editor/.storybook"
+                },
+                "projectBuildConfig": "dotcms-block-editor"
+            },
+            "configurations": {
+                "ci": {
+                    "quiet": true
+                }
+            }
+        }
+    },
+    "tags": []
+}

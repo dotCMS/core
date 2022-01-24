@@ -1,0 +1,76 @@
+{
+    "projectType": "library",
+    "generators": {
+        "@nxext/stencil:component": {
+            "style": "scss",
+            "storybook": true
+        }
+    },
+    "root": "libs/dotcms-webcomponents",
+    "sourceRoot": "libs/dotcms-webcomponents/src",
+    "targets": {
+        "test": {
+            "executor": "@nxext/stencil:test",
+            "options": {
+                "projectType": "library",
+                "configPath": "libs/dotcms-webcomponents/stencil.config.ts"
+            }
+        },
+        "e2e": {
+            "executor": "@nxext/stencil:e2e",
+            "options": {
+                "projectType": "library",
+                "configPath": "libs/dotcms-webcomponents/stencil.config.ts"
+            }
+        },
+        "build": {
+            "executor": "@nxext/stencil:build",
+            "options": {
+                "outputPath": "dist/libs/dotcms-webcomponents",
+                "projectType": "library",
+                "configPath": "libs/dotcms-webcomponents/stencil.config.ts"
+            }
+        },
+        "serve": {
+            "executor": "@nxext/stencil:build",
+            "options": {
+                "projectType": "library",
+                "configPath": "libs/dotcms-webcomponents/stencil.config.ts",
+                "serve": true,
+                "watch": true
+            }
+        },
+        "storybook": {
+            "executor": "@nrwl/storybook:storybook",
+            "options": {
+                "uiFramework": "@storybook/html",
+                "port": 5500,
+                "config": {
+                    "configFolder": "libs/dotcms-webcomponents/.storybook"
+                }
+            },
+            "configurations": {
+                "ci": {
+                    "quiet": true
+                }
+            }
+        },
+        "build-storybook": {
+            "executor": "@nrwl/storybook:build",
+            "options": {
+                "uiFramework": "@storybook/html",
+                "outputPath": "docs/dotcms-webcomponents",
+                "deleteOutputPath": false,
+                "config": {
+                    "configFolder": "libs/dotcms-webcomponents/.storybook"
+                }
+            },
+            "configurations": {
+                "ci": {
+                    "quiet": true
+                }
+            }
+        }
+    },
+    "tags": []
+}

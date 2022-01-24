@@ -124,7 +124,7 @@ xdescribe('ContentTypeFieldsPropertiesFormComponent', () => {
         hostFixture.detectChanges();
 
         return new Promise((resolve) => {
-            setTimeout(() => resolve(), 1);
+            setTimeout(() => resolve(true), 1);
         });
     };
 

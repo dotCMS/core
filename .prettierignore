@@ -9,3 +9,7 @@ node_modules
 .storybook
 .cicd
 karma_html
+docs
+.angular
+*.md
+decorate-angular-cli.js

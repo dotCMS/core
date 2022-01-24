@@ -8,7 +8,8 @@ describe('PlaceholderComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [LoaderComponent]
+            declarations: [LoaderComponent],
+            teardown: { destroyAfterEach: false }
         }).compileComponents();
     });
 

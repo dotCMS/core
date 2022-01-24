@@ -18,7 +18,10 @@
     </div>
     <div class="p-field">
         <label for="content-type-form-description">{{ 'contenttypes.form.label.icon' | dm }}</label>
-        <dot-md-icon-selector id="content-type-form-icon" formControlName="icon"></dot-md-icon-selector>
+        <dot-md-icon-selector
+            id="content-type-form-icon"
+            formControlName="icon"
+        ></dot-md-icon-selector>
     </div>
 
     <div class="p-field">
@@ -66,7 +69,7 @@
     <span id="field-workflow-hint" class="p-field-hint" *ngIf="form.get('workflows').disabled">{{
         'contenttypes.form.hint.error.only.default.scheme.available.in.Community' | dm
     }}</span>
-    <div class="p-formgrid p-grid">
+    <div class="p-formgrid grid">
         <div class="p-field p-col">
             <label for="content-type-form-publish-date-field" class="form__label">{{
                 'contenttypes.form.label.publish.date.field' | dm

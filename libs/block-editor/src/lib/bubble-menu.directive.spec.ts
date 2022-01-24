@@ -8,53 +8,50 @@ import { BubbleMenuDirective } from './bubble-menu.directive';
 import { EditorDirective } from './editor.directive';
 
 @Component({
-  template: `
-    <tiptap-editor [editor]="editor"></tiptap-editor>
-    <tiptap-bubble-menu [editor]="editor"></tiptap-bubble-menu>
-  `
+    template: `
+        <tiptap-editor [editor]="editor"></tiptap-editor>
+        <tiptap-bubble-menu [editor]="editor"></tiptap-bubble-menu>
+    `
 })
 class TestComponent {
-  @Input() editor!: Editor
+    @Input() editor!: Editor;
 }
 
 describe('BubbleMenuDirective', () => {
-  let component: TestComponent;
-  let fixture: ComponentFixture<TestComponent>;
+    let component: TestComponent;
+    let fixture: ComponentFixture<TestComponent>;
 
-  beforeEach(async () => {
-    TestBed.configureTestingModule({
-      declarations: [
-        TestComponent,
-        EditorDirective,
-        BubbleMenuDirective
-      ]
+    beforeEach(async () => {
+        TestBed.configureTestingModule({
+            declarations: [TestComponent, EditorDirective, BubbleMenuDirective],
+            teardown: { destroyAfterEach: false }
+        });
+
+        await TestBed.compileComponents();
+
+        fixture = TestBed.createComponent(TestComponent);
+        component = fixture.componentInstance;
+
+        const editor = new Editor({
+            extensions: [StarterKit]
+        });
+
+        component.editor = editor;
+        fixture.detectChanges();
     });
 
-    await TestBed.compileComponents();
-
-    fixture = TestBed.createComponent(TestComponent);
-    component = fixture.componentInstance;
-
-    const editor = new Editor({
-      extensions: [StarterKit]
+    it('should create an instance', () => {
+        const hostEl = fixture.debugElement.query(By.css('tiptap-bubble-menu'));
+        const directive = new BubbleMenuDirective(hostEl);
+        expect(directive).toBeTruthy();
     });
 
-    component.editor = editor;
-    fixture.detectChanges();
-  });
+    it('should create bubble menu', () => {
+        expect(fixture.debugElement.query(By.css('[data-tippy-root]'))).toBeFalsy();
 
-  it('should create an instance', () => {
-    const hostEl = fixture.debugElement.query(By.css('tiptap-bubble-menu'));
-    const directive = new BubbleMenuDirective(hostEl);
-    expect(directive).toBeTruthy();
-  });
+        component.editor.chain().setContent('Hello world').focus().selectAll().run();
+        fixture.detectChanges();
 
-  it('should create bubble menu', () => {
-    expect(fixture.debugElement.query(By.css('[data-tippy-root]'))).toBeFalsy();
-
-    component.editor.chain().setContent('Hello world').focus().selectAll().run();
-    fixture.detectChanges();
-
-    expect(fixture.debugElement.query(By.css('[data-tippy-root]'))).toBeTruthy();
-  });
+        expect(fixture.debugElement.query(By.css('[data-tippy-root]'))).toBeTruthy();
+    });
 });

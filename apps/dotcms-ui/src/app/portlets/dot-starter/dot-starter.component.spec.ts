@@ -77,8 +77,12 @@ class ActivatedRouteMock {
 }
 
 class DotAccountServiceMock {
-    addStarterPage() {}
-    removeStarterPage() {}
+    addStarterPage() {
+        return of(true);
+    }
+    removeStarterPage() {
+        return of(true);
+    }
 }
 
 describe('DotStarterComponent', () => {

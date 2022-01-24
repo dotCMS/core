@@ -7,7 +7,7 @@
     dataKey="id"
 >
     <ng-template pTemplate="header" let-columns>
-        <tr>
+        <tr data-testId="header">
             <th class="dot-key-value__header-keyValue-label">
                 {{ 'keyValue.key_header.label' | dm }}
             </th>
@@ -44,7 +44,7 @@
         </dot-key-value-table-row>
     </ng-template>
     <ng-template pTemplate="emptymessage" let-variables>
-        <tr>
+        <tr data-testId="no-rows">
             <td [attr.colspan]="showHiddenField ? 4 : 3">
                 {{ 'keyValue.value_no_rows.label' | dm }}
             </td>
