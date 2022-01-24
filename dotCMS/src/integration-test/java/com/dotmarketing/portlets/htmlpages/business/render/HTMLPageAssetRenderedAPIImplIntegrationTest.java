@@ -33,6 +33,7 @@ import com.liferay.portal.model.User;
 import io.swagger.annotations.Api;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
@@ -136,6 +137,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * @throws DotSecurityException
      * @throws InterruptedException
      */
+    @Ignore
     @Test
     public void test_getPageRenderedLivePreviewVersion_diff() throws DotDataException, DotSecurityException, WebAssetException {
         init();
