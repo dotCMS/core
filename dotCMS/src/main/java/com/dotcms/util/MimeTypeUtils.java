@@ -25,13 +25,9 @@ public class MimeTypeUtils {
 
     /**
      * Gets the mime type of a file.
-     * @deprecated This is no longer the way to recover the mimeType instead use
-     *   {@link com.dotmarketing.portlets.contentlet.model.Contentlet#getBinaryMetadata(Field)} or
-     *   {@link com.dotcms.storage.FileMetadataAPI#getFullMetadataNoCache(File, Supplier)}
      * @param binary {@link File}
      * @return String
      */
-    @Deprecated
     public static String getMimeType (final File binary) {
         if(binary==null) {
             return FileAsset.UNKNOWN_MIME_TYPE;
@@ -46,8 +42,9 @@ public class MimeTypeUtils {
             if( !UtilMethods.isSet(mimeType)){
                 try {
                     mimeType = new TikaUtils().detect(binary);
-                } catch(Exception e) {
-                    Logger.warn(MimeTypeUtils.class, e.getMessage() +  e.getStackTrace()[0]);
+                } catch(Throwable e) {
+                    Logger.warn(MimeTypeUtils.class, "Unable to parse Mime type for : " + binary);
+                    Logger.warn(MimeTypeUtils.class, e.getMessage() + e.getStackTrace()[0]);
                 }
 
                 if(!UtilMethods.isSet(mimeType)) {
