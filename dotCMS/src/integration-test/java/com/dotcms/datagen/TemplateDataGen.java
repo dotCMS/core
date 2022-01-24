@@ -23,6 +23,7 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.Date;
@@ -337,6 +338,13 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
     public static void publish(final Template template)
             throws DotSecurityException, WebAssetException, DotDataException {
         PublishFactory.publishAsset(template, APILocator.systemUser(),
+                false, false);
+    }
+
+    @WrapInTransaction
+    public static void publish(final Template template, final User user)
+            throws DotSecurityException, WebAssetException, DotDataException {
+        PublishFactory.publishAsset(template, user,
                 false, false);
     }
 
