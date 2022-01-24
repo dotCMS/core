@@ -64,7 +64,7 @@ public class MetadataDelegate implements HydrationDelegate {
                     if (fileAsContentOptional.isPresent()) {
                         final Contentlet fileAsset = fileAsContentOptional.get();
                         metadataMap = fileMetadataAPI
-                                .getMetadataForceGenerate(fileAsset, "fileAsset").getFieldsMeta();
+                                .getOrGenerateMetadata(fileAsset, "fileAsset").getFieldsMeta();
                     }
                 }
             }
