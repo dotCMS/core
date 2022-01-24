@@ -176,6 +176,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
         final List<Field> fields = contentlet.getContentType().fields();
         for (final Field field : fields) {
             if (isNotMappable(field)) {
+                Logger.debug(ContentletJsonAPIImpl.class, String.format("Field `%s` is getting skipped.", field.name()));
                 continue;
             }
             final Object value = contentlet.get(field.variable());

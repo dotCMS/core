@@ -9,6 +9,7 @@ import static org.junit.Assert.assertNotNull;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.model.FieldValue;
 import com.dotcms.content.model.type.ImageFieldType;
+import com.dotcms.content.model.type.system.BinaryFieldType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.CategoryDataGen;
 import com.dotcms.datagen.ContentletDataGen;
@@ -375,10 +376,8 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
             final FieldValue<?> binaryField = fieldValueMap.get("binaryField");
             final ImageFieldType imageType = (ImageFieldType)imageField;
             assertNotNull(imageType.metadata());
-            /*
             final BinaryFieldType binaryType = (BinaryFieldType)binaryField;
             assertNotNull(binaryType.metadata());
-             */
         } finally {
             Config.setProperty(SAVE_CONTENTLET_AS_JSON, defaultValue);
         }
