@@ -137,7 +137,6 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * @throws DotSecurityException
      * @throws InterruptedException
      */
-    @Ignore
     @Test
     public void test_getPageRenderedLivePreviewVersion_diff() throws DotDataException, DotSecurityException, WebAssetException {
         init();
