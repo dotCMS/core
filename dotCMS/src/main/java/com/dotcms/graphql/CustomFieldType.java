@@ -14,7 +14,6 @@ import static graphql.Scalars.GraphQLLong;
 import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLList.list;
 
-import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.graphql.datafetcher.BinaryFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.FieldDataFetcher;
 import com.dotcms.graphql.datafetcher.KeyValueFieldDataFetcher;
@@ -22,22 +21,15 @@ import com.dotcms.graphql.datafetcher.MapFieldPropertiesDataFetcher;
 import com.dotcms.graphql.datafetcher.MultiValueFieldDataFetcher;
 import com.dotcms.graphql.util.TypeUtil;
 import com.dotcms.graphql.util.TypeUtil.TypeFetcher;
-import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
-import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.containers.model.FileAssetContainer;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import graphql.scalars.ExtendedScalars;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeReference;
-import graphql.schema.PropertyDataFetcher;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
 
 public enum CustomFieldType {
     BINARY("DotBinary"),
@@ -144,13 +136,8 @@ public enum CustomFieldType {
         customFieldTypes.put("USER", TypeUtil.createObjectType(USER.getTypeName(), userTypeFields, null));
 
         final Map<String, TypeFetcher> fileAssetTypeFields = new HashMap<>();
-        fileAssetTypeFields.put(FILEASSET_FILE_NAME_FIELD_VAR,
-                new TypeFetcher(GraphQLString, PropertyDataFetcher.fetching(Contentlet::getName)));
-        fileAssetTypeFields.put(FILEASSET_DESCRIPTION_FIELD_VAR, new TypeFetcher(GraphQLString,
-                PropertyDataFetcher.fetching((Function<Contentlet, String>)
-                (contentlet)-> contentlet.getContentType().baseType()
-                        == BaseContentType.DOTASSET ? contentlet.getTitle()
-                        : (String) contentlet.get(FILEASSET_DESCRIPTION_FIELD_VAR))));
+        fileAssetTypeFields.put(FILEASSET_FILE_NAME_FIELD_VAR, new TypeFetcher(GraphQLString, new FieldDataFetcher()));
+        fileAssetTypeFields.put(FILEASSET_DESCRIPTION_FIELD_VAR, new TypeFetcher(GraphQLString, new FieldDataFetcher()));
         fileAssetTypeFields.put(FILEASSET_FILEASSET_FIELD_VAR,
                 new TypeFetcher(CustomFieldType.BINARY.getType(),new BinaryFieldDataFetcher()));
         fileAssetTypeFields.put(FILEASSET_METADATA_FIELD_VAR,
