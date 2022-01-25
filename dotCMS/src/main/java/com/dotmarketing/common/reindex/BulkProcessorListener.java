@@ -1,6 +1,8 @@
 package com.dotmarketing.common.reindex;
 
 
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;

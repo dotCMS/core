@@ -1,4 +1,4 @@
-name: pre-release-process-automation
+name: code-freeze-automation
 on:
   workflow_dispatch:
     inputs:

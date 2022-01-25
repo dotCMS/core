@@ -28,11 +28,8 @@
 <script type='text/javascript' src='/dwr/interface/ACheckerDWR.js'></script>
 
 <script src="/html/js/ace-builds-1.2.3/src-noconflict/ace.js" type="text/javascript"></script>
-<%if(Config.getBooleanProperty("ENABLE_GZIP",true)){ %>
-<script type="text/javascript" src="/html/js/tinymce/js/tinymce/tiny_mce_gzip.js"></script>
-<%}else { %>
 <script type="text/javascript" src="/html/js/tinymce/js/tinymce/tinymce.min.js"></script>
-<%}%>
+
 <script type="text/javascript">
 
 	dojo.require("dotcms.dijit.form.HostFolderFilteringSelect");
@@ -43,38 +40,42 @@
 
 <% User usera= com.liferay.portal.util.PortalUtil.getUser(request); %>
 	var textAreaId;
-	if(<%=Config.getBooleanProperty("ENABLE_GZIP",true) %>){
-		tinyMCE_GZ.init({
-			plugins : 'style,layer,table,save,advhr,advimage,advlink,emotions,iespell,insertdatetime,preview,media,searchreplace,print,contextmenu',
-			themes : 'simple,advanced',
-			languages : '<%= usera.getLanguageId().substring(0,2) %>',
-			disk_cache : true,
-			debug : false
-		});
-	}else{
-		tinymce.init({
-			selector: "textarea#"+textAreaId,
-    		theme: "modern",
-    		menubar:false,
-    	    statusbar: false,
-    		plugins: [
-        		"advlist autolink lists link image charmap print preview hr anchor pagebreak",
-        		"searchreplace wordcount visualblocks visualchars code fullscreen",
-        		"insertdatetime media nonbreaking save table contextmenu directionality",
-        		"emoticons template paste textcolor colorpicker validation textpattern dotimageclipboard"
-    		],
-			languages : '<%= usera.getLanguageId().substring(0,2) %>',
-			toolbar1: "insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image",
-    		toolbar2: "print preview | validation media | forecolor dotimageclipboard backcolor emoticons",
-    		image_advtab: true,
-    		file_picker_callback: function(callback, value, meta) {
-    			cmsFileBrowser(callback, value, meta);
-    		}
-		});
-	}
+	tinymce.init({
+		selector: "textarea#"+textAreaId,
+		theme: "modern",
+		menubar:false,
+	    statusbar: false,
+		plugins: [
+    		"advlist autolink lists link image charmap print preview hr anchor pagebreak",
+    		"searchreplace wordcount visualblocks visualchars code fullscreen",
+    		"insertdatetime media nonbreaking save table contextmenu directionality",
+    		"emoticons template paste textcolor colorpicker validation textpattern dotimageclipboard"
+		],
+		languages : '<%= usera.getLanguageId().substring(0,2) %>',
+		toolbar1: "insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image",
+		toolbar2: "print preview | validation media | forecolor dotimageclipboard backcolor emoticons",
+		image_advtab: true,
+		file_picker_callback: function(callback, value, meta) {
+			cmsFileBrowser(callback, value, meta);
+		}
+	});
+	
 </script>
 
 <script type="text/javascript">
+
+function confirmEditSite(dialogId) {
+    dijit.byId(dialogId).show();
+}
+
+function enableSiteKeyUpdate(dialogId, siteKeyInputId) {
+    dijit.byId(dialogId).hide();
+    dojo.removeAttr(siteKeyInputId, 'readonly');
+    setTimeout(() => {
+        dijit.byId(siteKeyInputId).focus();
+    }, 500);
+}
+
 var cmsfile=null;
 	//Hints
 	function showHint(jsevent) {
@@ -384,12 +385,14 @@ var cmsfile=null;
   var dropzoneEvents = false
 
   function bindDropZoneUploadComplete(activeEditor, textAreaId) {
-		const dropZone = document.getElementById(`dot-asset-drop-zone-${textAreaId}`);
-		dropZone.addEventListener('uploadComplete', async (asset) => {
-			dropZone.style.pointerEvents = "none";
-			asset.detail && insertAssetInEditor(asset.detail)
-		})
-		dropzoneEvents = true
+        const dropZone = document.getElementById(`dot-asset-drop-zone-${textAreaId}`);
+        if (dropZone && dropZone.dataset["disabled"] !== 'false') {
+            dropZone.addEventListener('uploadComplete', async (asset) => {
+                dropZone.style.pointerEvents = "none";
+                asset.detail && insertAssetInEditor(asset.detail)
+            })
+            dropzoneEvents = true
+        }
   }
 
 	function enableWYSIWYG(textAreaId, confirmChange) {
@@ -444,31 +447,35 @@ var cmsfile=null;
 			      let dropZone = document.getElementById(
 			        `dot-asset-drop-zone-${textAreaId}`
 			      );
-			      editor.on("dragover", function (e) {
-                    const { kind } = Array.from(e.dataTransfer.items)[0];
-                    if (kind === 'file') {
-                        dropZone.style.pointerEvents = "all";
-                    }
-                  });
 
-                  editor.on("ExecCommand", function (e) {
-                    if (e.command === 'mceFullScreen'){
-                        if (dropZone.style.position === '') {
-                            dropZone.style.position = 'fixed';
-                            dropZone.style.zIndex = '999';
-                        } else {
-                            dropZone.style.position = '';
-                            dropZone.style.zIndex = '';
+                  if (dropZone) {
+                    editor.on("dragover", function (e) {
+                        const { kind } = Array.from(e.dataTransfer.items)[0];
+                        if (kind === 'file') {
+                            dropZone.style.pointerEvents = "all";
                         }
-                    }
+                    });
 
-			      });
+                    editor.on("ExecCommand", function (e) {
+                        if (e.command === 'mceFullScreen'){
+                            if (dropZone.style.position === '') {
+                                dropZone.style.position = 'fixed';
+                                dropZone.style.zIndex = '999';
+                            } else {
+                                dropZone.style.position = '';
+                                dropZone.style.zIndex = '';
+                            }
+                        }
 
-			      editor.dom.bind(document, "dragleave", function (e) {
-			        dropZone.style.pointerEvents = "none";
-			        return false;
-			      });
-          }
+                    });
+
+                    editor.dom.bind(document, "dragleave", function (e) {
+                        dropZone.style.pointerEvents = "none";
+                        return false;
+                    });
+                  }
+			      
+                }
 			  };
 			  var wellTinyMCE = new tinymce.Editor(
 			    textAreaId,

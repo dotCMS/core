@@ -51,12 +51,12 @@ public class NullLettuceClient<K, V> implements RedisClient {
     }
 
     @Override
-    public long addMembers(Object key, Object[] values) {
+    public long addMembers(Object key, Object... values) {
         return 0;
     }
 
     @Override
-    public Future<Long> addAsyncMembers(Object key, Object[] values) {
+    public Future<Long> addAsyncMembers(Object key, Object... values) {
         return null;
     }
 
@@ -91,12 +91,12 @@ public class NullLettuceClient<K, V> implements RedisClient {
     }
 
     @Override
-    public long delete(Object[] keys) {
+    public long delete(Object... keys) {
         return 0;
     }
 
     @Override
-    public Future<Long> deleteNonBlocking(Object[] keys) {
+    public Future<Long> deleteNonBlocking(Object... keys) {
         return null;
     }
 
@@ -126,7 +126,7 @@ public class NullLettuceClient<K, V> implements RedisClient {
     }
 
     @Override
-    public List<Map.Entry> getHash(Object key, Object[] fields) {
+    public List<Map.Entry> getHash(Object key, Object... fields) {
         return null;
     }
 
@@ -141,7 +141,7 @@ public class NullLettuceClient<K, V> implements RedisClient {
     }
 
     @Override
-    public long deleteHash(Object key, Object[] fields) {
+    public long deleteHash(Object key, Object... fields) {
         return 0;
     }
 

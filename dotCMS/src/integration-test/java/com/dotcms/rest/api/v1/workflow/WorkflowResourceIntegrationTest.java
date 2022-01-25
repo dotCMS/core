@@ -28,6 +28,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
@@ -200,8 +201,8 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         final InitDataObject dataObject = mock(InitDataObject.class);
         when(dataObject.getUser()).thenReturn(user);
         when(webResource
-                .init(anyString(), any(HttpServletRequest.class), any(HttpServletResponse.class), anyBoolean(),
-                        anyString())).thenReturn(dataObject);
+                .init(nullable(String.class), any(HttpServletRequest.class), any(HttpServletResponse.class), anyBoolean(),
+                        nullable(String.class))).thenReturn(dataObject);
 
         workflowResource = new WorkflowResource(workflowHelper, contentHelper, workflowAPI,
                 contentletAPI, responseUtil, permissionAPI, workflowImportExportUtil, new MultiPartUtils(), webResource,

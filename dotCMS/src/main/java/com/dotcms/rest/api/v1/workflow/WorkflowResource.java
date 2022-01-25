@@ -3,6 +3,8 @@ package com.dotcms.rest.api.v1.workflow;
 import static com.dotcms.rest.ResponseEntityView.OK;
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.DotLambdas.not;
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.FAIL_ACTION_CALLBACK;
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SUCCESS_ACTION_CALLBACK;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.WrapInTransaction;
@@ -34,6 +36,7 @@ import com.dotcms.rest.annotation.IncludePermissions;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.rest.api.v1.authentication.RequestUtil;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
@@ -68,6 +71,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -77,14 +81,12 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
-import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
@@ -120,6 +122,8 @@ import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Future;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -141,10 +145,11 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
-
-import io.vavr.control.Try;
 import org.apache.commons.lang.time.StopWatch;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.glassfish.jersey.media.sse.EventOutput;
+import org.glassfish.jersey.media.sse.OutboundEvent;
+import org.glassfish.jersey.media.sse.SseFeature;
 import org.glassfish.jersey.server.JSONP;
 
 /**
@@ -500,7 +505,6 @@ public class WorkflowResource {
         return actionInputViews;
     }
 
-
     /**
      * Get the bulk actions based on the {@link BulkActionForm}
      * @param request HttpServletRequest
@@ -564,6 +568,63 @@ public class WorkflowResource {
         }
     }
 
+    @POST
+    @Path("/contentlet/actions/_bulkfire")
+    @JSONP
+    @Produces(SseFeature.SERVER_SENT_EVENTS)
+    public EventOutput fireBulkActions(@Context final HttpServletRequest request,
+            final FireBulkActionsForm fireBulkActionsForm)
+            throws DotDataException, DotSecurityException {
+        final InitDataObject initDataObject = this.webResource
+                .init(null, request, new EmptyHttpResponse(), true, null);
+
+        final EventOutput eventOutput = new EventOutput();
+
+        DotConcurrentFactory.getInstance().getSubmitter().submit(()-> {
+
+            final OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
+
+
+            fireBulkActionsForm.getPopupParamsBean()
+                    .getAdditionalParamsMap().put(SUCCESS_ACTION_CALLBACK,
+                            (Consumer<Long>) delta -> {
+                                Logger.info(this, "CALLBACK ------");
+                                eventBuilder.name("success");
+                                eventBuilder.data(Map.class,
+                                        map("success", delta));
+                                eventBuilder.mediaType(MediaType.APPLICATION_JSON_TYPE);
+                                final OutboundEvent event = eventBuilder.build();
+                                try {
+                                    eventOutput.write(event);
+                                } catch (Exception e) {
+                                    throw new DotRuntimeException(e);
+                                }
+                            });
+
+            fireBulkActionsForm.getPopupParamsBean()
+                    .getAdditionalParamsMap().put(FAIL_ACTION_CALLBACK,
+                            (BiConsumer<String, Exception>) (inode, e) -> {
+                                eventBuilder.name("failure");
+                                eventBuilder.data(Map.class,
+                                        map("failure", inode));
+                                final OutboundEvent event = eventBuilder.build();
+                                try {
+                                    eventOutput.write(event);
+                                } catch (Exception e1) {
+                                    throw new DotRuntimeException(e1);
+                                }
+                            });
+
+            try {
+                workflowHelper.fireBulkActionsNoReturn(fireBulkActionsForm, initDataObject.getUser());
+                Logger.info(this, "finished");
+            } catch (DotSecurityException | DotDataException e) {
+                throw new DotRuntimeException(e);
+            }
+        });
+
+        return eventOutput;
+    }
 
     /**
      * Returns a single action, 404 if does not exists. 401 if the user does not have permission.
@@ -1689,7 +1750,7 @@ public class WorkflowResource {
                 new DotConcurrentFactory.SubmitterConfigBuilder().poolSize(2).maxPoolSize(5).queueCapacity(CONTENTLETS_LIMIT).build());
         final CompletionService<Map<String, Object>> completionService = new ExecutorCompletionService<>(dotSubmitter);
         final List<Future<Map<String, Object>>> futures = new ArrayList<>();
-        final HttpServletRequest statelessRequest = this.createStatelessRequest(request);
+        final HttpServletRequest statelessRequest = RequestUtil.INSTANCE.createStatelessRequest(request);
 
         for (final Map<String, Object> contentMap : contentletsToSaveList) {
 
@@ -1737,26 +1798,6 @@ public class WorkflowResource {
         }
 
         printResponseEntityViewResult(outputStream, objectMapper, completionService, futures);
-    }
-
-    private HttpServletRequest createStatelessRequest(final HttpServletRequest request) {
-
-        final DotCMSMockRequest statelessRequest =
-                new DotCMSMockRequestWithSession(request.getSession(false), request.isSecure());
-
-        statelessRequest.setAttribute(WebKeys.USER, request.getAttribute(WebKeys.USER));
-        statelessRequest.setAttribute(WebKeys.USER_ID, request.getAttribute(WebKeys.USER_ID));
-        statelessRequest.addHeader("User-Agent", request.getHeader("User-Agent"));
-        statelessRequest.addHeader("Host", request.getHeader("Host"));
-        statelessRequest.addHeader("Accept-Language", request.getHeader("Accept-Language"));
-        statelessRequest.addHeader("Accept-Encoding", request.getHeader("Accept-Encoding"));
-        statelessRequest.addHeader("X-Forwarded-For", request.getHeader("X-Forwarded-For"));
-        statelessRequest.addHeader("Origin", request.getHeader("Origin"));
-        statelessRequest.addHeader("referer", request.getHeader("referer"));
-        statelessRequest.setRemoteAddr(request.getRemoteAddr());
-        statelessRequest.setRemoteHost(request.getRemoteHost());
-
-        return statelessRequest;
     }
 
     ////////////////////////////

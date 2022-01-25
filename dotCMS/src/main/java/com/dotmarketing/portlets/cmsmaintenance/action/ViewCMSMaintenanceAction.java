@@ -235,7 +235,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 
 		}
 		//Manage all the import/ export Task
-		else {
+		else if (Config.getBooleanProperty("ALLOW_STARTER_ZIP_GENERATION_ON_DISK", false)) {
 
 			final boolean dataOnly = Parameter.getBooleanFromString(req.getParameter("dataOnly"), true);
 			final boolean download ="downloadZip".equalsIgnoreCase(cmd);

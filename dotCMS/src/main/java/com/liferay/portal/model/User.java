@@ -30,6 +30,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.portlets.user.ajax.UserAjax;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.liferay.portal.util.PropsUtil;
@@ -382,7 +383,7 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
   }
 
     public Map<String, Object> toMap() throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
-        Map<String, Object> map = new HashMap<String, Object>();
+        final Map<String, Object> map = new HashMap<>();
         map.put("active", this.getActive());
         map.put("actualCompanyId", this.getActualCompanyId());
         map.put("birthday", this.getBirthday());
@@ -390,8 +391,17 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
         map.put("companyId", this.getCompanyId());
         map.put("createDate", this.getCreateDate());
         map.put("modificationDate", this.getModificationDate());
-        map.put("emailAddress", this.getEmailAddress());
-        map.put("emailaddress", this.getEmailAddress());
+		String emailAddress = this.getEmailAddress();
+		if (!UtilMethods.isSet(this.getEmailAddress())) {
+		    emailAddress = StringPool.BLANK;
+            Logger.warn(this, String.format("Email address for user '%s' is null. Returning an empty value instead.",
+                    getUserId()));
+            map.put("gravitar", StringPool.BLANK);
+        } else {
+            map.put("gravitar", DigestUtils.md5Hex(emailAddress.toLowerCase()));
+        }
+		map.put("emailAddress", emailAddress);
+        map.put("emailaddress", emailAddress);
         map.put("failedLoginAttempts", this.getFailedLoginAttempts());
         map.put("male", this.getMale());
         map.put("firstName", this.getFirstName());
@@ -416,7 +426,6 @@ public class User extends UserModel implements Recipient, ManifestItem, DotClone
         map.put("hasConsoleAccess", hasConsoleAccess());
         map.put("id", getUserId());
         map.put("type", UserAjax.USER_TYPE_VALUE);
-        map.put("gravitar", DigestUtils.md5Hex(this.getEmailAddress().toLowerCase()).toString());
         map.put("additionalInfo", getAdditionalInfo());
         return map;
     }

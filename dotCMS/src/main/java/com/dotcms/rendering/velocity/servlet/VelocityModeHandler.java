@@ -2,6 +2,7 @@ package com.dotcms.rendering.velocity.servlet;
 
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
+import com.dotcms.security.ContentSecurityPolicyUtil;
 import com.dotmarketing.beans.Identifier;
 import com.google.common.collect.ImmutableMap;
 import com.dotcms.visitor.business.VisitorAPI;
@@ -18,6 +19,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import java.nio.charset.StandardCharsets;
 import org.apache.velocity.Template;
 import org.apache.velocity.exception.ParseErrorException;
 
@@ -100,7 +102,13 @@ public abstract class VelocityModeHandler {
     public final String eval() {
         try(ByteArrayOutputStream out = new ByteArrayOutputStream(4096)) {
             serve(out);
-            return new String(out.toByteArray());
+
+            if (ContentSecurityPolicyUtil.isConfig()) {
+                final String htmlCode = new String(out.toByteArray(), StandardCharsets.UTF_8);
+                return ContentSecurityPolicyUtil.apply(htmlCode);
+            } else {
+                return new String(out.toByteArray(), StandardCharsets.UTF_8);
+            }
         } catch (DotDataException | IOException | DotSecurityException e) {
             Logger.debug(VelocityModeHandler.class, e.getMessage(), e);
             throw new DotRuntimeException(e);

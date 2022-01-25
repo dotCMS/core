@@ -1,15 +1,18 @@
 package com.dotcms.vanityurl.business;
 
+
+import java.util.List;
+import java.util.Optional;
+import javax.servlet.http.HttpServletResponse;
+import com.dotcms.vanityurl.filters.VanityUrlRequestWrapper;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
+import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-
-import java.util.List;
-import java.util.Optional;
 
 /**
  * This API provides access to the information related to Vanity URLs in dotCMS. Vanity URLs are
@@ -83,5 +86,15 @@ public interface VanityUrlAPI {
      * @return The list of Vanity URLs.
      */
     List<CachedVanityUrl> findInDb(Host host, Language language);
+
+
+    /**
+    * Product of refactoring handling 301 and 302 previously executed by CachedVanityUrl
+    *
+    * @return whether or not the redirect was handled
+    */
+    boolean handleVanityURLRedirects(VanityUrlRequestWrapper request, HttpServletResponse response,
+                VanityUrlResult vanityUrlResult);
+
 
 }

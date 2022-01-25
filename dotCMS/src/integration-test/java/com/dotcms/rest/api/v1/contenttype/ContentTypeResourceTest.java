@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
@@ -244,7 +245,7 @@ public class ContentTypeResourceTest {
 		final InitDataObject initDataObject = mock(InitDataObject.class);
 		final User user = new User();
 		when(initDataObject.getUser()).thenReturn(user);
-		when(webResource.init(anyString(), any(HttpServletRequest.class),  any(HttpServletResponse.class),  anyBoolean(), anyString())).thenReturn(initDataObject);
+		when(webResource.init(nullable(String.class), any(HttpServletRequest.class),  any(HttpServletResponse.class),  anyBoolean(), nullable(String.class))).thenReturn(initDataObject);
 
 		String filter = "filter";
 		int page = 3;
@@ -261,7 +262,7 @@ public class ContentTypeResourceTest {
 
 		final ContentTypeResource resource = new ContentTypeResource
 				(new ContentTypeHelper(), webResource, paginationUtil, WorkflowHelper.getInstance(), permissionAPI);
-		final Response response = resource.getContentTypes(request,  new EmptyHttpResponse(),  filter, page, perPage, orderBy, direction.toString(), "FORM");
+		final Response response = resource.getContentTypes(request,  new EmptyHttpResponse(),  filter, page, perPage, orderBy, direction.toString(), "FORM",null);
 		RestUtilTest.verifySuccessResponse(response);
 	}
 
@@ -274,7 +275,7 @@ public class ContentTypeResourceTest {
 		final InitDataObject initDataObject = mock(InitDataObject.class);
 		final User user = new User();
 		when(initDataObject.getUser()).thenReturn(user);
-		when(webResource.init(anyString(), any(HttpServletRequest.class),  any(HttpServletResponse.class), anyBoolean(), anyString())).thenReturn(initDataObject);
+		when(webResource.init(nullable(String.class), any(HttpServletRequest.class),  any(HttpServletResponse.class), anyBoolean(), nullable(String.class))).thenReturn(initDataObject);
 
 		String filter = "filter";
 		int page = 3;
@@ -287,7 +288,7 @@ public class ContentTypeResourceTest {
 		final ContentTypeResource resource = new ContentTypeResource
 				(new ContentTypeHelper(), webResource,new PaginationUtil(new ContentTypesPaginator()) , WorkflowHelper.getInstance(), permissionAPI);
 
-		resource.getContentTypes(request,  new EmptyHttpResponse(), filter, page, perPage, orderBy, direction.toString(), "FORM2");
+		resource.getContentTypes(request,  new EmptyHttpResponse(), filter, page, perPage, orderBy, direction.toString(), "FORM2",null);
 
 	}
 
@@ -300,7 +301,7 @@ public class ContentTypeResourceTest {
 		final InitDataObject initDataObject = mock(InitDataObject.class);
 		final User user = new User();
 		when(initDataObject.getUser()).thenReturn(user);
-        when(webResource.init(anyString(), any(HttpServletRequest.class),  any(HttpServletResponse.class), anyBoolean(), anyString())).thenReturn(initDataObject);
+        when(webResource.init(nullable(String.class), any(HttpServletRequest.class),  any(HttpServletResponse.class), anyBoolean(), nullable(String.class))).thenReturn(initDataObject);
 
 		String filter = "filter";
 		int page = 3;
@@ -322,7 +323,7 @@ public class ContentTypeResourceTest {
 
 		final ContentTypeResource resource = new ContentTypeResource
 				(new ContentTypeHelper(), webResource, paginationUtil, WorkflowHelper.getInstance(), permissionAPI);
-		final Response response = resource.getContentTypes(request,  new EmptyHttpResponse(), filter, page, perPage, orderBy, direction.toString(), null);
+		final Response response = resource.getContentTypes(request,  new EmptyHttpResponse(), filter, page, perPage, orderBy, direction.toString(), null,null);
 		RestUtilTest.verifySuccessResponse(response);
 	}
 
@@ -476,8 +477,8 @@ public class ContentTypeResourceTest {
 		when(dataObject.getUser()).thenReturn(adminUser);
 
 		when(webResource
-				.init(anyString(), anyBoolean(), any(HttpServletRequest.class), anyBoolean(),
-						anyString())).thenReturn(dataObject);
+				.init(nullable(String.class), anyBoolean(), any(HttpServletRequest.class), anyBoolean(),
+						nullable(String.class))).thenReturn(dataObject);
 
 		final PaginationUtil paginationUtil = mock(PaginationUtil.class);
 		final PermissionAPI permissionAPI = mock(PermissionAPI.class);
@@ -511,8 +512,8 @@ public class ContentTypeResourceTest {
 		when(dataObject.getUser()).thenReturn(chrisPublisher);
 
 		when(webResource
-				.init(anyString(), anyBoolean(), any(HttpServletRequest.class), anyBoolean(),
-						anyString())).thenReturn(dataObject);
+				.init(nullable(String.class), anyBoolean(), any(HttpServletRequest.class), anyBoolean(),
+						nullable(String.class))).thenReturn(dataObject);
 
 		final PaginationUtil paginationUtil = mock(PaginationUtil.class);
 		final PermissionAPI permissionAPI = mock(PermissionAPI.class);
@@ -562,8 +563,8 @@ public class ContentTypeResourceTest {
 		when(dataObject.getUser()).thenReturn(adminUser);
 
 		when(webResource
-			.init(anyString(), anyBoolean(), any(HttpServletRequest.class), anyBoolean(),
-				anyString())).thenReturn(dataObject);
+			.init(nullable(String.class), anyBoolean(), any(HttpServletRequest.class), anyBoolean(),
+					nullable(String.class))).thenReturn(dataObject);
 
 		final ContentTypeHelper contentTypeHelper = Mockito.spy(new ContentTypeHelper(webResource,
 				APILocator.getStructureAPI(), ContentTypeUtil.getInstance()));

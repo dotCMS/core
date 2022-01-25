@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "c1adea2b-53b3-40b4-9147-09006e0f41e8",
+		"_postman_id": "4f66cc2e-05a4-4926-8e57-86bf13756d4a",
 		"name": "ContentType Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -690,7 +690,7 @@
 									"    pm.expect(contentType.fields.length).to.eql(2);",
 									"});",
 									"pm.test(\"Content Type has a Story_block_field\", function() {",
-									"    pm.expect(contentType.fields[1].fieldType).to.eql(\"Story_block_field\");",
+									"    pm.expect(contentType.fields[1].fieldType).to.eql(\"Story-Block\");",
 									"});"
 								],
 								"type": "text/javascript"
@@ -796,7 +796,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"{{contentTypeIdWithStoryBlock}}\",\n        \"name\": \"test with data block field\",\n        \"title\": \"test with data block field\",\n        \"block\": \"{\\\"type\\\": \\\"doc\\\",\\\"render\\\": \\\"<h4>Wow, this editor instance exports its content as JSON.</h4>\\\",\\\"content\\\": [{\\\"type\\\": \\\"paragraph\\\",\\\"content\\\": [{\\\"type\\\": \\\"text\\\",\\\"text\\\": \\\"Wow, this editor instance exports its content as JSON.\\\"}]}]}\"\n    }\n}",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"{{contentTypeIdWithStoryBlock}}\",\n        \"name\": \"test with data block field\",\n        \"title\": \"test with data block field\",\n        \"block\": \"{\\\"type\\\": \\\"doc\\\",\\\"content\\\": [{\\\"type\\\": \\\"paragraph\\\",\\\"content\\\": [{\\\"type\\\": \\\"text\\\",\\\"text\\\": \\\"Wow, this editor instance exports its content as JSON.\\\"}]}]}\"\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -816,6 +816,193 @@
 								"default",
 								"fire",
 								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Test Get ContentTypes",
+			"item": [
+				{
+					"name": "Get ContentTypes sending HostID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype?host=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							],
+							"query": [
+								{
+									"key": "host",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get ContentTypes sending SYSTEM_HOST",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Amount of ContentTypes could be greather or eql than 10\", function () {",
+									"     pm.expect(jsonData.entity.length).to.be.gte(10);",
+									"});",
+									"",
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype?host=SYSTEM_HOST",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							],
+							"query": [
+								{
+									"key": "host",
+									"value": "SYSTEM_HOST"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get ContentTypes without any param",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Amount of ContentTypes could be greather or eql than 10\", function () {",
+									"     pm.expect(jsonData.entity.length).to.be.gte(10);",
+									"});",
+									"",
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get ContentTypes sending not existing hostID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype?host=aaaaa-aaaa-aaaa-aaaaaa",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							],
+							"query": [
+								{
+									"key": "host",
+									"value": "aaaaa-aaaa-aaaa-aaaaaa"
+								}
 							]
 						}
 					},

@@ -194,6 +194,14 @@
 
 	function onChangeProtocolTypeSelectCheck() {
 		currentProtocol = dijit.byId("protocol").value;
+        
+        if (currentProtocol.indexOf('http') >= 0) {
+            dojo.byId("getToken").show();
+        } else {
+            dojo.byId("getToken").hide();
+        }
+
+        shouldEnabledGeToken();
 
 		if (dojo.getStyle("getTokenSpan", "display") === "none"){
 			setAddressRow(true);
@@ -210,30 +218,29 @@
 	}
 
 	function showGetToken(show){
-
-		if (show){
-			dojo.byId("authPropertiesRow").hide();
-			dojo.byId("getTokenSpan").show();
-			dojo.byId("showGetTokenSpan").hide();
-
-			dojo.byId('buttons').hide();
-		} else {
-			dojo.byId("authPropertiesRow").show();
-			dojo.byId("getTokenSpan").hide();
-			dojo.byId("showGetTokenSpan").show();
-			dojo.byId('buttons').show();
-
-		}
-	}
+        if (show){
+            dojo.byId("authPropertiesRow").hide();
+            dojo.byId("getTokenSpan").show();
+            dojo.byId("showGetTokenSpan").hide();
+            dojo.byId('buttons').hide();
+        } else {
+            dojo.byId("authPropertiesRow").show();
+            dojo.byId("getTokenSpan").hide();
+            dojo.byId("showGetTokenSpan").show();
+            dojo.byId('buttons').show();
+        }
+    }
 
 	function shouldEnabledGeToken(){
 		address = document.getElementById('address').value;
 		port = document.getElementById('port').value;
 
 		if (address && port){
-			dojo.byId("showGetTokenSpan").show();
+            dijit.byId('getToken').attr('disabled', false);
+            dojo.removeClass('getToken', 'getTokenBtnDisabled')
 		} else {
-			dojo.byId("showGetTokenSpan").hide();
+            dijit.byId('getToken').attr('disabled', true);
+            dojo.addClass('getToken', 'getTokenBtnDisabled')
 		}
 	}
 
@@ -323,6 +330,11 @@
 
 </script>
 
+<style>
+    .getTokenBtnDisabled{
+        color: #C5C5C5;
+    }
+</style>
 
 <div id="main" style="margin:auto;display: inline-block;">
 	<div dojoType="dijit.form.Form"  name="formSaveEndpoint"  id="formSaveEndpoint" onsubmit="return false;">
@@ -427,7 +439,7 @@
 				</dt>
 				<dd>
 					<textarea dojoType="dijit.form.SimpleTextarea" name="authKey" id="authKey" style="width:300px;height:105px;"><%=currentEndpoint.hasAuthKey() ? PublicEncryptionFactory.decryptString( currentEndpoint.getAuthKey().toString())  : "" %></textarea>
-					<div id= "showGetTokenSpan" style="display:none;text-align:right">
+					<div id= "showGetTokenSpan" style="text-align:right">
 						<button dojoType="dijit.form.Button" onClick="showGetToken(true)" id="getToken" class="dijitButtonFlat">Get Token</button>
 					</div>
 				</dd>

@@ -477,6 +477,9 @@ public class ImportContentletsAction extends DotPortletAction {
 		ImportContentletsForm importForm = (ImportContentletsForm) form;
 		httpReq.getSession().setAttribute("fileName", importForm.getFileName());
 		String currentSiteId = (String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+		Logger.info(this, "-------- Starting Content Import Preview -------- ");
+        Logger.info(this, String.format("-> File: %s", importForm.getFileName()));
+        Logger.info(this, String.format("-> Content Type ID: %s", importForm.getStructure()));
 		HashMap<String, List<String>> results = ImportUtil.importFile(importId, currentSiteId, importForm.getStructure(), importForm.getFields(), true, (importForm.getLanguage() == -1), user, importForm.getLanguage(), csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader, importForm.getWorkflowActionId(),httpReq);
 		req.setAttribute("previewResults", results);
 	}
@@ -520,6 +523,9 @@ public class ImportContentletsAction extends DotPortletAction {
 				.getAttribute("form_to_import");
 		final String currentSiteId = (String) session
 				.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+        Logger.info(this, "-------- Starting Content Import Process -------- ");
+        Logger.info(this, String.format("-> File: %s", importForm.getFileName()));
+        Logger.info(this, String.format("-> Content Type ID: %s", importForm.getStructure()));
 		final HashMap<String, List<String>> results = ImportUtil
 				.importFile(importId, currentSiteId, importForm.getStructure(),
 						importForm.getFields(), false, (importForm.getLanguage() == -1), user,

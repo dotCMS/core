@@ -1,11 +1,14 @@
 package com.dotcms.http;
 
+import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
@@ -16,11 +19,14 @@ import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletResponse;
 import net.jodah.failsafe.CircuitBreaker;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.FailsafeException;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
@@ -59,6 +65,8 @@ public class CircuitBreakerUrl {
     private final boolean verbose;
     private final String rawData;
     private int response=-1;
+    private Header[] responseHeaders;
+
     /**
      * 
      * @param proxyUrl
@@ -138,12 +146,6 @@ public class CircuitBreakerUrl {
 
     }
 
-    public void doOut(HttpServletResponse response) throws IOException {
-        try (OutputStream out = response.getOutputStream()) {
-            doOut(out);
-        }
-    }
-
     public String doString() throws IOException {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             doOut(out);
@@ -151,8 +153,33 @@ public class CircuitBreakerUrl {
         }
     }
 
-    public void doOut(OutputStream outer) throws IOException {
-        try (OutputStream out = outer) {
+    public void doOut(final OutputStream out ) throws IOException {
+        doOut(new EmptyHttpResponse() {
+            @Override
+            public ServletOutputStream getOutputStream() throws IOException {
+                return new ServletOutputStream(){
+
+                    @Override
+                    public void write(int b) throws IOException {
+                        out.write(b);
+                    }
+
+                    @Override
+                    public boolean isReady() {
+                        return false;
+                    }
+
+                    @Override
+                    public void setWriteListener(WriteListener writeListener) {
+
+                    }
+                };
+            }
+        });
+    }
+
+    public void doOut(final HttpServletResponse response) throws IOException {
+        try (final OutputStream out = response.getOutputStream()) {
             if(verbose) {
                 Logger.info(this.getClass(), "Circuitbreaker to " + request + " is " + circuitBreaker.getState());
             }
@@ -167,10 +194,20 @@ public class CircuitBreakerUrl {
                                 .setConnectionRequestTimeout(Math.toIntExact(this.timeoutMs))
                                 .setSocketTimeout(Math.toIntExact(this.timeoutMs)).build();
                         try (CloseableHttpClient httpclient = HttpClientBuilder.create().setDefaultRequestConfig(config).build()) {
-                            HttpResponse response = httpclient.execute(this.request);
-                            this.response = response.getStatusLine().getStatusCode();
                             
-                            IOUtils.copy(response.getEntity().getContent(), out);
+                            if(IPUtils.isIpPrivateSubnet(this.request.getURI().getHost()) && !Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false)){
+                                throw new DotRuntimeException("Remote HttpRequests cannot access private subnets.  Set ALLOW_ACCESS_TO_PRIVATE_SUBNETS=true to allow");
+                            }
+                            
+                            HttpResponse innerResponse = httpclient.execute(this.request);
+
+                            this.responseHeaders = innerResponse.getAllHeaders();
+
+                            copyHeaders(innerResponse, response);
+
+                            this.response = innerResponse.getStatusLine().getStatusCode();
+                            
+                            IOUtils.copy(innerResponse.getEntity().getContent(), out);
                             
                             // throw an error if the request is bad
                             if(this.response<200 || this.response>299){
@@ -180,6 +217,20 @@ public class CircuitBreakerUrl {
                     });
         } catch (FailsafeException ee) {
             Logger.debug(this.getClass(), ee.getMessage() + " " + toString());
+        }
+    }
+
+    private void copyHeaders(final HttpResponse innerResponse, final HttpServletResponse response) {
+        final Header contentTypeHeader = innerResponse.getFirstHeader("Content-Type");
+
+        if (UtilMethods.isSet(contentTypeHeader)) {
+            response.setHeader(contentTypeHeader.getName(), contentTypeHeader.getValue());
+        }
+
+        final Header contentLengthHeader = innerResponse.getFirstHeader("Content-Length");
+
+        if (UtilMethods.isSet(contentLengthHeader)) {
+            response.setHeader(contentLengthHeader.getName(), contentLengthHeader.getValue());
         }
     }
 
@@ -203,7 +254,11 @@ public class CircuitBreakerUrl {
     public Map<String,Object> doMap() {
         return (Map<String,Object>) Try.of(()-> DotObjectMapperProvider.getInstance().getDefaultObjectMapper().readValue(doString(), typeRef)).onFailure(e->Logger.warnAndDebug(CircuitBreakerUrl.class,  e)).getOrElse(HashMap::new);
     }
-    
+
+    public Header[] getResponseHeaders() {
+        return responseHeaders;
+    }
+
     public enum Method {
         GET, POST, PUT, DELETE, PATCH;
 

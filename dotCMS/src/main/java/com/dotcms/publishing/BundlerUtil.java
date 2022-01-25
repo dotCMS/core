@@ -108,7 +108,7 @@ public class BundlerUtil {
     public static boolean isRetryable(final String bundleId) {
         try {
             final PublishAuditStatus publishAuditStatus = PublishAuditAPI.getInstance()
-                    .getPublishAuditStatus(bundleId);
+                    .getPublishAuditStatus(bundleId, 0);
 
             return isRetryable(publishAuditStatus) && !isInPublishQueue(bundleId)
                     && bundleExists(bundleId);

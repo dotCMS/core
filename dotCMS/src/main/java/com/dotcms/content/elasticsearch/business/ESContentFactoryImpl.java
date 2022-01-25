@@ -1945,7 +1945,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 
         REMOVABLE_KEY_SET.forEach(key -> toReturn.getMap().remove(key));
-
+        contentlet.getMap().remove(Contentlet.CONTENTLET_AS_JSON);
         contentletCache.remove(inode);
         return toReturn;
     }
@@ -1953,9 +1953,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
     private void setUpContentletAsJson(final Contentlet contentlet, final String inode) {
         final ContentletJsonAPI contentletJsonAPI = APILocator.getContentletJsonAPI();
         if (contentletJsonAPI.isPersistContentAsJson()) {
-            //json contentlet is currently supported only for postgres
-            final Map<String, Object> map = (Map) contentlet.get(Contentlet.CONTENTLET_AS_JSON);
-            if (null != map) {
+            final Map<String, Object> map = new HashMap<>(contentlet.getMap());
                 try {
 
                     if (UtilMethods.isNotSet((String) map.get("inode")) && UtilMethods
@@ -1973,9 +1971,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     Logger.error(ESContentletAPIImpl.class, error, e);
                     throw new DotRuntimeException(error, e);
                 }
-            }
-        } else {
-            contentlet.getMap().remove(Contentlet.CONTENTLET_AS_JSON);
         }
     }
 

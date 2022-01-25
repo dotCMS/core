@@ -9,18 +9,16 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import org.eclipse.jetty.util.ConcurrentHashSet;
+
 
 /**
  * it allow process a set of Assets to calculate its dependency in a multi-threading environment.
@@ -106,7 +104,7 @@ public class ConcurrentDependencyProcessor implements DependencyProcessor {
         Set<String> set = assetsRequestToProcess.get(pusheableAsset);
 
         if (set == null) {
-            set = new ConcurrentHashSet<>();
+            set = ConcurrentHashMap.newKeySet();
             assetsRequestToProcess.put(pusheableAsset, set);
         }
 

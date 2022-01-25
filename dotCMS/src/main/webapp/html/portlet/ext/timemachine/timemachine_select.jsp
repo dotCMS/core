@@ -150,7 +150,7 @@ function showSettings() {
 	var dialog = new dijit.Dialog({
 		id: 'settingsDialog',
         title: "<%= LanguageUtil.get(pageContext, "TIMEMACHINE-SETTINGS")%>",
-        style: "width: 600px;height: auto;",
+        style: "width: 680px;height: auto;",
         content: new dojox.layout.ContentPane({
         	style: "height:auto; width: 580px;",
             href: "/html/portlet/ext/timemachine/settings.jsp?random="+r

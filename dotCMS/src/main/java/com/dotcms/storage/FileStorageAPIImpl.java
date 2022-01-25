@@ -7,9 +7,11 @@ import static com.dotmarketing.util.UtilMethods.isSet;
 import com.dotcms.storage.model.BasicMetadataFields;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.util.MimeTypeUtils;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.MetadataCache;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
@@ -19,6 +21,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import java.awt.Dimension;
 import java.io.File;
 import java.io.Serializable;
 import java.util.Collections;
@@ -68,7 +71,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
      */
     public FileStorageAPIImpl() {
         this(new JsonReaderDelegate<>(Map.class), new JsonWriterDelegate(),
-                new TikaMetadataGenerator(), StoragePersistenceProvider.INSTANCE.get(), CacheLocator.getMetadataCache());
+                new MetadataGeneratorImpl(), StoragePersistenceProvider.INSTANCE.get(), CacheLocator.getMetadataCache());
     }
 
     /**
@@ -105,50 +108,31 @@ public class FileStorageAPIImpl implements FileStorageAPI {
     private Map<String, Serializable> generateBasicMetaData(final File binary,
             final Predicate<String> metaDataKeyFilter) {
 
-        final ImmutableSortedMap.Builder<String, Serializable> mapBuilder =
-                new ImmutableSortedMap.Builder<>(Comparator.naturalOrder());
-
         if (this.validBinary(binary)) {
-            final String binaryName = binary.getName();
-            mapBuilder.put(NAME_META_KEY.key(), binaryName);
-            mapBuilder.put(TITLE_META_KEY.key(), binaryName); //Title gets replaced by the loaded metadata. Otherwise iwe set a default
-            final String relativePath = binary.getAbsolutePath()
-                    .replace(ConfigUtils.getAbsoluteAssetsRootPath(),
-                            StringPool.BLANK);
 
-            mapBuilder.put(PATH_META_KEY.key(), relativePath);
+            final TreeMap<String, Serializable> standAloneMetadata = metadataGenerator.standAloneMetadata(binary);
 
-            if (metaDataKeyFilter.test(LENGTH_META_KEY.key())) {
-                mapBuilder.put(LENGTH_META_KEY.key(), binary.length());
+            if (!metaDataKeyFilter.test(LENGTH_META_KEY.key())) {
+                standAloneMetadata.remove(LENGTH_META_KEY.key());
             }
 
-            if (metaDataKeyFilter.test(SIZE_META_KEY.key())) {
-                mapBuilder.put(SIZE_META_KEY.key(), binary.length());
+            if (!metaDataKeyFilter.test(SIZE_META_KEY.key())) {
+                standAloneMetadata.remove(SIZE_META_KEY.key());
             }
 
-            if (metaDataKeyFilter.test(CONTENT_TYPE_META_KEY.key())) {
-                mapBuilder.put(CONTENT_TYPE_META_KEY.key(), MimeTypeUtils.getMimeType(binary));
+            if (!metaDataKeyFilter.test(CONTENT_TYPE_META_KEY.key())) {
+                standAloneMetadata.remove(CONTENT_TYPE_META_KEY.key());
             }
 
-            mapBuilder.put(MOD_DATE_META_KEY.key(), binary.lastModified());
-            mapBuilder.put(SHA256_META_KEY.key(),
-                    Try.of(() -> FileUtil.sha256toUnixHash(binary)).getOrElse("unknown"));
+            standAloneMetadata.put(VERSION_KEY.key(), APILocator.getFileMetadataAPI().getBinaryMetadataVersion());
 
-            final boolean isImage = UtilMethods.isImage(relativePath);
-            mapBuilder.put(IS_IMAGE_META_KEY.key(), isImage);
-            //These are added here to even things when comparing
-            //typically these values are added by tika except for svg file so that creates some sort of inconsistency
-            //we add them for image types with a default value of zero that gets replaced by the values provided by tika
-            //if tika fails to tell us the dimension we are keeping a default 0
-            if(isImage){
-               mapBuilder.put(WIDTH_META_KEY.key(), 0);
-               mapBuilder.put(HEIGHT_META_KEY.key(), 0);
-            }
-
+            return ensureTypes(standAloneMetadata);
         }
 
-        return mapBuilder.build();
+        return ImmutableMap.of();
     }
+
+
 
     /**
      * Gets the full metadata from the binary, this could involved a more expensive process such as Tika, this method does not any stores but could do a filter anything
@@ -164,7 +148,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         TreeMap<String, Serializable> metadataMap = new TreeMap<>(Comparator.naturalOrder());
 
         try {
-            final Map<String, Serializable> fullMetaDataMap = this.metadataGenerator.generate(binary, maxLength);
+            final Map<String, Serializable> fullMetaDataMap = this.metadataGenerator.tikaBasedMetadata(binary, maxLength);
             if (isSet(fullMetaDataMap)) {
                 for (final Map.Entry<String, Serializable> entry : fullMetaDataMap.entrySet()) {
                     if (metaDataKeyFilter.test(entry.getKey())) {

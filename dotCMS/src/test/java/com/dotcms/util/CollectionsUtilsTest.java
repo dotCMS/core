@@ -1,18 +1,30 @@
 package com.dotcms.util;
 
 import com.dotcms.UnitTestBase;
-import com.dotcms.workflow.form.AssignCommentBean;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.dotcms.util.CollectionsUtils.*;
-import static org.junit.Assert.*;
+import static com.dotcms.util.CollectionsUtils.Merge;
+import static com.dotcms.util.CollectionsUtils.groupByKey;
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.CollectionsUtils.partition;
+import static com.dotcms.util.CollectionsUtils.set;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * CollectionsUtils unit test.

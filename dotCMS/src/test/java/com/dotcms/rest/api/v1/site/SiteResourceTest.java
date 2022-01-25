@@ -7,6 +7,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.notNull;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -121,7 +122,7 @@ public class SiteResourceTest extends UnitTestBase {
 
         when(initDataObject.getUser()).thenReturn(user);
         // final InitDataObject initData = this.webResource.init(null, request, response, true, null); // should logged in
-        when(webResource.init((WebResource.InitBuilder)anyObject())).thenReturn(initDataObject);
+        when(webResource.init((WebResource.InitBuilder)notNull())).thenReturn(initDataObject);
 
         when(hostAPI.findAll(user, true)).thenReturn(hosts);
         when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);

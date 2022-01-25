@@ -1,6 +1,5 @@
 package com.dotcms.contenttype.model.type;
 
-import static com.dotcms.util.CollectionsUtils.map;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.publisher.util.PusheableAsset;
@@ -26,11 +25,10 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.google.common.collect.ImmutableMap;
 
-import io.vavr.control.Try;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
-import org.elasticsearch.common.Nullable;
+import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
 

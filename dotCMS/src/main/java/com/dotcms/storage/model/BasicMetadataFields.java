@@ -11,6 +11,7 @@ public enum BasicMetadataFields {
 
     //These are stand-alone metadata fields that can be calculated without having to use Tika
 
+    VERSION_KEY            ("version"),
     NAME_META_KEY          ("name"),
     TITLE_META_KEY         ("title"),
     PATH_META_KEY          ("path"),

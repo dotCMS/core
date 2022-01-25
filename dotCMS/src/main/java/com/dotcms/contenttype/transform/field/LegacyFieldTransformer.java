@@ -5,7 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
-import org.elasticsearch.common.Nullable;
+import javax.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -44,6 +44,11 @@ public class LegacyFieldTransformer implements FieldTransformer {
 		
 		this.newFields = ImmutableList.copyOf(news);
 		this.oldFields = ImmutableList.copyOf(olds);
+	}
+
+	public static Field from(com.dotmarketing.portlets.structure.model.Field oldField) {
+		final LegacyFieldTransformer legacyFieldTransformer = new LegacyFieldTransformer(oldField);
+		return legacyFieldTransformer.from();
 	}
 
 	public Field from() throws DotStateException {

@@ -1,5 +1,7 @@
 package com.dotcms.csspreproc;
 
+import com.dotmarketing.common.db.DotConnect;
+import com.liferay.util.StringPool;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -11,6 +13,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -29,6 +32,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.util.FileUtil;
+import java.util.stream.Collectors;
 
 abstract class DotCSSCompiler {
   protected final Set<String> allImportedURI = new HashSet<String>();
@@ -215,12 +219,32 @@ abstract class DotCSSCompiler {
 
       
       // copy any files that did not make it
-      final String query = "+path:" + ident.getParentPath() + "* +baseType:" + BaseContentType.FILEASSET.ordinal() + " +conHost:"
-          + ident.getHostId() + ((live) ? " +live:true" : " +working:true");
-      final List<Contentlet> files = APILocator.getContentletAPI().search(query, 1000, 0, null, APILocator.systemUser(), true);
-      for (Contentlet con : files) {
-        FileAsset asset = APILocator.getFileAssetAPI().fromContentlet(con);
-        File f = new File(
+      final String inode = live ? "live_inode" : "working_inode";
+      final StringBuilder sqlQuery = new StringBuilder("select cvi." + inode +" as inode from contentlet_version_info cvi, identifier id where"
+              + " id.parent_path like ? and id.host_inode = ? and cvi.identifier = id.id");
+      final List<Object> parameters = new ArrayList<>();
+      parameters.add(ident.getParentPath() + StringPool.PERCENT);
+      parameters.add(ident.getHostId());
+
+      final DotConnect dc = new DotConnect().setSQL(sqlQuery.toString());
+      parameters.forEach(param -> dc.addParam(param));
+
+      final List<Map<String,String>> inodesMapList =  dc.loadResults();
+
+      final List<String> inodes = new ArrayList<>();
+      for (final Map<String, String> versionInfoMap : inodesMapList) {
+        inodes.add(versionInfoMap.get("inode"));
+      }
+
+      List<Contentlet> contentletList  = APILocator.getContentletAPI().findContentlets(inodes);
+
+      contentletList = contentletList.stream()
+              .filter(contentlet -> contentlet.getBaseType().get().ordinal()==BaseContentType.FILEASSET.ordinal())
+              .collect(Collectors.toList());
+
+      for (final Contentlet con : contentletList) {
+        final FileAsset asset = APILocator.getFileAssetAPI().fromContentlet(con);
+        final File f = new File(
             compDir.getAbsolutePath() + File.separator + inputHost.getHostname() + asset.getPath() + File.separator + asset.getFileName());
         if (f.exists())
           continue;

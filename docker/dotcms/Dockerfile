@@ -2,7 +2,7 @@
 # ----------------------------------------------
 # Stage 1:  Build dotCMS from our builder image
 # ----------------------------------------------
-FROM dotcms/dotcms-seed:21.06 as build-cms
+FROM dotcms/dotcms-seed:21.12 as build-cms
 
 LABEL com.dotcms.contact "support@dotcms.com"
 LABEL com.dotcms.vendor "dotCMS LLC"
@@ -52,8 +52,8 @@ RUN apt purge --allow-remove-essential -y  && \
     rm -rf /var/lib/apt/lists/*
 
 # Defining default non-root user UID, GID, and name 
-ARG USER_UID="1000000000"
-ARG USER_GID="1000000000"
+ARG USER_UID="65001"
+ARG USER_GID="65001"
 ARG USER_NAME="dotcms"
 
 # Creating default non-user 
@@ -87,8 +87,8 @@ LABEL com.dotcms.contact "support@dotcms.com"
 LABEL com.dotcms.vendor "dotCMS LLC"
 LABEL com.dotcms.description "dotCMS Content Management System"
 
-ARG USER_UID="1000000000"
-ARG USER_GID="1000000000"
+ARG USER_UID="65001"
+ARG USER_GID="65001"
 
 COPY --from=container-base / /
 

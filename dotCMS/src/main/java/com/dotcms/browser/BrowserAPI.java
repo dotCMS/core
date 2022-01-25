@@ -1,7 +1,9 @@
 package com.dotcms.browser;
 
+import com.dotmarketing.business.Treeable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.model.User;
 
 import java.util.List;
@@ -223,5 +225,23 @@ public interface BrowserAPI {
      * @throws DotDataException
      */
     public Map<String, Object> getFolderContent(final BrowserQuery browserQuery) throws DotSecurityException, DotDataException;
-}
 
+
+	/**
+	 * Returns a collection of contentlets that live inside the parent(browserQuery.directParent)
+	 * @param browserQuery {@link BrowserQuery}
+	 * @return list of contentlets
+	 */
+	List<Contentlet> getContentUnderParentFromDB(BrowserQuery browserQuery);
+
+	/**
+	 * Returns a collection of contentlets, folders, links that live inside the parent(browserQuery.directParent)
+	 * @param browserQuery {@link BrowserQuery}
+	 * @return list of treeable (folders, content, links)
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	List<Treeable> getFolderContentList(BrowserQuery browserQuery) throws DotSecurityException, DotDataException;
+
+
+}
