@@ -7,7 +7,7 @@ jobs:
     name: Release Process Automation
     runs-on: ubuntu-latest
     env:
-      DOT_CICD_BRANCH: master
+      DOT_CICD_BRANCH: release-22.02
       GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
       PULL_REQUEST: ${{ github.event.number }}
       REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
@@ -87,4 +87,4 @@ jobs:
           SLACK_ICON: https://avatars.slack-edge.com/temp/2021-12-08/2830145934625_e4e464d502865ff576e4.png
           SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of dotCMS - dotCMS ${{ env.BUILD_ID }} :rocket:"
 #       For testing purposes remember to switch webhook channel to an account that can be used for testing
-        if: success()
+        if: success() && env.DRY_RUN != 'true'

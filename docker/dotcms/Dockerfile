@@ -32,7 +32,7 @@ RUN chmod -R 666 /srv && find /srv/ -type d -exec chmod a+x {} \;
 # Stage 2:  Construct our container using the minimal-java image
 #           and copying the prebuilt dotcms
 # ----------------------------------------------
-FROM dotcms/java-base:latest as container-base
+FROM dotcms/java-base:22.02 as container-base
 
 WORKDIR /srv
 
@@ -40,10 +40,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Installing basic packages 
 RUN apt update && \
-    apt upgrade -y 
-
-# Install prebuilt dockerize
-RUN curl -Ls https://repo.dotcms.com/artifactory/ext-release-local/com/dotcms/dockerize/dockerize-linux-`uname -m` | install /dev/stdin /usr/local/bin/dockerize 
+    apt upgrade -y
 
 # Cleanup
 RUN apt purge --allow-remove-essential -y  && \
@@ -62,8 +59,8 @@ RUN groupadd -g $USER_GID $USER_NAME && \
 	useradd -l -d /srv -g $USER_GID -u $USER_UID $USER_NAME
 
 # Copy our build
-COPY --from=build-cms --chown=dotcms:dotcms /srv/ /srv/
-COPY --chown=dotcms:dotcms ROOT/ /
+COPY --from=build-cms --chown=$USER_NAME:$USER_NAME /srv/ /srv/
+COPY --chown=$USER_NAME:$USER_NAME ROOT/ /
 
 # Make scripts runable
  RUN find /srv/ -type f -name "*.sh" -exec chmod a+x {} \; && \
@@ -71,17 +68,15 @@ COPY --chown=dotcms:dotcms ROOT/ /
     find /srv/templates -type d -exec chmod 770 {} \;  && \
     # Make dotcms user owner
     mkdir -p /data/shared/assets && \
+    mkdir -p /data/shared/felix/load && \
+    mkdir -p /data/shared/felix/undeployed && \
     mkdir -p /data/local/dotsecure/license && \
-    chown -R dotcms /data 
+    chown -R $USER_NAME.$USER_NAME /data
 
 # ----------------------------------------------
 # Stage 3:  Flatten everything to 1 layer
 # ----------------------------------------------
 FROM scratch
-
-ENV SERVICE_DELAY_DEFAULT_MIN 1
-ENV SERVICE_DELAY_DEFAULT_STEP 3
-ENV SERVICE_DELAY_DEFAULT_MAX 30
 
 LABEL com.dotcms.contact "support@dotcms.com"
 LABEL com.dotcms.vendor "dotCMS LLC"
@@ -97,19 +92,24 @@ USER $USER_UID:$USER_GID
 ENV JAVA_HOME="/java"
 ENV PATH=$PATH:/java/bin
 
+
 ENTRYPOINT ["/usr/bin/tini", "--", "/srv/entrypoint.sh"]
 CMD ["dotcms"]
     
 ## Ports
+# Glowroot profiler - must be configured via CMS_JAVA_OPTS
+EXPOSE 4000
+# Java Debugging - must be configured via CMS_JAVA_OPTS
+EXPOSE 8000
 # Direct connect
 EXPOSE 8080
-# Direct connect for HTTPS, secure
-EXPOSE 8443
 # Connect from proxy, HTTP/80, non-secure
 EXPOSE 8081
 # Connect from proxy, HTTPS/443, secure
 EXPOSE 8082
-# Java Debugging - must be configured via CMS_JAVA_OPTS
-EXPOSE 8000
-# Glowroot profiler - must be configured via CMS_JAVA_OPTS
-EXPOSE 4000
+# Direct connect for HTTPS, secure
+EXPOSE 8443
+
+
+
+

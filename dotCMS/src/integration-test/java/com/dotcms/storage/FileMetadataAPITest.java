@@ -297,9 +297,23 @@ public class FileMetadataAPITest {
             }
 
         });
+        //Now We should always expect a width and height for images
+        if(metaData.isImage()){
+            assertTrue(metaData.getHeight() > 0);
+            assertTrue(metaData.getWidth() > 0);
+        }
+        assertTrue(metaData.getModDate() > 0);
+        assertTrue(metaData.getLength() > 0);
+        assertTrue(metaData.getSize() > 0);
+
+        assertNotNull(metaData.getSha256());
+        assertNotNull(metaData.getTitle());
+        assertNotNull(metaData.getFieldName());
+        assertNotNull(metaData.getContentType());
+        assertNotNull(metaData.getFieldName());
     }
 
-    private static Set<String> basicMetadataFields = new HashSet<>(BasicMetadataFields.keyMap().keySet());
+    private static final Set<String> basicMetadataFields = new HashSet<>(BasicMetadataFields.keyMap().keySet());
 
     /**
      * validate basic layout expected in the basic md for File-Asset
@@ -353,13 +367,16 @@ public class FileMetadataAPITest {
             //the field is set as the first one according to the sortOrder prop. This is the only that has to have full metadata
             final Metadata fileAsset2FullMeta = fullMetadataMap.get(FILE_ASSET_2);
             assertNotNull(fileAsset2FullMeta);
+            validateBasic(fileAsset2FullMeta);
 
             //These are all the non-null binaries
             final Metadata fileAsset1BasicMeta = basicMetadataMap.get(FILE_ASSET_1);
             assertNotNull(fileAsset1BasicMeta);
+            validateBasic(fileAsset1BasicMeta);
 
             final Metadata fileAsset2BasicMeta = basicMetadataMap.get(FILE_ASSET_2);
             assertNotNull(fileAsset2BasicMeta);
+            validateBasic(fileAsset2BasicMeta);
 
             //the filed does exist but it was not set
             final Metadata fileAsset3BasicMeta = basicMetadataMap.get(FILE_ASSET_3);

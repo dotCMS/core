@@ -1,5 +1,8 @@
 package com.dotcms.graphql.datafetcher;
 
+import static com.dotcms.contenttype.model.type.BaseContentType.DOTASSET;
+
+import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.BinaryToMapTransformer;
 import com.dotmarketing.util.Logger;
@@ -15,7 +18,8 @@ public class BinaryFieldDataFetcher implements DataFetcher<Map<String, Object>> 
     public Map<String, Object> get(final DataFetchingEnvironment environment) throws Exception {
         try {
             final Contentlet contentlet = environment.getSource();
-            final String var = environment.getField().getName();
+            final String var = contentlet.getContentType().baseType() == DOTASSET ?"asset"
+                    :environment.getField().getName();
             final BinaryToMapTransformer transformer = new BinaryToMapTransformer(contentlet);
             return (Map<String, Object>) transformer.asMap().get(var + "Map");
         } catch (IllegalArgumentException e) {

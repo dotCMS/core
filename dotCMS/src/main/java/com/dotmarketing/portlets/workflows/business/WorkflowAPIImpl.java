@@ -3106,7 +3106,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					APILocator.getNotificationAPI()
 							.generateNotification(new I18NMessage("Workflow-Bulk-Actions-Title"),
 									// title = Reindex Notification
-									new I18NMessage("Workflow-Bulk-Actions-Finished", null, null),
+									new I18NMessage("Workflow-Bulk-Actions-Finished", null,
+											(Object) null),
 									null, // no actions
 									NotificationLevel.INFO, NotificationType.GENERIC,
 									Visibility.ROLE, cmsAdminRole.getId(), user.getUserId(),

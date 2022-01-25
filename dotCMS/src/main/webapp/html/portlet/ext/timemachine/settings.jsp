@@ -202,7 +202,7 @@
 
 </script>
 <span dojoType="dotcms.dojo.data.HostReadStore" jsId="HostStore"></span>
-<div style="height:auto; width:580px; overflow:auto;">
+<div style="height:auto; overflow:auto;">
     <form id="settingform" dojoType="dijit.form.Form">
         <div class="form-horizontal">
             <dl>
@@ -297,12 +297,7 @@
                 </dd>
             </dl>
         </div>
-        <div class="buttonRow-right">
-            <span class="showScheduler">
-                <button dojoType="dijit.form.Button" class="dijitButtonFlat" id="disableButton" onClick="disableJob();" iconClass="deleteIcon">
-                    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "TIMEMACHINE-DISABLE")) %>
-                </button>
-            </span>
+        <div style="text-align: center;">
             <span class="showRunNow">
                 <button dojoType="dijit.form.Button" id="runButton" onClick="runNow();" iconClass="republishIcon">
                     <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "TIMEMACHINE-RUN")) %>
@@ -314,7 +309,13 @@
                 </button>
             </span>
         </div>
-
+        <div style="text-align: center;">
+            <span class="showScheduler">
+                <button dojoType="dijit.form.Button" class="dijitButtonFlat" id="disableButton" onClick="disableJob();" iconClass="deleteIcon">
+                    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "TIMEMACHINE-DISABLE")) %>
+                </button>
+            </span>
+        </div>
     </form>
 </div>
 <%@include file="/html/common/bottom_inc.jsp"%>
