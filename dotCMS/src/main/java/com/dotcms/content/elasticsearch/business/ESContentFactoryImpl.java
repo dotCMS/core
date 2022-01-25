@@ -1924,16 +1924,20 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
 	@Override
-    public Contentlet save(Contentlet contentlet) throws DotDataException, DotStateException, DotSecurityException {
+    public Contentlet save(final Contentlet contentlet) throws DotDataException, DotStateException, DotSecurityException {
 	    return save(contentlet,null);
 	}
 
 	@Override
-    protected Contentlet save(Contentlet contentlet, String existingInode)
+    protected Contentlet save(final Contentlet contentlet, final String existingInode)
             throws DotDataException, DotStateException, DotSecurityException {
 
         final String inode = getInode(existingInode, contentlet);
         setUpContentletAsJson(contentlet, inode);
+        //Remove any system field from the incoming contentlet that could have made it this far.
+        //We need them for the contentlet json representation but down the upsert path they're not needed
+        //in fact they are nuisance
+        //TODO: Remove system fields from contentlet before the make it into the upsert
         upsertContentlet(contentlet, inode);
         contentlet.setInode(inode);
         final Contentlet toReturn = findInDb(inode).orElseThrow(()->

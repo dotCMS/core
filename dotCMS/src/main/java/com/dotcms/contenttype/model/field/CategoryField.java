@@ -1,17 +1,19 @@
 package com.dotcms.contenttype.model.field;
 
-import java.util.Collection;
-import java.util.List;
+import static com.dotcms.util.CollectionsUtils.list;
 
+import com.dotcms.content.model.FieldValueBuilder;
+import com.dotcms.content.model.type.system.CategoryFieldType;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.immutables.value.Value;
-
-import com.google.common.collect.ImmutableList;
-
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
-import static com.dotcms.util.CollectionsUtils.list;
+import com.google.common.collect.ImmutableList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import org.immutables.value.Value;
 
 @JsonSerialize(as = ImmutableCategoryField.class)
 @JsonDeserialize(as = ImmutableCategoryField.class)
@@ -50,4 +52,29 @@ public abstract class CategoryField extends Field {
 				ContentTypeFieldProperties.CATEGORIES, ContentTypeFieldProperties.HINT,
 				ContentTypeFieldProperties.SEARCHABLE);
 	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public Optional<FieldValueBuilder> fieldValue(final Object value) {
+
+		if (value instanceof List<?>) {
+			final List<?> list = (List<?>) value;
+			if (!list.isEmpty()) {
+				//This might get a collection of Categories
+				if (list.get(0) instanceof Category) {
+					final List<Category> categories = (List<Category>) list;
+					return Optional.of(CategoryFieldType.builder()
+							.value(categories.stream().map(Category::getCategoryName).collect(
+									Collectors.toList())));
+				}
+				//Or a collection of Strings which would contain the Category-Name
+				return Optional.of(CategoryFieldType.builder().value((List<String>) value));
+			}
+		}
+
+		return Optional.empty();
+	}
+
 }

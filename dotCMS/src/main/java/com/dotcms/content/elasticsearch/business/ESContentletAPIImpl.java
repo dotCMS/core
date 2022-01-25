@@ -29,6 +29,7 @@ import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -153,6 +154,7 @@ import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -171,7 +173,6 @@ import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -4754,6 +4755,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             final User systemUser = APILocator.getUserAPI().getSystemUser();
 
+            //ContentletRaw keeps a copy with everything that was originally sent from the front-end including binaries etc..
+            //While the original contentlet first will get stuff marked for delete and then refreshed after saved in the database.
             final Contentlet contentletRaw = populateHost(contentlet);
 
             if ( contentlet.getMap().get( "_use_mod_date" ) != null ) {
@@ -4784,7 +4787,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                  */
             String htmlPageURL = null;
 
-            if ( contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE ) {
+            if ( contentlet.isHTMLPage() ) {
                 //Getting the URL saved on the contentlet form
                 htmlPageURL = contentletRaw.getStringProperty( HTMLPageAssetAPI.URL_FIELD );
                 //Clean-up the contentlet object, we don' want to persist this URL in the db
@@ -4804,6 +4807,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final IndexPolicy indexPolicy             = contentlet.getIndexPolicy();
             final IndexPolicy indexPolicyDependencies = contentlet.getIndexPolicyDependencies();
             contentlet = applyNullProperties(contentlet);
+            //This is executed first hand to create the inode-contentlet relationship.
             if(InodeUtils.isSet(existingInode)) {
                 contentlet = contentFactory.save(contentlet, existingInode);
             } else {
@@ -4834,7 +4838,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 //Clean-up the contentlet object again..., we don' want to persist this URL in the db
                 removeURLFromContentlet( contentlet );
 
-                contentlet.setIdentifier(identifier.getId() );
+                contentlet.setIdentifier(identifier.getId());
+
+                contentlet = includeSystemFields(contentlet, contentletRaw, tagsValues);
+
                 contentlet = applyNullProperties(contentlet);
                 contentlet = contentFactory.save(contentlet);
                 contentlet.setIndexPolicy(indexPolicy);
@@ -4850,7 +4857,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 // can't remove it
                 CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
 
-                // Once the contetlet is saved, it gets refresh from the db. for which the incoming data gets lost.
+                // Once the contentlet is saved, it gets refresh from the db. for which the incoming data gets lost.
                 // Therefore here we need to make sure we use the original contentlet that comes with the info passed from the ui.
                 final String hostId = UtilMethods.isSet(contentletRaw.getHost()) ? contentletRaw.getHost() : contentlet.getHost();
                 identifier.setHostId(hostId);
@@ -4867,7 +4874,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             //From now on we'll recover such value from the field "fileName" presented on the screen.
                             //The physical file asset is just an internal piece that is mapped to the system asset-name.
                             //The file per-se no longer can be renamed. We can only modify the asset-name that refers to it.
-                            final String assetName = String.class.cast(contentletRaw.getMap().get(FileAssetAPI.FILE_NAME_FIELD));
+                            final String assetName = (String) contentletRaw.getMap()
+                                    .get(FileAssetAPI.FILE_NAME_FIELD);
                             identifier.setAssetName(UtilMethods.isSet(assetName) ?
                                     assetName :
                                     contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD).getName()
@@ -5004,6 +5012,41 @@ public class ESContentletAPIImpl implements ContentletAPI {
             bubbleUpException(e);
         }
         return contentlet;
+    }
+
+    /**
+     *
+     * @param contentlet
+     * @param contentletRaw
+     * @param tagsValues
+     * @return
+     */
+    private  Contentlet includeSystemFields(final Contentlet contentlet, final Contentlet contentletRaw, final Map<String, String> tagsValues){
+        final ContentType contentType = contentlet.getContentType();
+        final Contentlet preparedContentlet = new Contentlet(contentlet);
+
+        final com.dotcms.contenttype.business.FieldAPI fieldAPI = APILocator
+                .getContentTypeFieldAPI();
+
+        //Set<com.dotcms.contenttype.model.field.Field> systemFields = fieldAPI.fieldTypes().stream().filter(clazz -> clazz.isInstance(com.dotcms.contenttype.model.field.Field.class)).map(clazz->com.dotcms.contenttype.model.field.Field.class.cast(clazz)).filter(field -> field.dataType()==DataTypes.SYSTEM).collect(Collectors.toSet());
+
+        final ImmutableList.Builder<com.dotcms.contenttype.model.field.Field> builder = ImmutableList.builder();
+        builder.addAll(contentType.fields(BinaryField.class))
+                .addAll(contentType.fields(ImageField.class))
+                .addAll(contentType.fields(TagField.class)).build();
+        List<com.dotcms.contenttype.model.field.Field> fields = builder.build();
+        final Map<String, Object> map = preparedContentlet.getMap();
+          for(com.dotcms.contenttype.model.field.Field field:fields){
+            if(field instanceof TagField){
+                 final String tagValues = tagsValues.get(field.variable());
+                 if(StringUtils.isNotEmpty(tagValues)){
+                     map.put(field.variable(),tagValues);
+                 }
+            } else {
+                map.put(field.variable(),contentletRaw.get(field.variable()));
+            }
+          }
+        return preparedContentlet;
     }
 
     /**
@@ -5286,7 +5329,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentlet;
     }
 
-
+    /**
+     *
+     * @param contentlet Just Saved contentlet it is supposed to have at least an inode
+     * @param createNewVersion
+     * @param contentType ContentType
+     * @param workingContentlet Working version of our content. If different from the actual then it has prior version's inode
+     * @param contentletRaw incoming content loaded from the ui. This one has all the files
+     * @return bool that says whether or not there were files to process
+     * @throws DotDataException
+     */
     private boolean handleBinaries(final Contentlet contentlet, final boolean createNewVersion, final ContentType contentType, final Contentlet workingContentlet, final Contentlet contentletRaw) throws DotDataException {
 
         // http://jira.dotmarketing.net/browse/DOTCMS-1073

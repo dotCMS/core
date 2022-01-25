@@ -2,12 +2,17 @@ package com.dotcms.contenttype.model.field;
 
 import static com.dotcms.util.CollectionsUtils.list;
 
+import com.dotcms.content.model.FieldValueBuilder;
+import com.dotcms.content.model.type.system.TagFieldType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.collect.ImmutableList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.immutables.value.Value;
 
 @JsonSerialize(as = ImmutableTagField.class)
@@ -50,5 +55,23 @@ public abstract class TagField extends Field  implements OnePerContentType{
 				ContentTypeFieldProperties.DEFAULT_VALUE, ContentTypeFieldProperties.HINT,
 				ContentTypeFieldProperties.SEARCHABLE, ContentTypeFieldProperties.DATA_TYPE);
 	}
-	
+
+	/**
+	 * {@inheritDoc}
+	 * @return
+	 */
+	@Override
+	public Optional<FieldValueBuilder> fieldValue(Object value) {
+		if (value instanceof String) {
+			final String[] strings = value.toString().split(",");
+			return Optional.of(TagFieldType.builder().value(Stream.of(strings).collect(Collectors.toList())));
+		} else {
+			if(value instanceof Iterable){
+			  return Optional.of(TagFieldType.builder().value((Iterable) value));
+			}
+		}
+
+		return Optional.empty();
+	}
+
 }
