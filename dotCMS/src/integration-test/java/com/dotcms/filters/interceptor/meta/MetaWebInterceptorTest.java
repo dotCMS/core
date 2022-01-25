@@ -44,6 +44,7 @@ public class MetaWebInterceptorTest {
     @Test
     public void check_header_x_dot_server()  {
 
+        Config.setProperty(ResponseMetaDataWebInterceptor.RESPONSE_HEADER_ADD_NODE_ID, true);
         final ResponseMetaDataWebInterceptor metaWebInterceptor = new ResponseMetaDataWebInterceptor();
         final MockHeaderResponse mockHeaderResponse = new MockHeaderResponse(response);
         metaWebInterceptor.intercept(request, mockHeaderResponse);
