@@ -1,14 +1,5 @@
 package com.dotcms.rendering.velocity.servlet;
 
-import java.io.IOException;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import com.dotmarketing.util.WebKeys;
-import org.apache.velocity.exception.ResourceNotFoundException;
 import com.dotcms.business.CloseDB;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
@@ -24,8 +15,16 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotF
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import com.liferay.portal.util.PortalUtil;
+import org.apache.velocity.exception.ResourceNotFoundException;
+
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 public class VelocityServlet extends HttpServlet {
 
@@ -40,6 +39,22 @@ public class VelocityServlet extends HttpServlet {
      */
     private static final long serialVersionUID = 1L;
 
+    private PageMode processPageMode (final User user, final HttpServletRequest request) {
+
+        if (user.isBackendUser() && user.isFrontendUser()) {
+
+            return null != request.getParameter(WebKeys.PAGE_MODE_PARAMETER)
+                    && PageMode.LIVE.name().equalsIgnoreCase(request.getParameter(WebKeys.PAGE_MODE_PARAMETER))?
+                    PageMode.setPageMode(request, PageMode.LIVE):
+                    PageMode.getWithNavigateMode(request);
+
+        } else { // be but not front end
+
+            return user.isBackendUser()? //  if user is only BE
+                    PageMode.getWithNavigateMode(request)
+                    :PageMode.setPageMode(request, PageMode.LIVE); // if only FE or anon
+        }
+    }
 
     @Override
     @CloseDB
@@ -55,8 +70,9 @@ public class VelocityServlet extends HttpServlet {
                            : userApi.getAnonymousUserNoThrow();
         
         request.setRequestUri(uri);
-        final PageMode mode = user.isFrontendUser()?  PageMode.setPageMode(request, PageMode.LIVE) : PageMode.getWithNavigateMode(request);
-        
+        //final PageMode mode = user.isFrontendUser()? PageMode.setPageMode(request, PageMode.LIVE) : PageMode.getWithNavigateMode(request);
+        final PageMode mode = this.processPageMode(user, request);
+
         // if you are hitting the servlet without running through the other filters
         if (uri == null) {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "VelocityServlet called without running through the CMS Filter");
