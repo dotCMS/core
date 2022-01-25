@@ -22,6 +22,8 @@ Please send any thoughts or suggestions to improve our docker image to support@d
 | JAVA_VERSION  | SDKMAN java version to use | 
 | USER_UID      | User ID to run as | 
 | USER_GID      | Group ID for user | 
+| USER_NAME     | User name to run as |
+| USER_GROUP    | Group name for user | 
 
 
 

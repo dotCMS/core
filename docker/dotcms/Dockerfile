@@ -51,16 +51,18 @@ RUN apt purge --allow-remove-essential -y  && \
 # Defining default non-root user UID, GID, and name 
 ARG USER_UID="65001"
 ARG USER_GID="65001"
+ARG USER_GROUP="dotcms"
 ARG USER_NAME="dotcms"
 
-# Creating default non-user 
-# the useradd 
-RUN groupadd -g $USER_GID $USER_NAME && \
-	useradd -l -d /srv -g $USER_GID -u $USER_UID $USER_NAME
+
+RUN groupadd -f -g $USER_GID $USER_NAME
+# Creating default non-user
+# the useradd
+RUN useradd -l -d /srv -g $USER_GID -u $USER_UID $USER_NAME
 
 # Copy our build
-COPY --from=build-cms --chown=$USER_NAME:$USER_NAME /srv/ /srv/
-COPY --chown=$USER_NAME:$USER_NAME ROOT/ /
+COPY --from=build-cms --chown=$USER_NAME:$USER_GROUP /srv/ /srv/
+COPY --chown=$USER_NAME:$USER_GROUP ROOT/ /
 
 # Make scripts runable
  RUN find /srv/ -type f -name "*.sh" -exec chmod a+x {} \; && \
@@ -71,7 +73,7 @@ COPY --chown=$USER_NAME:$USER_NAME ROOT/ /
     mkdir -p /data/shared/felix/load && \
     mkdir -p /data/shared/felix/undeployed && \
     mkdir -p /data/local/dotsecure/license && \
-    chown -R $USER_NAME.$USER_NAME /data
+    chown -R $USER_NAME.$USER_GROUP /data
 
 # ----------------------------------------------
 # Stage 3:  Flatten everything to 1 layer
