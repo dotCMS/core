@@ -141,6 +141,13 @@ public class DbExporterUtil {
      * @return file with DB dump
      */
     public static File exportToFile() {
+        if (!DbConnectionFactory.isPostgres()) {
+            Logger.error(
+                    DbExporterUtil.class,
+                    "Database export through pg_dump detected in an installation other than Postgres");
+            throw new DotRuntimeException("Attempting to run Postgres database dump in a non-Postgres installation");
+        }
+
         final String hostName = Try.of(() ->
                         APILocator.getHostAPI()
                                 .findDefaultHost(
