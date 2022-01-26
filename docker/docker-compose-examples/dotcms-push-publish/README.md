@@ -1,6 +1,8 @@
 # Dotcms Push Publish
 
-Push publish environment where the sender runs on port 8080 and the receiver on 8081. Database: postgres
+Push publish environment where the sender runs on port 8080 and the receiver on 8081. Database: postgres.
+
+**Important note:**  For the endpoint configuration, the local IP address must be used instead of `localhost` or `127.0.0.1`
 
 ## Usage
 
@@ -31,8 +33,8 @@ The license pack must contain at least two licenses (one for each node in the cl
 ####Deploying nodes:
 
 ```bash
-docker-compose -f docker-compose-node-sender.yml up
-docker-compose -f docker-compose-node-receiver.yml up
+docker-compose -f docker-compose-sender.yml up
+docker-compose -f docker-compose-receiver.yml up
 
 ```
 
