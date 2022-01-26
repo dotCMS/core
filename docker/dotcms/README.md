@@ -20,10 +20,10 @@ Please send any thoughts or suggestions to improve our docker image to support@d
 | COMMIT        | Commit hash or branch name to use for build |
 | TAG           | Tag to use for build         |
 | JAVA_VERSION  | SDKMAN java version to use | 
-| USER_UID      | User ID to run as | 
-| USER_GID      | Group ID for user | 
-| USER_NAME     | User name to run as |
-| USER_GROUP    | Group name for user | 
+| USER_UID      | User ID to run as _(default: 65001)_| 
+| USER_GID      | Group ID for user _(default: 65001)_| 
+| USER_NAME     | User name to run as _(default: dotcms)_|
+| USER_GROUP    | Group name for user _(default: dotcms)_| 
 
 
 
