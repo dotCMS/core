@@ -247,10 +247,13 @@ public class DbExporterUtil {
     /**
      * Verifies that pg_dump is located and callable.
      *
-     * @return {@link Optional} with actual output of the command when called successfully, otherwise an empty {@link Optional}
+     * @return {@link Optional} with actual output of the command when called successfully,
+     * otherwise an empty {@link Optional}
      */
     public static Optional<String> isPgDumpAvailable() {
-        return RuntimeUtils.runProcessAndGetOutput(PG_DUMP_PATH.get(), "--help");
+        return DbConnectionFactory.isPostgres()
+                ? RuntimeUtils.runProcessAndGetOutput(PG_DUMP_PATH.get(), "--help")
+                : Optional.empty();
     }
 
     /**
