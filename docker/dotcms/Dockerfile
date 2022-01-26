@@ -55,7 +55,7 @@ ARG USER_GROUP="dotcms"
 ARG USER_NAME="dotcms"
 
 
-RUN groupadd -f -g $USER_GID $USER_NAME
+RUN groupadd -f -g $USER_GID $USER_GROUP
 # Creating default non-user
 # the useradd
 RUN useradd -l -d /srv -g $USER_GID -u $USER_UID $USER_NAME
