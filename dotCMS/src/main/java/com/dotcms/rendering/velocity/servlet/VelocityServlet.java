@@ -14,6 +14,7 @@ import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.LoginMode;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
@@ -41,19 +42,19 @@ public class VelocityServlet extends HttpServlet {
 
     private PageMode processPageMode (final User user, final HttpServletRequest request) {
 
-        if (user.isBackendUser() && user.isFrontendUser()) {
+        final LoginMode loginMode = LoginMode.get(request);
 
-            return null != request.getParameter(WebKeys.PAGE_MODE_PARAMETER)
-                    && PageMode.LIVE.name().equalsIgnoreCase(request.getParameter(WebKeys.PAGE_MODE_PARAMETER))?
-                    PageMode.setPageMode(request, PageMode.LIVE):
-                    PageMode.getWithNavigateMode(request);
+        if (LoginMode.UNKNOWN == loginMode) {
 
-        } else { // be but not front end
-
-            return user.isBackendUser()? //  if user is only BE
-                    PageMode.getWithNavigateMode(request)
-                    :PageMode.setPageMode(request, PageMode.LIVE); // if only FE or anon
+            return user.isFrontendUser()
+                    ? PageMode.setPageMode(request, PageMode.LIVE)
+                    :  user.isBackendUser()
+                    ? PageMode.getWithNavigateMode(request)
+                    :  PageMode.setPageMode(request, PageMode.LIVE);
         }
+
+        return  LoginMode.FE == loginMode?
+                PageMode.setPageMode(request, PageMode.LIVE): PageMode.getWithNavigateMode(request);
     }
 
     @Override
