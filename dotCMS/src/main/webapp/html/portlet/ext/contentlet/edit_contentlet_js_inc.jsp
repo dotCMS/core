@@ -833,6 +833,7 @@
         dojo.byId("wfWhereToSend").value = formData.whereToSend;
         dojo.byId("wfiWantTo").value = formData.iWantTo;
         dojo.byId("wfFilterKey").value = formData.filterKey;
+        dojo.byId("wfTimezoneId").value = formData.timezoneId;
         // END: PUSH PUBLISHING ACTIONLET
 
         saveContent(false);

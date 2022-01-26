@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.UtilMethods;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -9,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TimeZone;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -128,6 +131,7 @@ public class PushPublishActionlet extends WorkFlowActionlet implements BatchActi
 
 			final String contentPushPublishDate = pushPublishData.get(Contentlet.WORKFLOW_PUBLISH_DATE);
 			final String contentPushPublishTime = pushPublishData.get(Contentlet.WORKFLOW_PUBLISH_TIME);
+			final String contentPushPublishTimezoneId = pushPublishData.get(Contentlet.WORKFLOW_TIMEZONE_ID);
 			final String contentPushExpireDate = pushPublishData.get(Contentlet.WORKFLOW_EXPIRE_DATE);
 			final String contentPushExpireTime = pushPublishData.get(Contentlet.WORKFLOW_EXPIRE_TIME);
 			final String contentNeverExpire = pushPublishData.get(Contentlet.WORKFLOW_NEVER_EXPIRE);
@@ -144,12 +148,15 @@ public class PushPublishActionlet extends WorkFlowActionlet implements BatchActi
 			    Logger.warn(this.getClass(), "There are no valid environments to sent to - looking for:" + whoToSendTmp);
 			    return;
 			}
-			
-			
-			
-			final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-H-m");
-			final Date publishDate = dateFormat
-					.parse(contentPushPublishDate + "-" + contentPushPublishTime);
+
+		final TimeZone currentTimeZone =
+				UtilMethods.isSet(contentPushPublishTimezoneId) ? TimeZone.getTimeZone(contentPushPublishTimezoneId)
+						: APILocator.systemTimeZone();
+
+		final Date publishDate = DateUtil
+				.convertDate(contentPushPublishDate + "-" + contentPushPublishTime,
+						currentTimeZone, "yyyy-MM-dd-H-m");
+
 
 		if ( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH.equals( iWantTo ) || RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE.equals( iWantTo ) ) {
 			final Bundle bundle = new Bundle(null, publishDate, null, user.getUserId(), forcePush,
@@ -160,8 +167,9 @@ public class PushPublishActionlet extends WorkFlowActionlet implements BatchActi
 		if ( RemotePublishAjaxAction.DIALOG_ACTION_EXPIRE.equals( iWantTo ) || RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE.equals( iWantTo ) ) {
 			if (!contentPushNeverExpire && (!"".equals(contentPushExpireDate.trim()) && !""
 					.equals(contentPushExpireTime.trim()))) {
-				final Date expireDate = dateFormat
-						.parse(contentPushExpireDate + "-" + contentPushExpireTime);
+				final Date expireDate = DateUtil
+						.convertDate(contentPushExpireDate + "-" + contentPushExpireTime,
+								currentTimeZone, "yyyy-MM-dd-H-m");
 				final Bundle bundle = new Bundle(null, publishDate, expireDate, user.getUserId(), forcePush,
 						filterKey);
 				APILocator.getBundleAPI().saveBundle(bundle, envsToSendTo);
@@ -176,6 +184,7 @@ public class PushPublishActionlet extends WorkFlowActionlet implements BatchActi
 		final Map<String,String> map = new HashMap<>();
         map.put(Contentlet.WORKFLOW_PUBLISH_DATE,contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE));
 		map.put(Contentlet.WORKFLOW_PUBLISH_TIME,contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME));
+		map.put(Contentlet.WORKFLOW_TIMEZONE_ID,contentlet.getStringProperty(Contentlet.WORKFLOW_TIMEZONE_ID));
 		map.put(Contentlet.WORKFLOW_EXPIRE_DATE,contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE));
 		map.put(Contentlet.WORKFLOW_EXPIRE_TIME,contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME));
 		map.put(Contentlet.WORKFLOW_NEVER_EXPIRE,contentlet.getStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE));
