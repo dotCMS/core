@@ -44,7 +44,6 @@ public class MetaWebInterceptorTest {
     @Test
     public void check_header_x_dot_server()  {
 
-        Config.setProperty(ResponseMetaDataWebInterceptor.RESPONSE_HEADER_ADD_NODE_ID, true);
         final ResponseMetaDataWebInterceptor metaWebInterceptor = new ResponseMetaDataWebInterceptor();
         final MockHeaderResponse mockHeaderResponse = new MockHeaderResponse(response);
         metaWebInterceptor.intercept(request, mockHeaderResponse);
@@ -52,9 +51,7 @@ public class MetaWebInterceptorTest {
         final String header = mockHeaderResponse.getHeader(ResponseMetaDataWebInterceptor.X_DOT_SERVER_HEADER);
         Assert.assertNotNull(header);
 
-        final Object nodeName =  Try.of(() -> ClusterUtilProxy.getNodeInfo()).
-                getOrElse(Collections.emptyMap()).getOrDefault("friendlyName", "unknown");
-        String tokenHeader = nodeName + StringPool.PIPE + StringUtils.shortify(APILocator.getServerAPI().readServerId(), 10);
+        final String tokenHeader = "unknown" + StringPool.PIPE + StringUtils.shortify(APILocator.getServerAPI().readServerId(), 10);
 
         Assert.assertEquals(tokenHeader, header);
     }
