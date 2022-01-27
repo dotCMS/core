@@ -38,7 +38,7 @@ export class DotTextfieldComponent {
     @Element()
     el: HTMLElement;
 
-    /** Value specifies the value of the <input> element */
+    /** Value specifies the value of the input element */
     @Prop({ mutable: true })
     value = '';
 
@@ -78,7 +78,7 @@ export class DotTextfieldComponent {
     @Prop({ mutable: true, reflect: true })
     regexCheck = '';
 
-    /** type specifies the type of <input> element to display */
+    /** type specifies the type of input element to display */
     @Prop({ mutable: true, reflect: true })
     type = 'text';
 

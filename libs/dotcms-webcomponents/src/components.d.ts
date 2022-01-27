@@ -156,7 +156,7 @@ export namespace Components {
          */
         "previewImageUrl": string;
         /**
-          * (optional) Determine if it is mandatory
+          * (optional) Determine if it is required
          */
         "required": boolean;
         /**
@@ -563,11 +563,11 @@ export namespace Components {
          */
         "step": string;
         /**
-          * type specifies the type of <input> element to display
+          * type specifies the type of input element to display
          */
         "type": string;
         /**
-          * Value specifies the value of the <input> element
+          * Value specifies the value of the input element
          */
         "value": string;
     }
@@ -577,23 +577,23 @@ export namespace Components {
          */
         "disabled": boolean;
         /**
-          * (optional) Label for the add button in the <key-value-form>
+          * (optional) Label for the add button in the key-value-form
          */
         "formAddButtonLabel": string;
         /**
-          * (optional) The string to use in the key label in the <key-value-form>
+          * (optional) The string to use in the key label in the key-value-form
          */
         "formKeyLabel": string;
         /**
-          * (optional) Placeholder for the key input text in the <key-value-form>
+          * (optional) Placeholder for the key input text in the key-value-form
          */
         "formKeyPlaceholder": string;
         /**
-          * (optional) The string to use in the value label in the <key-value-form>
+          * (optional) The string to use in the value label in the key-value-form
          */
         "formValueLabel": string;
         /**
-          * (optional) Placeholder for the value input text in the <key-value-form>
+          * (optional) Placeholder for the value input text in the key-value-form
          */
         "formValuePlaceholder": string;
         /**
@@ -876,7 +876,7 @@ export namespace Components {
          */
         "hint": string;
         /**
-          * (optional) Text to be rendered next to <textarea> element
+          * (optional) Text to be rendered next to textarea element
          */
         "label": string;
         /**
@@ -905,7 +905,7 @@ export namespace Components {
          */
         "validationMessage": string;
         /**
-          * Value specifies the value of the <textarea> element
+          * Value specifies the value of the textarea element
          */
         "value": string;
     }
@@ -947,7 +947,7 @@ export namespace Components {
          */
         "reset": () => Promise<void>;
         /**
-          * type specifies the type of <input> element to display
+          * type specifies the type of input element to display
          */
         "type": string;
         /**
@@ -955,7 +955,7 @@ export namespace Components {
          */
         "validationMessage": string;
         /**
-          * Value specifies the value of the <input> element
+          * Value specifies the value of the input element
          */
         "value": string;
     }
@@ -1500,7 +1500,7 @@ declare namespace LocalJSX {
          */
         "previewImageUrl"?: string;
         /**
-          * (optional) Determine if it is mandatory
+          * (optional) Determine if it is required
          */
         "required"?: boolean;
         /**
@@ -1902,11 +1902,11 @@ declare namespace LocalJSX {
          */
         "step"?: string;
         /**
-          * type specifies the type of <input> element to display
+          * type specifies the type of input element to display
          */
         "type"?: string;
         /**
-          * Value specifies the value of the <input> element
+          * Value specifies the value of the input element
          */
         "value"?: string;
     }
@@ -1916,23 +1916,23 @@ declare namespace LocalJSX {
          */
         "disabled"?: boolean;
         /**
-          * (optional) Label for the add button in the <key-value-form>
+          * (optional) Label for the add button in the key-value-form
          */
         "formAddButtonLabel"?: string;
         /**
-          * (optional) The string to use in the key label in the <key-value-form>
+          * (optional) The string to use in the key label in the key-value-form
          */
         "formKeyLabel"?: string;
         /**
-          * (optional) Placeholder for the key input text in the <key-value-form>
+          * (optional) Placeholder for the key input text in the key-value-form
          */
         "formKeyPlaceholder"?: string;
         /**
-          * (optional) The string to use in the value label in the <key-value-form>
+          * (optional) The string to use in the value label in the key-value-form
          */
         "formValueLabel"?: string;
         /**
-          * (optional) Placeholder for the value input text in the <key-value-form>
+          * (optional) Placeholder for the value input text in the key-value-form
          */
         "formValuePlaceholder"?: string;
         /**
@@ -2205,7 +2205,7 @@ declare namespace LocalJSX {
          */
         "hint"?: string;
         /**
-          * (optional) Text to be rendered next to <textarea> element
+          * (optional) Text to be rendered next to textarea element
          */
         "label"?: string;
         /**
@@ -2231,7 +2231,7 @@ declare namespace LocalJSX {
          */
         "validationMessage"?: string;
         /**
-          * Value specifies the value of the <textarea> element
+          * Value specifies the value of the textarea element
          */
         "value"?: string;
     }
@@ -2271,7 +2271,7 @@ declare namespace LocalJSX {
          */
         "requiredMessage"?: string;
         /**
-          * type specifies the type of <input> element to display
+          * type specifies the type of input element to display
          */
         "type"?: string;
         /**
@@ -2279,7 +2279,7 @@ declare namespace LocalJSX {
          */
         "validationMessage"?: string;
         /**
-          * Value specifies the value of the <input> element
+          * Value specifies the value of the input element
          */
         "value"?: string;
     }

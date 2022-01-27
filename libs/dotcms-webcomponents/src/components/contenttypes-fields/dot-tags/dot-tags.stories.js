@@ -1,63 +1,34 @@
 import readme from './readme.md';
-import { withKnobs, text, boolean, number } from '@storybook/addon-knobs';
 
 export default {
     title: 'Components/Content Types Fields',
-    decorators: [withKnobs],
     parameters: {
-        notes: readme
+        docs: {
+            page: readme
+        }
+    },
+    args: {
+        value: '',
+        name: '',
+        label: 'Tags',
+        hint: 'Hello I am a hint',
+        placeholder: 'The Placeholder',
+        required: false,
+        requireMessage: 'This field is required',
+        disabled: false,
+        threshold: 0,
+        debounce: 300
     }
 };
 
-export const Tags = () => {
-    const props = [
-        {
-            name: 'value',
-            content: text('Value', '')
-        },
-        {
-            name: 'name',
-            content: text('Name', 'field-name')
-        },
-        {
-            name: 'label',
-            content: text('Label', 'Label')
-        },
-        {
-            name: 'hint',
-            content: text('Hint', 'Hello Im a hint')
-        },
-        {
-            name: 'placeholder',
-            content: text('Placeholder', 'The Placeholder')
-        },
-        {
-            name: 'required',
-            content: boolean('Required', false)
-        },
-        {
-            name: 'requiredMessage',
-            content: text('Required Message', '')
-        },
-        {
-            name: 'disabled',
-            content: boolean('Disabled', false)
-        },
-        {
-            name: 'threshold',
-            content: number('Threshold', 0)
-        },
-        {
-            name: 'debounce',
-            content: number('Debounce', 300)
-        }
-    ];
-
+const Template = (args) => {
     const tags = document.createElement('dot-tags');
 
-    props.forEach(({ name, content }) => {
-        tags[name] = content;
-    });
+    for (const item in args) {
+        tags[item] = args[item];
+    }
 
     return tags;
 };
+
+export const Tags = Template.bind({});

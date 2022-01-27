@@ -1,63 +1,34 @@
 import readme from './readme.md';
-import { withKnobs, text, boolean } from '@storybook/addon-knobs';
 
 export default {
     title: 'Components/Content Types Fields',
-    decorators: [withKnobs],
     parameters: {
-        notes: readme
+        docs: {
+            page: readme
+        }
+    },
+    args: {
+        label: 'Date Range',
+        value: '',
+        name: 'Name',
+        hint: 'This is a hint',
+        min: '',
+        max: '',
+        required: false,
+        requiredMessage: 'This is a required message',
+        disabled: false,
+        displayFormat: 'MM/DD/YYYY'
     }
 };
 
-export const DateRange = () => {
-    const props = [
-        {
-            name: 'value',
-            content: text('Value', '')
-        },
-        {
-            name: 'name',
-            content: text('Name', 'field-name')
-        },
-        {
-            name: 'label',
-            content: text('Label', 'Label')
-        },
-        {
-            name: 'hint',
-            content: text('Hint', 'Hello Im a hint')
-        },
-        {
-            name: 'min',
-            content: text('Min', '')
-        },
-        {
-            name: 'max',
-            content: text('Max', '')
-        },
-        {
-            name: 'required',
-            content: boolean('Required', false)
-        },
-        {
-            name: 'requiredMessage',
-            content: text('Required Message', '')
-        },
-        {
-            name: 'disabled',
-            content: boolean('Disabled', false)
-        },
-        {
-            name: 'displayFormat',
-            content: text('Display Format', '')
-        }
-    ];
-
+const Template = (args) => {
     const daterange = document.createElement('dot-date-range');
 
-    props.forEach(({ name, content }) => {
-        daterange[name] = content;
-    });
+    for (const item in args) {
+        daterange[item] = args[item];
+    }
 
     return daterange;
 };
+
+export const DateRange = Template.bind({});

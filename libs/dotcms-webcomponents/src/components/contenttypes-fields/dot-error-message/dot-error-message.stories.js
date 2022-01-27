@@ -1,16 +1,26 @@
 import readme from './readme.md';
-import { withKnobs, text } from '@storybook/addon-knobs';
 
 export default {
     title: 'Components/Content Types Fields',
-    decorators: [withKnobs],
     parameters: {
-        notes: readme
+        docs: {
+            page: readme
+        }
+    },
+    args: {
+        content: 'This is the error message'
     }
 };
 
-export const ErrorMessage = () =>
-    `<dot-error-message>${text(
-        'Content',
-        'This is an error message for fields and form'
-    )}</dot-error-message>`;
+const Template = (args) => {
+    const datetime = document.createElement('dot-date-time');
+
+    for (const item in args) {
+        datetime[item] = args[item];
+    }
+
+    return `<dot-error-message>${args.content}</dot-error-message>`;;
+};
+
+export const ErrorMessage = Template.bind({});
+

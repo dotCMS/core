@@ -250,8 +250,8 @@ export class DotBinaryFileComponent {
         nextTick(() => {
             if (!this.binaryTextField) {
                 this.binaryTextField = this.el.querySelector('dot-binary-text-field');
-                console.log(this.binaryTextField);
             }
+
             this.setValue();
         });
     }

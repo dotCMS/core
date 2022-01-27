@@ -1,46 +1,66 @@
-import { withKnobs, object } from '@storybook/addon-knobs';
-import { withActions } from '@storybook/addon-actions';
-
 import readme from './readme.md';
+
 export default {
     title: 'Components',
-    decorators: [withKnobs, withActions('valueChange')],
     parameters: {
-        notes: readme
+        docs: {
+            page: readme
+        },
+        layout: 'centered'
+    },
+    argTypes: {
+        data: {
+            table: {
+                expanded: true
+            },
+        },
+        actions: {
+            table: {
+                disable: true
+            }
+        },
+    },
+    args: {
+        data: {
+            title: 'Hola Mundo',
+            language: 'es-es',
+            locked: true,
+            live: true,
+            working: false,
+            deleted: false,
+            hasLiveVersion: true,
+            hasTitleImage: false,
+            contentTypeIcon: 'description'
+        },
+        actions: [
+            {
+                label: 'Action 1',
+                action: (e) => {
+                    console.log(e);
+                }
+            },
+            {
+                label: 'Action 2',
+                action: (e) => {
+                    console.log(e);
+                }
+            }
+        ]
     }
 };
-export const ContentletCard = () => {
-    const props = [
-        {
-            name: 'item',
-            content: object('Item', {
-                data: {
-                    title: 'Hola Mundo',
-                    language: 'es-es',
-                    locked: 'true'
-                },
-                actions: [
-                    {
-                        label: 'Action 1',
-                        action: (e) => {
-                            console.log(e);
-                        }
-                    },
-                    {
-                        label: 'Action 2',
-                        action: (e) => {
-                            console.log(e);
-                        }
-                    }
-                ]
-            })
-        }
-    ];
 
+const Template = (args) => {
     const cardContentlet = document.createElement('dot-card-contentlet');
-    props.forEach(({ name, content }) => {
-        cardContentlet[name] = content;
-    });
+    cardContentlet.item = args
 
-    return cardContentlet;
+    const div = document.createElement('div');
+    div.style.display = 'flex';
+    div.style.width = '250px';
+    div.style.height = '300px';
+
+    div.appendChild(cardContentlet);
+
+    return div;
 };
+
+export const ContentletCard = Template.bind({})

@@ -22,7 +22,7 @@ jobs:
             - name: Run NX Commands
               run: |
                   npm run nx build dotcms-webcomponents -- --with-deps
-                  npm run nx run-many -- --target=build-storybook --parallel --projects=dotcms-ui,dotcms-webcomponents,block-editor
+                  npm run nx run-many -- --target=build-storybook --parallel --projects=dotcms-ui,dotcms-webcomponents,dotcms-block-editor
                   npm run nx run-many -- --target=build-docs --parallel --projects=dotcms,dotcms-models
             - name: Deploy to GitHub Pages
               uses: JamesIves/github-pages-deploy-action@4.1.0

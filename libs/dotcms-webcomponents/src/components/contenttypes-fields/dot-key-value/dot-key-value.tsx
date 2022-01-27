@@ -85,31 +85,31 @@ export class DotKeyValueComponent {
     })
     disabled = false;
 
-    /** (optional) Placeholder for the key input text in the <key-value-form> */
+    /** (optional) Placeholder for the key input text in the key-value-form */
     @Prop({
         reflect: true
     })
     formKeyPlaceholder: string;
 
-    /** (optional) Placeholder for the value input text in the <key-value-form> */
+    /** (optional) Placeholder for the value input text in the key-value-form */
     @Prop({
         reflect: true
     })
     formValuePlaceholder: string;
 
-    /** (optional) The string to use in the key label in the <key-value-form> */
+    /** (optional) The string to use in the key label in the key-value-form */
     @Prop({
         reflect: true
     })
     formKeyLabel: string;
 
-    /** (optional) The string to use in the value label in the <key-value-form> */
+    /** (optional) The string to use in the value label in the key-value-form */
     @Prop({
         reflect: true
     })
     formValueLabel: string;
 
-    /** (optional) Label for the add button in the <key-value-form> */
+    /** (optional) Label for the add button in the key-value-form */
     @Prop({
         reflect: true
     })

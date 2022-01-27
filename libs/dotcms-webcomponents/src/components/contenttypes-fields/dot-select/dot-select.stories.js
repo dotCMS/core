@@ -1,55 +1,32 @@
 import readme from './readme.md';
-import { withKnobs, text, boolean } from '@storybook/addon-knobs';
 
 export default {
     title: 'Components/Content Types Fields',
-    decorators: [withKnobs],
     parameters: {
-        notes: readme
+        docs: {
+            page: readme
+        }
+    },
+    args: {
+        name: '',
+        label: 'Radio',
+        hint: 'Hello I am a hint',
+        options: 'Pizza|pizza,Burguer|burguer,Sushi|sushi',
+        required: false,
+        disabled: false,
+        requiredMessage: 'This field is required',
+        value: ''
     }
 };
 
-export const Select = () => {
-    const props = [
-        {
-            name: 'value',
-            content: text('Value', '')
-        },
-        {
-            name: 'name',
-            content: text('Name', 'field-name')
-        },
-        {
-            name: 'label',
-            content: text('Label', 'Label')
-        },
-        {
-            name: 'hint',
-            content: text('Hint', 'Hello Im a hint')
-        },
-        {
-            name: 'options',
-            content: text('Options', 'Pizza|pizza,Burguer|burguer,Sushi|sushi')
-        },
-        {
-            name: 'required',
-            content: boolean('Required', false)
-        },
-        {
-            name: 'requiredMessage',
-            content: text('Required Message', '')
-        },
-        {
-            name: 'disabled',
-            content: boolean('Disabled', false)
-        }
-    ];
-
+const Template = (args) => {
     const select = document.createElement('dot-select');
 
-    props.forEach(({ name, content }) => {
-        select[name] = content;
-    });
+    for (const item in args) {
+        select[item] = args[item];
+    }
 
     return select;
 };
+
+export const Select = Template.bind({});
