@@ -66,7 +66,7 @@ public abstract class CategoryField extends Field {
 				if (list.get(0) instanceof Category) {
 					final List<Category> categories = (List<Category>) list;
 					return Optional.of(CategoryFieldType.builder()
-							.value(categories.stream().map(Category::getCategoryName).collect(
+							.value(categories.stream().map(Category::getCategoryVelocityVarName).collect(
 									Collectors.toList())));
 				}
 				//Or a collection of Strings which would contain the Category-Name

@@ -15,7 +15,9 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.ContentletJsonAPI;
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.notifications.bean.NotificationLevel;
@@ -1934,10 +1936,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         final String inode = getInode(existingInode, contentlet);
         setUpContentletAsJson(contentlet, inode);
-        //Remove any system field from the incoming contentlet that could have made it this far.
-        //We need them for the contentlet json representation but down the upsert path they're not needed
-        //in fact they are nuisance
-        //TODO: Remove system fields from contentlet before the make it into the upsert
         upsertContentlet(contentlet, inode);
         contentlet.setInode(inode);
         final Contentlet toReturn = findInDb(inode).orElseThrow(()->
@@ -1967,7 +1965,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
                     final String asJson = contentletJsonAPI.toJson(new Contentlet(map));
                     Logger.debug(ESContentletAPIImpl.class, asJson);
+                    //attach the json so it can be grabbed by the upsert downstream
                     contentlet.setProperty(Contentlet.CONTENTLET_AS_JSON, asJson);
+
                 } catch (DotDataException | JsonProcessingException e) {
                     final String error = String
                             .format("Error converting from json to contentlet with id: %s and inode: %s ",
@@ -1975,6 +1975,16 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     Logger.error(ESContentletAPIImpl.class, error, e);
                     throw new DotRuntimeException(error, e);
                 }
+        }
+        final ContentType contentType = contentlet.getContentType();
+        //Now collect all system fields from the content-type so can use them for clean up
+        final List<com.dotcms.contenttype.model.field.Field> systemFields = contentType.fields().stream()
+                .filter(field -> field.dataType() == DataTypes.SYSTEM).collect(Collectors.toList());
+
+        //Remove any system field from the incoming contentlet that could have made it this far.
+        //We need them for the contentlet json representation but down the upsert path they're only nuisance
+        for (final com.dotcms.contenttype.model.field.Field systemField : systemFields) {
+            contentlet.getMap().remove(systemField.variable());
         }
     }
 
@@ -2003,7 +2013,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
     private String getInode(final String existingInode, final Contentlet contentlet)
-            throws DotDataException, DotSecurityException {
+            throws DotDataException {
 
         final String inode;
         if(UtilMethods.isSet(existingInode)){

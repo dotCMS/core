@@ -10,6 +10,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import java.io.File;
@@ -35,6 +36,28 @@ public interface FileMetadataAPI {
 
     String BINARY_METADATA_VERSION = "BINARY_METADATA_VERSION";
     int CURRENT_BINARY_METADATA_VERSION = 20220201;
+
+    String META_TMP = ".meta.tmp";
+    String METADATA_GROUP_NAME = "METADATA_GROUP_NAME";
+    String DEFAULT_STORAGE_TYPE = "DEFAULT_STORAGE_TYPE";
+    String DOT_METADATA = "dotmetadata";
+    String DEFAULT_METADATA_GROUP_NAME = DOT_METADATA;
+    String METADATA_JSON = "-metadata.json";
+
+    /**
+     * Metadata file generator.
+     * @param contentlet
+     * @param fieldVariableName
+     * @return
+     */
+    default String getFileName (final Contentlet contentlet, final String fieldVariableName) {
+
+        final String inode        = contentlet.getInode();
+        final String fileName     = fieldVariableName + METADATA_JSON;
+        return StringUtils.builder(File.separator,
+                inode.charAt(0), File.separator, inode.charAt(1), File.separator, inode, File.separator,
+                fileName).toString();
+    }
 
     /**
      * Reads INDEX_METADATA_FIELDS for  pre-configured metadata fields

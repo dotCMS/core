@@ -29,7 +29,6 @@ import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.HostFolderField;
-import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -154,7 +153,6 @@ import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -195,6 +193,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -4806,6 +4805,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             final IndexPolicy indexPolicy             = contentlet.getIndexPolicy();
             final IndexPolicy indexPolicyDependencies = contentlet.getIndexPolicyDependencies();
+
+            //Include system fields to generate a json representation - these fields are later removed before contentlet gets saved
+            contentlet = includeSystemFields(contentlet, contentletRaw, tagsValues, categories, user);
+
             contentlet = applyNullProperties(contentlet);
             //This is executed first hand to create the inode-contentlet relationship.
             if(InodeUtils.isSet(existingInode)) {
@@ -4840,7 +4843,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 contentlet.setIdentifier(identifier.getId());
 
-                contentlet = includeSystemFields(contentlet, contentletRaw, tagsValues);
+                //Include system fields to generate a json representation - these fields are later removed before contentlet gets saved
+                contentlet = includeSystemFields(contentlet, contentletRaw, tagsValues, categories, user);
 
                 contentlet = applyNullProperties(contentlet);
                 contentlet = contentFactory.save(contentlet);
@@ -5015,38 +5019,48 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     *
+     * This takes the incoming contentlet makes a copy out of it and includes all the system fields in it so they can be used to generate a sound json representation of the contentlet
+     * System fields are required to generate a json representation of the contentlet
      * @param contentlet
      * @param contentletRaw
      * @param tagsValues
      * @return
      */
-    private  Contentlet includeSystemFields(final Contentlet contentlet, final Contentlet contentletRaw, final Map<String, String> tagsValues){
+    private Contentlet includeSystemFields(final Contentlet contentlet,
+            final Contentlet contentletRaw, final Map<String, String> tagsValues, final List<Category> categories, final User user) {
         final ContentType contentType = contentlet.getContentType();
-        final Contentlet preparedContentlet = new Contentlet(contentlet);
+        final Contentlet systemFieldsInclusiveContentlet = new Contentlet(contentlet);
+        final Map<String, Object> map = systemFieldsInclusiveContentlet.getMap();
+        final List<com.dotcms.contenttype.model.field.Field> systemFields = contentType.fields()
+                .stream()
+                .filter(field -> field.dataType() == DataTypes.SYSTEM).collect(Collectors.toList());
 
-        final com.dotcms.contenttype.business.FieldAPI fieldAPI = APILocator
-                .getContentTypeFieldAPI();
-
-        //Set<com.dotcms.contenttype.model.field.Field> systemFields = fieldAPI.fieldTypes().stream().filter(clazz -> clazz.isInstance(com.dotcms.contenttype.model.field.Field.class)).map(clazz->com.dotcms.contenttype.model.field.Field.class.cast(clazz)).filter(field -> field.dataType()==DataTypes.SYSTEM).collect(Collectors.toSet());
-
-        final ImmutableList.Builder<com.dotcms.contenttype.model.field.Field> builder = ImmutableList.builder();
-        builder.addAll(contentType.fields(BinaryField.class))
-                .addAll(contentType.fields(ImageField.class))
-                .addAll(contentType.fields(TagField.class)).build();
-        List<com.dotcms.contenttype.model.field.Field> fields = builder.build();
-        final Map<String, Object> map = preparedContentlet.getMap();
-          for(com.dotcms.contenttype.model.field.Field field:fields){
-            if(field instanceof TagField){
-                 final String tagValues = tagsValues.get(field.variable());
-                 if(StringUtils.isNotEmpty(tagValues)){
-                     map.put(field.variable(),tagValues);
-                 }
-            } else {
-                map.put(field.variable(),contentletRaw.get(field.variable()));
+        for (final com.dotcms.contenttype.model.field.Field systemField : systemFields) {
+            if (systemField instanceof TagField) {
+                final String tagValues = tagsValues.get(systemField.variable());
+                if (StringUtils.isNotEmpty(tagValues)) {
+                    map.put(systemField.variable(), Arrays.asList(tagValues.split("\\s*,\\s*")));
+                }
+                continue;
             }
-          }
-        return preparedContentlet;
+            if(systemField instanceof CategoryField){
+                //This is a bit obscure logic. In order to find if a category belongs into a category-field we need to extract the value stored in the field it self
+                final List<String> selectedCategories = new ArrayList<>();
+                final Category parent = Try.of(()->categoryAPI.find(systemField.values(), user, false)).getOrNull();
+                if(null != parent){
+                   for(final Category child:categories){
+                       if(categoryAPI.isParent(child, parent, user)){
+                           selectedCategories.add(child.getCategoryVelocityVarName());
+                       }
+                   }
+                }
+                map.put(systemField.variable(), selectedCategories);
+                continue;
+            }
+            map.put(systemField.variable(), contentletRaw.get(systemField.variable()));
+
+        }
+        return systemFieldsInclusiveContentlet;
     }
 
     /**
@@ -5321,7 +5335,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             //Adding tags back as field to be returned
             if (tagEntry.getValue()!=null && !StringPool.BLANK.equals(tagEntry.getValue())) {
-                contentlet.setProperty(tagEntry.getKey(), tagEntry.getValue());
+                //Tags must be handled from now on a as a List
+                contentlet.setProperty(tagEntry.getKey(),
+                        Stream.of(tagEntry.getValue().split(StringPool.COMMA))
+                                .collect(Collectors.toList()));
             } else{
                 contentlet.setProperty(tagEntry.getKey(), null);
             }

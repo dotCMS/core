@@ -6109,10 +6109,16 @@ public class ContentletAPITest extends ContentletBaseTest {
             Map<String, Object> innerMap = new HashMap<>(newsContent.getMap());
             newsContent = contentletAPI.checkin(newsContent, user,false);
             Contentlet checkedoutNewsContent = contentletAPI.checkout(newsContent.getInode(), user, false);
-            assertEquals(checkedoutNewsContent.getStringProperty("tags"), innerMap.get("tags"));
+            final List<String> tags = Stream.of(((String)innerMap.get("tags")).split(",")).collect(Collectors.toList());
+            assertEquals(checkedoutNewsContent.get("tags"), tags);
             innerMap.put("tags", "newTag");
             contentletAPI.copyProperties(checkedoutNewsContent, innerMap);
             assertEquals(checkedoutNewsContent.getStringProperty("tags"), "newTag");
+
+            final List<String> asList = Arrays.asList("newTag","anotherTag");
+            innerMap.put("tags", asList);
+            contentletAPI.copyProperties(checkedoutNewsContent, innerMap);
+            assertEquals(checkedoutNewsContent.get("tags"), asList);
 
         } finally {
             try {

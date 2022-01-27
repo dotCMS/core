@@ -213,9 +213,11 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
         final StorageKey storageKey = configuration.getStorageKey();
         final StoragePersistenceAPI storage = persistenceProvider.getStorage(storageKey.getStorage());
-
-        this.checkBucket(storageKey, storage);  //if the group/bucket doesn't exist create it.
-        this.checkOverride(storage, configuration); //if config states we need to remove and force regen
+        if(configuration.isStore()) {
+            this.checkBucket(storageKey, storage);  //if the group/bucket doesn't exist create it.
+            this.checkOverride(storage,
+                    configuration); //if config states we need to remove and force regen
+        }
         final boolean objectExists = storage.existsObject(storageKey.getGroup(), storageKey.getPath());
 
         Map<String, Serializable> metadataMap = objectExists ? retrieveMetadata(storageKey, storage) : ImmutableMap.of();

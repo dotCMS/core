@@ -60,6 +60,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.Tuple;
@@ -67,12 +68,14 @@ import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.File;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -137,6 +140,23 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
      */
     public String toJson(final com.dotmarketing.portlets.contentlet.model.Contentlet contentlet)
             throws JsonProcessingException, DotDataException {
+
+        //A small precaution that guarantees categories and tags will be stored as Lists
+        final ContentType contentType = contentlet.getContentType();
+        final ImmutableSet.Builder<com.dotcms.contenttype.model.field.Field> builder = ImmutableSet.builder();
+        Set<Field> categoriesAndTagFields = builder.addAll(contentType.fields(TagField.class))
+                .addAll(contentType.fields(CategoryField.class)).build();
+
+        final Map<String, Object> map = contentlet.getMap();
+
+        categoriesAndTagFields.forEach(field -> {
+            final Object object = map.get(field.variable());
+            if(object instanceof String){
+                final String asString = (String)object;
+                map.put(field.variable(), Arrays.asList(asString.split("\\s*,\\s*")));
+            }
+        });
+
         return objectMapper.get().writeValueAsString(toImmutable(contentlet));
     }
 
