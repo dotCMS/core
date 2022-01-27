@@ -5259,7 +5259,9 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							""
+							"pm.test(\"Status code should be 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
 						],
 						"type": "text/javascript"
 					}
