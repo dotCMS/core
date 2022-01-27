@@ -356,7 +356,9 @@ public class Mailer {
 			}
 			message.setSubject(subject, encoding);
 			message.setContent(mp);
-			session.getTransport().sendMessage(message, message.getAllRecipients());
+			Transport transport = session.getTransport();
+			transport.connect();
+			transport.sendMessage(message, message.getAllRecipients());
 			result = "Send Ok";
 			return true;
 		} catch (javax.mail.SendFailedException f) {
