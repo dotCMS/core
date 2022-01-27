@@ -1,5 +1,6 @@
 package com.dotcms.mail;
 
+import com.dotcms.mail.MailAPI.Keys;
 import java.util.Properties;
 import com.dotmarketing.util.Config;
 import io.vavr.Lazy;
@@ -27,8 +28,11 @@ class MailConfig {
 
         final Properties properties = new Properties();
 
-        properties.setProperty(MailAPI.Keys.HOST.getValue(),       "localhost");
-        properties.setProperty(MailAPI.Keys.SMTP_USER.getValue(), "dotCMS");
+        final String protocol = properties.containsKey(Keys.TRANSPORT_PROTOCOL.getValue())
+                ? properties.getProperty(Keys.TRANSPORT_PROTOCOL.getValue()) : "smtp";
+
+        properties.setProperty("mail." + protocol + ".host", "localhost");
+        properties.setProperty("mail." + protocol + ".user", "dotCMS");
 
         Config.getKeys().forEachRemaining(origKey -> {
             final String lowerKey = origKey.toLowerCase();

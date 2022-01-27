@@ -18,15 +18,9 @@ public interface MailAPI {
      */
     enum Keys {
 
-        HOST("mail.smtp.host"),
-        PORT("mail.smtp.port"),
-        TIMEOUT("mail.smtp.connectiontimeout"),
-        ENABLED("mail.smtp.auth"),
-        EHLO("mail.smtp.ehlo"),
+        TRANSPORT_PROTOCOL("mail.transport.protocol"),
         USER("mail.user"),
-        SMTP_USER("mail.smtp.user"),
-        PASSWORD("mail.password"),
-        SMTP_PASSWORD("mail.smtp.password");
+        PASSWORD("mail.password");
 
         private final String value;
 

@@ -62,7 +62,6 @@ public class MailAPIImpl implements MailAPI {
     private Session createNewMailContext() {
 
         final Session session = Session.getInstance(this.properties, createAuthenticator());
-
         // bind session if not already there
         if (!hasMailInContext()) {
             Try.run(() -> new InitialContext().bind(MAIL_JNDI_NAME, session))
@@ -75,19 +74,25 @@ public class MailAPIImpl implements MailAPI {
     @VisibleForTesting
     Authenticator createAuthenticator() {
 
-        final boolean enabled = "true".equalsIgnoreCase(this.properties.getProperty(Keys.ENABLED.getValue()));
+        final String protocol = this.properties.containsKey(Keys.TRANSPORT_PROTOCOL.getValue())
+                ? this.properties.getProperty(Keys.TRANSPORT_PROTOCOL.getValue()) : "smtp";
+
+        final boolean enabled = "true".equalsIgnoreCase(this.properties.getProperty("mail." + protocol + ".auth"));
 
         if (!enabled) {
 
             return null;
         }
 
-        final String user = this.properties.containsKey(Keys.SMTP_USER.getValue())?
-                                this.properties.getProperty(Keys.SMTP_USER.getValue()):
+        final String userKey = "mail." + protocol + ".user";
+        final String passwordKey = "mail." + protocol + ".password";
+
+        final String user = this.properties.containsKey(userKey)?
+                                this.properties.getProperty(userKey):
                                 this.properties.getProperty(Keys.USER.getValue());
 
-        final String password = this.properties.containsKey(Keys.SMTP_PASSWORD.getValue())?
-                                this.properties.getProperty(Keys.SMTP_PASSWORD.getValue()):
+        final String password = this.properties.containsKey(passwordKey)?
+                                this.properties.getProperty(passwordKey):
                                 this.properties.getProperty(Keys.PASSWORD.getValue());
 
         if(user==null || password==null) {
