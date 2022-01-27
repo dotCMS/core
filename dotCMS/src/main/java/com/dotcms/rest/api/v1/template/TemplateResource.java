@@ -419,7 +419,7 @@ public class TemplateResource {
      * @throws DotSecurityException
      */
     @PUT
-    @Path("/_save_publish")
+    @Path("/_savepublish")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})

@@ -5158,7 +5158,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/templates/_save_publish",
+							"raw": "{{serverURL}}/api/v1/templates/_savepublish",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -5166,7 +5166,7 @@
 								"api",
 								"v1",
 								"templates",
-								"_save_publish"
+								"_savepublish"
 							]
 						}
 					},
@@ -5236,7 +5236,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/templates/_save_publish",
+							"raw": "{{serverURL}}/api/v1/templates/_savepublish",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -5244,7 +5244,7 @@
 								"api",
 								"v1",
 								"templates",
-								"_save_publish"
+								"_savepublish"
 							]
 						}
 					},
