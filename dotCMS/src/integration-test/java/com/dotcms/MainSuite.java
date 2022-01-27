@@ -36,6 +36,7 @@ import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
 import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
 import com.dotcms.junit.MainBaseSuite;
+import com.dotcms.mail.MailAPIImplTest;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleAPITest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
@@ -508,7 +509,8 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentSecurityPolicyUtilTest.class,
         MessageToolTest.class,
         XmlToolTest.class,
-        LanguageFolderTest.class
+        LanguageFolderTest.class,
+        MailAPIImplTest.class
 })
 public class MainSuite {
 
