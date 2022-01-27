@@ -434,14 +434,14 @@ public class TemplateResource {
         final PageMode pageMode = PageMode.get(request);
         final Template currentTemplate = UtilMethods.isSet(templateForm.getIdentifier())?
                 this.templateAPI.findWorkingTemplate(templateForm.getIdentifier(),user,pageMode.respectAnonPerms):null;
-        final Template newVersionTemplate = new Template();
+        Template newVersionTemplate = new Template();
 
         if (null != currentTemplate) {
 
-            newVersionTemplate.setIdentifier(currentTemplate.getIdentifier());
+            newVersionTemplate = currentTemplate;
         }
 
-        Logger.debug(this, ()-> "Saving & publishing the template: " + newVersionTemplate.getIdentifier());
+        Logger.debug(this, ()-> "Saving & publishing the template: " + templateForm.getIdentifier());
 
         final Template templateSaved = this.saveAndPublishTemplate(templateForm, user, host, pageMode, newVersionTemplate);
 
