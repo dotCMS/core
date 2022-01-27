@@ -26,7 +26,6 @@
         "docker:build": "docker build -t core-web .",
         "analyze": "ng build --stats-json;webpack-bundle-analyzer dist/stats.json",
         "docs:json": "compodoc -p ./tsconfig.base.json -e json -d .",
-        "storybook": "npm run docs:json && start-storybook -p 6006",
         "affected:apps": "nx affected:apps",
         "affected:libs": "nx affected:libs",
         "affected:build": "nx affected:build",

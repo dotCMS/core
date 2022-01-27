@@ -121,7 +121,7 @@
             "outputs": ["{options.outputPath}"],
             "options": {
                 "uiFramework": "@storybook/angular",
-                "outputPath": "dist/storybook/dotcms-block-editor",
+                "outputPath": "dist-docs/sb/dotcms-block-editor",
                 "config": {
                     "configFolder": "apps/dotcms-block-editor/.storybook"
                 },

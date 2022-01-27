@@ -59,7 +59,7 @@
             "executor": "@nrwl/storybook:build",
             "options": {
                 "uiFramework": "@storybook/html",
-                "outputPath": "docs/dotcms-webcomponents",
+                "outputPath": "dist-docs/sb/dotcms-webcomponents",
                 "deleteOutputPath": false,
                 "config": {
                     "configFolder": "libs/dotcms-webcomponents/.storybook"

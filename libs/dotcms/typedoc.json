@@ -1,6 +1,6 @@
 {
     "name": "DotCMS",
-    "out": "../../docs/dotcms",
+    "out": "../../dist-docs/docs/dotcms",
     "entryPoints": ["./src/index.ts"],
     "readme": "./libs/dotcms/README.md",
     "excludePrivate": true,

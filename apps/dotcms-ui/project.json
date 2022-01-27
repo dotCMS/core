@@ -141,7 +141,7 @@
             "outputs": ["{options.outputPath}"],
             "options": {
                 "uiFramework": "@storybook/angular",
-                "outputPath": "docs",
+                "outputPath": "dist-docs",
                 "deleteOutputPath": false,
                 "config": {
                     "configFolder": "apps/dotcms-ui/.storybook"
