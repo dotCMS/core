@@ -21,6 +21,8 @@ public class MailAPIImpl implements MailAPI {
             new MailAPIImpl().loadMailSessionFromContext()
                     .orElse(new MailAPIImpl().createNewMailContext()));
 
+    private static Lazy<String> protocol = Lazy.of(() -> new MailAPIImpl().getProtocol());
+
     private final Properties properties;
 
     public MailAPIImpl() {
@@ -35,6 +37,23 @@ public class MailAPIImpl implements MailAPI {
     @Override
     public Session getMailSession() {
         return mailSessionHolder.get();
+    }
+
+    private String getProtocol(){
+        return this.properties.containsKey(Keys.TRANSPORT_PROTOCOL.getValue())
+                ? this.properties.getProperty(Keys.TRANSPORT_PROTOCOL.getValue()) : "smtp";
+    }
+
+    @Override
+    public int getConnectionPort(){
+        return this.properties.containsKey("mail." + protocol.get() + ".port")?
+                Integer.parseInt(this.properties.getProperty("mail." + protocol.get() + ".port")):25;
+    }
+
+    @Override
+    public String getConnectionHost(){
+        return this.properties.containsKey("mail." + protocol.get() + ".host")?
+                this.properties.getProperty("mail." + protocol.get() + ".host"):"localhost";
     }
 
     @Override
@@ -74,18 +93,15 @@ public class MailAPIImpl implements MailAPI {
     @VisibleForTesting
     Authenticator createAuthenticator() {
 
-        final String protocol = this.properties.containsKey(Keys.TRANSPORT_PROTOCOL.getValue())
-                ? this.properties.getProperty(Keys.TRANSPORT_PROTOCOL.getValue()) : "smtp";
-
-        final boolean enabled = "true".equalsIgnoreCase(this.properties.getProperty("mail." + protocol + ".auth"));
+        final boolean enabled = "true".equalsIgnoreCase(this.properties.getProperty("mail." + protocol.get() + ".auth"));
 
         if (!enabled) {
 
             return null;
         }
 
-        final String userKey = "mail." + protocol + ".user";
-        final String passwordKey = "mail." + protocol + ".password";
+        final String userKey = "mail." + protocol.get() + ".user";
+        final String passwordKey = "mail." + protocol.get() + ".password";
 
         final String user = this.properties.containsKey(userKey)?
                                 this.properties.getProperty(userKey):

@@ -49,6 +49,10 @@ public interface MailAPI {
      */
     Optional<Session> loadMailSessionFromContext();
 
+    int getConnectionPort();
+
+    String getConnectionHost();
+
     /**
      * True if has a mail session in the context
      * @return Boolean
