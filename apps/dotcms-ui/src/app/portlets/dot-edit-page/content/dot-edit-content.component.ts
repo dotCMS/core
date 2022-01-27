@@ -250,7 +250,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
     /**
      * Handle add Form ContentType from Content Palette.
-     * 
+     *
      * @memberof DotEditContentComponent
      */
     addFormContentType(): void {
@@ -337,20 +337,20 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         };
         this.dotEditContentHtmlService.setContainterToAppendContentlet(container);
 
-        if( $event.data.contentType.variable !== 'forms' ) {
-        this.dotContentletEditorService
-            .getActionUrl($event.data.contentType.variable)
-            .pipe(take(1))
-            .subscribe((url) => {
-                this.dotContentletEditorService.create({
-                    data: { url },
-                    events: {
-                        load: (event) => {
-                            event.target.contentWindow.ngEditContentletEvents = this.dotEditContentHtmlService.contentletEvents$;
+        if ($event.data.contentType.variable !== 'forms') {
+            this.dotContentletEditorService
+                .getActionUrl($event.data.contentType.variable)
+                .pipe(take(1))
+                .subscribe((url) => {
+                    this.dotContentletEditorService.create({
+                        data: { url },
+                        events: {
+                            load: (event) => {
+                                event.target.contentWindow.ngEditContentletEvents = this.dotEditContentHtmlService.contentletEvents$;
+                            }
                         }
-                    }
+                    });
                 });
-            });
         } else {
             this.addFormContentType();
         }
