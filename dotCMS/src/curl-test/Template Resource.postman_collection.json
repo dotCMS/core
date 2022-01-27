@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "d381aca3-3b4c-4be7-afbb-2816bf89aa78",
+		"_postman_id": "6322fd51-e39d-421e-ad69-ceab585ed91a",
 		"name": "Template Resource",
 		"description": "Make the test for the template resource crud",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -5092,15 +5092,173 @@
 			]
 		},
 		{
+			"name": "SaveAndPublish",
+			"item": [
+				{
+					"name": "SavePublishNewTemplate",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"live check\", function () {",
+									"    pm.expect(jsonData.entity.live).to.eql(true);",
+									"});",
+									"",
+									"pm.test(\"body check\", function () {",
+									"    pm.expect(jsonData.entity.body).to.eql('This is the body');",
+									"});",
+									"",
+									"pm.test(\"friendlyName check\", function () {",
+									"    pm.expect(jsonData.entity.friendlyName).to.eql('This is a postman test description');",
+									"});",
+									"",
+									"pm.test(\"Title check\", function () {",
+									"    pm.expect(jsonData.entity.title).to.eql('PostMan Test Save Publish');",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"templateIdToPublished\", jsonData.entity.identifier);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\":\"PostMan Test Save Publish\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_save_publish",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_save_publish"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "SavePublishTemplate",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"live check\", function () {",
+									"    pm.expect(jsonData.entity.live).to.eql(true);",
+									"});",
+									"",
+									"pm.test(\"body check\", function () {",
+									"    pm.expect(jsonData.entity.body).to.eql('This is the body');",
+									"});",
+									"",
+									"pm.test(\"friendlyName check\", function () {",
+									"    pm.expect(jsonData.entity.friendlyName).to.eql('This is a postman test description');",
+									"});",
+									"",
+									"pm.test(\"Title check\", function () {",
+									"    pm.expect(jsonData.entity.title).to.eql('PostMan Test Save Publish 2');",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"templateIdToPublished\", jsonData.entity.identifier);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"identifier\":\"{{templateIdToPublished}}\",\n    \"title\":\"PostMan Test Save Publish 2\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_save_publish",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_save_publish"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "Create New Template Theme Not Send BadRequest",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code should be ok 400\", function () {",
-							"    pm.response.to.have.status(400);",
-							"});",
 							""
 						],
 						"type": "text/javascript"
@@ -6095,6 +6253,10 @@
 		},
 		{
 			"key": "templateInodeToEdit",
+			"value": ""
+		},
+		{
+			"key": "templateIdToPublished",
 			"value": ""
 		}
 	]
