@@ -287,7 +287,7 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
         Assert.assertEquals("Test", contentletPublished.getStringProperty("title"));
         Assert.assertEquals("Test", contentletPublished.getStringProperty("txt"));
         contentletPublished.setTags();
-        Assert.assertEquals("test", contentletPublished.getStringProperty("tag"));
+        Assert.assertEquals(Collections.singletonList("test"), contentletPublished.get("tag"));
         Assert.assertTrue(contentletPublished.isLive());
     }
 

@@ -59,7 +59,9 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.velocity.exception.ResourceNotFoundException;
@@ -537,9 +539,9 @@ public class HTMLPageAPITest extends IntegrationTestBase {
                     APILocator.getContentletAPI().find(contentlet.getInode(), sysuser, false));
             assertNotNull(page);
 
-            final String tags = (String) page.getMap().get("tags");
+            final List<?> tags = (List<?>) page.getMap().get("tags");
             assertNotNull(tags);
-            assertEquals("test", tags);
+            assertEquals(Collections.singletonList("test"), tags);
         }finally {
 	        if (testContentType != null && testContentType.inode() != null) {
                 ContentTypeDataGen.remove(testContentType);
