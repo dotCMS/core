@@ -7,10 +7,22 @@
 <script type="module" src="/dotcms-webcomponents/dotcms-webcomponents.esm.js"></script>
 <script nomodule="" src="/dotcms-webcomponents/dotcms-webcomponents.js"></script>
 
-<script src="/api/v1/form/$structure.inode/successCallback"></script>
+#if($EDIT_MODE)
+    <dot-form id="$formDOM" variable='$structure.velocityVarName'></dot-form>
+     <script type="text/javascript">
+         document.getElementById('$formDOM').layout = $structures.getLayoutAsJson($formId);
+         document.getElementById('$formDOM').addEventListener('submit', function(event) {
+            alert('Submitting form!, This is a fake success callback because you are render the page in EDIT_MODE');
+         });
+     </script>
+#else
+    <script src="/api/v1/form/$structure.inode/successCallback"></script>
 
-<dot-form id="$formDOM" variable='$structure.velocityVarName'></dot-form>
- <script type="text/javascript">
-     document.getElementById('$formDOM').layout = $structures.getLayoutAsJson($formId);
-     document.getElementById('$formDOM').addEventListener('submit', formSuccessCallback_$structure.inode.replaceAll("-", ""));
- </script>
+    <dot-form id="$formDOM" variable='$structure.velocityVarName'></dot-form>
+     <script type="text/javascript">
+         document.getElementById('$formDOM').layout = $structures.getLayoutAsJson($formId);
+         document.getElementById('$formDOM').addEventListener('submit', formSuccessCallback_$structure.inode.replaceAll("-", ""));
+     </script>
+#end
+
+
