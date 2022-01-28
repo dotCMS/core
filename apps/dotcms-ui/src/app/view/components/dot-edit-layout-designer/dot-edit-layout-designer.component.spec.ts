@@ -200,15 +200,9 @@ describe('DotEditLayoutDesignerComponent', () => {
             expect(checkboxSave).toBe(null);
         });
 
-        it('should display unsaved changes message when editing the form.', () => {
-            component.form.get('title').setValue('Hello');
-            fixture.detectChanges();
-            expect(dotGlobalMessageService.customDisplay).toHaveBeenCalled();
-        });
-
-        it('should save changes when showMessage is true', () => {
+        it('should save changes when closeEditLayout is true', () => {
             spyOn(component.save, 'emit');
-            dotEditLayoutService.changeMessageState(true);
+            dotEditLayoutService.changeCloseEditLayoutState(true);
             fixture.detectChanges();
             expect(component.save.emit).toHaveBeenCalledTimes(1);
         });
