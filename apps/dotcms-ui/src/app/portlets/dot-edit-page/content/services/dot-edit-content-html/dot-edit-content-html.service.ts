@@ -102,7 +102,7 @@ export class DotEditContentHtmlService {
 
     /**
      * Set the current page
-     * 
+     *
      * @param DotPage page
      */
     setCurrentPage(page: DotPage) {
@@ -203,7 +203,6 @@ export class DotEditContentHtmlService {
                     uuid: containerEl.dataset.dotUuid
                 };
 
-                
                 this.dotContainerContentletService
                     .getContentletToContainer(container, contentlet, this.currentPage)
                     .pipe(take(1))
@@ -624,6 +623,9 @@ export class DotEditContentHtmlService {
                         // on success
                         content.element.classList.remove('inline-editing--saving');
                         delete this.inlineCurrentContent[content.element.id];
+                        this.dotGlobalMessageService.success(
+                            this.dotMessageService.get('dot.common.message.saved')
+                        );
                     },
                     (e: HttpErrorResponse) => {
                         // on error
@@ -787,7 +789,11 @@ export class DotEditContentHtmlService {
         };
 
         this.dotContainerContentletService
-            .getContentletToContainer(relocateInfo.container, relocateInfo.contentlet, this.currentPage)
+            .getContentletToContainer(
+                relocateInfo.container,
+                relocateInfo.contentlet,
+                this.currentPage
+            )
             .subscribe((contentletHtml: string) => {
                 const newContentletEl: HTMLElement = this.generateNewContentlet(contentletHtml);
                 container.replaceChild(newContentletEl, contenletEl);

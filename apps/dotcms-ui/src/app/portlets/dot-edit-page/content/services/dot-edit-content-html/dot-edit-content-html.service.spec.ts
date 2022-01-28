@@ -163,7 +163,8 @@ xdescribe('DotEditContentHtmlService', () => {
         'editpage.content.container.menu.content': 'Content',
         'editpage.content.container.menu.widget': 'Widget',
         'editpage.content.container.menu.form': 'Form',
-        'editpage.inline.error': 'An error ocurred'
+        'editpage.inline.error': 'An error ocurred',
+        'dot.common.message.saved': 'All changes Saved'
     });
 
     let service: DotEditContentHtmlService;
@@ -963,6 +964,7 @@ xdescribe('DotEditContentHtmlService', () => {
 
         it('should call saveContentlet and save the content', () => {
             spyOn(dotWorkflowActionsFireService, 'saveContentlet').and.returnValue(of({}));
+            spyOn(dotGlobalMessageService, 'success');
             const fakeElem: HTMLElement = fakeDocument.querySelector(
                 '[data-test-id="inline-edit-element-title"]'
             );
@@ -987,6 +989,8 @@ xdescribe('DotEditContentHtmlService', () => {
                 title: '<div>hello</div>',
                 inode: '999'
             });
+
+            expect(dotGlobalMessageService.success).toHaveBeenCalledOnceWith('All changes Saved');
         });
 
         it('should not call saveContentlet if isNotDirty is true', () => {
