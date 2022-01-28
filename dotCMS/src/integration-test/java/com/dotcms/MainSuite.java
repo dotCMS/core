@@ -32,6 +32,7 @@ import com.dotcms.enterprise.publishing.remote.handler.HandlerUtilTest;
 import com.dotcms.enterprise.publishing.staticpublishing.LanguageFolderTest;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
+import com.dotcms.filters.interceptor.meta.MetaWebInterceptorTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
 import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
 import com.dotcms.junit.MainBaseSuite;
@@ -495,6 +496,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task211012AddCompanyDefaultLanguageTest.class,
         StaticPublisherIntegrationTest.class,
         HostIntegrityCheckerTest.class,
+        MetaWebInterceptorTest.class,
         BrowserUtilTest.class,
         Task211101AddContentletAsJsonColumnTest.class,
         ContentletJsonAPITest.class,

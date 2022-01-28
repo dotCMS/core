@@ -85,4 +85,6 @@ public class StringPool {
 
 	public static final String PLUS = "+";
 
+	public static final String PIPE = "|";
+
 }
