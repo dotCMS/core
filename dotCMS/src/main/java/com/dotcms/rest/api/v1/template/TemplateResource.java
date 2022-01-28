@@ -7,7 +7,6 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.BulkResultView;
 import com.dotcms.rest.api.FailedResultView;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.ContainerPaginator;
 import com.dotcms.util.pagination.OrderDirection;
@@ -16,7 +15,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.HostWebAPI;
@@ -24,10 +22,8 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.util.DesignTemplateUtil;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -46,7 +42,6 @@ import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -68,8 +63,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 /**
  * CRUD of Templates
@@ -267,12 +260,14 @@ public class TemplateResource {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response).rejectWhenNoUser(true).init();
         final User user         = initData.getUser();
-        final Host host         = this.hostWebAPI.getCurrentHostNoThrow(request);
+        final Host host         = this.templateHelper.getHost(templateForm.getSiteId(), ()->this.hostWebAPI.getCurrentHostNoThrow(request));
         final PageMode pageMode = PageMode.get(request);
 
         return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(
                 this.fillAndSaveTemplate(templateForm, user, host, pageMode, new Template()), user))).build();
     }
+
+
 
     /**
      * Saves a new working version of an existing template. The templateForm must contain the identifier of the template.
@@ -295,7 +290,7 @@ public class TemplateResource {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response).rejectWhenNoUser(true).init();
         final User user         = initData.getUser();
-        final Host host         = this.hostWebAPI.getCurrentHostNoThrow(request);
+        final Host host         = this.templateHelper.getHost(templateForm.getSiteId(), ()->this.hostWebAPI.getCurrentHostNoThrow(request));
         final PageMode pageMode = PageMode.get(request);
         final Template currentTemplate = this.templateAPI.findWorkingTemplate(templateForm.getIdentifier(),user,pageMode.respectAnonPerms);
 
@@ -332,7 +327,7 @@ public class TemplateResource {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response).rejectWhenNoUser(true).init();
         final User user         = initData.getUser();
-        final Host host         = this.hostWebAPI.getCurrentHostNoThrow(request);
+        final Host host         = this.templateHelper.getHost(templateForm.getSiteId(), ()->this.hostWebAPI.getCurrentHostNoThrow(request));
         final PageMode pageMode = PageMode.get(request);
         final Template currentTemplate = this.templateAPI.findWorkingTemplate(templateForm.getIdentifier(),
                 user, pageMode.respectAnonPerms);
