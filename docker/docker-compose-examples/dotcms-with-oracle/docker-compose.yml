@@ -29,16 +29,16 @@ services:
   dotcms:
     image: dotcms/dotcms:latest
     environment:
-      "CMS_HEAP_SIZE": '1g'
-      "PROVIDER_DB_DNSNAME": '{ip_address}'
-      "PROVIDER_DB_URL": 'jdbc:oracle:thin:@{ip_address}:1521:XE'
-      "PROVIDER_DB_DRIVER": 'ORACLE'
-      "PROVIDER_DB_USERNAME": "oracle"
-      "PROVIDER_DB_PASSWORD": "oracle"
-      "PROVIDER_ELASTICSEARCH_ENDPOINTS": 'http://elasticsearch:9200'
-      "ES_ADMIN_PASSWORD": 'admin'
-      "TZ": UTC
-      #"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20210920/starter-20210920.zip'
+        "CATALINA_OPTS": ' -Xms1g -Xmx1g '
+        "DB_BASE_URL": "jdbc:oracle:thin:@{ip_address}:1521:XE"
+        "DB_USERNAME": 'oracle'
+        "DB_PASSWORD": 'oracle'
+        "DOT_ES_AUTH_BASIC_PASSWORD": 'admin'
+        "DOT_ES_ENDPOINTS": 'http://elasticsearch:9200'
+        "DB_DRIVER": 'oracle.jdbc.OracleDriver'
+        "ES_ADMIN_PASSWORD": 'admin'
+        "TZ": UTC
+        #"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20211201/starter-20211201.zip'
     depends_on:
       - elasticsearch
     volumes:
