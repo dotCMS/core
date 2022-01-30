@@ -4375,6 +4375,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 bubbleUpException(t);
             }
 
+            //This way no matter how many times the contentlet reference that we're passing in gets override.
+            //On the way back this updates the original contentlet references updating the new inode and identifier
+            contentletIn.setIdentifier(contentletOut.getIdentifier());
+            contentletIn.setInode(contentletOut.getInode());
+
             wfPublishDate = contentletOut.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE);
             wfExpireDate = contentletOut.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE);
 
