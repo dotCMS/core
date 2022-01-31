@@ -1,9 +1,12 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.util.ConversionUtils;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.*;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.LanguageWebAPI;
@@ -17,6 +20,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRendered;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRenderedBuilder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.ViewAsPageStatus;
@@ -28,6 +32,7 @@ import com.dotmarketing.portlets.personas.model.IPersona;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.rules.business.RulesEngine;
 import com.dotmarketing.portlets.rules.model.Rule.FireOn;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.WebKeys;
@@ -40,6 +45,7 @@ import java.util.Optional;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.Context;
 
 
 /**
@@ -460,5 +466,44 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
         return null != persona && pagePersonalizationSet.contains
                 (Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + persona.getKeyTag());
+    }
+
+    @Override
+    public PageLivePreviewVersionBean getPageRenderedLivePreviewVersion (final String  pageId,
+                                                                         final User user,
+                                                                         final long languageId,
+                                                                         final HttpServletRequest  request,
+                                                                         final HttpServletResponse response)
+            throws DotSecurityException, DotDataException {
+
+        final HTMLPageAsset page   = (HTMLPageAsset) this.htmlPageAssetAPI.
+                findByIdLanguageFallback(pageId, languageId, false, user, false);
+
+        if (!this.permissionAPI.doesUserHavePermission(page, PermissionAPI.PERMISSION_EDIT, user)) {
+
+            throw new DotSecurityException("User " + user.getFullName() + " id " + user.getUserId()
+                    + " does not have read perms on page :" + page.getIdentifier());
+        }
+
+        Logger.debug(this, ()-> "Getting the html for the live and preview version of the page: " + pageId);
+
+        final String pageURI = page.getURI();
+        final Identifier pageIdentifier = APILocator.getIdentifierAPI().find(page.getIdentifier());
+        new PageLoader().invalidate(page, PageMode.EDIT_MODE, PageMode.PREVIEW_MODE);
+        final Host host = this.hostWebAPI.find(pageIdentifier.getHostId(), user, false);
+
+        final String renderLive    = HTMLPageAssetRendered.class.cast(new HTMLPageAssetRenderedBuilder()
+                .setHtmlPageAsset(page).setUser(user)
+                .setRequest(request).setResponse(response)
+                .setSite(host).setURLMapper(pageURI)
+                .setLive(true).build(true, PageMode.LIVE)).getHtml();
+
+        final String renderWorking =  HTMLPageAssetRendered.class.cast(new HTMLPageAssetRenderedBuilder()
+                .setHtmlPageAsset(page).setUser(user)
+                .setRequest(request).setResponse(response)
+                .setSite(host).setURLMapper(pageURI)
+                .setLive(false).build(true, PageMode.PREVIEW_MODE)).getHtml();
+
+        return new PageLivePreviewVersionBean(renderLive, renderWorking);
     }
 }
