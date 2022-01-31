@@ -1,1 +1,10 @@
-<dot-iframe [src]="url"></dot-iframe>
+<dot-iframe *ngIf="whatsChanged.diff else noChanges" #dotIframe></dot-iframe>
+<ng-template #noChanges>
+    <span class='whats-changed__empty-state'>
+        {{'nothing-changed' | dm}}
+    </span>
+</ng-template>
+
+
+
+

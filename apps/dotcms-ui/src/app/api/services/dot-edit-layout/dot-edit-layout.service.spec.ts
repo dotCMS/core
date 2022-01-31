@@ -258,12 +258,12 @@ describe('DotEditLayoutService', () => {
         })
     });
 
-    it('Should set _showMessage to true', (done) => {
-        dotEditLayoutService.showMessage$.subscribe((resp) =>{
+    it('Should set _closeEditLayout to true', (done) => {
+        dotEditLayoutService.closeEditLayout$.subscribe((resp) =>{
             expect(resp).toBeTruthy();
             done();
         })
-        dotEditLayoutService.changeMessageState(true);
+        dotEditLayoutService.changeCloseEditLayoutState(true);
     });
     
 });

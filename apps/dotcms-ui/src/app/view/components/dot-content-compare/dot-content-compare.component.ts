@@ -4,16 +4,9 @@ import {
     DotContentCompareStore
 } from '@components/dot-content-compare/store/dot-content-compare.store';
 import { Observable } from 'rxjs';
-import { catchError, filter, map, take } from 'rxjs/operators';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import {
-    DotVersionable,
-    DotVersionableService
-} from '@services/dot-verionable/dot-versionable.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { HttpErrorResponse } from '@angular/common/http';
+import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 
 export interface DotContentCompareEvent {
     inode: string;
@@ -39,10 +32,8 @@ export class DotContentCompareComponent {
     constructor(
         private store: DotContentCompareStore,
         private dotAlertConfirmService: DotAlertConfirmService,
-        private dotVersionableService: DotVersionableService,
-        private dotRouterService: DotRouterService,
         private dotMessageService: DotMessageService,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService
+        private dotIframeService: DotIframeService
     ) {}
 
     /**
@@ -53,21 +44,8 @@ export class DotContentCompareComponent {
     bringBack(inode: string) {
         this.dotAlertConfirmService.confirm({
             accept: () => {
-                this.dotVersionableService
-                    .bringBack(inode)
-                    .pipe(
-                        take(1),
-                        catchError((err: HttpErrorResponse) => {
-                            return this.dotHttpErrorManagerService
-                                .handle(err)
-                                .pipe(map(() => null));
-                        }),
-                        filter((version: DotVersionable) => version != null)
-                    )
-                    .subscribe((version: DotVersionable) => {
-                        this.dotRouterService.goToURL(`/c/content/${version.inode}`);
-                        this.close.emit(true);
-                    });
+                this.dotIframeService.run({ name: 'getVersionBack', args: [inode] });
+                this.close.emit(true);
             },
             reject: () => {},
             header: this.dotMessageService.get('Confirm'),

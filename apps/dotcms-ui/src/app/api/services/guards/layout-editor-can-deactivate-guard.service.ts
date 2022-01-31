@@ -35,7 +35,7 @@ export class LayoutEditorCanDeactivateGuardService implements CanDeactivate<CanD
         return this.dotEditLayoutService.canBeDesactivated$.pipe(
             filter((res) => {
                 if(!res) {
-                    this.dotEditLayoutService.changeMessageState(!res);
+                    this.dotEditLayoutService.changeCloseEditLayoutState(!res);
                 }
                 return res;
             })

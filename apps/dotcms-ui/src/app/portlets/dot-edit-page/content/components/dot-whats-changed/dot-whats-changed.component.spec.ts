@@ -1,12 +1,13 @@
-/* tslint:disable:no-unused-variable */
-import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { DebugElement, Input, Component } from '@angular/core';
-
-import { DotWhatsChangedComponent } from './dot-whats-changed.component';
-import { LoginService } from '@dotcms/dotcms-js';
-import { LoginServiceMock } from '../../../../../test/login-service.mock';
+import { DebugElement, Component, ViewChild, ElementRef } from '@angular/core';
+import { DotWhatsChangedComponent, SHOW_DIFF_STYLES } from './dot-whats-changed.component';
 import { IframeComponent } from '@components/_common/iframe/iframe-component';
+import { DotEditPageService } from '@services/dot-edit-page/dot-edit-page.service';
+import { of } from 'rxjs';
+import { DotDOMHtmlUtilService } from '@portlets/dot-edit-page/content/services/html/dot-dom-html-util.service';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 @Component({
     selector: 'dot-test',
@@ -19,11 +20,10 @@ class TestHostComponent {
 
 @Component({
     selector: 'dot-iframe',
-    template: ''
+    template: '<iframe #iframeElement></iframe>'
 })
 class TestDotIframeComponent {
-    @Input()
-    src: string;
+    @ViewChild('iframeElement') iframeElement: ElementRef;
 }
 
 describe('DotWhatsChangedComponent', () => {
@@ -31,58 +31,74 @@ describe('DotWhatsChangedComponent', () => {
     let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
     let dotIframe: IframeComponent;
-
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [DotWhatsChangedComponent, TestDotIframeComponent, TestHostComponent],
-                providers: [
-                    {
-                        provide: LoginService,
-                        useClass: LoginServiceMock
-                    }
-                ]
-            }).compileComponents();
-        })
-    );
+    let dotEditPageService: DotEditPageService;
+    let dotDOMHtmlUtilService: DotDOMHtmlUtilService;
 
     beforeEach(() => {
+        TestBed.configureTestingModule({
+            declarations: [DotWhatsChangedComponent, TestDotIframeComponent, TestHostComponent],
+            providers: [
+                {
+                    provide: DotEditPageService,
+                    useValue: {
+                        whatChange: jasmine
+                            .createSpy()
+                            .and.returnValue(
+                                of({ diff: true, renderLive: 'ABC', renderWorking: 'ABC DEF' })
+                            )
+                    }
+                },
+                {
+                    provide: DotDOMHtmlUtilService,
+                    useValue: {
+                        createStyleElement: jasmine
+                            .createSpy()
+                            .and.returnValue(document.createElement('style'))
+                    }
+                },
+                {
+                    provide: DotHttpErrorManagerService,
+                    useValue: {
+                        handle: jasmine.createSpy()
+                    }
+                }
+            ],
+            imports: [DotMessagePipeModule]
+        });
+
         fixture = TestBed.createComponent(TestHostComponent);
 
         de = fixture.debugElement.query(By.css('dot-whats-changed'));
         component = de.componentInstance;
+        dotEditPageService = TestBed.inject(DotEditPageService);
+        dotDOMHtmlUtilService = TestBed.inject(DotDOMHtmlUtilService);
+        fixture.detectChanges();
+        dotIframe = de.query(By.css('dot-iframe')).componentInstance;
 
         fixture.componentInstance.pageId = '123';
-        fixture.componentInstance.languageId = '321';
-        dotIframe = de.query(By.css('dot-iframe')).componentInstance;
+        fixture.componentInstance.languageId = '1';
         fixture.detectChanges();
     });
 
-    it('should have dot-iframe', () => {
-        expect(dotIframe).toBeTruthy();
-    });
-
-    it('should set url based on the page id', () => {
-        expect(dotIframe.src).toEqual(
-            `/html/portlet/ext/htmlpages/view_live_working_diff.jsp?id=${component.pageId}&pageLang=${component.languageId}`
+    it('should load content based on the pageId and URL', () => {
+        expect(dotDOMHtmlUtilService.createStyleElement).toHaveBeenCalledOnceWith(SHOW_DIFF_STYLES);
+        expect(dotEditPageService.whatChange).toHaveBeenCalledWith('123', '1');
+        expect(dotIframe.iframeElement.nativeElement.contentDocument.body.innerHTML).toContain(
+            'ABC<ins class="diffins">&nbsp;DEF</ins>'
         );
     });
 
-    it('should reset url when languageId is change', () => {
-        fixture.componentInstance.languageId = '123';
+    it('should load content when languageId is change', () => {
+        fixture.componentInstance.languageId = '2';
         fixture.detectChanges();
 
-        expect(dotIframe.src).toEqual(
-            `/html/portlet/ext/htmlpages/view_live_working_diff.jsp?id=123&pageLang=123`
-        );
+        expect(dotEditPageService.whatChange).toHaveBeenCalledWith('123', '2');
     });
 
-    it('should reset url when pageId is change', () => {
-        fixture.componentInstance.pageId = '321';
+    it('should load content when pageId is change', () => {
+        fixture.componentInstance.pageId = 'abc-123';
         fixture.detectChanges();
 
-        expect(dotIframe.src).toEqual(
-            `/html/portlet/ext/htmlpages/view_live_working_diff.jsp?id=321&pageLang=321`
-        );
+        expect(dotEditPageService.whatChange).toHaveBeenCalledWith('abc-123', '1');
     });
 });

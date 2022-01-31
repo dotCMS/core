@@ -1,3 +1,5 @@
+@use "variables" as *;
+
 :host {
     display: flex;
     flex-direction: column;
@@ -10,5 +12,11 @@
         ::ng-deep iframe {
             flex-grow: 1;
         }
+    }
+
+    .whats-changed__empty-state {
+        text-align: center;
+        margin-top: $spacing-9;
+        font-size: $font-size-xx-large;
     }
 }

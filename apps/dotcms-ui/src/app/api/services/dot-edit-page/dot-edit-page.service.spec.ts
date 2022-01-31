@@ -46,6 +46,17 @@ describe('DotEditPageService', () => {
         req.flush({});
     });
 
+    it('should do a request for see whatChanged', () => {
+        const pageId = '123-456';
+        const languageId = '1';
+
+        dotEditPageService.whatChange(pageId, languageId).subscribe();
+
+        const req = httpMock.expectOne(`v1/page/${pageId}/render/versions?langId=${languageId}`);
+        expect(req.request.method).toBe('GET');
+        req.flush({});
+    });
+
     afterEach(() => {
         httpMock.verify();
     });

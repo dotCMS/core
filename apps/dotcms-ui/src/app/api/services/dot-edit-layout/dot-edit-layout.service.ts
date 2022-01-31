@@ -26,7 +26,7 @@ import { DotPageContainer } from '@models/dot-page-container/dot-page-container.
 export class DotEditLayoutService {
     private _addGridBox: Subject<boolean> = new Subject();
 
-    private _showMessage: Subject<boolean> = new Subject();
+    private _closeEditLayout: Subject<boolean> = new Subject();
     private _canBeDesactivated = new BehaviorSubject(true);
 
     constructor(private templateContainersCacheService: DotTemplateContainersCacheService) {}
@@ -36,8 +36,8 @@ export class DotEditLayoutService {
      * @readonly
      * @memberof DotEditLayoutService
      */
-     get showMessage$() {
-        return this._showMessage;
+     get closeEditLayout$() {
+        return this._closeEditLayout;
     }
 
     /**
@@ -63,8 +63,8 @@ export class DotEditLayoutService {
      * @param {boolean} next
      * @memberof DotEditLayoutService
      */
-    changeMessageState(next: boolean) {
-        this._showMessage.next(next);
+    changeCloseEditLayoutState(next: boolean) {
+        this._closeEditLayout.next(next);
     }
 
     /**

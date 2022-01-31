@@ -1,9 +1,11 @@
+@use "variables" as *;
+
 ::ng-deep {
     del {
-        background-color: #fdb8c0;
+        background-color: $deleted-content-color;
     }
 
     ins {
-        background-color: #ddffdd;
+        background-color: $new-content-color;
     }
 }
