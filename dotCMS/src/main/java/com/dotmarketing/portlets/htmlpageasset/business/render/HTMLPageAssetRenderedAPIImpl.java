@@ -504,6 +504,6 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setSite(host).setURLMapper(pageURI)
                 .setLive(false).build(true, PageMode.PREVIEW_MODE)).getHtml();
 
-        return new PageLivePreviewVersionBean(renderLive, renderWorking, !renderLive.equals(renderWorking));
+        return new PageLivePreviewVersionBean(renderLive, renderWorking);
     }
 }

@@ -7,11 +7,10 @@ public class PageLivePreviewVersionBean {
     private final boolean diff;
 
     public PageLivePreviewVersionBean(final String renderLive,
-                                      final String renderWorking,
-                                      final boolean diff) {
+                                      final String renderWorking) {
         this.renderLive = renderLive;
         this.renderWorking = renderWorking;
-        this.diff = diff;
+        this.diff = !renderLive.equals(renderWorking);
     }
 
     public String getRenderLive() {
