@@ -385,12 +385,14 @@ var cmsfile=null;
   var dropzoneEvents = false
 
   function bindDropZoneUploadComplete(activeEditor, textAreaId) {
-		const dropZone = document.getElementById(`dot-asset-drop-zone-${textAreaId}`);
-		dropZone.addEventListener('uploadComplete', async (asset) => {
-			dropZone.style.pointerEvents = "none";
-			asset.detail && insertAssetInEditor(asset.detail)
-		})
-		dropzoneEvents = true
+        const dropZone = document.getElementById(`dot-asset-drop-zone-${textAreaId}`);
+        if (dropZone && dropZone.dataset["disabled"] !== 'false') {
+            dropZone.addEventListener('uploadComplete', async (asset) => {
+                dropZone.style.pointerEvents = "none";
+                asset.detail && insertAssetInEditor(asset.detail)
+            })
+            dropzoneEvents = true
+        }
   }
 
 	function enableWYSIWYG(textAreaId, confirmChange) {
@@ -445,31 +447,35 @@ var cmsfile=null;
 			      let dropZone = document.getElementById(
 			        `dot-asset-drop-zone-${textAreaId}`
 			      );
-			      editor.on("dragover", function (e) {
-                    const { kind } = Array.from(e.dataTransfer.items)[0];
-                    if (kind === 'file') {
-                        dropZone.style.pointerEvents = "all";
-                    }
-                  });
 
-                  editor.on("ExecCommand", function (e) {
-                    if (e.command === 'mceFullScreen'){
-                        if (dropZone.style.position === '') {
-                            dropZone.style.position = 'fixed';
-                            dropZone.style.zIndex = '999';
-                        } else {
-                            dropZone.style.position = '';
-                            dropZone.style.zIndex = '';
+                  if (dropZone) {
+                    editor.on("dragover", function (e) {
+                        const { kind } = Array.from(e.dataTransfer.items)[0];
+                        if (kind === 'file') {
+                            dropZone.style.pointerEvents = "all";
                         }
-                    }
+                    });
 
-			      });
+                    editor.on("ExecCommand", function (e) {
+                        if (e.command === 'mceFullScreen'){
+                            if (dropZone.style.position === '') {
+                                dropZone.style.position = 'fixed';
+                                dropZone.style.zIndex = '999';
+                            } else {
+                                dropZone.style.position = '';
+                                dropZone.style.zIndex = '';
+                            }
+                        }
 
-			      editor.dom.bind(document, "dragleave", function (e) {
-			        dropZone.style.pointerEvents = "none";
-			        return false;
-			      });
-          }
+                    });
+
+                    editor.dom.bind(document, "dragleave", function (e) {
+                        dropZone.style.pointerEvents = "none";
+                        return false;
+                    });
+                  }
+			      
+                }
 			  };
 			  var wellTinyMCE = new tinymce.Editor(
 			    textAreaId,

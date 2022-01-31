@@ -14,6 +14,7 @@ import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -30,6 +31,7 @@ import org.junit.Test;
 import java.util.*;
 
 import static com.dotcms.translate.TranslateTestUtil.*;
+import static org.mockito.AdditionalAnswers.returnsFirstArg;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.*;
 
@@ -53,8 +55,8 @@ public class TranslationActionletTest extends UnitTestBase {
 
         ContentletAPI contentletAPI = mock(ContentletAPI.class);
         when(contentletAPI
-            .findContentletByIdentifier(unpersisted.getIdentifier(), false, unpersisted.getLanguageId(), systemUser,
-                false)).thenThrow(DotStateException.class);
+                .findContentletByIdentifier(unpersisted.getIdentifier(), false, unpersisted.getLanguageId(), systemUser,
+                        false)).thenThrow(DotStateException.class);
         final WorkflowAPI workflowAPI = getMockedWorkflowAPI();
         ApiProvider apiProvider = mock(ApiProvider.class);
         when(apiProvider.contentletAPI()).thenReturn(contentletAPI);
@@ -74,6 +76,10 @@ public class TranslationActionletTest extends UnitTestBase {
         doReturn(true).when(englishContent).isLive();
         doNothing().when(englishContent).setTags();
 
+        List<Contentlet> translatedContents = getTranslatedContents();
+
+
+
         // Mock TranslationUtil
         TranslationUtil translationUtil = getMockedTranslationUtil(englishContent);
 
@@ -88,6 +94,9 @@ public class TranslationActionletTest extends UnitTestBase {
         ApiProvider apiProvider = getMockedApiProvider(englishContent, systemUser);
         final WorkflowAPI workflowAPI = getMockedWorkflowAPI();
         ContentletAPI contentletAPI = apiProvider.contentletAPI();
+
+        when(contentletAPI.checkin(any(Contentlet.class), any(ContentletRelationships.class), anyList(), anyList(),any(User.class),	anyBoolean())).then(returnsFirstArg());
+
         ContentletRelationships conRel = new ContentletRelationships(englishContent);
         when(contentletAPI.getAllRelationships(englishContent)).thenReturn(conRel);
 
@@ -100,18 +109,17 @@ public class TranslationActionletTest extends UnitTestBase {
 
         actionlet.executeAction(processor, getParams());
 
-        List<Contentlet> translatedContents = getTranslatedContents();
+
 
         for (Contentlet translatedContent : translatedContents) {
             verify(translatedContent).setProperty(Contentlet.DISABLE_WORKFLOW, true);
             verify(contentletAPI)
-                .checkin(translatedContent, conRel, cats,
-                    perms, systemUser,
-                    false);
+                    .checkin(eq(translatedContent), eq(conRel), eq(cats),
+                            eq(perms), eq(systemUser),
+                            eq(false));
+            verify(contentletAPI)
+                    .publish(eq(translatedContent), eq(systemUser), eq(false));
         }
-
-        verify(contentletAPI, times(translatedContents.size()))
-            .publish(any(Contentlet.class), any(User.class), anyBoolean());
 
         verify(contentletAPI).unlock(englishContent, systemUser, false);
 
@@ -155,13 +163,13 @@ public class TranslationActionletTest extends UnitTestBase {
         for (Contentlet translatedContent : translatedContents) {
             verify(translatedContent).setProperty(Contentlet.DISABLE_WORKFLOW, true);
             verify(contentletAPI)
-                .checkin(translatedContent, conRel, cats,
-                    perms, systemUser,
-                    false);
+                    .checkin(translatedContent, conRel, cats,
+                            perms, systemUser,
+                            false);
         }
 
         verify(contentletAPI, never())
-            .publish(any(Contentlet.class), any(User.class), anyBoolean());
+                .publish(any(Contentlet.class), any(User.class), anyBoolean());
 
         verify(contentletAPI).unlock(englishContent, systemUser, false);
     }
@@ -188,8 +196,8 @@ public class TranslationActionletTest extends UnitTestBase {
     private ContentletAPI getMockedContentletAPI(Contentlet content, User user) throws Exception {
         ContentletAPI contentletAPI = mock(ContentletAPI.class);
         when(contentletAPI
-            .findContentletByIdentifier(content.getIdentifier(), false, content.getLanguageId(),
-                user, false)).thenReturn(content);
+                .findContentletByIdentifier(content.getIdentifier(), false, content.getLanguageId(),
+                        user, false)).thenReturn(content);
 
         return contentletAPI;
     }
@@ -198,11 +206,11 @@ public class TranslationActionletTest extends UnitTestBase {
         TranslationUtil translationUtil = mock(TranslationUtil.class);
         List<Field> fieldsOfContent = getFieldsForContent();
         when(
-            translationUtil.getFieldsOfContentlet(contentlet, TranslationUtilTest.filterTypes, new ArrayList<>()))
-            .thenReturn(fieldsOfContent);
+                translationUtil.getFieldsOfContentlet(contentlet, TranslationUtilTest.filterTypes, new ArrayList<>()))
+                .thenReturn(fieldsOfContent);
         List<Language> translateTo = getTranslateToAsList();
         when(translationUtil.getLanguagesByLanguageCodes(Collections.singletonList("all")))
-            .thenReturn(translateTo);
+                .thenReturn(translateTo);
 
         return translationUtil;
     }
@@ -222,7 +230,7 @@ public class TranslationActionletTest extends UnitTestBase {
     private TranslationService getMockedTranslationService(Contentlet contentlet, User user) throws Exception {
         TranslationService translationService = mock(TranslationService.class);
         when(translationService.translateContent(contentlet, getTranslateToAsList(), getFieldsForContent(), user))
-            .thenReturn(getTranslatedContents());
+                .thenReturn(getTranslatedContents());
 
         return translationService;
     }
