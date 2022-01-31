@@ -115,8 +115,8 @@ public class PageResourceTest {
         esapi = mock(ContentletAPI.class);
         when(pageResourceHelper.decorateRequest(request)).thenReturn(request);
 
-        when(webResource.init(anyString(), any(HttpServletRequest.class), any(HttpServletResponse.class), anyBoolean(), anyString())).thenReturn(initDataObject);
-        when(webResource.init(any(HttpServletRequest.class), any(HttpServletResponse.class), anyBoolean())).thenReturn(initDataObject);
+        when(webResource.init(nullable(String.class), any(HttpServletRequest.class), any(HttpServletResponse.class), any(Boolean.class), nullable(String.class))).thenReturn(initDataObject);
+        when(webResource.init(any(HttpServletRequest.class), any(HttpServletResponse.class), any(Boolean.class))).thenReturn(initDataObject);
         when(webResource.init(false, request, true)).thenReturn(initDataObject);
         when(initDataObject.getUser()).thenReturn(user);
         pageResource = new PageResource(pageResourceHelper, webResource, htmlPageAssetRenderedAPI, esapi);
@@ -137,8 +137,8 @@ public class PageResourceTest {
         // Mock setAttribute
         Mockito.doAnswer((InvocationOnMock invocation)-> {
 
-                String key = invocation.getArgumentAt(0, String.class);
-                Object value = invocation.getArgumentAt(1, Object.class);
+                String key = invocation.getArgument(0, String.class);
+                Object value = invocation.getArgument(1, Object.class);
                 if (null != key && null != value) {
                     attributes.put(key, value);
                 }

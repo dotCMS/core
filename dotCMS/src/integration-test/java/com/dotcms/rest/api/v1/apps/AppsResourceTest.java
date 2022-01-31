@@ -1188,7 +1188,7 @@ public class AppsResourceTest extends IntegrationTestBase {
         final List<Host> hosts = new ArrayList<>();
         final char[] alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
         for(final char chr :alphabet) {
-           hosts.add(new SiteDataGen().name( String.format("%s,%d",chr, timeMark )).nextPersisted());
+           hosts.add(new SiteDataGen().name( String.format("%s-%d",chr, timeMark )).nextPersisted());
         }
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);

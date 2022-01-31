@@ -10,6 +10,7 @@ import com.dotcms.contenttype.model.field.CustomField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.HiddenField;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.KeyValueField;
@@ -2106,6 +2107,14 @@ public class TestDataUtils {
 
                 List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
 
+                fields.add(
+                        new FieldDataGen()
+                                .name("hiddenBool")
+                                .velocityVarName("hiddenBool")
+                                .type(HiddenField.class)
+                                .dataType(DataTypes.BOOL)
+                                .next()
+                );
                 fields.add(
                         new FieldDataGen()
                                 .name("hostFolder")

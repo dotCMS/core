@@ -21,6 +21,10 @@ if [[ "${1}" == "dotcms" || -z "${1}" ]]; then
             exit 1
     fi
 
+    [[ -n "${WAIT_DB_FOR}" ]] \
+      && echo "Waiting ${WAIT_DB_FOR} for Database to start up nicely" \
+      && sleep ${WAIT_DB_FOR}
+
     cd /srv/home
 
     DB_CONNECT_TEST="$(cat /tmp/DB_CONNECT_TEST | tr -d [:space:])"

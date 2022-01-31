@@ -506,7 +506,6 @@ import org.junit.runners.Suite.SuiteClasses;
         Task211103RenameHostNameLabelTest.class,
         ContentSecurityPolicyUtilTest.class,
         MessageToolTest.class,
-        Task211103RenameHostNameLabelTest.class,
         XmlToolTest.class
 })
 public class MainSuite {

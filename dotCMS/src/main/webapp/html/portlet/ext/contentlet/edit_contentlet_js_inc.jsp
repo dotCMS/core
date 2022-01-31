@@ -107,6 +107,15 @@
         window.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="<%= formAction %>" /></portlet:actionURL>&cmd=edit&inode=' + objId  + '&referer=' + referer;
     }
 
+    function emmitCompareEvent(inode, identifier, language) {
+        var customEvent = document.createEvent("CustomEvent");
+        customEvent.initCustomEvent("ng-event", false, false,  {
+            name: "compare-contentlet",
+            data: { inode, identifier, language }
+        });
+        document.dispatchEvent(customEvent)
+    }
+
 
 
     function openAssignTo()

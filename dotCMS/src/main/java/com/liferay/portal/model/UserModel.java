@@ -22,6 +22,7 @@
 
 package com.liferay.portal.model;
 
+import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.GetterUtil;
@@ -209,16 +210,18 @@ public class UserModel extends BaseModel {
 	}
 
 	public void setUserId(String userId) {
-		if (((userId == null) && (_userId != null)) ||
-				((userId != null) && (_userId == null)) ||
-				((userId != null) && (_userId != null) &&
-				!userId.equals(_userId))) {
+
+		if (null == this.getUserId()) {
+
 			if (!XSS_ALLOW_USERID) {
 				userId = Xss.strip(userId);
 			}
 
 			_userId = userId;
 			setModified(true);
+			Logger.info(this, "User id has been modified");
+		} else {
+			Logger.info(this, "User id has not been modified");
 		}
 	}
 
