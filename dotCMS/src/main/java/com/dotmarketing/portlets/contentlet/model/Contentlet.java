@@ -1484,7 +1484,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 			if (hasTagFields) {
 
-				final Map<String, List<String>> contentletTagsMap = new HashMap<>();
+				final HashMap<String, StringBuilder> contentletTagsMap = new HashMap<>();
 				final List<TagInode> foundTagInodes = APILocator.getTagAPI().getTagInodesByInode(this.getInode());
 				if (isSet(foundTagInodes)) {
 
@@ -1494,23 +1494,26 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 						// if the map does not have already this field on the map so populate it. we do not want to override the eventual user values.
 						if (!map.containsKey(fieldVarName)) {
-							List <String> tagsList = new ArrayList<>();
+							StringBuilder contentletTagsBuilder = new StringBuilder();
 
 							if (isSet(fieldVarName)) {
 								//Getting the related tag object
-								final Tag relatedTag = APILocator.getTagAPI().getTagByTagId(foundTagInode.getTagId());
+								Tag relatedTag = APILocator.getTagAPI().getTagByTagId(foundTagInode.getTagId());
 
 								if (contentletTagsMap.containsKey(fieldVarName)) {
-									tagsList = contentletTagsMap.get(fieldVarName);
+									contentletTagsBuilder = contentletTagsMap.get(fieldVarName);
 								}
-
+								if (contentletTagsBuilder.length() > 0) {
+									contentletTagsBuilder.append(",");
+								}
 								if (relatedTag.isPersona()) {
-									tagsList.add(relatedTag.getTagName()+":persona");
+									contentletTagsBuilder.append(relatedTag.getTagName())
+											.append(":persona");
 								} else {
-									tagsList.add(relatedTag.getTagName());
+									contentletTagsBuilder.append(relatedTag.getTagName());
 								}
 
-								contentletTagsMap.put(fieldVarName, tagsList);
+								contentletTagsMap.put(fieldVarName, contentletTagsBuilder);
 							} else {
 
 								Logger.error(this, "Found Tag with id [" + foundTagInode.getTagId() + "] related with Contentlet " +
@@ -1525,7 +1528,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 				this is done only for display purposes.
 				 */
 				if (!contentletTagsMap.isEmpty()) {
-					for (final Map.Entry<String, List<String>> tagsList : contentletTagsMap.entrySet()) {
+					for (final Map.Entry<String, StringBuilder> tagsList : contentletTagsMap.entrySet()) {
 						//We should not store the tags inside the field, the relation must only exist on the tag_inode table
 						this.setStringProperty(tagsList.getKey(), tagsList.getValue().toString());
 					}

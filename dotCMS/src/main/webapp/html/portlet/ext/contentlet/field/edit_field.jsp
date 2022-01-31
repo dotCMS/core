@@ -762,10 +762,7 @@
         //TAG kind of field rendering
 
     } else if (field.getFieldType().equals(Field.FieldType.TAG.toString())) {
-        String textValue = value instanceof String ? (String) value
-                : value instanceof List ? String.join(",",(List)value) :
-                        (UtilMethods.isSet(defaultValue) ? defaultValue : "");
-
+        String textValue = UtilMethods.isSet(value) ? (String) value : (UtilMethods.isSet(defaultValue) ? defaultValue : "");
         String hiddenTextValue = textValue.replaceAll(":persona","");
     %>
     <!-- display -->

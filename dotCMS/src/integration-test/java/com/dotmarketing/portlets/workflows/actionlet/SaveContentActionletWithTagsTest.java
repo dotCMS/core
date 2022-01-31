@@ -20,7 +20,6 @@ import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.tag.model.TagInode;
-import java.util.Arrays;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -118,7 +117,7 @@ public class SaveContentActionletWithTagsTest extends BaseWorkflowIntegrationTes
         Assert.assertEquals("Test", contentletSaved.getStringProperty("title"));
         Assert.assertEquals("Test", contentletSaved.getStringProperty("txt"));
         contentletSaved.setTags();
-        Assert.assertEquals(Collections.singletonList("test"), contentletSaved.get("tag"));
+        Assert.assertEquals("test", contentletSaved.getStringProperty("tag"));
 
         //// save 2 override - adding a new tag
         final List<TagInode> tagInodes = APILocator.getTagAPI().getTagInodesByInode(contentletSaved.getInode());
@@ -138,9 +137,8 @@ public class SaveContentActionletWithTagsTest extends BaseWorkflowIntegrationTes
         Assert.assertEquals("Test", contentletSaved2.getStringProperty("title"));
         Assert.assertEquals("Test", contentletSaved2.getStringProperty("txt"));
         contentletSaved2.setTags();
-        final List<?> tags2 = (List<?>)contentletSaved2.get("tag");
-        Assert.assertTrue( tags2.contains("testing"));
-        Assert.assertTrue( tags2.contains("test"));
+        Assert.assertTrue( contentletSaved2.getStringProperty("tag").contains("testing"));
+        Assert.assertTrue( contentletSaved2.getStringProperty("tag").contains("test"));
 
         //// save 3 override to just one
         contentletSaved2.setProperty("tag", "testing");
@@ -156,7 +154,7 @@ public class SaveContentActionletWithTagsTest extends BaseWorkflowIntegrationTes
         Assert.assertEquals("Test", contentletSaved3.getStringProperty("title"));
         Assert.assertEquals("Test", contentletSaved3.getStringProperty("txt"));
         contentletSaved3.setTags();
-        Assert.assertEquals(Collections.singletonList("testing"), contentletSaved3.get("tag"));
+        Assert.assertEquals("testing", contentletSaved3.getStringProperty("tag"));
 
         ////save 4 cleaning all tags
         contentletSaved3.setProperty("tag", "");

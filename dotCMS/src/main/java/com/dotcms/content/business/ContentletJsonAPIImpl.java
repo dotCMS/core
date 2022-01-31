@@ -69,6 +69,7 @@ import io.vavr.control.Try;
 import java.io.File;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -141,14 +142,15 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
     public String toJson(final com.dotmarketing.portlets.contentlet.model.Contentlet contentlet)
             throws JsonProcessingException, DotDataException {
 
-        //A small precaution that guarantees categories and tags will be stored as Lists
-        final ContentType contentType = contentlet.getContentType();
+        final com.dotmarketing.portlets.contentlet.model.Contentlet copy = new com.dotmarketing.portlets.contentlet.model.Contentlet(contentlet);
+
+        final ContentType contentType = copy.getContentType();
         final ImmutableSet.Builder<com.dotcms.contenttype.model.field.Field> builder = ImmutableSet.builder();
         Set<Field> categoriesAndTagFields = builder.addAll(contentType.fields(TagField.class))
                 .addAll(contentType.fields(CategoryField.class)).build();
 
-        final Map<String, Object> map = contentlet.getMap();
-
+        final Map<String, Object> map = copy.getMap();
+        //A small precaution that guarantees categories and tags will be stored as Lists.
         categoriesAndTagFields.forEach(field -> {
             final Object object = map.get(field.variable());
             if(object instanceof String){
@@ -157,7 +159,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
             }
         });
 
-        return objectMapper.get().writeValueAsString(toImmutable(contentlet));
+        return objectMapper.get().writeValueAsString(toImmutable(copy));
     }
 
     /**
@@ -274,7 +276,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
                 continue;
             }
 
-            final Object value;
+            Object value;
             if (field instanceof ConstantField) {
                 value = field.values();
             } else {
@@ -287,6 +289,12 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
                         value = getValue(contentletFields, field);
                     }
                 }
+            }
+            //We're returning Tags as a comma separated string for backwards compatibility
+            //This is expected to be removed in the near future
+            if(field instanceof TagField && value instanceof Collection){
+                final Collection tags = ((Collection)value);
+                value = String.join(",",tags);
             }
             map.put(field.variable(), value);
         }

@@ -193,7 +193,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -5044,7 +5043,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if (systemField instanceof TagField) {
                 final String tagValues = tagsValues.get(systemField.variable());
                 if (StringUtils.isNotEmpty(tagValues)) {
-                    map.put(systemField.variable(), Arrays.asList(tagValues.split("\\s*,\\s*")));
+                    map.put(systemField.variable(), tagValues);
                 }
                 continue;
             }
@@ -5340,10 +5339,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             //Adding tags back as field to be returned
             if (tagEntry.getValue()!=null && !StringPool.BLANK.equals(tagEntry.getValue())) {
-                //Tags must be handled from now on a as a List
-                contentlet.setProperty(tagEntry.getKey(),
-                        Stream.of(tagEntry.getValue().split(StringPool.COMMA))
-                                .collect(Collectors.toList()));
+                contentlet.setProperty(tagEntry.getKey(), tagEntry.getValue());
             } else{
                 contentlet.setProperty(tagEntry.getKey(), null);
             }
