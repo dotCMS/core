@@ -41,13 +41,13 @@ public class MailAPIImpl implements MailAPI {
 
     private String getProtocol(){
         return this.properties.containsKey(Keys.TRANSPORT_PROTOCOL.getValue())
-                ? this.properties.getProperty(Keys.TRANSPORT_PROTOCOL.getValue()) : "smtp";
+                ? this.properties.getProperty(Keys.TRANSPORT_PROTOCOL.getValue()) : DEFAULT_MAIL_PROTOCOL;
     }
 
     @Override
     public int getConnectionPort(){
         return this.properties.containsKey("mail." + protocol.get() + ".port")?
-                Integer.parseInt(this.properties.getProperty("mail." + protocol.get() + ".port")):25;
+                Integer.parseInt(this.properties.getProperty("mail." + protocol.get() + ".port")): DEFAULT_MAIL_PORT;
     }
 
     @Override

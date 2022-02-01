@@ -1,5 +1,7 @@
 package com.dotcms.mail;
 
+import static com.dotcms.mail.MailAPI.DEFAULT_MAIL_PROTOCOL;
+
 import com.dotcms.mail.MailAPI.Keys;
 import java.util.Properties;
 import com.dotmarketing.util.Config;
@@ -29,7 +31,7 @@ class MailConfig {
         final Properties properties = new Properties();
 
         final String protocol = properties.containsKey(Keys.TRANSPORT_PROTOCOL.getValue())
-                ? properties.getProperty(Keys.TRANSPORT_PROTOCOL.getValue()) : "smtp";
+                ? properties.getProperty(Keys.TRANSPORT_PROTOCOL.getValue()) : DEFAULT_MAIL_PROTOCOL;
 
         properties.setProperty("mail." + protocol + ".host", "localhost");
         properties.setProperty("mail." + protocol + ".user", "dotCMS");

@@ -38,6 +38,9 @@ public interface MailAPI {
         }
     }
 
+    int DEFAULT_MAIL_PORT = 25;
+    String DEFAULT_MAIL_PROTOCOL = "smtp";
+
     /**
      * Default JNDI dir for the mail session
      */
