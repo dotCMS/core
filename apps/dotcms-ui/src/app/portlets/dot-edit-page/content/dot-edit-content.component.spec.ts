@@ -3,7 +3,14 @@ import { of as observableOf, of, throwError } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
-import { ComponentFixture, tick, fakeAsync, TestBed, discardPeriodicTasks, flush } from '@angular/core/testing';
+import {
+    ComponentFixture,
+    tick,
+    fakeAsync,
+    TestBed,
+    discardPeriodicTasks,
+    flush
+} from '@angular/core/testing';
 import {
     Component,
     DebugElement,
@@ -87,6 +94,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { DotGenerateSecurePasswordService } from '@services/dot-generate-secure-password/dot-generate-secure-password.service';
 import { DotPropertiesService } from '@services/dot-properties/dot-properties.service';
 import { PageModelChangeEventType } from './services/dot-edit-content-html/models';
+import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
 
 const responseData: DotCMSContentType[] = [
     {
@@ -173,6 +181,15 @@ export class MockDotFormSelectorComponent {
     @Output() close = new EventEmitter<any>();
 }
 
+@Component({
+    selector: 'dot-palette',
+    template: ''
+})
+export class MockDotPaletteComponent {
+    @Input() languageId = '1';
+    @Input() items: any[];
+}
+
 @Injectable()
 class MockDotContentTypeService {
     getContentTypes = jasmine
@@ -235,6 +252,7 @@ describe('DotEditContentComponent', () => {
                 MockDotWhatsChangedComponent,
                 MockDotFormSelectorComponent,
                 MockDotIconComponent,
+                MockDotPaletteComponent,
                 HostTestComponent,
                 MockGlobalMessageComponent
             ],
@@ -250,7 +268,6 @@ describe('DotEditContentComponent', () => {
                 DotEditPageWorkflowsActionsModule,
                 DotOverlayMaskModule,
                 DotWizardModule,
-                DotPaletteModule,
                 RouterTestingModule.withRoutes([
                     {
                         component: DotEditContentComponent,
@@ -273,6 +290,7 @@ describe('DotEditContentComponent', () => {
                 DotGenerateSecurePasswordService,
                 DotCustomEventHandlerService,
                 DotPropertiesService,
+                DotESContentService,
                 { provide: DotContentTypeService, useClass: MockDotContentTypeService },
                 {
                     provide: LoginService,
@@ -658,7 +676,9 @@ describe('DotEditContentComponent', () => {
                         jasmine.any(ElementRef)
                     );
                     expect(dotEditContentHtmlService.initEditMode).not.toHaveBeenCalled();
-                    expect(dotEditContentHtmlService.setCurrentPage).toHaveBeenCalledWith(mockRenderedPageState.page);
+                    expect(dotEditContentHtmlService.setCurrentPage).toHaveBeenCalledWith(
+                        mockRenderedPageState.page
+                    );
                 }));
 
                 it('should render in edit mode', fakeAsync(() => {
@@ -685,7 +705,9 @@ describe('DotEditContentComponent', () => {
                         jasmine.any(ElementRef)
                     );
                     expect(dotEditContentHtmlService.renderPage).not.toHaveBeenCalled();
-                    expect(dotEditContentHtmlService.setCurrentPage).toHaveBeenCalledWith(state.page);
+                    expect(dotEditContentHtmlService.setCurrentPage).toHaveBeenCalledWith(
+                        state.page
+                    );
                 }));
 
                 it('should show/hide content palette in edit mode with correct content', fakeAsync(() => {
@@ -718,13 +740,17 @@ describe('DotEditContentComponent', () => {
                     );
                     const classList = contentPaletteWrapper.nativeElement.classList;
                     expect(contentPalette.items).toEqual(responseData.slice(0, 3));
-                    expect(parseInt(contentPalette.languageId)).toEqual(mockDotRenderedPage().page.languageId);
+                    expect(parseInt(contentPalette.languageId)).toEqual(
+                        mockDotRenderedPage().page.languageId
+                    );
                     expect(classList.contains('editMode')).toEqual(true);
                     paletteController.triggerEventHandler('click', '');
                     fixture.detectChanges();
                     expect(classList.contains('collapsed')).toEqual(true);
 
-                    expect(dotEditContentHtmlService.setCurrentPage).toHaveBeenCalledWith(state.page);
+                    expect(dotEditContentHtmlService.setCurrentPage).toHaveBeenCalledWith(
+                        state.page
+                    );
                 }));
 
                 it('should not display palette when is not enterprise', fakeAsync(() => {
@@ -750,7 +776,9 @@ describe('DotEditContentComponent', () => {
                     fixture.detectChanges();
                     const contentPaletteWrapper = de.query(By.css('.dot-edit-content__palette'));
                     expect(contentPaletteWrapper).toBeNull();
-                    expect(dotEditContentHtmlService.setCurrentPage).toHaveBeenCalledWith(state.page);
+                    expect(dotEditContentHtmlService.setCurrentPage).toHaveBeenCalledWith(
+                        state.page
+                    );
                 }));
 
                 it('should reload the page because of EMA', fakeAsync(() => {
@@ -784,7 +812,7 @@ describe('DotEditContentComponent', () => {
                     expect(dotPageStateService.reload).toHaveBeenCalledTimes(1);
 
                     flush();
-                }))
+                }));
 
                 it('should NOT reload the page', fakeAsync(() => {
                     spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
@@ -795,7 +823,7 @@ describe('DotEditContentComponent', () => {
                             ...mockDotRenderedPage(),
                             page: {
                                 ...mockDotRenderedPage().page,
-                                lockedBy: null,
+                                lockedBy: null
                             },
                             viewAs: {
                                 mode: DotPageMode.EDIT,
@@ -820,7 +848,7 @@ describe('DotEditContentComponent', () => {
                     expect(dotPageStateService.reload).toHaveBeenCalledTimes(0);
 
                     flush();
-                }))
+                }));
             });
 
             describe('events', () => {
@@ -846,8 +874,6 @@ describe('DotEditContentComponent', () => {
                     expect(dotLoadingIndicatorService.hide).toHaveBeenCalled();
                     expect(dotUiColorsService.setColors).toHaveBeenCalled();
                 }));
-
-
 
                 describe('custom', () => {
                     it('should handle remote-render-edit', fakeAsync(() => {
@@ -909,10 +935,9 @@ describe('DotEditContentComponent', () => {
                     }));
 
                     it('should handle load-edit-mode-page to internal navigation', fakeAsync(() => {
-                        spyOn(
-                            dotPageStateService,
-                            'setInternalNavigationState'
-                        ).and.callFake(() => {});
+                        spyOn(dotPageStateService, 'setInternalNavigationState').and.callFake(
+                            () => {}
+                        );
 
                         detectChangesForIframeRender(fixture);
 

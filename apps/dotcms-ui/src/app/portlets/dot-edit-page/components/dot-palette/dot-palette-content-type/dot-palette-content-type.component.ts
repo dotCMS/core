@@ -64,7 +64,7 @@ export class DotPaletteContentTypeComponent implements OnChanges {
      */
     filterContentTypes(value: string): void {
         this.itemsFiltered = this.items.filter((item) =>
-            item.name.toLowerCase().includes(value.toLowerCase())
+            item.name?.toLowerCase().includes(value.toLowerCase())
         );
     }
 

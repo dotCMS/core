@@ -1,6 +1,5 @@
 <dot-palette-input-filter
     #inputFilter
-    [value]="filter"
     [goBackBtn]="true"
     (goBack)="backHandler()"
     (filter)="filterContentlets($event)"
@@ -34,14 +33,17 @@
         [rows]="itemsPerPage"
         [showFirstLastIcon]="false"
         [totalRecords]="totalRecords"
-        (onPageChange)="paginate($event)"
+        (onPageChange)="onPaginate($event)"
     ></p-paginator>
 </div>
 
 <ng-template #Loading>
-    <dot-spinner *ngIf="hideNoResults" [size]="'40px'" [borderSize]="'8px'"></dot-spinner>
+    <dot-spinner *ngIf="loading" [size]="'40px'" [borderSize]="'8px'"></dot-spinner>
 </ng-template>
 
-<span *ngIf="!hideNoResults" data-testId="emptyState" class="dot-content-palette__empty">{{
-    'No-Results' | dm
-}}</span>
+<span
+    *ngIf="totalRecords < 1 && !loading"
+    data-testId="emptyState"
+    class="dot-content-palette__empty"
+    >{{ 'No-Results' | dm }}</span
+>

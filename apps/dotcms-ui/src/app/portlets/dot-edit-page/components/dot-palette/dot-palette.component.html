@@ -1,13 +1,18 @@
-<div [@inOut]="stateContentlet" (@inOut.done)="onAnimationDone($event)" data-testId="wrapper">
-    <dot-palette-content-type
-        #contentTypes
-        (selected)="switchView($event)"
-        [items]="items"
-    ></dot-palette-content-type>
-    <dot-palette-contentlets
-        #contentlets
-        (back)="switchView()"
-        [contentTypeVariable]="contentTypeVariable"
-        [languageId]="languageId"
-    ></dot-palette-contentlets>
-</div>
+<ng-container *ngIf="vm$ | async as vm">
+    <div [@inOut]="vm.viewContentlet" (@inOut.done)="onAnimationDone($event)" data-testId="wrapper">
+        <dot-palette-content-type
+            #contentTypes
+            (selected)="switchView($event)"
+            [items]="vm.contentTypes"
+        ></dot-palette-content-type>
+        <dot-palette-contentlets
+            #contentlets
+            [items]="vm.contentlets"
+            [loading]="vm.loading"
+            [totalRecords]="vm.totalRecords"
+            (back)="switchView()"
+            (filter)="filterContentlets($event)"
+            (paginate)="paginateContentlets($event)"
+        ></dot-palette-contentlets>
+    </div>
+</ng-container>
