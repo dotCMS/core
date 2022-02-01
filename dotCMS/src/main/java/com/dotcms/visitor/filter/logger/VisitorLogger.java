@@ -134,7 +134,7 @@ public class VisitorLogger {
     }
 
     private static void doLog(String message) {
-        Logger.info(VisitorLogger.class, message);
+        Logger.debug(VisitorLogger.class, message);
     }
 
 
