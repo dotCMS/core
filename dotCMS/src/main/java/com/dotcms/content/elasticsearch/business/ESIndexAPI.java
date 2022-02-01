@@ -357,7 +357,7 @@ public class ESIndexAPI {
                     + "/" + forceMergeResponse.getTotalShards() + " shards optimized");
 
 			return true;
-		} catch (Exception e) {
+		} catch (ElasticsearchException | IOException e) {
 			throw new ElasticsearchException(e.getMessage(),e);
 		}
 	}
