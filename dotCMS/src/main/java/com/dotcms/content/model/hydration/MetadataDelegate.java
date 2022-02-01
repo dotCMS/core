@@ -81,7 +81,7 @@ public class MetadataDelegate implements HydrationDelegate {
                 }
             }
         } catch (Throwable e) {
-            Logger.error(MetadataDelegate.class, "error calculating metadata ", e);
+            Logger.warnAndDebug(MetadataDelegate.class, "error calculating metadata ", e);
         }
         return (metadataMap == null || metadataMap.isEmpty() ? null : filterMetadataFields(metadataMap));
     }

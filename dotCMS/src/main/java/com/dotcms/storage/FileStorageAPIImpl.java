@@ -266,7 +266,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
                 }
 
             } else {
-               throw new IllegalArgumentException(String.format("the binary `%s` isn't accessible ", binary != null ? binary.getName() : "unknown"));
+               throw new IllegalArgumentException(String.format("the binary `%s` isn't accessible ", binary != null ? binary : "unknown"));
             }
         }
 

@@ -21,6 +21,7 @@ public class CategoryDataGen extends AbstractDataGen<Category> {
     private int orderNumber = 1;
     private String keywords;
     private List<Category> children = new ArrayList<>();
+    private Category parent = null;
 
     /**
      *
@@ -77,6 +78,11 @@ public class CategoryDataGen extends AbstractDataGen<Category> {
         return this;
     }
 
+    public CategoryDataGen parent(final Category parent) {
+        this.parent = parent;
+        return this;
+    }
+
     @Override
     public Category next() {
 
@@ -100,7 +106,7 @@ public class CategoryDataGen extends AbstractDataGen<Category> {
     public Category persist(final Category object) {
         final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
         try {
-             categoryAPI.save(null, object, APILocator.systemUser(), false);
+             categoryAPI.save(parent, object, APILocator.systemUser(), false);
              if(UtilMethods.isSet(children)){
                 for(final Category category : children){
                    categoryAPI.save(object, category, APILocator.systemUser(), false);

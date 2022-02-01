@@ -5,11 +5,18 @@ import static junit.framework.TestCase.assertNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.model.FieldValue;
+import com.dotcms.content.model.ImmutableContentlet;
 import com.dotcms.content.model.type.ImageFieldType;
+import com.dotcms.content.model.type.system.AbstractCategoryFieldType;
+import com.dotcms.content.model.type.system.AbstractTagFieldType;
 import com.dotcms.content.model.type.system.BinaryFieldType;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.CategoryDataGen;
 import com.dotcms.datagen.ContentletDataGen;
@@ -31,12 +38,18 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.collect.ImmutableMap;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -192,7 +205,7 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
                 "select count(*) as x from contentlet c where c.inode = ? and c.contentlet_as_json is null"
         ).addParam(columnSaved.getInode()).getInt("x");
 
-       //These lines should corroborate the json was actually written when the API was instructed to use json
+        //These lines should corroborate the json was actually written when the API was instructed to use json
         final int jsonSavedCount = dotConnect.setSQL(
                 "select count(*) as x from contentlet c where c.inode = ? and c.contentlet_as_json is not null"
         ).addParam(jsonSaved.getInode()).getInt("x");
@@ -334,9 +347,13 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
         }
     }
 
-
+    /**
+     * Method to test {@link ContentletJsonAPI#toJson(Contentlet)} && {@link ContentletJsonAPI#mapContentletFieldsFromJson(String)}
+     * Here we're testing that what is annotated to be properly hydrated comes back with the injected attributes
+     * @throws Exception
+     */
     @Test
-    public void Test_Raw_Immutable_Serialization()
+    public void Test_Hydration_Test()
             throws DotDataException, IOException, DotSecurityException, URISyntaxException {
         final boolean defaultValue = Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
         Config.setProperty(SAVE_CONTENTLET_AS_JSON, false);
@@ -372,7 +389,6 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
             assertNotNull(immutableFromJson);
             final Map<String, FieldValue<?>> fieldValueMap = immutableFromJson.fields();
             final FieldValue<?> imageField = fieldValueMap.get("imageField");
-            imageField.value();
             final FieldValue<?> binaryField = fieldValueMap.get("binaryField");
             final ImageFieldType imageType = (ImageFieldType)imageField;
             assertNotNull(imageType.metadata());
@@ -383,6 +399,94 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to test {@link ContentletJsonAPI#toJson(Contentlet)} && {@link ContentletJsonAPI#mapContentletFieldsFromJson(String)}
+     * This test is intended to create a content with tags and categories then serialize it to json and do the inverse process read and compare
+     * @throws DotDataException
+     * @throws JsonProcessingException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Test_Category_And_Tags_Serialization_And_Recovery()
+            throws DotDataException, JsonProcessingException, DotSecurityException {
+        final boolean defaultValue = Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
+        Config.setProperty(SAVE_CONTENTLET_AS_JSON, false);
+        try {
+
+            final Folder folder = new FolderDataGen().site(site).nextPersisted();
+
+            final String parentCategoryName = "ParentCategory" + System.currentTimeMillis();
+
+            final Category parentCategory = new CategoryDataGen()
+                    .setCategoryName(parentCategoryName)
+                    .setKey(parentCategoryName + "Key")
+                    .setCategoryVelocityVarName(parentCategoryName)
+                    .setSortOrder(1)
+                    .nextPersisted();
+
+            final ContentType contentType = TestDataUtils
+                    .newContentTypeFieldTypesGalore(parentCategory);
+
+            final Optional<Field> tag = contentType.fields(TagField.class).stream().findFirst();
+            final Optional<Field> category = contentType.fields(CategoryField.class).stream()
+                    .findFirst();
+
+            assertTrue(tag.isPresent());
+            assertTrue(category.isPresent());
+
+            final Category parent = APILocator.getCategoryAPI()
+                    .find(category.get().values(), APILocator.systemUser(), false);
+
+            assertNotNull(parent);
+
+            new TagDataGen().name("mtb").nextPersisted();
+            new TagDataGen().name("road").nextPersisted();
+
+            final String bikeCategoryName = "Enduro" + System.currentTimeMillis();
+
+            final Category childCategory = new CategoryDataGen()
+                    .setCategoryName(bikeCategoryName)
+                    .setKey(bikeCategoryName + "Key")
+                    .setCategoryVelocityVarName(bikeCategoryName)
+                    .setSortOrder(1)
+                    .parent(parent).nextPersisted();
+
+            final Contentlet persisted = new ContentletDataGen(contentType).host(site)
+                    .languageId(1)
+                    .setProperty("title", "lol")
+                    .setProperty("hostFolder", folder.getIdentifier())
+                    .setProperty("tagField", "mtb,road")
+                    .addCategory(childCategory) //These are associated to the category type field
+                    .nextPersisted();
+
+            final String tagsAsString = (String)persisted.get("tagField");
+            final List<String> tags = Stream.of(tagsAsString.split(",", -1))
+                    .collect(Collectors.toList());
+            assertTrue(tags.contains("mtb"));
+            assertTrue(tags.contains("road"));
+
+            final ContentletJsonAPIImpl impl = (ContentletJsonAPIImpl)APILocator.getContentletJsonAPI();
+            final ImmutableContentlet immutableContentlet = impl.toImmutable(persisted);
+
+            final ImmutableMap<String, FieldValue<?>> fields = immutableContentlet.fields();
+            final AbstractTagFieldType tagsFieldValue =  (AbstractTagFieldType)fields.get("tagField");
+            final AbstractCategoryFieldType categoryFieldValue =  (AbstractCategoryFieldType)fields.get("categoryField");
+            assertNotNull(tagsFieldValue);
+            assertEquals(Arrays.asList("mtb","road"),tagsFieldValue.value());
+            assertNotNull(categoryFieldValue);
+            final List<String> categories = categoryFieldValue.value();
+            assertNotNull(categories);
+            assertTrue(categories.contains(childCategory.getCategoryVelocityVarName()));
+            final String json = impl.toJson(persisted);
+            assertNotNull(json);
+            final Contentlet out = impl.mapContentletFieldsFromJson(json);
+            final List<?> recoveredCategories =  (List<?>)out.get("categoryField");
+            assertTrue(recoveredCategories.contains(childCategory.getCategoryVelocityVarName()));
+
+        } finally {
+            Config.setProperty(SAVE_CONTENTLET_AS_JSON, defaultValue);
+        }
+    }
 
 
 }
