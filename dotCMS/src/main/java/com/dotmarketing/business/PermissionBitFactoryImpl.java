@@ -79,8 +79,8 @@ import java.util.Set;
 import java.util.function.Supplier;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.core.TimeValue;
 import java.util.stream.Collectors;
+import org.elasticsearch.common.unit.TimeValue;
 
 
 /**

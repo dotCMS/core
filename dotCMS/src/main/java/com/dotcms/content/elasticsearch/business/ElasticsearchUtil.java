@@ -18,11 +18,11 @@ import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.core.TimeValue;
 
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
+import org.elasticsearch.common.unit.TimeValue;
 
 /**
  * Provide util methods to set Elasticsearch index properties
