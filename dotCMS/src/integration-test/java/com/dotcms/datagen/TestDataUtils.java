@@ -2267,27 +2267,6 @@ public class TestDataUtils {
                 );
 
                 //Category field
-                /*
-                final Collection<Category> topLevelCategories = APILocator.getCategoryAPI()
-                        .findTopLevelCategories(APILocator.systemUser(), false);
-                final Optional<Category> anyTopLevelCategory = topLevelCategories.stream()
-                        .findAny();
-
-                anyTopLevelCategory.map(category -> new FieldDataGen()
-                        .name("categoryField")
-                        .velocityVarName("categoryField")
-                        .type(CategoryField.class)
-                        .values(category.getInode())
-                        .next()).ifPresent(fields::add);
-
-                anyTopLevelCategory.map(category -> new FieldDataGen()
-                        .name("categoryField")
-                        .velocityVarName("categoryField")
-                        .type(CategoryField.class)
-                        .values(category.getInode())
-                        .next()).ifPresent(fields::add);
-                */
-
                 if(null != parent) {
                     fields.add(new FieldDataGen()
                             .name("categoryField")
