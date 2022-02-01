@@ -106,15 +106,16 @@
 
     function getVersionBack(inode) {
         window.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="<%= formAction %>" /></portlet:actionURL>&cmd=getversionback&inode=' + inode + '&inode_version=' + inode  + '&referer=' + referer;
-        console.log('getVersionBack');
-        ngEditContentletEvents.next({
-            name: 'save',
-            data: {
-                identifier: null,
-                inode: inode,
-                type: null
-            }
-        });
+        setTimeout(() => {
+            ngEditContentletEvents.next({
+                name: 'save',
+                data: {
+                    identifier: null,
+                    inode: inode,
+                    type: null
+                }
+            });
+        }, 100);
     }
 
     function editVersion(objId) {
