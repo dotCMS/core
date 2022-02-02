@@ -2,7 +2,7 @@
 # ----------------------------------------------
 # Stage 1:  Build dotCMS from our builder image
 # ----------------------------------------------
-FROM dotcms/dotcms-seed:21.12 as build-cms
+FROM dotcms/dotcms-seed:22.01 as build-cms
 
 LABEL com.dotcms.contact "support@dotcms.com"
 LABEL com.dotcms.vendor "dotCMS LLC"
@@ -54,7 +54,6 @@ ARG USER_GID="65001"
 ARG USER_GROUP="dotcms"
 ARG USER_NAME="dotcms"
 
-
 RUN groupadd -f -g $USER_GID $USER_GROUP
 # Creating default non-user
 # the useradd
@@ -73,10 +72,17 @@ COPY --chown=$USER_NAME:$USER_GROUP ROOT/ /
     mkdir -p /data/shared/felix/load && \
     mkdir -p /data/shared/felix/undeployed && \
     mkdir -p /data/local/dotsecure/license && \
-    chown -R $USER_NAME.$USER_GROUP /data
+    chown -R $USER_NAME:$USER_NAME /data
 
 # ----------------------------------------------
-# Stage 3:  Flatten everything to 1 layer
+# Stage 3:  Copy pg_dump binary
+# ----------------------------------------------
+FROM dotcms/pg-base:22.02 as composed-base
+
+COPY --from=container-base / /
+
+# ----------------------------------------------
+# Stage 4:  Flatten everything to 1 layer
 # ----------------------------------------------
 FROM scratch
 
@@ -87,17 +93,16 @@ LABEL com.dotcms.description "dotCMS Content Management System"
 ARG USER_UID="65001"
 ARG USER_GID="65001"
 
-COPY --from=container-base / /
+COPY --from=composed-base / /
 
 # Switching to non-root user to install SDKMAN! 
 USER $USER_UID:$USER_GID
 ENV JAVA_HOME="/java"
 ENV PATH=$PATH:/java/bin
 
-
 ENTRYPOINT ["/usr/bin/tini", "--", "/srv/entrypoint.sh"]
 CMD ["dotcms"]
-    
+
 ## Ports
 # Glowroot profiler - must be configured via CMS_JAVA_OPTS
 EXPOSE 4000
@@ -111,7 +116,3 @@ EXPOSE 8081
 EXPOSE 8082
 # Direct connect for HTTPS, secure
 EXPOSE 8443
-
-
-
-

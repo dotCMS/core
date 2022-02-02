@@ -4,7 +4,7 @@ package com.dotcms.util;
 /**
  * This class holds information fof the datasource connection to be used when exporting the DB as a postgres dump.
  *
- * @author vic
+ * @author vico
  */
 public class DataSourceAttributes {
     public final String username;
