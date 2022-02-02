@@ -7,6 +7,7 @@ import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER
 import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_PARENT_PATH;
 
 import com.dotcms.browser.BrowserQuery;
+import com.dotcms.system.SimpleMapAppContext;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.transform.DBTransformer;
 import com.dotcms.util.transform.TransformerLocator;
@@ -21,8 +22,10 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.db.commands.DatabaseCommand.QueryReplacements;
+import com.dotmarketing.db.commands.UpsertCommand;
+import com.dotmarketing.db.commands.UpsertCommandFactory;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -46,7 +49,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import org.apache.commons.beanutils.BeanUtils;
+import java.sql.Timestamp;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.oro.text.regex.Pattern;
 import org.apache.oro.text.regex.Perl5Compiler;
@@ -62,6 +65,9 @@ import java.util.*;
 public class FolderFactoryImpl extends FolderFactory {
 
 	private final FolderCache folderCache = CacheLocator.getFolderCache();
+
+	private static final String[] UPSERT_EXTRA_COLUMNS = {"name", "title", "show_on_menu",
+			"sort_order", "files_masks", "identifier", "default_file_type", "mod_date"};
 
 	@VisibleForTesting
 	protected static final Set<String> reservedFolderNames =
@@ -165,8 +171,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	protected List<Folder> findSubFolders(final Host host, Boolean showOnMenu)
-			throws DotHibernateException {
+	protected List<Folder> findSubFolders(final Host host, Boolean showOnMenu) {
 
  		return getSubFolders(showOnMenu, "/", host.getIdentifier(), null);
 	}
@@ -431,7 +436,7 @@ public class FolderFactoryImpl extends FolderFactory {
 					ident = createIdentifierForFolder(f, parentId.getPath());
 				}
 				f.setIdentifier(ident.getId());
-				HibernateUtil.saveOrUpdate(f);
+				save(f);
 			}
 			parent = f;
 
@@ -890,7 +895,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		CacheLocator.getFolderCache().removeFolder(folder, ident);
 
 		final ArrayList<String> childIdents=new ArrayList<String>();
-		DotConnect dc=new DotConnect();
+		DotConnect dc = new DotConnect();
 		dc.setSQL("select id from identifier where parent_path like ? and host_inode=?");
 		dc.addParam(identifierPath+"%");
 		dc.addParam(identifierHostId);
@@ -905,14 +910,19 @@ public class FolderFactoryImpl extends FolderFactory {
             }
 		});
 
-        Folder ff=(Folder) HibernateUtil.load(Folder.class, folder.getInode());
-		ff.setName(newName);
-		ff.setTitle(newName);
-		ff.setModDate(new Date());
+		dc = new DotConnect();
+		dc.setSQL("select * from folder where inode = ?");
+		dc.addParam(folder.getInode());
+		final List<Folder> result = TransformerLocator.createFolderTransformer(dc.loadObjectResults()).asList();
 
-		save(ff);
+		if (result != null && !result.isEmpty()){
+			nFolder = result.get(0);
+			nFolder.setName(newName);
+			nFolder.setTitle(newName);
+			nFolder.setModDate(new Date());
 
-		HibernateUtil.getSession().clear();
+			save(nFolder);
+		}
 
         HibernateUtil.addCommitListener(new FlushCacheRunnable() {
             public void run() {
@@ -1030,7 +1040,7 @@ public class FolderFactoryImpl extends FolderFactory {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected List<Folder> findFoldersByHost(Host host) throws DotHibernateException {
+	protected List<Folder> findFoldersByHost(Host host)  {
 		List<Folder> folderList = getSubFolders(null, "/", host.getIdentifier(), null);
 		Collections.sort(folderList, (Folder folder1, Folder folder2) -> folder1.getName()
 				.compareToIgnoreCase(folder2.getName()));
@@ -1038,7 +1048,7 @@ public class FolderFactoryImpl extends FolderFactory {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected List<Folder> findThemesByHost(Host host) throws DotHibernateException {
+	protected List<Folder> findThemesByHost(Host host) {
 		List<Folder> folderList = getSubFolders(null, "/application/themes/", host.getIdentifier(),
 				null);
 		Collections.sort(folderList, (Folder folder1, Folder folder2) -> folder1.getName()
@@ -1188,49 +1198,45 @@ public class FolderFactoryImpl extends FolderFactory {
 		return Collections.emptyList();
     }
 
-
-
-
 	@Override
-	protected void save(Folder folderInode) throws DotDataException {
-        if (SYSTEM_FOLDER.equals(folderInode.getInode()) && !Host.SYSTEM_HOST.equals(folderInode.getHostId())) {
+	protected void save(Folder folder) throws DotDataException {
+        if (SYSTEM_FOLDER.equals(folder.getInode()) && !Host.SYSTEM_HOST.equals(folder.getHostId())) {
             throw new DotRuntimeException(String.format("Host ID for SYSTEM_FOLDER must always be SYSTEM_HOST. Value " +
-                    "'%s' was set.", folderInode.getHostId()));
+                    "'%s' was set.", folder.getHostId()));
         }
-        validateFolderName(folderInode);
+		validateFolderName(folder);
 
-		HibernateUtil.getSession().clear();
-		HibernateUtil.saveOrUpdate(folderInode);
-		
-		// try clearing cache
-		Try.run(()->folderCache.removeFolder(folderInode, APILocator.getIdentifierAPI().find(folderInode.getIdentifier())));
+		if(null == folder.getInode()){
+			folder.setInode(APILocator.getDeterministicIdentifierAPI()
+					.generateDeterministicIdBestEffort(folder,
+							(Treeable) folder.getParentPermissionable()));
+		}
+
+		upsertFolder(folder);
+		folderCache.removeFolder(folder, APILocator.getIdentifierAPI().find(folder.getIdentifier()));
+
 	}
 
-	@Override
-	protected void save(Folder folderInode, String existingId) throws DotDataException {
-        if (SYSTEM_FOLDER.equals(folderInode.getInode()) && !Host.SYSTEM_HOST.equals(folderInode.getHostId())) {
-            throw new DotRuntimeException(String.format("Host ID for SYSTEM_FOLDER must always be SYSTEM_HOST. Value " +
-                    "'%s' was set.", folderInode.getHostId()));
-        }
-		validateFolderName(folderInode);
+	private void upsertFolder(final Folder folder) throws DotDataException {
+		final UpsertCommand upsertContentletCommand = UpsertCommandFactory.getUpsertCommand();
+		final SimpleMapAppContext replacements = new SimpleMapAppContext();
 
-		if(existingId==null){
-			Folder folderToSave = folderInode;
-			if(UtilMethods.isSet(folderInode.getInode())) {
-				folderToSave = (Folder) new HibernateUtil(Folder.class).load(folderInode.getInode());
-				try{
-					BeanUtils.copyProperties(folderToSave, folderInode);
-				}
-				catch (Exception e) {
-					throw new DotDataException(e.getMessage(), e);
-				}
-			}
-			HibernateUtil.saveOrUpdate(folderToSave);
-			folderCache.removeFolder(folderToSave, APILocator.getIdentifierAPI().find(folderToSave.getIdentifier()));
-		}else{
-			folderInode.setInode(existingId);
-			HibernateUtil.saveWithPrimaryKey(folderInode, existingId);
-		}
+		replacements.setAttribute(QueryReplacements.TABLE, "folder");
+		replacements.setAttribute(QueryReplacements.CONDITIONAL_COLUMN, "inode");
+		replacements.setAttribute(QueryReplacements.CONDITIONAL_VALUE, folder.getInode());
+		replacements.setAttribute(QueryReplacements.EXTRA_COLUMNS, UPSERT_EXTRA_COLUMNS);
+
+		final List<Object> parameters = new ArrayList<>();
+		parameters.add(folder.getInode());
+		parameters.add(folder.getName());
+		parameters.add(folder.getTitle());
+		parameters.add(folder.isShowOnMenu());
+		parameters.add(folder.getSortOrder());
+		parameters.add(folder.getFilesMasks());
+		parameters.add(folder.getIdentifier());
+		parameters.add(folder.getDefaultFileType());
+		parameters.add(new Timestamp(folder.getModDate().getTime()));
+		upsertContentletCommand.execute(new DotConnect(), replacements, parameters.toArray());
 	}
 
 	public void validateFolderName(final Folder folder) throws DotDataException {

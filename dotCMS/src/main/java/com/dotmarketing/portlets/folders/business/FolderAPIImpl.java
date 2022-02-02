@@ -590,7 +590,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		boolean isNew = folder.getInode() == null;
 		folder.setModDate(new Date());
 		folder.setName(folder.getName());
-		folderFactory.save(folder, existingId);
+		folderFactory.save(folder);
 
         // remove folder and parent from navigation cache
         CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
