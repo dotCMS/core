@@ -15,7 +15,6 @@ import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.dotpubsub.PostgresPubSubImplTest;
 import com.dotcms.dotpubsub.RedisPubSubImplTest;
 import com.dotcms.ema.EMAWebInterceptorTest;
-import com.dotcms.enterprise.HTMLDiffUtilTest;
 import com.dotcms.enterprise.cluster.ClusterFactoryTest;
 import com.dotcms.enterprise.publishing.remote.PushPublishBundleGeneratorTest;
 import com.dotcms.enterprise.publishing.remote.StaticPushPublishBundleGeneratorTest;
@@ -385,7 +384,6 @@ import org.junit.runners.Suite.SuiteClasses;
         FileAssetFactoryIntegrationTest.class,
         UserResourceIntegrationTest.class,
         IntegrationResourceLinkTest.class,
-        HTMLDiffUtilTest.class,
         HashBuilderTest.class,
         ElasticsearchUtilTest.class,
         LanguageUtilTest.class,
