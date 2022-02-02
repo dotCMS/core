@@ -356,7 +356,11 @@ public class Mailer {
 			}
 			message.setSubject(subject, encoding);
 			message.setContent(mp);
-			Transport.send(message);
+
+			final Transport transport = session.getTransport();
+			transport.connect(APILocator.getMailApi().getConnectionHost(),
+					APILocator.getMailApi().getConnectionPort(), null, null);
+			transport.sendMessage(message, message.getAllRecipients());
 			result = "Send Ok";
 			return true;
 		} catch (javax.mail.SendFailedException f) {
