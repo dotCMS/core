@@ -4769,6 +4769,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // Keep the 5 properties BEFORE store the contentlet on DB.
             final String contentPushPublishDate = contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE);
             final String contentPushPublishTime = contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME);
+            final String contentPushPublishtimezoneId = contentlet.getStringProperty(Contentlet.WORKFLOW_TIMEZONE_ID);
             final String contentPushExpireDate = contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE);
             final String contentPushExpireTime = contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME);
             final String contentPushNeverExpire = contentlet.getStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE);
@@ -4972,6 +4973,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // Set the properties again after the store on DB and before the fire on an Actionlet.
             contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE, contentPushPublishDate);
             contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME, contentPushPublishTime);
+            contentlet.setStringProperty(Contentlet.WORKFLOW_TIMEZONE_ID, contentPushPublishtimezoneId);
             contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE, contentPushExpireDate);
             contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME, contentPushExpireTime);
             contentlet.setStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE, contentPushNeverExpire);
@@ -6149,6 +6151,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 (String) properties.get(Contentlet.I_WANT_TO));
         contentlet.setStringProperty(Contentlet.PATH_TO_MOVE,
                 (String) properties.get(Contentlet.PATH_TO_MOVE));
+        contentlet.setStringProperty(Contentlet.WORKFLOW_TIMEZONE_ID,
+                (String) properties.get(Contentlet.WORKFLOW_TIMEZONE_ID));
     }
 
     @Override
