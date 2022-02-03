@@ -1912,4 +1912,26 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		return null != this.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS) &&
 				Boolean.TRUE.equals(this.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS));
 	}
+
+	/**
+	 * Do a smart copy of the contentlet into the content argument
+	 * @return
+	 */
+	@JsonIgnore
+	public Contentlet copy (final Contentlet contentlet) {
+
+		if (null != contentlet && null != contentlet.map) {
+
+			if (this.loadedTags) {
+
+				contentlet.loadedTags = true;
+				contentlet.map.putAll(this.map);
+			} else {
+
+				contentlet.map.putAll(this.getMap());
+			}
+		}
+
+		return contentlet;
+	}
 }
