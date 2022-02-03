@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.template;
 
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RoleAPI;
@@ -19,10 +20,12 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -49,6 +52,17 @@ public class TemplateHelper {
         this.permissionAPI  = permissionAPI;
         this.roleAPI        = roleAPI;
         this.containerAPI   = containerAPI;
+    }
+
+    public Host getHost (final String hostId, final Supplier<Host> hostSupplier) {
+
+        if (UtilMethods.isSet(hostId)) {
+
+            return Try.of(()->APILocator.getHostAPI().find(hostId, APILocator.systemUser(), false))
+                    .getOrElse(hostSupplier);
+        }
+
+        return hostSupplier.get();
     }
 
     public TemplateView toTemplateView(final Template template, final User user) {

@@ -143,7 +143,7 @@ public class HostAjax {
 
 				boolean hostInSetup = false;
 				try {
-					hostInSetup = QuartzUtils.isJobSequentiallyScheduled("setup-host-" + host.getIdentifier(), "setup-host-group");
+					hostInSetup = QuartzUtils.isJobScheduled("setup-host-" + host.getIdentifier(), "setup-host-group");
 				} catch (SchedulerException e) {
 					Logger.error(HostAjax.class, e.getMessage(), e);
 				}

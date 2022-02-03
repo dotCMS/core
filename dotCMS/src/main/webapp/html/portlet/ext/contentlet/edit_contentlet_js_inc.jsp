@@ -100,9 +100,14 @@
     }
     function selectVersion(objId) {
         if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.replace.version")) %>')){
-            window.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="<%= formAction %>" /></portlet:actionURL>&cmd=getversionback&inode=' + objId + '&inode_version=' + objId  + '&referer=' + referer;
+            getVersionBack(objId)
         }
     }
+
+    function getVersionBack(inode) {
+        window.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="<%= formAction %>" /></portlet:actionURL>&cmd=getversionback&inode=' + inode + '&inode_version=' + inode  + '&referer=' + referer;
+    }
+
     function editVersion(objId) {
         window.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="<%= formAction %>" /></portlet:actionURL>&cmd=edit&inode=' + objId  + '&referer=' + referer;
     }
@@ -833,6 +838,7 @@
         dojo.byId("wfWhereToSend").value = formData.whereToSend;
         dojo.byId("wfiWantTo").value = formData.iWantTo;
         dojo.byId("wfFilterKey").value = formData.filterKey;
+        dojo.byId("wfTimezoneId").value = formData.timezoneId;
         // END: PUSH PUBLISHING ACTIONLET
 
         saveContent(false);
