@@ -3,7 +3,7 @@ import { DotDOMHtmlUtilService } from './dot-dom-html-util.service';
 
 import DRAGULA_CSS from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/dragula.css';
 import EDIT_PAGE_DRAG_DROP, {
-  EDIT_PAGE_JS_DOJO_REQUIRE,
+    EDIT_PAGE_JS_DOJO_REQUIRE
 } from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/index';
 
 /**
@@ -30,6 +30,7 @@ export class DotDragDropAPIHtmlService {
         doc.head.appendChild(dragulaCSSElement);
 
         // If the page has DOJO, we need to inject the Dragula dependency with require.
+        // eslint-disable-next-line no-prototype-builtins
         const script = iframe.contentWindow.hasOwnProperty('dojo')
             ? this.getDojoDragAndDropScript()
             : this.getDragAndDropScript();
@@ -38,16 +39,14 @@ export class DotDragDropAPIHtmlService {
     }
 
     private getDragAndDropScript(): HTMLScriptElement {
-        const dragAndDropScript = this.dotDOMHtmlUtilService.createInlineScriptElement(
-            EDIT_PAGE_DRAG_DROP
-        );
+        const dragAndDropScript =
+            this.dotDOMHtmlUtilService.createInlineScriptElement(EDIT_PAGE_DRAG_DROP);
 
         return dragAndDropScript;
     }
     private getDojoDragAndDropScript(): HTMLScriptElement {
-        const dragAndDropScript = this.dotDOMHtmlUtilService.createInlineScriptElement(
-            EDIT_PAGE_JS_DOJO_REQUIRE
-        );
+        const dragAndDropScript =
+            this.dotDOMHtmlUtilService.createInlineScriptElement(EDIT_PAGE_JS_DOJO_REQUIRE);
 
         return dragAndDropScript;
     }

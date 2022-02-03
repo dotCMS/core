@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { By } from '@angular/platform-browser';
 import { Component, DebugElement } from '@angular/core';
 import { waitForAsync, ComponentFixture } from '@angular/core/testing';

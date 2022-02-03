@@ -10,7 +10,9 @@ import { MenuGuardService } from './menu-guard.service';
 
 @Injectable()
 class MockDotMenuService {
-    isPortletInMenu() {}
+    isPortletInMenu() {
+        //
+    }
 }
 
 @Injectable()

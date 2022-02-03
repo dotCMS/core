@@ -111,7 +111,9 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
                             return text;
                         },
 
-                        highlight() {}
+                        highlight() {
+                            //
+                        }
                     }
                 }
             ]

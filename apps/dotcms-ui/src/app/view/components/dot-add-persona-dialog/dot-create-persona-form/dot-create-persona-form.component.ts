@@ -14,7 +14,7 @@ import { SiteService } from '@dotcms/dotcms-js';
 })
 export class DotCreatePersonaFormComponent implements OnInit, OnDestroy {
     @Input() personaName = '';
-    @Output() isValid: EventEmitter<Boolean> = new EventEmitter();
+    @Output() isValid: EventEmitter<boolean> = new EventEmitter();
 
     form: FormGroup;
     tempUploadedFile: DotCMSTempFile;

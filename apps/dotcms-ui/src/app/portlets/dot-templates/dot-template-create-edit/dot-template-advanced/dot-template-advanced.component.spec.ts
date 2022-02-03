@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { Component, DebugElement, EventEmitter, forwardRef, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -19,9 +21,7 @@ import { DotTemplateAdvancedComponent } from './dot-template-advanced.component'
     selector: 'dot-portlet-base',
     template: '<ng-content></ng-content>'
 })
-export class DotPortletBaseMockComponent {
-    constructor() {}
-}
+export class DotPortletBaseMockComponent {}
 
 @Component({
     selector: 'dot-portlet-toolbar',
@@ -29,8 +29,6 @@ export class DotPortletBaseMockComponent {
 })
 export class DotPortletToolbarMockComponent {
     @Input() actions;
-
-    constructor() {}
 }
 
 @Component({
@@ -44,9 +42,7 @@ class MockDotGlobalMessageComponent {}
     template: ''
 })
 export class DotContainerSelectorMockComponent {
-    @Output() change = new EventEmitter<any>();
-
-    constructor() {}
+    @Output() swap = new EventEmitter<any>();
 }
 
 @Component({
@@ -82,10 +78,15 @@ export class DotTextareaContentMockComponent implements ControlValueAccessor {
     @Input()
     language;
 
-    constructor() {}
-    writeValue() {}
-    registerOnChange() {}
-    registerOnTouched() {}
+    writeValue() {
+        //
+    }
+    registerOnChange() {
+        //
+    }
+    registerOnTouched() {
+        //
+    }
 }
 
 const messageServiceMock = new MockDotMessageService({
@@ -190,7 +191,7 @@ describe('DotTemplateAdvancedComponent', () => {
             spyOn(Date, 'now').and.returnValue(1111111);
             const container = de.query(By.css('dot-container-selector'));
 
-            container.triggerEventHandler('change', {
+            container.triggerEventHandler('swap', {
                 identifier: '123',
                 parentPermissionable: { hostname: 'demo.com' }
             });

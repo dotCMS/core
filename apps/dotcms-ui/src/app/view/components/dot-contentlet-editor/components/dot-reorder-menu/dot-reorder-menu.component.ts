@@ -8,8 +8,6 @@ export class DotReorderMenuComponent {
     @Input() url: string;
     @Output() close: EventEmitter<any> = new EventEmitter();
 
-    constructor() {}
-
     /**
      * Handle close event from the iframe
      *

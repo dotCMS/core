@@ -17,8 +17,6 @@ export class DotKeyValueComponent implements OnChanges {
 
     variablesBackup: DotKeyValue[] = [];
 
-    constructor() {}
-
     ngOnChanges(_changes: SimpleChanges): void {
         this.variablesBackup = _.cloneDeep(this.variables);
     }
@@ -30,11 +28,9 @@ export class DotKeyValueComponent implements OnChanges {
      * @memberof DotKeyValueComponent
      */
     deleteVariable(variable: DotKeyValue): void {
-        [this.variables, this.variablesBackup] = [
-            this.variables,
-            this.variablesBackup
-        ].map((variables: DotKeyValue[]) =>
-            variables.filter((item: DotKeyValue) => item.key !== variable.key)
+        [this.variables, this.variablesBackup] = [this.variables, this.variablesBackup].map(
+            (variables: DotKeyValue[]) =>
+                variables.filter((item: DotKeyValue) => item.key !== variable.key)
         );
         this.delete.emit(variable);
     }

@@ -5,7 +5,7 @@ export class StringFormat {
         if (s) {
             for (let i = 0; i < args.length - 1; i++) {
                 const reg = new RegExp('\\{' + i + '\\}', 'gm');
-                s = s.replace(reg, arguments[i]);
+                s = s.replace(reg, args[i]);
             }
             return s;
         }

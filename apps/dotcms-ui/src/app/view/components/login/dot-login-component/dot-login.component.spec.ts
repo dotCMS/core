@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { DotLoginComponent } from '@components/login/dot-login-component/dot-login.component';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement, Injectable } from '@angular/core';

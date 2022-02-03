@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { Injectable } from '@angular/core';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -35,7 +37,6 @@ import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fi
 import { mockResponseView } from '@dotcms/app/test/response-view.mock';
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotPage } from '@dotcms/app/shared/models/dot-page/dot-page.model';
 
 @Injectable()
 class MockDotLicenseService {
@@ -392,16 +393,24 @@ xdescribe('DotEditContentHtmlService', () => {
         service.initEditMode(pageState, {
             nativeElement: {
                 ...fakeIframeEl,
-                addEventListener: () => {},
+                addEventListener: () => {
+                    //
+                },
                 contentDocument: {
                     createElement: () => {
                         const el = document.createElement('div');
                         el.innerHTML = '<h1>new container</h1>';
                         return el;
                     },
-                    open: () => {},
-                    close: () => {},
-                    write: () => {},
+                    open: () => {
+                        //
+                    },
+                    close: () => {
+                        //
+                    },
+                    write: () => {
+                        //
+                    },
                     querySelector: () => {
                         return {
                             tagName: 'DIV',

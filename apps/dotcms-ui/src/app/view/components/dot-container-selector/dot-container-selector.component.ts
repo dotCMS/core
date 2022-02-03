@@ -15,7 +15,7 @@ import { map, take } from 'rxjs/operators';
     styleUrls: ['./dot-container-selector.component.scss']
 })
 export class DotContainerSelectorComponent implements OnInit {
-    @Output() change: EventEmitter<DotContainer> = new EventEmitter();
+    @Output() swap: EventEmitter<DotContainer> = new EventEmitter();
 
     @Input() data: DotContainerColumnBox[] = [];
     @Input() innerClass = '';
@@ -40,7 +40,7 @@ export class DotContainerSelectorComponent implements OnInit {
      * @memberof DotContainerSelectorComponent
      */
     containerChange(container: DotContainer): void {
-        this.change.emit(container);
+        this.swap.emit(container);
     }
 
     /**
@@ -72,9 +72,8 @@ export class DotContainerSelectorComponent implements OnInit {
 
     private setIdentifierReference(items: DotContainer[]): any {
         return items.map((dotContainer) => {
-            dotContainer.identifier = this.templateContainersCacheService.getContainerReference(
-                dotContainer
-            );
+            dotContainer.identifier =
+                this.templateContainersCacheService.getContainerReference(dotContainer);
             return dotContainer;
         });
     }

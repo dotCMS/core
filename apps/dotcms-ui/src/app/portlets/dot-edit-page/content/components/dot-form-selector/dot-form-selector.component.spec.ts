@@ -122,8 +122,8 @@ describe('DotFormSelectorComponent', () => {
 
             describe('events', () => {
                 beforeEach(() => {
-                    spyOn(component.select, 'emit');
-                    spyOn(component.close, 'emit');
+                    spyOn(component.pick, 'emit');
+                    spyOn(component.shutdown, 'emit');
 
                     fixture.componentInstance.show = true;
                     fixture.detectChanges();
@@ -133,7 +133,7 @@ describe('DotFormSelectorComponent', () => {
                     const dialog: DebugElement = de.query(By.css('dot-dialog'));
                     dialog.triggerEventHandler('hide', {});
 
-                    expect(component.close.emit).toHaveBeenCalledWith({});
+                    expect(component.shutdown.emit).toHaveBeenCalledWith({});
                 });
 
                 xit('trigger event when click select button', async () => {
@@ -143,7 +143,7 @@ describe('DotFormSelectorComponent', () => {
                     const button = de.query(By.css('.form-selector__button'));
                     button.triggerEventHandler('click', null);
 
-                    expect(component.select.emit).toHaveBeenCalledWith(mockContentType);
+                    expect(component.pick.emit).toHaveBeenCalledWith(mockContentType);
                 });
             });
         });

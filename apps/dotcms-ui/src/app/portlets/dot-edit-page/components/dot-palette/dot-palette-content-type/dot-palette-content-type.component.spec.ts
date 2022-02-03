@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotIconModule } from '@dotcms/ui';

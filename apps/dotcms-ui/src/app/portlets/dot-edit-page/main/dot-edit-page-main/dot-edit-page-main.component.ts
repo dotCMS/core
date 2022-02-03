@@ -18,7 +18,7 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
     pageState$: Observable<DotPageRenderState>;
     private pageUrl: string;
     private languageId: string;
-    private pageIsSaved: boolean = false;
+    private pageIsSaved = false;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private readonly customEventsHandler;
 

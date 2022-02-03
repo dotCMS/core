@@ -474,7 +474,9 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
                         this.notifyResult(response, 'message.template.full_delete');
                     });
             },
-            reject: () => {},
+            reject: () => {
+                //
+            },
             header: this.dotMessageService.get('Delete-Template'),
             message: this.dotMessageService.get('message.template.confirm.delete.template')
         });

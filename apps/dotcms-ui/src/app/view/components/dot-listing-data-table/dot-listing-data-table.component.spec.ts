@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { of } from 'rxjs';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
@@ -162,7 +164,9 @@ describe('DotListingDataTableComponent', () => {
                 menuItem: {
                     icon: 'fa fa-trash',
                     label: 'Remove',
-                    command: () => {}
+                    command: () => {
+                        //
+                    }
                 }
             }
         ];
@@ -342,7 +346,9 @@ describe('DotListingDataTableComponent', () => {
                 menuItem: {
                     icon: 'fa fa-trash',
                     label: 'Remove',
-                    command: () => {}
+                    command: () => {
+                        //
+                    }
                 }
             }
         ];
@@ -361,7 +367,9 @@ describe('DotListingDataTableComponent', () => {
                 menuItem: {
                     icon: 'fa fa-trash',
                     label: 'Remove',
-                    command: () => {}
+                    command: () => {
+                        //
+                    }
                 }
             }
         ];

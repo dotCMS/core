@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { TestBed, getTestBed } from '@angular/core/testing';
 import { DotPageLayoutService } from './dot-page-layout.service';
 import { mockDotLayout } from '../../../test/dot-page-render.mock';

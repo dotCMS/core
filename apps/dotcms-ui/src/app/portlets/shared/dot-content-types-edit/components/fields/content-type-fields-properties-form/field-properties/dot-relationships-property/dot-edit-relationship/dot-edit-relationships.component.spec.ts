@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotEditRelationshipsComponent } from './dot-edit-relationships.component';
 import { Component, Input, Output, EventEmitter, Injectable, DebugElement } from '@angular/core';

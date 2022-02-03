@@ -24,8 +24,6 @@ export class DotLayoutSidebarComponent implements ControlValueAccessor {
 
     value: DotLayoutSideBar;
 
-    constructor() {}
-
     propagateChange = (_: any) => {};
 
     /**

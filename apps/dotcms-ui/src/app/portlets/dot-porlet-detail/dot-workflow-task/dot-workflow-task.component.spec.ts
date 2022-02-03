@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { Injectable, DebugElement } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { DotWorkflowTaskComponent } from './dot-workflow-task.component';

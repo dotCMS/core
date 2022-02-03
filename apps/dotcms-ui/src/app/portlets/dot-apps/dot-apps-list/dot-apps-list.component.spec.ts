@@ -19,7 +19,9 @@ import { DotApps } from '@shared/models/dot-apps/dot-apps.model';
 import { ButtonModule } from 'primeng/button';
 
 export class AppsServicesMock {
-    get() {}
+    get() {
+        return of({});
+    }
 }
 
 export const appsResponse = [
@@ -150,10 +152,11 @@ describe('DotAppsListComponent', () => {
         it('should contain a dot-icon and a link with info on how to create apps', () => {
             const link = fixture.debugElement.query(By.css('.dot-apps__header-info a'));
             const icon = fixture.debugElement.query(By.css('.dot-apps__header-info dot-icon'));
-            expect(link.nativeElement.href).toBe('https://dotcms.com/docs/latest/apps-integrations');
+            expect(link.nativeElement.href).toBe(
+                'https://dotcms.com/docs/latest/apps-integrations'
+            );
             expect(link.nativeElement.target).toBe('_blank');
             expect(icon.componentInstance.name).toBe('help');
-            
         });
 
         it('should set messages to Search Input', () => {

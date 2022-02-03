@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { CoreWebService } from '@dotcms/dotcms-js';
+import { CoreWebService, ResponseView } from '@dotcms/dotcms-js';
 import { Observable } from 'rxjs';
 import { take } from 'rxjs/operators';
 
@@ -17,9 +17,9 @@ export class DotSiteBrowserService {
      * @returns Observable<{}>
      * @memberof DotSiteBrowserService
      */
-    setSelectedFolder(path: string): Observable<{}> {
+    setSelectedFolder(path: string): Observable<ResponseView<Record<string, unknown>>> {
         return this.coreWebService
-            .requestView({
+            .requestView<Record<string, unknown>>({
                 body: {
                     path: path
                 },

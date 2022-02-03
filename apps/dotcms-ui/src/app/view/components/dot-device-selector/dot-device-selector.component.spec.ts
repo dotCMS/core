@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { ComponentFixture } from '@angular/core/testing';
 
 import { DotDeviceSelectorComponent } from './dot-device-selector.component';

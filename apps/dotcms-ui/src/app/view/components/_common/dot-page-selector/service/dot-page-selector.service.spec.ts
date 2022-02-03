@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { DotPageAsset, DotPageSelectorService } from './dot-page-selector.service';
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed, getTestBed } from '@angular/core/testing';

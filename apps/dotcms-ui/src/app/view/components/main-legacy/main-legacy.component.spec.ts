@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement, Component, Input } from '@angular/core';
 import { MainComponentLegacyComponent } from './main-legacy.component';

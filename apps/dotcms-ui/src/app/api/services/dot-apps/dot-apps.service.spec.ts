@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { DotAppsService } from './dot-apps.service';
 import {
     DotApps,

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { TestBed } from '@angular/core/testing';
 
 import { PushPublishService } from '@services/push-publish/push-publish.service';

@@ -8,7 +8,7 @@ import {
     EventEmitter,
     ChangeDetectionStrategy
 } from '@angular/core';
-import { tap, map, catchError, pluck, take } from 'rxjs/operators';
+import { tap, map, catchError, take } from 'rxjs/operators';
 import { MenuItem } from 'primeng/api';
 
 import { DotCMSContentlet, DotCMSWorkflowAction } from '@dotcms/dotcms-models';

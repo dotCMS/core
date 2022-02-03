@@ -8,6 +8,4 @@ import { DotUnlicensedPortlet } from '@portlets/dot-form-builder/resolvers/dot-f
 })
 export class DotUnlicensedPorletComponent {
     @Input() data: DotUnlicensedPortlet;
-
-    constructor() {}
 }

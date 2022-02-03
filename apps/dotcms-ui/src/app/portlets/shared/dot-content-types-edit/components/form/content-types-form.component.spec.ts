@@ -1,4 +1,6 @@
-import { of as observableOf, Observable } from 'rxjs';
+/* eslint-disable @typescript-eslint/no-empty-function */
+
+import { of, Observable } from 'rxjs';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
@@ -74,7 +76,7 @@ class DotSiteSelectorComponent implements ControlValueAccessor {
 @Injectable()
 class MockDotLicenseService {
     isEnterprise(): Observable<boolean> {
-        return observableOf(false);
+        return of(false);
     }
 }
 
@@ -298,7 +300,7 @@ describe('ContentTypesFormComponent', () => {
 
     // tslint:disable-next-line:max-line-length
     it('should set canSave property false when the form value is updated and then gets back to the original content (no community license)', () => {
-        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(false));
+        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
 
         comp.data = {
             ...dotcmsContentTypeBasicMock,
@@ -320,7 +322,7 @@ describe('ContentTypesFormComponent', () => {
 
     // eslint-disable-next-line max-len
     it('should set canSave property false when the form value is updated and then gets back to the original content (community license)', () => {
-        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(true));
+        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
 
         comp.data = {
             ...dotcmsContentTypeBasicMock,
@@ -441,7 +443,7 @@ describe('ContentTypesFormComponent', () => {
     });
 
     it('should set value to the form', () => {
-        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(true));
+        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
 
         const base = {
             icon: null,
@@ -485,7 +487,7 @@ describe('ContentTypesFormComponent', () => {
 
     describe('systemActionMappings', () => {
         beforeEach(() => {
-            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(true));
+            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
         });
 
         it('should set value to the form with systemActionMappings', () => {
@@ -658,7 +660,7 @@ describe('ContentTypesFormComponent', () => {
         let data;
 
         beforeEach(() => {
-            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(true));
+            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
             comp.data = {
                 ...dotcmsContentTypeBasicMock,
                 baseType: 'CONTENT'
@@ -716,7 +718,7 @@ describe('ContentTypesFormComponent', () => {
 
             describe('community license true', () => {
                 beforeEach(() => {
-                    spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(false));
+                    spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
                     fixture.detectChanges();
                 });
 
@@ -733,7 +735,7 @@ describe('ContentTypesFormComponent', () => {
 
             describe('community license true', () => {
                 beforeEach(() => {
-                    spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(true));
+                    spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
                     fixture.detectChanges();
                 });
 
@@ -768,7 +770,7 @@ describe('ContentTypesFormComponent', () => {
                         }
                     ]
                 };
-                spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(false));
+                spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
                 fixture.detectChanges();
                 expect(comp.form.get('workflows').value).toEqual([
                     {
@@ -790,7 +792,7 @@ describe('ContentTypesFormComponent', () => {
                     baseType: 'CONTENT',
                     id: '123'
                 };
-                spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(false));
+                spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
                 fixture.detectChanges();
                 expect(comp.form.get('workflows').value).toEqual([]);
             });

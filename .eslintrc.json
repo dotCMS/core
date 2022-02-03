@@ -9,6 +9,7 @@
                 "@nrwl/nx/enforce-module-boundaries": [
                     "error",
                     {
+                        "allowCircularSelfDependency": true,
                         "enforceBuildableLibDependency": true,
                         "allow": [],
                         "depConstraints": [
@@ -24,7 +25,15 @@
         {
             "files": ["*.ts", "*.tsx"],
             "extends": ["plugin:@nrwl/nx/typescript"],
-            "rules": {}
+            "rules": {
+                "@typescript-eslint/no-explicit-any": ["error"],
+                "@typescript-eslint/no-unused-vars": [
+                    "error",
+                    {
+                        "argsIgnorePattern": "^_"
+                    }
+                ]
+            }
         },
         {
             "files": ["*.js", "*.jsx"],

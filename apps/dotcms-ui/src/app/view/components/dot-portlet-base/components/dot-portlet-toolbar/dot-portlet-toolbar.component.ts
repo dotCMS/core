@@ -16,8 +16,6 @@ export class DotPortletToolbarComponent {
 
     @Input() actions: DotPortletToolbarActions;
 
-    constructor() {}
-
     /**
      * Handle cancel button click
      *

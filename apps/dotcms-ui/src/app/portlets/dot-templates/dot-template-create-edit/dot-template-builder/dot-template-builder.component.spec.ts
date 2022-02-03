@@ -58,12 +58,14 @@ export class IframeMockComponent {
 }
 
 @Component({
+    // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'p-tabView',
     template: '<ng-content></ng-content>'
 })
 export class TabViewMockComponent {}
 
 @Component({
+    // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'p-tabPanel',
     template:
         '<ng-content></ng-content><ng-container *ngTemplateOutlet="contentTemplate"></ng-container>'

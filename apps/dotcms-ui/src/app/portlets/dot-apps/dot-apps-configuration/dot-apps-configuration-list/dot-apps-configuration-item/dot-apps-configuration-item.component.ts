@@ -64,7 +64,9 @@ export class DotAppsConfigurationItemComponent {
             accept: () => {
                 this.delete.emit(site);
             },
-            reject: () => {},
+            reject: () => {
+                //
+            },
             header: this.dotMessageService.get('apps.confirmation.title'),
             message: `${this.dotMessageService.get('apps.confirmation.delete.message')} <b>${
                 site.name

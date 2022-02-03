@@ -6,8 +6,6 @@ import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
     styleUrls: ['./dot-content-compare-preview-field.component.scss']
 })
 export class DotContentComparePreviewFieldComponent implements OnChanges {
-    constructor() {}
-
     @Input() fileURL: string;
     @Input() label: string;
     imageError = false;

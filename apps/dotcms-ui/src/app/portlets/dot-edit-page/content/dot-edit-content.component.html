@@ -1,10 +1,13 @@
 <dot-form-selector
     [show]="editForm"
-    (select)="onFormSelected($event)"
-    (close)="editForm = false"
+    (pick)="onFormSelected($event)"
+    (shutdown)="editForm = false"
 ></dot-form-selector>
 <dot-add-contentlet (custom)="onCustomEvent($event)"></dot-add-contentlet>
-<dot-create-contentlet (custom)="onCustomEvent($event)" (close)='handleCloseAction()'></dot-create-contentlet>
+<dot-create-contentlet
+    (custom)="onCustomEvent($event)"
+    (close)="handleCloseAction()"
+></dot-create-contentlet>
 <dot-edit-contentlet (custom)="onCustomEvent($event)"></dot-edit-contentlet>
 <dot-reorder-menu [url]="reorderMenuUrl" (close)="onCloseReorderDialog()"></dot-reorder-menu>
 <div class="dot-edit-content__wrapper">
@@ -61,17 +64,19 @@
         </div>
     </ng-container>
 </div>
-<div class="dot-edit-content__palette"
-     *ngIf="isEnterpriseLicense && isEditMode"
-     [class.editMode]="isEditMode"
-     [class.collapsed]="paletteCollapsed">
-    <dot-palette
-        [languageId]="pageStateInternal.page?.languageId"
-        [items]='contentPalletItems'>
+<div
+    class="dot-edit-content__palette"
+    *ngIf="isEnterpriseLicense && isEditMode"
+    [class.editMode]="isEditMode"
+    [class.collapsed]="paletteCollapsed"
+>
+    <dot-palette [languageId]="pageStateInternal.page?.languageId" [items]="contentPalletItems">
     </dot-palette>
-    <div class="dot-edit-content__palette-visibility"
-         data-testId="palette-visibility"
-         (click)='paletteCollapsed = !paletteCollapsed'>
-        <dot-icon size='22' [name]="paletteCollapsed ? 'chevron_left' : 'chevron_right' "></dot-icon>
+    <div
+        class="dot-edit-content__palette-visibility"
+        data-testId="palette-visibility"
+        (click)="paletteCollapsed = !paletteCollapsed"
+    >
+        <dot-icon size="22" [name]="paletteCollapsed ? 'chevron_left' : 'chevron_right'"></dot-icon>
     </div>
 </div>

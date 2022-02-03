@@ -34,8 +34,6 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit {
     @Output() valid = new EventEmitter<boolean>();
     myFormGroup: FormGroup;
 
-    constructor() {}
-
     ngOnInit() {
         const group = {};
         this.formFields.forEach((field: DotAppsSecrets) => {

@@ -1,7 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 
 import { DotPushPublishDialogService } from './dot-push-publish-dialog.service';
-import { DotPushPublishDialogData } from '@models/dot-push-publish-dialog-data/dot-push-publish-dialog-data.model';
 
 const mockEventData = { assetIdentifier: 'test', title: 'Title' };
 
@@ -11,11 +10,9 @@ describe('DotPushPublishDialogService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({});
-        dotPushPublishDialogService.showDialog$.subscribe(
-            (dialogData: DotPushPublishDialogData) => {
-                data = dialogData;
-            }
-        );
+        dotPushPublishDialogService.showDialog$.subscribe((dialogData: any) => {
+            data = dialogData;
+        });
     });
 
     it('should receive data', () => {

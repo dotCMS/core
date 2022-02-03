@@ -11,8 +11,6 @@ import { DotEvent } from '@models/dot-event/dot-event';
 export class DotEventsService {
     private subject: Subject<DotEvent> = new Subject();
 
-    constructor() {}
-
     /**
      * Method to register a listener of a specif event.
      *

@@ -45,8 +45,6 @@ export class DotIframeDialogComponent implements OnChanges, OnInit {
 
     show: boolean;
 
-    constructor() {}
-
     ngOnInit() {
         if (this.beforeClose.observers.length) {
             this.dotDialog.beforeClose

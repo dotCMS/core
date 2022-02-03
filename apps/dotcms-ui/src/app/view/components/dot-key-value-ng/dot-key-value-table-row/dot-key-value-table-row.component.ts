@@ -33,11 +33,9 @@ export class DotKeyValueTableRowComponent implements OnInit, OnChanges {
     @Output() delete: EventEmitter<DotKeyValue> = new EventEmitter(false);
 
     variableCopy: DotKeyValue;
-    showEditMenu: Boolean = false;
-    saveDisabled: Boolean = false;
+    showEditMenu = false;
+    saveDisabled = false;
     elemRef: ElementRef;
-
-    constructor() {}
 
     ngOnInit(): void {
         this.variableCopy = _.cloneDeep(this.variable);

@@ -5,8 +5,6 @@ import { Injectable } from '@angular/core';
 export class IframeOverlayService {
     public $overlay: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
 
-    constructor() {}
-
     show(): void {
         this.$overlay.next(true);
     }

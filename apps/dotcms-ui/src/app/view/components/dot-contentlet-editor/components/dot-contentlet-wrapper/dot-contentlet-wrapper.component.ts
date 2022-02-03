@@ -91,7 +91,9 @@ export class DotContentletWrapperComponent {
                 accept: () => {
                     $event.close();
                 },
-                reject: () => {},
+                reject: () => {
+                    //
+                },
                 header: this.dotMessageService.get('editcontentlet.lose.dialog.header'),
                 message: this.dotMessageService.get('editcontentlet.lose.dialog.message'),
                 footerLabel: {

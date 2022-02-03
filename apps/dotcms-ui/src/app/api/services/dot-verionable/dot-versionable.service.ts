@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { Observable } from 'rxjs';
-import { pluck, take } from 'rxjs/operators';
+import { pluck } from 'rxjs/operators';
 
 export interface DotVersionable {
     inode: string;

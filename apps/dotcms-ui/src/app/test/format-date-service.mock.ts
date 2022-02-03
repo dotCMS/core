@@ -2,8 +2,6 @@ import { format } from 'date-fns';
 export class DotFormatDateServiceMock {
     private _localeOptions: any;
 
-    constructor() {}
-
     get localeOptions(): any {
         return this._localeOptions;
     }
@@ -21,6 +19,6 @@ export class DotFormatDateServiceMock {
     }
 
     getRelative(time): string {
-        return '1 hour ago'
+        return '1 hour ago';
     }
 }

@@ -20,9 +20,7 @@ export class DotEditPageLockInfoComponent {
 
     private _state: DotPageRenderState;
 
-    constructor() {}
-
-    @Input('pageState')
+    @Input()
     set pageState(value: DotPageRenderState) {
         this._state = value;
         this.show = value.state.lockedByAnotherUser && value.page.canEdit;

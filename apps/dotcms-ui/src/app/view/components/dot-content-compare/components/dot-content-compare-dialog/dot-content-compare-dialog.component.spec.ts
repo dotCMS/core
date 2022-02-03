@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DotContentCompareDialogComponent } from './dot-content-compare-dialog.component';
@@ -57,10 +59,15 @@ describe('DotContentCompareDialogComponent', () => {
 
     it('should hide dialog on close', () => {
         const closeBtn = fixture.debugElement.query(By.css('.dialog__header dot-icon-button'));
-        closeBtn.triggerEventHandler('click', { preventDefault: () => {} });
+        closeBtn.triggerEventHandler('click', {
+            preventDefault: () => {
+                //
+            }
+        });
         fixture.detectChanges();
-        const dotDialog: DotDialogComponent = fixture.debugElement.query(By.css('dot-dialog'))
-            .componentInstance;
+        const dotDialog: DotDialogComponent = fixture.debugElement.query(
+            By.css('dot-dialog')
+        ).componentInstance;
         expect(dotDialog.visible).toEqual(false);
     });
 

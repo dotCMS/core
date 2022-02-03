@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { DotWorkflowService } from './dot-workflow.service';
 import { mockWorkflows } from '../../../test/dot-workflow-service.mock';
 import { TestBed, getTestBed } from '@angular/core/testing';

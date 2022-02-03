@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { DOTTestBed } from '@tests/dot-test-bed';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';

@@ -14,6 +14,4 @@ import { Component, Input } from '@angular/core';
 export class DotIconComponent {
     @Input() name: string;
     @Input() size: number;
-
-    constructor() {}
 }

@@ -1,6 +1,5 @@
 import { Component, Input } from '@angular/core';
 import { DotApps } from '@shared/models/dot-apps/dot-apps.model';
-import * as _ from 'lodash';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 @Component({

@@ -20,8 +20,6 @@ export class DotAppsConfigurationListComponent {
     @Output() export = new EventEmitter<DotAppsSites>();
     @Output() delete = new EventEmitter<DotAppsSites>();
 
-    constructor() {}
-
     /**
      * Emits action to load next configuration page
      *

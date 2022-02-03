@@ -102,7 +102,9 @@ export class DotTemplateThumbnailFieldComponent implements ControlValueAccessor 
         }
     }
 
-    propagateChange = (_: any) => {};
+    propagateChange = (_: any) => {
+        // do nothing
+    };
 
     writeValue(id: string): void {
         this.loading = true;
@@ -129,5 +131,7 @@ export class DotTemplateThumbnailFieldComponent implements ControlValueAccessor 
         this.propagateChange = fn;
     }
 
-    registerOnTouched(): void {}
+    registerOnTouched(): void {
+        //
+    }
 }

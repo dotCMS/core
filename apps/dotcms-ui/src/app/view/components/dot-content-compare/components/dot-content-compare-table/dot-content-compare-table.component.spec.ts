@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotContentCompareTableComponent } from './dot-content-compare-table.component';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';

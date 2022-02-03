@@ -118,7 +118,9 @@ describe('DotPersonaSelectorOptionComponent', () => {
 
         it('should emit persona when field clicked', () => {
             de.triggerEventHandler('click', {
-                stopPropagation: () => {}
+                stopPropagation: () => {
+                    //
+                }
             });
             expect(component.change.emit).toHaveBeenCalledWith(mockDotPersona);
         });
@@ -126,7 +128,9 @@ describe('DotPersonaSelectorOptionComponent', () => {
         it('should emit persona when delete clicked', () => {
             const btnElement: DebugElement = de.query(By.css('button'));
             btnElement.triggerEventHandler('click', {
-                stopPropagation: () => {}
+                stopPropagation: () => {
+                    //
+                }
             });
             expect(component.delete.emit).toHaveBeenCalledWith(mockDotPersona);
         });

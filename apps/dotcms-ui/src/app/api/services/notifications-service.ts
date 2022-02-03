@@ -27,7 +27,7 @@ export class NotificationsService {
         });
     }
 
-    dismissNotifications(items: Object): Observable<any> {
+    dismissNotifications(items: Record<string, unknown>): Observable<any> {
         return this.coreWebService.request({
             body: items,
             method: 'PUT',

@@ -27,7 +27,7 @@ describe('DotClipboardUtil', () => {
 
         service
             .copy('hello-world')
-            .then(() => {})
+            .then()
             .catch((res) => {
                 expect(res).toBe(undefined);
             });

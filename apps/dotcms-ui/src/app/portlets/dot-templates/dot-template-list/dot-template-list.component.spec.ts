@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { DotTemplateListComponent } from './dot-template-list.component';
 import { of, Subject } from 'rxjs';
@@ -353,8 +355,9 @@ describe('DotTemplateListComponent', () => {
             fixture.detectChanges();
             tick(2);
             fixture.detectChanges();
-            dotListingDataTable = fixture.debugElement.query(By.css('dot-listing-data-table'))
-                .componentInstance;
+            dotListingDataTable = fixture.debugElement.query(
+                By.css('dot-listing-data-table')
+            ).componentInstance;
             spyOn(dotPushPublishDialogService, 'open');
 
             spyOn<any>(dialogService, 'open').and.returnValue({
@@ -401,8 +404,9 @@ describe('DotTemplateListComponent', () => {
                 revision: 'Revision',
                 draft: 'Draft'
             };
-            lockedTemplate = fixture.debugElement.query(By.css('[data-testid="123Locked"]'))
-                .componentInstance;
+            lockedTemplate = fixture.debugElement.query(
+                By.css('[data-testid="123Locked"]')
+            ).componentInstance;
             const stateIcon = fixture.debugElement.query(By.css('dot-state-icon'));
 
             expect(stateIcon.attributes['size']).toEqual('14px');
@@ -412,8 +416,9 @@ describe('DotTemplateListComponent', () => {
 
         describe('row', () => {
             it('should set actions to publish template', () => {
-                publishTemplate = fixture.debugElement.query(By.css('[data-testid="123Published"]'))
-                    .componentInstance;
+                publishTemplate = fixture.debugElement.query(
+                    By.css('[data-testid="123Published"]')
+                ).componentInstance;
                 const actions = setBasicOptions();
                 actions.push({ menuItem: { label: 'Unpublish', command: jasmine.any(Function) } });
                 actions.push({ menuItem: { label: 'Copy', command: jasmine.any(Function) } });
@@ -422,8 +427,9 @@ describe('DotTemplateListComponent', () => {
             });
 
             it('should set actions to locked template', () => {
-                lockedTemplate = fixture.debugElement.query(By.css('[data-testid="123Locked"]'))
-                    .componentInstance;
+                lockedTemplate = fixture.debugElement.query(
+                    By.css('[data-testid="123Locked"]')
+                ).componentInstance;
                 const actions = setBasicOptions();
                 actions.push({ menuItem: { label: 'Unpublish', command: jasmine.any(Function) } });
                 actions.push({ menuItem: { label: 'Copy', command: jasmine.any(Function) } });
@@ -443,8 +449,9 @@ describe('DotTemplateListComponent', () => {
             });
 
             it('should set actions to archived template', () => {
-                archivedTemplate = fixture.debugElement.query(By.css('[data-testid="123Archived"]'))
-                    .componentInstance;
+                archivedTemplate = fixture.debugElement.query(
+                    By.css('[data-testid="123Archived"]')
+                ).componentInstance;
                 const actions = [
                     { menuItem: { label: 'Unarchive', command: jasmine.any(Function) } },
                     { menuItem: { label: 'Delete', command: jasmine.any(Function) } }
@@ -453,8 +460,7 @@ describe('DotTemplateListComponent', () => {
             });
 
             it('should hide push-publish and Add to Bundle actions', () => {
-                let activatedRoute: ActivatedRoute;
-                activatedRoute = TestBed.inject(ActivatedRoute);
+                const activatedRoute: ActivatedRoute = TestBed.inject(ActivatedRoute);
                 spyOnProperty(activatedRoute, 'data', 'get').and.returnValue(
                     of({
                         dotTemplateListResolverData: [false, false]
@@ -462,8 +468,9 @@ describe('DotTemplateListComponent', () => {
                 );
                 comp.ngOnInit();
                 fixture.detectChanges();
-                publishTemplate = fixture.debugElement.query(By.css('[data-testid="123Published"]'))
-                    .componentInstance;
+                publishTemplate = fixture.debugElement.query(
+                    By.css('[data-testid="123Published"]')
+                ).componentInstance;
                 const actions = [
                     { menuItem: { label: 'Edit', command: jasmine.any(Function) } },
                     { menuItem: { label: 'Publish', command: jasmine.any(Function) } },
@@ -476,7 +483,7 @@ describe('DotTemplateListComponent', () => {
 
             describe('template as a file ', () => {
                 it('should go to site Broser when selected', () => {
-                    spyOn(dotSiteBrowserService, 'setSelectedFolder').and.returnValue(of({}));
+                    spyOn(dotSiteBrowserService, 'setSelectedFolder').and.returnValue(of(null));
                     const rows: DebugElement[] = fixture.debugElement.queryAll(
                         By.css('.p-selectable-row')
                     );
@@ -501,15 +508,18 @@ describe('DotTemplateListComponent', () => {
             beforeEach(() => {
                 spyOn(dotMessageDisplayService, 'push');
                 spyOn(dotListingDataTable, 'loadCurrentPage');
-                publishTemplate = fixture.debugElement.query(By.css('[data-testid="123Published"]'))
-                    .componentInstance;
-                lockedTemplate = fixture.debugElement.query(By.css('[data-testid="123Locked"]'))
-                    .componentInstance;
+                publishTemplate = fixture.debugElement.query(
+                    By.css('[data-testid="123Published"]')
+                ).componentInstance;
+                lockedTemplate = fixture.debugElement.query(
+                    By.css('[data-testid="123Locked"]')
+                ).componentInstance;
                 unPublishTemplate = fixture.debugElement.query(
                     By.css('[data-testid="123Unpublish"]')
                 ).componentInstance;
-                archivedTemplate = fixture.debugElement.query(By.css('[data-testid="123Archived"]'))
-                    .componentInstance;
+                archivedTemplate = fixture.debugElement.query(
+                    By.css('[data-testid="123Archived"]')
+                ).componentInstance;
             });
 
             it('should open add to bundle dialog', () => {

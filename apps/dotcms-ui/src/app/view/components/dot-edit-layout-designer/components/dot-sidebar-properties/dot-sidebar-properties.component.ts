@@ -19,7 +19,7 @@ import { DotLayoutSideBar } from '@models/dot-edit-layout-designer';
 export class DotSidebarPropertiesComponent implements OnInit, ControlValueAccessor {
     value: DotLayoutSideBar;
     @ViewChild('overlay', { static: true }) overlay: any;
-    @Output() change: EventEmitter<String> = new EventEmitter();
+    @Output() change: EventEmitter<string> = new EventEmitter();
 
     constructor(private dotEventsService: DotEventsService) {}
 

@@ -101,7 +101,9 @@ describe('DotPortletToolbarComponent', () => {
                             command: spy
                         }
                     ],
-                    cancel: () => {}
+                    cancel: () => {
+                        //
+                    }
                 };
 
                 hostfixture.detectChanges();
@@ -124,14 +126,20 @@ describe('DotPortletToolbarComponent', () => {
                     primary: [
                         {
                             label: 'Design',
-                            command: () => {}
+                            command: () => {
+                                //
+                            }
                         },
                         {
                             label: 'Code',
-                            command: () => {}
+                            command: () => {
+                                //
+                            }
                         }
                     ],
-                    cancel: () => {}
+                    cancel: () => {
+                        //
+                    }
                 };
 
                 hostfixture.detectChanges();
@@ -151,7 +159,9 @@ describe('DotPortletToolbarComponent', () => {
                             }
                         }
                     ],
-                    cancel: () => {}
+                    cancel: () => {
+                        //
+                    }
                 };
 
                 hostfixture.detectChanges();
@@ -168,14 +178,20 @@ describe('DotPortletToolbarComponent', () => {
                     primary: [
                         {
                             label: 'Design',
-                            command: () => {}
+                            command: () => {
+                                //
+                            }
                         },
                         {
                             label: 'Code',
-                            command: () => {}
+                            command: () => {
+                                //
+                            }
                         }
                     ],
-                    cancel: () => {}
+                    cancel: () => {
+                        //
+                    }
                 };
 
                 hostfixture.detectChanges();
@@ -221,7 +237,9 @@ describe('DotPortletToolbarComponent', () => {
                 component.cancelButtonLabel = 'Custom Cancel Label';
                 component.actions = {
                     primary: null,
-                    cancel: () => {}
+                    cancel: () => {
+                        //
+                    }
                 };
 
                 hostfixture.detectChanges();

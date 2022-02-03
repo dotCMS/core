@@ -17,6 +17,4 @@ export class UiDotIconButtonTooltipComponent {
 
     @Input()
     tooltipPosition = 'bottom';
-
-    constructor() {}
 }

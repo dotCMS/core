@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { throwError, of } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { By } from '@angular/platform-browser';

@@ -13,7 +13,6 @@ import { DotWizardService } from '@services/dot-wizard/dot-wizard.service';
 import { DotWizardInput } from '@models/dot-wizard-input/dot-wizard-input.model';
 import { DotWizardStep } from '@models/dot-wizard-step/dot-wizard-step.model';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { format } from 'date-fns';
 import { DotCommentAndAssignFormComponent } from '@components/_common/forms/dot-comment-and-assign-form/dot-comment-and-assign-form.component';
 import { DotPushPublishFormComponent } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.component';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';

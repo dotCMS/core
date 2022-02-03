@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotPaletteComponent } from './dot-palette.component';
 import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
@@ -20,7 +22,9 @@ export class DotPaletteContentTypeMockComponent {
     @Input() items: any[];
     @Output() selected = new EventEmitter<any>();
 
-    focusInputFilter() {}
+    focusInputFilter() {
+        //
+    }
 }
 
 @Component({
@@ -35,7 +39,9 @@ export class DotPaletteContentletsMockComponent {
     @Output() filter = new EventEmitter<any>();
     @Output() paginate = new EventEmitter<any>();
 
-    focusInputFilter() {}
+    focusInputFilter() {
+        //
+    }
 }
 
 const itemMock = {
@@ -129,7 +135,6 @@ describe('DotPaletteComponent', () => {
         store = TestBed.inject(DotPaletteStore);
 
         fixture = TestBed.createComponent(DotPaletteComponent);
-        de = fixture.debugElement;
         comp = fixture.componentInstance;
         comp.items = [itemMock];
         fixture.detectChanges();

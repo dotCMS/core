@@ -24,8 +24,6 @@ export class DotTemplateBuilderComponent implements OnInit, OnChanges {
     permissionsUrl = '';
     historyUrl = '';
 
-    constructor() {}
-
     ngOnInit() {
         this.permissionsUrl = `/html/templates/permissions.jsp?templateId=${this.item.identifier}&popup=true`;
         this.historyUrl = `/html/templates/push_history.jsp?templateId=${this.item.identifier}&popup=true`;

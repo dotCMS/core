@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { DebugElement, Component } from '@angular/core';
@@ -253,7 +256,9 @@ describe('DotIframeDialogComponent', () => {
 
         it('should emit beforeClose when a observer is set', () => {
             dialogComponent.beforeClose.emit({
-                close: () => {}
+                close: () => {
+                    //
+                }
             });
             expect(component.beforeClose.emit).toHaveBeenCalledTimes(1);
         });
@@ -263,7 +268,9 @@ describe('DotIframeDialogComponent', () => {
             hostFixture.detectChanges();
 
             dialogComponent.beforeClose.emit({
-                close: () => {}
+                close: () => {
+                    //
+                }
             });
             expect(component.beforeClose.emit).not.toHaveBeenCalled();
         });

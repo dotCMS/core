@@ -1,6 +1,6 @@
 <dot-form-dialog
     data-testId="dialogForm"
-    [saveButtonDisabled]="!(isFormValid$ | async)"
+    [saveButtonDisabled]="(isFormValid$ | async) === false"
     (cancel)="onCancel()"
     (save)="onSave()"
 >

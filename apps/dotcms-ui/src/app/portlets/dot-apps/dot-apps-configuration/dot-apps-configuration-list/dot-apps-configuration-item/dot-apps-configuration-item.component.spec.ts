@@ -168,7 +168,9 @@ describe('DotAppsConfigurationItemComponent', () => {
         it('should emit edit action when host component clicked', () => {
             spyOn(component.edit, 'emit');
             fixture.debugElement.triggerEventHandler('click', {
-                stopPropagation: () => {}
+                stopPropagation: () => {
+                    //
+                }
             });
             expect(component.edit.emit).toHaveBeenCalledWith(sites[0]);
         });

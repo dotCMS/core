@@ -16,6 +16,4 @@ export class DotPersonaSelectedItemComponent {
     disabled: boolean;
 
     @Output() selected = new EventEmitter<MouseEvent>();
-
-    constructor() {}
 }

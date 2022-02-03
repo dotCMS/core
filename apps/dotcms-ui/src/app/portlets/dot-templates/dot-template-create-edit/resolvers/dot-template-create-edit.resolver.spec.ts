@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { TestBed } from '@angular/core/testing';
 import { DotTemplatesService } from '@services/dot-templates/dot-templates.service';
 import { of } from 'rxjs';
@@ -44,7 +46,9 @@ describe('DotTemplateDesignerService', () => {
                                 }
                             })
                         ),
-                        getFiltered: () => {}
+                        getFiltered: () => {
+                            //
+                        }
                     }
                 }
             ]

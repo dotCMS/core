@@ -8,9 +8,7 @@ import { Component, Input } from '@angular/core';
 export class DotApiLinkComponent {
     link: string;
 
-    constructor() {}
-
-    @Input('href')
+    @Input()
     set href(value: string) {
         this.link = this.getFixedLink(value);
     }

@@ -9,6 +9,4 @@ import { Component, Input, ViewEncapsulation } from '@angular/core';
 })
 export class DotLayoutPropertiesComponent {
     @Input() group: FormGroup;
-
-    constructor() {}
 }

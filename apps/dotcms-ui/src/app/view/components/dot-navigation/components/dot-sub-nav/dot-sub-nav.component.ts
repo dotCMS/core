@@ -48,7 +48,6 @@ export class DotSubNavComponent {
         return !this.collapsed && this.data.isOpen ? 'expanded' : 'collapsed';
     }
 
-    constructor() {}
 
     /**
      * Handle click event in a menu sub item

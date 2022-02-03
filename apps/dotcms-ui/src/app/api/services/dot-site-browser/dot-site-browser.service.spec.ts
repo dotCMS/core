@@ -7,7 +7,6 @@ import { DotSiteBrowserService } from '@services/dot-site-browser/dot-site-brows
 
 describe('DotSiteBrowserService', () => {
     let injector: TestBed;
-    let coreWebService: CoreWebService;
     let httpMock: HttpTestingController;
     let dotSiteBrowserService: DotSiteBrowserService;
 
@@ -20,13 +19,12 @@ describe('DotSiteBrowserService', () => {
             ]
         });
         injector = getTestBed();
-        dotSiteBrowserService = injector.get(DotSiteBrowserService);
-        coreWebService = injector.get(CoreWebService);
-        httpMock = injector.get(HttpTestingController);
+        dotSiteBrowserService = injector.inject(DotSiteBrowserService);
+        httpMock = injector.inject(HttpTestingController);
     });
 
     it('should set Site Browser Selected folder', () => {
-        dotSiteBrowserService.setSelectedFolder('/test').subscribe(() => {});
+        dotSiteBrowserService.setSelectedFolder('/test').subscribe();
 
         const req = httpMock.expectOne('/api/v1/browser/selectedfolder');
         expect(req.request.method).toEqual('PUT');

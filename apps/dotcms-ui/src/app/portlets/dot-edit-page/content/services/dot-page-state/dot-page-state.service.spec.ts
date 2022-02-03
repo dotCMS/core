@@ -9,7 +9,6 @@ import { LoginServiceMock } from '@tests/login-service.mock';
 import { mockDotRenderedPage } from '@tests/dot-page-render.mock';
 import { dotcmsContentletMock } from '@tests/dotcms-contentlet.mock';
 import { mockUser } from '@tests/login-service.mock';
-import * as _ from 'lodash';
 import { DotPersona } from '@shared/models/dot-persona/dot-persona.model';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { getTestBed, TestBed } from '@angular/core/testing';
@@ -263,7 +262,7 @@ describe('DotPageStateService', () => {
                 .requestPage({
                     url: 'hello/world'
                 })
-                .subscribe(() => {});
+                .subscribe();
 
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error300);
             expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
@@ -283,7 +282,7 @@ describe('DotPageStateService', () => {
                 .requestPage({
                     url: 'hello/world'
                 })
-                .subscribe(() => {});
+                .subscribe();
 
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error404);
             expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
@@ -304,7 +303,7 @@ describe('DotPageStateService', () => {
                 .requestPage({
                     url: 'hello/world'
                 })
-                .subscribe(() => {});
+                .subscribe();
 
             expect(service.reload).toHaveBeenCalledTimes(1);
             expect(dotRouterService.goToSiteBrowser).not.toHaveBeenCalled();

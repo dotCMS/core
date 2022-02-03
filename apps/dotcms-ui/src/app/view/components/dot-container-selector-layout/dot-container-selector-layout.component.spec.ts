@@ -34,7 +34,7 @@ import { DotContainerSelectorModule } from '@components/dot-container-selector/d
 })
 class MockDotIconButtonComponent {}
 
-describe('ContainerSelectorComponent', () => {
+describe('DotContainerSelectorLayoutComponent', () => {
     let comp: DotContainerSelectorLayoutComponent;
     let fixture: ComponentFixture<DotContainerSelectorLayoutComponent>;
     let de: DebugElement;
@@ -129,7 +129,7 @@ describe('ContainerSelectorComponent', () => {
     it('should add containers to containers list and emit a change event', () => {
         comp.currentContainers = containers;
 
-        dotContainerSelector.change.emit(containers[0]);
+        dotContainerSelector.swap.emit(containers[0]);
 
         expect(comp.data[0].container).toEqual(containers[0]);
         expect(comp.data[0].uuid).not.toBeNull();
@@ -138,11 +138,13 @@ describe('ContainerSelectorComponent', () => {
 
     it('should remove containers after click on trash icon', () => {
         const bodySelectorList = de.query(By.css('.container-selector__list'));
+        console.log(bodySelectorList);
+
         const bodySelectorListItems = bodySelectorList.nativeElement.children;
 
         comp.currentContainers = containers;
 
-        dotContainerSelector.change.emit(containers[0]);
+        dotContainerSelector.swap.emit(containers[0]);
 
         fixture.detectChanges();
 
@@ -153,12 +155,12 @@ describe('ContainerSelectorComponent', () => {
     it('should not add duplicated containers to the list when multiple false', () => {
         comp.currentContainers = containers;
 
-        dotContainerSelector.change.emit(containers[0]);
+        dotContainerSelector.swap.emit(containers[0]);
         fixture.detectChanges();
 
         expect(comp.data.length).toEqual(1);
 
-        dotContainerSelector.change.emit(containers[0]);
+        dotContainerSelector.swap.emit(containers[0]);
         fixture.detectChanges();
 
         expect(comp.data.length).toEqual(1);
@@ -168,8 +170,8 @@ describe('ContainerSelectorComponent', () => {
         comp.currentContainers = containers;
         comp.multiple = true;
 
-        dotContainerSelector.change.emit(containers[0]);
-        dotContainerSelector.change.emit(containers[0]);
+        dotContainerSelector.swap.emit(containers[0]);
+        dotContainerSelector.swap.emit(containers[0]);
         fixture.detectChanges();
 
         expect(comp.data.length).toEqual(2);

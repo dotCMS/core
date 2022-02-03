@@ -121,7 +121,7 @@ describe('DotTempFileUploadService', () => {
     });
 
     it('should handle error', () => {
-        service.upload('https://dotcms.com/image.jpg').subscribe(() => {});
+        service.upload('https://dotcms.com/image.jpg').subscribe();
 
         const req = httpMock.expectOne('/api/v1/temp/byUrl');
         req.flush('deliberate 404 error', { status: 404, statusText: 'Not Found' });

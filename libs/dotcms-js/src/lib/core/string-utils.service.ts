@@ -4,7 +4,6 @@ import { Injectable } from '@angular/core';
  */
 @Injectable()
 export class StringUtils {
-    constructor() {}
     /**
      * Get from text, the line number (indexLine), null if it does not exists.
      * @param text

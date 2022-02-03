@@ -1,4 +1,4 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, Input } from '@angular/core';
 
 /**
  * Basic page information for edit mode
@@ -12,12 +12,8 @@ import { Component, OnInit, Input } from '@angular/core';
     templateUrl: './dot-edit-page-info.component.html',
     styleUrls: ['./dot-edit-page-info.component.scss']
 })
-export class DotEditPageInfoComponent implements OnInit {
+export class DotEditPageInfoComponent {
     @Input() title: string;
     @Input() url: string;
     @Input() apiLink: string;
-
-    constructor() {}
-
-    ngOnInit() {}
 }

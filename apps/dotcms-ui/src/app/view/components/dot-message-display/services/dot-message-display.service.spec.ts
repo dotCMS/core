@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { DotMessageDisplayService } from './dot-message-display.service';
 import { DotMessage, DotMessageSeverity, DotMessageType } from '../model';
 import { DotcmsEventsService } from '@dotcms/dotcms-js';

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { DotFieldVariablesService } from './dot-field-variables.service';
 import { DotFieldVariable } from '../models/dot-field-variable.interface';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';

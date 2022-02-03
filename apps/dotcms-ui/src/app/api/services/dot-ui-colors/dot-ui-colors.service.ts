@@ -7,8 +7,6 @@ export class DotUiColorsService {
     private currentColors: DotUiColors;
     private readonly COL_MAIN_LIGHTEN_VAL = 12;
 
-    constructor() {}
-
     /**
      * Set css variables colors
      *

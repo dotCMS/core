@@ -15,8 +15,12 @@ import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
 describe('DotContentletEditorService', () => {
-    const load = () => {};
-    const keyDown = () => {};
+    const load = () => {
+        //
+    };
+    const keyDown = () => {
+        //
+    };
     let service: DotContentletEditorService;
     let dotMenuService: DotMenuService;
     let dotRouterService: DotRouterService;
@@ -226,7 +230,7 @@ describe('DotContentletEditorService', () => {
     });
 
     it('should set Dragged content', () => {
-        const content = ({ id: '1' } as unknown) as DotCMSContentType;
+        const content = { id: '1' } as unknown as DotCMSContentType;
         service.draggedContentType$.subscribe((value) => {
             expect(value).toEqual(content);
         });
@@ -234,7 +238,7 @@ describe('DotContentletEditorService', () => {
     });
 
     it('should set Dragged contentlet', () => {
-        const contentlet = ({ id: '2' } as unknown) as DotCMSContentlet;
+        const contentlet = { id: '2' } as unknown as DotCMSContentlet;
         service.draggedContentType$.subscribe((value) => {
             expect(value).toEqual(contentlet);
         });

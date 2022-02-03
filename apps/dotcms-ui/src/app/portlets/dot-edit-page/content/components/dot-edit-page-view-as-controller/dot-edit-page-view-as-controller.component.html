@@ -19,7 +19,7 @@
         ></dot-device-selector>
         <dot-persona-selector
             (delete)="deletePersonalization($event)"
-            [disabled]="!(dotPageStateService.haveContent$ | async)"
+            [disabled]="(dotPageStateService.haveContent$ | async) === false"
             (selected)="changePersonaHandler($event)"
             [pageState]="pageState"
         ></dot-persona-selector>

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { DOTTestBed } from '../../../../../../test/dot-test-bed';
 import { DotLayoutPropertiesItemComponent } from './dot-layout-properties-item.component';
 import { FormGroup, FormControl } from '@angular/forms';

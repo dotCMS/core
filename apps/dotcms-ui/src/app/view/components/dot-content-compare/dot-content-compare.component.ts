@@ -47,7 +47,9 @@ export class DotContentCompareComponent {
                 this.dotIframeService.run({ name: 'getVersionBack', args: [inode] });
                 this.close.emit(true);
             },
-            reject: () => {},
+            reject: () => {
+                //
+            },
             header: this.dotMessageService.get('Confirm'),
             message: this.dotMessageService.get('folder.replace.contentlet.working.version')
         });

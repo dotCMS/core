@@ -4,8 +4,6 @@ import { DotCMSPersonalizedItem } from '@services/dot-personalize/dot-personaliz
 
 @Injectable()
 export class DotPersonalizeServiceMock {
-    constructor() {}
-
     personalized(): Observable<DotCMSPersonalizedItem[]> {
         return of([]);
     }

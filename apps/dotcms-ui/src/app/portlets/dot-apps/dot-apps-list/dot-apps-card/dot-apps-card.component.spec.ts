@@ -11,6 +11,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { Component } from '@angular/core';
 
 @Component({
+    // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'markdown',
     template: `<ng-content></ng-content>`
 })

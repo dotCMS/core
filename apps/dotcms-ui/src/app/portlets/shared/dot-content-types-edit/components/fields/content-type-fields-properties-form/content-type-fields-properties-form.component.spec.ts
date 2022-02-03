@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import {
     DebugElement,
     ComponentFactoryResolver,
@@ -38,8 +40,6 @@ class DotHostTesterComponent {
     mockDFormFieldData: DotCMSContentTypeField = {
         ...dotcmsContentTypeFieldBasicMock
     };
-
-    constructor() {}
 }
 
 @Directive({

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { TestBed } from '@angular/core/testing';
 import { DotWizardService } from './dot-wizard.service';
 import { DotWizardStep } from '@models/dot-wizard-step/dot-wizard-step.model';

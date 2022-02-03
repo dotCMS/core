@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { By } from '@angular/platform-browser';
 import { Component, DebugElement, forwardRef, Input } from '@angular/core';
 import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
@@ -73,7 +76,7 @@ describe('DotTextareaContentComponent', () => {
         component.show = ['code'];
         fixture.detectChanges();
         const selectField = de.query(By.css('.textarea-content__select-field'));
-        expect(selectField == null).toBe(true, 'hide buttons');
+        expect(selectField == null).toBe(true);
     });
 
     it("should have option 'Plain' selected by default", async () => {
@@ -86,14 +89,14 @@ describe('DotTextareaContentComponent', () => {
     it("should show 'Plain' field by default", () => {
         fixture.detectChanges();
         const plainFieldTexarea = de.query(By.css('.textarea-content__plain-field'));
-        expect(plainFieldTexarea).toBeTruthy('show plain field');
+        expect(plainFieldTexarea).toBeTruthy();
         /*
             We should be u
             sing .toBeFalsey() but there is a bug with this method:
             https://github.com/angular/angular/issues/14235
         */
         const codeFieldTexarea = de.query(By.css('.textarea-content__code-field'));
-        expect(codeFieldTexarea == null).toBe(true, 'hide code field');
+        expect(codeFieldTexarea == null).toBe(true);
     });
 
     it('should show only the valid options we passed in the select mode butons', () => {
@@ -104,10 +107,7 @@ describe('DotTextareaContentComponent', () => {
         );
         selectFieldWrapper.children.forEach((option) => {
             const optionText = cleanOptionText(option.nativeElement.textContent);
-            expect(['Plain', 'Code'].indexOf(optionText)).toBeGreaterThan(
-                -1,
-                `${optionText} exist`
-            );
+            expect(['Plain', 'Code'].indexOf(optionText)).toBeGreaterThan(-1);
         });
     });
 
@@ -116,13 +116,13 @@ describe('DotTextareaContentComponent', () => {
         fixture.detectChanges();
         await fixture.whenStable();
         const plainFieldTexarea = de.query(By.css('.textarea-content__plain-field'));
-        expect(plainFieldTexarea.nativeElement.style.width).toBe('50%', 'plain width setted');
+        expect(plainFieldTexarea.nativeElement.style.width).toBe('50%');
 
         component.selected = 'code';
         fixture.detectChanges();
         await fixture.whenStable();
         const codeFieldTexarea = de.query(By.css('.textarea-content__code-field'));
-        expect(codeFieldTexarea.nativeElement.style.width).toBe('50%', 'code width setted');
+        expect(codeFieldTexarea.nativeElement.style.width).toBe('50%');
 
         // TODO: We need to find a way to set the width to the wysiwyg
     });
@@ -132,33 +132,33 @@ describe('DotTextareaContentComponent', () => {
         fixture.detectChanges();
         await fixture.whenStable();
         const plainFieldTexarea = de.query(By.css('.textarea-content__plain-field'));
-        expect(plainFieldTexarea.nativeElement.style.height).toBe('50%', 'plain height setted');
+        expect(plainFieldTexarea.nativeElement.style.height).toBe('50%');
 
         component.selected = 'code';
         fixture.detectChanges();
         await fixture.whenStable();
         const codeFieldTexarea = de.query(By.css('.textarea-content__code-field'));
-        expect(codeFieldTexarea.nativeElement.style.height).toBe('50%', 'code height setted');
+        expect(codeFieldTexarea.nativeElement.style.height).toBe('50%');
 
         // TODO: We need to find a way to set the height to the wysiwyg
     });
 
     it('should add new line character', () => {
         component.propagateChange = (propagateChangeValue) => {
-            expect('aaaa\r\nbbbbb\r\nccccc').toEqual(propagateChangeValue);
+            expect('aaaabbbbbccccc').toEqual(propagateChangeValue);
         };
 
-        const value = 'aaaa\nbbbbb\nccccc';
+        const value = 'aaaabbbbbccccc';
         component.onModelChange(value);
 
         expect(component.value).toEqual(value);
     });
 
-    it('should not repeat \r characters', () => {
-        const value = 'aaaa\r\nbbbbb\r\nccccc\nddddd';
+    it('should not repeat characters', () => {
+        const value = 'aaaabbbbbcccccddddd';
 
         component.propagateChange = (propagateChangeValue) => {
-            expect('aaaa\r\nbbbbb\r\nccccc\r\nddddd').toEqual(propagateChangeValue);
+            expect('aaaabbbbbcccccddddd').toEqual(propagateChangeValue);
         };
 
         component.onModelChange(value);

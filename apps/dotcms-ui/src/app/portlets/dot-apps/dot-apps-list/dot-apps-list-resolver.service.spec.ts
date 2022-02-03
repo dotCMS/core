@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { of as observableOf, of } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
@@ -7,7 +9,9 @@ import { DotAppsService } from '@services/dot-apps/dot-apps.service';
 import { appsResponse, AppsServicesMock } from './dot-apps-list.component.spec';
 
 class DotLicenseServicesMock {
-    canAccessEnterprisePortlet(_url: string) {}
+    canAccessEnterprisePortlet(_url: string) {
+        of(true);
+    }
 }
 
 const activatedRouteSnapshotMock: any = jasmine.createSpyObj<ActivatedRouteSnapshot>(

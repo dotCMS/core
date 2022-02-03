@@ -6,8 +6,6 @@ import { BehaviorSubject } from 'rxjs';
 export class DotNavLogoService {
     navBarLogo$: BehaviorSubject<string> = new BehaviorSubject('');
 
-    constructor() {}
-
     /**
      * Sets a logo for the nav bar
      *

@@ -64,10 +64,18 @@ export default {
         rows: 4,
         pageLinkSize: 2,
         optionsWidth: '300',
-        paginate: () => {},
-        showOverlayHandler: () => {},
-        hideOverlayHandler: () => {},
-        handleClick: () => {},
+        paginate: () => {
+            //
+        },
+        showOverlayHandler: () => {
+            //
+        },
+        hideOverlayHandler: () => {
+            //
+        },
+        handleClick: () => {
+            //
+        },
         data: [
             {
                 label: 'This is an option',

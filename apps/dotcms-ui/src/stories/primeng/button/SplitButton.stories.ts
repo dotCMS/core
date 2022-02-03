@@ -27,16 +27,32 @@ const items = [
     {
         label: 'Update',
         icon: 'pi pi-refresh',
-        command: () => {}
+        command: () => {
+            //
+        }
     },
     {
         label: 'Delete',
         icon: 'pi pi-times',
-        command: () => {}
+        command: () => {
+            //
+        }
     },
-    { label: 'Angular.io', icon: 'pi pi-info', command: () => {} },
+    {
+        label: 'Angular.io',
+        icon: 'pi pi-info',
+        command: () => {
+            //
+        }
+    },
     { separator: true },
-    { label: 'Setup', icon: 'pi pi-cog', command: () => {} }
+    {
+        label: 'Setup',
+        icon: 'pi pi-cog',
+        command: () => {
+            //
+        }
+    }
 ];
 
 const PrimaryTemplate = `

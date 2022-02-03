@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { of as observableOf, Subject } from 'rxjs';
 import { mockUser } from './../../../../test/login-service.mock';
 import { mockDotRenderedPage } from '../../../../test/dot-page-render.mock';
@@ -64,7 +66,9 @@ class MockDotContentletEditorService {
 class MockDotPageStateService {
     reload$ = new Subject();
     state$ = new Subject();
-    get(): void {}
+    get(): void {
+        //
+    }
     reload(): void {
         this.reload$.next(
             new DotPageRenderState(mockUser(), new DotPageRender(mockDotRenderedPage()))
@@ -184,8 +188,9 @@ describe('DotEditPageMainComponent', () => {
         dotCustomEventHandlerService = fixture.debugElement.injector.get(
             DotCustomEventHandlerService
         );
-        editContentlet = fixture.debugElement.query(By.css('dot-edit-contentlet'))
-            .componentInstance;
+        editContentlet = fixture.debugElement.query(
+            By.css('dot-edit-contentlet')
+        ).componentInstance;
         fixture.detectChanges();
     });
 
@@ -198,8 +203,9 @@ describe('DotEditPageMainComponent', () => {
     });
 
     it('should bind correctly pageState param', () => {
-        const nav: DotEditPageNavComponent = fixture.debugElement.query(By.css('dot-edit-page-nav'))
-            .componentInstance;
+        const nav: DotEditPageNavComponent = fixture.debugElement.query(
+            By.css('dot-edit-page-nav')
+        ).componentInstance;
         expect(nav.pageState).toEqual(mockDotRenderedPageState);
     });
 

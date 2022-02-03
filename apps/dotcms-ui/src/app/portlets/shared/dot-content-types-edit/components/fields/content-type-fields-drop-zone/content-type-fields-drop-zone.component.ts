@@ -51,7 +51,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     dialogActions: DotDialogActions;
     fieldRows: DotCMSContentTypeLayoutRow[];
     hideButtons = false;
-    activeTab: number = 0;
+    activeTab = 0;
 
     @ViewChild('fieldPropertiesForm', { static: true })
     propertiesForm: ContentTypeFieldsPropertiesFormComponent;
@@ -243,7 +243,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
         Object.assign(this.currentField, fieldToSave);
 
-        if (!!fieldToSave.id) {
+        if (fieldToSave.id) {
             this.editField.emit(this.currentField);
         } else {
             this.emitSaveFields(this.fieldRows);

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { of as observableOf, of, throwError } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
@@ -177,8 +179,8 @@ class MockDotWhatsChangedComponent {
 })
 export class MockDotFormSelectorComponent {
     @Input() show = false;
-    @Output() select = new EventEmitter<DotCMSContentType>();
-    @Output() close = new EventEmitter<any>();
+    @Output() pick = new EventEmitter<DotCMSContentType>();
+    @Output() shutdown = new EventEmitter<any>();
 }
 
 @Component({
@@ -398,7 +400,7 @@ describe('DotEditContentComponent', () => {
 
             describe('events', () => {
                 it('select > should add form', () => {
-                    dotFormSelector.triggerEventHandler('select', {
+                    dotFormSelector.triggerEventHandler('pick', {
                         baseType: 'string',
                         clazz: 'string'
                     });
@@ -420,7 +422,7 @@ describe('DotEditContentComponent', () => {
 
                 it('close > should close form', () => {
                     component.editForm = true;
-                    dotFormSelector.triggerEventHandler('close', {});
+                    dotFormSelector.triggerEventHandler('shutdown', {});
                     expect(component.editForm).toBe(false);
                 });
             });
@@ -916,7 +918,9 @@ describe('DotEditContentComponent', () => {
                     }));
 
                     it('should handle load-edit-mode-page to internal navigation', fakeAsync(() => {
-                        spyOn(dotPageStateService, 'setLocalState').and.callFake(() => {});
+                        spyOn(dotPageStateService, 'setLocalState').and.callFake(() => {
+                            //
+                        });
                         detectChangesForIframeRender(fixture);
 
                         triggerIframeCustomEvent({
@@ -936,7 +940,9 @@ describe('DotEditContentComponent', () => {
 
                     it('should handle load-edit-mode-page to internal navigation', fakeAsync(() => {
                         spyOn(dotPageStateService, 'setInternalNavigationState').and.callFake(
-                            () => {}
+                            () => {
+                                //
+                            }
                         );
 
                         detectChangesForIframeRender(fixture);
@@ -980,7 +986,9 @@ describe('DotEditContentComponent', () => {
                     }));
 
                     it('should handle error-saving-menu-order', fakeAsync(() => {
-                        spyOn(dotGlobalMessageService, 'error').and.callFake(() => {});
+                        spyOn(dotGlobalMessageService, 'error').and.callFake(() => {
+                            //
+                        });
 
                         detectChangesForIframeRender(fixture);
 
@@ -996,7 +1004,9 @@ describe('DotEditContentComponent', () => {
                     }));
 
                     it('should handle cancel-save-menu-order', fakeAsync(() => {
-                        spyOn(dotGlobalMessageService, 'error').and.callFake(() => {});
+                        spyOn(dotGlobalMessageService, 'error').and.callFake(() => {
+                            //
+                        });
 
                         detectChangesForIframeRender(fixture);
 
@@ -1080,7 +1090,9 @@ describe('DotEditContentComponent', () => {
                         spyOn(
                             dotEditContentHtmlService,
                             'setContainterToAppendContentlet'
-                        ).and.callFake(() => {});
+                        ).and.callFake(() => {
+                            //
+                        });
 
                         fixture.detectChanges();
 
@@ -1108,7 +1120,9 @@ describe('DotEditContentComponent', () => {
                         spyOn(
                             dotEditContentHtmlService,
                             'setContainterToAppendContentlet'
-                        ).and.callFake(() => {});
+                        ).and.callFake(() => {
+                            //
+                        });
                         spyOn(dotContentletEditorService, 'add').and.callFake((param) => {
                             expect(param.data).toEqual({
                                 container: 'identifier',
@@ -1166,7 +1180,9 @@ describe('DotEditContentComponent', () => {
                         spyOn(
                             dotEditContentHtmlService,
                             'setContainterToAppendContentlet'
-                        ).and.callFake(() => {});
+                        ).and.callFake(() => {
+                            //
+                        });
 
                         spyOn(dotContentletEditorService, 'getActionUrl').and.returnValue(
                             of('/url/')
@@ -1210,10 +1226,15 @@ describe('DotEditContentComponent', () => {
                     });
 
                     it('should display Form Selector when handle add content event of form Type', () => {
-
-                        spyOn( dotEditContentHtmlService, 'setContainterToAppendContentlet' ).and.callFake(() => {});
-                        spyOn( dotEditContentHtmlService, 'removeContentletPlaceholder' ).and.callFake(() => {});
-                        spyOn( component, 'addFormContentType' ).and.callThrough();
+                        spyOn(
+                            dotEditContentHtmlService,
+                            'setContainterToAppendContentlet'
+                        ).and.callFake(() => {});
+                        spyOn(
+                            dotEditContentHtmlService,
+                            'removeContentletPlaceholder'
+                        ).and.callFake(() => {});
+                        spyOn(component, 'addFormContentType').and.callThrough();
 
                         fixture.detectChanges();
 
@@ -1235,14 +1256,20 @@ describe('DotEditContentComponent', () => {
                             uuid: data.container.dotUuid
                         };
 
-                        expect( dotEditContentHtmlService.setContainterToAppendContentlet ).toHaveBeenCalledWith(container);
-                        expect( dotEditContentHtmlService.removeContentletPlaceholder ).toHaveBeenCalled();
-                        expect( component.addFormContentType ).toHaveBeenCalled();
-                        expect( component.editForm ).toBeTruthy();
+                        expect(
+                            dotEditContentHtmlService.setContainterToAppendContentlet
+                        ).toHaveBeenCalledWith(container);
+                        expect(
+                            dotEditContentHtmlService.removeContentletPlaceholder
+                        ).toHaveBeenCalled();
+                        expect(component.addFormContentType).toHaveBeenCalled();
+                        expect(component.editForm).toBeTruthy();
                     });
 
                     it('should handle remove event', (done) => {
-                        spyOn(dotEditContentHtmlService, 'removeContentlet').and.callFake(() => {});
+                        spyOn(dotEditContentHtmlService, 'removeContentlet').and.callFake(() => {
+                            //
+                        });
                         spyOn(dotDialogService, 'confirm').and.callFake((param) => {
                             expect(param.header).toEqual('header');
                             expect(param.message).toEqual('message');
@@ -1281,7 +1308,9 @@ describe('DotEditContentComponent', () => {
                     });
 
                     it('should handle select event', () => {
-                        spyOn(dotContentletEditorService, 'clear').and.callFake(() => {});
+                        spyOn(dotContentletEditorService, 'clear').and.callFake(() => {
+                            //
+                        });
 
                         fixture.detectChanges();
 
@@ -1365,7 +1394,7 @@ describe('DotEditContentComponent', () => {
             });
 
             it('should save form', () => {
-                dotFormSelector.triggerEventHandler('select', {
+                dotFormSelector.triggerEventHandler('pick', {
                     baseType: 'string',
                     clazz: 'string'
                 });
@@ -1450,7 +1479,6 @@ describe('DotEditContentComponent', () => {
             });
             detectChangesForIframeRender(fixture);
             fixture.detectChanges();
-            const contentPaletteWrapper = de.query(By.css('.dot-edit-content__palette'));
             const contentPalette: DotPaletteComponent = de.query(
                 By.css('dot-palette')
             ).componentInstance;

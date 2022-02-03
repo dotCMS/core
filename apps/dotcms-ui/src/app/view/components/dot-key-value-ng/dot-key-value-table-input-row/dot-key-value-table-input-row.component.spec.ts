@@ -54,8 +54,9 @@ describe('DotKeyValueTableInputRowComponent', () => {
 
         hostComponentfixture = DOTTestBed.createComponent(TestHostComponent);
         hostComponent = hostComponentfixture.componentInstance;
-        comp = hostComponentfixture.debugElement.query(By.css('dot-key-value-table-input-row'))
-            .componentInstance;
+        comp = hostComponentfixture.debugElement.query(
+            By.css('dot-key-value-table-input-row')
+        ).componentInstance;
         de = hostComponentfixture.debugElement.query(By.css('dot-key-value-table-input-row'));
 
         dotMessageDisplayService = de.injector.get(DotMessageDisplayService);
@@ -174,7 +175,11 @@ describe('DotKeyValueTableInputRowComponent', () => {
 
             de.query(
                 By.css('.dot-key-value-table-input-row__variables-actions-edit-cancel')
-            ).triggerEventHandler('click', { stopPropagation: () => {} });
+            ).triggerEventHandler('click', {
+                stopPropagation: () => {
+                    //
+                }
+            });
             expect(comp.variable).toEqual({ key: '', hidden: false, value: '' });
             expect(comp.keyCell.nativeElement.focus).toHaveBeenCalled();
         });
