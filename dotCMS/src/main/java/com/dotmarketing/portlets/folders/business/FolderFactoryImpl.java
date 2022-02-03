@@ -1219,15 +1219,15 @@ public class FolderFactoryImpl extends FolderFactory {
 	}
 
 	private void setInodeIfNeeded(final Folder folder) throws DotDataException {
-		String inode = null;
+		String inode = folder.getInode();
 
-		if (!UtilMethods.isSet(folder.getInode())) {
+		if (!UtilMethods.isSet(inode)) {
 			inode = APILocator.getDeterministicIdentifierAPI()
 					.generateDeterministicIdBestEffort(folder,
 							(Treeable) folder.getParentPermissionable());
 		}
 
-		if (null== find(inode)) {
+		if (null == find(inode)) {
 			final UpsertCommand upsertInodeCommand = UpsertCommandFactory.getUpsertCommand();
 			final SimpleMapAppContext replacements = new SimpleMapAppContext();
 
