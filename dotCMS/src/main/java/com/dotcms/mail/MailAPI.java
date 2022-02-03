@@ -18,15 +18,9 @@ public interface MailAPI {
      */
     enum Keys {
 
-        HOST("mail.smtp.host"),
-        PORT("mail.smtp.port"),
-        TIMEOUT("mail.smtp.connectiontimeout"),
-        ENABLED("mail.smtp.auth"),
-        EHLO("mail.smtp.ehlo"),
+        TRANSPORT_PROTOCOL("mail.transport.protocol"),
         USER("mail.user"),
-        SMTP_USER("mail.smtp.user"),
-        PASSWORD("mail.password"),
-        SMTP_PASSWORD("mail.smtp.password");
+        PASSWORD("mail.password");
 
         private final String value;
 
@@ -44,6 +38,9 @@ public interface MailAPI {
         }
     }
 
+    int DEFAULT_MAIL_PORT = 25;
+    String DEFAULT_MAIL_PROTOCOL = "smtp";
+
     /**
      * Default JNDI dir for the mail session
      */
@@ -54,6 +51,10 @@ public interface MailAPI {
      * @return
      */
     Optional<Session> loadMailSessionFromContext();
+
+    int getConnectionPort();
+
+    String getConnectionHost();
 
     /**
      * True if has a mail session in the context

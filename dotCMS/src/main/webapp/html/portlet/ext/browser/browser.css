@@ -23,7 +23,8 @@
 /* end if scrolling */
 
 ul, li {list-style: none;padding: 0;margin: 0;}
-#TreeUL{font-size:100%;color: black;}
+#TreeUL {font-size:100%;color: black;padding: 0;margin: 0;}
+#TreeUL ul {list-style: none;padding: 0;margin: 0;}
 #TreeUL li li {padding: 10px 0 0 20px;}
 #TreeUL img {border: 0;vertical-align: middle;}
 #TreeUL a {cursor: pointer;color: black;}

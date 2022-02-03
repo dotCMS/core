@@ -3,28 +3,26 @@ package com.dotmarketing.portlets.rules.conditionlet;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
-
-import com.dotcms.LicenseTestUtil;
-import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.osgi.GenericBundleActivator;
-import com.dotmarketing.osgi.HostActivator;
-import com.dotmarketing.osgi.OSGIProxyServlet;
-import com.dotmarketing.portlets.rules.RuleComponentInstance;
-import com.dotmarketing.portlets.rules.model.ParameterModel;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import org.apache.felix.framework.OSGIUtil;
 import java.util.Map;
 import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.felix.framework.OSGIUtil;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.osgi.framework.BundleContext;
+import com.dotcms.LicenseTestUtil;
+import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.osgi.GenericBundleActivator;
+import com.dotmarketing.osgi.HostActivator;
+import com.dotmarketing.portlets.rules.RuleComponentInstance;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 
 public class ConditionletOSGIFTest {
 
@@ -36,7 +34,6 @@ public class ConditionletOSGIFTest {
 
         Mockito.when(Config.CONTEXT.getRealPath("/WEB-INF/felix")).thenReturn(Config.getStringProperty("felix.base.dir","/WEB-INF/felix"));
         final ServletConfig servletConfig = mock(ServletConfig.class);
-        OSGIProxyServlet.servletConfig = servletConfig;
 
         OSGIUtil.getInstance().initializeFramework();
     }
