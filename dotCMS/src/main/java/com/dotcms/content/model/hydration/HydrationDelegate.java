@@ -13,6 +13,16 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
  */
 public interface HydrationDelegate {
 
+    /**
+     * When a Field is annotated this method gets called from the contentletToJsonAPI
+     * @param builder FieldValueBuilder
+     * @param field The Field we're looking at
+     * @param contentlet The Source Contentlet
+     * @param propertyName The property we want to inject
+     * @return FieldValueBuilder with the new calculated values
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     FieldValueBuilder hydrate(FieldValueBuilder builder, Field field, Contentlet contentlet,
             String propertyName)
             throws DotDataException, DotSecurityException;
