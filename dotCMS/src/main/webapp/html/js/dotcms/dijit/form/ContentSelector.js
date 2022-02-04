@@ -924,14 +924,16 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			}
 		}
 
+		
 		// Header based sorting functionality
 		var headerClicked =  function(scope,header) {
+			const fieldStructureVarName = header?.fieldStructureVarName || this.structureVelVar;
             if ("__title__" === header["fieldVelocityVarName"]) {
-                scope._doSearch(1,this.structureVelVar+".title");
+                scope._doSearch(1,fieldStructureVarName+".title");
             } else if ("__type__" === header["fieldVelocityVarName"]) {
-                scope._doSearch(1,this.structureVelVar+".structurename");
+                scope._doSearch(1,fieldStructureVarName+".structurename");
             } else {
-                scope._doSearch(1,this.structureVelVar+"."+header["fieldVelocityVarName"]);
+                scope._doSearch(1,fieldStructureVarName+"."+header["fieldVelocityVarName"]);
             }
 		};
 		for (var i = 0; i < headers.length; i++) {

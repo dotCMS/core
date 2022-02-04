@@ -70,6 +70,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.search.SearchRequest;
@@ -802,7 +803,12 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
     ContentType type = new ContentTypeDataGen()
         .fields(ImmutableList.of(ImmutableTextField.builder().name("Title").variable("title").searchable(true).listed(true).build()))
         .nextPersisted();
-    Contentlet content = new ContentletDataGen(type.id()).setProperty("title", "contentTest " + System.currentTimeMillis()).next();
+
+      String testBody = RandomStringUtils.random(10000000, true, true);
+
+    Contentlet content = new ContentletDataGen(type.id()).setProperty("title", "contentTest " + System.currentTimeMillis())
+            .setProperty("body", testBody).next();
+
 
     String title = "version1";
     content.setStringProperty("title", title);

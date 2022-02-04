@@ -145,6 +145,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   public static final String WORKFLOW_EXPIRE_DATE = "wfExpireDate";
   public static final String WORKFLOW_EXPIRE_TIME = "wfExpireTime";
   public static final String WORKFLOW_NEVER_EXPIRE = "wfNeverExpire";
+  public static final String WORKFLOW_TIMEZONE_ID = "timezoneId";
   public static final String FILTER_KEY = "filterKey";
   public static final String WHERE_TO_SEND = "whereToSend";
   public static final String I_WANT_TO = "iWantTo";

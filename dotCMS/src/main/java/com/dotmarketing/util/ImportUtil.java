@@ -65,6 +65,8 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
+
+import org.apache.commons.lang3.BooleanUtils;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -734,8 +736,7 @@ public class ImportUtil {
                             }
                         }
                         if (!found) {
-                            throw new DotRuntimeException("Line #" + lineNumber + " contains errors. Column: '" + field.getVelocityVarName() +
-                                    "', value: '" + value + "', invalid value found. Line will be ignored.");
+                            valueObj = BooleanUtils.toBoolean(value);
                         }
                     } else {
                         valueObj = null;

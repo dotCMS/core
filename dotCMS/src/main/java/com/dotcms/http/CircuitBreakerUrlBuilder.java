@@ -119,7 +119,7 @@ public class CircuitBreakerUrlBuilder {
             default:
                 request = new HttpGet(proxyUrl);
                 break;
-        }
+        } 
 
         return new CircuitBreakerUrl(this.proxyUrl, this.timeout, this.circuitBreaker, request, this.params, this.headers, this.verbose, this.rawData);
 
