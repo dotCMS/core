@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.collect.ImmutableList;
+import com.liferay.util.StringPool;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -63,7 +64,7 @@ public abstract class TagField extends Field  implements OnePerContentType{
 	@Override
 	public Optional<FieldValueBuilder> fieldValue(Object value) {
 		if (value instanceof String) {
-			final String[] strings = value.toString().split(",");
+			final String[] strings = value.toString().split(StringPool.COMMA);
 			return Optional.of(TagFieldType.builder().value(Stream.of(strings).collect(Collectors.toList())));
 		} else {
 			if(value instanceof Iterable){
