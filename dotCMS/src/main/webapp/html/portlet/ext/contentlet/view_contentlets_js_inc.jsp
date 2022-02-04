@@ -2039,7 +2039,7 @@
 
                     var modDate = cellData.modDateMilis;
                     cell.innerHTML = (hasTitleImage)
-                        ? '<img draggable="false" style="width:64px;height: 64px;object-fit: contain;" class="listingTitleImg" onError="replaceWithIcon(this.parentElement, \'' + iconName + '\')" src="/dA/' + cellData.inode + '/titleImage/256w?r=' + modDate +'" alt="' + cellData['__title__'].replace(/[^A-Za-z0-9_]/g, ' ') + '" >'
+                        ? '<img draggable="false" style="width:64px;height: 64px;object-fit: contain;" class="listingTitleImg" onError="replaceWithIcon(this.parentElement, \'' + iconName + '\')" src="/dA/' + cellData.inode + '/titleImage/256w/20q?r=' + modDate +'" alt="' + cellData['__title__'].replace(/[^A-Za-z0-9_]/g, ' ') + '" >'
                         : '<dot-contentlet-icon icon="' + iconName +'" size="48px" />';
                     
                     cell.setAttribute("style","height: 85px; text-align: center;");
