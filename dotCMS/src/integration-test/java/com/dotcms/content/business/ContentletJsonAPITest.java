@@ -338,7 +338,6 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
             final ContentletJsonAPI impl = APILocator.getContentletJsonAPI();
             final String json = impl.toJson(in);
             assertNotNull(json);
-            System.out.println(json);
             final Contentlet out = impl.mapContentletFieldsFromJson(json);
             mapsAreEqual(in.getMap(),out.getMap());
 

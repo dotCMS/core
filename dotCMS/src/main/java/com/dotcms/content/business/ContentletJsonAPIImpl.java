@@ -451,7 +451,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
     private Optional<FieldValue<?>> hydrateThenGetFieldValue(final Object value, final Field field,
             final com.dotmarketing.portlets.contentlet.model.Contentlet contentlet) {
 
-        Optional<FieldValueBuilder> fieldValueBuilder = field.fieldValue(value);
+        final Optional<FieldValueBuilder> fieldValueBuilder = field.fieldValue(value);
         if (fieldValueBuilder.isPresent()) {
             FieldValueBuilder builder = fieldValueBuilder.get();
             final List<Tuple2<HydrationDelegate,String>> delegateAndFields = getHydrationDelegatesFromAnnotations(builder.getClass());

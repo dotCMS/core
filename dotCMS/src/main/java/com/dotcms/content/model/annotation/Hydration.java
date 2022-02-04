@@ -11,6 +11,10 @@ import java.lang.annotation.RetentionPolicy;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Hydration {
 
+    /**
+     * Through this attribute we indicate what properties of the bean annotated should be injected
+     * @return
+     */
     HydrateWith[] properties();
 
 }
