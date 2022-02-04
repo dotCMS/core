@@ -1,5 +1,5 @@
 <form [formGroup]="form" class="content-type__form p-fluid" id="content-type-form" novalidate>
-    <div class="p-field form__group--validation">
+    <div class="field form__group--validation">
         <label for="content-type-form-name">{{ nameFieldLabel }}</label>
         <input
             pInputText
@@ -16,7 +16,7 @@
             [field]="form.get('name')"
         ></dot-field-validation-message>
     </div>
-    <div class="p-field">
+    <div class="field">
         <label for="content-type-form-description">{{ 'contenttypes.form.label.icon' | dm }}</label>
         <dot-md-icon-selector
             id="content-type-form-icon"
@@ -24,7 +24,7 @@
         ></dot-md-icon-selector>
     </div>
 
-    <div class="p-field">
+    <div class="field">
         <label for="content-type-form-description">{{
             'contenttypes.form.label.description' | dm
         }}</label>
@@ -37,7 +37,7 @@
             [tabindex]="2"
         />
     </div>
-    <div class="p-field">
+    <div class="field">
         <label for="content-type-form-host" class="form__label">{{
             'contenttypes.form.field.host_folder.label' | dm
         }}</label>
@@ -48,7 +48,7 @@
             [tabindex]="3"
         ></dot-site-selector-field>
     </div>
-    <div class="p-field">
+    <div class="field">
         <label for="content-type-form-workflow" class="form__label">{{
             'contenttypes.form.label.workflow' | dm
         }}</label>
@@ -57,7 +57,7 @@
             formControlName="workflows"
         ></dot-workflows-selector-field>
     </div>
-    <div class="p-field" formGroupName="systemActionMappings">
+    <div class="field" formGroupName="systemActionMappings">
         <label for="content-type-form-workflow" class="form__label">{{
             'contenttypes.form.label.workflow.actions' | dm
         }}</label>
@@ -70,7 +70,7 @@
         'contenttypes.form.hint.error.only.default.scheme.available.in.Community' | dm
     }}</span>
     <div class="p-formgrid grid">
-        <div class="p-field p-col">
+        <div class="field p-col">
             <label for="content-type-form-publish-date-field" class="form__label">{{
                 'contenttypes.form.label.publish.date.field' | dm
             }}</label>
@@ -85,7 +85,7 @@
                 [tabindex]="5"
             ></p-dropdown>
         </div>
-        <div class="p-field p-col">
+        <div class="field p-col">
             <label for="content-type-form-expire-date-field" class="form__label">{{
                 'contenttypes.form.field.expire.date.field' | dm
             }}</label>
@@ -102,13 +102,13 @@
         </div>
     </div>
 
-    <div class="p-field">
+    <div class="field">
         <small class="p-field-hint" *ngIf="!dateVarOptions.length" id="field-dates-hint">{{
             'contenttypes.form.message.no.date.fields.defined' | dm
         }}</small>
     </div>
 
-    <div class="p-field" *ngIf="form.get('detailPage')">
+    <div class="field" *ngIf="form.get('detailPage')">
         <dot-page-selector
             id="content-type-form-detail-page"
             formControlName="detailPage"
@@ -116,7 +116,7 @@
             [label]="'contenttypes.form.field.detail.page' | dm"
         ></dot-page-selector>
     </div>
-    <div class="p-field form__group--helper" *ngIf="form.get('urlMapPattern')">
+    <div class="field form__group--helper" *ngIf="form.get('urlMapPattern')">
         <dot-field-helper
             [message]="'contenttypes.hint.URL.map.pattern.hint1' | dm"
         ></dot-field-helper>

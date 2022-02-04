@@ -21,7 +21,7 @@
 <form #form="ngForm" [formGroup]="myFormGroup" class="p-fluid" novalidate>
     <div #formContainer class="dot-apps-configuration-detail__form">
         <div
-            class="p-field"
+            class="field"
             *ngFor="let field of formFields"
             [attr.data-testid]="field.name"
             [ngSwitch]="field.type"

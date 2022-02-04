@@ -7,7 +7,7 @@
     #formEl="ngForm"
     class="p-fluid"
 >
-    <div class="p-field">
+    <div class="field">
         <label class="form__label"
             >{{ 'contenttypes.content.push_publish.I_want_To' | dm }}:
         </label>
@@ -19,7 +19,7 @@
         </p-selectButton>
     </div>
 
-    <div class="p-field">
+    <div class="field">
         <label class="form__label">{{ 'contenttypes.content.push_publish.filters' | dm }}: </label>
         <p-dropdown
             [options]="filterOptions"
@@ -28,8 +28,8 @@
         ></p-dropdown>
     </div>
 
-    <div class="p-field form-group__two-cols push-publish-dialog__publish-dates-container">
-        <div class="p-field push-publish-dialog__publish-date">
+    <div class="field form-group__two-cols push-publish-dialog__publish-dates-container">
+        <div class="field push-publish-dialog__publish-date">
             <label class="form__label"
                 >{{ 'contenttypes.content.push_publish.publish_date' | dm }}:
             </label>
@@ -51,7 +51,7 @@
                 [field]="form.get('publishDate')"
             ></dot-field-validation-message>
         </div>
-        <div class="p-field push-publish-dialog__expire-date">
+        <div class="field push-publish-dialog__expire-date">
             <label class="form__label"
                 >{{ 'contenttypes.content.push_publish.expire_date' | dm }}:
             </label>
@@ -73,11 +73,11 @@
             ></dot-field-validation-message>
         </div>
     </div>
-    <div class="p-field push-publish-dialog__timezone-label">
+    <div class="field push-publish-dialog__timezone-label">
         <span>{{ localTimezone }}</span> -
         <a href="#" (click)="toggleTimezonePicker($event)"> {{ changeTimezoneActionLabel }}</a>
     </div>
-    <div class="p-field" data-testid="timeZoneSelectContainer" [hidden]="!showTimezonePicker">
+    <div class="field" data-testid="timeZoneSelectContainer" [hidden]="!showTimezonePicker">
         <label class="form__label">{{ 'time-zone' | dm }}: </label>
         <p-dropdown
             data-testid="timeZoneSelect"
@@ -89,7 +89,7 @@
             appendTo="body"
         ></p-dropdown>
     </div>
-    <div class="p-field">
+    <div class="field">
         <label class="form__label">{{ 'contenttypes.content.push_publish.push_to' | dm }}: </label>
         <dot-push-publish-env-selector
             [assetIdentifier]="assetIdentifier"
