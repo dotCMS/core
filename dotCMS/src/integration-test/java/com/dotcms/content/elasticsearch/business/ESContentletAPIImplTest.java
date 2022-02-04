@@ -421,7 +421,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      * @throws DotSecurityException
      */
     @Test
-    public void saveAndUpdateContentletWithBynaryField() throws IOException, DotDataException, DotSecurityException {
+    public void saveAndUpdateContentletWithBinaryField() throws IOException, DotDataException, DotSecurityException {
         final Field binaryField = new FieldDataGen()
                 .name("binary")
                 .velocityVarName("binary")

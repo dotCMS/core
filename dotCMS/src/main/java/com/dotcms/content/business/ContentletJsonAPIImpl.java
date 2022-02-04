@@ -16,12 +16,13 @@ import static com.dotmarketing.util.UtilMethods.isSet;
 
 import com.dotcms.content.model.Contentlet;
 import com.dotcms.content.model.FieldValue;
+import com.dotcms.content.model.FieldValueBuilder;
 import com.dotcms.content.model.ImmutableContentlet;
 import com.dotcms.content.model.ImmutableContentlet.Builder;
-import com.dotcms.content.model.type.hidden.BoolHiddenFieldType;
-import com.dotcms.content.model.type.radio.BoolRadioFieldType;
-import com.dotcms.content.model.type.text.FloatTextFieldType;
-import com.dotcms.content.model.type.text.LongTextFieldType;
+import com.dotcms.content.model.annotation.HydrateWith;
+import com.dotcms.content.model.annotation.Hydration;
+import com.dotcms.content.model.hydration.HydrationDelegate;
+import com.dotcms.content.model.type.system.CategoryFieldType;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -31,9 +32,6 @@ import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.HiddenField;
 import com.dotcms.contenttype.model.field.HostFolderField;
-import com.dotcms.contenttype.model.field.ImmutableHiddenField;
-import com.dotcms.contenttype.model.field.ImmutableRadioField;
-import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.LineDividerField;
 import com.dotcms.contenttype.model.field.PermissionTabField;
@@ -43,16 +41,18 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
+import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.business.CategoryAPI;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.BinaryFileFilter;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -62,7 +62,9 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.Tuple;
@@ -70,12 +72,15 @@ import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.File;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -127,8 +132,8 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
      */
     public ContentletJsonAPIImpl() {
         this(APILocator.getIdentifierAPI(), APILocator.getContentTypeAPI(APILocator.systemUser()),
-             APILocator.getFileAssetAPI(), APILocator.getContentletAPI(),
-             APILocator.getFolderAPI(), APILocator.getHostAPI());
+                APILocator.getFileAssetAPI(), APILocator.getContentletAPI(),
+                APILocator.getFolderAPI(), APILocator.getHostAPI());
     }
 
     /**
@@ -140,7 +145,25 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
      */
     public String toJson(final com.dotmarketing.portlets.contentlet.model.Contentlet contentlet)
             throws JsonProcessingException, DotDataException {
-        return objectMapper.get().writeValueAsString(toImmutable(contentlet));
+
+        final com.dotmarketing.portlets.contentlet.model.Contentlet copy = new com.dotmarketing.portlets.contentlet.model.Contentlet(contentlet);
+
+        final ContentType contentType = copy.getContentType();
+        final ImmutableSet.Builder<com.dotcms.contenttype.model.field.Field> builder = ImmutableSet.builder();
+        Set<Field> categoriesAndTagFields = builder.addAll(contentType.fields(TagField.class))
+                .addAll(contentType.fields(CategoryField.class)).build();
+
+        final Map<String, Object> map = copy.getMap();
+        //A small precaution that guarantees categories and tags will be stored as Lists.
+        categoriesAndTagFields.forEach(field -> {
+            final Object object = map.get(field.variable());
+            if(object instanceof String){
+                final String asString = (String)object;
+                map.put(field.variable(), Arrays.asList(asString.split("\\s*,\\s*")));
+            }
+        });
+
+        return objectMapper.get().writeValueAsString(toImmutable(copy));
     }
 
     /**
@@ -153,7 +176,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
 
         final Builder builder = ImmutableContentlet.builder();
         builder.baseType(contentlet.getBaseType().orElseGet(() -> BaseContentType.ANY).toString());
-        builder.contentType(contentlet.getContentType().id());
+        builder.contentType(Try.of(()->contentlet.getContentType().id()).getOrElse("unknown"));
         // Don't use the title getter method here.
         // Title is a nullable field and the getter is meant to always calculate something.
         // it's ok if it's null sometimes. We need to mirror the old columns behavior.
@@ -179,17 +202,39 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
         final List<Field> fields = contentlet.getContentType().fields();
         for (final Field field : fields) {
             if (isNotMappable(field)) {
+                Logger.debug(ContentletJsonAPIImpl.class, String.format("Field `%s` is getting skipped.", field.name()));
+                continue;
+            }
+
+            final String variable = field.variable();
+            if(null == variable){
+                Logger.debug(ContentletJsonAPIImpl.class, String.format("Field `%s` lacks variable unique name.", field.name()));
                 continue;
             }
             final Object value = contentlet.get(field.variable());
-            final Optional<FieldValue<?>> fieldValue = getFieldValue(value, field);
-            if (!fieldValue.isPresent()) {
-                    Logger.debug(ContentletJsonAPIImpl.class,()->
+            if (null != value) {
+                final Optional<FieldValue<?>> fieldValue = hydrateThenGetFieldValue(value, field, contentlet);
+                if (!fieldValue.isPresent()) {
+                    Logger.debug(ContentletJsonAPIImpl.class,
                             String.format("Unable to set field `%s` with the given value %s.",
                                     field.name(), value));
                 } else {
-                    builder.putFields(field.variable(), fieldValue.get());
+                    builder.putFields(variable, fieldValue.get());
                 }
+            } else {
+                if(DataTypes.SYSTEM == field.dataType()){
+                    //There is still the possibility that we're looking at a system field that isn't in the contentlet.
+                    //So we need to fetch the values from an external source
+                    final Optional<FieldValue<?>> externalFieldValue = Try
+                            .of(() -> loadSystemFieldValue(field, contentlet, APILocator.systemUser())).get();
+                    if(externalFieldValue.isPresent()){
+                        builder.putFields(variable, externalFieldValue.get());
+                        continue;
+                    }
+                }
+                Logger.debug(ContentletJsonAPIImpl.class,
+                        String.format("Unable to set field `%s` as it wasn't set on the source contentlet", field.name()));
+            }
         }
         return builder.build();
     }
@@ -251,7 +296,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
                 continue;
             }
 
-            final Object value;
+            Object value;
             if (field instanceof ConstantField) {
                 value = field.values();
             } else {
@@ -265,10 +310,25 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
                     }
                 }
             }
+            //We're returning Tags as a comma separated string for backwards compatibility
+            //This is expected to be removed in the near future
+            if(field instanceof TagField && value instanceof Collection){
+                final Collection<String>tags = (Collection)value;
+                value = String.join(StringPool.COMMA,tags);
+            }
             map.put(field.variable(), value);
         }
 
         return map;
+    }
+
+    /**
+     * These basically tells what system fields are accepted in the generate contentlet-json
+     * @param field
+     * @return
+     */
+    private boolean isAllowedSystemField(final Field field){
+        return (field instanceof BinaryField || field instanceof HiddenField || field instanceof CategoryField || field instanceof TagField || field instanceof ConstantField);
     }
 
     /**
@@ -292,7 +352,6 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
                 field instanceof LineDividerField ||
                         field instanceof TabDividerField ||
                         field instanceof ColumnField ||
-                        field instanceof CategoryField ||
                         field instanceof PermissionTabField ||
                         field instanceof RelationshipsTabField
         );
@@ -305,7 +364,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
      */
     private boolean isNoneMappableSystemField(final Field field) {
         return (field.dataType() == DataTypes.SYSTEM &&
-                  !(field instanceof BinaryField) && !(field instanceof HiddenField)
+                !(isAllowedSystemField(field))
         );
     }
 
@@ -324,9 +383,10 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
      * @return
      */
     private boolean isNotMappable(final Field field) {
-        return (!isSettable(field) || (field instanceof HostFolderField)
-                || (field instanceof TagField) || isNoneMappableSystemField(field) || isMetadataField(field)
-        );
+        return (!isSettable(field) ||
+                (field instanceof HostFolderField) ||
+                isNoneMappableSystemField(field) ||
+                isMetadataField(field));
     }
 
     /**
@@ -366,18 +426,18 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
      * @return
      */
     private Object getValue(final Map<String, FieldValue<?>> fields, final Field field){
-       final Object value = Try.of(()->fields.get(field.variable()).value()).getOrNull();
-       if(null == value){
-          //defined in the CT but not present on the instance
-          return null;
-       }
-       if(field instanceof KeyValueField){
-         //KeyValues are stored as List to preserve the order of their elements so some additional logic is required here
-         List<com.dotcms.content.model.type.keyvalue.Entry<?>> asList = (List<com.dotcms.content.model.type.keyvalue.Entry<?>>)value;
-         return KeyValueField.asMap(asList);
-       }
-       //We store Dates as Instants in our json so a bit of extra conversion is required for backwards compatibility
-       return value instanceof Instant ? Date.from((Instant)value) : value;
+        final Object value = Try.of(()->fields.get(field.variable()).value()).getOrNull();
+        if(null == value){
+            //defined in the CT but not present on the instance
+            return null;
+        }
+        if(field instanceof KeyValueField){
+            //KeyValues are stored as List to preserve the order of their elements so some additional logic is required here
+            List<com.dotcms.content.model.type.keyvalue.Entry<?>> asList = (List<com.dotcms.content.model.type.keyvalue.Entry<?>>)value;
+            return KeyValueField.asMap(asList);
+        }
+        //We store Dates as Instants in our json so a bit of extra conversion is required for backwards compatibility
+        return value instanceof Instant ? Date.from((Instant)value) : value;
     }
 
     /**
@@ -385,10 +445,93 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
      * Meaning this converts the field to a json representation
      * @param value
      * @param field
+     * @param contentlet
      * @return
      */
-    private Optional<FieldValue<?>> getFieldValue(final Object value, final Field field) {
-        return field.fieldValue(value);
+    private Optional<FieldValue<?>> hydrateThenGetFieldValue(final Object value, final Field field,
+            final com.dotmarketing.portlets.contentlet.model.Contentlet contentlet) {
+
+        final Optional<FieldValueBuilder> fieldValueBuilder = field.fieldValue(value);
+        if (fieldValueBuilder.isPresent()) {
+            FieldValueBuilder builder = fieldValueBuilder.get();
+            final List<Tuple2<HydrationDelegate,String>> delegateAndFields = getHydrationDelegatesFromAnnotations(builder.getClass());
+            for (Tuple2<HydrationDelegate,String> delegateAndField : delegateAndFields) {
+                final HydrationDelegate delegate = delegateAndField._1();
+                final String propertyName = delegateAndField._2();
+                try {
+                    builder = delegate.hydrate(builder, field, contentlet, propertyName);
+                } catch (Exception e) {
+                    Logger.error(ContentletJsonAPIImpl.class,
+                            String.format(
+                                    "An error occurred while hydrating FieldValue with Builder: %s, field: %s, contentlet: %s , propertyName %s ",
+                                    builder, field, contentlet.getIdentifier(), propertyName), e);
+                }
+            }
+            return Optional.of(builder.build());
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * FieldValue descendant's Builders are annotated so the builder class is instructed on how the properties need to be fetched and set into the Builder
+     * This method takes the
+     * @param builderClass
+     * @return
+     */
+    private List<Tuple2<HydrationDelegate,String>> getHydrationDelegatesFromAnnotations(final Class<? extends FieldValueBuilder> builderClass){
+
+        final ImmutableList.Builder<Hydration> annotations = new ImmutableList.Builder<>();
+        Optional<Hydration> hydrateWith = annotations
+                .add(builderClass.getAnnotationsByType(Hydration.class))
+                .add(builderClass.getSuperclass().getAnnotationsByType(Hydration.class))
+                .build().stream().findFirst();
+
+        final ImmutableList.Builder<Tuple2<HydrationDelegate,String>> delegates = new ImmutableList.Builder<>();
+        if(hydrateWith.isPresent()) {
+            final HydrateWith [] hydrateWiths = hydrateWith.get().properties();
+            for (final HydrateWith with : hydrateWiths) {
+                final HydrationDelegate instance = ReflectionUtils.newInstance(with.delegate());
+                if(null == instance){
+                    Logger.error(ContentletJsonAPIImpl.class,String.format("Unable to instantiate hydration delegate %s.",with.delegate()));
+                    continue;
+                }
+                if(UtilMethods.isNotSet(with.propertyName())){
+                    Logger.error(ContentletJsonAPIImpl.class,String.format("HydrateWith Annotation is missing required param 'field' %s.",with.propertyName()));
+                    continue;
+                }
+                delegates.add(Tuple.of(instance, with.propertyName()));
+            }
+        }
+
+
+        return delegates.build();
+    }
+
+    Optional<FieldValue<?>> loadSystemFieldValue(final Field field, final com.dotmarketing.portlets.contentlet.model.Contentlet contentlet, final User user)
+            throws DotDataException, DotSecurityException {
+        if(field instanceof CategoryField){
+            final List<String> selectedCategories = findSelectedCategories((CategoryField) field, contentlet.getContentType(), user);
+            if(!selectedCategories.isEmpty()){
+                return Optional.of(CategoryFieldType.builder().value(selectedCategories).build());
+            }
+        }
+        return Optional.empty();
+    }
+
+    List<String> findSelectedCategories(final CategoryField categoryField, final ContentType contentType, final User user)
+            throws DotDataException, DotSecurityException {
+        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+        final List<Category> categories = categoryAPI.findCategories(contentType, user);
+        final ImmutableList.Builder<String> builder = ImmutableList.builder();
+        final Category parent = Try.of(()->categoryAPI.find(categoryField.values(), user, false)).getOrNull();
+        if(null != parent){
+            for(final Category child:categories){
+                if(categoryAPI.isParent(child, parent, user)){
+                    builder.add(child.getCategoryVelocityVarName());
+                }
+            }
+        }
+        return builder.build();
     }
 
     /**
@@ -397,7 +540,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
      * @return
      * @throws JsonProcessingException
      */
-    Contentlet immutableFromJson(final String json) throws JsonProcessingException {
+    public Contentlet immutableFromJson(final String json) throws JsonProcessingException {
         return objectMapper.get().readValue(json, Contentlet.class);
     }
 
