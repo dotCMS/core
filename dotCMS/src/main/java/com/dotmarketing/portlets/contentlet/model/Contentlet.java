@@ -246,9 +246,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
   /**
    * Create a contentlet based on a map (makes a copy of it)
-   *
+   * @deprecated use {@link #Contentlet(Contentlet)}
    * @param mapIn
    */
+  @Deprecated
   public Contentlet(final Map<String, Object> mapIn) {
     this();
     mapIn.values().removeIf(Objects::isNull);
@@ -262,7 +263,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public Contentlet(final Contentlet contentlet) {
 		this(contentlet.getMap());
 		this.setIndexPolicy(contentlet.getIndexPolicy());
-
+		this.loadedTags = contentlet.loadedTags;
 	}
 
   /**
