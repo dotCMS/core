@@ -7,7 +7,6 @@ import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER
 import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_PARENT_PATH;
 
 import com.dotcms.browser.BrowserQuery;
-import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 import com.dotcms.system.SimpleMapAppContext;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.transform.DBTransformer;
@@ -45,7 +44,6 @@ import com.dotmarketing.util.AssetsComparator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
@@ -1213,38 +1211,33 @@ public class FolderFactoryImpl extends FolderFactory {
 
 		folderCache.removeFolder(folder, APILocator.getIdentifierAPI().find(folder.getIdentifier()));
 
-		setInodeIfNeeded(folder);
+		saveInode(folder);
 
 		upsertFolder(folder);
 	}
 
-	private void setInodeIfNeeded(final Folder folder) throws DotDataException {
+	private void saveInode(final Folder folder) throws DotDataException {
 		String inode = folder.getInode();
 
 		if (!UtilMethods.isSet(inode)) {
-			inode = APILocator.getDeterministicIdentifierAPI()
-					.generateDeterministicIdBestEffort(folder,
-							(Treeable) folder.getParentPermissionable());
+			inode = folder.getIdentifier();
 		}
 
-		if (null == find(inode)) {
-			final UpsertCommand upsertInodeCommand = UpsertCommandFactory.getUpsertCommand();
-			final SimpleMapAppContext replacements = new SimpleMapAppContext();
+		final UpsertCommand upsertInodeCommand = UpsertCommandFactory.getUpsertCommand();
+		final SimpleMapAppContext replacements = new SimpleMapAppContext();
 
-			replacements.setAttribute(QueryReplacements.TABLE, "inode");
-			replacements.setAttribute(QueryReplacements.CONDITIONAL_COLUMN, "inode");
-			replacements.setAttribute(QueryReplacements.CONDITIONAL_VALUE, inode);
-			replacements.setAttribute(QueryReplacements.EXTRA_COLUMNS, UPSERT_INODE_EXTRA_COLUMNS);
-			replacements.setAttribute(QueryReplacements.DO_NOTHING_ON_CONFLICT, true);
+		replacements.setAttribute(QueryReplacements.TABLE, "inode");
+		replacements.setAttribute(QueryReplacements.CONDITIONAL_COLUMN, "inode");
+		replacements.setAttribute(QueryReplacements.CONDITIONAL_VALUE, inode);
+		replacements.setAttribute(QueryReplacements.EXTRA_COLUMNS, UPSERT_INODE_EXTRA_COLUMNS);
+		replacements.setAttribute(QueryReplacements.DO_NOTHING_ON_CONFLICT, false);
 
-			upsertInodeCommand
-					.execute(new DotConnect(), replacements, inode, folder.getOwner(),
-							new Timestamp(new Date().getTime()),
-							"folder");
+		upsertInodeCommand
+				.execute(new DotConnect(), replacements, inode, folder.getOwner(),
+						new Timestamp(new Date().getTime()),
+						"folder");
 
-			folder.setInode(inode);
-		}
-
+		folder.setInode(inode);
 	}
 
 	private void upsertFolder(final Folder folder) throws DotDataException {
