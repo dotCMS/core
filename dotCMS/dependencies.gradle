@@ -37,7 +37,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.core-renderer-modified', version:'ukv_3'
     compile group: 'com.dotcms.lib', name: 'dot.cos', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.counter-ejb', version:'ukv_2'
-    compile group: 'com.dotcms.lib', name: 'dot.daisydiff', version:'ukv_3'
     compile group: 'com.dotcms.lib', name: 'dot.dwr', version:'3rc2modified_3'
 
     compile group: 'com.lmax', name: 'disruptor', version: '3.3.4'
@@ -568,8 +567,8 @@ dependencies {
 
     compile group: 'javax.websocket', name: 'javax.websocket-api', version:'1.1'
 
-    compileOnly "org.immutables:value:2.3.3:annotations"
-    compile 'org.immutables:gson:2.3.3'
+    compileOnly  'org.immutables:value-annotations:2.8.8'
+    compile  'org.immutables:gson:2.8.8'
 
 
     compileOnly  'com.google.code.findbugs:jsr305:3.0.2'
@@ -591,7 +590,7 @@ dependencies {
     compile 'net.jodah:failsafe:1.1.1'
     compile 'com.rainerhahnekamp:sneakythrow:1.1.0'
 
-    compile ('org.elasticsearch.client:elasticsearch-rest-high-level-client:7.3.2') {
+    compile ('org.elasticsearch.client:elasticsearch-rest-high-level-client:7.10.2') {
         exclude(group: 'org.apache.logging.log4j')
         exclude(group: 'com.fasterxml.jackson.core')
     }

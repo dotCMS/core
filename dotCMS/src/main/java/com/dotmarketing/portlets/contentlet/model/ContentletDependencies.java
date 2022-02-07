@@ -22,6 +22,7 @@ public class ContentletDependencies {
     private final String                  workflowNeverExpire;
     private final String                  workflowWhereToSend;
     private final String                  workflowFilterKey;
+    private final String workflowTimezoneId;
     private final String                  workflowIWantTo;
     private String workflowPathToMove;
     private final List<Category>          categories;
@@ -53,6 +54,7 @@ public class ContentletDependencies {
         this.workflowFilterKey = builder.workflowFilterKey;
         this.workflowIWantTo = builder.workflowIWantTo;
         this.workflowPathToMove = builder.workflowPathToMove;
+        this.workflowTimezoneId = builder.workflowTimezoneId;
 
     }
 
@@ -132,6 +134,10 @@ public class ContentletDependencies {
 
     public String getWorkflowPathToMove(){ return workflowPathToMove;}
 
+    public String getWorkflowTimezoneId(){
+        return workflowTimezoneId;
+    }
+
     public static final class Builder {
 
         private User modUser;
@@ -148,6 +154,7 @@ public class ContentletDependencies {
         private String workflowFilterKey;
         private String workflowIWantTo;
         private String workflowPathToMove;
+        private String workflowTimezoneId;
         private List<Category> categories;
         private boolean respectAnonymousPermissions;
         private boolean generateSystemEvent;
@@ -236,6 +243,11 @@ public class ContentletDependencies {
 
         public ContentletDependencies.Builder workflowPathToMove(final String workflowPathToMove){
             this.workflowPathToMove = workflowPathToMove;
+            return this;
+        }
+
+        public ContentletDependencies.Builder workflowTimezoneId(final String workflowTimezoneId){
+            this.workflowTimezoneId = workflowTimezoneId;
             return this;
         }
 

@@ -1,7 +1,5 @@
 package com.dotmarketing.db;
 
-import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_MAX_WAIT;
-import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_PASSWORD;
 
 import com.dotmarketing.util.Constants;
 import com.google.common.annotations.VisibleForTesting;
@@ -78,15 +76,15 @@ public class DockerSecretDataSourceStrategy implements DotDataSourceStrategy {
         config.setJdbcUrl(dockerSecretsMap.getOrDefault(
                 DataSourceStrategyProvider.CONNECTION_DB_BASE_URL, "jdbc:postgresql://localhost/dotcms"));
         config.setUsername(dockerSecretsMap.get(DataSourceStrategyProvider.CONNECTION_DB_USERNAME));
-        config.setPassword(dockerSecretsMap.get(CONNECTION_DB_PASSWORD));
+        config.setPassword(dockerSecretsMap.get(DataSourceStrategyProvider.CONNECTION_DB_PASSWORD));
         config.setMaximumPoolSize(Integer.parseInt(
                 dockerSecretsMap.getOrDefault(DataSourceStrategyProvider.CONNECTION_DB_MAX_TOTAL, "60")));
         config.setIdleTimeout(
                 Integer.parseInt(dockerSecretsMap.getOrDefault(
-                        DataSourceStrategyProvider.CONNECTION_DB_MAX_IDLE, "10"))
+                        DataSourceStrategyProvider.CONNECTION_DB_MIN_IDLE, "10"))
                         * 1000);
         config.setMaxLifetime(Integer.parseInt(
-                dockerSecretsMap.getOrDefault(CONNECTION_DB_MAX_WAIT, "60000")));
+                dockerSecretsMap.getOrDefault(DataSourceStrategyProvider.CONNECTION_DB_MAX_WAIT, "60000")));
         config.setConnectionTestQuery(dockerSecretsMap.get(
                 DataSourceStrategyProvider.CONNECTION_DB_VALIDATION_QUERY));
 

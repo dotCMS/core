@@ -29,13 +29,13 @@ services:
   dotcms-node-1:
     image: dotcms/dotcms:latest
     environment:
-      "CMS_HEAP_SIZE": '1g'
-      "PROVIDER_DB_DNSNAME": 'db'
-      "PROVIDER_DB_USERNAME": "dotcmsdbuser"
-      "PROVIDER_DB_PASSWORD": "password"
-      "PROVIDER_ELASTICSEARCH_ENDPOINTS": 'http://elasticsearch:9200'
-      "ES_ADMIN_PASSWORD": 'admin'
-      #"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20210920/starter-20210920.zip'
+        "CATALINA_OPTS": ' -Xms1g -Xmx1g '
+        "DB_BASE_URL": "jdbc:postgresql://db/dotcms"
+        "DB_USERNAME": 'dotcmsdbuser'
+        "DB_PASSWORD": 'password'
+        "DOT_ES_AUTH_BASIC_PASSWORD": 'admin'
+        "DOT_ES_ENDPOINTS": 'http://elasticsearch:9200'
+        #"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20211201/starter-20211201.zip'
     depends_on:
       - elasticsearch
       - db
@@ -46,7 +46,7 @@ services:
       - db_net
       - es_net
     ports:
-      - "8080:8081"
+      - "8080:8080"
       - "8443:8443"
 
   db:

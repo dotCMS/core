@@ -285,6 +285,13 @@ public class ContainerDataGen extends AbstractDataGen<Container> {
                 false, false);
     }
 
+    @WrapInTransaction
+    public static void publish(final Container container, final User user)
+            throws DotSecurityException, WebAssetException, DotDataException {
+        PublishFactory.publishAsset(container, user,
+                false, false);
+    }
+
     /**
      * Deletes a given {@link Container} instance
      *
