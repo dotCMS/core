@@ -1,6 +1,6 @@
 package com.dotcms.contenttype.model.field;
 
-import com.dotcms.content.model.FieldValue;
+import com.dotcms.content.model.FieldValueBuilder;
 import com.dotcms.content.model.type.date.TimeFieldType;
 import java.util.Collection;
 import java.util.Date;
@@ -64,11 +64,12 @@ public abstract class TimeField extends Field {
 
 	/**
 	 * {@inheritDoc}
-	 */
+     * @return
+     */
 	@Override
-	public Optional<FieldValue<?>> fieldValue(Object value) {
+	public Optional<FieldValueBuilder> fieldValue(Object value) {
 		if (value instanceof Date) {
-			return Optional.of(TimeFieldType.of(((Date) value).toInstant()));
+			return Optional.of(TimeFieldType.builder().value(((Date) value).toInstant()));
 		}
 		return Optional.empty();
 	}

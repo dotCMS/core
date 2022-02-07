@@ -1,4 +1,4 @@
-package com.dotcms.content.model.type.hidden;
+package com.dotcms.content.model.type.system;
 
 import com.dotcms.content.model.FieldValue;
 import com.dotcms.content.model.FieldValueBuilder;
@@ -8,15 +8,15 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.immutables.value.Value.Immutable;
 
 /**
- * Custom Field json representation
+ * Constant-Field json representation
  */
 @ValueType
 @Immutable
-@JsonDeserialize(as = BoolHiddenFieldType.class)
-@JsonTypeName(value = AbstractBoolHiddenFieldType.TYPENAME)
-public interface AbstractBoolHiddenFieldType extends FieldValue<Boolean> {
+@JsonDeserialize(as = ConstantFieldType.class)
+@JsonTypeName(value = AbstractConstantFieldType.TYPENAME)
+public interface AbstractConstantFieldType extends FieldValue<String> {
 
-    String TYPENAME = "Bool-Hidden";
+    String TYPENAME = "Constant";
 
     /**
      * {@inheritDoc}
@@ -24,7 +24,10 @@ public interface AbstractBoolHiddenFieldType extends FieldValue<Boolean> {
     @Override
     default String type() {
         return TYPENAME;
+    };
+
+    abstract class Builder implements FieldValueBuilder {
+
     }
 
-    abstract class Builder implements FieldValueBuilder {}
 }
