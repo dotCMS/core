@@ -283,7 +283,7 @@ function initDragAndDrop () {
 
         // draggedContent is set by dotContentletEditorService.draggedContentType$
         const dotAcceptTypes = container.dataset.dotAcceptTypes.toLocaleLowerCase();
-        return (window.hasOwnProperty('draggedContent') && (draggedContent.baseType.toLocaleLowerCase() === 'widget') || 
+        return (window.hasOwnProperty('draggedContent') && (draggedContent.baseType.toLocaleLowerCase() === 'widget') ||
                 dotAcceptTypes.includes(draggedContent.variable?.toLocaleLowerCase() || draggedContent.contentType?.toLocaleLowerCase() || draggedContent.baseType?.toLocaleLowerCase()))
     }
 
@@ -409,6 +409,13 @@ function initDragAndDrop () {
         });
     }
 
+    function sendCreateFormEvent(formId) {
+        window.contentletEvents.next({
+            name: 'add-form',
+            data: formId
+        });
+    }
+
     function dropEvent(event) {
 
         event.preventDefault();
@@ -437,24 +444,8 @@ function initDragAndDrop () {
                 })
             } else { // Adding specific Content Type / Contentlet
                 if (draggedContent.contentType) { // Contentlet
-
                     if (draggedContent.contentType === 'FORM') {
-                        const requestForm = async () => {
-                            const url = 'api/v1/containers/form/' + draggedContent.id + '?containerId=' + container.dataset['dotIdentifier'];
-                            try {
-                                const response = await fetch(url);
-                                const json = await response.json();
-                                sendCreateContentletEvent({ 
-                                    baseType: 'FORM',
-                                    identifier: json.entity.content.identifier,
-                                    inode: json.entity.content.inode
-                                });
-                            } catch(e) {
-                                handleHttpErrors(e);
-                            }
-                        }
-                        requestForm();
-
+                        sendCreateFormEvent(draggedContent.id)
                     } else {
                         sendCreateContentletEvent(draggedContent);
                     }

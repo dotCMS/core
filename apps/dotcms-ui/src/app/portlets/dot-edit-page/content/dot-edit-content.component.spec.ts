@@ -3,7 +3,14 @@ import { of as observableOf, of, throwError } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
-import { ComponentFixture, tick, fakeAsync, TestBed, discardPeriodicTasks, flush } from '@angular/core/testing';
+import {
+    ComponentFixture,
+    tick,
+    fakeAsync,
+    TestBed,
+    discardPeriodicTasks,
+    flush
+} from '@angular/core/testing';
 import {
     Component,
     DebugElement,
@@ -382,15 +389,14 @@ describe('DotEditContentComponent', () => {
                 it('select > should add form', () => {
                     dotFormSelector.triggerEventHandler('select', {
                         baseType: 'string',
-                        clazz: 'string'
+                        clazz: 'string',
+                        id: '123'
                     });
                     fixture.detectChanges();
 
-                    expect<any>(dotEditContentHtmlService.renderAddedForm).toHaveBeenCalledWith({
-                        baseType: 'string',
-                        clazz: 'string'
-                    });
-
+                    expect<any>(dotEditContentHtmlService.renderAddedForm).toHaveBeenCalledWith(
+                        '123'
+                    );
                     expect(dotEditPageService.save).toHaveBeenCalledWith('123', [
                         { identifier: '123', uuid: 'uui-1' }
                     ]);
@@ -658,7 +664,9 @@ describe('DotEditContentComponent', () => {
                         jasmine.any(ElementRef)
                     );
                     expect(dotEditContentHtmlService.initEditMode).not.toHaveBeenCalled();
-                    expect(dotEditContentHtmlService.setCurrentPage).toHaveBeenCalledWith(mockRenderedPageState.page);
+                    expect(dotEditContentHtmlService.setCurrentPage).toHaveBeenCalledWith(
+                        mockRenderedPageState.page
+                    );
                 }));
 
                 it('should render in edit mode', fakeAsync(() => {
@@ -685,7 +693,9 @@ describe('DotEditContentComponent', () => {
                         jasmine.any(ElementRef)
                     );
                     expect(dotEditContentHtmlService.renderPage).not.toHaveBeenCalled();
-                    expect(dotEditContentHtmlService.setCurrentPage).toHaveBeenCalledWith(state.page);
+                    expect(dotEditContentHtmlService.setCurrentPage).toHaveBeenCalledWith(
+                        state.page
+                    );
                 }));
 
                 it('should show/hide content palette in edit mode with correct content', fakeAsync(() => {
@@ -710,21 +720,24 @@ describe('DotEditContentComponent', () => {
                     detectChangesForIframeRender(fixture);
                     fixture.detectChanges();
                     const contentPaletteWrapper = de.query(By.css('.dot-edit-content__palette'));
-                    const contentPalette: DotPaletteComponent = de.query(
-                        By.css('dot-palette')
-                    ).componentInstance;
+                    const contentPalette: DotPaletteComponent = de.query(By.css('dot-palette'))
+                        .componentInstance;
                     const paletteController = de.query(
                         By.css('.dot-edit-content__palette-visibility')
                     );
                     const classList = contentPaletteWrapper.nativeElement.classList;
                     expect(contentPalette.items).toEqual(responseData.slice(0, 3));
-                    expect(parseInt(contentPalette.languageId)).toEqual(mockDotRenderedPage().page.languageId);
+                    expect(parseInt(contentPalette.languageId)).toEqual(
+                        mockDotRenderedPage().page.languageId
+                    );
                     expect(classList.contains('editMode')).toEqual(true);
                     paletteController.triggerEventHandler('click', '');
                     fixture.detectChanges();
                     expect(classList.contains('collapsed')).toEqual(true);
 
-                    expect(dotEditContentHtmlService.setCurrentPage).toHaveBeenCalledWith(state.page);
+                    expect(dotEditContentHtmlService.setCurrentPage).toHaveBeenCalledWith(
+                        state.page
+                    );
                 }));
 
                 it('should not display palette when is not enterprise', fakeAsync(() => {
@@ -750,7 +763,9 @@ describe('DotEditContentComponent', () => {
                     fixture.detectChanges();
                     const contentPaletteWrapper = de.query(By.css('.dot-edit-content__palette'));
                     expect(contentPaletteWrapper).toBeNull();
-                    expect(dotEditContentHtmlService.setCurrentPage).toHaveBeenCalledWith(state.page);
+                    expect(dotEditContentHtmlService.setCurrentPage).toHaveBeenCalledWith(
+                        state.page
+                    );
                 }));
 
                 it('should reload the page because of EMA', fakeAsync(() => {
@@ -784,7 +799,7 @@ describe('DotEditContentComponent', () => {
                     expect(dotPageStateService.reload).toHaveBeenCalledTimes(1);
 
                     flush();
-                }))
+                }));
 
                 it('should NOT reload the page', fakeAsync(() => {
                     spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
@@ -795,7 +810,7 @@ describe('DotEditContentComponent', () => {
                             ...mockDotRenderedPage(),
                             page: {
                                 ...mockDotRenderedPage().page,
-                                lockedBy: null,
+                                lockedBy: null
                             },
                             viewAs: {
                                 mode: DotPageMode.EDIT,
@@ -820,7 +835,7 @@ describe('DotEditContentComponent', () => {
                     expect(dotPageStateService.reload).toHaveBeenCalledTimes(0);
 
                     flush();
-                }))
+                }));
             });
 
             describe('events', () => {
@@ -846,8 +861,6 @@ describe('DotEditContentComponent', () => {
                     expect(dotLoadingIndicatorService.hide).toHaveBeenCalled();
                     expect(dotUiColorsService.setColors).toHaveBeenCalled();
                 }));
-
-
 
                 describe('custom', () => {
                     it('should handle remote-render-edit', fakeAsync(() => {
@@ -1185,10 +1198,15 @@ describe('DotEditContentComponent', () => {
                     });
 
                     it('should display Form Selector when handle add content event of form Type', () => {
-
-                        spyOn( dotEditContentHtmlService, 'setContainterToAppendContentlet' ).and.callFake(() => {});
-                        spyOn( dotEditContentHtmlService, 'removeContentletPlaceholder' ).and.callFake(() => {});
-                        spyOn( component, 'addFormContentType' ).and.callThrough();
+                        spyOn(
+                            dotEditContentHtmlService,
+                            'setContainterToAppendContentlet'
+                        ).and.callFake(() => {});
+                        spyOn(
+                            dotEditContentHtmlService,
+                            'removeContentletPlaceholder'
+                        ).and.callFake(() => {});
+                        spyOn(component, 'addFormContentType').and.callThrough();
 
                         fixture.detectChanges();
 
@@ -1210,10 +1228,14 @@ describe('DotEditContentComponent', () => {
                             uuid: data.container.dotUuid
                         };
 
-                        expect( dotEditContentHtmlService.setContainterToAppendContentlet ).toHaveBeenCalledWith(container);
-                        expect( dotEditContentHtmlService.removeContentletPlaceholder ).toHaveBeenCalled();
-                        expect( component.addFormContentType ).toHaveBeenCalled();
-                        expect( component.editForm ).toBeTruthy();
+                        expect(
+                            dotEditContentHtmlService.setContainterToAppendContentlet
+                        ).toHaveBeenCalledWith(container);
+                        expect(
+                            dotEditContentHtmlService.removeContentletPlaceholder
+                        ).toHaveBeenCalled();
+                        expect(component.addFormContentType).toHaveBeenCalled();
+                        expect(component.editForm).toBeTruthy();
                     });
 
                     it('should handle remove event', (done) => {
@@ -1342,14 +1364,12 @@ describe('DotEditContentComponent', () => {
             it('should save form', () => {
                 dotFormSelector.triggerEventHandler('select', {
                     baseType: 'string',
-                    clazz: 'string'
+                    clazz: 'string',
+                    id: '123'
                 });
                 fixture.detectChanges();
 
-                expect<any>(dotEditContentHtmlService.renderAddedForm).toHaveBeenCalledWith({
-                    baseType: 'string',
-                    clazz: 'string'
-                });
+                expect<any>(dotEditContentHtmlService.renderAddedForm).toHaveBeenCalledWith('123');
 
                 expect<any>(dotEditPageService.save).toHaveBeenCalledWith('123', [
                     { identifier: '123', uuid: 'uui-1', personaTag: 'SuperPersona' }
@@ -1426,9 +1446,8 @@ describe('DotEditContentComponent', () => {
             detectChangesForIframeRender(fixture);
             fixture.detectChanges();
             const contentPaletteWrapper = de.query(By.css('.dot-edit-content__palette'));
-            const contentPalette: DotPaletteComponent = de.query(
-                By.css('dot-palette')
-            ).componentInstance;
+            const contentPalette: DotPaletteComponent = de.query(By.css('dot-palette'))
+                .componentInstance;
             expect(contentPalette.items).toEqual(responseData.slice(0, 5));
         }));
     });
