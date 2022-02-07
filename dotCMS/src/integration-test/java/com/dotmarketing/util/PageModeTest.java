@@ -1,11 +1,20 @@
 package com.dotmarketing.util;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.mock.request.MockParameterRequest;
+import com.dotcms.mock.request.MockSession;
 import com.dotcms.mock.request.MockSessionRequest;
+import com.dotcms.rendering.velocity.servlet.VelocityServlet;
 import com.google.common.collect.ImmutableMap;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.eclipse.persistence.internal.oxm.mappings.Login;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotcms.datagen.UserDataGen;
@@ -49,6 +58,50 @@ public class PageModeTest {
         assertTrue("backEndUser has backend role", backEndUser.isBackendUser());
         request.setAttribute(WebKeys.USER, backEndUser);
         return request;
+    }
+
+    /**
+     * Method to test: Test for {@link VelocityServlet#processPageMode(User, HttpServletRequest)}
+     * Given Scenario: Be user logged in should be NAVIGATE_EDIT_MODE
+     * ExpectedResult: Page mode should be NAVIGATE_EDIT_MODE
+     *
+     */
+    @Test
+    public void test_be_page_mode_should_be_NAVIGATE_EDIT_MODE() {
+
+        final HttpSession session        = new MockSession(UUIDGenerator.uuid());
+        final MockSessionRequest requestSession = new MockSessionRequest(backEndRequest());
+        final MockAttributeRequest request = new MockAttributeRequest(requestSession);
+        session.setAttribute(com.dotmarketing.util.WebKeys.PAGE_MODE_SESSION, PageMode.NAVIGATE_EDIT_MODE);
+        request.setAttribute(WebKeys.USER, backEndUser);
+        requestSession.setSession(session);
+        LoginMode.set(request, LoginMode.BE);
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+        final PageMode pageMode = VelocityServlet.processPageMode(backEndUser, request);
+        Assert.assertEquals(LoginMode.BE, LoginMode.get(request));
+        Assert.assertEquals(PageMode.NAVIGATE_EDIT_MODE, pageMode);
+    }
+
+    /**
+     * Method to test: Test for {@link VelocityServlet#processPageMode(User, HttpServletRequest)}
+     * Given Scenario: Fe user logged in should be live
+     * ExpectedResult: Page mode should be live
+     *
+     */
+    @Test
+    public void test_fe_page_mode_should_be_LIVE() {
+
+        final HttpSession session        = new MockSession(UUIDGenerator.uuid());
+        final MockSessionRequest requestSession = new MockSessionRequest(frontEndRequest());
+        final MockAttributeRequest request = new MockAttributeRequest(requestSession);
+        session.setAttribute(com.dotmarketing.util.WebKeys.PAGE_MODE_SESSION, PageMode.NAVIGATE_EDIT_MODE);
+        request.setAttribute(WebKeys.USER, frontEndUser);
+        requestSession.setSession(session);
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+        LoginMode.set(request, LoginMode.FE);
+        final PageMode pageMode = VelocityServlet.processPageMode(frontEndUser, frontEndRequest());
+        Assert.assertEquals(LoginMode.FE, LoginMode.get(request));
+        Assert.assertEquals(PageMode.LIVE, pageMode);
     }
 
 

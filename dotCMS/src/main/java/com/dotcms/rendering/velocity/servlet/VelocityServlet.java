@@ -16,7 +16,7 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilde
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.LoginMode;
 import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.WebKeys;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
@@ -40,7 +40,11 @@ public class VelocityServlet extends HttpServlet {
      */
     private static final long serialVersionUID = 1L;
 
-    private PageMode processPageMode (final User user, final HttpServletRequest request) {
+    /*
+    * Returns the page mode based on the login mode or the FE/BE roles
+     */
+    @VisibleForTesting
+    public static PageMode processPageMode (final User user, final HttpServletRequest request) {
 
         final LoginMode loginMode = LoginMode.get(request);
 
@@ -72,7 +76,7 @@ public class VelocityServlet extends HttpServlet {
         
         request.setRequestUri(uri);
         //final PageMode mode = user.isFrontendUser()? PageMode.setPageMode(request, PageMode.LIVE) : PageMode.getWithNavigateMode(request);
-        final PageMode mode = this.processPageMode(user, request);
+        final PageMode mode = processPageMode(user, request);
 
         // if you are hitting the servlet without running through the other filters
         if (uri == null) {
