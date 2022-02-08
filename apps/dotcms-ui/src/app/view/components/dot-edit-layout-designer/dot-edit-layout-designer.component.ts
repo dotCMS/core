@@ -39,10 +39,7 @@ import {
     DotLayoutSideBar
 } from '@models/dot-edit-layout-designer';
 import { DotPageContainer } from '@models/dot-page-container/dot-page-container.model';
-<<<<<<< HEAD
 import { DotTemplate } from '@models/dot-edit-layout-designer/dot-template.model';
-=======
->>>>>>> master
 
 @Component({
     selector: 'dot-edit-layout-designer',
@@ -82,10 +79,6 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
     currentTheme: DotTheme;
 
     saveAsTemplate: boolean;
-<<<<<<< HEAD
-=======
-    leaving = false;
->>>>>>> master
     showTemplateLayoutSelectionDialog = false;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -229,22 +222,10 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
                 width: this.layout.width
             })
         });
-<<<<<<< HEAD
         this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
             if (!_.isEqual(this.form.value, this.initialFormValue)) {
                 this.updateTemplate.emit(this.form.value);
             }
-=======
-        this.form.valueChanges.pipe(takeUntil(this.destroy$), debounceTime(10000)).subscribe(() => {
-            if(!_.isEqual(this.form.value, this.initialFormValue)){
-                this.onSave();
-            }
-            this.cd.detectChanges();
-        });
-        this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            const isEqual = _.isEqual(this.form.value, this.initialFormValue);
-            this.dotEditLayoutService.changeDesactivateState(isEqual);
->>>>>>> master
         });
         this.updateModel();
     }
@@ -261,10 +242,6 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
                 (error) => this.errorHandler(error)
             );
         this.initialFormValue = _.cloneDeep(this.form.value);
-<<<<<<< HEAD
-=======
-        this.dotEditLayoutService.changeDesactivateState(true);
->>>>>>> master
     }
 
     private createSidebarForm(layout: DotLayout): DotLayoutSideBar {
@@ -299,7 +276,6 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
     }
 
     private saveChangesBeforeLeave(): void {
-<<<<<<< HEAD
         this.dotEditLayoutService.closeEditLayout$
             .pipe(takeUntil(this.destroy$))
             .subscribe((res) => {
@@ -307,13 +283,5 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
                     this.onSave();
                 }
             });
-=======
-        this.dotEditLayoutService.closeEditLayout$.pipe(takeUntil(this.destroy$)).subscribe((res) => {
-            if (res && !this.leaving) {
-                this.onSave();
-                this.leaving = true;
-            }
-        });
->>>>>>> master
     }
 }
