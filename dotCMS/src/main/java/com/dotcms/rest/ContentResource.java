@@ -2,6 +2,7 @@ package com.dotcms.rest;
 
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
@@ -1376,9 +1377,12 @@ public class ContentResource {
                 } else if (isCategoryField(type, key) && map.get(key) instanceof Collection) {
                     final Collection<?> categoryList = (Collection<?>) map.get(key);
                     jsonObject.put(key, new JSONArray(categoryList.stream()
-                            .map(value -> new JSONObject((Map<?,?>) value))
+                            .map(value -> new JSONObject((Map<?, ?>) value))
                             .collect(Collectors.toList())));
-                  // this might be coming from transformers views, so let's try to make them JSONObjects
+                }else if (isTagField(type, key) && map.get(key) instanceof Collection) {
+                        final Collection<?> tags = (Collection<?>) map.get(key);
+                        jsonObject.put(key, new JSONArray(tags));
+                        // this might be coming from transformers views, so let's try to make them JSONObjects
                 } else if(hydrateRelated) {
                     if(map.get(key) instanceof Map) {
                         jsonObject.put(key, new JSONObject((Map) map.get(key)));
@@ -1411,6 +1415,19 @@ public class ContentResource {
                     type.fields().stream().filter(f -> UtilMethods.equal(key, f.variable())).findFirst();
             if (optionalField.isPresent()) {
                 return optionalField.get() instanceof CategoryField;
+            }
+        } catch (Exception e) {
+            Logger.error(ContentResource.class, "Error getting field " + key, e);
+        }
+        return false;
+    }
+
+    private static boolean isTagField(final ContentType type, final String key) {
+        try {
+            Optional<com.dotcms.contenttype.model.field.Field> optionalField =
+                    type.fields().stream().filter(f -> UtilMethods.equal(key, f.variable())).findFirst();
+            if (optionalField.isPresent()) {
+                return optionalField.get() instanceof TagField;
             }
         } catch (Exception e) {
             Logger.error(ContentResource.class, "Error getting field " + key, e);

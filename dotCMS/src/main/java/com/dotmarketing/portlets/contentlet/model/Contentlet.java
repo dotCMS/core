@@ -1251,7 +1251,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public Metadata getBinaryMetadata (final String fieldVariableName)
 			throws DotDataException {
 
-		return APILocator.getFileMetadataAPI().getMetadataForceGenerate(this, fieldVariableName);
+		return APILocator.getFileMetadataAPI().getOrGenerateMetadata(this, fieldVariableName);
 	}
 
 
@@ -1467,9 +1467,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public boolean hasTags () throws DotDataException {
 
 		final List<TagInode> foundTagInodes = APILocator.getTagAPI().getTagInodesByInode(this.getInode());
-		return foundTagInodes != null && !foundTagInodes.isEmpty()?
-				foundTagInodes.stream().anyMatch(foundTagInode -> isSet(this.getStringProperty(foundTagInode.getFieldVarName()))):
-				false;
+		return foundTagInodes != null && !foundTagInodes.isEmpty() && foundTagInodes.stream()
+				.anyMatch(foundTagInode -> isSet(
+						this.get(foundTagInode.getFieldVarName())));
 	}
 
     /**
@@ -1508,7 +1508,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 									contentletTagsBuilder.append(",");
 								}
 								if (relatedTag.isPersona()) {
-									contentletTagsBuilder.append(relatedTag.getTagName() + ":persona");
+									contentletTagsBuilder.append(relatedTag.getTagName())
+											.append(":persona");
 								} else {
 									contentletTagsBuilder.append(relatedTag.getTagName());
 								}
