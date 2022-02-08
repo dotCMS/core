@@ -1,0 +1,28 @@
+{
+    "projectType": "library",
+    "root": "libs/dot-layout-grid",
+    "sourceRoot": "libs/dot-layout-grid/src",
+    "prefix": "",
+    "targets": {
+        "lint": {
+            "executor": "@nrwl/linter:eslint",
+            "options": {
+                "lintFilePatterns": [
+                    "libs/dot-layout-grid/src/**/*.ts",
+                    "libs/dot-layout-grid/src/**/*.html"
+                ]
+            },
+            "outputs": ["{options.outputFile}"]
+        },
+        "test": {
+            "executor": "@angular-devkit/build-angular:karma",
+            "outputs": ["coverage/libs/dot-layout-grid"],
+            "options": {
+                "main": "libs/dot-layout-grid/src/test.ts",
+                "karmaConfig": "libs/dot-layout-grid/karma.conf.js",
+                "tsConfig": "libs/dot-layout-grid/tsconfig.spec.json"
+            }
+        }
+    },
+    "tags": []
+}

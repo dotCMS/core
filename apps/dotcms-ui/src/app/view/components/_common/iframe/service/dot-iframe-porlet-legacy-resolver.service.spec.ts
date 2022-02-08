@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { LoginService } from '@dotcms/dotcms-js';
 import { LoginServiceMock, mockUser } from '@tests/login-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';

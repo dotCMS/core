@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, waitForAsync, fakeAsync, tick, TestBed } from '@angular/core/testing';
 import { DebugElement, Component, Input } from '@angular/core';
@@ -211,11 +213,14 @@ describe('SearchableDropdownComponent', () => {
     });
 
     it('should display Action button', () => {
-        hostComp.action = () => {};
+        hostComp.action = () => {
+            //
+        };
 
         hostFixture.detectChanges();
-        const actionBtn = de.query(By.css('.searchable-dropdown__search-action dot-icon-button'))
-            .componentInstance;
+        const actionBtn = de.query(
+            By.css('.searchable-dropdown__search-action dot-icon-button')
+        ).componentInstance;
         expect(actionBtn.icon).toBe('add');
     });
 

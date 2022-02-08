@@ -76,7 +76,7 @@ const appData = {
     configurationsCount: 1,
     key: 'google-calendar',
     name: 'Google Calendar',
-    description: `It is a tool to keep track of your life\'s events`,
+    description: `It is a tool to keep track of your life's events`,
     iconUrl: '/dA/d948d85c-3bc8-4d85-b0aa-0e989b9ae235/photo/surfer-profile.jpg',
     sites
 };
@@ -175,7 +175,9 @@ describe('DotAppsConfigurationDetailComponent', () => {
                                 return text;
                             },
 
-                            highlight() {}
+                            highlight() {
+                                //
+                            }
                         }
                     },
                     DotAppsConfigurationDetailResolver

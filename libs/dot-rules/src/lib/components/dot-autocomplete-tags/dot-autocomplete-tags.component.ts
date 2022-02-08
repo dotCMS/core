@@ -16,8 +16,6 @@ export class DotAutocompleteTagsComponent implements OnInit {
 
     filteredOptions: SelectItem[] = [];
 
-    constructor() {}
-
     ngOnInit() {
         this.filteredOptions = this.options;
         this.value = this.value === null ? [] : this.value;

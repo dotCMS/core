@@ -37,7 +37,7 @@ import { getDotAttributesFromElement, setDotAttributesToElement } from '../dot-f
  * Represent a dotcms binary file control.
  *
  * @export
- * @class DotBinaryFile
+ * @class DotBinaryFileComponent
  */
 @Component({
     tag: 'dot-binary-file',
@@ -63,7 +63,7 @@ export class DotBinaryFileComponent {
     @Prop({ reflect: true })
     hint = '';
 
-    /** (optional) Determine if it is mandatory */
+    /** (optional) Determine if it is required */
     @Prop({ reflect: true })
     required = false;
 
@@ -250,8 +250,8 @@ export class DotBinaryFileComponent {
         nextTick(() => {
             if (!this.binaryTextField) {
                 this.binaryTextField = this.el.querySelector('dot-binary-text-field');
-                console.log(this.binaryTextField);
             }
+
             this.setValue();
         });
     }

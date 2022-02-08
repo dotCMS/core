@@ -1,5 +1,5 @@
 <form [formGroup]="form" class="p-fluid">
-    <div class="p-field">
+    <div class="field">
         <label for="content-type-form-host" class="form__label">{{
             'modes.persona.host' | dm
         }}</label>
@@ -10,7 +10,7 @@
         ></dot-site-selector-field>
     </div>
 
-    <div class="p-field">
+    <div class="field">
         <label for="persona-name" class="form__label">{{ 'modes.persona.name' | dm }}</label>
         <input
             id="persona-name"
@@ -28,12 +28,12 @@
         </dot-field-validation-message>
     </div>
 
-    <div class="p-field">
+    <div class="field">
         <label for="persona-keyTag" class="form__label">{{ 'modes.persona.key.tag' | dm }}</label>
         <input id="persona-keyTag" type="text" formControlName="keyTag" name="keyTag" pInputText />
     </div>
 
-    <div class="p-field">
+    <div class="field">
         <label for="persona-image" class="form__label">{{
             'modes.persona.upload.file' | dm
         }}</label>
@@ -60,7 +60,7 @@
             ></button>
         </div>
     </div>
-    <div class="p-field">
+    <div class="field">
         <label for="persona-other-tags" class="form__label">{{
             'modes.persona.other.tags' | dm
         }}</label>

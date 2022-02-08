@@ -10,6 +10,4 @@ import { FieldProperty } from '../field-properties.model';
 export class NamePropertyComponent {
     property: FieldProperty;
     group: FormGroup;
-
-    constructor() {}
 }

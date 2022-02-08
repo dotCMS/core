@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotNewRelationshipsComponent } from './dot-new-relationships.component';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';

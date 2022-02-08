@@ -5,35 +5,33 @@ import { By } from '@angular/platform-browser';
 import { DraggableDirective } from './draggable.directive';
 
 @Component({
-  template: `<div tiptapDraggable>Hello Tiptap!</div>`
+    template: `<div tiptapDraggable>Hello Tiptap!</div>`
 })
-class TestComponent { }
+class TestComponent {}
 
 describe('DraggableDirective', () => {
-  let fixture: ComponentFixture<TestComponent>;
+    let fixture: ComponentFixture<TestComponent>;
 
-  beforeEach(async () => {
-    TestBed.configureTestingModule({
-      declarations: [
-        TestComponent,
-        DraggableDirective,
-      ]
+    beforeEach(async () => {
+        TestBed.configureTestingModule({
+            declarations: [TestComponent, DraggableDirective],
+            teardown: { destroyAfterEach: false }
+        });
+
+        await TestBed.compileComponents();
+
+        fixture = TestBed.createComponent(TestComponent);
+
+        fixture.detectChanges();
     });
 
-    await TestBed.compileComponents();
+    it('should create an instance', () => {
+        const directive = new DraggableDirective();
+        expect(directive).toBeTruthy();
+    });
 
-    fixture = TestBed.createComponent(TestComponent);
-
-    fixture.detectChanges();
-  });
-
-  it('should create an instance', () => {
-    const directive = new DraggableDirective();
-    expect(directive).toBeTruthy();
-  });
-
-  it('should add the attributes correctly', () => {
-    expect(fixture.debugElement.query(By.css('[data-drag-handle]'))).toBeTruthy();
-    expect(fixture.debugElement.query(By.css('[draggable]'))).toBeTruthy();
-  });
+    it('should add the attributes correctly', () => {
+        expect(fixture.debugElement.query(By.css('[data-drag-handle]'))).toBeTruthy();
+        expect(fixture.debugElement.query(By.css('[draggable]'))).toBeTruthy();
+    });
 });

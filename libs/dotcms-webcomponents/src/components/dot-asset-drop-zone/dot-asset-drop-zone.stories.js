@@ -1,27 +1,24 @@
-import { withKnobs, text, boolean } from '@storybook/addon-knobs';
 import readme from './readme.md';
 
 export default {
     title: 'Content Types Fields',
-    decorators: [withKnobs],
     parameters: {
-        notes: readme
+        docs: {
+            page: readme
+        },
+    },
+    args: {
+        text: 'Drop files here',
     }
 };
 
-export const DropZone = () => {
-    const props = [
-        {
-            name: 'Text',
-            content: text('Value', '')
-        }
-    ];
+const Template = (args) => {
     const body = document.createElement('div');
     const dropZone = document.createElement('dot-asset-drop-zone');
 
-    props.forEach(({ name, content }) => {
-        dropZone[name] = content;
-    });
+    for (const item in args) {
+        dropZone[item] = args[item];
+    }
 
     dropZone.style.display = 'block';
     dropZone.style.width = '100%';
@@ -29,9 +26,10 @@ export const DropZone = () => {
 
     body.appendChild(dropZone);
 
-    body.style.width = '600px';
     body.style.height = '600px';
     body.style.border = '3px solid green';
 
     return body;
 };
+
+export const DropZone = Template.bind({});

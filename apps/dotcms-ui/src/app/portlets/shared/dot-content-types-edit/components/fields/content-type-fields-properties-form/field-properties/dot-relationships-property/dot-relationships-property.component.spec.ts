@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { DotRelationshipsPropertyComponent } from './dot-relationships-property.component';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/core';

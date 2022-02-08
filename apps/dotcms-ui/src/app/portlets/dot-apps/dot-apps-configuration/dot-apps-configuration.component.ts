@@ -158,7 +158,9 @@ export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
                         this.loadData();
                     });
             },
-            reject: () => {},
+            reject: () => {
+                //
+            },
             header: this.dotMessageService.get('apps.confirmation.title'),
             message: this.dotMessageService.get('apps.confirmation.delete.all.message'),
             footerLabel: {

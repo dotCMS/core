@@ -20,6 +20,4 @@ export class UiDotIconButtonComponent {
 
     @Input()
     size: number;
-
-    constructor() {}
 }

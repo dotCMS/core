@@ -7,5 +7,4 @@ import { Injectable } from '@angular/core';
 export class AppConfig {
     public iconPath = './src/assets/images/icons';
     public dotCMSURLKey = 'siteURLJWT';
-    constructor() {}
 }

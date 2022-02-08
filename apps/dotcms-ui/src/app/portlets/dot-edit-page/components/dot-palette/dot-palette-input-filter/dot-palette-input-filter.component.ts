@@ -27,8 +27,6 @@ export class DotPaletteInputFilterComponent implements OnInit, OnDestroy {
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor() {}
-
     ngOnInit() {
         observableFromEvent(this.searchInput.nativeElement, 'keyup')
             .pipe(debounceTime(500), takeUntil(this.destroy$))

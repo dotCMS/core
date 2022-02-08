@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { DotCrumbtrailService, DotCrumb } from './dot-crumbtrail.service';
 import { Injectable } from '@angular/core';
 import { DotNavigationService } from '../../dot-navigation/services/dot-navigation.service';

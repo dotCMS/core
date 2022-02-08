@@ -1,6 +1,6 @@
 <ng-container *ngIf="userData$ | async as user">
-    <div class="p-grid p-nogutter dot-starter-top-content">
-        <div class="p-col-12 dot-starter-header">
+    <div class="grid dot-starter-top-content">
+        <div class="col-12 dot-starter-header">
             <div>
                 <h2 class="dot-starter-title">{{ 'starter.title' | dm }}</h2>
                 <p
@@ -9,13 +9,14 @@
                 ></p>
             </div>
             <p-checkbox
+                [binary]="true"
                 [label]="'starter.dont.show' | dm"
                 (onChange)="handleVisibility($event.checked)"
             ></p-checkbox>
         </div>
-        <div class="p-col-12">
-            <div class="p-grid p-nogutter">
-                <div class="p-md-12 p-lg-7">
+        <div class="col-12">
+            <div class="grid">
+                <div class="md:col-12 lg:col-7">
                     <div class="dot-starter-top-main__section">
                         <a
                             *ngIf="user.showCreateDataModelLink"
@@ -87,7 +88,7 @@
                         </a>
                     </div>
                 </div>
-                <div class="p-md-12 p-lg-5">
+                <div class="md:col-12 lg:col-5">
                     <div class="dot-starter-top-secondary__section">
                         <h3>{{ 'starter.side.title' | dm }}</h3>
                         <a
@@ -188,7 +189,7 @@
     </div>
     <hr />
     <div class="dot-starter-bottom-content">
-        <div class="p-lg-4 p-md-12">
+        <div class="lg:col-4 md:col-12">
             <a
                 href="https://dotcms.com/docs/latest/"
                 data-testId="starter.footer.link.documentation"
@@ -204,7 +205,7 @@
                 </div>
             </a>
         </div>
-        <div class="p-lg-4 p-md-12">
+        <div class="lg:col-4 md:col-12">
             <a
                 href="https://dotcms.com/codeshare/"
                 data-testId="starter.footer.link.examples"
@@ -220,7 +221,7 @@
                 </div>
             </a>
         </div>
-        <div class="p-lg-4 p-md-12">
+        <div class="lg:col-4 md:col-12">
             <a
                 href="https://dotcms.com/forum/"
                 data-testId="starter.footer.link.community"
@@ -236,7 +237,7 @@
                 </div>
             </a>
         </div>
-        <div class="p-lg-4 p-md-12">
+        <div class="lg:col-4 md:col-12">
             <a
                 href="https://dotcms.com/courses/"
                 data-testId="starter.footer.link.training"
@@ -252,7 +253,7 @@
                 </div>
             </a>
         </div>
-        <div class="p-lg-4 p-md-12">
+        <div class="lg:col-4 md:col-12">
             <a
                 href="https://dotcms.com/review/"
                 data-testId="starter.footer.link.review"
@@ -268,7 +269,7 @@
                 </div>
             </a>
         </div>
-        <div class="p-lg-4 p-md-12">
+        <div class="lg:col-4 md:col-12">
             <a
                 href="https://dotcms.com/contact-us/"
                 data-testId="starter.footer.link.feedback"

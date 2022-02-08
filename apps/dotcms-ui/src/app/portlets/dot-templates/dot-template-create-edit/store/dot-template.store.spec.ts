@@ -1,4 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
+>>>>>>> master
 import { ActivatedRoute } from '@angular/router';
 
 import { of, throwError } from 'rxjs';

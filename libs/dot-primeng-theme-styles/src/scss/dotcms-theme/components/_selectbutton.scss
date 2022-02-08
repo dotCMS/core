@@ -57,3 +57,19 @@
         }
     }
 }
+
+.p-button-compact {
+    .p-button {
+        padding-left: $spacing-3;
+        padding-right: $spacing-3;
+
+        &.p-highlight {
+            &:focus {
+                background-color: $brand-primary;
+                color: $white;
+            }
+            background-color: $brand-primary;
+            color: $white;
+        }
+    }
+}

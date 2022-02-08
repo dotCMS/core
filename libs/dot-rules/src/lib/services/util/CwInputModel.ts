@@ -211,8 +211,6 @@ export class ParameterDefinition {
 
         return m;
     }
-
-    constructor() {}
 }
 
 const Registry = {

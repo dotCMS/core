@@ -107,7 +107,9 @@ const data = [
 
 @Injectable()
 class MockDotContentletEditorService {
-    setDraggedContentType = () => {};
+    setDraggedContentType = () => {
+        //
+    };
 }
 
 const messageServiceMock = new MockDotMessageService({

@@ -2,7 +2,8 @@ import { Component, Prop, Event, EventEmitter, h } from '@stencil/core';
 import { DotKeyValueField } from '../../../../../models';
 
 @Component({
-    tag: 'key-value-table'
+    tag: 'key-value-table',
+    styleUrl: 'key-value-table.scss'
 })
 export class KeyValueTableComponent {
     /** (optional) Items to render in the list of key value */
@@ -45,7 +46,9 @@ export class KeyValueTableComponent {
         const label = `${this.buttonLabel} ${item.key}, ${item.value}`;
         return (
             <tr>
-                <td>
+                <td class="key-value-table-wc__key">{item.key}</td>
+                <td class="key-value-table-wc__value">{item.value}</td>
+                <td class="key-value-table-wc__action">
                     <button
                         aria-label={label}
                         disabled={this.disabled || null}
@@ -55,8 +58,6 @@ export class KeyValueTableComponent {
                         {this.buttonLabel}
                     </button>
                 </td>
-                <td>{item.key}</td>
-                <td>{item.value}</td>
             </tr>
         );
     }

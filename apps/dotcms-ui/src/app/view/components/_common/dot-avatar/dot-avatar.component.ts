@@ -51,7 +51,7 @@ export class DotAvatarComponent {
      * @memberof DotAvatarComponent
      */
     getPlaceholder(label: string): string {
-        return !!label ? label.charAt(0).toUpperCase() : null;
+        return label ? label.charAt(0).toUpperCase() : null;
     }
 
     /**

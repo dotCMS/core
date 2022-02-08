@@ -21,7 +21,7 @@
 | `placeholder`          | `placeholder`              | (optional) Placeholder specifies a short hint that describes the expected value of the input field      | `string`  | `'Drop or paste a file or url'`                        |
 | `previewImageName`     | `preview-image-name`       | (optional) Name of the file uploaded                                                                    | `string`  | `''`                                                   |
 | `previewImageUrl`      | `preview-image-url`        | (optional) URL of the file uploaded                                                                     | `string`  | `''`                                                   |
-| `required`             | `required`                 | (optional) Determine if it is mandatory                                                                 | `boolean` | `false`                                                |
+| `required`             | `required`                 | (optional) Determine if it is required                                                                  | `boolean` | `false`                                                |
 | `requiredMessage`      | `required-message`         | (optional) Text that be shown when required is set and condition not met                                | `string`  | `'This field is required'`                             |
 | `validationMessage`    | `validation-message`       | (optional) Text that be shown when the Regular Expression condition not met                             | `string`  | `"The field doesn't comply with the specified format"` |
 

@@ -1,7 +1,8 @@
+@use "sass:math";
 @use "variables" as *;
 
 $size: $field-height;
-$border-size: $size / 5;
+$border-size: math.div($size, 5);
 
 div {
     border-radius: 50%;

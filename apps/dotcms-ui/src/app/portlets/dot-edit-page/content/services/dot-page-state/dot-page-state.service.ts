@@ -179,6 +179,7 @@ export class DotPageStateService {
      * @memberof DotPageStateService
      */
     requestPage(options: DotPageRenderOptions): Observable<DotPageRenderState> {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { url, ...extraParams } = this.dotRouterService.queryParams;
         return this.dotPageRenderService.get(options, extraParams).pipe(
             catchError((err) => this.handleSetPageStateFailed(err)),

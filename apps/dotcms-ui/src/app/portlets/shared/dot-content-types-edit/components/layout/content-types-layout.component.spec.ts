@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { of, Observable } from 'rxjs';
 import { ContentTypesLayoutComponent } from './content-types-layout.component';
 import { ComponentFixture, fakeAsync, TestBed } from '@angular/core/testing';
@@ -147,7 +150,7 @@ describe('ContentTypesLayoutComponent', () => {
     });
 
     it('should not have a Permissions tab', () => {
-        let pTabPanel = de.query(By.css('.content-type__permissions'));
+        const pTabPanel = de.query(By.css('.content-type__permissions'));
         expect(pTabPanel).toBeFalsy();
     });
 

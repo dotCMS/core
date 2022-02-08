@@ -1,10 +1,14 @@
-import { of as observableOf } from 'rxjs';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import { of } from 'rxjs';
 import { waitForAsync, TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
 import { DotAppsService } from '@services/dot-apps/dot-apps.service';
 import { DotAppsConfigurationDetailResolver } from './dot-apps-configuration-detail-resolver.service';
 class AppsServicesMock {
-    getConfiguration(_appKey: string, _id: string) {}
+    getConfiguration(_appKey: string, _id: string) {
+        return of({});
+    }
 }
 
 const activatedRouteSnapshotMock: any = jasmine.createSpyObj<ActivatedRouteSnapshot>(
@@ -58,7 +62,7 @@ describe('DotAppsConfigurationDetailResolver', () => {
         activatedRouteSnapshotMock.paramMap.get = (param: string) => {
             return param === 'appKey' ? queryParams.appKey : queryParams.id;
         };
-        spyOn<any>(dotAppsServices, 'getConfiguration').and.returnValue(observableOf(response));
+        spyOn<any>(dotAppsServices, 'getConfiguration').and.returnValue(of(response));
 
         dotAppsConfigurationDetailResolver
             .resolve(activatedRouteSnapshotMock)

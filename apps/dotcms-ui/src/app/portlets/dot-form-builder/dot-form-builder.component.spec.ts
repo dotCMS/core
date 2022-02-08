@@ -11,18 +11,14 @@ import { ActivatedRoute } from '@angular/router';
     selector: 'dot-unlicensed-porlet',
     template: ''
 })
-export class DotUnlicensedPorletComponentMock {
+export class MockDotUnlicensedPorletComponent {
     @Input() data;
-
-    constructor() {}
 }
 @Component({
     selector: 'dot-content-types',
     template: ''
 })
-export class DotContentTypesPortletComponentMock {
-    constructor() {}
-}
+export class MockDotContentTypesPortletComponent {}
 
 describe('DotFormBuilderComponent', () => {
     let fixture: ComponentFixture<DotFormBuilderComponent>;
@@ -34,8 +30,8 @@ describe('DotFormBuilderComponent', () => {
             TestBed.configureTestingModule({
                 declarations: [
                     DotFormBuilderComponent,
-                    DotUnlicensedPorletComponentMock,
-                    DotContentTypesPortletComponentMock
+                    MockDotUnlicensedPorletComponent,
+                    MockDotContentTypesPortletComponent
                 ],
                 providers: [
                     {

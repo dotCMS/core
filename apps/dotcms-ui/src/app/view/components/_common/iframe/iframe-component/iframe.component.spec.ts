@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { RouterTestingModule } from '@angular/router/testing';
 import { IframeOverlayService } from './../service/iframe-overlay.service';
 import { DotLoadingIndicatorService } from './../dot-loading-indicator/dot-loading-indicator.service';

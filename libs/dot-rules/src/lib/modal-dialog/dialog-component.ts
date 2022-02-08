@@ -54,8 +54,6 @@ export class ModalDialogComponent {
 
     private _keyListener: any;
 
-    constructor() {}
-
     onCancel(_e): void {
         this.cancel.emit(true);
     }

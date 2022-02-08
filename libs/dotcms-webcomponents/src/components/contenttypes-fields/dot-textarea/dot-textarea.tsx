@@ -38,7 +38,7 @@ export class DotTextareaComponent {
     @Element()
     el: HTMLElement;
 
-    /** Value specifies the value of the <textarea> element */
+    /** Value specifies the value of the textarea element */
     @Prop({ mutable: true, reflect: true })
     value = '';
 
@@ -46,7 +46,7 @@ export class DotTextareaComponent {
     @Prop({ reflect: true })
     name = '';
 
-    /** (optional) Text to be rendered next to <textarea> element */
+    /** (optional) Text to be rendered next to textarea element */
     @Prop({ reflect: true })
     label = '';
 
@@ -79,6 +79,7 @@ export class DotTextareaComponent {
 
     @Event()
     dotValueChange: EventEmitter<DotFieldValueEvent>;
+
     @Event()
     dotStatusChange: EventEmitter<DotFieldStatusEvent>;
 

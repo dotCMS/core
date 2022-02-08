@@ -17,8 +17,6 @@ export class DotPersonaSelectorOptionComponent {
 
     @Output() delete = new EventEmitter<DotPersona>();
 
-    constructor() {}
-
     @HostListener('click', ['$event'])
     onClick(_$event: MouseEvent) {
         this.change.emit(this.persona);

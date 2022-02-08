@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement, Component } from '@angular/core';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';

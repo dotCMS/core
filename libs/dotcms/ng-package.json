@@ -2,9 +2,6 @@
     "$schema": "../../node_modules/ng-packagr/ng-package.schema.json",
     "dest": "../../dist/libs/dotcms",
     "lib": {
-        "entryFile": "src/index.ts",
-        "umdModuleIds": {
-            "cross-fetch": "fetch"
-        }
+        "entryFile": "src/index.ts"
     }
 }

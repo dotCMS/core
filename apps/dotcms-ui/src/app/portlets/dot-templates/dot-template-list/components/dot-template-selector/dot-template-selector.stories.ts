@@ -30,7 +30,9 @@ export default {
                 {
                     provide: DynamicDialogRef,
                     useValue: {
-                        close: () => {}
+                        close: () => {
+                            //
+                        }
                     }
                 }
             ]

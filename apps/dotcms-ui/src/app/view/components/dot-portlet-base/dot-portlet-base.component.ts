@@ -8,6 +8,4 @@ import { Component, Input } from '@angular/core';
 export class DotPortletBaseComponent {
     @Input()
     boxed = true;
-
-    constructor() {}
 }

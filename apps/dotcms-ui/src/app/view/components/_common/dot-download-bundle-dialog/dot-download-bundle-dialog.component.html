@@ -11,7 +11,7 @@
         (keyup.enter)="handleSubmit()"
         class="p-fluid"
     >
-        <div class="p-field">
+        <div class="field">
             <label class="form__label">{{ 'download.bundle.i.want' | dm }}: </label>
             <p-selectButton
                 class="p-button-tabbed"
@@ -20,7 +20,7 @@
             >
             </p-selectButton>
         </div>
-        <div class="p-field">
+        <div class="field">
             <label class="form__label">{{ 'download.bundle.filter' | dm }}: </label>
             <p-dropdown
                 [options]="filterOptions"

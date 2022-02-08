@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { of } from 'rxjs';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
@@ -251,7 +253,9 @@ describe('DotContentletWrapperComponent', () => {
                     });
 
                     dotIframeDialog.triggerEventHandler('beforeClose', {
-                        close: () => {}
+                        close: () => {
+                            //
+                        }
                     });
 
                     expect<any>(dotAlertConfirmService.confirm).toHaveBeenCalledWith({

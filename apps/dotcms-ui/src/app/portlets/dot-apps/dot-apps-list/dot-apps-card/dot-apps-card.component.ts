@@ -10,6 +10,4 @@ import { DotApps } from '@shared/models/dot-apps/dot-apps.model';
 export class DotAppsCardComponent {
     @Input() app: DotApps;
     @Output() actionFired = new EventEmitter<string>();
-
-    constructor() {}
 }

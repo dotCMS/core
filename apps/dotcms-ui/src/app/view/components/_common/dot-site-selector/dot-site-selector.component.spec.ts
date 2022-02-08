@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { Observable, of as observableOf, of } from 'rxjs';
 import { ComponentFixture, waitForAsync, fakeAsync, tick, TestBed } from '@angular/core/testing';
 import { Component, DebugElement, Input } from '@angular/core';
@@ -149,7 +151,9 @@ describe('SiteSelectorComponent', () => {
         expect(comp.handleSitesRefresh).toHaveBeenCalledTimes(1);
     });
 
-    describe('Pagination', () => {});
+    describe('Pagination', () => {
+        //
+    });
 
     it('should change page', () => {
         const filter = 'filter';

@@ -48,5 +48,7 @@ Basic.parameters = {
 };
 
 Basic.args = {
-    confirm: () => {}
+    confirm: () => {
+        //
+    }
 };

@@ -21,8 +21,6 @@ export class DotNotificationsItemComponent implements OnInit {
         WARNING: 'ban'
     };
 
-    constructor() {}
-
     ngOnInit(): void {
         // TODO: hand more than one action
         const actions = this.data.actions ? this.data.actions[0] : null;
@@ -60,8 +58,6 @@ export class DotNotificationsItemComponent implements OnInit {
 export class DotNotificationsListComponent {
     @Input() notifications: INotification[];
     @Output() dismissNotification = new EventEmitter<Object>();
-
-    constructor() {}
 
     onClearNotification($event): void {
         this.dismissNotification.emit($event);

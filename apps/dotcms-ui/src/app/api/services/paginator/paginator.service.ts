@@ -276,7 +276,7 @@ export class PaginatorService {
     }
 
     private getObjectFromMap(map: Map<string, any>): { [key: string]: any } {
-        let result = Array.from(map).reduce(
+        const result = Array.from(map).reduce(
             (obj, [key, value]) => Object.assign(obj, { [key]: value }),
             {}
         );

@@ -34,7 +34,7 @@ export class DotThemeSelectorDropdownComponent
     implements OnInit, OnDestroy, ControlValueAccessor, AfterViewInit {
     themes: DotTheme[] = [];
     value: DotTheme = null;
-    totalRecords: number = 0;
+    totalRecords = 0;
     currentOffset: number;
     currentSiteIdentifier: string;
 

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { of } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { By } from '@angular/platform-browser';

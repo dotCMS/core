@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { FieldDragDropService } from './field-drag-drop.service';
 import { DragulaService } from 'ng2-dragula';
 import { Subject, Observable } from 'rxjs';

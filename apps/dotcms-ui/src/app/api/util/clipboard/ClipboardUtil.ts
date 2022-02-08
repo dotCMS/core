@@ -8,8 +8,6 @@ import { Injectable } from '@angular/core';
  */
 @Injectable()
 export class DotClipboardUtil {
-    constructor() {}
-
     /**
      * Copy the passed string to the clipboard
      *

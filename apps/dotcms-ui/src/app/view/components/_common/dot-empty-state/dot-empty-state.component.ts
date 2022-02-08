@@ -17,8 +17,6 @@ export class DotEmptyStateComponent implements OnInit {
     columnWidth: string;
     public readonly checkBoxWidth: number = 3.5;
 
-    constructor() {}
-
     ngOnInit(): void {
         this.columnWidth = this.getColumnWidth();
     }

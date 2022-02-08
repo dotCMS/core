@@ -65,10 +65,14 @@ xdescribe('ActionHeaderComponent', () => {
     it('should show action-button', () => {
         const options = {
             primary: {
-                command: () => {},
+                command: () => {
+                    //
+                },
                 model: [
                     {
-                        command: () => {},
+                        command: () => {
+                            //
+                        },
                         icon: 'Test',
                         label: 'Test'
                     }
@@ -132,7 +136,9 @@ xdescribe('ActionHeaderComponent', () => {
             primary: {
                 model: [
                     {
-                        command: () => {},
+                        command: () => {
+                            //
+                        },
                         icon: 'Test',
                         label: 'Test'
                     }

@@ -125,7 +125,7 @@ export class DotContentCompareStore extends ComponentStore<DotContentCompareStat
         fields: DotCMSContentTypeField[]
     ): DotCMSContentlet[] {
         const types = ['Date', 'Time', 'Date-and-Time', 'Category', 'Key-Value'];
-        let fieldNeedFormat: DotCMSContentTypeField[] = [];
+        const fieldNeedFormat: DotCMSContentTypeField[] = [];
         fields.forEach((field) => {
             if (types.includes(field.fieldType)) {
                 fieldNeedFormat.push(field);

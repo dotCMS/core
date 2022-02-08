@@ -374,7 +374,8 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 },
                 events: {
                     load: (event) => {
-                        event.target.contentWindow.ngEditContentletEvents = this.dotEditContentHtmlService.contentletEvents$;
+                        event.target.contentWindow.ngEditContentletEvents =
+                            this.dotEditContentHtmlService.contentletEvents$;
                     }
                 }
             });
@@ -388,13 +389,14 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
             },
             events: {
                 load: (event) => {
-                    event.target.contentWindow.ngEditContentletEvents = this.dotEditContentHtmlService.contentletEvents$;
+                    event.target.contentWindow.ngEditContentletEvents =
+                        this.dotEditContentHtmlService.contentletEvents$;
                 }
             }
         });
     }
 
-    private iframeActionsHandler(event: any): Function {
+    private iframeActionsHandler(event: any): (contentlet: Record<string, unknown>) => void {
         const eventsHandlerMap = {
             edit: this.editContentlet.bind(this),
             code: this.editContentlet.bind(this),
@@ -543,7 +545,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         blackList: string[] = [],
         pageState: DotPageRenderState
     ): DotCMSContentType[] {
-        let allowedContent = new Set();
+        const allowedContent = new Set();
         Object.values(pageState.containers).forEach((container) => {
             Object.values(container.containerStructures).forEach(
                 (containerStructure: DotContainerStructure) => {

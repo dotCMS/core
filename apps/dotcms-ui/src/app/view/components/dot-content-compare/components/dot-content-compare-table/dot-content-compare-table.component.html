@@ -1,73 +1,128 @@
-<p-table [value]='data.fields' *ngIf='data'  styleClass="p-datatable-gridlines">
-    <ng-template pTemplate='header'>
+<p-table [value]="data.fields" *ngIf="data" styleClass="p-datatable-gridlines">
+    <ng-template pTemplate="header">
         <tr>
-            <th style="width:12%"> </th>
+            <th style="width: 12%"></th>
             <th>
                 <span data-testId="table-tittle" class="dot-content-compare-table__title">
-                    {{data.working?.title}}
+                    {{ data.working?.title }}
                 </span>
             </th>
             <th>
-               <div class="dot-content-compare-table__controls">
-                   <p-dropdown [options]="data.versions" (onChange)='changeVersion.emit($event.value)' appendTo="body" >
-                       <ng-template let-selected pTemplate="selectedItem">
-                           {{selected.modDate}}
-                       </ng-template>
-                       <ng-template let-item pTemplate="item">
-                           {{item.modDate}}
-                       </ng-template>
-                   </p-dropdown>
-                   <p-selectButton
-                       [options]="displayOptions"
-                       [(ngModel)]="showDiff"
-                       class="p-button-tabbed"
-                       (onChange)="changeDiff.emit($event.value)" >
-                   </p-selectButton>
-                   <button data-testId="table-bring-back" pButton class="p-button-sm p-button" [label]="'Bring-Back' | dm" (click)='bringBack.emit(data.compare.inode)'></button>
-               </div>
+                <div class="dot-content-compare-table__controls">
+                    <p-dropdown
+                        [options]="data.versions"
+                        data-testid="versions-dropdown"
+                        (onChange)="changeVersion.emit($event.value)"
+                        appendTo="body"
+                    >
+                        <ng-template let-selected pTemplate="selectedItem">
+                            {{ selected | dotTransformVersionLabel }}
+                        </ng-template>
+                        <ng-template let-item pTemplate="item">
+                            {{ item | dotTransformVersionLabel }}
+                        </ng-template>
+                    </p-dropdown>
+                    <p-selectButton
+                        data-testid="show-diff"
+                        [options]="displayOptions"
+                        [(ngModel)]="showDiff"
+                        class="p-button-compact"
+                        (onChange)="changeDiff.emit($event.value)"
+                    >
+                    </p-selectButton>
+                    <button
+                        data-testId="table-bring-back"
+                        pButton
+                        class="p-button-sm p-button"
+                        [label]="'Bring-Back' | dm"
+                        (click)="bringBack.emit(data.compare.inode)"
+                    ></button>
+                </div>
             </th>
         </tr>
     </ng-template>
 
-    <ng-template pTemplate="body" let-field >
-        <tr [ngSwitch]="field?.fieldType" >
-           <td>{{field.name}}</td>
+    <ng-template pTemplate="body" let-field>
+        <tr [ngSwitch]="field?.fieldType">
+            <td>{{ field.name }}</td>
             <ng-container *ngSwitchCase="'Image'">
-               <td><img data-testId="table-image-working" *ngIf="data.working[field.variable]" [alt]="data.working[field.variable]" [src]="'/dA/'+data.working[field.variable]+'/20q'"></td>
-               <td><img data-testId="table-image-compare" *ngIf="data.compare[field.variable]" [alt]="data.compare[field.variable]" [src]="'/dA/'+data.compare[field.variable]+'/20q'"></td>
+                <td>
+                    <img
+                        data-testId="table-image-working"
+                        *ngIf="data.working[field.variable]"
+                        [alt]="data.working[field.variable]"
+                        [src]="'/dA/' + data.working[field.variable] + '/20q'"
+                    />
+                </td>
+                <td>
+                    <img
+                        data-testId="table-image-compare"
+                        *ngIf="data.compare[field.variable]"
+                        [alt]="data.compare[field.variable]"
+                        [src]="'/dA/' + data.compare[field.variable] + '/20q'"
+                    />
+                </td>
             </ng-container>
-            <ng-container *ngSwitchCase="'File'" >
+            <ng-container *ngSwitchCase="'File'">
                 <td>
-                    <dot-content-compare-preview-field *ngIf="data.working[field.variable]" data-testId="table-file-working"
-                        [fileURL]="'/dA/'+data.working[field.variable]+'/fileAsset/'"
-                        [label]="'/dA/'+data.working[field.variable]+'/fileAsset/'" >
+                    <dot-content-compare-preview-field
+                        *ngIf="data.working[field.variable]"
+                        data-testId="table-file-working"
+                        [fileURL]="'/dA/' + data.working[field.variable] + '/fileAsset/'"
+                        [label]="'/dA/' + data.working[field.variable] + '/fileAsset/'"
+                    >
                     </dot-content-compare-preview-field>
                 </td>
                 <td>
-                    <dot-content-compare-preview-field *ngIf="data.compare[field.variable]" data-testId="table-file-compare"
-                        [fileURL]="'/dA/'+data.compare[field.variable]+'/fileAsset/'"
-                        [label]="'/dA/'+data.working[field.variable]+'/fileAsset/' | dotDiff:'/dA/'+data.compare[field.variable]+'/fileAsset/':showDiff" >
+                    <dot-content-compare-preview-field
+                        *ngIf="data.compare[field.variable]"
+                        data-testId="table-file-compare"
+                        [fileURL]="'/dA/' + data.compare[field.variable] + '/fileAsset/'"
+                        [label]="
+                            '/dA/' + data.working[field.variable] + '/fileAsset/'
+                                | dotDiff
+                                    : '/dA/' + data.compare[field.variable] + '/fileAsset/'
+                                    : showDiff
+                        "
+                    >
                     </dot-content-compare-preview-field>
                 </td>
             </ng-container>
-            <ng-container *ngSwitchCase="'Binary'" >
+            <ng-container *ngSwitchCase="'Binary'">
                 <td>
-                    <dot-content-compare-preview-field *ngIf="data.working[field.variable+'Version']" data-testId="table-binary-working"
-                                                       [fileURL]="data.working[field.variable+'Version']"
-                                                       [label]="data.working[field.variable+'Version']" >
+                    <dot-content-compare-preview-field
+                        *ngIf="data.working[field.variable + 'Version']"
+                        data-testId="table-binary-working"
+                        [fileURL]="data.working[field.variable + 'Version']"
+                        [label]="data.working[field.variable + 'Version']"
+                    >
                     </dot-content-compare-preview-field>
                 </td>
                 <td>
-                    <dot-content-compare-preview-field *ngIf="data.compare[field.variable+'Version']" data-testId="table-binary-compare"
-                                                       [fileURL]="data.compare[field.variable+'Version']"
-                                                       [label]="data.working[field.variable+'Version'] | dotDiff:data.compare[field.variable+'Version']:showDiff" >
+                    <dot-content-compare-preview-field
+                        *ngIf="data.compare[field.variable + 'Version']"
+                        data-testId="table-binary-compare"
+                        [fileURL]="data.compare[field.variable + 'Version']"
+                        [label]="
+                            data.working[field.variable + 'Version']
+                                | dotDiff: data.compare[field.variable + 'Version']:showDiff
+                        "
+                    >
                     </dot-content-compare-preview-field>
                 </td>
             </ng-container>
             <ng-container *ngSwitchDefault>
-                <td data-testId="table-field-working" [innerHTML]="data.working[field.variable]"></td>
-                <td data-testId="table-field-compare" [innerHTML]="(data.working[field.variable] ? data.working[field.variable] : '')  | dotDiff:(data.compare[field.variable] ? data.compare[field.variable] : '') :showDiff" >
-                </td>
+                <td
+                    data-testId="table-field-working"
+                    [innerHTML]="data.working[field.variable]"
+                ></td>
+                <td
+                    data-testId="table-field-compare"
+                    [innerHTML]="
+                        data.working[field.variable]
+                            | dotDiff: data.compare[field.variable]:showDiff
+                    "
+                ></td>
             </ng-container>
         </tr>
     </ng-template>

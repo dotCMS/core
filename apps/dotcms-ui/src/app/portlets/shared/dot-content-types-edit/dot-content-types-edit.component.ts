@@ -199,7 +199,9 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
                     this.dotHttpErrorManagerService
                         .handle(err)
                         .pipe(take(1))
-                        .subscribe(() => {});
+                        .subscribe(() => {
+                            //
+                        });
                 }
             );
     }

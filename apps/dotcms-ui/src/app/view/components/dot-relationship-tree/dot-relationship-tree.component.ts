@@ -10,13 +10,11 @@ export class DotRelationshipTreeComponent implements OnInit {
     @Input() velocityVar: string;
     @Input() contentType: DotCMSContentType;
 
-    isRelationshipChild: boolean = false;
+    isRelationshipChild = false;
     relatedContentType: string;
     fieldName: string;
     child: string;
     parent: string;
-
-    constructor() {}
 
     ngOnInit(): void {
         this.setInitialValues();

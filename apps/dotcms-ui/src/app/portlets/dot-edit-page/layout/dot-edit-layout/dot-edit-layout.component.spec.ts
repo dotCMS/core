@@ -15,7 +15,6 @@ import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotTemplateContainersCacheService } from '@services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DotLayout } from '@models/dot-edit-layout-designer';
-import { CONTAINER_SOURCE } from '@models/container/dot-container.model';
 import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
 import { HttpResponse } from '@angular/common/http';
 import { mockResponseView } from '@tests/response-view.mock';
@@ -26,7 +25,7 @@ import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot
     selector: 'dot-edit-layout-designer',
     template: ''
 })
-export class DotEditLayoutDesignerComponentMock {
+export class MockDotEditLayoutDesignerComponent {
     @Input()
     layout: DotLayout;
 
@@ -53,7 +52,7 @@ const messageServiceMock = new MockDotMessageService({
 describe('DotEditLayoutComponent', () => {
     let component: DotEditLayoutComponent;
     let layoutDesignerDe: DebugElement;
-    let layoutDesigner: DotEditLayoutDesignerComponentMock;
+    let layoutDesigner: MockDotEditLayoutDesignerComponent;
     let dotPageLayoutService: DotPageLayoutService;
     let dotGlobalMessageService: DotGlobalMessageService;
     let dotTemplateContainersCacheService: DotTemplateContainersCacheService;
@@ -64,7 +63,7 @@ describe('DotEditLayoutComponent', () => {
     beforeEach(
         waitForAsync(() => {
             TestBed.configureTestingModule({
-                declarations: [DotEditLayoutDesignerComponentMock, DotEditLayoutComponent],
+                declarations: [MockDotEditLayoutDesignerComponent, DotEditLayoutComponent],
                 providers: [
                     DotEditLayoutService,
                     {
@@ -88,7 +87,9 @@ describe('DotEditLayoutComponent', () => {
                     {
                         provide: DotPageLayoutService,
                         useValue: {
-                            save() {}
+                            save() {
+                                //
+                            }
                         }
                     },
                     {

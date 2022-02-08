@@ -1,56 +1,33 @@
-import { withKnobs, text, boolean } from '@storybook/addon-knobs';
 
 import readme from './readme.md';
 
 export default {
     title: 'Components/Content Types Fields',
-    decorators: [withKnobs],
     parameters: {
-        notes: readme
+        docs: {
+            page: readme
+        }
+    },
+    args: {
+        name: '',
+        label: 'Radio',
+        hint: 'Hello I am a hint',
+        options: 'Pizza|pizza,Burguer|burguer,Sushi|sushi',
+        required: false,
+        disabled: false,
+        requiredMessage: 'This field is required',
+        value: ''
     }
 };
 
-export const Radio = () => {
-    const props = [
-        {
-            name: 'name',
-            content: text('Name', 'field-name')
-        },
-        {
-            name: 'label',
-            content: text('Label', 'Label')
-        },
-        {
-            name: 'hint',
-            content: text('Hint', 'Hello Im a hint')
-        },
-        {
-            name: 'options',
-            content: text('Options', 'Pizza|pizza,Burguer|burguer,Sushi|sushi')
-        },
-        {
-            name: 'required',
-            content: boolean('Required', false)
-        },
-        {
-            name: 'disabled',
-            content: boolean('Disabled', false)
-        },
-        {
-            name: 'requiredMessage',
-            content: text('Required Message', '')
-        },
-        {
-            name: 'value',
-            content: text('Value', '')
-        }
-    ];
-
+const Template = (args) => {
     const checkbox = document.createElement('dot-radio');
 
-    props.forEach(({ name, content }) => {
-        checkbox[name] = content;
-    });
+    for (const item in args) {
+        checkbox[item] = args[item];
+    }
 
     return checkbox;
-};
+}
+
+export const Radio = Template.bind({});

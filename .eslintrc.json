@@ -9,9 +9,15 @@
                 "@nrwl/nx/enforce-module-boundaries": [
                     "error",
                     {
+                        "allowCircularSelfDependency": true,
                         "enforceBuildableLibDependency": true,
                         "allow": [],
-                        "depConstraints": [{ "sourceTag": "*", "onlyDependOnLibsWithTags": ["*"] }]
+                        "depConstraints": [
+                            {
+                                "sourceTag": "*",
+                                "onlyDependOnLibsWithTags": ["*"]
+                            }
+                        ]
                     }
                 ]
             }
@@ -19,8 +25,15 @@
         {
             "files": ["*.ts", "*.tsx"],
             "extends": ["plugin:@nrwl/nx/typescript"],
-            "parserOptions": { "project": "./tsconfig.*?.json" },
-            "rules": {}
+            "rules": {
+                "@typescript-eslint/no-explicit-any": ["error"],
+                "@typescript-eslint/no-unused-vars": [
+                    "error",
+                    {
+                        "argsIgnorePattern": "^_"
+                    }
+                ]
+            }
         },
         {
             "files": ["*.js", "*.jsx"],

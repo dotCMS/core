@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { RouterTestingModule } from '@angular/router/testing';

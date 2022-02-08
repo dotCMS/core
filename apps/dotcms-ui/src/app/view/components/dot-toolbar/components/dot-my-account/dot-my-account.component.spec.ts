@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { MockDotMessageService } from '@dotcms/app/test/dot-message-service.mock';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';

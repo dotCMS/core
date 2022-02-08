@@ -21,7 +21,6 @@ import { DotWizardService } from '@services/dot-wizard/dot-wizard.service';
     ],
     declarations: [DotWizardComponent],
     exports: [DotWizardComponent],
-    entryComponents: [DotCommentAndAssignFormComponent, DotPushPublishFormComponent],
     providers: [DotWizardService]
 })
 export class DotWizardModule {}

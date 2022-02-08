@@ -6,6 +6,4 @@ import { Component, ViewEncapsulation } from '@angular/core';
     styleUrls: ['./global-search.scss'],
     templateUrl: 'global-search.html'
 })
-export class GlobalSearchComponent {
-    constructor() {}
-}
+export class GlobalSearchComponent {}

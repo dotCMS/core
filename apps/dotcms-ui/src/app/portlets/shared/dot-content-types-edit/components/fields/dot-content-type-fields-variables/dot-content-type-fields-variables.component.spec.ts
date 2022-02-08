@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { By } from '@angular/platform-browser';
 import { DebugElement, Component } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';

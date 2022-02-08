@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotIconModule } from '@dotcms/ui';
@@ -12,26 +14,38 @@ import { DotPaletteInputFilterModule } from '../dot-palette-input-filter/dot-pal
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 
-const data = [
+export const contentTypeDataMock = [
     {
+        baseType: 'Product',
+        clazz: '',
+        defaultType: false,
         icon: 'cloud',
         id: 'a1661fbc-9e84-4c00-bd62-76d633170da3',
         name: 'Product',
         variable: 'Product'
     },
     {
+        baseType: 'Blog',
+        clazz: '',
+        defaultType: false,
         icon: 'alt_route',
         id: '799f176a-d32e-4844-a07c-1b5fcd107578',
         name: 'Blog',
         variable: 'Blog'
     },
     {
+        baseType: 'Form',
+        clazz: '',
+        defaultType: false,
         icon: 'cloud',
         id: '897cf4a9-171a-4204-accb-c1b498c813fe',
         name: 'Contact',
         variable: 'Form'
     },
     {
+        baseType: 'Text',
+        clazz: '',
+        defaultType: false,
         icon: 'person',
         id: '6044a806-f462-4977-a353-57539eac2a2c',
         name: 'Long name Blog Comment',
@@ -61,10 +75,7 @@ describe('DotPaletteContentTypeComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [
-                TestHostComponent,
-                DotPaletteContentTypeComponent
-            ],
+            declarations: [TestHostComponent, DotPaletteContentTypeComponent],
             imports: [
                 DotPipesModule,
                 DotIconModule,
@@ -75,7 +86,7 @@ describe('DotPaletteContentTypeComponent', () => {
             ],
             providers: [
                 { provide: DotContentletEditorService, useClass: MockDotContentletEditorService },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                { provide: CoreWebService, useClass: CoreWebServiceMock }
             ]
         });
 
@@ -89,7 +100,7 @@ describe('DotPaletteContentTypeComponent', () => {
     });
 
     it('should list items correctly', () => {
-        componentHost.items = data;
+        componentHost.items = contentTypeDataMock;
         fixtureHost.detectChanges();
         const contents = fixtureHost.debugElement.queryAll(By.css('[data-testId="paletteItem"]'));
         expect(contents.length).toEqual(4);
@@ -104,7 +115,7 @@ describe('DotPaletteContentTypeComponent', () => {
     });
 
     it('should filter items on search', () => {
-        componentHost.items = data;
+        componentHost.items = contentTypeDataMock;
         fixtureHost.detectChanges();
         const input = fixtureHost.debugElement.query(By.css('dot-palette-input-filter'));
         input.componentInstance.filter.emit('Product');
@@ -114,24 +125,22 @@ describe('DotPaletteContentTypeComponent', () => {
     });
 
     it('should set Dragged ContentType on dragStart', () => {
-        componentHost.items = data;
+        componentHost.items = contentTypeDataMock;
         fixtureHost.detectChanges();
         const content = fixtureHost.debugElement.query(By.css('[data-testId="paletteItem"]'));
-        content.triggerEventHandler('dragstart', data[0]);
+        content.triggerEventHandler('dragstart', contentTypeDataMock[0]);
         expect(dotContentletEditorService.setDraggedContentType).toHaveBeenCalledOnceWith(
-            data[0] as DotCMSContentType
+            contentTypeDataMock[0] as DotCMSContentType
         );
     });
 
     it('should emit event to show a specific contentlet', () => {
-        componentHost.items = data;
+        componentHost.items = contentTypeDataMock;
         spyOn(de.componentInstance.selected, 'emit').and.callThrough();
         fixtureHost.detectChanges();
-        const buttons = fixtureHost.debugElement.queryAll(
-            By.css('[data-testId="paletteItem"]')
-        );
+        const buttons = fixtureHost.debugElement.queryAll(By.css('[data-testId="paletteItem"]'));
         buttons[3].nativeElement.click();
-        expect(de.componentInstance.itemsFiltered).toEqual(data);
+        expect(de.componentInstance.itemsFiltered).toEqual(contentTypeDataMock);
         expect(de.componentInstance.selected.emit).toHaveBeenCalledWith('Text');
     });
 });

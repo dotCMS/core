@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import {
     DebugElement,
     ComponentFactoryResolver,
@@ -38,8 +40,6 @@ class DotHostTesterComponent {
     mockDFormFieldData: DotCMSContentTypeField = {
         ...dotcmsContentTypeFieldBasicMock
     };
-
-    constructor() {}
 }
 
 @Directive({
@@ -124,7 +124,7 @@ xdescribe('ContentTypeFieldsPropertiesFormComponent', () => {
         hostFixture.detectChanges();
 
         return new Promise((resolve) => {
-            setTimeout(() => resolve(), 1);
+            setTimeout(() => resolve(true), 1);
         });
     };
 

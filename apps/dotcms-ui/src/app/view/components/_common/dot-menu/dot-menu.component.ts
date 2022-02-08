@@ -27,8 +27,6 @@ export class DotMenuComponent {
 
     visible = false;
 
-    constructor() {}
-
     /**
      * Toogle the visibility of the menu options & track
      * a document click when is open to eventually hide the menu

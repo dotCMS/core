@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { of as observableOf, Observable, of } from 'rxjs';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/core';

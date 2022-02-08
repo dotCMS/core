@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { of, Observable } from 'rxjs';
 import { waitForAsync, ComponentFixture, fakeAsync, tick, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -59,7 +61,7 @@ const appData = {
     configurationsCount: 2,
     key: 'google-calendar',
     name: 'Google Calendar',
-    description: `It is a tool to keep track of your life\'s events`,
+    description: `It is a tool to keep track of your life's events`,
     iconUrl: '/dA/d948d85c-3bc8-4d85-b0aa-0e989b9ae235/photo/surfer-profile.jpg',
     sites
 };
@@ -135,7 +137,9 @@ describe('DotAppsConfigurationComponent', () => {
                                 return text;
                             },
 
-                            highlight() {}
+                            highlight() {
+                                //
+                            }
                         }
                     },
                     { provide: CoreWebService, useClass: CoreWebServiceMock },
@@ -168,7 +172,9 @@ describe('DotAppsConfigurationComponent', () => {
         });
 
         it('should set params in export dialog attribute', () => {
-            const importExportDialog = fixture.debugElement.query(By.css('dot-apps-import-export-dialog'));
+            const importExportDialog = fixture.debugElement.query(
+                By.css('dot-apps-import-export-dialog')
+            );
             expect(importExportDialog.componentInstance.app).toEqual(appData);
             expect(importExportDialog.componentInstance.action).toEqual('Export');
         });
@@ -213,23 +219,26 @@ describe('DotAppsConfigurationComponent', () => {
         });
 
         it('should have dot-apps-configuration-list with correct values', () => {
-            const listComp = fixture.debugElement.query(By.css('dot-apps-configuration-list'))
-                .componentInstance;
+            const listComp = fixture.debugElement.query(
+                By.css('dot-apps-configuration-list')
+            ).componentInstance;
             expect(listComp.siteConfigurations).toBe(component.apps.sites);
             expect(listComp.hideLoadDataButton).toBe(true);
             expect(listComp.itemsPerPage).toBe(component.paginationPerPage);
         });
 
         it('should dot-apps-configuration-list emit action to load more data', () => {
-            const listComp = fixture.debugElement.query(By.css('dot-apps-configuration-list'))
-                .componentInstance;
+            const listComp = fixture.debugElement.query(
+                By.css('dot-apps-configuration-list')
+            ).componentInstance;
             listComp.loadData.emit({ first: 10 });
             expect(paginationService.getWithOffset).toHaveBeenCalledWith(10);
         });
 
         it('should redirect to goto configuration page action', () => {
-            const listComp = fixture.debugElement.query(By.css('dot-apps-configuration-list'))
-                .componentInstance;
+            const listComp = fixture.debugElement.query(
+                By.css('dot-apps-configuration-list')
+            ).componentInstance;
             listComp.edit.emit(sites[0]);
             expect(routerService.goToUpdateAppsConfiguration).toHaveBeenCalledWith(
                 component.apps.key,
@@ -263,8 +272,9 @@ describe('DotAppsConfigurationComponent', () => {
         });
 
         it('should export a specific configuration', () => {
-            const listComp = fixture.debugElement.query(By.css('dot-apps-configuration-list'))
-                .componentInstance;
+            const listComp = fixture.debugElement.query(
+                By.css('dot-apps-configuration-list')
+            ).componentInstance;
             listComp.export.emit(sites[0]);
             expect(component.importExportDialog.show).toBe(true);
             expect(component.siteSelected).toBe(sites[0]);
@@ -272,8 +282,9 @@ describe('DotAppsConfigurationComponent', () => {
 
         it('should delete a specific configuration', () => {
             spyOn(appsServices, 'deleteConfiguration').and.returnValue(of(null));
-            const listComp = fixture.debugElement.query(By.css('dot-apps-configuration-list'))
-                .componentInstance;
+            const listComp = fixture.debugElement.query(
+                By.css('dot-apps-configuration-list')
+            ).componentInstance;
             listComp.delete.emit(sites[0]);
 
             expect(appsServices.deleteConfiguration).toHaveBeenCalledWith(

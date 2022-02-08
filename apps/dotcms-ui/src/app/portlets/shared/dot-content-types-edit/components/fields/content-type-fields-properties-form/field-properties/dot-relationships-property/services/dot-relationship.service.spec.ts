@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { DotRelationshipService } from './dot-relationship.service';
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
 import { CoreWebService } from '@dotcms/dotcms-js';

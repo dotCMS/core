@@ -60,10 +60,12 @@ describe('DotLayoutSidebarComponent', () => {
 
     it('should propagate change after sidebar property item is clicked', () => {
         let res = false;
-        const dotLayoutPropertiesItem = de.query(By.css('dot-layout-properties-item'))
-            .componentInstance;
-        const layoutPropertyItemEl: HTMLElement = de.query(By.css('dot-layout-properties-item'))
-            .nativeElement;
+        const dotLayoutPropertiesItem = de.query(
+            By.css('dot-layout-properties-item')
+        ).componentInstance;
+        const layoutPropertyItemEl: HTMLElement = de.query(
+            By.css('dot-layout-properties-item')
+        ).nativeElement;
 
         dotLayoutPropertiesItem.change.subscribe((value) => (res = value));
         layoutPropertyItemEl.click();
@@ -76,10 +78,12 @@ describe('DotLayoutSidebarComponent', () => {
 
     it('should check left value and unchecked right value', () => {
         let res = false;
-        const dotLayoutPropertiesItem = de.query(By.css('dot-layout-properties-item'))
-            .componentInstance;
-        const layoutPropertyItemEl: HTMLElement = de.query(By.css('dot-layout-properties-item'))
-            .nativeElement;
+        const dotLayoutPropertiesItem = de.query(
+            By.css('dot-layout-properties-item')
+        ).componentInstance;
+        const layoutPropertyItemEl: HTMLElement = de.query(
+            By.css('dot-layout-properties-item')
+        ).nativeElement;
 
         dotLayoutPropertiesItem.change.subscribe((value) => (res = value));
         layoutPropertyItemEl.click();
@@ -95,10 +99,12 @@ describe('DotLayoutSidebarComponent', () => {
 
     it('should check right value and unchecked left value', () => {
         let res = false;
-        const dotLayoutPropertiesItem = de.query(By.css('dot-layout-properties-item'))
-            .componentInstance;
-        const layoutPropertyItemEl: HTMLElement = de.query(By.css('dot-layout-properties-item'))
-            .nativeElement;
+        const dotLayoutPropertiesItem = de.query(
+            By.css('dot-layout-properties-item')
+        ).componentInstance;
+        const layoutPropertyItemEl: HTMLElement = de.query(
+            By.css('dot-layout-properties-item')
+        ).nativeElement;
 
         dotLayoutPropertiesItem.change.subscribe((value) => (res = value));
         layoutPropertyItemEl.click();
@@ -134,5 +140,7 @@ describe('DotLayoutSidebarComponent', () => {
         });
     });
 
-    xit('should show selected left or right based on the sidebar location value', () => {});
+    xit('should show selected left or right based on the sidebar location value', () => {
+        //
+    });
 });

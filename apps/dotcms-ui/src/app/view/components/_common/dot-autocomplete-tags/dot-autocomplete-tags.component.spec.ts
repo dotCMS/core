@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotAutocompleteTagsComponent } from './dot-autocomplete-tags.component';
 import { DebugElement } from '@angular/core';
@@ -107,7 +109,9 @@ describe('DotAutocompleteTagsComponent', () => {
                 const backspaceEvent = { key: 'Backspace' };
                 const qEvent = { key: 'q', currentTarget: { value: 'qEvent' } };
 
-                beforeEach(() => {});
+                beforeEach(() => {
+                    //
+                });
 
                 it('should show the helper when input has value', () => {
                     autoComplete.onKeyup({ ...qEvent });

@@ -7,8 +7,6 @@ import {
 import { fallbackErrorMessages } from '../../components/contenttypes-fields/dot-form/services/dot-upload.service';
 
 export class DotAssetService {
-    constructor() {}
-
     /**
      * Create DotAssets based on options passed in DotAssetCreateOptions
      * @param options

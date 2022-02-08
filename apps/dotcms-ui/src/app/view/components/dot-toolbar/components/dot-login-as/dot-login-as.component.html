@@ -15,7 +15,7 @@
             novalidate
             class="p-fluid"
         >
-            <div class="p-field">
+            <div class="field">
                 <!--TODO: get rid of this let autoComplete when this is fixed: https://github.com/primefaces/primeng/issues/745-->
                 <dot-searchable-dropdown
                     #searchableDropdown
@@ -33,7 +33,7 @@
                 >
                 </dot-searchable-dropdown>
             </div>
-            <div class="p-field" *ngIf="needPassword">
+            <div class="field" *ngIf="needPassword">
                 <input
                     pPassword
                     #password

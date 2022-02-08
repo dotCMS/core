@@ -237,7 +237,9 @@ describe('DotDialogComponent', () => {
                     const close: DebugElement = de.query(By.css('dot-icon-button'));
 
                     close.triggerEventHandler('click', {
-                        preventDefault: () => {}
+                        preventDefault: () => {
+                            //
+                        }
                     });
 
                     hostFixture.detectChanges();
@@ -258,7 +260,9 @@ describe('DotDialogComponent', () => {
                     const content: DebugElement = de.query(By.css('.dialog__content'));
                     content.triggerEventHandler('scroll', {
                         target: {
-                            click: () => {},
+                            click: () => {
+                                //
+                            },
                             scrollTop: 100
                         }
                     });
@@ -469,7 +473,9 @@ describe('DotDialogComponent', () => {
             const close: DebugElement = de.query(By.css('dot-icon-button'));
 
             close.triggerEventHandler('click', {
-                preventDefault: () => {}
+                preventDefault: () => {
+                    //
+                }
             });
 
             hostFixture.detectChanges();

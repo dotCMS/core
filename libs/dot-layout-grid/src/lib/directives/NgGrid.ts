@@ -188,7 +188,8 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
 
     // 	Public methods
     public ngOnInit(): void {
-        this._renderer.addClass(this._ngEl.nativeElement, 'grid');
+        // Need to rename from grid to grid layout because PrimeFlex use "grid"
+        this._renderer.addClass(this._ngEl.nativeElement, 'grid_layout');
         if (this.autoStyle)
             this._renderer.setStyle(this._ngEl.nativeElement, 'position', 'relative');
         this.setConfig(this._config);
@@ -1638,9 +1639,8 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
         const dims: NgGridItemSize = item.getSize();
 
         const factory = this.componentFactoryResolver.resolveComponentFactory(NgGridPlaceholder);
-        const componentRef: ComponentRef<NgGridPlaceholder> = item.containerRef.createComponent(
-            factory
-        );
+        const componentRef: ComponentRef<NgGridPlaceholder> =
+            item.containerRef.createComponent(factory);
         this._placeholderRef = componentRef;
         const placeholder: NgGridPlaceholder = componentRef.instance;
         placeholder.registerGrid(this);

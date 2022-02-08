@@ -55,15 +55,6 @@ const PORTLETS_ANGULAR = [
             import('@portlets/dot-rules/dot-rules.module').then((m) => m.DotRulesModule)
     },
     {
-        canActivate: [MenuGuardService],
-        canActivateChild: [MenuGuardService],
-        path: 'dot-browser',
-        loadChildren: () =>
-            import('@portlets/dot-site-browser/dot-site-browser.module').then(
-                (m) => m.DotSiteBrowserModule
-            )
-    },
-    {
         // canActivate: [MenuGuardService],
         // canActivateChild: [MenuGuardService],
         path: 'starter',

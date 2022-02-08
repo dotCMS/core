@@ -31,6 +31,7 @@ export class DotContentletThumbnail {
 
     render() {
         const image = this.contentlet ? `url(${this.getImageURL()})` : '';
+
         return (
             <Host>
                 {this.renderImage ? (

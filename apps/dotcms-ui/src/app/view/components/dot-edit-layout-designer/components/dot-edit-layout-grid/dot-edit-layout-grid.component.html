@@ -1,4 +1,4 @@
-<div class="grid" [ngGrid]="gridConfig" (onDragStop)="updateModel()" (onResizeStop)="updateModel()">
+<div [ngGrid]="gridConfig" (onDragStop)="updateModel()" (onResizeStop)="updateModel()">
     <div
         class="box__add-row-class-button"
         *ngFor="let rowClass of rowClass; let i = index"
@@ -50,7 +50,7 @@
     [width]="400"
 >
     <form *ngIf="addClassDialogShow" [formGroup]="form" novalidate class="p-fluid">
-        <div class="p-field">
+        <div class="field">
             <label>{{ 'editpage.layout.css.class.names' | dm }}</label>
             <input
                 class="box__add-class-text"

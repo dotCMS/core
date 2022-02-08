@@ -25,10 +25,7 @@ const appData = {
     configurationsCount: 2,
     key: 'google-calendar',
     name: 'Google Calendar',
-    description: `It is a tool to keep track of your life\'s events, also this descriptions is long and long
-    and long and long and long and long and long and long and long and long and long and long and long and
-    long and long and long and long and long and long and long and long and long and long and long and long
-    and long and long and long and long and long and long`,
+    description: `It is a tool to keep track of your life's events, also this descriptions is long and long and long and long and long and long and long and long and long and long and long and long and long and long and long and long and long and long and long and long and long and long and long and long and long and long and long and long and long and long and long`,
     iconUrl: '/dA/d948d85c-3bc8-4d85-b0aa-0e989b9ae235/photo/surfer-profile.jpg',
     sites: []
 };
@@ -65,7 +62,9 @@ describe('DotAppsConfigurationHeaderComponent', () => {
                                 return text;
                             },
 
-                            highlight() {}
+                            highlight() {
+                                //
+                            }
                         }
                     }
                 ]
@@ -96,7 +95,7 @@ describe('DotAppsConfigurationHeaderComponent', () => {
         const description = component.app.description
             .replace(/\n/gi, '')
             .replace(/\r/gi, '')
-            .replace(/   /gi, '');
+            .replace(/ {3}/gi, '');
         expect(
             de.query(By.css('.dot-apps-configuration__description')).nativeElement.outerText
         ).toBe(description);

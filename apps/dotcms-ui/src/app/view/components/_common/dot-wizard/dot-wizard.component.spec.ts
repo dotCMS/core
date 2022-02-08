@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { DotWizardComponent } from './dot-wizard.component';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';

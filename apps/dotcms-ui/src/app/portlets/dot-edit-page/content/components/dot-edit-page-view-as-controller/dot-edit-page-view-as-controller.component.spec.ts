@@ -3,7 +3,7 @@ import { DotDevicesService } from '@services/dot-devices/dot-devices.service';
 import { DotLanguagesService } from '@services/dot-languages/dot-languages.service';
 import { DotPersonasService } from '@services/dot-personas/dot-personas.service';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
-import { Component, DebugElement, EventEmitter, Input, Output, OnInit } from '@angular/core';
+import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { DotDevicesServiceMock } from '../../../../../test/dot-device-service.mock';
@@ -41,11 +41,9 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
         [pageState]="pageState"
     ></dot-edit-page-view-as-controller>`
 })
-class DotTestHostComponent implements OnInit {
+class DotTestHostComponent {
     @Input()
     pageState: DotPageRenderState;
-
-    ngOnInit() {}
 }
 
 @Component({

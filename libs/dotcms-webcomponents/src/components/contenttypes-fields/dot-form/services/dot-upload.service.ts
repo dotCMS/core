@@ -9,8 +9,6 @@ export const fallbackErrorMessages = {
 const TEMP_API_URL = '/api/v1/temp';
 
 export class DotUploadService {
-    constructor() {}
-
     /**
      * Will call the corresponding endpoint to upload a temporary file.
      * Return the information of tha file in the server

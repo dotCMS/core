@@ -21,8 +21,6 @@ export class ValuesPropertyComponent {
         'com.dotcms.contenttype.model.field.ImmutableSelectField'
     ];
 
-    constructor() {}
-
     /**
      * Checks if helper should show, based on the clazz property.
      *

@@ -21,7 +21,6 @@
 *.launch
 .settings/
 *.sublime-workspace
-*.vscode
 
 # IDE - VSCode
 .vscode/*
@@ -31,6 +30,7 @@
 !.vscode/extensions.json
 
 # misc
+/.angular/cache
 /.sass-cache
 /connect.lock
 /coverage
@@ -51,3 +51,4 @@ Thumbs.db
 
 /storybook
 /out*/
+dist-docs/

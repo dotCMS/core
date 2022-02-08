@@ -1,3 +1,5 @@
+import readme from './readme.md';
+
 const dataFields = [
     {
         columns: [
@@ -424,17 +426,21 @@ const dataFields = [
 ];
 
 export default {
-    title: 'Content Types Fields'
+    title: 'Content Types Fields',
+    args: {
+        layout: dataFields
+    },
+    parameters: {
+        docs: {
+            page: readme
+        }
+    }
 };
 
-export const Form = () => {
+const Template = (args) => {
     const form = document.createElement('dot-form');
-    form.layout = dataFields;
+    form.layout = args.layout;
     return form;
 };
 
-Form.story = {
-    parameters: {
-        notes: 'Web Component to handle Form Content Types from DotCMS'
-    }
-};
+export const Form = Template.bind({});

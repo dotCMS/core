@@ -2,8 +2,6 @@ import { DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DotHttpErrorResponse } from '../../../models/dot-http-error-response.model';
 
 export class DotUploadService {
-    constructor() {}
-
     /**
      * Will call the corresponding endpoint yo upload a temporary file.
      * Return the information of tha file in the server

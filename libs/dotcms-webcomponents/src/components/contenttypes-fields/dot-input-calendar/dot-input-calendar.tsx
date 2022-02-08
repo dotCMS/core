@@ -11,7 +11,7 @@ export class DotInputCalendarComponent {
     @Element()
     el: HTMLElement;
 
-    /** Value specifies the value of the <input> element */
+    /** Value specifies the value of the input element */
     @Prop({ mutable: true, reflect: true })
     value = '';
 
@@ -39,7 +39,7 @@ export class DotInputCalendarComponent {
     @Prop({ reflect: true })
     step = '1';
 
-    /** type specifies the type of <input> element to display */
+    /** type specifies the type of input element to display */
     @Prop({ reflect: true })
     type = '';
 

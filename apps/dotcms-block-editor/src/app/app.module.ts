@@ -25,8 +25,7 @@ import { HttpClientModule } from '@angular/common/http';
         ListboxModule,
         HttpClientModule
     ],
-    providers: [],
-    entryComponents: [DotBlockEditorComponent]
+    providers: []
 })
 export class AppModule {
     constructor(private injector: Injector) {}

@@ -1,67 +1,36 @@
 import readme from './readme.md';
-import { withKnobs, text, boolean } from '@storybook/addon-knobs';
 
 export default {
     title: 'Components/Content Types Fields',
-    decorators: [withKnobs],
     parameters: {
-        notes: readme
+        docs: {
+            page: readme
+        },
+    },
+    args: {
+        value: '',
+        name: '',
+        label: 'Time Field',
+        hint: 'Hello I am a hint',
+        required: false,
+        requireMessage: 'This field is required',
+        validationMessage: 'This field is invalid',
+        disabled: false,
+        min: '',
+        max: '',
+        step: ''
     }
 };
 
-export const Time = () => {
-    const props = [
-        {
-            name: 'value',
-            content: text('Value', '')
-        },
-        {
-            name: 'name',
-            content: text('Name', 'field-name')
-        },
-        {
-            name: 'label',
-            content: text('Label', 'Label')
-        },
-        {
-            name: 'hint',
-            content: text('Hint', 'Hello Im a hint')
-        },
-        {
-            name: 'required',
-            content: boolean('Required', false)
-        },
-        {
-            name: 'requiredMessage',
-            content: text('Required Message', '')
-        },
-        {
-            name: 'validationMessage',
-            content: text('Validation Message', '')
-        },
-        {
-            name: 'disabled',
-            content: boolean('Disabled', false)
-        },
-        {
-            name: 'min',
-            content: text('Min', '')
-        },
-        {
-            name: 'max',
-            content: text('Max', '')
-        },
-        {
-            name: 'step',
-            content: text('Step', '')
-        }
-    ];
 
+const Template = (args) => {
     const time = document.createElement('dot-time');
 
-    props.forEach(({ name, content }) => {
-        time[name] = content;
-    });
+    for (const item in args) {
+        time[item] = args[item];
+    }
 
     return time;
 };
+
+export const TimeField = Template.bind({});

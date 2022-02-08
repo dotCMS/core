@@ -17,9 +17,9 @@
 | `regexCheck`        | `regex-check`        | (optional) Regular expresion that is checked against the value to determine if is valid            | `string`  | `''`                                                   |
 | `required`          | `required`           | (optional) Determine if it is mandatory                                                            | `boolean` | `false`                                                |
 | `requiredMessage`   | `required-message`   | (optional) Text that be shown when required is set and condition not met                           | `string`  | `'This field is required'`                             |
-| `type`              | `type`               | type specifies the type of <input> element to display                                              | `string`  | `'text'`                                               |
+| `type`              | `type`               | type specifies the type of input element to display                                                | `string`  | `'text'`                                               |
 | `validationMessage` | `validation-message` | (optional) Text that be shown when the Regular Expression condition not met                        | `string`  | `"The field doesn't comply with the specified format"` |
-| `value`             | `value`              | Value specifies the value of the <input> element                                                   | `string`  | `''`                                                   |
+| `value`             | `value`              | Value specifies the value of the input element                                                     | `string`  | `''`                                                   |
 
 
 ## Events

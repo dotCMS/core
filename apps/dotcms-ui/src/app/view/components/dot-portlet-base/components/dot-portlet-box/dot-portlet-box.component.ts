@@ -5,6 +5,4 @@ import { Component } from '@angular/core';
     templateUrl: './dot-portlet-box.component.html',
     styleUrls: ['./dot-portlet-box.component.scss']
 })
-export class DotPortletBoxComponent {
-    constructor() {}
-}
+export class DotPortletBoxComponent {}

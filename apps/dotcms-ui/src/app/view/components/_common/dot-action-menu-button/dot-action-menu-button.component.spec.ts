@@ -28,7 +28,9 @@ describe('ActionMenuButtonComponent', () => {
         const fakeActions: DotActionMenuItem[] = [
             {
                 menuItem: {
-                    command: () => {},
+                    command: () => {
+                        //
+                    },
                     icon: 'fa fa-trash',
                     label: 'Remove'
                 },
@@ -36,7 +38,9 @@ describe('ActionMenuButtonComponent', () => {
             },
             {
                 menuItem: {
-                    command: () => {},
+                    command: () => {
+                        //
+                    },
                     icon: 'fa fa-pencil',
                     label: 'Edit'
                 }
@@ -59,7 +63,9 @@ describe('ActionMenuButtonComponent', () => {
         const fakeActions: DotActionMenuItem[] = [
             {
                 menuItem: {
-                    command: () => {},
+                    command: () => {
+                        //
+                    },
                     icon: 'fa fa-trash',
                     label: 'Remove'
                 }
@@ -82,7 +88,9 @@ describe('ActionMenuButtonComponent', () => {
                 menuItem: {
                     icon: 'fa fa-trash',
                     label: 'Remove',
-                    command: () => {}
+                    command: () => {
+                        //
+                    }
                 }
             }
         ];
@@ -119,13 +127,17 @@ describe('ActionMenuButtonComponent', () => {
                 menuItem: {
                     icon: 'fa fa-trash',
                     label: 'Remove',
-                    command: () => {}
+                    command: () => {
+                        //
+                    }
                 },
                 shouldShow: () => false
             },
             {
                 menuItem: {
-                    command: () => {},
+                    command: () => {
+                        //
+                    },
                     icon: 'fa fa-pencil',
                     label: 'Edit'
                 },
@@ -133,7 +145,9 @@ describe('ActionMenuButtonComponent', () => {
             },
             {
                 menuItem: {
-                    command: () => {},
+                    command: () => {
+                        //
+                    },
                     icon: 'fa fa-plus',
                     label: 'Add'
                 },
@@ -153,14 +167,18 @@ describe('ActionMenuButtonComponent', () => {
                 menuItem: {
                     icon: 'fa fa-trash',
                     label: 'Remove',
-                    command: () => {}
+                    command: () => {
+                        //
+                    }
                 }
             },
             {
                 menuItem: {
                     icon: 'fa fa-check',
                     label: 'Test',
-                    command: () => {}
+                    command: () => {
+                        //
+                    }
                 }
             }
         ];
@@ -198,7 +216,9 @@ describe('ActionMenuButtonComponent', () => {
                 menuItem: {
                     icon: 'fa fa-trash',
                     label: 'Remove',
-                    command: () => {}
+                    command: () => {
+                        //
+                    }
                 }
             },
             {
@@ -229,7 +249,9 @@ describe('ActionMenuButtonComponent', () => {
         fixture.detectChanges();
         const actionButtonMenu = de.query(By.css('.dot-menu__button'));
         actionButtonMenu.triggerEventHandler('click', {
-            stopPropagation: () => {}
+            stopPropagation: () => {
+                //
+            }
         });
         fixture.detectChanges();
 

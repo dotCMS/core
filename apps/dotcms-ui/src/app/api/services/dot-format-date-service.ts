@@ -1,5 +1,11 @@
 import { Injectable } from '@angular/core';
-import { isValid, format, formatDistanceToNowStrict, parse } from 'date-fns';
+import {
+    differenceInCalendarDays,
+    isValid,
+    format,
+    formatDistanceStrict,
+    parse
+} from 'date-fns';
 import { utcToZonedTime, format as formatTZ } from 'date-fns-tz';
 import { DotcmsConfigService, DotTimeZone } from '@dotcms/dotcms-js';
 interface DotLocaleOptions {
@@ -53,6 +59,19 @@ export class DotFormatDateService {
     }
 
     /**
+     * Get the number of calendar days between the given dates. This means that the 
+     * times are removed from the dates and then the difference in days is calculated.
+     *
+     * @param {Date} startDate
+     * @param {Date} endDate
+     * @returns {number}
+     * @memberof DotFormatDateService
+     */
+    differenceInCalendarDays(startDate: Date, endDate: Date): number {
+        return differenceInCalendarDays(startDate, endDate);
+    }
+
+    /**
      * Checks if a date is valid based on a pattern
      *
      * @param {string} date
@@ -93,11 +112,12 @@ export class DotFormatDateService {
      * Gets relative strict time from on a specific date passed
      *
      * @param {string} time
+     * @param {Date} baseDate
      * @returns {string}
      * @memberof DotFormatDateService
      */
-    getRelative(time: string): string {
-        return formatDistanceToNowStrict(new Date(parseInt(time, 10)), {
+    getRelative(time: string, baseDate = new Date()): string {
+        return formatDistanceStrict(new Date(parseInt(time, 10)), baseDate, {
             ...this.localeOptions,
             addSuffix: true
         });

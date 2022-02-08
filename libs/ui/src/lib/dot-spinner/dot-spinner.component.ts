@@ -8,6 +8,4 @@ import { Component, Input } from '@angular/core';
 export class DotSpinnerComponent {
     @Input() borderSize = '';
     @Input() size = '';
-
-    constructor() {}
 }

@@ -17,6 +17,4 @@ export class DotFieldValidationMessageComponent {
 
     @Input()
     message: string;
-
-    constructor() {}
 }

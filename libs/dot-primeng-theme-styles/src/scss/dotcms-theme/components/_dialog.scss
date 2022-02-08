@@ -79,4 +79,5 @@
 
 .p-dialog-mask.p-component-overlay {
     background-color: rgba($black, 0.8);
+    backdrop-filter: blur(5px);
 }

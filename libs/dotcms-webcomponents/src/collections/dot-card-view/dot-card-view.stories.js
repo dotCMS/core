@@ -1,6 +1,4 @@
 import readme from './readme.md';
-import { withKnobs, text } from '@storybook/addon-knobs';
-import { withActions } from '@storybook/addon-actions';
 
 const contentletsMock = [
     {
@@ -1356,32 +1354,28 @@ const contentletsMock = [
 
 export default {
     title: 'Collections',
-    decorators: [withKnobs, withActions('selected')],
     parameters: {
-        notes: readme
-    }
-};
-
-const actionsMock = [
-    {
-        label: 'Action 1',
-        action: (e) => {
-            console.log(e);
+        docs: {
+            page: readme
+        },
+    },
+    args: {
+        items: contentletsMock
+    },
+    argTypes: {
+        items: {
+            table: {
+                disable: true
+            },
         }
     },
-    {
-        label: 'Action 2',
-        action: (e) => {
-            console.log(e);
-        }
-    }
-];
+};
 
-export const CardView = () => {
+const Template = ({ items }) => {
     const props = [
         {
             name: 'value',
-            content: text('Value', 'deedaf10-c417-40ac-9d20-e1a307ab61c5')
+            content: 'deedaf10-c417-40ac-9d20-e1a307ab61c5'
         }
     ];
 
@@ -1389,15 +1383,30 @@ export const CardView = () => {
     props.forEach(({ name, content }) => {
         cardView[name] = content;
     });
-    cardView.items = contentletsMock.map((i) => {
+    cardView.items = items.map((i) => {
         return {
             data: {
                 ...i,
                 title: i.__title__
             },
-            actions: actionsMock
+            actions: [
+                {
+                    label: 'Action 1',
+                    action: (e) => {
+                        console.log(e);
+                    }
+                },
+                {
+                    label: 'Action 2',
+                    action: (e) => {
+                        console.log(e);
+                    }
+                }
+            ]
         };
     });
 
     return cardView;
 };
+
+export const CardView = Template.bind({})

@@ -8,7 +8,8 @@ describe('ImageBlockComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [ImageBlockComponent]
+            declarations: [ImageBlockComponent],
+            teardown: { destroyAfterEach: false }
         }).compileComponents();
     });
 

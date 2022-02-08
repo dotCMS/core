@@ -6,7 +6,7 @@
     novalidate
     class="p-fluid"
 >
-    <div class="p-field" *ngIf="data['assignable']">
+    <div class="field" *ngIf="data['assignable']">
         <label class="form__label">{{ 'assignee.form.assignee' | dm }}:</label>
         <p-dropdown
             [options]="dotRoles"
@@ -16,7 +16,7 @@
         >
         </p-dropdown>
     </div>
-    <div class="p-field" *ngIf="data['commentable']">
+    <div class="field" *ngIf="data['commentable']">
         <label class="form__label">{{ 'comment.form.comments' | dm }}:</label>
         <textarea
             pInputTextarea
@@ -27,13 +27,11 @@
         </textarea>
     </div>
 
-    <div class="p-field" *ngIf="data['moveable']" >
+    <div class="field" *ngIf="data['moveable']">
         <dot-page-selector
             formControlName="pathToMove"
             [folderSearch]="true"
             [label]="'Move' | dm"
         ></dot-page-selector>
     </div>
-
-
 </form>

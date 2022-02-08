@@ -12,7 +12,7 @@ const getValue = <T>(item): T => {
     try {
         return JSON.parse(item);
     } catch {
-        return (item as unknown) as T;
+        return item as unknown as T;
     }
 };
 /**
@@ -25,8 +25,6 @@ const getValue = <T>(item): T => {
     providedIn: 'root'
 })
 export class DotLocalstorageService {
-    constructor() {}
-
     /**
      * Save an item to localstorage
      *

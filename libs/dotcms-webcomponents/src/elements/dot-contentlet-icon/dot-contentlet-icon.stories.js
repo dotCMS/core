@@ -1,32 +1,26 @@
-import { withKnobs, text } from '@storybook/addon-knobs';
 import readme from './readme.md';
 
 export default {
     title: 'Elements',
-    decorators: [withKnobs],
     parameters: {
-        notes: readme
+        docs: {
+            page: readme
+        },
+    },
+    args: {
+        icon: 'insert_drive_file',
+        size: '48px',
     }
 };
 
-export const ContentletIcon = () => {
-    const props = [
-        {
-            name: 'icon',
-            content: text('Icon', '')
-        },
-
-        {
-            name: 'size',
-            content: text('Size', '')
-        }
-    ];
-
+const Template = (args) => {
     const contentletIcon = document.createElement('dot-contentlet-icon');
 
-    props.forEach(({ name, content }) => {
-        contentletIcon[name] = content;
-    });
+    for (const item in args) {
+        contentletIcon[item] = args[item];
+    }
 
     return contentletIcon;
 };
+
+export const ContentletIcon = Template.bind({});

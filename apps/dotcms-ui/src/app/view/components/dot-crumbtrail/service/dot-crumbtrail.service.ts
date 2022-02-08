@@ -126,7 +126,7 @@ export class DotCrumbtrailService {
         );
     }
 
-    private shouldAddSection(sections: String[], url: string): boolean {
+    private shouldAddSection(sections: string[], url: string): boolean {
         return sections.length > 1 && this.isPortletTitleAvailable(url);
     }
 

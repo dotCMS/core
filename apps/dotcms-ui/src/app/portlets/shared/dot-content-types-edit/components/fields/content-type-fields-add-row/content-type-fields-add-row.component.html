@@ -24,7 +24,7 @@
         >
             <li
                 *ngFor="let colNum of columns; let i = index"
-                [ngClass]="{ active: i == selectedColumnIndex }"
+                [ngClass]="{ active: i === selectedColumnIndex }"
                 class="dot-add-rows-columns-list__item"
                 tabindex="-1"
                 (mouseenter)="onMouseEnter(i, $event)"

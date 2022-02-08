@@ -3,7 +3,7 @@ import { DotEditPageViewAs } from '@models/dot-edit-page-view-as/dot-edit-page-v
 import { DotContainer, DotContainerStructure } from '@shared/models/container/dot-container.model';
 import { DotLayout, DotTemplate } from '@shared/models/dot-edit-layout-designer';
 
-export module DotPageRender {
+export namespace DotPageRender {
     export interface Parameters {
         layout?: DotLayout;
         page: DotPage;

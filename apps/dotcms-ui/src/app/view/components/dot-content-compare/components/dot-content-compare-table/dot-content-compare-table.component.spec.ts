@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotContentCompareTableComponent } from './dot-content-compare-table.component';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
@@ -12,6 +14,10 @@ import { FormsModule } from '@angular/forms';
 import { DotContentComparePreviewFieldComponent } from '@components/dot-content-compare/components/fields/dot-content-compare-preview-field/dot-content-compare-preview-field.component';
 import { By } from '@angular/platform-browser';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotcmsConfigService } from '@dotcms/dotcms-js';
+import { DotFormatDateService } from '@services/dot-format-date-service';
+import { of } from 'rxjs';
+import { DotTransformVersionLabelPipe } from '../../pipes/dot-transform-version-label.pipe';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -107,7 +113,7 @@ export const dotContentCompareTableDataMock: DotContentCompareTableData = {
             languageId: 1,
             live: false,
             locked: false,
-            modDate: '1639601771470',
+            modDate: '12/15/2021 - 01:56 PM',
             modUser: 'dotcms.org.1',
             modUserName: 'Admin User',
             owner: 'dotcms.org.1',
@@ -137,7 +143,7 @@ export const dotContentCompareTableDataMock: DotContentCompareTableData = {
             languageId: 1,
             live: false,
             locked: false,
-            modDate: '1639601760776',
+            modDate: '12/12/2021 - 01:56 PM',
             modUser: 'dotcms.org.1',
             modUserName: 'Admin User',
             owner: 'dotcms.org.1',
@@ -252,7 +258,8 @@ describe('DotContentCompareTableComponent', () => {
             declarations: [
                 TestHostComponent,
                 DotContentCompareTableComponent,
-                DotContentComparePreviewFieldComponent
+                DotContentComparePreviewFieldComponent,
+                DotTransformVersionLabelPipe
             ],
             imports: [
                 TableModule,
@@ -262,7 +269,21 @@ describe('DotContentCompareTableComponent', () => {
                 DotMessagePipeModule,
                 FormsModule
             ],
-            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                DotFormatDateService,
+                {
+                    provide: DotcmsConfigService,
+                    useValue: {
+                        getSystemTimeZone: () =>
+                            of({
+                                id: 'America/Costa_Rica',
+                                label: 'Central Standard Time (America/Costa_Rica)',
+                                offset: -21600000
+                            })
+                    }
+                }
+            ]
         });
 
         hostFixture = TestBed.createComponent(TestHostComponent);
@@ -275,7 +296,9 @@ describe('DotContentCompareTableComponent', () => {
     describe('header', () => {
         it('should show tittle correctly', () => {
             expect(
-                de.query(By.css('[data-testId="table-tittle"]')).nativeElement.innerText
+                de
+                    .query(By.css('[data-testId="table-tittle"]'))
+                    .nativeElement.innerText.replace(/^\s+|\s+$/gm, '')
             ).toEqual(dotContentCompareTableDataMock.working.identifier);
         });
         it('should show dropdown', () => {
@@ -283,11 +306,19 @@ describe('DotContentCompareTableComponent', () => {
             expect(dropdown.options).toEqual(dotContentCompareTableDataMock.versions);
         });
         it('should show selectButton', () => {
-            const select: SelectButton = de.query(By.css('p-selectButton')).componentInstance;
+            const select: SelectButton = de.query(
+                By.css('[data-testId="show-diff"]')
+            ).componentInstance;
             expect(select.options).toEqual([
                 { label: 'Diff', value: true },
                 { label: 'Plain', value: false }
             ]);
+        });
+        it('should show versions selectButton with transformed label', () => {
+            const dropdown = de.query(By.css('[data-testId="versions-dropdown"]')).nativeElement;
+            expect(dropdown.innerText.replace(/^\s+|\s+$/gm, '')).toEqual(
+                `${dotContentCompareTableDataMock.versions[0].modDate} by ${dotContentCompareTableDataMock.versions[0].modUserName}`
+            );
         });
     });
 

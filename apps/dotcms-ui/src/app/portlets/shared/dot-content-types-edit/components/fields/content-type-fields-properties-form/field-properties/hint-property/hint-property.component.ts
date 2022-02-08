@@ -9,6 +9,4 @@ import { FieldProperty } from '../field-properties.model';
 export class HintPropertyComponent {
     property: FieldProperty;
     group: FormGroup;
-
-    constructor() {}
 }

@@ -1,3 +1,5 @@
+@use "sass:math";
+
 /*
 * Variable names convention:
 * element-property-state
@@ -115,7 +117,7 @@ $dot-secondary-toolbar-main-height: 70px;
 
 // GRIDS
 $gutter-width: $spacing-9;
-$gutter-border: $gutter-width / 2;
+$gutter-border: math.div($gutter-width, 2);
 
 $screen-sm: 40em; // 640px
 $screen-md: 40.063em; // 641px;

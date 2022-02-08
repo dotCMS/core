@@ -15,17 +15,19 @@ jobs:
             - name: Configuring Node.js
               uses: actions/setup-node@v2-beta
               with:
-                  node-version: '10.15.3'
+                  node-version: '16.13.2'
             - name: Installing dependencies
               run: |
                   npm install
             - name: Run NX Commands
               run: |
                   npm run nx build dotcms-webcomponents -- --with-deps
-                  npm run nx run-many -- --target=build-storybook --parallel --projects=dotcms-ui,dotcms-webcomponents,block-editor
-                  npm run nx run-many -- --target=build-docs --parallel --projects=dotcms,dotcms-models
+                  npm run nx run-many -- --target=build-storybook --parallel --projects=dotcms-ui,dotcms-webcomponents
+                  npm run nx build-storybook dotcms-block-editor
+                  npm run build:docs:dotcms
+                  npm run build:docs:dotcms-models
             - name: Deploy to GitHub Pages
               uses: JamesIves/github-pages-deploy-action@4.1.0
               with:
                   branch: gh-pages
-                  folder: docs
+                  folder: dist-docs

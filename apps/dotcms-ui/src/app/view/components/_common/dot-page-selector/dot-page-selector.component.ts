@@ -98,7 +98,7 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
         this.message = null;
         this.invalidHost = false;
         this.isError = false;
-        if (!!query) {
+        if (query) {
             this.handleSearchType(query)
                 .pipe(take(1))
                 .subscribe((data) => {
@@ -268,7 +268,7 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
     }
 
     private isSearchingForHost(query: string): boolean {
-        return query.startsWith('//') && (!!this.getSiteName(query) ? !query.endsWith('/') : true);
+        return query.startsWith('//') && (this.getSiteName(query) ? !query.endsWith('/') : true);
     }
 
     private getSiteName(site: string): string {

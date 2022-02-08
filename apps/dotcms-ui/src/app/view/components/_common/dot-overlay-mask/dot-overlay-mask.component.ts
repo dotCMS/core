@@ -6,7 +6,5 @@ import { Component, OnInit } from '@angular/core';
     styleUrls: ['./dot-overlay-mask.component.scss']
 })
 export class DotOverlayMaskComponent implements OnInit {
-    constructor() {}
-
     ngOnInit() {}
 }

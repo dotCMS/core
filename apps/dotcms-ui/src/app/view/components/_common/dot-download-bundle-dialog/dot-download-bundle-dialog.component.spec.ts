@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { DotDownloadBundleDialogComponent } from './dot-download-bundle-dialog.component';
 import { DOTTestBed } from '@tests/dot-test-bed';

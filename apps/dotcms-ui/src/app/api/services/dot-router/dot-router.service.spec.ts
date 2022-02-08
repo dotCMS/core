@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { DotRouterService } from './dot-router.service';
 import { RouterTestingModule } from '@angular/router/testing';
 import { LoginService } from '@dotcms/dotcms-js';

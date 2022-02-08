@@ -101,7 +101,7 @@ export class DotLicenseService {
         const urlMatch = enterprisePorlets.filter((item) => {
             return url.indexOf(item.url) === 0;
         });
-        if (!!urlMatch.length) {
+        if (urlMatch.length) {
             this.unlicenseData.next(...urlMatch);
         }
         return !!urlMatch.length;

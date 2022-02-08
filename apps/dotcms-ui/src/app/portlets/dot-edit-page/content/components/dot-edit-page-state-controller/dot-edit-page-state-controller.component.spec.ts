@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { By } from '@angular/platform-browser';
 import { Component, DebugElement } from '@angular/core';
 import { waitForAsync, ComponentFixture } from '@angular/core/testing';
@@ -138,7 +140,7 @@ describe('DotEditPageStateControllerComponent', () => {
                 expect(lockerDe.attributes.appendTo).toBe('target');
                 expect(lockerDe.attributes['ng-reflect-text']).toBe('Page locked by Some One');
                 expect(lockerDe.attributes['ng-reflect-tooltip-position']).toBe('top');
-                expect(locker.checked).toBe(false, 'checked');
+                expect(locker.modelValue).toBe(false, 'checked');
                 expect(locker.disabled).toBe(false, 'disabled');
             });
 

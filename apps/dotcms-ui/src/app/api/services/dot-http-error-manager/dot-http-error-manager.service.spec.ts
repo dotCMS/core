@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { DotAlertConfirmService } from '../dot-alert-confirm/dot-alert-confirm.service';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotRouterService } from '../dot-router/dot-router.service';

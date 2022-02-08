@@ -18,8 +18,6 @@ export class CheckboxPropertyComponent {
         unique: 'contenttypes.field.properties.unique.label'
     };
 
-    constructor() {}
-
     setCheckboxLabel(field): string {
         return this.labelMap[field] || field;
     }

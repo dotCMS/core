@@ -132,6 +132,7 @@ describe('DotEditPageNavComponent', () => {
         it('should update menu items when new PageState', () => {
             dotLicenseService = de.injector.get(DotLicenseService);
             const menuListItems = fixture.debugElement.queryAll(By.css('.edit-page-nav__item'));
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { layout, ...noLayoutPage } = mockDotRenderedPage();
             fixture.componentInstance.pageState = new DotPageRenderState(
                 mockUser(),

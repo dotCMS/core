@@ -1,37 +1,32 @@
 import readme from './readme.md';
-import { text } from '@storybook/addon-knobs';
+
 export default {
     title: 'Elements',
     parameters: {
-        notes: readme
+        docs: {
+            title: 'Material Icon Picker',
+            description: {
+                component:
+                    'A component to display the thumbnail of a contentlet'
+            },
+            page: readme
+        },
+    },
+    args: {
+        value: 'account_balance',
+        size: '16px',
+        showColor: ['true', 'false'],
     }
 };
 
-export const MaterialIconPicker = () => {
-    const props = [
-        {
-            name: 'name',
-            content: text('Name', 'dotMaterialIconPicker')
-        },
-        {
-            name: 'value',
-            content: text('value', 'account_balance')
-        },
-        {
-            name: 'size',
-            content: text('Font Size', '16px')
-        },
-        {
-            name: 'showColor',
-            content: text('Show Color Picker', 'true')
-        }
-    ];
-
+const Template = (args) => {
     const dotMaterialIconPicker = document.createElement('dot-material-icon-picker');
 
-    props.forEach(({ name, content }) => {
-        dotMaterialIconPicker[name] = content;
-    });
+    for (const item in args) {
+        dotMaterialIconPicker[item] = args[item];
+    }
 
     return dotMaterialIconPicker;
 };
+
+export const MaterialIconPicker = Template.bind({});

@@ -5,7 +5,7 @@
     [cssClass]="
         paginatorService.totalRecords > paginatorService.paginationPerPage ? 'paginator' : ''
     "
-    (hide)="close.emit($event)"
+    (hide)="shutdown.emit($event)"
     [header]="'modes.Add-Form' | dm"
 >
     <p-table
@@ -34,7 +34,7 @@
                             flat
                             class="form-selector__button"
                             [label]="'Select' | dm"
-                            (click)="select.emit(item)"
+                            (click)="pick.emit(item)"
                         ></button>
                     </div>
                 </td>

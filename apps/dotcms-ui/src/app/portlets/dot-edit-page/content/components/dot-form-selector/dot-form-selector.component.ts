@@ -24,9 +24,9 @@ import { PaginatorService } from '@services/paginator';
 export class DotFormSelectorComponent implements OnInit, OnChanges {
     @Input() show = false;
 
-    @Output() select = new EventEmitter<DotCMSContentType>();
+    @Output() pick = new EventEmitter<DotCMSContentType>();
 
-    @Output() close = new EventEmitter<any>();
+    @Output() shutdown = new EventEmitter<any>();
 
     @ViewChild('datatable', { static: true }) datatable: Table;
 

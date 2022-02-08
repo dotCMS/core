@@ -15,8 +15,8 @@
 | `name`     | `name`     | Name that will be used as ID                                                          | `string`  | `''`    |
 | `required` | `required` | (optional) Determine if it is mandatory                                               | `boolean` | `false` |
 | `step`     | `step`     | (optional) Step specifies the legal number intervals for the input field              | `string`  | `'1'`   |
-| `type`     | `type`     | type specifies the type of <input> element to display                                 | `string`  | `''`    |
-| `value`    | `value`    | Value specifies the value of the <input> element                                      | `string`  | `''`    |
+| `type`     | `type`     | type specifies the type of input element to display                                   | `string`  | `''`    |
+| `value`    | `value`    | Value specifies the value of the input element                                        | `string`  | `''`    |
 
 
 ## Events

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
+
 import { of } from 'rxjs';
 import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';

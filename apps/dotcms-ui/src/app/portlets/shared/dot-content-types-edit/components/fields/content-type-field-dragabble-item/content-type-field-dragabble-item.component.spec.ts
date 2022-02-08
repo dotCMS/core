@@ -132,7 +132,9 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         let resp: DotCMSContentTypeField;
         comp.remove.subscribe((fieldItem) => (resp = fieldItem));
         button.triggerEventHandler('click', {
-            stopPropagation: () => {}
+            stopPropagation: () => {
+                //
+            }
         });
 
         expect(resp).toEqual(field);
@@ -179,7 +181,9 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         let resp: DotCMSContentTypeField;
         comp.edit.subscribe((field) => (resp = field));
         button.triggerEventHandler('click', {
-            stopPropagation: () => {}
+            stopPropagation: () => {
+                //
+            }
         });
 
         expect(resp).toEqual(mockField);
@@ -204,7 +208,9 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         comp.edit.subscribe((field) => (resp = field));
 
         de.triggerEventHandler('click', {
-            stopPropagation: () => {}
+            stopPropagation: () => {
+                //
+            }
         });
 
         expect(resp).toEqual(mockField);

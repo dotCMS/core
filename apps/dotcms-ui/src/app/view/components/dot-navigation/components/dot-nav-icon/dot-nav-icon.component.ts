@@ -9,8 +9,6 @@ export class DotNavIconComponent {
     @Input()
     icon: string;
 
-    constructor() {}
-
     isFaIcon(icon: string): boolean {
         return icon.startsWith('fa-');
     }

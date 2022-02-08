@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/dot-test-bed';
 import { Injectable, DebugElement } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';

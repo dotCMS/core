@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
+
 import { Injectable } from '@angular/core';
 import { DotMessageDisplayComponent } from './dot-message-display.component';
 import { ComponentFixture, waitForAsync, TestBed } from '@angular/core/testing';
@@ -26,7 +28,8 @@ export class DotMessageDisplayServiceMock {
 
 describe('DotMessageDisplayComponent', () => {
     let component: DotMessageDisplayComponent;
-    const dotMessageDisplayServiceMock: DotMessageDisplayServiceMock = new DotMessageDisplayServiceMock();
+    const dotMessageDisplayServiceMock: DotMessageDisplayServiceMock =
+        new DotMessageDisplayServiceMock();
     let fixture: ComponentFixture<DotMessageDisplayComponent>;
 
     beforeEach(
@@ -77,8 +80,9 @@ describe('DotMessageDisplayComponent', () => {
             type: DotMessageType.SIMPLE_MESSAGE
         });
         fixture.detectChanges();
-        const icon: DotIconComponent = fixture.debugElement.query(By.css('dot-icon'))
-            .componentInstance;
+        const icon: DotIconComponent = fixture.debugElement.query(
+            By.css('dot-icon')
+        ).componentInstance;
         expect(icon.name).toEqual('check');
     });
 

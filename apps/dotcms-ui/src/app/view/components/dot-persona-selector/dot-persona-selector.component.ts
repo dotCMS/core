@@ -58,7 +58,7 @@ export class DotPersonaSelectorComponent implements OnInit {
         this.paginationService.paginationPerPage = this.paginationPerPage;
     }
 
-    @Input('pageState')
+    @Input()
     set pageState(value: DotPageRenderState) {
         this._pageState = value;
         this.paginationService.paginationPerPage = this.paginationPerPage;

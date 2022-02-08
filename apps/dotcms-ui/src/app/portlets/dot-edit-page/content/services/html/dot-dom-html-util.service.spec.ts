@@ -32,7 +32,9 @@ describe('DotDOMHtmlUtilService', () => {
 
     it('should create a external script', () => {
         const src = 'https://testing/test.js';
-        const onloadCallbackFunc = () => {};
+        const onloadCallbackFunc = () => {
+            //
+        };
 
         const scriptElementCreated = service.creatExternalScriptElement(src, onloadCallbackFunc);
 

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { ActivatedRouteSnapshot } from '@angular/router';
 import { DotContentletLockerService } from '@services/dot-contentlet-locker/dot-contentlet-locker.service';
 import { DotEditPageResolver } from './dot-edit-page-resolver.service';

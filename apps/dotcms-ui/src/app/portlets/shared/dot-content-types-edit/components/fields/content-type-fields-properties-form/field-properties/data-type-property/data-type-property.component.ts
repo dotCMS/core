@@ -12,8 +12,6 @@ export class DataTypePropertyComponent implements OnInit {
     group: FormGroup;
     radioInputs: object;
 
-    constructor() {}
-
     ngOnInit(): void {
         this.radioInputs = DATA_TYPE_PROPERTY_INFO[this.property.field.clazz];
 

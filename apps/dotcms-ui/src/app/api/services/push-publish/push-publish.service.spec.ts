@@ -1,9 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { of } from 'rxjs';
 import { PushPublishService } from './push-publish.service';
 import { TestBed } from '@angular/core/testing';
 import { DotCurrentUserService } from '../dot-current-user/dot-current-user.service';
 import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
 import { ApiRoot, CoreWebService, LoggerService, StringUtils, UserModel } from '@dotcms/dotcms-js';
+import { format } from 'date-fns';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { DotFormatDateService } from '@services/dot-format-date-service';
@@ -92,7 +95,7 @@ describe('PushPublishService', () => {
 
         const req = httpMock.expectOne(() => true);
         const currentDateStr = new Date().toISOString().split('T')[0];
-        const currentTimeStr = `${new Date().getHours()}-${new Date().getMinutes()}`
+        const currentTimeStr = format(new Date(), "HH-mm");
 
         expect(
             req.request.url.indexOf(
@@ -109,7 +112,7 @@ describe('PushPublishService', () => {
     it('should do a post request and push publish Remove an asset', () => {
         const formValue: DotPushPublishData = { ...mockFormValue, publishDate: undefined };
         const currentDateStr = new Date().toISOString().split('T')[0];
-        const currentTimeStr = `${new Date().getHours()}-${new Date().getMinutes()}`
+        const currentTimeStr = format(new Date(), "HH-mm");
 
         pushPublishService
             .pushPublishContent('1234567890', formValue, false)
@@ -127,7 +130,7 @@ describe('PushPublishService', () => {
     it('should do a post request and push publish an asset with no filter', () => {
         const formValue: DotPushPublishData = { ...mockFormValue, filterKey: null };
         const currentDateStr = new Date().toISOString().split('T')[0];
-        const currentTimeStr = `${new Date().getHours()}-${new Date().getMinutes()}`
+        const currentTimeStr = format(new Date(), "HH-mm");
 
         pushPublishService
             .pushPublishContent('1234567890', formValue, false)
@@ -144,7 +147,7 @@ describe('PushPublishService', () => {
 
     it('should do a post with the correct URL when is a bundle', () => {
         const currentDateStr = new Date().toISOString().split('T')[0];
-        const currentTimeStr = `${new Date().getHours()}-${new Date().getMinutes()}`
+        const currentTimeStr = format(new Date(), "HH-mm");
 
         pushPublishService
             .pushPublishContent('1234567890', mockFormValue, true)

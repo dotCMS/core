@@ -30,7 +30,9 @@ class MockDotSiteSelectorComponent {
     @Input() system;
     @Input() archive;
     searchableDropdown = {
-        handleClick: () => {}
+        handleClick: () => {
+            //
+        }
     };
 }
 

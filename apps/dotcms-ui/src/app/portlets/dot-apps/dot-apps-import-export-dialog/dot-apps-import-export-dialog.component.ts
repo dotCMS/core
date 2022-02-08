@@ -35,7 +35,7 @@ export class DotAppsImportExportDialogComponent implements OnChanges, OnDestroy 
     @Input() site?: DotAppsSites;
     @Input() show? = false;
     @Output() resolved: EventEmitter<boolean> = new EventEmitter();
-    @Output() onClose: EventEmitter<boolean> = new EventEmitter();
+    @Output() shutdown: EventEmitter<boolean> = new EventEmitter();
 
     form: FormGroup;
     dialogActions: DotDialogActions;
@@ -71,7 +71,7 @@ export class DotAppsImportExportDialogComponent implements OnChanges, OnDestroy 
         this.form.reset();
         this.site = null;
         this.show = false;
-        this.onClose.emit();
+        this.shutdown.emit();
     }
 
     /**

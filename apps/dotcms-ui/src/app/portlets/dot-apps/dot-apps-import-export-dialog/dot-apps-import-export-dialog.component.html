@@ -10,7 +10,7 @@
 >
     <form [formGroup]="form" [ngSwitch]="action" novalidate>
         <ng-container *ngSwitchCase="'Export'">
-            <div class="p-field">
+            <div class="field">
                 <label class="form__label" for="export-password">{{ 'Password' | dm }}</label>
                 <input
                     dotAutofocus
@@ -26,7 +26,7 @@
             </div>
         </ng-container>
         <ng-container *ngSwitchCase="'Import'">
-            <div class="p-field">
+            <div class="field">
                 <label class="form__label" for="import-file">{{ 'Upload-File' | dm }}</label>
                 <input
                     #importFile
@@ -36,7 +36,7 @@
                     (change)="onFileChange($event.target.files)"
                 />
             </div>
-            <div class="p-field">
+            <div class="field">
                 <label class="form__label" for="import-password">{{ 'Password' | dm }}</label>
                 <input
                     id="import-password"

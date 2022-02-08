@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, startWith } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-template-props',
@@ -42,7 +42,8 @@ export class DotTemplatePropsComponent implements OnInit {
                 return (
                     JSON.stringify(this.form.value) !== JSON.stringify(template) && this.form.valid
                 );
-            })
+            }),
+            startWith(false)
         );
     }
 

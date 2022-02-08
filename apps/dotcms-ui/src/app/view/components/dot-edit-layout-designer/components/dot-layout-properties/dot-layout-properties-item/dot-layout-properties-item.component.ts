@@ -22,8 +22,6 @@ export class DotLayoutPropertiesItemComponent implements ControlValueAccessor {
 
     value: boolean;
 
-    constructor() {}
-
     propagateChange = (_: any) => {};
 
     @HostListener('click', ['$event'])

@@ -6,10 +6,10 @@ export interface DotContentletEvent<T> {
     data: T;
 }
 
-export interface DotContentletEventDragAndDropDotAsset extends DotContentletEvent<DotAssetPayload> {}
-export interface DotContentletEventRelocate extends DotContentletEvent<DotRelocatePayload> {}
-export interface DotContentletEventSelect extends DotContentletEvent<DotPageContent> {}
-export interface DotContentletEventSave extends DotContentletEvent<DotPageContent> {}
+export type DotContentletEventDragAndDropDotAsset = DotContentletEvent<DotAssetPayload>
+export type DotContentletEventRelocate = DotContentletEvent<DotRelocatePayload>
+export type DotContentletEventSelect = DotContentletEvent<DotPageContent>
+export type DotContentletEventSave = DotContentletEvent<DotPageContent>
 
 export interface DotAssetPayload {
     contentlet: DotPageContent;

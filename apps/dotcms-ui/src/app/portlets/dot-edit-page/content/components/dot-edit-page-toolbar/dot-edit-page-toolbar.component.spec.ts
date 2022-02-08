@@ -35,7 +35,6 @@ import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { mockDotPersona } from '@tests/dot-persona.mock';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
@@ -77,7 +76,6 @@ describe('DotEditPageToolbarComponent', () => {
     let de: DebugElement;
     let deHost: DebugElement;
     let dotLicenseService: DotLicenseService;
-    let dotEventsService: DotEventsService;
     let dotMessageDisplayService: DotMessageDisplayService;
 
     beforeEach(
@@ -152,7 +150,6 @@ describe('DotEditPageToolbarComponent', () => {
         component = de.componentInstance;
 
         dotLicenseService = de.injector.get(DotLicenseService);
-        dotEventsService = de.injector.get(DotEventsService);
         dotMessageDisplayService = de.injector.get(DotMessageDisplayService);
     });
 
