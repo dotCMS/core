@@ -313,7 +313,7 @@ public class SAMLHelperTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link SAMLHelper#createNewUser(User, Attributes, IdentityProviderConfiguration)}
-     * Given Scenario: creates an user only with name id
+     * Given Scenario: creates an user with all properties
      * ExpectedResult: The user is created successfully with random values
      *
      */
