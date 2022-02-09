@@ -1511,7 +1511,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{serverURL}}/api/v1/page/render/testrespectorder",
+									"raw": "{{serverURL}}/api/v1/page/render/testrespectorder?language_id=1&host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
 									"host": [
 										"{{serverURL}}"
 									],
@@ -1521,6 +1521,16 @@
 										"page",
 										"render",
 										"testrespectorder"
+									],
+									"query": [
+										{
+											"key": "language_id",
+											"value": "1"
+										},
+										{
+											"key": "host_id",
+											"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+										}
 									]
 								}
 							},
@@ -1630,7 +1640,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{serverURL}}/api/v1/page/render/testrespectorder",
+									"raw": "{{serverURL}}/api/v1/page/render/testrespectorder?language_id=1&host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
 									"host": [
 										"{{serverURL}}"
 									],
@@ -1640,6 +1650,16 @@
 										"page",
 										"render",
 										"testrespectorder"
+									],
+									"query": [
+										{
+											"key": "language_id",
+											"value": "1"
+										},
+										{
+											"key": "host_id",
+											"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+										}
 									]
 								}
 							},
@@ -2760,7 +2780,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"contentlet\":{\n\t\t\"stName\": \"htmlpageasset\",\n\t\t\"title\": \"PageAsset SystemTemplate\",\n        \"url\": \"pageassetsystemtemplate\",\n        \"friendlyName\":\"pageassetsystemtemplate\",\n        \"template\": \"//default/application/templates/system/\",\n        \"sortOrder\": \"0\",\n        \"cachettl\": \"100\",\n        \"hostFolder\":\"48190c8c-42c4-46af-8d1a-0cd5db894797\"\n\t}\n}",
+					"raw": "{\n\t\"contentlet\":{\n\t\t\"stName\": \"htmlpageasset\",\n\t\t\"title\": \"PageAsset SystemTemplate\",\n        \"url\": \"pageassetsystemtemplate\",\n        \"friendlyName\":\"pageassetsystemtemplate\",\n        \"template\": \"//default/application/templates/system/\",\n        \"sortOrder\": \"0\",\n        \"cachettl\": \"100\",\n        \"hostFolder\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\"\n\t}\n}",
 					"options": {
 						"raw": {
 							"language": "json"
