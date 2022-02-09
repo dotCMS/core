@@ -39,11 +39,10 @@ export class DotLoginComponent implements OnInit, OnDestroy {
         private route: ActivatedRoute,
         public loginPageStateService: DotLoginPageStateService,
         private dotMessageService: DotMessageService,
-        private dotFormatDateService: DotFormatDateService,
+        private dotFormatDateService: DotFormatDateService
     ) {}
 
     ngOnInit() {
-        this.dotMessageService.init(true);
         this.loginForm = this.fb.group({
             login: ['', [Validators.required]],
             language: [''],
@@ -102,7 +101,7 @@ export class DotLoginComponent implements OnInit, OnDestroy {
      */
     onLanguageChange(lang: string): void {
         this.loginPageStateService.update(lang);
-        this.dotMessageService.init(true, lang);
+        this.dotMessageService.init({ language: lang });
     }
 
     /**

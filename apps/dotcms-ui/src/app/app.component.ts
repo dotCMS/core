@@ -10,7 +10,6 @@ import { DotNavLogoService } from '@services/dot-nav-logo/dot-nav-logo.service';
     styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit {
-
     constructor(
         private dotCmsConfigService: DotcmsConfigService,
         private dotUiColors: DotUiColorsService,
@@ -19,19 +18,32 @@ export class AppComponent implements OnInit {
     ) {}
 
     ngOnInit() {
-        this.dotMessageService.init(false);
         this.dotCmsConfigService
             .getConfig()
             .pipe(
                 take(1),
-                map((config: ConfigParams) => ({
-                    colors: config.colors,
-                    navBar: config.logos?.navBar
-                }))
+                map((config: ConfigParams) => {
+                    return {
+                        buildDate: config.releaseInfo?.buildDate,
+                        colors: config.colors,
+                        navBar: config.logos?.navBar
+                    };
+                })
             )
-            .subscribe(({ colors, navBar }: { colors: DotUiColors; navBar: string }) => {
-                this.dotNavLogoService.setLogo(navBar);
-                this.dotUiColors.setColors(document.querySelector('html'), colors);
-            });
+            .subscribe(
+                ({
+                    buildDate,
+                    colors,
+                    navBar
+                }: {
+                    buildDate: string;
+                    colors: DotUiColors;
+                    navBar: string;
+                }) => {
+                    this.dotMessageService.init({ buildDate });
+                    this.dotNavLogoService.setLogo(navBar);
+                    this.dotUiColors.setColors(document.querySelector('html'), colors);
+                }
+            );
     }
 }

@@ -110,6 +110,7 @@ describe('DotcmsConfigService', () => {
                 logos: undefined,
                 paginatorLinks: configParams.config['dotcms.paginator.links'],
                 paginatorRows: configParams.config['dotcms.paginator.rows'],
+                releaseInfo: configParams.config.releaseInfo,
                 websocket: {
                     websocketReconnectTime:
                         configParams.config.websocket['dotcms.websocket.reconnect.time'],

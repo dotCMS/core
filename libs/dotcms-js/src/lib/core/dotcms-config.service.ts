@@ -40,6 +40,10 @@ export interface ConfigParams {
     menu: Menu[];
     paginatorLinks: number;
     paginatorRows: number;
+    releaseInfo: {
+        buildDate: string;
+        version: string;
+    };
     websocket: WebSocketConfigParams;
 }
 
@@ -94,6 +98,10 @@ export class DotcmsConfigService {
                     menu: res.menu,
                     paginatorLinks: res.config[DOTCMS_PAGINATOR_LINKS],
                     paginatorRows: res.config[DOTCMS_PAGINATOR_ROWS],
+                    releaseInfo: {
+                        buildDate: res.config.releaseInfo?.buildDate,
+                        version: res.config.releaseInfo?.version
+                    },
                     websocket: {
                         websocketReconnectTime:
                             res.config.websocket[DOTCMS_WEBSOCKET_RECONNECT_TIME],
