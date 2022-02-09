@@ -568,7 +568,7 @@ dependencies {
     compile group: 'javax.websocket', name: 'javax.websocket-api', version:'1.1'
 
     compileOnly  'org.immutables:value-annotations:2.8.8'
-    compile  'org.immutables:gson:2.8.8'
+    //compile  'org.immutables:gson:2.8.8'
 
 
     compileOnly  'com.google.code.findbugs:jsr305:3.0.2'
