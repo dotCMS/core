@@ -7,6 +7,7 @@ import static com.dotmarketing.util.UtilMethods.isSet;
 import com.dotcms.storage.model.BasicMetadataFields;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.util.MimeTypeUtils;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.MetadataCache;
@@ -122,8 +123,10 @@ public class FileStorageAPIImpl implements FileStorageAPI {
             if (!metaDataKeyFilter.test(CONTENT_TYPE_META_KEY.key())) {
                 standAloneMetadata.remove(CONTENT_TYPE_META_KEY.key());
             }
-            return ensureTypes(standAloneMetadata);
 
+            standAloneMetadata.put(VERSION_KEY.key(), APILocator.getFileMetadataAPI().getBinaryMetadataVersion());
+
+            return ensureTypes(standAloneMetadata);
         }
 
         return ImmutableMap.of();
@@ -210,9 +213,11 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
         final StorageKey storageKey = configuration.getStorageKey();
         final StoragePersistenceAPI storage = persistenceProvider.getStorage(storageKey.getStorage());
-
-        this.checkBucket(storageKey, storage);  //if the group/bucket doesn't exist create it.
-        this.checkOverride(storage, configuration); //if config states we need to remove and force regen
+        if(configuration.isStore()) {
+            this.checkBucket(storageKey, storage);  //if the group/bucket doesn't exist create it.
+            this.checkOverride(storage,
+                    configuration); //if config states we need to remove and force regen
+        }
         final boolean objectExists = storage.existsObject(storageKey.getGroup(), storageKey.getPath());
 
         Map<String, Serializable> metadataMap = objectExists ? retrieveMetadata(storageKey, storage) : ImmutableMap.of();
@@ -261,7 +266,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
                 }
 
             } else {
-               throw new IllegalArgumentException(String.format("the binary `%s` isn't accessible ", binary != null ? binary.getName() : "unknown"));
+               throw new IllegalArgumentException(String.format("the binary `%s` isn't accessible ", binary != null ? binary : "unknown"));
             }
         }
 

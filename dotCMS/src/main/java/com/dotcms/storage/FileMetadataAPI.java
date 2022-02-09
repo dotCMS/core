@@ -10,6 +10,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import java.io.File;
@@ -32,6 +33,31 @@ import java.util.function.Supplier;
 public interface FileMetadataAPI {
 
     String ALWAYS_REGENERATE_METADATA_ON_REINDEX = "always.regenerate.metadata.on.reindex";
+
+    String BINARY_METADATA_VERSION = "BINARY_METADATA_VERSION";
+    int CURRENT_BINARY_METADATA_VERSION = 20220201;
+
+    String META_TMP = ".meta.tmp";
+    String METADATA_GROUP_NAME = "METADATA_GROUP_NAME";
+    String DEFAULT_STORAGE_TYPE = "DEFAULT_STORAGE_TYPE";
+    String DOT_METADATA = "dotmetadata";
+    String DEFAULT_METADATA_GROUP_NAME = DOT_METADATA;
+    String METADATA_JSON = "-metadata.json";
+
+    /**
+     * Metadata file generator.
+     * @param contentlet
+     * @param fieldVariableName
+     * @return
+     */
+    default String getFileName (final Contentlet contentlet, final String fieldVariableName) {
+
+        final String inode        = contentlet.getInode();
+        final String fileName     = fieldVariableName + METADATA_JSON;
+        return StringUtils.builder(File.separator,
+                inode.charAt(0), File.separator, inode.charAt(1), File.separator, inode, File.separator,
+                fileName).toString();
+    }
 
     /**
      * Reads INDEX_METADATA_FIELDS for  pre-configured metadata fields
@@ -57,25 +83,6 @@ public interface FileMetadataAPI {
      */
     ContentletMetadata generateContentletMetadata (Contentlet contentlet)
             throws IOException, DotDataException;
-
-    /**
-     * Retrieves the basic metadata projection for the contentlet
-     * @param contentlet  {@link Contentlet}
-     * @param field       {@link Field}
-     * @return Map
-     */
-    Metadata getMetadata(Contentlet contentlet, Field field) throws DotDataException;
-
-    /**
-     * Retrieves the basic metadata projection for the contentlet
-     * @param contentlet
-     * @param field
-     * @param forceGenerate
-     * @return
-     * @throws DotDataException
-     */
-    Metadata getMetadata(Contentlet contentlet, Field field, boolean forceGenerate) throws DotDataException;
-
     /**
      * Retrieves the basic metadata for the contentlet (a projection over the full MD)
      * @param contentlet          {@link Contentlet}
@@ -92,8 +99,18 @@ public interface FileMetadataAPI {
      * @param fieldVariableName  {@link String}
      * @return Map
      */
-     Metadata getMetadataForceGenerate(Contentlet contentlet, String fieldVariableName)
+     Metadata getOrGenerateMetadata(Contentlet contentlet, String fieldVariableName)
             throws DotDataException;
+
+    /**
+     * This number helps us to determine if we need to regenerate lazily the md if we want to include new attributes on the md
+     * @return ver number follows the same pattern as our StartupTasks, eg, the date formatted like YYYYMMDD
+     */
+    default int getBinaryMetadataVersion(){
+        //We should always return the hard coded val but I'm leaving it open so it can be override via props
+        return Config.getIntProperty(BINARY_METADATA_VERSION,
+                CURRENT_BINARY_METADATA_VERSION);
+    }
 
     /**
      * Retrieves the full metadata for the contentlet
@@ -113,7 +130,7 @@ public interface FileMetadataAPI {
      * @return
      * @throws DotDataException
      */
-    Metadata getFullMetadataNoCacheForceGenerate(Contentlet contentlet,
+    Metadata getOrGenerateFullMetadataNoCache(Contentlet contentlet,
             String fieldVariableName) throws DotDataException;
 
     /**
@@ -129,7 +146,7 @@ public interface FileMetadataAPI {
      * @param contentlet
      * @return
      */
-    Optional<Metadata> getDefaultMetadataForceGenerate(final Contentlet contentlet);
+    Optional<Metadata> getOrGenerateDefaultMetadata(final Contentlet contentlet);
 
     /**
      * Removes All metadata for a given Contentlet

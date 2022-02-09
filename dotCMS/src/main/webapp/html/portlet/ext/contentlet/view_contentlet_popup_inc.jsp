@@ -29,6 +29,8 @@ if(contentletId == null){
 ContentletAPI capi = APILocator.getContentletAPI();
 
 Contentlet content=null;
+String vinode = "";
+String videntifier = "";
 Language lang=null;
 Structure structure=null;
 List<Field> fields=null;
@@ -47,6 +49,9 @@ try {
 	fields = structure.getFields();
 	
 	id = APILocator.getIdentifierAPI().find(content);
+
+    vinode = content.getInode();
+    videntifier = content.getIdentifier();
 
 }
 catch(DotSecurityException dse) {
@@ -178,6 +183,15 @@ if(!hasPermissions) {
 
 	   }
 
+    function emmitCompareEvent(inode, identifier, language) {
+        var customEvent = document.createEvent("CustomEvent");
+        customEvent.initCustomEvent("ng-event", false, false,  {
+            name: "compare-contentlet",
+            data: { inode, identifier, language }
+        });
+        document.dispatchEvent(customEvent)
+    }
+
 </script>
 
 
@@ -202,8 +216,12 @@ if(!hasPermissions) {
 			<th>
 				<%= LanguageUtil.get(pageContext, "Title") %>
 			</th>
-			<td>
+			<td style="display: flex; align-items: center; justify-content: space-between;">
 				<%= content.getTitle()%>
+                <button dojoType="dijit.form.Button" type="button" 
+                    onclick="emmitCompareEvent('<%= vinode %>', '<%= videntifier %>', '<%=lang.getLanguageCode() %>-<%=lang.getCountryCode().toLowerCase()%>');return false;" >
+                    <%= LanguageUtil.get(pageContext, "compare.to.previous.versions") %>
+                </button>
 
 			</td>
 		</tr>

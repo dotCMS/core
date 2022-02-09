@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
@@ -95,8 +96,8 @@ public class FieldResourceTest {
         final InitDataObject dataObject1 = mock(InitDataObject.class);
         when(dataObject1.getUser()).thenReturn(APILocator.systemUser());
         when(webResourceThatReturnsAdminUser
-                .init(anyString(), any(HttpServletRequest.class),any(HttpServletResponse.class), anyBoolean(),
-                        anyString())).thenReturn(dataObject1);
+                .init(nullable(String.class), any(HttpServletRequest.class),any(HttpServletResponse.class), anyBoolean(),
+                        nullable(String.class))).thenReturn(dataObject1);
 
         final FieldResource resource = new FieldResource(webResourceThatReturnsAdminUser, APILocator.getContentTypeFieldAPI());
 
@@ -124,8 +125,8 @@ public class FieldResourceTest {
         final InitDataObject dataObject1 = mock(InitDataObject.class);
         when(dataObject1.getUser()).thenReturn(APILocator.systemUser());
         when(webResourceThatReturnsAdminUser
-                .init(anyString(), any(HttpServletRequest.class),any(HttpServletResponse.class), anyBoolean(),
-                        anyString())).thenReturn(dataObject1);
+                .init(nullable(String.class), any(HttpServletRequest.class),any(HttpServletResponse.class), anyBoolean(),
+                        nullable(String.class))).thenReturn(dataObject1);
 
         final FieldResource resource = new FieldResource(webResourceThatReturnsAdminUser, APILocator.getContentTypeFieldAPI());
 
@@ -154,8 +155,8 @@ public class FieldResourceTest {
         final InitDataObject dataObject1 = mock(InitDataObject.class);
         when(dataObject1.getUser()).thenReturn(APILocator.systemUser());
         when(webResourceThatReturnsAdminUser
-                .init(anyString(), any(HttpServletRequest.class),any(HttpServletResponse.class), anyBoolean(),
-                        anyString())).thenReturn(dataObject1);
+                .init(nullable(String.class), any(HttpServletRequest.class),any(HttpServletResponse.class), anyBoolean(),
+                        nullable(String.class))).thenReturn(dataObject1);
 
         final FieldResource resource = new FieldResource(webResourceThatReturnsAdminUser, APILocator.getContentTypeFieldAPI());
 
@@ -185,8 +186,8 @@ public class FieldResourceTest {
         final InitDataObject dataObject1 = mock(InitDataObject.class);
         when(dataObject1.getUser()).thenReturn(APILocator.systemUser());
         when(webResourceThatReturnsAdminUser
-                .init(anyString(), any(HttpServletRequest.class),any(HttpServletResponse.class), anyBoolean(),
-                        anyString())).thenReturn(dataObject1);
+                .init(nullable(String.class), any(HttpServletRequest.class),any(HttpServletResponse.class), anyBoolean(),
+                        nullable(String.class))).thenReturn(dataObject1);
 
         final FieldResource resource = new FieldResource(webResourceThatReturnsAdminUser, APILocator.getContentTypeFieldAPI());
 
@@ -238,8 +239,8 @@ public class FieldResourceTest {
         final InitDataObject dataObject1 = mock(InitDataObject.class);
         when(dataObject1.getUser()).thenReturn(APILocator.systemUser());
         when(webResourceThatReturnsAdminUser
-                .init(anyString(), any(HttpServletRequest.class),any(HttpServletResponse.class), anyBoolean(),
-                        anyString())).thenReturn(dataObject1);
+                .init(nullable(String.class), any(HttpServletRequest.class),any(HttpServletResponse.class), anyBoolean(),
+                        nullable(String.class))).thenReturn(dataObject1);
 
         final FieldResource resource = new FieldResource(webResourceThatReturnsAdminUser, APILocator.getContentTypeFieldAPI());
 
@@ -2440,8 +2441,8 @@ public class FieldResourceTest {
             final InitDataObject dataObject1 = mock(InitDataObject.class);
             when(dataObject1.getUser()).thenReturn(APILocator.systemUser());
             when(webResourceThatReturnsAdminUser
-                    .init(anyString(), any(HttpServletRequest.class),any(HttpServletResponse.class), anyBoolean(),
-                            anyString())).thenReturn(dataObject1);
+                    .init(nullable(String.class), any(HttpServletRequest.class),any(HttpServletResponse.class), anyBoolean(),
+                            nullable(String.class))).thenReturn(dataObject1);
 
             final FieldResource resource = new FieldResource(webResourceThatReturnsAdminUser, APILocator.getContentTypeFieldAPI());
 

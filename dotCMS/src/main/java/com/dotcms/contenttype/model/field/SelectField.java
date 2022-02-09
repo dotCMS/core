@@ -1,6 +1,6 @@
 package com.dotcms.contenttype.model.field;
 
-import com.dotcms.content.model.FieldValue;
+import com.dotcms.content.model.FieldValueBuilder;
 import com.dotcms.content.model.type.select.BoolSelectFieldType;
 import com.dotcms.content.model.type.select.FloatSelectFieldType;
 import com.dotcms.content.model.type.select.LongSelectFieldType;
@@ -57,38 +57,37 @@ public abstract class SelectField extends SelectableValuesField {
 
 	/**
 	 * {@inheritDoc}
-	 */
+     * @return
+     */
 	@Override
-	public Optional<FieldValue<?>> fieldValue(final Object value) {
-
+	public Optional<FieldValueBuilder> fieldValue(final Object value) {
 		if (value != null) {
 			if (value instanceof String) {
-				return Optional.of(SelectFieldType.of((String) value));
+				return Optional.of(SelectFieldType.builder().value((String) value));
 			}
 			if (value instanceof Boolean) {
-				return Optional.of(BoolSelectFieldType.of((Boolean) value));
+				return Optional.of(BoolSelectFieldType.builder().value((Boolean) value));
 			}
 			if (value instanceof Float) {
-				return Optional.of(FloatSelectFieldType.of((Float) value));
+				return Optional.of(FloatSelectFieldType.builder().value((Float) value));
 			}
 			if (value instanceof Long) {
-				return Optional.of(LongSelectFieldType.of((Long) value));
+				return Optional.of(LongSelectFieldType.builder().value((Long) value));
 			}
 			if (value instanceof Integer) {
-				return Optional.of(LongSelectFieldType.of(((Integer) value).longValue()));
+				return Optional.of(LongSelectFieldType.builder().value(((Integer) value).longValue()));
 			}
 		} else {
 			final DataTypes dataType = dataType();
 			switch (dataType) {
 				case BOOL:
-					return Optional.of(BoolSelectFieldType.of(false));
+					return Optional.of(BoolSelectFieldType.builder().value(false));
 				case FLOAT:
-					return Optional.of(FloatSelectFieldType.of(0F));
+					return Optional.of(FloatSelectFieldType.builder().value(0F));
 				case INTEGER:
-					return Optional.of(LongSelectFieldType.of(0L));
+					return Optional.of(LongSelectFieldType.builder().value(0L));
 			}
 		}
-
 		return Optional.empty();
 	}
 

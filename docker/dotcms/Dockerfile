@@ -72,13 +72,13 @@ COPY --chown=$USER_NAME:$USER_GROUP ROOT/ /
     mkdir -p /data/shared/felix/load && \
     mkdir -p /data/shared/felix/undeployed && \
     mkdir -p /data/local/dotsecure/license && \
+
     chown -R $USER_NAME:$USER_NAME /data
 
 # ----------------------------------------------
 # Stage 3:  Copy pg_dump binary
 # ----------------------------------------------
 FROM dotcms/pg-base:22.02 as composed-base
-
 COPY --from=container-base / /
 
 # ----------------------------------------------
@@ -99,6 +99,7 @@ COPY --from=composed-base / /
 USER $USER_UID:$USER_GID
 ENV JAVA_HOME="/java"
 ENV PATH=$PATH:/java/bin
+
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/srv/entrypoint.sh"]
 CMD ["dotcms"]

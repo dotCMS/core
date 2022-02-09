@@ -1622,14 +1622,14 @@ public class ContentletAPITest extends ContentletBaseTest {
         long defLang=APILocator.getLanguageAPI().getDefaultLanguage().getId();
         
         Host host1=new Host();
-        host1.setHostname("copy.contentlet.t1_"+System.currentTimeMillis());
+        host1.setHostname("copy.contentlet.t1."+System.currentTimeMillis());
         host1.setDefault(false);
         host1.setLanguageId(defLang);
         host1.setIndexPolicy(IndexPolicy.FORCE);
         host1 = APILocator.getHostAPI().save(host1, user, false);
 
         Host host2=new Host();
-        host2.setHostname("copy.contentlet.t2_"+System.currentTimeMillis());
+        host2.setHostname("copy.contentlet.t2."+System.currentTimeMillis());
         host2.setDefault(false);
         host2.setLanguageId(defLang);
         host2.setIndexPolicy(IndexPolicy.FORCE);
