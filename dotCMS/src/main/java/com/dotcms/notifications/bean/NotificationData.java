@@ -2,6 +2,8 @@ package com.dotcms.notifications.bean;
 
 import com.dotcms.util.I18NMessage;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 import java.util.List;
 
@@ -35,7 +37,8 @@ public class NotificationData implements Serializable {
 	 *            - A list of {@link NotificationAction} objects that provide
 	 *            more features to the notification.
 	 */
-	public NotificationData(I18NMessage title, I18NMessage message, List<NotificationAction> actions) {
+	@JsonCreator
+	public NotificationData(@JsonProperty("title") final I18NMessage title, @JsonProperty("message") final I18NMessage message, @JsonProperty("actions")final List<NotificationAction> actions) {
 		this.title = title;
 		this.message = message;
 		this.actions = actions;

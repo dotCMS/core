@@ -8,11 +8,10 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.collect.ImmutableList;
 import java.util.List;
-import org.immutables.gson.Gson;
 import org.immutables.value.Value;
 @JsonSerialize(as = ImmutableWidgetContentType.class)
 @JsonDeserialize(as = ImmutableWidgetContentType.class)
-@Gson.TypeAdapters
+//@Gson.TypeAdapters
 @Value.Immutable
 public abstract class WidgetContentType extends ContentType implements Expireable{
 	

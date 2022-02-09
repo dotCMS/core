@@ -1,21 +1,10 @@
 package com.dotcms.util.marshal;
 
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.Serializable;
-import java.io.Writer;
-import java.lang.reflect.Type;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.util.Date;
-
-import com.google.gson.*;
 import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import java.io.Serializable;
 
 /**
  * Marshal Factory, provides the default implementation for the MarhalUtils
@@ -99,12 +88,12 @@ public class MarshalFactory implements Serializable {
                             }
 
                             this.marshalUtils =
-                                    new GsonMarshalUtils();
+                                    new JacksonMarshalUtilsImpl();
                         }
                     } else {
 
                         this.marshalUtils =
-                                new GsonMarshalUtils();
+                                new JacksonMarshalUtilsImpl();
                     }
                 }
             }
@@ -116,6 +105,7 @@ public class MarshalFactory implements Serializable {
     /**
      * Gson Implementation
      */
+    /*
     private class GsonMarshalUtils implements MarshalUtils {
 
         private final Gson gson;
@@ -320,6 +310,11 @@ public class MarshalFactory implements Serializable {
         }
 
         @Override
+        public <T> T unmarshal(String s, TypeReference<T> typeOfT) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public <T> T unmarshal(final Reader reader, final Class<? extends T> clazz) {
 
             return this.gson.fromJson(reader, clazz);
@@ -331,5 +326,5 @@ public class MarshalFactory implements Serializable {
             return this.gson.fromJson(new InputStreamReader(inputStream), clazz);
         }
     } // GsonMarshalUtils.
-
+     */
 } // E:O:F:MarshalFactory.

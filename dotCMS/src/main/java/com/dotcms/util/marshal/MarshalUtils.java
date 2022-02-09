@@ -1,5 +1,6 @@
 package com.dotcms.util.marshal;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.Serializable;
@@ -46,6 +47,15 @@ public interface MarshalUtils extends Serializable {
      * @return T
      */
     public <T> T unmarshal(final String s, Type typeOfT);
+
+    /**
+     * Un marshal from a String into a Type
+     * @param s
+     * @param typeOfT
+     * @param <T>
+     * @return
+     */
+    public <T> T unmarshal(String s, TypeReference<T> typeOfT);
 
     /**
      * Un marshal from a reader to a object with the clazz type

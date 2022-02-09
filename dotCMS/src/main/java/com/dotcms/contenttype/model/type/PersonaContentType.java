@@ -1,11 +1,5 @@
 package com.dotcms.contenttype.model.type;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.immutables.gson.Gson;
-import org.immutables.value.Value;
-
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
@@ -14,13 +8,16 @@ import com.dotcms.contenttype.model.field.ImmutableHostFolderField;
 import com.dotcms.contenttype.model.field.ImmutableTagField;
 import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
-import com.google.common.collect.ImmutableList;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.common.collect.ImmutableList;
+import java.util.ArrayList;
+import java.util.List;
+import org.immutables.value.Value;
 
 @JsonSerialize(as = ImmutablePersonaContentType.class)
 @JsonDeserialize(as = ImmutablePersonaContentType.class)
-@Gson.TypeAdapters
+//@Gson.TypeAdapters
 @Value.Immutable
 public abstract class PersonaContentType extends ContentType implements Expireable, EnterpriseType {
 
