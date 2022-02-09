@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { DebugElement, Component } from '@angular/core';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { By } from '@angular/platform-browser';
@@ -29,7 +29,7 @@ describe('DotGenerateSecurePasswordComponent', () => {
 
     const messageServiceMock = new MockDotMessageService({
         'generate.secure.password': 'Generate Secure Password',
-        Copy: 'Copy',
+        Copy: 'COPY',
         'generate.secure.password.reveal': 'Reveal',
         'generate.secure.password.description': 'Description'
     });
@@ -73,18 +73,16 @@ describe('DotGenerateSecurePasswordComponent', () => {
             expect(comp.typeInput).toBe('password');
         });
 
-        it('should copy password to clipboard', (done) => {
+        it('should copy password to clipboard', fakeAsync(() => {
             const copyButton = fixture.debugElement.query(By.css('[data-testId="copyBtn"]'));
             copyButton.nativeElement.click();
             fixture.detectChanges();
             expect(dotClipboardUtil.copy).toHaveBeenCalledWith(comp.value);
             expect(copyButton.nativeElement.innerText).toBe('COPIED');
-            setTimeout(() => {
-                fixture.detectChanges();
-                expect(copyButton.nativeElement.innerText).toBe('COPY');
-                done();
-            }, 2000);
-        });
+            tick(2000);
+            fixture.detectChanges();
+            expect(copyButton.nativeElement.innerText).toBe('COPY');
+        }));
 
         it('should Reveal password', () => {
             const revealButton = fixture.debugElement.query(

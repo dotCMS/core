@@ -223,7 +223,7 @@ describe('DotLoginComponent', () => {
 
             fixture.detectChanges();
 
-            const errorsMessages = de.queryAll(By.css('.p-field .p-invalid'));
+            const errorsMessages = de.queryAll(By.css('.p-invalid'));
             expect(errorsMessages.length).toBe(2);
         });
 
