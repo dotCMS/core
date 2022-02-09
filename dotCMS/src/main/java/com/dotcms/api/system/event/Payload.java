@@ -1,6 +1,12 @@
 package com.dotcms.api.system.event;
 
+import com.dotcms.util.jackson.PayloadDeserializer;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * This class wraps the payload of a System Event, specifying its type (i.e.,
@@ -11,14 +17,16 @@ import java.io.Serializable;
  * @version 3.7
  * @since Jul 13, 2016
  */
-@SuppressWarnings("serial")
+@JsonInclude(Include.NON_NULL)
+@JsonDeserialize(using = PayloadDeserializer.class)
 public class Payload implements Serializable {
 
 	private final Object data;
 	private final Visibility visibility;
+	private final String type;
 
     private final Object visibilityValue; // this could be anything: an user id, role uid or permission, or event a meta object with several things.
-
+	private final String visibilityType;
 	/**
 	 * Creates a payload object.
 	 *
@@ -27,7 +35,7 @@ public class Payload implements Serializable {
 	 */
 	public Payload(final Object data) {
 
-		this(data, Visibility.GLOBAL, (String) null);
+		this(data, Visibility.GLOBAL, null);
 	}
 	
 	/**
@@ -38,12 +46,12 @@ public class Payload implements Serializable {
 	 */
 	public Payload() {
 
-		this(new Void(), Visibility.GLOBAL, (String) null);
+		this(new Void(), Visibility.GLOBAL, null);
 	}
 	
 	/**
 	 * Creates a payload object without data, but allowing to set the visility 
-	 * and visibilityid. This method generates an empty object payload using an 
+	 * and visibility. This method generates an empty object payload using an
 	 * empty Void generic class object. This allows to send events that doesn't 
 	 * requires any data input on their payload.
 	 * 
@@ -73,6 +81,9 @@ public class Payload implements Serializable {
 		this.data = data;
 		this.visibility = visibility;
 		this.visibilityValue = visibilityValue;
+		final Object rawData = getRawData();
+		this.type = rawData != null ? rawData.getClass().getName() : null;
+		this.visibilityType = visibilityValue != null ? visibilityValue.getClass().getName() : null;
 	}
 
 	/**
@@ -91,6 +102,15 @@ public class Payload implements Serializable {
 		return data;
 	}
 
+	/**
+	 * Payload Type getter
+	 * @return
+	 */
+	public String getType() {
+		return type;
+	}
+
+	@JsonIgnore
 	public Object getRawData() {
 		return this.data;
 	}
@@ -112,14 +132,22 @@ public class Payload implements Serializable {
 		return visibilityValue;
 	}
 
+	/**
+	 * Returns the visibility type
+	 * @return String
+	 */
+	public String getVisibilityType() {
+		return visibilityType;
+	}
+
 	@Override
 	public boolean equals(Object o) {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 
-		Payload payload = (Payload) o;
+		final Payload payload = (Payload) o;
 
-		return data != null ? data.equals(payload.data) : payload.data == null;
+		return Objects.equals(data, payload.data);
 
 	}
 

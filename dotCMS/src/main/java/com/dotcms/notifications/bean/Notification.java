@@ -2,6 +2,8 @@ package com.dotcms.notifications.bean;
 
 import com.dotcms.util.I18NMessage;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -17,7 +19,6 @@ import java.util.List;
  * @since Feb 3, 2014
  *
  */
-@SuppressWarnings("serial")
 public class Notification implements Serializable, Cloneable {
 
     private String groupId;
@@ -67,7 +68,8 @@ public class Notification implements Serializable, Cloneable {
      * @param notificationData
      *            - The additional information that make up this notification.
      */
-    public Notification(NotificationType type, NotificationLevel level, String userId, NotificationData notificationData) {
+    @JsonCreator
+    public Notification(@JsonProperty("type") final NotificationType type, @JsonProperty("level")  NotificationLevel level, @JsonProperty("userID")  final String userId, @JsonProperty("notificationData")  final NotificationData notificationData) {
         this(type, level, userId, false, notificationData);
     }
 

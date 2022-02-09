@@ -2,6 +2,8 @@ package com.dotcms.api.system.event;
 
 import com.dotmarketing.util.UtilMethods;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -20,7 +22,6 @@ import java.util.Date;
  * @since Jul 11, 2016
  *
  */
-@SuppressWarnings("serial")
 public class SystemEvent implements Serializable {
 
 	private final String id;
@@ -73,10 +74,13 @@ public class SystemEvent implements Serializable {
 	 *             If the system event type or the payload object are not
 	 *             specified.
 	 */
-	public SystemEvent(final String id, final SystemEventType eventType,
-					   final Payload payload,
-					   final Date creationDate,
-					   final String serverId) {
+	@JsonCreator
+	public SystemEvent(
+			@JsonProperty("id") final String id,
+			@JsonProperty("eventType") final SystemEventType eventType,
+			@JsonProperty("payload") final Payload payload,
+			@JsonProperty("creationDate") final Date creationDate,
+			@JsonProperty("serverId") final String serverId) {
 
 		if (!UtilMethods.isSet(eventType)) {
 			throw new IllegalArgumentException("System Event type must be specified.");
@@ -143,7 +147,7 @@ public class SystemEvent implements Serializable {
 		result = prime * result + ((event == null) ? 0 : event.hashCode());
 		result = prime * result + ((id == null) ? 0 : id.hashCode());
 		result = prime * result + ((payload == null) ? 0 : payload.hashCode());
-		result = prime * result + ((serverId == null) ? 0 : payload.hashCode());
+		result = prime * result + ((serverId == null) ? 0 : serverId.hashCode());
 		return result;
 	}
 

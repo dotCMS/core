@@ -1,6 +1,8 @@
 package com.dotcms.util.marshal;
 
+import com.dotcms.util.jackson.SqlTimeStampSerializer;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,6 +26,7 @@ public class JacksonMarshalUtilsImpl implements MarshalUtils{
         objectMapper.registerModule(new JavaTimeModule().addSerializer(java.sql.Time.class, new SqlTimeStampSerializer()));
         objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, true);
         objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS,false);
+        objectMapper.setSerializationInclusion(Include.NON_NULL);
         objectMapper.configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true);
         return objectMapper;
     });

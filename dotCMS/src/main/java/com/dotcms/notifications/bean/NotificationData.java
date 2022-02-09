@@ -19,7 +19,6 @@ import java.util.List;
  * @since Jul 14, 2016
  *
  */
-@SuppressWarnings("serial")
 public class NotificationData implements Serializable {
 
 	private I18NMessage title;

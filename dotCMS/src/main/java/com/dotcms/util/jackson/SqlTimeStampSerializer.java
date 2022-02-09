@@ -1,4 +1,4 @@
-package com.dotcms.util.marshal;
+package com.dotcms.util.jackson;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
