@@ -75,7 +75,6 @@ public class VelocityServlet extends HttpServlet {
                            : userApi.getAnonymousUserNoThrow();
         
         request.setRequestUri(uri);
-        //final PageMode mode = user.isFrontendUser()? PageMode.setPageMode(request, PageMode.LIVE) : PageMode.getWithNavigateMode(request);
         final PageMode mode = processPageMode(user, request);
 
         // if you are hitting the servlet without running through the other filters

@@ -16,6 +16,10 @@ public enum LoginMode {
 
     UNKNOWN, BE, FE;
 
+    /**
+     * Gets the current Login mode based on the {@link HttpServletRequestThreadLocal} (if it is set)
+     * @return LoginMode
+     */
     public static LoginMode get() {
 
         final HttpServletRequest req = Try.of(()-> HttpServletRequestThreadLocal.INSTANCE.getRequest()).getOrNull();
@@ -23,6 +27,11 @@ public enum LoginMode {
 
     }
 
+    /**
+     * Gets the current Login mode based on the {@link HttpServletRequest}
+     * @param request  {@link HttpServletRequest}
+     * @return LoginMode
+     */
     public static LoginMode get(final HttpServletRequest request) {
 
         if (request.getSession(false) != null && PortalUtil.getUser(request) != null &&
@@ -36,6 +45,12 @@ public enum LoginMode {
         return UNKNOWN;
     }
 
+    /**
+     * Sets the loginMode
+     * pre: session should exists, otherwise won't set the loginMode
+     * @param request  {@link HttpServletRequest}
+     * @param loginMode {@link LoginMode}
+     */
     public static void set(final HttpServletRequest request, final LoginMode loginMode) {
 
         if (request.getSession(false) != null) {
