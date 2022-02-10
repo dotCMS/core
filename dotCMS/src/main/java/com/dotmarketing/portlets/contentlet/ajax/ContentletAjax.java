@@ -1180,7 +1180,6 @@ public class ContentletAjax {
 	                searchResult.put("titleImage", contentlet.getTitleImage().get().variable());
 	            }
 				searchResult.put("modDate", fieldValue);
-				searchResult.put("modDateMilis", String.valueOf(con.getModDate().getTime()));
 				String user = "";
 				User contentEditor = null;
 				try {

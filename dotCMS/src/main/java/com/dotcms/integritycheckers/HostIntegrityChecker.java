@@ -1,7 +1,6 @@
 package com.dotcms.integritycheckers;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.repackage.com.csvreader.CsvWriter;
@@ -27,7 +26,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -55,7 +53,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
     }
 
     /**
-     * Generates a CSV file based on results returned by a query fetching duplicated content.
+     * Generates a CSV file based on results returned by a query fetching duplicated contentt.
      *
      * @param outputPath
      *            location to store cvs files; for example outputPath =
@@ -129,11 +127,11 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
     public boolean generateIntegrityResults(final String endpointId) throws Exception {
         try {
             final CsvReader hosts = new CsvReader(
-                    Paths.get(
-                            ConfigUtils.getIntegrityPath(),
-                            endpointId,
-                            getIntegrityType().getDataToCheckCSVName()
-                    ).toString(),
+                    ConfigUtils.getIntegrityPath() +
+                            File.separator +
+                            endpointId +
+                            File.separator +
+                            getIntegrityType().getDataToCheckCSVName(),
                     '|',
                     StandardCharsets.UTF_8);
             boolean tempCreated = false;
@@ -164,7 +162,6 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                     " VALUES(?, ?, ?, ?, ?, ?)";
             final String hostField = resolveHostField();
             final DotConnect dc = new DotConnect();
-            dc.executeStatement("DROP TABLE IF EXISTS " + tempTableName);
 
             while(hosts.readRecord()) {
                 if (!tempCreated) {
@@ -263,7 +260,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
      * @throws DotSecurityException
      */
     @Override
-    @WrapInTransaction
+    @CloseDBIfOpened
     public void executeFix(final String endpointId) throws DotDataException, DotSecurityException {
         // remove from the index all the content under each conflicted host
         final DotConnect dc = new DotConnect().setSQL(
@@ -298,7 +295,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
     /**
      * Prepares duplicates detection query to run prior to creating CSV file.
      *
-     * @param hostField column name used to retrieve the host name
+     * @param hostField column name used to retrieved the host name
      * @return a ready to use {@link PreparedStatement}
      * @throws SQLException
      */
@@ -323,7 +320,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
 
     /**
      * Perform actual fix in real tables based on hosts_ir table record.
-     *1
+     *
      * @param row map representing a row from hosts_ir table
      * @param isLastConflict flag telling  if this is the last conflict
      * @throws DotDataException
@@ -338,7 +335,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
         final String remoteWorkingInode = (String) row.get("remote_working_inode");
         final String remoteLiveInode = (String) row.get("remote_live_inode");
         final Long languageId = DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()
-                ? Long.valueOf(((BigDecimal) row.get("language_id")).toPlainString())
+                ? new Long(((BigDecimal) row.get("language_id")).toPlainString())
                 : (Long) row.get("language_id");
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
         final User systemUser = APILocator.getUserAPI().getSystemUser();
@@ -359,8 +356,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
         // constraint that limit us to use the final one
         if (results == null || results.isEmpty()) {
             Logger.debug(
-                    this,
-                    () -> String.format(
+                    this, () -> String.format(
                             "Fixing Host conflict for local %s with remote %s",
                             localHostIdentifier,
                             remoteHostIdentifier));
@@ -376,10 +372,10 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
         if (dc.getRecordCount("inode", "WHERE inode = '" + remoteWorkingInode + "'") == 0) {
             // Insert the new Inodes records so they can be used in the contentlet
             dc.setSQL("INSERT INTO inode(inode, owner, idate, type)" +
-                    " SELECT ?, owner, idate, type FROM inode i WHERE i.inode = ?")
-                    .addParam(remoteWorkingInode)
-                    .addParam(localWorkingInode)
-                    .loadResult();
+                    " SELECT ?, owner, idate, type FROM inode i WHERE i.inode = ?");
+            dc.addParam(remoteWorkingInode);
+            dc.addParam(localWorkingInode);
+            dc.loadResult();
         }
 
         if (!remoteWorkingInode.equals(remoteLiveInode)
@@ -387,10 +383,10 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                 && UtilMethods.isSet(localLiveInode)
                 && dc.getRecordCount("inode", "WHERE i.inode = '" + remoteLiveInode + "'") == 0) {
             dc.setSQL("INSERT INTO inode(inode, owner, idate, type)" +
-                    " SELECT ?, owner, idate, type FROM inode i WHERE i.inode = ?")
-                    .addParam(remoteLiveInode)
-                    .addParam(localLiveInode)
-                    .loadResult();
+                    " SELECT ?, owner, idate, type FROM inode i WHERE i.inode = ?");
+            dc.addParam(remoteLiveInode);
+            dc.addParam(localLiveInode);
+            dc.loadResult();
         }
 
         // Insert the new working Contentlet (Host) record with the new Inode
@@ -425,31 +421,25 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                 dc);
 
         // Update other workflow task with new Identifier
-        dc.setSQL("UPDATE workflow_task SET webasset = ? WHERE webasset = ? AND language_id = ?")
-                .addParam(remoteHostIdentifier)
-                .addParam(localHostIdentifier)
-                .addParam(languageId)
-                .loadResult();
-
-        // Update child elements
-        dc.setSQL("UPDATE identifier SET host_inode = ? WHERE host_inode = ?")
-                .addParam(remoteHostIdentifier)
-                .addParam(localHostIdentifier)
-                .loadResult();
+        dc.setSQL("UPDATE workflow_task SET webasset = ? WHERE webasset = ? AND language_id = ?");
+        dc.addParam(remoteHostIdentifier);
+        dc.addParam(localHostIdentifier);
+        dc.addParam(languageId);
+        dc.loadResult();
 
         // Remove the live_inode references from Contentlet_version_info
-        dc.setSQL("DELETE FROM contentlet_version_info WHERE identifier = ? AND working_inode = ? AND lang = ?")
-                .addParam(localHostIdentifier)
-                .addParam(localWorkingInode)
-                .addParam(languageId)
-                .loadResult();
+        dc.setSQL("DELETE FROM contentlet_version_info WHERE identifier = ? AND working_inode = ? AND lang = ? ");
+        dc.addParam(localHostIdentifier);
+        dc.addParam(localWorkingInode);
+        dc.addParam(languageId);
+        dc.loadResult();
 
         // Remove the conflicting version of the Contentlet record
-        dc.setSQL("DELETE FROM contentlet WHERE identifier = ? AND inode = ? AND language_id = ?")
-                .addParam(localHostIdentifier)
-                .addParam(localWorkingInode)
-                .addParam(languageId)
-                .loadResult();
+        dc.setSQL("DELETE FROM contentlet WHERE identifier = ? AND inode = ? AND language_id = ?");
+        dc.addParam(localHostIdentifier);
+        dc.addParam(localWorkingInode);
+        dc.addParam(languageId);
+        dc.loadResult();
 
         final boolean liveInodesDefinedAndDiffFromLocal = UtilMethods.isSet(localLiveInode)
                 && UtilMethods.isSet(remoteLiveInode)
@@ -479,6 +469,12 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                 .loadResult();
 
         if (isLastConflict) {
+            // Update child elements
+            dc.setSQL("UPDATE identifier SET host_inode = ? WHERE host_inode = ?")
+                    .addParam(remoteHostIdentifier)
+                    .addParam(localHostIdentifier)
+                    .loadResult();
+
             // Remove the old Identifier record
             dc.setSQL("DELETE FROM identifier WHERE id = ?")
                     .addParam(localHostIdentifier)
@@ -486,11 +482,15 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
         }
 
         // Remove the old Inode record
-        dc.setSQL("DELETE FROM inode WHERE inode = ?").addParam(localWorkingInode).loadResult();
+        dc.setSQL("DELETE FROM inode WHERE inode = ?")
+                .addParam(localWorkingInode)
+                .loadResult();
 
         if (liveInodesDefinedAndDiffFromLocal) {
             // Remove the old Inode record
-            dc.setSQL("DELETE FROM inode WHERE inode = ?").addParam(localLiveInode).loadResult();
+            dc.setSQL("DELETE FROM inode WHERE inode = ?");
+            dc.addParam(localLiveInode);
+            dc.loadResult();
         }
 
         // Create new contentlet using the current information, this is for the working contentlet
@@ -519,13 +519,14 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
      *            identifier for the new contentlet
      * @param remoteInode
      *            inode for the new contentlet
+     * @return new generated contentlet
      * @throws DotContentletStateException
      * @throws DotRuntimeException
      * @throws DotSecurityException
      * @throws DotDataException
      * @throws IOException
      */
-    private void generateNewContentlet(final Contentlet existingContentlet,
+    private Contentlet generateNewContentlet(final Contentlet existingContentlet,
                                              final String newContentletIdentifier,
                                              final String remoteInode)
             throws DotContentletStateException, DotRuntimeException, DotSecurityException, DotDataException {
@@ -538,6 +539,8 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
 
         // Add new contentlet to lucene index
         APILocator.getContentletIndexAPI().addContentToIndex(newContentlet);
+
+        return newContentlet;
     }
 
     /**

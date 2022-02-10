@@ -93,7 +93,7 @@ public abstract class ImageFilter implements ImageFilterIf {
 
 
 			MessageDigest digest = java.security.MessageDigest.getInstance("MD5");
-			digest.update((inode + sb.toString() + this.getClass() + file.getName()).getBytes());
+			digest.update((inode + sb.toString() + this.getClass()).getBytes());
 
 			StringBuilder ret = new StringBuilder();
 			ret.append( WebKeys.GENERATED_FILE);
