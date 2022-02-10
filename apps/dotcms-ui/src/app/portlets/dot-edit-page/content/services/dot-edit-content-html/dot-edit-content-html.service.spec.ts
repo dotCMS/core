@@ -1231,7 +1231,7 @@ xdescribe('DotEditContentHtmlService', () => {
                 })
             );
 
-            service.renderAddedForm('4').subscribe((model) => {
+            service.renderAddedForm({ ...form, id: '4' }).subscribe((model) => {
                 expect(model).toEqual(
                     [
                         {
@@ -1274,7 +1274,7 @@ xdescribe('DotEditContentHtmlService', () => {
                 })
             );
 
-            service.renderAddedForm(form.id).subscribe((model) => {
+            service.renderAddedForm(form).subscribe((model) => {
                 expect(model).toBeNull();
             });
 

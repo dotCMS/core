@@ -10,8 +10,11 @@ import {
     ReactiveFormsModule
 } from '@angular/forms';
 
+import { of } from 'rxjs';
+
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotTemplateStore, EMPTY_TEMPLATE_ADVANCED } from '../store/dot-template.store';
 import { DotTemplateAdvancedComponent } from './dot-template-advanced.component';
 
 @Component({
@@ -116,7 +119,21 @@ describe('DotTemplateAdvancedComponent', () => {
     });
 
     beforeEach(() => {
+        const storeMock = jasmine.createSpyObj(
+            'DotTemplateStore',
+            ['createTemplate', 'goToTemplateList'],
+            {
+                vm$: of({
+                    original: {
+                        ...EMPTY_TEMPLATE_ADVANCED,
+                        body: '<h1>Hello</h1>'
+                    }
+                }),
+                didTemplateChanged$: of(false)
+            }
+        );
 
+        TestBed.overrideProvider(DotTemplateStore, { useValue: storeMock });
         fixture = TestBed.createComponent(DotTemplateAdvancedComponent);
         component = fixture.componentInstance;
         de = fixture.debugElement;
@@ -170,14 +187,6 @@ describe('DotTemplateAdvancedComponent', () => {
     });
 
     describe('events', () => {
-
-        it('should emit updateTemplate event when the form changes', () => {
-            const updateTemplate = spyOn(component.updateTemplate, 'emit');
-            component.form.get('body').setValue('<body></body>');
-
-            expect<any>(updateTemplate).toHaveBeenCalledWith({ body: '<body></body>' });
-        });
-
         it('should have form and fields', () => {
             spyOn(Date, 'now').and.returnValue(1111111);
             const container = de.query(By.css('dot-container-selector'));

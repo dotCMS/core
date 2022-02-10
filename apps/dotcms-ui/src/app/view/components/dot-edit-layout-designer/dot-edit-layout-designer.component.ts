@@ -19,7 +19,7 @@ import * as _ from 'lodash';
 
 import { Observable } from 'rxjs';
 import { Subject } from 'rxjs';
-import { tap, take, takeUntil } from 'rxjs/operators';
+import { tap, take, takeUntil, debounceTime } from 'rxjs/operators';
 
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
@@ -39,7 +39,6 @@ import {
     DotLayoutSideBar
 } from '@models/dot-edit-layout-designer';
 import { DotPageContainer } from '@models/dot-page-container/dot-page-container.model';
-import { DotTemplate } from '@models/dot-edit-layout-designer/dot-template.model';
 
 @Component({
     selector: 'dot-edit-layout-designer',
@@ -67,10 +66,7 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
     url: string;
 
     @Output()
-    save: EventEmitter<DotTemplate> = new EventEmitter();
-
-    @Output()
-    updateTemplate: EventEmitter<DotTemplate> = new EventEmitter();
+    save: EventEmitter<Event> = new EventEmitter();
 
     form: FormGroup;
     initialFormValue: FormGroup;
@@ -79,6 +75,7 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
     currentTheme: DotTheme;
 
     saveAsTemplate: boolean;
+    leaving = false;
     showTemplateLayoutSelectionDialog = false;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -99,11 +96,7 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
     }
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (changes.theme && !changes.theme.firstChange) {
-            this.form.get('themeId').setValue(this.theme);
-            this.updateModel();
-        }
-        if (changes.layout && !changes.layout.firstChange) {
+        if (!changes.layout.firstChange) {
             this.setFormValue(changes.layout.currentValue);
         }
     }
@@ -187,25 +180,16 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
     }
 
     private setFormValue(layout: DotLayout): void {
-        const currentLayout = this.form.get('layout').value;
-        if (_.isEqual(currentLayout, layout)) {
-            return;
-        }
-        this.form.setValue(
-            {
-                title: this.title,
-                themeId: this.theme,
-                layout: {
-                    body: this.cleanUpBody(layout.body),
-                    header: layout.header,
-                    footer: layout.footer,
-                    sidebar: this.createSidebarForm(layout),
-                    title: layout.title,
-                    width: layout.width
-                }
-            },
-            { emitEvent: false }
-        );
+        this.form.setValue({
+            title: this.title,
+            themeId: this.theme,
+            layout: {
+                body: this.cleanUpBody(layout.body),
+                header: layout.header,
+                footer: layout.footer,
+                sidebar: layout.sidebar
+            }
+        });
         this.updateModel();
     }
 
@@ -217,15 +201,18 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
                 body: this.cleanUpBody(this.layout.body),
                 header: this.layout.header,
                 footer: this.layout.footer,
-                sidebar: this.createSidebarForm(this.layout),
-                title: this.layout.title,
-                width: this.layout.width
+                sidebar: this.createSidebarForm()
             })
         });
-        this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            if (!_.isEqual(this.form.value, this.initialFormValue)) {
-                this.updateTemplate.emit(this.form.value);
+        this.form.valueChanges.pipe(takeUntil(this.destroy$), debounceTime(10000)).subscribe(() => {
+            if(!_.isEqual(this.form.value, this.initialFormValue)){
+                this.onSave();
             }
+            this.cd.detectChanges();
+        });
+        this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+            const isEqual = _.isEqual(this.form.value, this.initialFormValue);
+            this.dotEditLayoutService.changeDesactivateState(isEqual);
         });
         this.updateModel();
     }
@@ -242,13 +229,14 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
                 (error) => this.errorHandler(error)
             );
         this.initialFormValue = _.cloneDeep(this.form.value);
+        this.dotEditLayoutService.changeDesactivateState(true);
     }
 
-    private createSidebarForm(layout: DotLayout): DotLayoutSideBar {
+    private createSidebarForm(): DotLayoutSideBar {
         return {
-            location: this.getSidebarLocation(layout),
-            containers: this.getSidebarContainers(layout),
-            width: this.getSidebarWidth(layout)
+            location: this.getSidebarLocation(this.layout),
+            containers: this.getSidebarContainers(this.layout),
+            width: this.getSidebarWidth(this.layout)
         };
     }
 
@@ -276,12 +264,11 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
     }
 
     private saveChangesBeforeLeave(): void {
-        this.dotEditLayoutService.closeEditLayout$
-            .pipe(takeUntil(this.destroy$))
-            .subscribe((res) => {
-                if (res) {
-                    this.onSave();
-                }
-            });
+        this.dotEditLayoutService.closeEditLayout$.pipe(takeUntil(this.destroy$)).subscribe((res) => {
+            if (res && !this.leaving) {
+                this.onSave();
+                this.leaving = true;
+            }
+        });
     }
 }

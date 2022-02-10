@@ -1,7 +1,7 @@
 import { ActivatedRoute } from '@angular/router';
 import { By } from '@angular/platform-browser';
 import { Component, DebugElement, Input } from '@angular/core';
-import { waitForAsync, ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { of, throwError } from 'rxjs';
 import { HttpCode, ResponseView } from '@dotcms/dotcms-js';
@@ -181,28 +181,6 @@ describe('DotEditLayoutComponent', () => {
             });
             expect(component.pageState).toEqual(new DotPageRender(mockDotRenderedPage()));
         });
-
-        it('should save the layout after 10000', fakeAsync(() => {
-            const res: DotPageRender = new DotPageRender(mockDotRenderedPage());
-            spyOn(dotPageLayoutService, 'save').and.returnValue(of(res));
-
-            layoutDesignerDe.triggerEventHandler('updateTemplate', fakeLayout);
-
-            tick(10000);
-            expect(dotGlobalMessageService.loading).toHaveBeenCalledWith('Saving');
-            expect(dotGlobalMessageService.success).toHaveBeenCalledWith('Saved');
-            expect(dotGlobalMessageService.error).not.toHaveBeenCalled();
-
-            expect(dotPageLayoutService.save).toHaveBeenCalledWith('123', {
-                ...fakeLayout,
-                title: null
-            });
-            expect(dotTemplateContainersCacheService.set).toHaveBeenCalledWith({
-                '/default/': processedContainers[0].container,
-                '/banner/': processedContainers[1].container
-            });
-            expect(component.pageState).toEqual(new DotPageRender(mockDotRenderedPage()));
-        }));
 
         it('should handle error when save fail', (done) => {
             spyOn(dotPageLayoutService, 'save').and.returnValue(

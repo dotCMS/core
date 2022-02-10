@@ -1,5 +1,5 @@
 <dot-portlet-base>
-    <dot-portlet-toolbar *ngIf="actions" [actions]="actions">
+    <dot-portlet-toolbar [actions]="actions$ | async">
         <dot-global-message right></dot-global-message>
     </dot-portlet-toolbar>
 

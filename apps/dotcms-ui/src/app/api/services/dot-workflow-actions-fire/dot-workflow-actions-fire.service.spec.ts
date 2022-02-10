@@ -23,8 +23,7 @@ const mockBulkOptions: DotActionBulkRequestOptions = {
             expireTime: 'e',
             publishDate: 'p',
             publishTime: 'pp',
-            filterKey: 'f',
-            timezoneId: 'America/Costa_Rica'
+            filterKey: 'f'
         },
         additionalParamsMap: { _path_to_move: '' }
     }

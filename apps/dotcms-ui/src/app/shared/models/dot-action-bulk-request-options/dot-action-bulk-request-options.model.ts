@@ -20,7 +20,6 @@ export interface DotActionBulkRequestOptions {
             publishDate: string;
             publishTime: string;
             filterKey: string;
-            timezoneId: string;
         };
         additionalParamsMap: { _path_to_move: string };
     };

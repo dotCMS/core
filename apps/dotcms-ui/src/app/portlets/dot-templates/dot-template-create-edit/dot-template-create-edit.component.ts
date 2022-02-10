@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 import { Subject } from 'rxjs';
 import { filter, takeUntil } from 'rxjs/operators';
+
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotTemplate } from '@shared/models/dot-edit-layout-designer/dot-template.model';
@@ -21,9 +22,9 @@ import { Site, SiteService } from '@dotcms/dotcms-js';
 })
 export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     vm$ = this.store.vm$;
-    didTemplateChanged$ = this.store.didTemplateChanged$;
 
     form: FormGroup;
+
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
@@ -75,28 +76,6 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Update Working Tempalte
-     *
-     * @memberof DotTemplateCreateEditComponent
-     */
-    updateWorkingTemplate({ layout, body, themeId }: DotTemplate): void {
-        let value = {
-            ...this.form.value,
-            body
-        };
-
-        if (layout) {
-            value = {
-                ...this.form.value,
-                layout,
-                theme: themeId
-            };
-        }
-
-        this.store.saveWorkingTemplate(value);
-    }
-
-    /**
      * Save template to store
      *
      * @memberof DotTemplateCreateEditComponent
@@ -114,7 +93,10 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
                 theme: themeId
             };
         }
-        this.store.saveTemplate(value);
+        this.store.saveTemplate({
+            ...this.form.value,
+            ...value
+        });
     }
 
     /**
@@ -159,7 +141,6 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     private getForm(template: DotTemplateItem): FormGroup {
         if (template.type === 'design') {
             return this.fb.group({
-                type: template.type,
                 title: [template.title, Validators.required],
                 layout: this.fb.group(template.layout),
                 identifier: template.identifier,
@@ -170,7 +151,6 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
         }
 
         return this.fb.group({
-            type: template.type,
             title: [template.title, Validators.required],
             body: template.body,
             identifier: template.identifier,
@@ -182,7 +162,6 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     private getFormValue(template: DotTemplateItem): { [key: string]: any } {
         if (template.type === 'design') {
             return {
-                type: template.type,
                 title: template.title,
                 layout: template.layout,
                 identifier: template.identifier,
@@ -193,7 +172,6 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
         }
 
         return {
-            type: template.type,
             title: template.title,
             body: template.body,
             identifier: template.identifier,

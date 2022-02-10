@@ -28,9 +28,7 @@ export interface DotEditorAction {
 @Injectable()
 export class DotContentletEditorService {
     close$: Subject<boolean> = new Subject<boolean>();
-    draggedContentType$: Subject<DotCMSContentType | DotCMSContentlet> = new Subject<
-        DotCMSContentType | DotCMSContentlet
-    >();
+    draggedContentType$: Subject<DotCMSContentType | DotCMSContentlet> = new Subject<DotCMSContentType | DotCMSContentlet>();
 
     private data: Subject<DotEditorAction> = new Subject();
     private _header: Subject<string> = new Subject();

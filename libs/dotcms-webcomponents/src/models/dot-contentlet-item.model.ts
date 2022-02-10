@@ -33,5 +33,4 @@ export interface DotContentletItem {
     ownerCanPublish: string;
     mimeType: string;
     titleImage: string;
-    modDateMilis: number;
 }

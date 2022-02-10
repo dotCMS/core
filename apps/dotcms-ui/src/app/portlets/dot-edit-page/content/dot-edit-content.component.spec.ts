@@ -402,14 +402,15 @@ describe('DotEditContentComponent', () => {
                 it('select > should add form', () => {
                     dotFormSelector.triggerEventHandler('pick', {
                         baseType: 'string',
-                        clazz: 'string',
-                        id: '123'
+                        clazz: 'string'
                     });
                     fixture.detectChanges();
 
-                    expect<any>(dotEditContentHtmlService.renderAddedForm).toHaveBeenCalledWith(
-                        '123'
-                    );
+                    expect<any>(dotEditContentHtmlService.renderAddedForm).toHaveBeenCalledWith({
+                        baseType: 'string',
+                        clazz: 'string'
+                    });
+
                     expect(dotEditPageService.save).toHaveBeenCalledWith('123', [
                         { identifier: '123', uuid: 'uui-1' }
                     ]);
@@ -733,8 +734,9 @@ describe('DotEditContentComponent', () => {
                     detectChangesForIframeRender(fixture);
                     fixture.detectChanges();
                     const contentPaletteWrapper = de.query(By.css('.dot-edit-content__palette'));
-                    const contentPalette: DotPaletteComponent = de.query(By.css('dot-palette'))
-                        .componentInstance;
+                    const contentPalette: DotPaletteComponent = de.query(
+                        By.css('dot-palette')
+                    ).componentInstance;
                     const paletteController = de.query(
                         By.css('.dot-edit-content__palette-visibility')
                     );
@@ -1394,12 +1396,14 @@ describe('DotEditContentComponent', () => {
             it('should save form', () => {
                 dotFormSelector.triggerEventHandler('pick', {
                     baseType: 'string',
-                    clazz: 'string',
-                    id: '123'
+                    clazz: 'string'
                 });
                 fixture.detectChanges();
 
-                expect<any>(dotEditContentHtmlService.renderAddedForm).toHaveBeenCalledWith('123');
+                expect<any>(dotEditContentHtmlService.renderAddedForm).toHaveBeenCalledWith({
+                    baseType: 'string',
+                    clazz: 'string'
+                });
 
                 expect<any>(dotEditPageService.save).toHaveBeenCalledWith('123', [
                     { identifier: '123', uuid: 'uui-1', personaTag: 'SuperPersona' }
@@ -1475,8 +1479,9 @@ describe('DotEditContentComponent', () => {
             });
             detectChangesForIframeRender(fixture);
             fixture.detectChanges();
-            const contentPalette: DotPaletteComponent = de.query(By.css('dot-palette'))
-                .componentInstance;
+            const contentPalette: DotPaletteComponent = de.query(
+                By.css('dot-palette')
+            ).componentInstance;
             expect(contentPalette.items).toEqual(responseData.slice(0, 5));
         }));
     });
