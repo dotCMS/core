@@ -29,6 +29,7 @@ services:
   dotcms:
     image: dotcms/dotcms:latest
     environment:
+        "CATALINA_OPTS": ' -Xms1g -Xmx1g '
         "DB_BASE_URL": "jdbc:oracle:thin:@{ip_address}:1521:XE"
         "DB_USERNAME": 'oracle'
         "DB_PASSWORD": 'oracle'

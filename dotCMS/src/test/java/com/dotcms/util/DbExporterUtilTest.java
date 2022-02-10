@@ -10,10 +10,9 @@ import java.util.Optional;
 /**
  * Tests for {@link DbExporterUtil} class.
  *
- * @author vico
+ * @author vic
  */
 public class DbExporterUtilTest {
-
     /**
      * Tests executable finding.
      *
@@ -23,6 +22,7 @@ public class DbExporterUtilTest {
     public void test_finding_executables() throws Exception {
         Optional<String> sh = DbExporterUtil.findExecutable("sh");
         assert(sh.isPresent());
+        assert(sh.get().equals("/bin/sh"));
         assert(!DbExporterUtil.findExecutable("thisDoesNotExist").isPresent());
     }
 
@@ -54,10 +54,9 @@ public class DbExporterUtilTest {
      */
     @Test
     public void test_getting_pg_dumps_path() {
-        final String pgDumpPath = DbExporterUtil.PG_DUMP_PATH.get();
+        final String pgDumpPath = DbExporterUtil.pgDumpPath.get();
         Assert.assertNotNull(pgDumpPath);
         assert(new File(pgDumpPath).exists());
         assert(new File(pgDumpPath).canExecute());
     }
-
 }

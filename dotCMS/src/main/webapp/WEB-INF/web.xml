@@ -368,7 +368,7 @@
 			<param-name>jersey.config.server.mediaTypeMappings</param-name>
 			<param-value>txt : text/plain, xml : application/xml, json : application/json, js : application/javascript</param-value>
 		</init-param>
-		<load-on-startup>1</load-on-startup>
+		<load-on-startup>5</load-on-startup>
 		<async-supported>true</async-supported>
 	</servlet>
 	
