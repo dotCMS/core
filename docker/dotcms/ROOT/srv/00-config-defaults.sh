@@ -26,7 +26,7 @@ export JAVA_OPTS=${JAVA_OPTS:-"$JAVA_OPTS_BASE $JAVA_OPTS_AGENT $JAVA_OPTS_MEMOR
 export CMS_CONNECTOR_THREADS=${CMS_CONNECTOR_THREADS:-"600"}
 
 # SMTP hostname for CMS
-export CMS_SMTP_HOST=${CMS_SMTP_HOST:-"smtp.dotcms.site"}
+export DOT_MAIL_SMTP_HOST=${DOT_MAIL_SMTP_HOST:-"smtp.dotcms.site"}
 export DOT_MAIL_SMTP_SSL_PROTOCOLS=${DOT_MAIL_SMTP_SSL_PROTOCOLS:-"TLSv1.2"}
 
 # tomcat gzip compression
