@@ -60,9 +60,8 @@ describe('DotMessageService', () => {
     describe('init', () => {
         it('should call languages endpoint with default language and set them in local storage', () => {
             spyOn(dotLocalstorageService, 'setItem');
-            spyOn(dotLocalstorageService, 'getItem');
-            dotMessageService.init(true);
-            expect(dotLocalstorageService.getItem).not.toHaveBeenCalled();
+            spyOn(dotLocalstorageService, 'getItem').and.returnValue(null);
+            dotMessageService.init();
             expect(coreWebService.requestView).toHaveBeenCalledWith({
                 url: '/api/v2/languages/default/keys'
             });
@@ -72,10 +71,10 @@ describe('DotMessageService', () => {
             );
         });
 
-        it('should try to laod mesasges otherwise get the default one and set them in local storage', () => {
+        it('should try to load messages otherwise get the default one and set them in local storage', () => {
             spyOn(dotLocalstorageService, 'setItem');
             spyOn(dotLocalstorageService, 'getItem');
-            dotMessageService.init(false);
+            dotMessageService.init();
             expect(dotLocalstorageService.getItem).toHaveBeenCalledWith('dotMessagesKeys');
             expect(coreWebService.requestView).toHaveBeenCalledWith({
                 url: '/api/v2/languages/default/keys'
@@ -87,7 +86,7 @@ describe('DotMessageService', () => {
         });
 
         it('should call languages endpoint with passed language', () => {
-            dotMessageService.init(true, 'en_US');
+            dotMessageService.init({ language: 'en_US' });
             expect(coreWebService.requestView).toHaveBeenCalledWith({
                 url: '/api/v2/languages/en_US/keys'
             });
@@ -96,7 +95,7 @@ describe('DotMessageService', () => {
         it('should read messages from local storage', () => {
             spyOn(dotLocalstorageService, 'getItem').and.callThrough();
             dotLocalstorageService.setItem(MESSAGES_LOCALSTORAGE_KEY, messages);
-            dotMessageService.init(false);
+            dotMessageService.init();
             expect(dotLocalstorageService.getItem).toHaveBeenCalledWith('dotMessagesKeys');
             expect(coreWebService.requestView).not.toHaveBeenCalled();
         });
@@ -104,7 +103,7 @@ describe('DotMessageService', () => {
 
     describe('get', () => {
         beforeEach(() => {
-            dotMessageService.init(true);
+            dotMessageService.init();
         });
 
         it('should return message', () => {

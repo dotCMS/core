@@ -158,7 +158,7 @@ describe('DotTemplatePropsComponent', () => {
                 const input = field.query(By.css('input'));
                 const message = field.query(By.css('dot-field-validation-message'));
 
-                expect(field.classes['p-field']).toBe(true);
+                expect(field.classes['field']).toBe(true);
 
                 expect(label.classes['p-label-input-required']).toBe(true);
                 expect(label.attributes.for).toBe('title');
@@ -177,7 +177,7 @@ describe('DotTemplatePropsComponent', () => {
                 const label = field.query(By.css('label'));
                 const selector = field.query(By.css('dot-theme-selector-dropdown'));
 
-                expect(field.classes['p-field']).toBe(true);
+                expect(field.classes['field']).toBe(true);
 
                 expect(label.attributes.for).toBe('theme');
                 expect(label.nativeElement.textContent).toBe('Theme');
@@ -191,7 +191,7 @@ describe('DotTemplatePropsComponent', () => {
                 const label = field.query(By.css('label'));
                 const textarea = field.query(By.css('textarea'));
 
-                expect(field.classes['p-field']).toBe(true);
+                expect(field.classes['field']).toBe(true);
 
                 expect(label.attributes.for).toBe('description');
                 expect(label.nativeElement.textContent).toBe('Description');
@@ -205,7 +205,7 @@ describe('DotTemplatePropsComponent', () => {
                 const field = de.query(By.css('[data-testId="thumbnailField"]'));
                 const label = field.query(By.css('label'));
 
-                expect(field.classes['p-field']).toBe(true);
+                expect(field.classes['field']).toBe(true);
 
                 expect(label.attributes.for).toBe('thumbnail');
                 expect(label.nativeElement.textContent).toBe('Thumbnail');
