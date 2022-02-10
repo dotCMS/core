@@ -29,7 +29,6 @@ services:
   dotcms:
     image: dotcms/dotcms:latest
     environment:
-        "CATALINA_OPTS": ' -Xms1g -Xmx1g '
         "DB_BASE_URL": "jdbc:postgresql://db/dotcms"
         "DB_USERNAME": 'dotcmsdbuser'
         "DB_PASSWORD": 'password'
