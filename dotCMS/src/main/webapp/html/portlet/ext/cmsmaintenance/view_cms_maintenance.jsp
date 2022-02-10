@@ -403,6 +403,18 @@ function doCreateZip(dataOnly) {
 }
 <% } %>
 
+function downloadDb(downloadLocation) {
+    fetch('/api/v1/maintenance/_pgDumpAvailable', {method:'GET'} )
+    .then(response => response.text())
+    .then((data) => {
+        if (data !== 'true') {
+            alert("<%= LanguageUtil.get(pageContext,"PG-Dump-Unavailable") %>");
+            return;
+        }
+        location.href = downloadLocation;
+    });
+}
+
 function doDownloadZip(dataOnly){
    form = document.getElementById('cmsMaintenanceForm');
 	var action = "<portlet:actionURL>";
@@ -1446,17 +1458,13 @@ dd.leftdl {
                     </tr>
                 <% } %>
                 <tr>
-                    <td><%= LanguageUtil.get(pageContext,"Download-Zip-file") %></td>
+                    <td><%= LanguageUtil.get(pageContext,"Download-Assets") %></td>
                     <td style="text-align:center;white-space:nowrap;">
-						<div class="inline-form">
-							<button dojoType="dijit.form.Button" onClick="location.href='/api/v1/maintenance/_downloadStarter'" iconClass="downloadIcon">
-							   <%= LanguageUtil.get(pageContext,"Download-Data-Only") %>
-							</button>
-
-							<button dojoType="dijit.form.Button" onClick="location.href='/api/v1/maintenance/_downloadStarterWithAssets'" iconClass="downloadIcon">
-							  <%= LanguageUtil.get(pageContext,"Download-Data/Assets") %>
-							</button>
-						</div>
+                        <div class="inline-form">
+                            <button dojoType="dijit.form.Button" onclick="location.href='/api/v1/maintenance/_downloadAssets'" iconClass="downloadIcon">
+                                <%= LanguageUtil.get(pageContext,"Download-Assets") %>
+                            </button>
+                        </div>
                     </td>
                 </tr>
                 <% if (DbConnectionFactory.isPostgres()) { %>
@@ -1464,7 +1472,7 @@ dd.leftdl {
                         <td><%= LanguageUtil.get(pageContext,"Download-DB-Dump") %></td>
                         <td style="text-align:center;white-space:nowrap;">
                             <div class="inline-form">
-                                <button dojoType="dijit.form.Button" onclick="location.href='/api/v1/maintenance/_downloadDb'" iconClass="backupIcon">
+                                <button dojoType="dijit.form.Button" onclick="downloadDb('/api/v1/maintenance/_downloadDb')" iconClass="backupIcon">
                                     <%= LanguageUtil.get(pageContext,"Download-DB-Dump") %>
                                 </button>
                             </div>
@@ -1472,11 +1480,15 @@ dd.leftdl {
                     </tr>
                 <% } %>
                 <tr>
-                    <td><%= LanguageUtil.get(pageContext,"Download-Assets") %></td>
+                    <td><%= LanguageUtil.get(pageContext,"Download-Starter-ZIP") %></td>
                     <td style="text-align:center;white-space:nowrap;">
                         <div class="inline-form">
-                            <button dojoType="dijit.form.Button" onclick="location.href='/api/v1/maintenance/_downloadAssets'" iconClass="downloadIcon">
-                                <%= LanguageUtil.get(pageContext,"Download-Assets") %>
+                            <button dojoType="dijit.form.Button" onClick="location.href='/api/v1/maintenance/_downloadStarter'" iconClass="downloadIcon">
+                                <%= LanguageUtil.get(pageContext,"Download-Data-Only") %>
+                            </button>
+
+                            <button dojoType="dijit.form.Button" onClick="location.href='/api/v1/maintenance/_downloadStarterWithAssets'" iconClass="downloadIcon">
+                                <%= LanguageUtil.get(pageContext,"Download-Data/Assets") %>
                             </button>
                         </div>
                     </td>

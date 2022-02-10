@@ -28,7 +28,7 @@ import java.util.zip.GZIPOutputStream;
 /**
  * Utility class for exporting assets.
  *
- * @author vic
+ * @author vico
  */
 public class AssetExporterUtil {
 
