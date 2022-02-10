@@ -82,7 +82,8 @@ const mockWizardOutputData = {
     expireDate: '2020-08-11 19:59',
     filterKey: 'Intelligent.yml',
     publishDate: '2020-08-05 17:59',
-    pushActionSelected: 'publishexpire'
+    pushActionSelected: 'publishexpire',
+    timezoneId: 'America/Costa_Rica'
 };
 
 const mockWizardOutputTransformedData: { [key: string]: any } = {
@@ -95,6 +96,7 @@ const mockWizardOutputTransformedData: { [key: string]: any } = {
     publishDate: '2020-08-05',
     publishTime: '17-59',
     whereToSend: '37fe23d5-588d-4c61-a9ea-70d01e913344',
+    timezoneId: 'America/Costa_Rica',
     pathToMove: '/test/',
     contentlet: {}
 };
@@ -223,7 +225,8 @@ describe('DotWorkflowEventHandlerService', () => {
                         expireTime: '19-59',
                         publishDate: '2020-08-05',
                         publishTime: '17-59',
-                        filterKey: 'Intelligent.yml'
+                        filterKey: 'Intelligent.yml',
+                        timezoneId: 'America/Costa_Rica'
                     },
                     additionalParamsMap: { _path_to_move: mockWizardOutputData.pathToMove }
                 },

@@ -5,6 +5,9 @@
     >
         <ng-container *ngIf="item.type === 'advanced'; else elseBlock">
             <dot-template-advanced
+                [didTemplateChanged]="didTemplateChanged"
+                [body]="item.body"
+                (updateTemplate)="updateTemplate.emit($event)"
                 (save)="save.emit($event)"
                 (cancel)="cancel.emit()"
             ></dot-template-advanced>
@@ -13,6 +16,7 @@
             <dot-edit-layout-designer
                 [theme]="item.theme"
                 [layout]="item.layout"
+                (updateTemplate)="updateTemplate.emit($event)"
                 (save)="save.emit($event)"
             ></dot-edit-layout-designer>
         </ng-template>

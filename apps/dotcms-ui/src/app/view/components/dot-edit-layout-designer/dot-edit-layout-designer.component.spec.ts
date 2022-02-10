@@ -82,7 +82,6 @@ const messageServiceMock = new MockDotMessageService({
 let component: DotEditLayoutDesignerComponent;
 let fixture: ComponentFixture<DotEditLayoutDesignerComponent>;
 let dotThemesService: DotThemesService;
-let dotGlobalMessageService: DotGlobalMessageService;
 let dotEditLayoutService: DotEditLayoutService;
 
 describe('DotEditLayoutDesignerComponent', () => {
@@ -152,7 +151,6 @@ describe('DotEditLayoutDesignerComponent', () => {
 
         fixture = TestBed.createComponent(DotEditLayoutDesignerComponent);
         component = fixture.componentInstance;
-        dotGlobalMessageService = TestBed.inject(DotGlobalMessageService);
         dotThemesService = TestBed.inject(DotThemesService);
         dotEditLayoutService = TestBed.inject(DotEditLayoutService);
     });
@@ -207,13 +205,12 @@ describe('DotEditLayoutDesignerComponent', () => {
             expect(component.save.emit).toHaveBeenCalledTimes(1);
         });
 
-        it('should save changes when editing the form.', fakeAsync( () => {
-            spyOn(component.save, 'emit');
+        it('should save changes when editing the form.', () => {
+            spyOn(component.updateTemplate, 'emit');
             component.form.get('title').setValue('Hello');
-            tick(10500);
             fixture.detectChanges();
-            expect(component.save.emit).toHaveBeenCalledTimes(1);
-        }));
+            expect(component.updateTemplate.emit).toHaveBeenCalledTimes(1);
+        });
 
         it('should show dot-layout-properties and bind attr correctly', () => {
             fixture.detectChanges();
@@ -262,7 +259,9 @@ describe('DotEditLayoutDesignerComponent', () => {
                         location: mockDotRenderedPage().layout.sidebar.location,
                         containers: mockDotRenderedPage().layout.sidebar.containers,
                         width: mockDotRenderedPage().layout.sidebar.width
-                    }
+                    },
+                    title: mockDotRenderedPage().layout.title,
+                    width: mockDotRenderedPage().layout.width
                 }
             });
         });
@@ -372,7 +371,9 @@ describe('DotEditLayoutDesignerComponent', () => {
                         location: '',
                         containers: [],
                         width: 'small'
-                    }
+                    },
+                    title: '',
+                    width: ''
                 }
             });
         });
