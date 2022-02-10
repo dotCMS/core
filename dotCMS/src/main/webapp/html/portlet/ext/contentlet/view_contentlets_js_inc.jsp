@@ -4,10 +4,12 @@
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.business.Role"%>
-<%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
+<%@page import="com.dotcms.contenttype.model.type.ContentType"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
+<%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="java.util.List"%>
+<%@ page import="io.vavr.control.Try" %>
 
 
 <script language="JavaScript"><!--
@@ -15,7 +17,10 @@
 
 <%boolean canReindex= APILocator.getRoleAPI().doesUserHaveRole(user,APILocator.getRoleAPI().loadRoleByKey(Role.CMS_POWER_USER))|| com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());%>
 
-<%Structure calendarEventSt = APILocator.getStructureAPI().findByVarName("calendarEvent", APILocator.getUserAPI().getSystemUser());%>
+<%
+final ContentType calendarEventSt = Try.of(()->APILocator.getContentTypeAPI(APILocator.systemUser()).find("calendarEvent")).getOrNull();
+final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode() : StringPool.BLANK;
+%>
 
         dojo.require("dojox.dtl.filter.strings");
         dojo.require("dijit.form.FilteringSelect");
@@ -330,7 +335,7 @@
 
                 var editRef ='';
 
-                if(structure_id == '<%=calendarEventSt.getInode() %>'){
+                if(structure_id == '<%=calendarEventInode %>'){
               editRef = " editEvent('" + inode + "','<%=user.getUserId()%>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ") ";
             }else{
               editRef = " editContentlet('" + inode + "','<%=user.getUserId()%>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ") ";
@@ -386,7 +391,7 @@
 
                 var editRef = '';
 
-            if(structure_id == '<%=calendarEventSt.getInode() %>'){
+            if(structure_id == '<%=calendarEventInode %>'){
               editRef = " editEvent('" + inode + "','<%=user.getUserId()%>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ") ";
             }else{
               editRef = " editContentlet('" + inode + "','<%=user.getUserId()%>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ") ";
@@ -844,7 +849,7 @@
 				dijit.byId("selectStructureDiv").show();
 				return;
 			}
-          else if(structureInode == '<%=calendarEventSt.getInode() %>'){
+          else if(structureInode == '<%=calendarEventInode %>'){
                 var href = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
                 href += "<portlet:param name='struts_action' value='/ext/calendar/edit_event' />";
                 href += "<portlet:param name='cmd' value='new' />";
@@ -1525,7 +1530,7 @@
 
                                             }
                                           }
-                                
+
                                 }else {
                                         fieldsValues[fieldsValues.length] = selectedStruct+"."+field["fieldVelocityVarName"];
                                         fieldsValues[fieldsValues.length] = formField.value;
@@ -1700,7 +1705,7 @@
                 if (viewCard) {
 	                viewCard.value = '';
                 }
-                
+
                 for (var i = 0; i < cbContentInodeList.length; ++i) {
                         check = dijit.byId("checkbox" + i);
                         if(check) {
@@ -1862,7 +1867,7 @@
 			var workingSt = data.working === "true" ? "1" : "0";
 			var write = userHasWritePermission (data, userId) ? "1" : "0";
 
-			if (data.structureInode == '<%=calendarEventSt.getInode() %>') {
+			if (data.structureInode == '<%=calendarEventInode %>') {
 				editEvent(inode, '<%=user.getUserId()%>', '<%= referer %>', liveSt, workingSt, write);
 			}else{
 				editContentlet(inode, '<%=user.getUserId()%>', '<%= referer %>', liveSt, workingSt, write);
@@ -1890,7 +1895,7 @@
 			const wfActionMapList = JSON.parse(data["wfActionMapList"]);
 
 			if ((live || working) && (read=="1") && (!deleted)) {
-				if(structure_id == '<%=calendarEventSt.getInode() %>'){
+				if(structure_id == '<%=calendarEventInode %>'){
 					actions.push({ label: write === '1' ? '<%=LanguageUtil.get(pageContext, "Edit") %>' : '<%=LanguageUtil.get(pageContext, "View") %>',
 						action: () => { editEvent(data.inode, '<%= user.getUserId() %>', '<%= referer %>', liveSt, workingSt, write)}
 					});
@@ -1917,7 +1922,7 @@
 			}
 
 			if (locked && (write=="1")){
-				if(structure_id == '<%=calendarEventSt.getInode() %>') {
+				if(structure_id == '<%=calendarEventInode %>') {
 					actions.push({ label: '<%=LanguageUtil.get(pageContext, "Unlock") %>',
 						action: () => { unlockEvent(data.inode, '<%= user.getUserId() %>', '<%= referer %>', liveSt, workingSt, write)}
 					});
@@ -2037,10 +2042,11 @@
                         cellData.contentTypeIcon : getIconName(cellData['__type__']);
                     var hasTitleImage = (cellData.hasTitleImage ==='true');
 
-                    cell.innerHTML = (hasTitleImage) 
-                        ? '<img draggable="false" style="width:64px;height: 64px;object-fit: contain;" class="listingTitleImg" onError="replaceWithIcon(this.parentElement, \'' + iconName + '\')" src="/dA/' + cellData.inode + '/titleImage/256w" alt="' + cellData['__title__'].replace(/[^A-Za-z0-9_]/g, ' ') + '" >' 
+                    var modDate = cellData.modDateMilis;
+                    cell.innerHTML = (hasTitleImage)
+                        ? '<img draggable="false" style="width:64px;height: 64px;object-fit: contain;" class="listingTitleImg" onError="replaceWithIcon(this.parentElement, \'' + iconName + '\')" src="/dA/' + cellData.inode + '/titleImage/256w/20q?r=' + modDate +'" alt="' + cellData['__title__'].replace(/[^A-Za-z0-9_]/g, ' ') + '" >'
                         : '<dot-contentlet-icon icon="' + iconName +'" size="48px" />';
-                    
+
                     cell.setAttribute("style","height: 85px; text-align: center;");
 
                     for (var j = 0; j < headers.length; j++) {
@@ -2054,7 +2060,7 @@
                             let fieldVarTitle = cellData[fieldVarName + "_title_"];
                             fieldVarTitle     = fieldVarTitle || cellData[fieldVarName]
                             var value         = titleCell(cellData,fieldVarTitle, i);
-                            
+
                             if (value != null){
                                 cell.innerHTML = value;
                             }
@@ -2081,7 +2087,7 @@
                             let fieldVarTitle = cellData[fieldVarName + "_title_"];
                             fieldVarTitle     = fieldVarTitle || cellData[fieldVarName]
                             var value         = fieldVarTitle;
-                        
+
                             if (value != null){
                                 cell.innerHTML = value;
                             }
@@ -2138,7 +2144,7 @@
                     // NEW CONTEXT MENU
 
                     if ((live || working) && (read=="1") && (!deleted)) {
-                            if(structure_id == '<%=calendarEventSt.getInode() %>'){
+                            if(structure_id == '<%=calendarEventInode %>'){
                                 if (write=="1"){
                                 popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"editIcon\" onClick=\"editEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Edit") %></div>";
                                 }else{
@@ -2179,7 +2185,7 @@
                     // END NEW CONTEXT
 
                     if (locked && (write=="1")){
-                        if(structure_id == '<%=calendarEventSt.getInode() %>'){
+                        if(structure_id == '<%=calendarEventInode %>'){
                             popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unlockIcon\" onClick=\"unlockEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Unlock") %></div>";
                         }else{
                             popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unlockIcon\" onClick=\"_unlockAsset('" + cellData.inode + "');\"><%=LanguageUtil.get(pageContext, "Unlock") %></div>";

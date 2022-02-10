@@ -3278,6 +3278,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			final PushPublishBean pushPublishBean = additionalParamsBean.getPushPublishBean();
 			contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE, pushPublishBean.getPublishDate());
 			contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME, pushPublishBean.getPublishTime());
+			contentlet.setStringProperty(Contentlet.WORKFLOW_TIMEZONE_ID, pushPublishBean.getTimezoneId());
 			contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE, pushPublishBean.getExpireDate());
 			contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME, pushPublishBean.getExpireTime());
 			contentlet.setStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE, pushPublishBean.getNeverExpire());
@@ -3391,6 +3392,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		if(UtilMethods.isSet(dependencies.getWorkflowPublishTime())){
 			contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME, dependencies.getWorkflowPublishTime());
+		}
+
+		if(UtilMethods.isSet(dependencies.getWorkflowTimezoneId())){
+			contentlet.setStringProperty(Contentlet.WORKFLOW_TIMEZONE_ID, dependencies.getWorkflowTimezoneId());
 		}
 
 		if(UtilMethods.isSet(dependencies.getWorkflowExpireDate())){

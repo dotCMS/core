@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.servlet;
 
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -14,6 +15,7 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilde
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -92,6 +94,13 @@ public class VelocityNavigateEditMode  extends VelocityModeHandler {
     private PageMode getMode() {
         final PageMode currentMode = PageMode.get(request);
         return currentMode.showLive ? currentMode :
-                APILocator.getHTMLPageAssetRenderedAPI().getDefaultEditPageMode(user, request, uri);
+                // The page could be created not only on the page render uri, but also in any other uri, this means the request uri is meaning less b/c does not represents a page
+                Try.of(()->APILocator.getHTMLPageAssetRenderedAPI().getDefaultEditPageMode(user, request, uri))
+                        .getOrElse(()->APILocator.getHTMLPageAssetRenderedAPI().getDefaultEditPageMode(user, request, this.getPageURI()));
+    }
+
+    private String getPageURI () {
+
+        return Try.of(()-> this.htmlPage.getURI()).getOrElseThrow(DotRuntimeException::new);
     }
 }

@@ -26,6 +26,7 @@ import javax.ws.rs.core.Response;
 public class ResetPasswordResourceIntegrationTest{
 
     static ResetPasswordResource resource;
+    private final String newPassword = "n3wP@ssworD";
 
     @BeforeClass
 	public static void prepare() throws Exception{
@@ -67,7 +68,7 @@ public class ResetPasswordResourceIntegrationTest{
         UserUtil.update(newUser);
 
         //Call Resource
-        final Response responseResource = resource.resetPassword(getHttpRequest(),getResetPasswordForm("n3wPa$$w0rD",token));
+        final Response responseResource = resource.resetPassword(getHttpRequest(),getResetPasswordForm(newPassword,token));
         //Check that the response is 200, OK
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         //Check password has changed
@@ -85,7 +86,7 @@ public class ResetPasswordResourceIntegrationTest{
         final String token = ResetPasswordTokenUtil.createToken();
 
         //Call Resource
-        final Response responseResource = resource.resetPassword(getHttpRequest(),getResetPasswordForm("n3wPa$$w0rD",token));
+        final Response responseResource = resource.resetPassword(getHttpRequest(),getResetPasswordForm(newPassword,token));
         //Check that the response is 400
         Assert.assertEquals(Status.BAD_REQUEST.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
@@ -111,7 +112,7 @@ public class ResetPasswordResourceIntegrationTest{
         UserUtil.update(newUser);
 
         //Call Resource
-        final Response responseResource = resource.resetPassword(getHttpRequest(),getResetPasswordForm("n3wPa$$w0rD",token));
+        final Response responseResource = resource.resetPassword(getHttpRequest(),getResetPasswordForm(newPassword,token));
         //Check that the response is 401
         Assert.assertEquals(Status.FORBIDDEN.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());

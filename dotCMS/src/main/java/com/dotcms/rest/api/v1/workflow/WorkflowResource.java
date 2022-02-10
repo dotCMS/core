@@ -1537,6 +1537,7 @@ public class WorkflowResource {
                     .workflowAssignKey(fireActionForm.getAssign())
                     .workflowPublishDate(fireActionForm.getPublishDate())
                     .workflowPublishTime(fireActionForm.getPublishTime())
+                    .workflowTimezoneId(fireActionForm.getTimezoneId())
                     .workflowExpireDate(fireActionForm.getExpireDate())
                     .workflowExpireTime(fireActionForm.getExpireTime())
                     .workflowNeverExpire(fireActionForm.getNeverExpire())
@@ -1768,7 +1769,7 @@ public class WorkflowResource {
                     .comments(fireActionForm.getComments()).expireDate(fireActionForm.getExpireDate())
                     .neverExpire(fireActionForm.getNeverExpire()).filterKey(fireActionForm.getFilterKey())
                     .iWantTo(fireActionForm.getIWantTo()).publishDate(fireActionForm.getPublishDate())
-                    .publishTime(fireActionForm.getPublishTime()).whereToSend(fireActionForm.getWhereToSend()).build();
+                    .publishTime(fireActionForm.getPublishTime()).timezoneId(fireActionForm.getTimezoneId()).whereToSend(fireActionForm.getWhereToSend()).build();
                 final IndexPolicy indexPolicy = MapToContentletPopulator.recoverIndexPolicy(
                         singleFireActionForm.getContentletFormData(),
                         IndexPolicyProvider.getInstance().forSingleContent(), request);
@@ -2600,6 +2601,7 @@ public class WorkflowResource {
 
         contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE, fireActionForm.getPublishDate());
         contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME, fireActionForm.getPublishTime());
+        contentlet.setStringProperty(Contentlet.WORKFLOW_TIMEZONE_ID, fireActionForm.getTimezoneId());
         contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE,  fireActionForm.getExpireDate());
         contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME,  fireActionForm.getExpireTime());
         contentlet.setStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE, fireActionForm.getNeverExpire());

@@ -12,6 +12,7 @@ import com.liferay.portal.model.User;
 import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.QueryParam;
 
 /**
  * Provides utility methods to render a {@link com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset}
@@ -180,4 +181,17 @@ public interface HTMLPageAssetRenderedAPI {
     ViewAsPageStatus getViewAsStatus(final HttpServletRequest request,
             final PageMode pageMode, final HTMLPageAsset htmlpage, final User user)
             throws DotDataException;
+
+    /**
+     * Gets the page rendered live and preview
+     * @param pageId {@link String}
+     * @param languageId {@link Long}
+     * @return PageLivePreviewVersionBean
+     */
+    PageLivePreviewVersionBean getPageRenderedLivePreviewVersion (final String  pageId,
+                                                                  final User user,
+                                                                  final long languageId,
+                                                                  final HttpServletRequest  request,
+                                                                  final HttpServletResponse response)
+            throws DotSecurityException, DotDataException;
 }

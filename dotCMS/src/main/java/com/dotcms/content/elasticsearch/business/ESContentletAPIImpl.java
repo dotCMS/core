@@ -171,7 +171,6 @@ import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -4375,6 +4374,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 bubbleUpException(t);
             }
 
+            //This way no matter how many times the contentlet reference that we're passing in gets override.
+            //On the way back this updates the original contentlet references updating the new inode and identifier
+            contentletIn.setIdentifier(contentletOut.getIdentifier());
+            contentletIn.setInode(contentletOut.getInode());
+
             wfPublishDate = contentletOut.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE);
             wfExpireDate = contentletOut.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE);
 
@@ -4754,6 +4758,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             final User systemUser = APILocator.getUserAPI().getSystemUser();
 
+            //ContentletRaw keeps a copy with everything that was originally sent from the front-end including binaries etc..
+            //While the original contentlet first will get stuff marked for delete and then refreshed after saved in the database.
             final Contentlet contentletRaw = populateHost(contentlet);
 
             if ( contentlet.getMap().get( "_use_mod_date" ) != null ) {
@@ -4769,6 +4775,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // Keep the 5 properties BEFORE store the contentlet on DB.
             final String contentPushPublishDate = contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE);
             final String contentPushPublishTime = contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME);
+            final String contentPushPublishtimezoneId = contentlet.getStringProperty(Contentlet.WORKFLOW_TIMEZONE_ID);
             final String contentPushExpireDate = contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE);
             final String contentPushExpireTime = contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME);
             final String contentPushNeverExpire = contentlet.getStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE);
@@ -4784,7 +4791,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                  */
             String htmlPageURL = null;
 
-            if ( contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE ) {
+            if ( contentlet.isHTMLPage() ) {
                 //Getting the URL saved on the contentlet form
                 htmlPageURL = contentletRaw.getStringProperty( HTMLPageAssetAPI.URL_FIELD );
                 //Clean-up the contentlet object, we don' want to persist this URL in the db
@@ -4803,7 +4810,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             final IndexPolicy indexPolicy             = contentlet.getIndexPolicy();
             final IndexPolicy indexPolicyDependencies = contentlet.getIndexPolicyDependencies();
+
+            //Include system fields to generate a json representation - these fields are later removed before contentlet gets saved
+            contentlet = includeSystemFields(contentlet, contentletRaw, tagsValues, categories, user);
+
             contentlet = applyNullProperties(contentlet);
+            //This is executed first hand to create the inode-contentlet relationship.
             if(InodeUtils.isSet(existingInode)) {
                 contentlet = contentFactory.save(contentlet, existingInode);
             } else {
@@ -4834,7 +4846,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 //Clean-up the contentlet object again..., we don' want to persist this URL in the db
                 removeURLFromContentlet( contentlet );
 
-                contentlet.setIdentifier(identifier.getId() );
+                contentlet.setIdentifier(identifier.getId());
+
+                //Include system fields to generate a json representation - these fields are later removed before contentlet gets saved
+                contentlet = includeSystemFields(contentlet, contentletRaw, tagsValues, categories, user);
+
                 contentlet = applyNullProperties(contentlet);
                 contentlet = contentFactory.save(contentlet);
                 contentlet.setIndexPolicy(indexPolicy);
@@ -4850,7 +4866,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 // can't remove it
                 CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
 
-                // Once the contetlet is saved, it gets refresh from the db. for which the incoming data gets lost.
+                // Once the contentlet is saved, it gets refresh from the db. for which the incoming data gets lost.
                 // Therefore here we need to make sure we use the original contentlet that comes with the info passed from the ui.
                 final String hostId = UtilMethods.isSet(contentletRaw.getHost()) ? contentletRaw.getHost() : contentlet.getHost();
                 identifier.setHostId(hostId);
@@ -4867,7 +4883,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             //From now on we'll recover such value from the field "fileName" presented on the screen.
                             //The physical file asset is just an internal piece that is mapped to the system asset-name.
                             //The file per-se no longer can be renamed. We can only modify the asset-name that refers to it.
-                            final String assetName = String.class.cast(contentletRaw.getMap().get(FileAssetAPI.FILE_NAME_FIELD));
+                            final String assetName = (String) contentletRaw.getMap()
+                                    .get(FileAssetAPI.FILE_NAME_FIELD);
                             identifier.setAssetName(UtilMethods.isSet(assetName) ?
                                     assetName :
                                     contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD).getName()
@@ -4972,6 +4989,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // Set the properties again after the store on DB and before the fire on an Actionlet.
             contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE, contentPushPublishDate);
             contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME, contentPushPublishTime);
+            contentlet.setStringProperty(Contentlet.WORKFLOW_TIMEZONE_ID, contentPushPublishtimezoneId);
             contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE, contentPushExpireDate);
             contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME, contentPushExpireTime);
             contentlet.setStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE, contentPushNeverExpire);
@@ -5004,6 +5022,51 @@ public class ESContentletAPIImpl implements ContentletAPI {
             bubbleUpException(e);
         }
         return contentlet;
+    }
+
+    /**
+     * This takes the incoming contentlet makes a copy out of it and includes all the system fields in it so they can be used to generate a sound json representation of the contentlet
+     * System fields are required to generate a json representation of the contentlet
+     * @param contentlet
+     * @param contentletRaw
+     * @param tagsValues
+     * @return
+     */
+    private Contentlet includeSystemFields(final Contentlet contentlet,
+            final Contentlet contentletRaw, final Map<String, String> tagsValues, final List<Category> categories, final User user) {
+        final ContentType contentType = contentlet.getContentType();
+        final Contentlet systemFieldsInclusiveContentlet = new Contentlet(contentlet);
+        final Map<String, Object> map = systemFieldsInclusiveContentlet.getMap();
+        final List<com.dotcms.contenttype.model.field.Field> systemFields = contentType.fields()
+                .stream()
+                .filter(field -> field.dataType() == DataTypes.SYSTEM).collect(Collectors.toList());
+
+        for (final com.dotcms.contenttype.model.field.Field systemField : systemFields) {
+            if (systemField instanceof TagField) {
+                final String tagValues = tagsValues.get(systemField.variable());
+                if (StringUtils.isNotEmpty(tagValues)) {
+                    map.put(systemField.variable(), tagValues);
+                }
+                continue;
+            }
+            if(systemField instanceof CategoryField){
+                //This is a bit obscure logic. In order to find if a category belongs into a category-field we need to extract the value stored in the field it self
+                final List<String> selectedCategories = new ArrayList<>();
+                final Category parent = Try.of(()->categoryAPI.find(systemField.values(), user, false)).getOrNull();
+                if(null != parent){
+                   for(final Category child:categories){
+                       if(categoryAPI.isParent(child, parent, user)){
+                           selectedCategories.add(child.getCategoryVelocityVarName());
+                       }
+                   }
+                }
+                map.put(systemField.variable(), selectedCategories);
+                continue;
+            }
+            map.put(systemField.variable(), contentletRaw.get(systemField.variable()));
+
+        }
+        return systemFieldsInclusiveContentlet;
     }
 
     /**
@@ -5286,7 +5349,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentlet;
     }
 
-
+    /**
+     *
+     * @param contentlet Just Saved contentlet it is supposed to have at least an inode
+     * @param createNewVersion
+     * @param contentType ContentType
+     * @param workingContentlet Working version of our content. If different from the actual then it has prior version's inode
+     * @param contentletRaw incoming content loaded from the ui. This one has all the files
+     * @return bool that says whether or not there were files to process
+     * @throws DotDataException
+     */
     private boolean handleBinaries(final Contentlet contentlet, final boolean createNewVersion, final ContentType contentType, final Contentlet workingContentlet, final Contentlet contentletRaw) throws DotDataException {
 
         // http://jira.dotmarketing.net/browse/DOTCMS-1073
@@ -6149,6 +6221,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 (String) properties.get(Contentlet.I_WANT_TO));
         contentlet.setStringProperty(Contentlet.PATH_TO_MOVE,
                 (String) properties.get(Contentlet.PATH_TO_MOVE));
+        contentlet.setStringProperty(Contentlet.WORKFLOW_TIMEZONE_ID,
+                (String) properties.get(Contentlet.WORKFLOW_TIMEZONE_ID));
     }
 
     @Override

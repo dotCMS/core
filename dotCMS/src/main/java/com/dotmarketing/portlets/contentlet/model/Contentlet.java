@@ -145,6 +145,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   public static final String WORKFLOW_EXPIRE_DATE = "wfExpireDate";
   public static final String WORKFLOW_EXPIRE_TIME = "wfExpireTime";
   public static final String WORKFLOW_NEVER_EXPIRE = "wfNeverExpire";
+  public static final String WORKFLOW_TIMEZONE_ID = "timezoneId";
   public static final String FILTER_KEY = "filterKey";
   public static final String WHERE_TO_SEND = "whereToSend";
   public static final String I_WANT_TO = "iWantTo";
@@ -1466,9 +1467,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public boolean hasTags () throws DotDataException {
 
 		final List<TagInode> foundTagInodes = APILocator.getTagAPI().getTagInodesByInode(this.getInode());
-		return foundTagInodes != null && !foundTagInodes.isEmpty()?
-				foundTagInodes.stream().anyMatch(foundTagInode -> isSet(this.getStringProperty(foundTagInode.getFieldVarName()))):
-				false;
+		return foundTagInodes != null && !foundTagInodes.isEmpty() && foundTagInodes.stream()
+				.anyMatch(foundTagInode -> isSet(
+						this.get(foundTagInode.getFieldVarName())));
 	}
 
     /**
@@ -1507,7 +1508,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 									contentletTagsBuilder.append(",");
 								}
 								if (relatedTag.isPersona()) {
-									contentletTagsBuilder.append(relatedTag.getTagName() + ":persona");
+									contentletTagsBuilder.append(relatedTag.getTagName())
+											.append(":persona");
 								} else {
 									contentletTagsBuilder.append(relatedTag.getTagName());
 								}
