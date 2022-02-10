@@ -3,7 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 
 import { ComponentStore } from '@ngrx/component-store';
 import { Observable, zip, of } from 'rxjs';
-import { pluck, switchMap, take, tap, catchError } from 'rxjs/operators';
+import { pluck, switchMap, take, tap, catchError, debounceTime } from 'rxjs/operators';
 import * as _ from 'lodash';
 
 import { DotTemplatesService } from '@services/dot-templates/dot-templates.service';
@@ -46,7 +46,7 @@ export type DotTemplateItem = DotTemplateItemDesign | DotTemplateItemadvanced;
 
 export interface DotTemplateState {
     original: DotTemplateItem;
-    working?: DotTemplateItem;
+    working: DotTemplateItem;
     apiLink: string;
 }
 
@@ -84,8 +84,9 @@ export const EMPTY_TEMPLATE_ADVANCED: DotTemplateItemadvanced = {
 
 @Injectable()
 export class DotTemplateStore extends ComponentStore<DotTemplateState> {
-    readonly vm$ = this.select(({ original, apiLink }: DotTemplateState) => {
+    readonly vm$ = this.select(({ working, original, apiLink }: DotTemplateState) => {
         return {
+            working,
             original,
             apiLink
         };
@@ -103,6 +104,18 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
         }
     }));
 
+    readonly updateWorkingTemplate = this.updater<DotTemplateItem>(
+        (state: DotTemplateState, template: DotTemplateItem) => {
+            return {
+                ...state,
+                working: {
+                    ...state.working,
+                    ...template
+                }
+            };
+        }
+    );
+
     readonly updateTemplate = this.updater<DotTemplateItem>(
         (state: DotTemplateState, template: DotTemplateItem) => {
             return {
@@ -113,33 +126,53 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
         }
     );
 
-    readonly saveTemplate = this.effect((origin$: Observable<DotTemplateItem>) => {
+    readonly updateProperties = this.updater<DotTemplateItem>(
+        (state: DotTemplateState, template: DotTemplateItem) => {
+            const working = this.updateTemplateProperties(state.working, template);
+            const original = this.updateTemplateProperties(state.original, template);
+            return {
+                ...state,
+                working: working,
+                original: original
+            };
+        }
+    );
 
+    readonly saveTemplate = this.effect((origin$: Observable<DotTemplateItem>) => {
         return origin$.pipe(
             switchMap((template: DotTemplateItem) => {
                 this.dotGlobalMessageService.loading(
                     this.dotMessageService.get('dot.common.message.saving')
                 );
-              return this.persistTemplate(template)
+                return this.persistTemplate(template);
             }),
-            tap((template: DotTemplate) => {
-                if (template.drawed) {
-                    this.templateContainersCacheService.set(template.containers);
-                }
-                this.updateTemplate(this.getTemplateItem(template));
-                this.dotGlobalMessageService.success(
-                    this.dotMessageService.get('dot.common.message.saved')
+            tap((template: DotTemplate) => this.onSaveTemplate(template)),
+            catchError((err: HttpErrorResponse) => this.onSaveTemplateError(err))
+        );
+    });
+
+    readonly saveTemplateDebounce = this.effect((origin$: Observable<DotTemplateItem>) => {
+        return origin$.pipe(
+            debounceTime(10000),
+            switchMap((template: DotTemplateItem) => {
+                this.dotGlobalMessageService.loading(
+                    this.dotMessageService.get('dot.common.message.saving')
                 );
-                if (this.activatedRoute?.snapshot?.params['inode']) {
-                    this.dotRouterService.goToEditTemplate(template.identifier);
-                }
+                return this.persistTemplate(template);
             }),
-            catchError((err: HttpErrorResponse) => {
-                this.dotGlobalMessageService.error(err.statusText);
-                this.dotHttpErrorManagerService.handle(err).subscribe(() => {
-                    this.dotEditLayoutService.changeDesactivateState(true);
-                });
-                return of(null);
+            tap((template: DotTemplate) => this.onSaveTemplate(template)),
+            catchError((err: HttpErrorResponse) => this.onSaveTemplateError(err))
+        );
+    });
+
+    readonly saveWorkingTemplate = this.effect((working$: Observable<DotTemplateItem>) => {
+        return working$.pipe(
+            tap((template: DotTemplateItem) => {
+                if (template.type === 'design') {
+                    // Design templates need to be save 10 seconds after the last change.
+                    this.saveTemplateDebounce(template);
+                }
+                this.updateWorkingTemplate(template);
             })
         );
     });
@@ -148,7 +181,7 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
         return origin$.pipe(
             switchMap((template: DotTemplateItem) => this.persistTemplate(template)),
             tap((template: DotTemplate) => {
-                this.updateTemplate(this.getTemplateItem(template));
+                this.updateProperties(this.getTemplateItem(template));
             })
         );
     });
@@ -198,6 +231,7 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
                     : this.getDefaultTemplate(isAdvanced);
 
                 if (template.type === 'design') {
+                    this.canRouteBeDesativated();
                     this.templateContainersCacheService.set(template.containers);
                 }
 
@@ -226,6 +260,27 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
     goToEditTemplate = (id, inode) => {
         this.dotRouterService.goToEditTemplate(id, inode);
     };
+
+    private onSaveTemplate(template: DotTemplate) {
+        if (template.drawed) {
+            this.templateContainersCacheService.set(template.containers);
+        }
+        this.updateTemplate(this.getTemplateItem(template));
+        this.dotGlobalMessageService.success(
+            this.dotMessageService.get('dot.common.message.saved')
+        );
+        if (this.activatedRoute?.snapshot?.params['inode']) {
+            this.dotRouterService.goToEditTemplate(template.identifier);
+        }
+    }
+
+    private onSaveTemplateError(err: HttpErrorResponse) {
+        this.dotGlobalMessageService.error(err.statusText);
+        this.dotHttpErrorManagerService.handle(err).subscribe(() => {
+            this.dotEditLayoutService.changeDesactivateState(true);
+        });
+        return of(null);
+    }
 
     private getApiLink(identifier: string): string {
         return identifier ? `/api/v1/templates/${identifier}/working` : '';
@@ -269,6 +324,45 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
         }
 
         return result;
+    }
+
+    /**
+     * Let the user leave the route only when changes have been saved on design template.
+     *
+     * @private
+     * @memberof DotTemplateStore
+     */
+    private canRouteBeDesativated(): void {
+        this.didTemplateChanged$.subscribe((didTemplateChanged: boolean) =>
+            this.dotEditLayoutService.changeDesactivateState(!didTemplateChanged)
+        );
+    }
+
+    /**
+     *
+     * When we save the properties, we do not want to save the body/layout.
+     * Therefore, we keep the same body/layout of the working template
+     *
+     * @private
+     * @param {DotTemplateItem} currentTemplate
+     * @param {DotTemplateItem} template
+     * @return {*}  {DotTemplateItem}
+     * @memberof DotTemplateStore
+     */
+    private updateTemplateProperties(
+        templateState: DotTemplateItem,
+        newPropertiesTemplate: DotTemplateItem
+    ): DotTemplateItem {
+        if (newPropertiesTemplate.type === 'design') {
+            return {
+                ...newPropertiesTemplate,
+                layout: (templateState as DotTemplateItemDesign).layout
+            };
+        }
+        return {
+            ...newPropertiesTemplate,
+            body: (templateState as DotTemplateItemadvanced).body
+        };
     }
 
     private persistTemplate(template: DotTemplateItem): Observable<DotTemplate> {

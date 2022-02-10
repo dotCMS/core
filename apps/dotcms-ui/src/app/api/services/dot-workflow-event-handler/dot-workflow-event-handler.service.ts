@@ -291,7 +291,8 @@ export class DotWorkflowEventHandlerService {
                     expireTime: data.expireTime,
                     publishDate: data.publishDate,
                     publishTime: data.publishTime,
-                    filterKey: data.filterKey
+                    filterKey: data.filterKey,
+                    timezoneId: data.timezoneId
                 },
                 additionalParamsMap: { _path_to_move: data.pathToMove }
             }

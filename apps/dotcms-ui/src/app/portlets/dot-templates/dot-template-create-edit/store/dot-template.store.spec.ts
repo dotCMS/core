@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { TestBed } from '@angular/core/testing';
+import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 
 import { of, throwError } from 'rxjs';
 
 import { DotTemplateContainersCacheService } from '@services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DotTemplatesService } from '@services/dot-templates/dot-templates.service';
-import { DotTemplateStore } from './dot-template.store';
+import { DotTemplateStore, DotTemplateItem } from './dot-template.store';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
@@ -163,28 +163,33 @@ describe('DotTemplateStore', () => {
         });
 
         it('should have basic state', (done) => {
+            const template: DotTemplateItem = {
+                containers: {},
+                identifier: '',
+                title: '',
+                friendlyName: '',
+                type: 'design',
+                layout: {
+                    header: true,
+                    footer: true,
+                    body: { rows: [] },
+                    sidebar: null,
+                    title: '',
+                    width: null
+                },
+                theme: '',
+                drawed: true,
+                image: ''
+            };
+
+            const state = {
+                original: template,
+                working: template,
+                apiLink: ''
+            };
+
             service.vm$.subscribe((res) => {
-                expect(res).toEqual({
-                    original: {
-                        containers: {},
-                        identifier: '',
-                        title: '',
-                        friendlyName: '',
-                        type: 'design',
-                        layout: {
-                            header: true,
-                            footer: true,
-                            body: { rows: [] },
-                            sidebar: null,
-                            title: '',
-                            width: null
-                        },
-                        theme: '',
-                        drawed: true,
-                        image: ''
-                    },
-                    apiLink: ''
-                });
+                expect(res).toEqual(state);
                 done();
             });
         });
@@ -225,7 +230,7 @@ describe('DotTemplateStore', () => {
                             data: of({
                                 template: getTemplate({
                                     identifier: '2d87af36-a935-4689-b427-dea75e9d84cf',
-                                    name: 'Advaced',
+                                    name: 'Advanced',
                                     body: ''
                                 })
                             }),
@@ -251,19 +256,24 @@ describe('DotTemplateStore', () => {
         });
 
         it('should have basic state', (done) => {
+            const template: DotTemplateItem = {
+                identifier: '2d87af36-a935-4689-b427-dea75e9d84cf',
+                title: 'Advanced',
+                friendlyName: '',
+                type: 'advanced',
+                drawed: false,
+                body: '',
+                image: ''
+            };
+
+            const state = {
+                original: template,
+                working: template,
+                apiLink: '/api/v1/templates/2d87af36-a935-4689-b427-dea75e9d84cf/working'
+            };
+
             service.vm$.subscribe((res) => {
-                expect(res).toEqual({
-                    original: {
-                        identifier: '2d87af36-a935-4689-b427-dea75e9d84cf',
-                        title: 'Advaced',
-                        friendlyName: '',
-                        type: 'advanced',
-                        drawed: false,
-                        body: '',
-                        image: ''
-                    },
-                    apiLink: '/api/v1/templates/2d87af36-a935-4689-b427-dea75e9d84cf/working'
-                });
+                expect(res).toEqual(state);
                 done();
             });
         });
@@ -319,6 +329,73 @@ describe('DotTemplateStore', () => {
                     });
                 });
             });
+
+            it('should update only the wokring template', () => {
+                service.updateWorkingTemplate({
+                    identifier: '23423-234as-sd-w3sd-sd-srzcxsd',
+                    title: 'New advaced',
+                    friendlyName: '',
+                    type: 'advanced',
+                    drawed: false,
+                    body: '<h1>Hello</h1>',
+                    image: ''
+                });
+
+                service.state$.subscribe((res) => {
+                    expect(res).toEqual({
+                        working: {
+                            type: 'advanced',
+                            identifier: '23423-234as-sd-w3sd-sd-srzcxsd',
+                            title: 'New advaced',
+                            friendlyName: '',
+                            drawed: false,
+                            body: '<h1>Hello</h1>',
+                            image: ''
+                        },
+                        original: {
+                            type: 'advanced',
+                            identifier: '2d87af36-a935-4689-b427-dea75e9d84cf',
+                            title: 'Advanced',
+                            friendlyName: '',
+                            drawed: false,
+                            body: '',
+                            image: ''
+                        },
+                        apiLink: '/api/v1/templates/2d87af36-a935-4689-b427-dea75e9d84cf/working'
+                    });
+                });
+            });
+
+            it('should update template properties', () => {
+                service.updateTemplate({
+                    identifier: '23423-234as-sd-w3sd-sd-srzcxsd',
+                    title: 'New advaced',
+                    friendlyName: '',
+                    type: 'advanced',
+                    drawed: false,
+                    image: 'image',
+                    body: ''
+                });
+
+                const tamplate: DotTemplateItem = {
+                    type: 'advanced',
+                    identifier: '23423-234as-sd-w3sd-sd-srzcxsd',
+                    title: 'New advaced',
+                    friendlyName: '',
+                    drawed: false,
+                    image: 'image',
+                    body: ''
+                };
+
+                service.state$.subscribe((res) => {
+                    expect(res).toEqual({
+                        working: tamplate,
+                        original: tamplate,
+                        apiLink: '/api/v1/templates/2d87af36-a935-4689-b427-dea75e9d84cf/working'
+                    });
+                });
+            });
+
             it('should update the body', () => {
                 service.updateBody('<h3>Hola Mundo</h3>');
 
@@ -326,7 +403,7 @@ describe('DotTemplateStore', () => {
                     expect(res).toEqual({
                         working: {
                             identifier: '2d87af36-a935-4689-b427-dea75e9d84cf',
-                            title: 'Advaced',
+                            title: 'Advanced',
                             friendlyName: '',
                             type: 'advanced',
                             drawed: false,
@@ -335,7 +412,7 @@ describe('DotTemplateStore', () => {
                         },
                         original: {
                             identifier: '2d87af36-a935-4689-b427-dea75e9d84cf',
-                            title: 'Advaced',
+                            title: 'Advanced',
                             friendlyName: '',
                             type: 'advanced',
                             drawed: false,
@@ -395,8 +472,95 @@ describe('DotTemplateStore', () => {
                 });
             });
 
+            it('should update template and update the state after 10 seconds', fakeAsync(() => {
+                service.saveTemplateDebounce({
+                    body: 'string',
+                    friendlyName: 'string',
+                    identifier: 'string',
+                    title: 'string'
+                });
+
+                tick(10000);
+
+                expect<any>(dotTemplatesService.update).toHaveBeenCalledWith({
+                    body: 'string',
+                    friendlyName: 'string',
+                    identifier: 'string',
+                    title: 'string'
+                });
+
+                expect(dotGlobalMessageService.loading).toHaveBeenCalledWith('saving');
+                expect(dotGlobalMessageService.success).toHaveBeenCalledWith('saved');
+                expect(dotRouterService.goToEditTemplate).toHaveBeenCalledWith(
+                    '222-3000-333---30303-394'
+                );
+
+                service.state$.subscribe((res) => {
+                    expect(res).toEqual({
+                        working: {
+                            type: 'advanced',
+                            identifier: '222-3000-333---30303-394',
+                            title: 'Updated template',
+                            friendlyName: '',
+                            drawed: false,
+                            body: '<h4>Hi you</h1>',
+                            image: ''
+                        },
+                        original: {
+                            type: 'advanced',
+                            identifier: '222-3000-333---30303-394',
+                            title: 'Updated template',
+                            friendlyName: '',
+                            drawed: false,
+                            body: '<h4>Hi you</h1>',
+                            image: ''
+                        },
+                        apiLink: '/api/v1/templates/2d87af36-a935-4689-b427-dea75e9d84cf/working'
+                    });
+                });
+            }));
+
+            it('should call updateWorkingTemplate and call saveTemplateDebounce when is a design template', () => {
+                spyOn(service, 'updateWorkingTemplate');
+                spyOn(service, 'saveTemplateDebounce');
+                service.saveWorkingTemplate({
+                    type: 'design',
+                    layout: {
+                        header: true,
+                        footer: true,
+                        body: { rows: [] },
+                        sidebar: null,
+                        title: '',
+                        width: null
+                    },
+                    theme: '123',
+                    friendlyName: 'string',
+                    identifier: 'string',
+                    title: 'string'
+                });
+
+                expect(service.updateWorkingTemplate).toHaveBeenCalled();
+                expect(service.saveTemplateDebounce).toHaveBeenCalled();
+            });
+            it('should call updateWorkingTemplate and not call saveTemplateDebounce when is a advanced template', () => {
+                spyOn(service, 'updateWorkingTemplate');
+                spyOn(service, 'saveTemplateDebounce');
+                service.saveWorkingTemplate({
+                    type: 'advanced',
+                    body: '',
+                    friendlyName: 'string',
+                    identifier: 'string',
+                    title: 'string'
+                });
+
+                // tick(10000);
+
+                expect(service.updateWorkingTemplate).toHaveBeenCalled();
+                expect(service.saveTemplateDebounce).not.toHaveBeenCalled();
+            });
+
             it('should handler error on update template', (done) => {
-                const error = throwError(new HttpErrorResponse(mockResponseView(400)))
+                const error = throwError(new HttpErrorResponse(mockResponseView(400)));
                 spyOn<any>(service, 'persistTemplate').and.returnValue(error);
                 service.saveTemplate({
                     body: 'string',
@@ -411,8 +575,8 @@ describe('DotTemplateStore', () => {
                     done();
                 });
             });
-            
-            it('should update template and update the state when updates props', () => {
+
+            it('should not update template body when updates props', () => {
                 service.saveProperties({
                     body: 'string',
                     friendlyName: 'string',
@@ -435,7 +599,7 @@ describe('DotTemplateStore', () => {
                             title: 'Updated template',
                             friendlyName: '',
                             drawed: false,
-                            body: '<h4>Hi you</h1>',
+                            body: '',
                             image: ''
                         },
                         original: {
@@ -444,7 +608,7 @@ describe('DotTemplateStore', () => {
                             title: 'Updated template',
                             friendlyName: '',
                             drawed: false,
-                            body: '<h4>Hi you</h1>',
+                            body: '',
                             image: ''
                         },
                         apiLink: '/api/v1/templates/2d87af36-a935-4689-b427-dea75e9d84cf/working'

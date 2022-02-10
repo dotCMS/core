@@ -148,6 +148,7 @@ export class DotFormComponent {
 
     private handleSubmit(event: Event): void {
         event.preventDefault();
+        event.stopPropagation();
 
         fetch(SUBMIT_FORM_API_URL, {
             method: 'PUT',
@@ -173,7 +174,6 @@ export class DotFormComponent {
             })
             .then((jsonResponse) => {
                 const contentlet = jsonResponse.entity;
-
                 this.submit.emit(contentlet);
             })
             .catch(({ message, status }: DotHttpErrorResponse) => {

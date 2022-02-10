@@ -233,18 +233,11 @@ export class DotEditContentHtmlService {
      * @param boolean isDroppedAsset
      * @memberof DotEditContentHtmlService
      */
-    renderAddedContentlet(contentlet: DotPageContent, isDroppedAsset = false): void {
+    renderAddedContentlet(contentlet: DotPageContent, isDroppedContentlet = false): void {
         const doc = this.getEditPageDocument();
-        if (isDroppedAsset) {
-            const container: HTMLElement = doc
-                .querySelector(CONTENTLET_PLACEHOLDER_SELECTOR)
-                .closest('[data-dot-object="container"]');
-            this.setContainterToAppendContentlet({
-                identifier: container.dataset['dotIdentifier'],
-                uuid: container.dataset['dotUuid']
-            });
+        if (isDroppedContentlet) {
+            this.setCurrentContainerOnContentDrop(doc);
         }
-
         const containerEl: HTMLElement = doc.querySelector(
             `[data-dot-object="container"][data-dot-identifier="${this.currentContainer.identifier}"][data-dot-uuid="${this.currentContainer.uuid}"]`
         );
@@ -272,12 +265,6 @@ export class DotEditContentHtmlService {
                     });
                     this.currentAction = DotContentletAction.EDIT;
                     this.updateContainerToolbar(containerEl.dataset.dotIdentifier);
-
-                    if (contentletEl.dataset['dotBasetype'] === 'FORM') {
-                        this.iframeActions$.next({
-                            name: 'save'
-                        });
-                    }
                 });
         }
     }
@@ -285,11 +272,15 @@ export class DotEditContentHtmlService {
     /**
      * Render a form in the DOM after add it
      *
-     * @param ContentType form
+     * @param string formId
+     * @param booblean isDroppedAsset
      * @memberof DotEditContentHtmlService
      */
-    renderAddedForm(form: DotCMSContentType): Observable<DotPageContainer[]> {
+    renderAddedForm(formId: string, isDroppedForm = false): Observable<DotPageContainer[]> {
         const doc = this.getEditPageDocument();
+        if (isDroppedForm) {
+            this.setCurrentContainerOnContentDrop(doc);
+        }
         const containerEl: HTMLElement = doc.querySelector(
             [
                 '[data-dot-object="container"]',
@@ -298,18 +289,23 @@ export class DotEditContentHtmlService {
             ].join('')
         );
 
-        if (this.isFormExistInContainer(form, containerEl)) {
+        if (this.isFormExistInContainer(formId, containerEl)) {
             this.showContentAlreadyAddedError();
+            this.removeContentletPlaceholder();
             return of(null);
         } else {
-            const contentletPlaceholder = this.getContentletPlaceholder();
-            containerEl.appendChild(contentletPlaceholder);
+            let contentletPlaceholder = doc.querySelector(CONTENTLET_PLACEHOLDER_SELECTOR);
+
+            if (!contentletPlaceholder) {
+                contentletPlaceholder = this.getContentletPlaceholder();
+                containerEl.appendChild(contentletPlaceholder);
+            }
+
             return this.dotContainerContentletService
-                .getFormToContainer(this.currentContainer, form)
+                .getFormToContainer(this.currentContainer, formId)
                 .pipe(
                     map(({ content }: { [key: string]: any }) => {
                         const { identifier, inode } = content;
-
                         containerEl.replaceChild(
                             this.renderFormContentlet(identifier, inode),
                             contentletPlaceholder
@@ -339,6 +335,16 @@ export class DotEditContentHtmlService {
      */
     getContentModel(): DotPageContainer[] {
         return this.getEditPageIframe().contentWindow['getDotNgModel']();
+    }
+
+    private setCurrentContainerOnContentDrop(doc: Document): void {
+        const container: HTMLElement = doc
+            .querySelector(CONTENTLET_PLACEHOLDER_SELECTOR)
+            .closest('[data-dot-object="container"]');
+        this.setContainterToAppendContentlet({
+            identifier: container.dataset['dotIdentifier'],
+            uuid: container.dataset['dotUuid']
+        });
     }
 
     private updateContainerToolbar(dotIdentifier: string) {
@@ -449,14 +455,14 @@ export class DotEditContentHtmlService {
         );
     }
 
-    private isFormExistInContainer(form: DotCMSContentType, containerEL: HTMLElement): boolean {
+    private isFormExistInContainer(formId: string, containerEL: HTMLElement): boolean {
         const contentsSelector = `[data-dot-object="contentlet"]`;
         const currentContentlets: HTMLElement[] = <HTMLElement[]>(
             Array.from(containerEL.querySelectorAll(contentsSelector).values())
         );
 
         return currentContentlets.some(
-            (contentElement) => contentElement.dataset.dotContentTypeId === form.id
+            (contentElement) => contentElement.dataset.dotContentTypeId === formId
         );
     }
 
@@ -691,6 +697,21 @@ export class DotEditContentHtmlService {
             },
             'add-contentlet': (dotAssetData: DotAssetPayload) => {
                 this.renderAddedContentlet(dotAssetData.contentlet, true);
+            },
+            'add-form': (formId: string) => {
+                this.renderAddedForm(formId, true)
+                    .pipe(take(1))
+                    .subscribe((model: DotPageContainer[]) => {
+                        if (model) {
+                            this.pageModel$.next({
+                                model: model,
+                                type: PageModelChangeEventType.ADD_CONTENT
+                            });
+                            this.iframeActions$.next({
+                                name: 'save'
+                            });
+                        }
+                    });
             },
             'handle-http-error': (err: HttpErrorResponse) => {
                 this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe();
