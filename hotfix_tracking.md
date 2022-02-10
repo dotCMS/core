@@ -111,3 +111,4 @@ This maintenance release includes the following code fixes:
 
 54. https://github.com/dotcms/core/issues/21267 : ReindexThread dies with bad data #21267, 2nd inclusion with additional fixes
 
+55. https://github.com/dotCMS/core/issues/21204 : [Site Copy] : Copying a Site randomly fails #21204
