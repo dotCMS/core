@@ -17,7 +17,9 @@ export TOMCAT_HOME=$( find /srv/dotserver/ -type d -name "tomcat-*" )
 export JAVA_OPTS_BASE=${JAVA_OPTS_BASE:-"-Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -server -XX:+DisableExplicitGC -Dpdfbox.fontcache=/data/local/dotsecure -Dlog4j2.formatMsgNoLookups=true -Djava.library.path=/usr/lib/x86_64-linux-gnu/"}
 export JAVA_OPTS_AGENT=${JAVA_OPTS_AGENT:-"-javaagent:${TOMCAT_HOME}/webapps/ROOT/WEB-INF/lib/byte-buddy-agent-1.9.0.jar"}
 export JAVA_OPTS_MEMORY=${JAVA_OPTS_MEMORY:-"-Xmx1G"}
-export JAVA_OPTS=${JAVA_OPTS:-"$JAVA_OPTS_BASE $JAVA_OPTS_AGENT $JAVA_OPTS_MEMORY"}
+
+# $CMS_JAVA_OPTS is last so it trumps them all
+export JAVA_OPTS=${JAVA_OPTS:-"$JAVA_OPTS_BASE $JAVA_OPTS_AGENT $JAVA_OPTS_MEMORY $CMS_JAVA_OPTS"}
 
 
 # Maximum number of Tomcat Connector threadpool threads (shared across Connectors)
