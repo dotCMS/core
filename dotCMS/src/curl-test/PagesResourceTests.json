@@ -1443,7 +1443,7 @@
 										{
 											"key": "file",
 											"type": "file",
-											"src": "/Users/erickgonzalez/Documents/dotcms/core/dotCMS/src/curl-test/resources/testRespectOrder_Bundle.tar.gz"
+											"src": "resources/testRespectOrder_Bundle.tar.gz"
 										}
 									]
 								},
