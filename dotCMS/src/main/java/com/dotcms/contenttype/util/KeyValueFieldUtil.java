@@ -1,6 +1,6 @@
 package com.dotcms.contenttype.util;
 
-import com.dotcms.util.marshal.MarshalFactory;
+import com.dotcms.util.marshal.MarshalUtilsProvider;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
@@ -26,7 +26,7 @@ public class KeyValueFieldUtil {
         if (object != null)
           return object.getAsMap();
 
-        return (Map)MarshalFactory.getInstance()
+        return (Map) MarshalUtilsProvider.getInstance()
                 .getMarshalUtils()
                 .unmarshal(json, new TypeReference<LinkedHashMap<String, String>>() {
                 });
@@ -45,9 +45,7 @@ public class KeyValueFieldUtil {
 
         if (tryEvaluate) {
           try {
-            //return MarshalFactory.getInstance().getMarshalUtils().unmarshal(replacedJSJson, new DotTypeToken<LinkedHashMap<String, String>>().getType());
-
-            return (Map)MarshalFactory.getInstance()
+            return (Map) MarshalUtilsProvider.getInstance()
                     .getMarshalUtils()
                     .unmarshal(replacedJSJson, new TypeReference<LinkedHashMap<String, String>>() {
                     });

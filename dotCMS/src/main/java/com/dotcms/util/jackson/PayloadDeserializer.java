@@ -5,9 +5,11 @@ import static com.dotcms.util.ReflectionUtils.getClassFor;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.Visibility;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.ObjectCodec;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vavr.control.Try;
 import java.io.IOException;
 import java.util.function.Function;
@@ -43,12 +45,12 @@ public class PayloadDeserializer extends JsonDeserializer<Payload> {
     }
 
     /**
-     *  This fires the deserailization of a sub-json block into a separate class as we instruct
-     * @param node
-     * @param clazz
-     * @param parser
+     *  This fires the deserialization of a sub-json block into a separate class as we instruct
+     * @param node sub-json block
+     * @param clazz Target Bean Class
+     * @param parser Parser
      * @param <T>
-     * @return
+     * @return Bean instance
      * @throws IOException
      */
     private <T> T readValueAs (final JsonNode node, final Class<T> clazz, final JsonParser parser)

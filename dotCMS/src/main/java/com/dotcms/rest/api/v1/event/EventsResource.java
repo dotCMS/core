@@ -21,7 +21,7 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.system.AppContext;
 import com.dotcms.util.LongPollingService;
-import com.dotcms.util.marshal.MarshalFactory;
+import com.dotcms.util.marshal.MarshalUtilsProvider;
 import com.dotcms.util.marshal.MarshalUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -67,7 +67,7 @@ public class EventsResource implements Serializable {
                 new LongPollingService
                 (Config.getLongProperty(SYSTEM_EVENT_LONGPOLLING_DEFAULTMILLIS, 15000),
                         new SystemEventsDelegate()),
-                MarshalFactory.getInstance().getMarshalUtils());
+                MarshalUtilsProvider.getInstance().getMarshalUtils());
     }
 
     @VisibleForTesting

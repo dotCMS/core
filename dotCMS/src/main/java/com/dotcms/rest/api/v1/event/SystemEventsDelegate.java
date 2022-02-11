@@ -8,13 +8,10 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.system.websocket.WebSocketUserSessionData;
 import com.dotcms.system.AppContext;
 import com.dotcms.util.Delegate;
-import com.dotcms.util.marshal.MarshalFactory;
+import com.dotcms.util.marshal.MarshalUtilsProvider;
 import com.dotcms.util.marshal.MarshalUtils;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
@@ -43,7 +40,7 @@ public class SystemEventsDelegate implements Delegate<AppContext> {
     private final SystemEventProcessorFactory systemEventProcessorFactory;
 
     public SystemEventsDelegate() {
-        this (APILocator.getSystemEventsAPI(), MarshalFactory.getInstance().getMarshalUtils(),
+        this (APILocator.getSystemEventsAPI(), MarshalUtilsProvider.getInstance().getMarshalUtils(),
                 PayloadVerifierFactory.getInstance(), SystemEventProcessorFactory.getInstance());
     }
 

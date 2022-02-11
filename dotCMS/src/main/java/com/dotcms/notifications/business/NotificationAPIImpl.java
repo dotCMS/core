@@ -18,7 +18,7 @@ import com.dotcms.notifications.dto.NotificationDTO;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.I18NMessage;
-import com.dotcms.util.marshal.MarshalFactory;
+import com.dotcms.util.marshal.MarshalUtilsProvider;
 import com.dotcms.util.marshal.MarshalUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -63,7 +63,7 @@ public class NotificationAPIImpl implements NotificationAPI {
 
         this(FactoryLocator.getNotificationFactory(),
             APILocator.getSystemEventsAPI(),
-            MarshalFactory.getInstance().getMarshalUtils(),
+            MarshalUtilsProvider.getInstance().getMarshalUtils(),
             ConversionUtils.INSTANCE,
             DotConcurrentFactory.getInstance(),
             CacheLocator.getNewNotificationCache(),

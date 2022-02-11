@@ -7,7 +7,7 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.util.CloseUtils;
 import com.dotcms.util.ConversionUtils;
-import com.dotcms.util.marshal.MarshalFactory;
+import com.dotcms.util.marshal.MarshalUtilsProvider;
 import com.dotcms.util.marshal.MarshalUtils;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.db.DotConnect;
@@ -225,7 +225,7 @@ public class Task04330WorkflowTaskAddLanguageIdColumn extends AbstractJDBCStartu
         int workflowTaskCount                  = 0;
         final String systemUserId              = this.getSystemUserId ();
         final File   workflowTaskDataFile      = File.createTempFile("rows-task-4330", "tmp");
-        final MarshalUtils marshalUtils        = MarshalFactory.getInstance().getMarshalUtils();
+        final MarshalUtils marshalUtils        = MarshalUtilsProvider.getInstance().getMarshalUtils();
         final ExecutorCompletionService<WorkflowTaskResult> completionService =
                 new ExecutorCompletionService<>(this.submitter);
         BufferedWriter fileWriter                  = null;
