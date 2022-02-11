@@ -38,12 +38,14 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.bouncycastle.util.Arrays;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.IntStream;
 
 
 /**
@@ -252,7 +254,7 @@ public class ShortyServlet extends HttpServlet {
 
     tokens.nextToken();
     final String inodeOrIdentifier    = tokens.nextToken();
-    final String fieldName            = tokens.hasMoreTokens() ? tokens.nextToken() : FILE_ASSET_DEFAULT;
+    final String fieldName            = tokens.hasMoreTokens() ? tokens.nextToken() : null;
     final String lowerUri             = uri.toLowerCase();
     final boolean live                = mode.showLive;
     final Optional<ShortyId> shortOpt = this.shortyIdAPI.getShorty(inodeOrIdentifier);
@@ -292,7 +294,7 @@ public class ShortyServlet extends HttpServlet {
     try {
 
         
-        String id = null;
+        String inodePath = null;
         if(shorty.type!= ShortType.TEMP_FILE) {
           final Optional<Contentlet> conOpt = (shorty.type == ShortType.IDENTIFIER)
                       ? APILocator.getContentletAPI().findContentletByIdentifierOrFallback(shorty.longId, live, language.getId(), APILocator.systemUser(), false)
@@ -312,21 +314,24 @@ public class ShortyServlet extends HttpServlet {
           }
 
 
-          id=this.inodePath(conOpt.get(), fieldName, live);
+          inodePath=this.inodePath(conOpt.get(), fieldName, live);
         }else {
-          id="/" + shorty.longId + "/temp";
+            inodePath="/" + shorty.longId + "/temp";
         }
         
         
 
-      final StringBuilder pathBuilder = new StringBuilder(path)
-              .append(id).append("/byInode/true");
-        //This logic is to get the filters to apply in the order were sent
-        final boolean isFieldNameAtUri = id.split(StringPool.FORWARD_SLASH)[2].equalsIgnoreCase(fieldName);
-        final int substringStartPos = isFieldNameAtUri ? lowerUri.lastIndexOf(fieldName.toLowerCase())+fieldName.length()+1 : lowerUri.lastIndexOf(fieldName.toLowerCase());
-        final String[] filters = lowerUri.substring(substringStartPos).split(StringPool.FORWARD_SLASH);
+      final StringBuilder pathBuilder = new StringBuilder(path).append(inodePath).append("/byInode/true");
+      
+      
+      // This logic is to get the filters to apply in the order were sent
+      final String[] filters = lowerUri.split(StringPool.FORWARD_SLASH);
 
-      this.addImagePath(width, height, quality, jpeg, jpegp,webp, isImage, pathBuilder, focalPoint, cropWidth,cropHeight,resampleOpt,filters);
+      final String[] subarray = IntStream.range( Math.min(3, filters.length), filters.length).mapToObj(i -> filters[i]).toArray(String[]::new);
+        
+
+
+      this.addImagePath(width, height, quality, jpeg, jpegp,webp, isImage, pathBuilder, focalPoint, cropWidth,cropHeight,resampleOpt,subarray);
       this.doForward(request, response, pathBuilder.toString());
     } catch (DotContentletStateException e) {
 
