@@ -20,7 +20,6 @@ import org.immutables.value.Value;
  */
 @JsonSerialize(as = ImmutableKeyValueContentType.class)
 @JsonDeserialize(as = ImmutableKeyValueContentType.class)
-//@Gson.TypeAdapters
 @Value.Immutable
 public abstract class KeyValueContentType extends ContentType implements MultilinguableFallback {
 

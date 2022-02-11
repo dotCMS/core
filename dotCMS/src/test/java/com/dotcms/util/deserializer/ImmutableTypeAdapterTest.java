@@ -1,9 +1,26 @@
 package com.dotcms.util.deserializer;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+import java.text.ParseException;
+
+import org.junit.Test;
+
 import com.dotcms.UnitTestBase;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.util.json.JSONException;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 public class ImmutableTypeAdapterTest extends UnitTestBase {
-/*
+	
     @Test
     public void test() throws ParseException, JSONException {
 
@@ -43,5 +60,4 @@ public class ImmutableTypeAdapterTest extends UnitTestBase {
 		assertEquals("owner", deserializedContentType.owner());
 		assertEquals("velocityVarNameDefault1", deserializedContentType.variable());
     }
- */
 }

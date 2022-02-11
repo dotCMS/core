@@ -18,7 +18,6 @@ import org.immutables.value.Value;
 
 @JsonSerialize(as = ImmutableFileAssetContentType.class)
 @JsonDeserialize(as = ImmutableFileAssetContentType.class)
-//@Gson.TypeAdapters
 @Value.Immutable
 public abstract class FileAssetContentType extends ContentType implements UrlMapable, Expireable{
 

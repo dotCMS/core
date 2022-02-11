@@ -11,7 +11,6 @@ import java.util.List;
 import org.immutables.value.Value;
 @JsonSerialize(as = ImmutableWidgetContentType.class)
 @JsonDeserialize(as = ImmutableWidgetContentType.class)
-//@Gson.TypeAdapters
 @Value.Immutable
 public abstract class WidgetContentType extends ContentType implements Expireable{
 	

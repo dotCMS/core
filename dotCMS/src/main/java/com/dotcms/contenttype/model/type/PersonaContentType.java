@@ -17,7 +17,6 @@ import org.immutables.value.Value;
 
 @JsonSerialize(as = ImmutablePersonaContentType.class)
 @JsonDeserialize(as = ImmutablePersonaContentType.class)
-//@Gson.TypeAdapters
 @Value.Immutable
 public abstract class PersonaContentType extends ContentType implements Expireable, EnterpriseType {
 

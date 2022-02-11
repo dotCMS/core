@@ -7,7 +7,6 @@ import org.immutables.value.Value;
 
 @JsonSerialize(as = ImmutableSimpleContentType.class)
 @JsonDeserialize(as = ImmutableSimpleContentType.class)
-//@Gson.TypeAdapters
 @Value.Immutable
 public abstract class SimpleContentType extends ContentType
         implements UrlMapable, Serializable, Expireable {

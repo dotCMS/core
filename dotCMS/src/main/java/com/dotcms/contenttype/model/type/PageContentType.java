@@ -16,7 +16,6 @@ import java.util.List;
 import org.immutables.value.Value;
 @JsonSerialize(as = ImmutablePageContentType.class)
 @JsonDeserialize(as = ImmutablePageContentType.class)
-//@Gson.TypeAdapters
 @Value.Immutable
 public abstract class PageContentType extends ContentType implements Expireable{
 

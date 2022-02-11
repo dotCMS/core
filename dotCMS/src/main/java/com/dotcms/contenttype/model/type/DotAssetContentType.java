@@ -14,7 +14,6 @@ import org.immutables.value.Value;
 
 @JsonSerialize(as = ImmutableDotAssetContentType.class)
 @JsonDeserialize(as = ImmutableDotAssetContentType.class)
-//@Gson.TypeAdapters
 @Value.Immutable
 /**
  * The dotAssets are distinguished from fileAssets in that the only required field in a dotAsset is the asset and they are only addressable via their ids,

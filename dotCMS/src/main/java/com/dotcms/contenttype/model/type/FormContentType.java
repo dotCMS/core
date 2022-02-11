@@ -10,7 +10,6 @@ import java.util.List;
 import org.immutables.value.Value;
 @JsonSerialize(as = ImmutableFormContentType.class)
 @JsonDeserialize(as = ImmutableFormContentType.class)
-//@Gson.TypeAdapters
 @Value.Immutable
 public abstract class FormContentType extends ContentType implements Expireable, EnterpriseType {
 

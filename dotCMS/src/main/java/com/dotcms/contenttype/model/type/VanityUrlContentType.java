@@ -25,7 +25,6 @@ import org.immutables.value.Value;
  */
 @JsonSerialize(as = ImmutableVanityUrlContentType.class)
 @JsonDeserialize(as = ImmutableVanityUrlContentType.class)
-//@Gson.TypeAdapters
 @Value.Immutable
 public abstract class VanityUrlContentType extends ContentType implements Expireable,
 		MultilinguableFallback {
