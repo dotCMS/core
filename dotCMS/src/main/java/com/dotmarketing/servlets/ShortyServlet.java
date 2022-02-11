@@ -1,5 +1,16 @@
 package com.dotmarketing.servlets;
 
+import java.io.IOException;
+import java.util.Optional;
+import java.util.StringTokenizer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.IntStream;
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
@@ -33,19 +44,6 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import org.bouncycastle.util.Arrays;
-import java.io.IOException;
-import java.util.List;
-import java.util.Optional;
-import java.util.StringTokenizer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.IntStream;
 
 
 /**
@@ -323,7 +321,7 @@ public class ShortyServlet extends HttpServlet {
 
       final StringBuilder pathBuilder = new StringBuilder(path).append(inodePath).append("/byInode/true");
       
-      
+
       // This logic is to get the filters to apply in the order were sent
       final String[] filters = lowerUri.split(StringPool.FORWARD_SLASH);
 
