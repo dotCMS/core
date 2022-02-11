@@ -10,6 +10,7 @@ import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.LoginMode;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.RequiredLayoutException;
@@ -123,6 +124,9 @@ public class AuthenticationResource implements Serializable {
                     userMap.put("editModeUrl", pageUrl);
                     request.getSession().removeAttribute(WebKeys.LOGIN_TO_EDIT_MODE);
                 }
+
+                LoginMode.set(request,
+                        authenticationForm.isBackEndLogin()? LoginMode.BE:LoginMode.FE);
 
                 res = Response.ok(new ResponseEntityView(userMap)).build(); // 200
                 request.getSession().setAttribute(Globals.LOCALE_KEY, locale);
