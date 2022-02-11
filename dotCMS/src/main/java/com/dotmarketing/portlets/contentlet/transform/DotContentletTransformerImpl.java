@@ -127,9 +127,12 @@ class DotContentletTransformerImpl implements DotContentletTransformer {
      */
     private Contentlet copy(final Contentlet contentlet) {
         final Contentlet newContentlet = new Contentlet();
-        if (null != contentlet && null != contentlet.getMap()) {
-            newContentlet.getMap().putAll(contentlet.getMap());
+
+        if (null != contentlet) {
+
+            contentlet.copy(newContentlet);
         }
+
         return newContentlet;
     }
 
