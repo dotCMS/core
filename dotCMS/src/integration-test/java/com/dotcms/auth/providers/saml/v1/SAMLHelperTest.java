@@ -10,6 +10,7 @@ import com.dotcms.saml.SamlAuthenticationService;
 import com.dotcms.saml.SamlConfigurationService;
 import com.dotcms.saml.SamlName;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.RegEX;
@@ -27,6 +28,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Writer;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -283,5 +285,60 @@ public class SAMLHelperTest extends IntegrationTestBase {
 
         Assert.assertEquals(expected, roleResult);
     }
+
+    /**
+     * Method to test: {@link SAMLHelper#createNewUser(User, Attributes, IdentityProviderConfiguration)}
+     * Given Scenario: creates an user only with name id
+     * ExpectedResult: The user is created successfully with random values
+     *
+     */
+    @Test()
+    public void test_createNewUser_non_Attrs() throws NoSuchAlgorithmException {
+
+        final SamlAuthenticationService samlAuthenticationService         = new MockSamlAuthenticationService();
+        final CompanyAPI companyAPI                                       = mock(CompanyAPI.class);
+        final Company    company                                          = new Company();
+        final SAMLHelper           		samlHelper                        = new SAMLHelper(samlAuthenticationService, companyAPI);
+
+        company.setAuthType(Company.AUTH_TYPE_EA);
+        when(companyAPI.getDefaultCompany()).thenReturn(company);
+        final IdentityProviderConfiguration identityProviderConfiguration = mock(IdentityProviderConfiguration.class);
+        final Attributes attrs = new Attributes.Builder().nameID(UUID.randomUUID()).build();
+
+        final User user = samlHelper.createNewUser(APILocator.systemUser(), attrs, identityProviderConfiguration);
+
+        Assert.assertNotNull(user);
+        Assert.assertEquals(samlHelper.hashIt(attrs.getNameID().toString()), user.getUserId());
+    }
+
+    /**
+     * Method to test: {@link SAMLHelper#createNewUser(User, Attributes, IdentityProviderConfiguration)}
+     * Given Scenario: creates an user with all properties
+     * ExpectedResult: The user is created successfully with random values
+     *
+     */
+    @Test()
+    public void test_createNewUser_known_Attrs() throws NoSuchAlgorithmException {
+
+        final SamlAuthenticationService samlAuthenticationService         = new MockSamlAuthenticationService();
+        final CompanyAPI companyAPI                                       = mock(CompanyAPI.class);
+        final Company    company                                          = new Company();
+        final SAMLHelper           		samlHelper                        = new SAMLHelper(samlAuthenticationService, companyAPI);
+
+        company.setAuthType(Company.AUTH_TYPE_EA);
+        when(companyAPI.getDefaultCompany()).thenReturn(company);
+        final IdentityProviderConfiguration identityProviderConfiguration = mock(IdentityProviderConfiguration.class);
+        final String uuid = UUID.randomUUID().toString();
+        final Attributes attrs = new Attributes.Builder().nameID(uuid).email(uuid+"@dotcms.com.cr").firstName("John").lastName("Sn").build();
+
+        final User user = samlHelper.createNewUser(APILocator.systemUser(), attrs, identityProviderConfiguration);
+
+        Assert.assertNotNull(user);
+        Assert.assertEquals(samlHelper.hashIt(attrs.getNameID().toString()), user.getUserId());
+        Assert.assertEquals(uuid+"@dotcms.com.cr", attrs.getEmail());
+        Assert.assertEquals("John", attrs.getFirstName());
+        Assert.assertEquals("Sn", attrs.getLastName());
+    }
+
 
 }
