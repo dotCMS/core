@@ -2,7 +2,6 @@ package com.dotmarketing.portlets.folders.business;
 
 import static com.dotmarketing.business.APILocator.getPermissionAPI;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-import static com.dotmarketing.db.HibernateUtil.addCommitListener;
 import static com.liferay.util.StringPool.BLANK;
 
 import com.dotcms.api.system.event.Payload;
@@ -42,7 +41,6 @@ import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.menubuilders.RefreshMenus;
@@ -590,7 +588,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		boolean isNew = folder.getInode() == null;
 		folder.setModDate(new Date());
 		folder.setName(folder.getName());
-		folderFactory.save(folder, existingId);
+		folderFactory.save(folder);
 
         // remove folder and parent from navigation cache
         CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
@@ -620,7 +618,7 @@ public class FolderAPIImpl implements FolderAPI  {
 
 
 	@WrapInTransaction
-	public Folder createFolders(String path, Host host, User user, boolean respectFrontEndPermissions) throws DotHibernateException,
+	public Folder createFolders(String path, Host host, User user, boolean respectFrontEndPermissions) throws
 			DotSecurityException, DotDataException {
 
 		if(!UtilMethods.isSet(host)){
@@ -692,7 +690,7 @@ public class FolderAPIImpl implements FolderAPI  {
 
 
 	@CloseDBIfOpened
-	public List<Folder> findFoldersByHost(Host host, User user, boolean respectFrontendRoles) throws DotHibernateException {
+	public List<Folder> findFoldersByHost(Host host, User user, boolean respectFrontendRoles) {
 		return folderFactory.findFoldersByHost(host);
 	}
 
@@ -830,7 +828,7 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		final boolean move = folderFactory.move(folderToMove, newParentHost);
 
-		addCommitListener(Sneaky.sneaked(()->sendMoveFolderSystemEvent(folderToMove, user)),1000);
+		HibernateUtil.addCommitListener(Sneaky.sneaked(()->sendMoveFolderSystemEvent(folderToMove, user)),1000);
 
 		return move;
 	}
@@ -936,7 +934,7 @@ public class FolderAPIImpl implements FolderAPI  {
 
 
 	@CloseDBIfOpened
-	public List<Folder> findSubFolders(Host host, boolean showOnMenu) throws DotHibernateException{
+	public List<Folder> findSubFolders(Host host, boolean showOnMenu) {
 		return folderFactory.findSubFolders(host, showOnMenu);
 	}
 
