@@ -510,7 +510,8 @@ import org.junit.runners.Suite.SuiteClasses;
         MessageToolTest.class,
         XmlToolTest.class,
         LanguageFolderTest.class,
-        MailAPIImplTest.class
+        MailAPIImplTest.class,
+        com.dotcms.rendering.velocity.viewtools.content.BinaryMapTest.class,
 })
 public class MainSuite {
 
