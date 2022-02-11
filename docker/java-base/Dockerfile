@@ -17,6 +17,7 @@ RUN apt update && \
     apt upgrade -y && \
     apt install -y --no-install-recommends zip unzip wget libtcnative-1 tzdata tini ca-certificates openssl libapr1 libpq-dev
 
+
 # Install curl
 RUN wget -O - https://repo.dotcms.com/artifactory/ext-release-local/com/dotcms/curl-static/curl-`uname -m` | install /dev/stdin /usr/bin/curl && \
     chmod a+x /usr/bin/curl 

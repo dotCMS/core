@@ -9,7 +9,6 @@ import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -99,7 +98,8 @@ import java.util.function.Predicate;
 	 *
 	 * @param folder
 	 * @return List of sub folders for passed in folder
-	 * @throws DotHibernateException
+	 * @throws DotDataException
+	 * @throws DotSecurityException
 	 */
 	List<Folder> findSubFolders(Folder folder, User user, boolean respectFrontEndPermissions) throws DotStateException,
 			DotDataException, DotSecurityException;
@@ -110,7 +110,9 @@ import java.util.function.Predicate;
 	 * @param user
 	 * @param respectFrontEndPermissions
 	 * @return List of sub folders for passed in folder
-	 * @throws DotHibernateException
+	 * @throws DotStateException
+	 * @throws DotDataException
+	 * @throws DotSecurityException
 	 */
 	List<Folder> findSubFolders(Host host, User user, boolean respectFrontEndPermissions) throws DotStateException,
 	DotDataException, DotSecurityException;
@@ -121,7 +123,9 @@ import java.util.function.Predicate;
 	 * @param user
 	 * @param respectFrontEndPermissions
 	 * @return List of themes for passed in host
-	 * @throws DotHibernateException
+	 * @throws DotStateException
+	 * @throws DotDataException
+	 * @throws DotSecurityException
 	 */
 	List<Folder> findThemes(Host host, User user, boolean respectFrontEndPermissions) throws DotStateException,
 			DotDataException, DotSecurityException;
@@ -131,7 +135,9 @@ import java.util.function.Predicate;
 	 * @param folder
 	 *            Recursively
 	 * @return List of sub folders for passed in folder
-	 * @throws DotHibernateException
+	 * @throws DotStateException
+	 * @throws DotDataException
+	 * @throws DotSecurityException
 	 */
 	List<Folder> findSubFoldersRecursively(Folder folder, User user, boolean respectFrontEndPermissions)
 			throws DotStateException, DotDataException, DotSecurityException;
@@ -142,7 +148,9 @@ import java.util.function.Predicate;
 	 * @param user
 	 * @param respectFrontEndPermissions
 	 * @return List of sub folders for passed in folder
-	 * @throws DotHibernateException
+	 * @throws DotStateException
+	 * @throws DotDataException
+	 * @throws DotSecurityException
 	 */
 	List<Folder> findSubFoldersRecursively(Host host, User user, boolean respectFrontEndPermissions)
 			throws DotStateException, DotDataException, DotSecurityException;
@@ -181,7 +189,6 @@ import java.util.function.Predicate;
 	 *
 	 * @param folderInode
 	 * @return boolean
-	 * @throws DotHibernateException
 	 * @throws DotDataException
 	 */
 	boolean exists(String folderInode) throws DotDataException;
@@ -193,7 +200,8 @@ import java.util.function.Predicate;
 	 * @param user
 	 * @param respectFrontEndPermissions
 	 * @return List of Inode
-	 * @throws DotHibernateException
+	 * @throws DotStateException
+	 * @throws DotDataException
 	 */
 	List<Inode> findMenuItems(Folder folder, User user, boolean respectFrontEndPermissions) throws DotStateException,
 			DotDataException;
@@ -275,10 +283,10 @@ import java.util.function.Predicate;
 	 * @param user
 	 * @param respectFrontEndPermissions
 	 * @return
-	 * @throws DotHibernateException
+	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
-	Folder find(String id, User user, boolean respectFrontEndPermissions) throws DotHibernateException,
+	Folder find(String id, User user, boolean respectFrontEndPermissions) throws
 			DotSecurityException, DotDataException;
 
 	/**
@@ -288,11 +296,10 @@ import java.util.function.Predicate;
 	 * @param folder
 	 * @param user
 	 * @param respectFrontEndPermissions
-	 * @throws DotHibernateException
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
-	void save(Folder folder, User user, boolean respectFrontEndPermissions) throws DotHibernateException,
+	void save(Folder folder, User user, boolean respectFrontEndPermissions) throws
 			DotSecurityException, DotDataException;
 
 	/**
@@ -302,11 +309,10 @@ import java.util.function.Predicate;
 	 * @param existingId
 	 * @param user
 	 * @param respectFrontEndPermissions
-	 * @throws DotHibernateException
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
-	void save(Folder folder,String existingId, User user, boolean respectFrontEndPermissions) throws DotHibernateException,
+	void save(Folder folder,String existingId, User user, boolean respectFrontEndPermissions) throws
 	DotSecurityException, DotDataException;
 
 	// http://jira.dotmarketing.net/browse/DOTCMS-3232
@@ -321,11 +327,11 @@ import java.util.function.Predicate;
 	 * @param user
 	 * @param respectFrontEndPermissions
 	 * @return
-	 * @throws DotHibernateException
 	 * @throws DotSecurityException
+	 * 	 * @throws DotDataException
 	 */
 	Folder createFolders(String path, Host host, User user, boolean respectFrontEndPermissions)
-			throws DotHibernateException, DotSecurityException, DotDataException;
+			throws DotSecurityException, DotDataException;
 
 	/**
 	 * Pulls a complete list of all folders on a host
@@ -334,10 +340,9 @@ import java.util.function.Predicate;
 	 * @param user
 	 * @param respectFrontEndPermissions
 	 * @return
-	 * @throws DotHibernateException
 	 * @throws DotSecurityException
 	 */
-	List<Folder> findFoldersByHost(Host host, User user, boolean respectFrontEndPermissions) throws DotHibernateException,
+	List<Folder> findFoldersByHost(Host host, User user, boolean respectFrontEndPermissions) throws
 			DotSecurityException;
 
 	/**
@@ -347,6 +352,7 @@ import java.util.function.Predicate;
 	 * @param respectFrontendRoles
 	 * @return
 	 * @throws ValidationException
+	 * @throws DotDataException
 	 */
 	List<Map<String, Serializable>> DBSearch(Query query, User user, boolean respectFrontendRoles)
 			throws ValidationException, DotDataException;
@@ -449,9 +455,8 @@ import java.util.function.Predicate;
 	 * @param host
 	 * @param showOnMenu
 	 * @return
-	 * @throws DotHibernateException
 	 */
-	List<Folder> findSubFolders(Host host,boolean showOnMenu) throws DotHibernateException;
+	List<Folder> findSubFolders(Host host,boolean showOnMenu);
 
 	/**
 	 *

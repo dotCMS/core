@@ -1,7 +1,7 @@
 package com.dotcms.contenttype.model.field;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.content.model.FieldValue;
+import com.dotcms.content.model.FieldValueBuilder;
 import com.dotcms.contenttype.model.component.FieldFormRenderer;
 import com.dotcms.contenttype.model.component.FieldValueRenderer;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
@@ -293,8 +293,9 @@ public abstract class Field implements FieldIf, Serializable {
    * This method and any specific descendant implementation should examine the type value of the
    * passed on the param and decide what Builder must be used to create a FieldValue to represent
    * the Field as json properly
+   * @return
    */
-  public Optional<FieldValue<?>> fieldValue(final Object value) {
+  public Optional<FieldValueBuilder> fieldValue(final Object value) {
     Logger.debug(Field.class, () -> String
             .format(" No field Specific Impl found for field with name `%s` and variable `%s`. ",
                     this.name(), variable()));

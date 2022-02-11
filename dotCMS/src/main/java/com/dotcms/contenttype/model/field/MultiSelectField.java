@@ -1,6 +1,6 @@
 package com.dotcms.contenttype.model.field;
 
-import com.dotcms.content.model.FieldValue;
+import com.dotcms.content.model.FieldValueBuilder;
 import com.dotcms.content.model.type.select.MultiSelectFieldType;
 import java.util.Collection;
 import java.util.List;
@@ -55,12 +55,13 @@ public abstract class MultiSelectField extends SelectableValuesField{
 
 	/**
 	 * {@inheritDoc}
-	 */
+     * @return
+     */
 	@Override
-	public Optional<FieldValue<?>> fieldValue(final Object value){
+	public Optional<FieldValueBuilder> fieldValue(final Object value){
 
 		if (value instanceof String) {
-			return Optional.of(MultiSelectFieldType.of((String) value));
+			return Optional.of(MultiSelectFieldType.builder().value((String) value));
 		}
 		return Optional.empty();
 

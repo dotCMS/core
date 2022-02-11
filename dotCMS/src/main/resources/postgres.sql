@@ -1810,7 +1810,6 @@ alter table import_audit add column warnings text,
 
 alter table structure alter host set default 'SYSTEM_HOST';
 alter table structure alter folder set default 'SYSTEM_FOLDER';
-alter table structure add constraint fk_structure_folder foreign key (folder) references folder(inode);
 alter table structure alter column velocity_var_name set not null;
 alter table structure add constraint unique_struct_vel_var_name unique (velocity_var_name);
 create index idx_structure_host on structure (host);

@@ -138,6 +138,7 @@ import com.dotmarketing.startup.runonce.Task210816DeInodeRelationshipTest;
 import com.dotmarketing.startup.runonce.Task210901UpdateDateTimezonesTest;
 import com.dotmarketing.startup.runonce.Task211007RemoveNotNullConstraintFromCompanyMXColumnTest;
 import com.dotmarketing.startup.runonce.Task211012AddCompanyDefaultLanguageTest;
+import com.dotmarketing.startup.runonce.Task220202RemoveFKStructureFolderConstraintTest;
 import com.dotmarketing.startup.runonce.Task211101AddContentletAsJsonColumnTest;
 import com.dotmarketing.startup.runonce.Task211103RenameHostNameLabelTest;
 import com.dotmarketing.util.ConfigTest;
@@ -510,7 +511,8 @@ import org.junit.runners.Suite.SuiteClasses;
         MessageToolTest.class,
         XmlToolTest.class,
         LanguageFolderTest.class,
-        MailAPIImplTest.class
+        MailAPIImplTest.class,
+        Task220202RemoveFKStructureFolderConstraintTest.class
 })
 public class MainSuite {
 
