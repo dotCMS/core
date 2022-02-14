@@ -485,7 +485,8 @@ public class SAMLHelper {
         return null == rolePatterns ? DotSamlConstants.NULL : Arrays.asList(rolePatterns).toString();
     }
 
-    private String hashIt (final String token) throws NoSuchAlgorithmException {
+    @VisibleForTesting
+    protected String hashIt (final String token) throws NoSuchAlgorithmException {
 
         final String hashed = Encryptor.Hashing.sha256().append(token.getBytes(StandardCharsets.UTF_8)).buildUnixHash();
         return org.apache.commons.lang3.StringUtils.abbreviate(hashed, Config.getIntProperty("dotcms.user.id.maxlength", 100));

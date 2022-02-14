@@ -17,7 +17,7 @@ build_by_commit() {
 
   # if this is not a shallow checkout (meaning, we are not being built in github)
   if [[ -d "/build/src/core/.git" ]]; then
-      git fetch --all --tags
+      git fetch --all
       git pull
       echo "Checking out commit/tag/branch: $1"
       if [[ ${is_release} == true ]]; then
