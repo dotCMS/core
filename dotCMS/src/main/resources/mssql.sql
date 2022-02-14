@@ -1989,8 +1989,7 @@ alter table import_audit add warnings NVARCHAR(MAX),
 
 alter table structure add CONSTRAINT [DF_structure_host] DEFAULT 'SYSTEM_HOST' for host;
 alter table structure add CONSTRAINT [DF_structure_folder] DEFAULT 'SYSTEM_FOLDER' for folder;
-alter table structure add CONSTRAINT [CK_structure_host] CHECK(host <> '' AND host IS NOT NULL)
-alter table structure add constraint fk_structure_folder foreign key (folder) references folder(inode);
+alter table structure add CONSTRAINT [CK_structure_host] CHECK(host <> '' AND host IS NOT NULL);
 alter table structure alter column velocity_var_name NVARCHAR(255) not null;
 alter table structure add constraint unique_struct_vel_var_name unique (velocity_var_name);
 

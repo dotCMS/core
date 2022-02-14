@@ -1,12 +1,12 @@
 version: '3.5'
 
 networks:
+  db_net:
   es_net:
-  oracle_net:
-    external: true
 
 volumes:
   cms-shared:
+  dbdata:
   esdata:
 
 services:
@@ -29,24 +29,34 @@ services:
   dotcms:
     image: dotcms/dotcms:latest
     environment:
-        "CATALINA_OPTS": ' -Xms1g -Xmx1g '
-        "DB_BASE_URL": "jdbc:oracle:thin:@{ip_address}:1521:XE"
-        "DB_USERNAME": 'oracle'
-        "DB_PASSWORD": 'oracle'
+        "CATALINA_OPTS": '-Xmx1g '
+        "DB_BASE_URL": "jdbc:postgresql://db/dotcms"
+        "DB_USERNAME": 'dotcmsdbuser'
+        "DB_PASSWORD": 'password'
         "DOT_ES_AUTH_BASIC_PASSWORD": 'admin'
         "DOT_ES_ENDPOINTS": 'http://elasticsearch:9200'
-        "DB_DRIVER": 'oracle.jdbc.OracleDriver'
-        "ES_ADMIN_PASSWORD": 'admin'
-        "TZ": UTC
         #"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20211201/starter-20211201.zip'
     depends_on:
       - elasticsearch
+      - db
     volumes:
-      #- {local_data_path}:/data/shared
-      - {license_local_path}/license.zip:/data/shared/assets/license.zip
+      - cms-shared:/data/shared
+      #- {license_local_path}/license.zip:/data/shared/assets/license.zip
     networks:
-      - oracle_net
+      - db_net
       - es_net
     ports:
-      - "8080:8081"
+      - "8080:8080"
       - "8443:8443"
+
+  db:
+    image: postgres:13
+    command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
+    environment:
+        "POSTGRES_USER": 'dotcmsdbuser'
+        "POSTGRES_PASSWORD": 'password'
+        "POSTGRES_DB": 'dotcms'
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    networks:
+      - db_net

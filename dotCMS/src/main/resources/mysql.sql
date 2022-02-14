@@ -1707,7 +1707,6 @@ alter table import_audit add column warnings text,
 
 alter table structure modify host varchar(100) default 'SYSTEM_HOST' not null;
 alter table structure modify folder varchar(100) default 'SYSTEM_FOLDER' not null;
-alter table structure add constraint fk_structure_folder foreign key (folder) references folder(inode);
 alter table structure modify column velocity_var_name varchar(255) not null;
 alter table structure add constraint unique_struct_vel_var_name unique (velocity_var_name);
 

@@ -1774,7 +1774,6 @@ alter table import_audit add( warnings nclob,
 
 alter table structure modify host default 'SYSTEM_HOST';
 alter table structure modify folder default 'SYSTEM_FOLDER';
-alter table structure add constraint fk_structure_folder foreign key (folder) references folder(inode);
 alter table structure modify (velocity_var_name varchar2(255) not null);
 alter table structure add constraint unique_struct_vel_var_name unique (velocity_var_name);
 
