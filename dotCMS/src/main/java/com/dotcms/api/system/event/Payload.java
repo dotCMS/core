@@ -1,9 +1,11 @@
 package com.dotcms.api.system.event;
 
 import com.dotcms.util.jackson.PayloadDeserializer;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.io.Serializable;
 import java.util.Objects;
@@ -75,9 +77,10 @@ public class Payload implements Serializable {
 	 * @param visibilityValue {@link String}
 	 *                     - Depending of the visibility type, this could be an userId or roleId, for global just keep it null.
 	 */
-	public Payload(final Object data,
-				   final Visibility visibility,
-				   final Object visibilityValue) {
+	@JsonCreator
+	public Payload(@JsonProperty("data") final Object data,
+			@JsonProperty("visibility") final Visibility visibility,
+			@JsonProperty("visibilityValue") final Object visibilityValue) {
 		this.data = data;
 		this.visibility = visibility;
 		this.visibilityValue = visibilityValue;
