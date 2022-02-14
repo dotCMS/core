@@ -11,7 +11,7 @@ import com.dotcms.notifications.bean.Notification;
 import com.dotcms.rest.api.v1.system.websocket.SystemEventsWebSocketEndPoint;
 import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPI;
 import com.dotcms.util.ConversionUtils;
-import com.dotcms.util.marshal.MarshalUtilsProvider;
+import com.dotcms.util.marshal.MarshalFactory;
 import com.dotcms.util.marshal.MarshalUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -22,6 +22,7 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import io.vavr.control.Try;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -111,7 +112,7 @@ public class SystemEventsFactory implements Serializable {
 
 		private final ConversionUtils conversionUtils 			  = ConversionUtils.INSTANCE;
 		private final SystemEventsDAO systemEventsDAO 			  = getSystemEventsDAO();
-		private final MarshalUtils    marshalUtils 	 			  = MarshalUtilsProvider.getInstance().getMarshalUtils();
+		private final MarshalUtils    marshalUtils 	 			  = MarshalFactory.getInstance().getMarshalUtils();
 		private final ServerAPI 	  serverAPI		  			  = APILocator.getServerAPI();
 		private final DotConcurrentFactory concurrentFactory	  = DotConcurrentFactory.getInstance();
 		private final WebSocketContainerAPI webSocketContainerAPI = APILocator.getWebSocketContainerAPI();

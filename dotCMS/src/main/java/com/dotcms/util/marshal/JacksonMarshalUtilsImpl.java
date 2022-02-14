@@ -4,6 +4,7 @@ import com.dotcms.util.jackson.SimpleContentletSerializer;
 import com.dotcms.util.jackson.SqlTimeStampSerializer;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -35,6 +36,7 @@ public class JacksonMarshalUtilsImpl implements MarshalUtils{
         objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS,false);
         objectMapper.setSerializationInclusion(Include.NON_NULL);
         objectMapper.configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true);
+        objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
 
         return objectMapper;
     });
@@ -43,8 +45,9 @@ public class JacksonMarshalUtilsImpl implements MarshalUtils{
 
     @Override
     public String marshal(final Object object) {
-        return Try.of(()-> defaultMapper.get().writeValueAsString(object)).getOrElseThrow(
-                DotRuntimeException::new);
+        final String json = Try.of(()-> defaultMapper.get().writeValueAsString(object)).getOrElseThrow(DotRuntimeException::new);
+        Logger.info(this, ()->" ::  "+json);
+        return json;
     }
 
     @Override
@@ -57,7 +60,11 @@ public class JacksonMarshalUtilsImpl implements MarshalUtils{
 
     @Override
     public <T> T unmarshal(final String string, final Class<? extends T> clazz) {
-        return Try.of(()-> defaultMapper.get().readValue(string,clazz)).getOrElseThrow(DotRuntimeException::new);
+        return Try.of(()-> {
+            System.out.println(string);
+            System.out.println(clazz);
+            return defaultMapper.get().readValue(string, clazz);
+        }).getOrElseThrow(DotRuntimeException::new);
     }
 
     @Override

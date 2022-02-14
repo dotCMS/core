@@ -13,7 +13,7 @@ import java.io.Serializable;
  * @version 3.7
  * @since Jun 14, 2016
  */
-public class MarshalUtilsProvider implements Serializable {
+public class MarshalFactory implements Serializable {
 
     /**
      * Used to keep the instance of the MarshalUtils.
@@ -26,12 +26,12 @@ public class MarshalUtilsProvider implements Serializable {
      */
     public static final String MARSHAL_IMPLEMENTATION_KEY = "marshal.implementation";
 
-    private MarshalUtilsProvider() {
+    private MarshalFactory() {
         // singleton
     }
 
     private static class SingletonHolder {
-        private static final MarshalUtilsProvider INSTANCE = new MarshalUtilsProvider();
+        private static final MarshalFactory INSTANCE = new MarshalFactory();
     }
 
 
@@ -39,7 +39,7 @@ public class MarshalUtilsProvider implements Serializable {
      * Get the instance.
      * @return MarshalFactory
      */
-    public static MarshalUtilsProvider getInstance() {
+    public static MarshalFactory getInstance() {
 
         return SingletonHolder.INSTANCE;
     } // getInstance.
@@ -54,7 +54,7 @@ public class MarshalUtilsProvider implements Serializable {
 
         if (null == this.marshalUtils) {
 
-            synchronized (MarshalUtilsProvider.class) {
+            synchronized (MarshalFactory.class) {
 
                 if (null == this.marshalUtils) { // by default we use Gson, but eventually we can introduce a key on the dotmarketing-config.properties to use a custom one.
 
@@ -64,9 +64,9 @@ public class MarshalUtilsProvider implements Serializable {
 
                     if (UtilMethods.isSet(marshalFactoryClass)) {
 
-                        if (Logger.isDebugEnabled(MarshalUtilsProvider.class)) {
+                        if (Logger.isDebugEnabled(MarshalFactory.class)) {
 
-                            Logger.debug(MarshalUtilsProvider.class,
+                            Logger.debug(MarshalFactory.class,
                                     "Using the marshall class: " + marshalFactoryClass);
                         }
 
@@ -75,9 +75,9 @@ public class MarshalUtilsProvider implements Serializable {
 
                         if (null == this.marshalUtils) {
 
-                            if (Logger.isDebugEnabled(MarshalUtilsProvider.class)) {
+                            if (Logger.isDebugEnabled(MarshalFactory.class)) {
 
-                                Logger.debug(MarshalUtilsProvider.class,
+                                Logger.debug(MarshalFactory.class,
                                         "Could not used this class: " + marshalFactoryClass +
                                         ", using the default Gson implementation");
                             }

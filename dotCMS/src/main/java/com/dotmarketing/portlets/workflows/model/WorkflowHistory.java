@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.workflows.model;
 
-import com.dotcms.util.marshal.MarshalUtilsProvider;
+import com.dotcms.util.marshal.MarshalFactory;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
@@ -88,7 +88,7 @@ public class WorkflowHistory  implements Serializable, WorkflowTimelineItem
 
         if (UtilMethods.isSet(this.changeDescription) && StringUtils.isJson(this.changeDescription.trim())) {
             // if it is json
-            return MarshalUtilsProvider
+            return MarshalFactory
                     .getInstance().getMarshalUtils().unmarshal(this.changeDescription, Map.class);
         }
 

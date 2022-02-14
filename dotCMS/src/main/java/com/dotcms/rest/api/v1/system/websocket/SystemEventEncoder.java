@@ -5,7 +5,7 @@ import javax.websocket.Encoder;
 import javax.websocket.EndpointConfig;
 
 import com.dotcms.api.system.event.SystemEvent;
-import com.dotcms.util.marshal.MarshalUtilsProvider;
+import com.dotcms.util.marshal.MarshalFactory;
 import com.dotcms.util.marshal.MarshalUtils;
 
 /**
@@ -19,7 +19,7 @@ import com.dotcms.util.marshal.MarshalUtils;
  */
 public class SystemEventEncoder implements Encoder.Text<SystemEvent> {
 
-	private final MarshalUtils marshalUtils = MarshalUtilsProvider.getInstance().getMarshalUtils();
+	private final MarshalUtils marshalUtils = MarshalFactory.getInstance().getMarshalUtils();
 
 	@Override
 	public String encode(final SystemEvent object) throws EncodeException {

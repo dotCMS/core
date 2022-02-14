@@ -69,7 +69,7 @@ public class Notification implements Serializable, Cloneable {
      *            - The additional information that make up this notification.
      */
     @JsonCreator
-    public Notification(@JsonProperty("type") final NotificationType type, @JsonProperty("level")  NotificationLevel level, @JsonProperty("userID")  final String userId, @JsonProperty("notificationData")  final NotificationData notificationData) {
+    public Notification(@JsonProperty("type") final NotificationType type, @JsonProperty("level")  NotificationLevel level, @JsonProperty("userId")  final String userId, @JsonProperty("notificationData")  final NotificationData notificationData) {
         this(type, level, userId, false, notificationData);
     }
 

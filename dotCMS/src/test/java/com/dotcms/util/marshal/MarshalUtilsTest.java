@@ -35,8 +35,8 @@ public class MarshalUtilsTest extends UnitTestBase {
     public void marshalTest() throws ParseException, JSONException {
 
 
-        final MarshalUtilsProvider marshalFactory =
-                MarshalUtilsProvider.getInstance();
+        final MarshalFactory marshalFactory =
+                MarshalFactory.getInstance();
 
         assertNotNull(marshalFactory);
 
@@ -88,8 +88,8 @@ public class MarshalUtilsTest extends UnitTestBase {
      */
     @Test
     public void metaDataMarshalTest() throws ParseException, JSONException {
-        final MarshalUtilsProvider marshalFactory =
-                MarshalUtilsProvider.getInstance();
+        final MarshalFactory marshalFactory =
+                MarshalFactory.getInstance();
 
         assertNotNull(marshalFactory);
 
@@ -108,8 +108,8 @@ public class MarshalUtilsTest extends UnitTestBase {
     public void marshalSQLDateTest() throws ParseException, JSONException {
 
 
-        final MarshalUtilsProvider marshalFactory =
-                MarshalUtilsProvider.getInstance();
+        final MarshalFactory marshalFactory =
+                MarshalFactory.getInstance();
 
         assertNotNull(marshalFactory);
 
@@ -160,8 +160,8 @@ public class MarshalUtilsTest extends UnitTestBase {
     public void marshalSqlTimeTest() throws ParseException, JSONException {
 
 
-        final MarshalUtilsProvider marshalFactory =
-                MarshalUtilsProvider.getInstance();
+        final MarshalFactory marshalFactory =
+                MarshalFactory.getInstance();
 
         assertNotNull(marshalFactory);
 
@@ -213,8 +213,8 @@ public class MarshalUtilsTest extends UnitTestBase {
     public void marshalTimeStampTest() throws ParseException, JSONException {
 
 
-        final MarshalUtilsProvider marshalFactory =
-                MarshalUtilsProvider.getInstance();
+        final MarshalFactory marshalFactory =
+                MarshalFactory.getInstance();
 
         assertNotNull(marshalFactory);
 

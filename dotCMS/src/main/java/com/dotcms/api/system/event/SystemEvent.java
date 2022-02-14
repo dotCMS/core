@@ -77,7 +77,7 @@ public class SystemEvent implements Serializable {
 	@JsonCreator
 	public SystemEvent(
 			@JsonProperty("id") final String id,
-			@JsonProperty("eventType") final SystemEventType eventType,
+			@JsonProperty("event") final SystemEventType eventType,
 			@JsonProperty("payload") final Payload payload,
 			@JsonProperty("creationDate") final Date creationDate,
 			@JsonProperty("serverId") final String serverId) {

@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.text.ParseException;
 
+import com.dotmarketing.business.APILocator;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -40,8 +41,8 @@ public class MarshalUtilsIntegrationTest {
     @Test
     public void marshalSystemEvent() throws ParseException, JSONException {
 
-        final MarshalUtilsProvider marshalFactory =
-                MarshalUtilsProvider.getInstance();
+        final MarshalFactory marshalFactory =
+                MarshalFactory.getInstance();
 
         assertNotNull(marshalFactory);
 
