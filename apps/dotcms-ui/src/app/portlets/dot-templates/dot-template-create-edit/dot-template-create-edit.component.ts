@@ -35,16 +35,17 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     ) {}
 
     ngOnInit() {
-        this.vm$.pipe(takeUntil(this.destroy$)).subscribe(({ original }: DotTemplateState) => {
+        this.vm$.pipe(takeUntil(this.destroy$)).subscribe(({ original, working }: DotTemplateState) => {
+            const template = original.type === 'design' ? working : original;
             if (this.form) {
-                const value = this.getFormValue(original);
+                const value = this.getFormValue(template);
 
                 this.form.setValue(value);
             } else {
-                this.form = this.getForm(original);
+                this.form = this.getForm(template);
             }
 
-            if (!original.identifier) {
+            if (!template.identifier) {
                 this.createTemplate();
             }
         });
@@ -68,7 +69,12 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
             data: {
                 template: this.form.value,
                 onSave: (value: DotTemplateItem) => {
-                    this.store.saveProperties(value);
+                    // If it is a template Desing, save entire template
+                    if( value.type === 'design' ) {
+                        this.store.saveTemplate(value);
+                    } else {
+                        this.store.saveProperties(value);
+                    }
                 }
             }
         });

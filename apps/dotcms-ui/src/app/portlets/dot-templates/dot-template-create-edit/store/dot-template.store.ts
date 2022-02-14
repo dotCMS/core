@@ -3,7 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 
 import { ComponentStore } from '@ngrx/component-store';
 import { Observable, zip, of } from 'rxjs';
-import { pluck, switchMap, take, tap, catchError, debounceTime } from 'rxjs/operators';
+import { pluck, switchMap, take, tap, catchError, debounceTime, withLatestFrom, filter, map } from 'rxjs/operators';
 import * as _ from 'lodash';
 
 import { DotTemplatesService } from '@services/dot-templates/dot-templates.service';
@@ -154,6 +154,14 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
     readonly saveTemplateDebounce = this.effect((origin$: Observable<DotTemplateItem>) => {
         return origin$.pipe(
             debounceTime(10000),
+            // If this observable is called due to a template change and then
+            // we save template properties, there is not simple way to cancel
+            // the debounceTime and avoid a double save.
+            // So we can implement the following code.
+            // More Information: https://stackoverflow.com/questions/17745478/filter-an-observable-using-values-from-another-observable
+            withLatestFrom(this.didTemplateChanged$),
+            filter(([, didTemplateChanged]: [DotTemplateItem, boolean]) => didTemplateChanged),
+            map(([template]: [DotTemplateItem, boolean]) => template),
             switchMap((template: DotTemplateItem) => {
                 this.dotGlobalMessageService.loading(
                     this.dotMessageService.get('dot.common.message.saving')

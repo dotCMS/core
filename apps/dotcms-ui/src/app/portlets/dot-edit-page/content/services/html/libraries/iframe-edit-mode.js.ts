@@ -421,7 +421,7 @@ function initDragAndDrop () {
         event.preventDefault();
         event.stopPropagation();
         const container = event.target.closest('[data-dot-object="container"]');
-        if (container && !container.classList.contains('no')) {
+        if (container && !container.classList.contains('no') && isContentletPlaceholderInDOM()) {
             setLoadingIndicator();
             if (event.dataTransfer.files[0]) { // trying to upload an image
                 uploadFile(event.dataTransfer.files[0]).then((dotCMSTempFile) => {

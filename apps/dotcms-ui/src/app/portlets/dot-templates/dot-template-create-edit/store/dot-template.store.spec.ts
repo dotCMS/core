@@ -472,13 +472,16 @@ describe('DotTemplateStore', () => {
                 });
             });
 
-            it('should update template and update the state after 10 seconds', fakeAsync(() => {
-                service.saveTemplateDebounce({
+            it('should update template and update the state after 10 seconds if template has changed', fakeAsync(() => {
+                const newTemplate = {
                     body: 'string',
                     friendlyName: 'string',
                     identifier: 'string',
                     title: 'string'
-                });
+                };
+
+                service.updateWorkingTemplate(newTemplate);
+                service.saveTemplateDebounce(newTemplate);
 
                 tick(10000);
 

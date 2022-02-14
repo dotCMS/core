@@ -16,7 +16,11 @@ export class DotFormColumnComponent {
     fieldsToShow: string;
 
     render() {
-        return this.column.fields.map((field: DotCMSContentTypeField) => this.getField(field));
+        // When the user start dragging a form in the edit page the value of layout of the
+        // <dot-form> element turns empty and eventually the column prop in this component
+        return this.column
+            ? this.column.fields.map((field: DotCMSContentTypeField) => this.getField(field))
+            : null;
     }
 
     private getField(field: DotCMSContentTypeField): JSX.Element {
