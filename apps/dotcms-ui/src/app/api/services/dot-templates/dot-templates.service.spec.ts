@@ -185,6 +185,32 @@ describe('DotTemplatesService', () => {
             }
         });
     });
+    it('should put to save and publish a template', () => {
+        service
+            .saveAndPublish({
+                name: '',
+                anonymous: true,
+                friendlyName: ''
+            } as DotTemplate)
+            .subscribe((template) => {
+                expect(template as any).toEqual({
+                    identifier: '1234',
+                    name: 'Theme name'
+                });
+            });
+
+        const req = httpMock.expectOne(`${TEMPLATE_API_URL}_savepublish`);
+
+        expect(req.request.method).toBe('PUT');
+        expect(req.request.body).toEqual({ name: '', anonymous: true, friendlyName: '' });
+
+        req.flush({
+            entity: {
+                identifier: '1234',
+                name: 'Theme name'
+            }
+        });
+    });
     it('should delete a template', () => {
         service.delete(['testId01']).subscribe();
         const req = httpMock.expectOne(TEMPLATE_API_URL);

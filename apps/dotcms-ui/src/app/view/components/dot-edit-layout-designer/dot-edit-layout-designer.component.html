@@ -44,6 +44,16 @@
             <dot-layout-properties [group]="form.get('layout')"></dot-layout-properties>
             <dot-icon-button [size]="32" float icon="add" (click)="addGridBox()"></dot-icon-button>
             <span class="toolbar__sep"></span>
+            <button
+                *ngIf="!apiLink"
+                pButton
+                class="p-button-secondary"
+                data-testid="publishBtn"
+                [disabled]="disablePublish"
+                type="button"
+                [label]="'Publish' | dm"
+                (click)="onSaveAndPublish()"
+            ></button>
             <input
                 #templateName
                 pInputText

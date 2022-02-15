@@ -70,6 +70,9 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
     save: EventEmitter<DotTemplate> = new EventEmitter();
 
     @Output()
+    saveAndPublish: EventEmitter<Event> = new EventEmitter();
+
+    @Output()
     updateTemplate: EventEmitter<DotTemplate> = new EventEmitter();
 
     form: FormGroup;
@@ -79,6 +82,7 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
     currentTheme: DotTheme;
 
     saveAsTemplate: boolean;
+    disablePublish = true;
     showTemplateLayoutSelectionDialog = false;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -129,6 +133,17 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
      */
     onSave(): void {
         this.save.emit(this.form.value);
+    }
+
+    /**
+     * Emit publish event
+     *
+     * @memberof DotEditLayoutDesignerComponent
+     */
+
+    onSaveAndPublish(): void {
+        this.disablePublish = true;
+        this.saveAndPublish.emit(this.form.value);
     }
 
     /**
@@ -223,6 +238,7 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
             })
         });
         this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+            this.disablePublish = false;
             if (!_.isEqual(this.form.value, this.initialFormValue)) {
                 this.updateTemplate.emit(this.form.value);
             }

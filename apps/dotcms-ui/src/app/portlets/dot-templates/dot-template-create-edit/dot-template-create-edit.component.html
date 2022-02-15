@@ -14,15 +14,16 @@
             </ng-container>
         </dot-portlet-toolbar>
         <!-- The observable returns a boolen, therefore we can not use  *ngIf="obs$ | async as obs" to subscribe to it -->
-        <ng-container *ngIf="{ value: didTemplateChanged$ | async} as didTemplateChanged">
-        <dot-template-builder
-            [didTemplateChanged]="didTemplateChanged.value"
-            [item]="vm.working"
-            (updateTemplate)="updateWorkingTemplate($event)"
-            (save)="saveTemplate($event)"
-            (cancel)="cancelTemplate()"
-            (custom)="onCustomEvent($event)"
-        ></dot-template-builder>
+        <ng-container *ngIf="{ value: didTemplateChanged$ | async } as didTemplateChanged">
+            <dot-template-builder
+                [didTemplateChanged]="didTemplateChanged.value"
+                [item]="vm.working"
+                (updateTemplate)="updateWorkingTemplate($event)"
+                (saveAndPublish)="saveAndPublishTemplate($event)"
+                (save)="saveTemplate($event)"
+                (cancel)="cancelTemplate()"
+                (custom)="onCustomEvent($event)"
+            ></dot-template-builder>
         </ng-container>
     </dot-portlet-base>
 </ng-container>

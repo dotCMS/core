@@ -81,46 +81,42 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Update Working Tempalte
+     * Save and publish template to store
      *
+     * @param DotTemplate template
      * @memberof DotTemplateCreateEditComponent
      */
-    updateWorkingTemplate({ layout, body, themeId }: DotTemplate): void {
-        let value = {
+    saveAndPublishTemplate(template: DotTemplate): void {
+        this.store.saveAndPublishTemplate({
             ...this.form.value,
-            body
-        };
+            ...this.formatTemplateItem(template)
+        });
+    }
 
-        if (layout) {
-            value = {
-                ...this.form.value,
-                layout,
-                theme: themeId
-            };
-        }
-
-        this.store.saveWorkingTemplate(value);
+    /**
+     * Update Working Template
+     *
+     * @param DotTemplate template
+     * @memberof DotTemplateCreateEditComponent
+     */
+    updateWorkingTemplate(template: DotTemplate): void {
+        this.store.saveWorkingTemplate({
+            ...this.form.value,
+            ...this.formatTemplateItem(template)
+        });
     }
 
     /**
      * Save template to store
      *
+     * @param DotTemplate template
      * @memberof DotTemplateCreateEditComponent
      */
-    saveTemplate({ layout, body, themeId }: DotTemplate): void {
-        let value = {
+    saveTemplate(template: DotTemplate): void {
+        this.store.saveTemplate({
             ...this.form.value,
-            body
-        };
-
-        if (layout) {
-            value = {
-                ...this.form.value,
-                layout,
-                theme: themeId
-            };
-        }
-        this.store.saveTemplate(value);
+            ...this.formatTemplateItem(template)
+        });
     }
 
     /**
@@ -232,5 +228,22 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
             .subscribe(() => {
                 this.store.goToTemplateList();
             });
+    }
+
+    private formatTemplateItem({ layout, body, themeId }: DotTemplate): DotTemplateItem {
+        let value = {
+            ...this.form.value,
+            body
+        };
+
+        if (layout) {
+            value = {
+                ...this.form.value,
+                layout,
+                theme: themeId
+            };
+        }
+
+        return value;
     }
 }

@@ -443,6 +443,10 @@ describe('DotTemplateCreateEditComponent', () => {
                 };
                 const storeMock = {
                     ...templateStoreValue,
+                    saveTemplate: jasmine.createSpy(),
+                    saveAndPublishTemplate: jasmine.createSpy(),
+                    goToTemplateList: jasmine.createSpy(),
+                    goToEditTemplate: jasmine.createSpy(),
                     vm$: of({
                         working: template,
                         original: template,
@@ -552,6 +556,42 @@ describe('DotTemplateCreateEditComponent', () => {
                     };
 
                     expect(store.saveWorkingTemplate).toHaveBeenCalledWith(template);
+                });
+
+                it('should saveAndPublishTemplate', () => {
+                    const builder = de.query(By.css('dot-template-builder'));
+                    builder.triggerEventHandler('saveAndPublish', {
+                        layout: {
+                            title: '',
+                            width: '',
+                            footer: true,
+                            header: false,
+                            sidebar: {},
+                            body: {
+                                rows: []
+                            }
+                        },
+                        themeId: '123'
+                    });
+
+                    expect(store.saveAndPublishTemplate).toHaveBeenCalledWith({
+                        title: 'Some template',
+                        type: 'design',
+                        layout: {
+                            title: '',
+                            width: '',
+                            footer: true,
+                            header: false,
+                            sidebar: {},
+                            body: {
+                                rows: []
+                            }
+                        },
+                        identifier: '123',
+                        friendlyName: '',
+                        theme: '123',
+                        image: ''
+                    });
                 });
 
                 it('should cancel', () => {
