@@ -36,7 +36,6 @@ public class JacksonMarshalUtilsImpl implements MarshalUtils{
         objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS,false);
         objectMapper.setSerializationInclusion(Include.NON_NULL);
         objectMapper.configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true);
-        objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
 
         return objectMapper;
     });
