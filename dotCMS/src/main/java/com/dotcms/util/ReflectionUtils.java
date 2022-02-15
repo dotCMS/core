@@ -1,9 +1,9 @@
 package com.dotcms.util;
 
+import com.dotmarketing.util.Logger;
+import java.beans.Statement;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
-
-import com.dotmarketing.util.Logger;
 
 /**
  * Encapsulates util methods to perform reflection, such as create a new
@@ -159,5 +159,23 @@ public class ReflectionUtils implements Serializable {
 
         return clazz;
     }
+
+    /**
+     * Java Beans set value utility
+     * The method d
+     * @param target any object
+     * @param method any method that takes one single param it doesnt have to be named setSomething
+     * @param value The param expected by the method we intent to fire
+     */
+    public static void setValue(final Object target, final String method,final Object value) {
+        //Uses Java Beans API
+        final Statement statement = new Statement(target, method, new Object[] {value});
+        try {
+            statement.execute();
+        } catch (Exception e) {
+            Logger.warn(ReflectionUtils.class,String.format("Unable to set value via %s into bean %s",method, target), e);
+        }
+    }
+
 
 } // E:O:F:ReflectionUtils.

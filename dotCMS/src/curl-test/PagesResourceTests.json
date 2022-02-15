@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "d0e910d5-815d-49ba-a7eb-de5bff9f993f",
+		"_postman_id": "03750f23-8ed5-479b-b3f2-efa4936d98ce",
 		"name": "Page API - [api/v1/page]",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -1387,6 +1387,289 @@
 			"name": "Add Content [/api/v1/page/{page-id}/content]",
 			"item": [
 				{
+					"name": "Test_RespectOrder",
+					"item": [
+						{
+							"name": "ImportBundle",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Bundle uploaded sucessfully\", function () {",
+											"    pm.response.to.have.status(200);",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    console.log(jsonData);",
+											"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/octet-stream"
+									},
+									{
+										"key": "Content-Disposition",
+										"type": "text",
+										"value": "attachment"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": "resources/testRespectOrder_Bundle.tar.gz"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/bundle?sync=true",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundle"
+									],
+									"query": [
+										{
+											"key": "sync",
+											"value": "true"
+										},
+										{
+											"key": "AUTH_TOKEN",
+											"value": "",
+											"disabled": true
+										}
+									]
+								},
+								"description": "Imports a Bundle that includes:\n\n*   Page (testRespectOrder)\n*   2 Content (testOrder1 and testOrder2)"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Page To Check Order",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"",
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"",
+											"pm.test(\"Response reorder check\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"<h2>testOrder2</h2><h2>testOrder1</h2>\");",
+											"",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/page/render/testrespectorder?language_id=1&host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"page",
+										"render",
+										"testrespectorder"
+									],
+									"query": [
+										{
+											"key": "language_id",
+											"value": "1"
+										},
+										{
+											"key": "host_id",
+											"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "ReorderContents",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Response body contains\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"ok\");",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "[{\"identifier\":\"//default/application/containers/system/\",\"uuid\":\"1\",\"contentletsId\":[\"ffba6c6b2e90ce4dcc2a553c6b860822\",\"844cdd64de4fd9418613b3b53f860c6f\"]}]"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/page/773c1d064bfedacf26986a67ee90b490/content",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"page",
+										"773c1d064bfedacf26986a67ee90b490",
+										"content"
+									]
+								},
+								"description": "Reorder the page contents."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Page To Check Reorder",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"",
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"",
+											"pm.test(\"Response reorder check\", function () {",
+											"    pm.expect(pm.response.text()).to.include(\"<h2>testOrder1</h2><h2>testOrder2</h2>\");",
+											"",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/page/render/testrespectorder?language_id=1&host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"page",
+										"render",
+										"testrespectorder"
+									],
+									"query": [
+										{
+											"key": "language_id",
+											"value": "1"
+										},
+										{
+											"key": "host_id",
+											"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
 					"name": "invalidateSession",
 					"event": [
 						{
@@ -2294,6 +2577,162 @@
 			]
 		},
 		{
+			"name": "Whats Changed",
+			"item": [
+				{
+					"name": "pre_ImportBundle",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.contains(\"testWhatsChanged\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/testWhatsChanged-01FTGYNEP672VF4KFRFWSX3RPT.tar.gz"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle?sync=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes: a page with content, the content has diff versions working and live"
+					},
+					"response": []
+				},
+				{
+					"name": "Check Whats Changed Endpoint",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"There are diff between live and working page\", function () {",
+									"    var jsonData = pm.response.json().entity;",
+									"    console.log(jsonData);",
+									"    pm.expect(jsonData[\"diff\"]).equal(true);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/8afe50bc66533c6f0ed7711d74654b80/render/versions",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"8afe50bc66533c6f0ed7711d74654b80",
+								"render",
+								"versions"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "Put Create Page With CacheTTL 55",
 			"event": [
 				{
@@ -2343,7 +2782,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"contentlet\":{\n\t\t\"stName\": \"htmlpageasset\",\n\t\t\"title\": \"PageAsset SystemTemplate\",\n        \"url\": \"pageassetsystemtemplate\",\n        \"friendlyName\":\"pageassetsystemtemplate\",\n        \"template\": \"//demo.dotcms.com/application/templates/system/\",\n        \"sortOrder\": \"0\",\n        \"cachettl\": \"100\",\n        \"hostFolder\":\"48190c8c-42c4-46af-8d1a-0cd5db894797\"\n\t}\n}",
+					"raw": "{\n\t\"contentlet\":{\n\t\t\"stName\": \"htmlpageasset\",\n\t\t\"title\": \"PageAsset SystemTemplate\",\n        \"url\": \"pageassetsystemtemplate\",\n        \"friendlyName\":\"pageassetsystemtemplate\",\n        \"template\": \"//default/application/templates/system/\",\n        \"sortOrder\": \"0\",\n        \"cachettl\": \"100\",\n        \"hostFolder\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\"\n\t}\n}",
 					"options": {
 						"raw": {
 							"language": "json"

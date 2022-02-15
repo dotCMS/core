@@ -22,7 +22,6 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
@@ -261,12 +260,14 @@ public class TemplateResource {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response).rejectWhenNoUser(true).init();
         final User user         = initData.getUser();
-        final Host host         = this.hostWebAPI.getCurrentHostNoThrow(request);
+        final Host host         = this.templateHelper.getHost(templateForm.getSiteId(), ()->this.hostWebAPI.getCurrentHostNoThrow(request));
         final PageMode pageMode = PageMode.get(request);
 
         return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(
                 this.fillAndSaveTemplate(templateForm, user, host, pageMode, new Template()), user))).build();
     }
+
+
 
     /**
      * Saves a new working version of an existing template. The templateForm must contain the identifier of the template.
@@ -289,7 +290,7 @@ public class TemplateResource {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response).rejectWhenNoUser(true).init();
         final User user         = initData.getUser();
-        final Host host         = this.hostWebAPI.getCurrentHostNoThrow(request);
+        final Host host         = this.templateHelper.getHost(templateForm.getSiteId(), ()->this.hostWebAPI.getCurrentHostNoThrow(request));
         final PageMode pageMode = PageMode.get(request);
         final Template currentTemplate = this.templateAPI.findWorkingTemplate(templateForm.getIdentifier(),user,pageMode.respectAnonPerms);
 
@@ -326,7 +327,7 @@ public class TemplateResource {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response).rejectWhenNoUser(true).init();
         final User user         = initData.getUser();
-        final Host host         = this.hostWebAPI.getCurrentHostNoThrow(request);
+        final Host host         = this.templateHelper.getHost(templateForm.getSiteId(), ()->this.hostWebAPI.getCurrentHostNoThrow(request));
         final PageMode pageMode = PageMode.get(request);
         final Template currentTemplate = this.templateAPI.findWorkingTemplate(templateForm.getIdentifier(),
                 user, pageMode.respectAnonPerms);

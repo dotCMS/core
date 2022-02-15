@@ -1180,6 +1180,7 @@ public class ContentletAjax {
 	                searchResult.put("titleImage", contentlet.getTitleImage().get().variable());
 	            }
 				searchResult.put("modDate", fieldValue);
+				searchResult.put("modDateMilis", String.valueOf(con.getModDate().getTime()));
 				String user = "";
 				User contentEditor = null;
 				try {
@@ -1886,7 +1887,11 @@ public class ContentletAjax {
 				String copyOptionsStr = (String)contentletFormData.get("copyOptions");
 				CopyHostContentUtil copyHostContentUtil = new CopyHostContentUtil();
 				if (UtilMethods.isSet(copyOptionsStr)) {
-					copyHostContentUtil.checkHostCopy(contentlet, user, copyOptionsStr);
+					final User finalUser = user;
+					final Contentlet finalContentlet = contentlet;
+					HibernateUtil.addCommitListener(()->{
+					                  copyHostContentUtil.checkHostCopy(finalContentlet, finalUser, copyOptionsStr);
+					       });
 				}
 
 			}
@@ -1912,7 +1917,7 @@ public class ContentletAjax {
 						if(!vars.isEmpty()){
 							String[] refererVars =referer.split("/");
 							for(String var: vars.keySet()){
-								String contVar = contentlet.get(var)!=null?(String)contentlet.get(var):"";
+								String contVar = contentlet.get(var)!=null?contentlet.get(var).toString():"";
 								String refererVar = refererVars[vars.get(var)];
 								if(UtilMethods.isSet(contVar) && !contVar.equals(refererVar)){
 									refererVars[vars.get(var)] = contVar;

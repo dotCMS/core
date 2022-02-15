@@ -24,6 +24,7 @@ public class FireMultipleActionForm extends Validated {
     private final String whereToSend;
     private final String filterKey;
     private final String iWantTo;
+    private final String timezoneId;
 
     private final List<Map<String, Object>> contentletsFormData;
 
@@ -67,6 +68,10 @@ public class FireMultipleActionForm extends Validated {
         return iWantTo;
     }
 
+    public String getTimezoneId() {
+        return timezoneId;
+    }
+
     public List<Map<String, Object>> getContentletsFormData() {
         return contentletsFormData;
     }
@@ -85,6 +90,7 @@ public class FireMultipleActionForm extends Validated {
         this.iWantTo     = builder.iWantTo;
         this.contentletsFormData =
                 builder.contentlets;
+        this.timezoneId = builder.timezoneId;
     }
 
     public static class Builder {
@@ -109,6 +115,8 @@ public class FireMultipleActionForm extends Validated {
         private String filterKey;
         @JsonProperty()
         private String iWantTo;
+        @JsonProperty()
+        private String timezoneId;
         @JsonProperty("contentlets")
         private List<Map<String, Object>> contentlets;
 
@@ -159,6 +167,11 @@ public class FireMultipleActionForm extends Validated {
 
         public Builder iWantTo(final String iWantTo) {
             this.iWantTo = iWantTo;
+            return this;
+        }
+
+        public Builder timezoneId(final String timezoneId){
+            this.timezoneId = timezoneId;
             return this;
         }
 

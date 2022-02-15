@@ -145,6 +145,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   public static final String WORKFLOW_EXPIRE_DATE = "wfExpireDate";
   public static final String WORKFLOW_EXPIRE_TIME = "wfExpireTime";
   public static final String WORKFLOW_NEVER_EXPIRE = "wfNeverExpire";
+  public static final String WORKFLOW_TIMEZONE_ID = "timezoneId";
   public static final String FILTER_KEY = "filterKey";
   public static final String WHERE_TO_SEND = "whereToSend";
   public static final String I_WANT_TO = "iWantTo";
@@ -245,9 +246,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
   /**
    * Create a contentlet based on a map (makes a copy of it)
-   *
+   * @deprecated use {@link #Contentlet(Contentlet)}
    * @param mapIn
    */
+  @Deprecated
   public Contentlet(final Map<String, Object> mapIn) {
     this();
     mapIn.values().removeIf(Objects::isNull);
@@ -261,7 +263,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public Contentlet(final Contentlet contentlet) {
 		this(contentlet.getMap());
 		this.setIndexPolicy(contentlet.getIndexPolicy());
-
+		this.loadedTags = contentlet.loadedTags;
 	}
 
   /**
@@ -1466,9 +1468,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public boolean hasTags () throws DotDataException {
 
 		final List<TagInode> foundTagInodes = APILocator.getTagAPI().getTagInodesByInode(this.getInode());
-		return foundTagInodes != null && !foundTagInodes.isEmpty()?
-				foundTagInodes.stream().anyMatch(foundTagInode -> isSet(this.getStringProperty(foundTagInode.getFieldVarName()))):
-				false;
+		return foundTagInodes != null && !foundTagInodes.isEmpty() && foundTagInodes.stream()
+				.anyMatch(foundTagInode -> isSet(
+						this.get(foundTagInode.getFieldVarName())));
 	}
 
     /**
@@ -1507,7 +1509,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 									contentletTagsBuilder.append(",");
 								}
 								if (relatedTag.isPersona()) {
-									contentletTagsBuilder.append(relatedTag.getTagName() + ":persona");
+									contentletTagsBuilder.append(relatedTag.getTagName())
+											.append(":persona");
 								} else {
 									contentletTagsBuilder.append(relatedTag.getTagName());
 								}
@@ -1911,5 +1914,27 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 		return null != this.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS) &&
 				Boolean.TRUE.equals(this.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS));
+	}
+
+	/**
+	 * Do a smart copy of the contentlet into the content argument
+	 * @return
+	 */
+	@JsonIgnore
+	public Contentlet copy (final Contentlet contentlet) {
+
+		if (null != contentlet && null != contentlet.map) {
+
+			if (this.loadedTags) {
+
+				contentlet.loadedTags = true;
+				contentlet.map.putAll(this.map);
+			} else {
+
+				contentlet.map.putAll(this.getMap());
+			}
+		}
+
+		return contentlet;
 	}
 }

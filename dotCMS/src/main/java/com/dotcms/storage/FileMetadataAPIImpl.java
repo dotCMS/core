@@ -50,11 +50,6 @@ import java.util.stream.Stream;
  */
 public class FileMetadataAPIImpl implements FileMetadataAPI {
 
-    public static final String META_TMP = ".meta.tmp";
-    private static final String METADATA_GROUP_NAME = "METADATA_GROUP_NAME";
-    private static final String DEFAULT_STORAGE_TYPE = "DEFAULT_STORAGE_TYPE";
-    private static final String DOT_METADATA = "dotmetadata";
-    private static final String DEFAULT_METADATA_GROUP_NAME = DOT_METADATA;
     private final FileStorageAPI fileStorageAPI;
     private final MetadataCache metadataCache;
 
@@ -66,21 +61,6 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     FileMetadataAPIImpl(final FileStorageAPI fileStorageAPI, final MetadataCache metadataCache) {
         this.fileStorageAPI = fileStorageAPI;
         this.metadataCache = metadataCache;
-    }
-
-    /**
-     * Metadata file generator.
-     * @param contentlet
-     * @param fieldVariableName
-     * @return
-     */
-    private String getFileName (final Contentlet contentlet, final String fieldVariableName) {
-
-        final String inode        = contentlet.getInode();
-        final String fileName     = fieldVariableName + "-metadata.json";
-        return StringUtils.builder(File.separator,
-                inode.charAt(0), File.separator, inode.charAt(1), File.separator, inode, File.separator,
-                fileName).toString();
     }
 
     /**
@@ -137,7 +117,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
         for (final String binaryFieldName : basicBinaryFieldNameSet) {
 
             final File file           = contentlet.getBinary(binaryFieldName);
-            final String metadataPath = this.getFileName(contentlet, binaryFieldName);
+            final String metadataPath = getFileName(contentlet, binaryFieldName);
 
             if (null != file && file.exists() && file.canRead()) {
 
@@ -407,7 +387,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
             final String fieldVariableName, final boolean forceGenerate) throws DotDataException {
         final StorageType storageType = StoragePersistenceProvider.getStorageType();
         final String metadataBucketName = Config.getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
-        final String metadataPath = this.getFileName(contentlet, fieldVariableName);
+        final String metadataPath = getFileName(contentlet, fieldVariableName);
 
         Map<String, Serializable> metadataMap = fileStorageAPI.retrieveMetaData(
                 new FetchMetadataParams.Builder()

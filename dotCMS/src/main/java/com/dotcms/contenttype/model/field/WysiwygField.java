@@ -2,7 +2,7 @@ package com.dotcms.contenttype.model.field;
 
 import static com.dotcms.util.CollectionsUtils.list;
 
-import com.dotcms.content.model.FieldValue;
+import com.dotcms.content.model.FieldValueBuilder;
 import com.dotcms.content.model.type.WysiwygType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -58,11 +58,12 @@ public abstract class WysiwygField extends Field {
 
 	/**
 	 * {@inheritDoc}
-	 */
+     * @return
+     */
 	@Override
-	public Optional<FieldValue<?>> fieldValue(final Object value) {
+	public Optional<FieldValueBuilder> fieldValue(final Object value) {
 		if (value instanceof String) {
-			return Optional.of(WysiwygType.of((String) value));
+			return Optional.of(WysiwygType.builder().value((String) value));
 		}
 		return Optional.empty();
 	}

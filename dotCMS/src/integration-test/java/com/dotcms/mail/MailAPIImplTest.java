@@ -90,19 +90,37 @@ public class MailAPIImplTest {
         properties.setProperty("mail.smtp.auth", "false");
         authenticator = new MailAPIImpl(properties).createAuthenticator();
         assert(authenticator ==null);
-        
-        
-        // Test no password
-        properties.setProperty("mail.smtp.auth", "true");
-        properties.setProperty("mail.smtp.user", "test");
+
+        // test smtps.auth=false
+        properties.setProperty("mail.smtps.auth", "false");
         authenticator = new MailAPIImpl(properties).createAuthenticator();
         assert(authenticator ==null);
         
         
-        // Test password
+        // Test no password (smtp)
+        properties.setProperty("mail.smtp.auth", "true");
+        properties.setProperty("mail.smtp.user", "test");
+        authenticator = new MailAPIImpl(properties).createAuthenticator();
+        assert(authenticator ==null);
+
+
+        // Test no password (smtps)
+        properties.setProperty("mail.smtps.auth", "true");
+        properties.setProperty("mail.smtps.user", "test");
+        authenticator = new MailAPIImpl(properties).createAuthenticator();
+        assert(authenticator ==null);
+
+        // Test password (smtp)
         properties.setProperty("mail.smtp.auth", "true");
         properties.setProperty("mail.smtp.user", "test");
         properties.setProperty("mail.smtp.password", "test");
+        authenticator = new MailAPIImpl(properties).createAuthenticator();
+        assert(authenticator !=null);
+
+        // Test password (smtps)
+        properties.setProperty("mail.smtps.auth", "true");
+        properties.setProperty("mail.smtps.user", "test");
+        properties.setProperty("mail.smtps.password", "test");
         authenticator = new MailAPIImpl(properties).createAuthenticator();
         assert(authenticator !=null);
     }

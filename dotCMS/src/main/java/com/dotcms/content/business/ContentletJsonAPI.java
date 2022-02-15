@@ -5,6 +5,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.liferay.portal.model.User;
 
 /**
  * This is class takes care of translating a contentlet from it's regular mutable representation

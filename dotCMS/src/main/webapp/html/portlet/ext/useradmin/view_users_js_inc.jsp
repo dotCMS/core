@@ -554,6 +554,7 @@
 
         dijit.byId('password').attr('value', data.password);
         dijit.byId('passwordCheck').attr('value', data.password);
+        userPasswordChanged();
     }
 
 	//Handler from when the user info has changed
