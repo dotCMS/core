@@ -344,7 +344,7 @@ public class EditFolderAction extends DotPortletAction {
 				// check if the new folder already exists
 				Identifier prevId = null;
 				if (parentFolder != null) {
-					String uri=APILocator.getIdentifierAPI().find(parentFolder).getPath()+ f.getName();
+					String uri=APILocator.getIdentifierAPI().find(parentFolder.getIdentifier()).getPath()+ f.getName();
 					prevId = APILocator.getIdentifierAPI().find(parentHost, uri);
 				} else {
 					String uri="/" + f.getName();
@@ -510,7 +510,7 @@ public class EditFolderAction extends DotPortletAction {
 			PortletConfig config, ActionForm form, User user) throws Exception {
 		String parentInode = req.getParameter("parent");
 		String inode = req.getParameter("inode");
-		Folder current = (Folder) InodeFactory.getInode(inode, Folder.class);
+		Folder current = folderAPI.find(inode, user, false);
 
 		if (APILocator.getFolderAPI().find(parentInode,user,false) != null) {
 			Host parentHost = hostAPI.find(parentInode, user, false); 
@@ -537,7 +537,7 @@ public class EditFolderAction extends DotPortletAction {
 			PortletConfig config, ActionForm form, User user) throws Exception {
 		String parentInode = req.getParameter("parent");
 		String inode = req.getParameter("inode");
-		Folder current = (Folder) InodeFactory.getInode(inode, Folder.class);
+		Folder current = folderAPI.find(inode, user, false);
 
 		if (!folderAPI.exists(parentInode)) {
 			Host parentHost = hostAPI.find(parentInode, user, false); 

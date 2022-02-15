@@ -120,7 +120,7 @@ public class WebAssetFactory {
 		permissionAPI = permissionAPIRef;
 	}
 
-	public static void createAsset(WebAsset webasset, String userId, Inode parent) throws DotDataException, DotStateException, DotSecurityException {
+	public static void createAsset(WebAsset webasset, String userId, Folder parent) throws DotDataException, DotStateException, DotSecurityException {
 
 		webasset.setModDate(new java.util.Date());
 		webasset.setModUser(userId);
@@ -132,7 +132,7 @@ public class WebAssetFactory {
 		   parent.addChild(webasset);
 
 		// create new identifier, with the URI
-		Identifier id = APILocator.getIdentifierAPI().createNew(webasset, (Folder) parent);
+		Identifier id = APILocator.getIdentifierAPI().createNew(webasset, parent);
 		id.setOwner(userId);
 		// set the identifier on the inode for future reference.
 		// and for when we get rid of identifiers all together
@@ -209,7 +209,7 @@ public class WebAssetFactory {
 
 	}
 
-	public static void createAsset(WebAsset webasset, String userId, Inode parent, Identifier identifier,
+	public static void createAsset(WebAsset webasset, String userId, Folder parent, Identifier identifier,
 			boolean working) throws DotDataException, DotStateException, DotSecurityException {
 
 		webasset.setModDate(new java.util.Date());
@@ -276,7 +276,7 @@ public class WebAssetFactory {
 
 	}
 
-	public static void createAsset(WebAsset webasset, String userId, Inode parent, boolean isLive) throws DotDataException, DotStateException, DotSecurityException {
+	public static void createAsset(WebAsset webasset, String userId, Folder parent, boolean isLive) throws DotDataException, DotStateException, DotSecurityException {
 		webasset.setModDate(new java.util.Date());
 		webasset.setModUser(userId);
 		// persists the webasset
@@ -287,7 +287,7 @@ public class WebAssetFactory {
 		  parent.addChild(webasset);
 
 		// create new identifier, with the URI
-		Identifier id = APILocator.getIdentifierAPI().createNew(webasset, (Folder) parent);
+		Identifier id = APILocator.getIdentifierAPI().createNew(webasset, parent);
 		id.setOwner(userId);
 		// set the identifier on the inode for future reference.
 		// and for when we get rid of identifiers all together
@@ -901,21 +901,37 @@ public class WebAssetFactory {
 		return false;
 	}
 
+	public static void changeAssetMenuOrder(Folder folder, int newValue, User user) throws ActionException, DotDataException {
+
+		// Checking permissions
+		if (!permissionAPI.doesUserHavePermission(folder, PERMISSION_WRITE, user))
+			throw new ActionException(WebKeys.USER_PERMISSIONS_EXCEPTION);
+
+		if (newValue == -1) {
+			folder.setShowOnMenu(false);
+		} else {
+			folder.setShowOnMenu(true);
+		}
+		folder.setSortOrder(newValue);
+		RefreshMenus.deleteMenu(folder);
+
+		Identifier ident=APILocator.getIdentifierAPI().find(folder.getIdentifier());
+		CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
+
+		try {
+			APILocator.getFolderAPI().save(folder, user, false);
+		} catch (DotSecurityException e) {
+			Logger.warnAndDebug(WebAssetFactory.class, "changeAssetMenuOrder failed for folder :" + folder.getName(), e);
+		}
+	}
+
 	public static void changeAssetMenuOrder(Inode asset, int newValue, User user) throws ActionException, DotDataException {
 
 		// Checking permissions
 		if (!permissionAPI.doesUserHavePermission(asset, PERMISSION_WRITE, user))
 			throw new ActionException(WebKeys.USER_PERMISSIONS_EXCEPTION);
 
-		if (asset instanceof Folder) {
-			if (newValue == -1) {
-				((Folder)asset).setShowOnMenu(false);
-			} else {
-				((Folder)asset).setShowOnMenu(true);
-			}
-			((Folder)asset).setSortOrder(newValue);
-			RefreshMenus.deleteMenu(((Folder)asset));
-		} else if (asset instanceof WebAsset) {
+        if (asset instanceof WebAsset) {
 			if (newValue == -1) {
 				((WebAsset)asset).setShowOnMenu(false);
 			} else {
@@ -1100,7 +1116,7 @@ public class WebAssetFactory {
 				}
 				if (!WebAssetFactory.isAbstractAsset(webAsset)) {
 					permAsset.setPathToMe(APILocator.getIdentifierAPI()
-							.find(folderParent).getPath());
+							.find(folderParent.getIdentifier()).getPath());
 				} else {
 					permAsset.setPathToMe("");
 				}
@@ -1133,7 +1149,7 @@ public class WebAssetFactory {
 				}
 				if(folderParent!=null)
 					permAsset.setPathToMe(APILocator.getIdentifierAPI()
-							.find(folderParent).getPath());
+							.find(folderParent.getIdentifier()).getPath());
 				else
 					permAsset.setPathToMe(pathToFolderParent);
 				permAsset.setPermissionableAsset(page);

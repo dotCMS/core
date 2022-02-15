@@ -1669,16 +1669,22 @@ public class PermissionBitAPIImpl implements PermissionAPI {
                         inode = InodeUtils.getInode(assetInode);
                         inodeCache.put(inode.getInode(), inode);
                     }
-					if(inode instanceof Folder) {
-						parentPermissionable = (Folder)inode;
-					} else if (inode instanceof Structure) {
+					if (inode instanceof Structure) {
 						parentPermissionable = (Structure)inode;
 					} else if (inode instanceof Category) {
 						parentPermissionable = (Category)inode;
 					} else {
-						Host host = APILocator.getHostAPI().find(assetInode, APILocator.getUserAPI().getSystemUser(), false);
-						if(host != null) {
+						//it can be a host or a folder
+						final Host host = APILocator.getHostAPI()
+								.find(assetInode, APILocator.getUserAPI().getSystemUser(), false);
+						if (host != null) {
 							parentPermissionable = host;
+						}
+
+						final Folder folder = APILocator.getFolderAPI()
+								.find(assetInode, APILocator.getUserAPI().getSystemUser(), false);
+						if (folder != null) {
+							parentPermissionable = folder;
 						}
 					}
     			}

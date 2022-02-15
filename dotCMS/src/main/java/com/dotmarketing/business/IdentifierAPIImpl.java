@@ -138,6 +138,45 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 	    return createNew(asset,parent,null);
 	}
 
+	public Identifier createNew(final Folder folder, final Treeable parent) throws DotDataException{
+		return createNew(folder, parent,null);
+	}
+
+	@WrapInTransaction
+	public Identifier createNew(final Folder folder, final Treeable parent,
+			final String existingId) throws DotDataException {
+
+		Logger.info(IdentifierAPIImpl.class, String.format(
+				"Creating new identifier for folder `%s` ", folder.getName()));
+
+		if (UtilMethods.isNotSet(existingId)) {
+
+			final String validId =
+					APILocator.getDeterministicIdentifierAPI().generateDeterministicIdBestEffort(folder, parent);
+
+			if (parent instanceof Folder) {
+				return identifierFactory.createNewIdentifier(folder, (Folder) parent, validId);
+			}
+
+			if (parent instanceof Host) {
+				return identifierFactory.createNewIdentifier(folder, (Host) parent, validId);
+			}
+
+		} else {
+
+			if (parent instanceof Folder) {
+				return identifierFactory.createNewIdentifier(folder, (Folder) parent, existingId);
+			}
+
+			if (parent instanceof Host) {
+				return identifierFactory.createNewIdentifier(folder, (Host) parent, existingId);
+			}
+		}
+		throw new DotStateException(
+				"You can only create an identifier on a host of folder.  Trying: " + parent);
+
+	}
+
 
 	@WrapInTransaction
 	public Identifier createNew(final Versionable asset, final Treeable parent,

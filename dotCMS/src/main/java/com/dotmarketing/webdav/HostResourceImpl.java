@@ -157,7 +157,7 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 				p = p.substring(0, path.length() - 1);
 			String folderPath = "";
 			try {
-				folderPath = APILocator.getIdentifierAPI().find(folder).getPath();
+				folderPath = APILocator.getIdentifierAPI().find(folder.getIdentifier()).getPath();
 			} catch (Exception e) {
 				Logger.error(this, e.getMessage(), e);
 				throw new DotRuntimeException(e.getMessage(),e);

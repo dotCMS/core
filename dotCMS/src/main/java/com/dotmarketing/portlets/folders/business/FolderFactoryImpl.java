@@ -94,20 +94,20 @@ public class FolderFactoryImpl extends FolderFactory {
 	}
 
 	@Override
-	protected void delete(Folder f) throws DotDataException {
+	protected void delete(final Folder folder) throws DotDataException {
 
-           Identifier id = APILocator.getIdentifierAPI().find(f.getIdentifier());
+           final Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
            new DotConnect()
                 .setSQL("delete from folder where folder.inode = ? ")
-                .addParam(f.getInode()).loadResult();
+                .addParam(folder.getInode()).loadResult();
         
            new DotConnect()
             .setSQL("delete from inode where inode = ? ")
-            .addParam(f.getInode()).loadResult();
-           folderCache.removeFolder(f, id);
+            .addParam(folder.getInode()).loadResult();
+           folderCache.removeFolder(folder, id);
 
         
-	   CacheLocator.getIdentifierCache().removeFromCacheByVersionable(f);
+	   CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(folder.getIdentifier());
 	}
 
 
@@ -159,7 +159,7 @@ public class FolderFactoryImpl extends FolderFactory {
 	@SuppressWarnings("unchecked")
 	@Override
 	protected java.util.List<Folder> getSubFoldersTitleSort(Folder folder) throws DotDataException  {
-		Identifier id = APILocator.getIdentifierAPI().find(folder);
+		Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
 
 		return getSubFolders(null, id.getPath(), id.getHostId(), "lower(folder.title)");
 	}
@@ -168,7 +168,7 @@ public class FolderFactoryImpl extends FolderFactory {
 	@Override
 	protected List<Folder> findSubFolders(final Folder folder, Boolean showOnMenu)
 			throws DotStateException, DotDataException {
-		Identifier id = APILocator.getIdentifierAPI().find(folder);
+		Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
 		return getSubFolders(showOnMenu, id.getPath(), id.getHostId(), null);
 	}
 
@@ -401,7 +401,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		return menuList;
 	}
 
-	@SuppressWarnings("unchecked")
+	/*@SuppressWarnings("unchecked")
 	protected java.util.List getAllMenuItems(Inode inode) throws DotStateException, DotDataException {
 		return getAllMenuItems(inode, 1);
 	}
@@ -411,7 +411,7 @@ public class FolderFactoryImpl extends FolderFactory {
 	    List<Folder> dummy=new ArrayList<Folder>();
 	    dummy.add((Folder)inode);
 	    return getMenuItems(dummy, orderDirection);
-	}
+	}*/
 
 	protected Folder createFolders(String path, Host host) throws DotDataException {
 
@@ -740,7 +740,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		while (!innerFolders.empty()) {
 			Folder nextFolder = innerFolders.pop();
 			Host destinationHost = APILocator.getHostAPI().findParentHost(newFolder, APILocator.getUserAPI().getSystemUser(), false);
-			String newPath = APILocator.getIdentifierAPI().find(newFolder).getPath()+nextFolder.getName()+"/";
+			String newPath = APILocator.getIdentifierAPI().find(newFolder.getIdentifier()).getPath()+nextFolder.getName()+"/";
 			Folder nextNewFolder = APILocator.getFolderAPI().createFolders(newPath, destinationHost, APILocator.getUserAPI().getSystemUser(), false);
 
 			List links = getChildrenClass(nextFolder,Link.class);
@@ -785,7 +785,7 @@ public class FolderFactoryImpl extends FolderFactory {
 				// gets identifier for this webasset and changes the uri and
 				// persists it
 				identifier.setHostId(newHost.getIdentifier());
-				Identifier folderIdentifier  = APILocator.getIdentifierAPI().find(theFolder);
+				Identifier folderIdentifier  = APILocator.getIdentifierAPI().find(theFolder.getIdentifier());
 				identifier.setParentPath(folderIdentifier.getPath());
 				APILocator.getIdentifierAPI().save(identifier);
 				CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(identifier.getId());
@@ -894,7 +894,7 @@ public class FolderFactoryImpl extends FolderFactory {
 			return false;
 
 		CacheLocator.getIdentifierCache().removeFromCacheByInode(folder.getInode());
-		CacheLocator.getIdentifierCache().removeFromCacheByVersionable(folder);
+		CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(folder.getIdentifier());
 		CacheLocator.getFolderCache().removeFolder(folder, ident);
 
 		final ArrayList<String> childIdents=new ArrayList<String>();
@@ -1024,7 +1024,7 @@ public class FolderFactoryImpl extends FolderFactory {
 			String InodeQuery = "INSERT INTO INODE(INODE, OWNER, IDATE, TYPE) VALUES (?,null,?,?)";
 			dc.setSQL(InodeQuery);
 			dc.addParam(folder1.getInode());
-			dc.addParam(folder1.getiDate());
+			dc.addParam(folder1.getIDate());
 			dc.addParam(folder1.getType());
 			dc.loadResult();
 			String hostQuery = "INSERT INTO " + Type.FOLDER.getTableName() + "(INODE, NAME,TITLE, SHOW_ON_MENU, SORT_ORDER,FILES_MASKS,IDENTIFIER) VALUES (?,?,?,?,?,?,?,?)";
@@ -1073,7 +1073,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		identifier.setAssetName(folder.getName());
 		identifier.setHostId(folder.getHostId());
 		if(InodeUtils.isSet(folder.getIdentifier())){
-			identifier.setParentPath(APILocator.getIdentifierAPI().find(folder).getParentPath()+ folder.getName() + "/");
+			identifier.setParentPath(APILocator.getIdentifierAPI().find(folder.getIdentifier()).getParentPath()+ folder.getName() + "/");
 		}else{
 			if(parentPath==null)
 				identifier.setParentPath("/");
@@ -1081,7 +1081,7 @@ public class FolderFactoryImpl extends FolderFactory {
 				identifier.setParentPath(parentPath);
 		}
 		APILocator.getIdentifierAPI().save(identifier);
-		CacheLocator.getIdentifierCache().removeFromCacheByVersionable(folder);
+		CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(folder.getIdentifier());
 
 		return identifier;
 	}
@@ -1211,38 +1211,18 @@ public class FolderFactoryImpl extends FolderFactory {
 
 		folderCache.removeFolder(folder, APILocator.getIdentifierAPI().find(folder.getIdentifier()));
 
-		saveInode(folder);
-
 		upsertFolder(folder);
 	}
 
-	private void saveInode(final Folder folder) throws DotDataException {
-		String inode = folder.getInode();
-
-		if (!UtilMethods.isSet(inode)) {
-			inode = folder.getIdentifier();
-		}
-
-		final UpsertCommand upsertInodeCommand = UpsertCommandFactory.getUpsertCommand();
-		final SimpleMapAppContext replacements = new SimpleMapAppContext();
-
-		replacements.setAttribute(QueryReplacements.TABLE, "inode");
-		replacements.setAttribute(QueryReplacements.CONDITIONAL_COLUMN, "inode");
-		replacements.setAttribute(QueryReplacements.CONDITIONAL_VALUE, inode);
-		replacements.setAttribute(QueryReplacements.EXTRA_COLUMNS, UPSERT_INODE_EXTRA_COLUMNS);
-		replacements.setAttribute(QueryReplacements.DO_NOTHING_ON_CONFLICT, false);
-
-		upsertInodeCommand
-				.execute(new DotConnect(), replacements, inode, folder.getOwner(),
-						new Timestamp(new Date().getTime()),
-						"folder");
-
-		folder.setInode(inode);
-	}
 
 	private void upsertFolder(final Folder folder) throws DotDataException {
 		final UpsertCommand upsertContentletCommand = UpsertCommandFactory.getUpsertCommand();
 		final SimpleMapAppContext replacements = new SimpleMapAppContext();
+
+		if (!UtilMethods.isSet(folder.getInode())) {
+			folder.setInode(folder.getIdentifier());
+		}
+
 
 		replacements.setAttribute(QueryReplacements.TABLE, "folder");
 		replacements.setAttribute(QueryReplacements.CONDITIONAL_COLUMN, "inode");
@@ -1259,6 +1239,11 @@ public class FolderFactoryImpl extends FolderFactory {
 		parameters.add(folder.getIdentifier());
 		parameters.add(folder.getDefaultFileType());
 		parameters.add(new Timestamp(folder.getModDate().getTime()));
+
+		if (!UtilMethods.isSet(folder.getIDate())){
+			parameters.add(new Timestamp(new Date().getTime()));
+		}
+
 		upsertContentletCommand.execute(new DotConnect(), replacements, parameters.toArray());
 	}
 

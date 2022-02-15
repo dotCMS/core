@@ -481,7 +481,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     @Override
     public boolean move(HTMLPageAsset page, Folder parent, User user) throws DotDataException, DotSecurityException {
-        return move(page,APILocator.getHostAPI().find(identifierAPI.find(parent).getHostId(),user,false), parent, user);
+        return move(page,APILocator.getHostAPI().find(identifierAPI.find(parent.getIdentifier()).getHostId(),user,false), parent, user);
     }
 
     @Override
@@ -493,7 +493,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     public boolean move(HTMLPageAsset page, Host host, Folder parent, User user)
             throws DotDataException, DotSecurityException {
         Identifier sourceIdent = identifierAPI.find(page);
-        Identifier targetFolderIdent = identifierAPI.find(parent);
+        Identifier targetFolderIdent = identifierAPI.find(parent.getIdentifier());
         Identifier targetIdent = identifierAPI.find(host,
                 targetFolderIdent.getURI() + sourceIdent.getAssetName());
         if (targetIdent == null || !InodeUtils.isSet(targetIdent.getId())) {
@@ -860,7 +860,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     /**
      * This returns the proper ihtml page based on id, state and language
      * 
-     * @param id
+     * @param identifier
      * @param tryLang
      * @param live
      * @return

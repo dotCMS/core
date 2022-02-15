@@ -338,7 +338,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 			return false;
 		}
 
-		final Identifier folderId = APILocator.getIdentifierAPI().find(folder);
+		final Identifier folderId = APILocator.getIdentifierAPI().find(folder.getIdentifier());
 		final String path =
 				folder.getInode().equals(FolderAPI.SYSTEM_FOLDER) ? StringPool.FORWARD_SLASH
 						+ fileName : folderId.getPath() + fileName;
@@ -367,7 +367,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		if(!UtilMethods.isSet(fileName) || folder == null || host == null ) {
 			return false;
 		}
-		final Identifier folderId  = this.identifierAPI.find(folder);
+		final Identifier folderId  = this.identifierAPI.find(folder.getIdentifier());
 		final String path          = folder.getInode().equals(FolderAPI.SYSTEM_FOLDER)?
 				new StringBuilder(StringPool.FORWARD_SLASH).append(fileName).toString():
 				new StringBuilder(folderId.getPath()).append(fileName).toString();
@@ -388,7 +388,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
 		boolean exist = false;
 
-		Identifier folderId = APILocator.getIdentifierAPI().find(folder);
+		Identifier folderId = APILocator.getIdentifierAPI().find(folder.getIdentifier());
 		String path = folder.getInode().equals(FolderAPI.SYSTEM_FOLDER)?"/"+fileName:folderId.getPath()+fileName;
 		Identifier fileAsset = APILocator.getIdentifierAPI().find(host, path);
 

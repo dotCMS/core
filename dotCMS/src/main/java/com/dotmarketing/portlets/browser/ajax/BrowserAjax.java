@@ -1765,7 +1765,7 @@ public class BrowserAjax {
 
 
 
-	public Map<String, Object> changeAssetMenuOrder (String inode, int newValue) throws ActionException, DotDataException {
+	public Map<String, Object> changeAssetMenuOrder (final String inode, final int newValue) throws ActionException, DotDataException {
     	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
         User user = null;
         try {
@@ -1775,16 +1775,24 @@ public class BrowserAjax {
             throw new DotRuntimeException ("Error trying to obtain the current liferay user from the request.");
         }
 
-    	HashMap<String, Object> result = new HashMap<String, Object> ();
-    	Inode asset = (Inode) InodeFactory.getInode(inode, Inode.class);
-    	if (asset instanceof Folder) {
-    		Folder folder = (Folder) asset;
+    	final Map<String, Object> result = new HashMap<> ();
+		Folder folder = null;
+		try {
+			folder = APILocator.getFolderAPI().find(inode, user, false);
+		} catch (DotSecurityException e) {
+			Logger.error(this, "Error trying to get info for folder with inode: " + inode, e);
+			throw new DotRuntimeException ("Error changing asset menu order.");
+		}
+
+		if (null != folder) {
     		result.put("lastValue", folder.getSortOrder());
-    		WebAssetFactory.changeAssetMenuOrder (asset, newValue, user);
+    		WebAssetFactory.changeAssetMenuOrder (folder, newValue, user);
     	} else {
+			Inode asset = InodeFactory.getInode(inode, Inode.class);
     		result.put("lastValue", ((WebAsset)asset).getSortOrder());
     		WebAssetFactory.changeAssetMenuOrder (asset, newValue, user);
     	}
+
        	result.put("result", 0);
     	return result;
     }

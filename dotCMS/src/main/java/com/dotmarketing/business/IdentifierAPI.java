@@ -135,6 +135,9 @@ public interface IdentifierAPI {
 	 * @throws DotDataException
 	 */
 	public Identifier createNew(Versionable asset, Treeable parent) throws DotDataException;
+
+	Identifier createNew(final Folder folder, final Treeable parent) throws DotDataException;
+
 	public Identifier createNew(Versionable asset, Treeable parent, String existingId) throws DotDataException;
 
 	/**

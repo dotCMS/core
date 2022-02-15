@@ -4899,7 +4899,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
                 if(UtilMethods.isSet(contentletRaw.getFolder()) && !contentletRaw.getFolder().equals(FolderAPI.SYSTEM_FOLDER)){
                     final Folder folder = APILocator.getFolderAPI().find(contentletRaw.getFolder(), systemUser, false);
-                    Identifier folderIdent = APILocator.getIdentifierAPI().find(folder);
+                    Identifier folderIdent = APILocator.getIdentifierAPI().find(folder.getIdentifier());
                     identifier.setParentPath(folderIdent.getPath());
                 }
                 else {
@@ -6886,7 +6886,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             if(UtilMethods.isSet(url)){
                 contentlet.setProperty(HTMLPageAssetAPI.URL_FIELD, url);
-                Identifier folderId = APILocator.getIdentifierAPI().find(folder);
+                Identifier folderId = APILocator.getIdentifierAPI().find(folder.getIdentifier());
                 String path = folder.getInode().equals(FolderAPI.SYSTEM_FOLDER)?"/"+url:folderId.getPath()+url;
                 Identifier htmlpage = APILocator.getIdentifierAPI().find(site, path);
                 if(htmlpage!=null && InodeUtils.isSet(htmlpage.getId()) && !htmlpage.getId().equals(contentlet.getIdentifier()) ){
@@ -8048,7 +8048,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         Identifier identifierWithSameUrl = null;
         if(UtilMethods.isSet(destinationFolder) && InodeUtils.isSet(destinationFolder.getInode())) { // Folders
             // Create new path
-            Identifier folderId = APILocator.getIdentifierAPI().find(destinationFolder);
+            Identifier folderId = APILocator.getIdentifierAPI().find(destinationFolder.getIdentifier());
             final String path = (destinationFolder.getInode().equals(FolderAPI.SYSTEM_FOLDER) ? "/" : folderId.getPath()) + futureAssetNameWithSuffix;
 
             final Host host =

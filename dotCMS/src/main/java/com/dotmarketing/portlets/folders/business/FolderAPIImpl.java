@@ -141,7 +141,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		try {
 			renamed = folderFactory.renameFolder(folder, newName, user, respectFrontEndPermissions);
 			CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
-			Identifier folderId = APILocator.getIdentifierAPI().find(folder);
+			Identifier folderId = APILocator.getIdentifierAPI().find(folder.getIdentifier());
 			CacheLocator.getNavToolCache().removeNavByPath(folderId.getHostId(), folderId.getParentPath());
 			return renamed;
 		} catch (InvalidFolderNameException e) {
@@ -518,7 +518,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			}
 
 			/******** delete possible orphaned identifiers under the folder *********/
-			Identifier ident=APILocator.getIdentifierAPI().find(folder);
+			Identifier ident=APILocator.getIdentifierAPI().find(folder.getIdentifier());
 			List<Identifier> orphanList=APILocator.getIdentifierAPI().findByParentPath(folder.getHostId(), ident.getURI());
 			for(Identifier orphan : orphanList) {
 			    APILocator.getIdentifierAPI().delete(orphan);

@@ -754,11 +754,11 @@ public class RoleAjax {
 				assetMap.put("type", "host");
 				hostMaps.add(assetMap);
 			} else {
-				Folder f = (Folder) i;
-				Identifier id = APILocator.getIdentifierAPI().find(f);
-				String hostId = f.getHostId();
+				final Folder folder = (Folder) i;
+				Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
+				String hostId = folder.getHostId();
 				Host h = hostAPI.find(hostId, systemUser, false);
-				assetMap.put("fullPath", h.getHostname() + ":" + id.getParentPath() + f.getName());
+				assetMap.put("fullPath", h.getHostname() + ":" + id.getParentPath() + folder.getName());
 				folderMaps.add(assetMap);
 			}
 			boolean permissionToEditPermissions = permAPI.doesUserHavePermission((Permissionable)i, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user, respectFrontendRoles);

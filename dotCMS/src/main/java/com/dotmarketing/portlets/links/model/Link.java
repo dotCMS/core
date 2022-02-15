@@ -230,7 +230,7 @@ public class Link extends WebAsset implements Serializable, Comparable, Manifest
  	public String getURI(Folder folder) {
        String uri ="";
        try {
-		 uri = APILocator.getIdentifierAPI().find(folder).getPath() + this.getInode();
+		 uri = APILocator.getIdentifierAPI().find(folder.getIdentifier()).getPath() + this.getInode();
 	   } catch (Exception e) {
 		   Logger.error(Link.class, e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);

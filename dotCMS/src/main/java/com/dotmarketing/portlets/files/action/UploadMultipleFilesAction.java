@@ -134,7 +134,7 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 			FileForm cf = (FileForm) form;
 			cf.setSelectedparent(parentFolder.getName());
 			cf.setParent(parentFolder.getInode());
-			cf.setSelectedparentPath(APILocator.getIdentifierAPI().find(parentFolder).getPath());
+			cf.setSelectedparentPath(APILocator.getIdentifierAPI().find(parentFolder.getIdentifier()).getPath());
 		}
 
 		req.setAttribute("PARENT_FOLDER",parentFolder);
@@ -273,7 +273,7 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 
                         // Now that we know that the host+folder+fileName+language doesn't exist, we need to find if
                         // we have an identifier with host+folder+fileName in order to create a new language.
-                        Identifier folderId = APILocator.getIdentifierAPI().find(folder);
+                        Identifier folderId = APILocator.getIdentifierAPI().find(folder.getIdentifier());
                         String path = folder.getInode().equals(FolderAPI.SYSTEM_FOLDER) ?
                             java.io.File.separator + fileName :
                             folderId.getPath() + fileName;

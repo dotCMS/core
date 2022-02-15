@@ -164,7 +164,7 @@ public class PermissionAjax {
 					}
 					if(permParent instanceof Folder) {
 						roleMap.put("inheritedFromType", "folder");
-						roleMap.put("inheritedFromPath", APILocator.getIdentifierAPI().find((Folder)permParent).getPath());
+						roleMap.put("inheritedFromPath", APILocator.getIdentifierAPI().find(((Folder)permParent).getIdentifier()).getPath());
 						roleMap.put("inheritedFromId", ((Folder)permParent).getInode());
 					} else if (permParent instanceof Structure) {
 					    roleMap.put("inheritedFromType", "structure");

@@ -66,7 +66,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 			Host host;
 			try {
 				host = hostAPI.find(folder.getHostId(), user, false);
-				folderPath = APILocator.getIdentifierAPI().find(folder).getPath();
+				folderPath = APILocator.getIdentifierAPI().find(folder.getIdentifier()).getPath();
 			} catch (DotDataException e) {
 				Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 				throw new DotRuntimeException(e.getMessage(), e);
@@ -217,7 +217,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#getModifiedDate()
 	 */
 	public Date getModifiedDate() {
-		return folder.getiDate();
+		return folder.getIDate();
 	}
 
 	/* (non-Javadoc)
@@ -310,7 +310,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 				String folderPath = "";
 				try {
 					host = hostAPI.find(fr.getFolder().getHostId(), user, false);
-					folderPath = APILocator.getIdentifierAPI().find(fr.getFolder()).getPath();
+					folderPath = APILocator.getIdentifierAPI().find(fr.getFolder().getIdentifier()).getPath();
 				} catch (DotDataException e) {
 					Logger.error(FolderResourceImpl.class, e.getMessage(), e);
 					throw new DotRuntimeException(e.getMessage(), e);
@@ -353,7 +353,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 	 * @see com.dotcms.repackage.com.bradmcevoy.http.PropFindableResource#getCreateDate()
 	 */
 	public Date getCreateDate() {
-		return folder.getiDate();
+		return folder.getIDate();
 	}
 
 	public String getName() {

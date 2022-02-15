@@ -1,20 +1,25 @@
 package com.dotmarketing.portlets.folders.model;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.api.tree.Parentable;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
-import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
-import com.dotcms.repackage.net.sf.hibernate.sql.Template;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
-import com.dotmarketing.business.*;
+import com.dotmarketing.beans.Tree;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionSummary;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.RelatedPermissionableGroup;
+import com.dotmarketing.business.Ruleable;
+import com.dotmarketing.business.Treeable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.factories.TreeFactory;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.struts.FolderForm;
 import com.dotmarketing.util.InodeUtils;
@@ -23,25 +28,26 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
-import org.apache.commons.lang.builder.ToStringBuilder;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang.builder.ToStringBuilder;
 
 /** @author Hibernate CodeGenerator */
-public class Folder extends Inode implements Serializable, Permissionable, Treeable, Ruleable,
+public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
 		Parentable, ManifestItem {
 
 	private static final long serialVersionUID = 1L;
 
 	public static final String SYSTEM_FOLDER = "SYSTEM_FOLDER";
 
+	private String identifier;
+
     /** nullable persistent field */
     private String name;
-
 
     /** nullable persistent field */
     private int sortOrder;
@@ -62,6 +68,48 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 
     private Date modDate;
 
+	private String owner;
+
+	private Date iDate;
+
+	private String inode;
+
+	@Override
+	public String getOwner() {
+		return owner;
+	}
+
+	@Override
+	public void setOwner(String owner) {
+		this.owner = owner;
+	}
+
+	public Date getIDate() {
+		return iDate;
+	}
+
+	public void setIDate(Date iDate) {
+		this.iDate = iDate;
+	}
+
+	public void setInode(String inode) {
+		this.inode = inode;
+	}
+
+	@Override
+	public String getIdentifier() {
+		return identifier;
+	}
+
+	/**
+	 * Returns the type.
+	 *
+	 * @return String
+	 */
+	public String getType() {
+		return "folder";
+	}
+
     
     @JsonIgnore
     public Host getHost() {
@@ -70,7 +118,7 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
     
     @JsonIgnore
     public boolean isSystemFolder() {
-        return Try.of(()->FolderAPI.SYSTEM_FOLDER.equals(inode)).getOrElse(false);
+        return Try.of(()->FolderAPI.SYSTEM_FOLDER.equals(identifier)).getOrElse(false);
     }
     
     
@@ -78,7 +126,6 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
     
     
 	public Folder() {
-    	this.setType("folder");
     	modDate = new Date();
     }
 
@@ -115,14 +162,6 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 	 */
 	public int getSortOrder() {
 		return sortOrder;
-	}
-
-	/**
-	 * Sets the inode.
-	 * @param inode The inode to set
-	 */
-	public void setInode(String inode) {
-		this.inode = inode;
 	}
 
 	/**
@@ -241,17 +280,22 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 	}
 
 	public Map<String, Object> getMap() throws DotStateException, DotDataException, DotSecurityException {
-        Map<String, Object> retMap = super.getMap();
-        retMap.put("filesMasks", this.filesMasks);
-        retMap.put("name", this.name);
-        retMap.put("title", this.title);
-        retMap.put("hostId", this.hostId);
-        retMap.put("showOnMenu", this.showOnMenu);
-        retMap.put("sortOrder", this.sortOrder);
-        retMap.put("defaultFileType", this.defaultFileType);
-		retMap.put("path", this.getPath());
-		retMap.put("modDate", this.getModDate());
-        return retMap;
+		final Map<String, Object> map = new HashMap<>();
+		map.put("inode", this.identifier);
+		map.put("type", "folder");
+		map.put("identifier", this.identifier);
+		map.put("owner", this.owner);
+		map.put("iDate", iDate);
+		map.put("filesMasks", this.filesMasks);
+		map.put("name", this.name);
+		map.put("title", this.title);
+		map.put("hostId", this.hostId);
+		map.put("showOnMenu", this.showOnMenu);
+		map.put("sortOrder", this.sortOrder);
+		map.put("defaultFileType", this.defaultFileType);
+		map.put("path", this.getPath());
+		map.put("modDate", this.getModDate());
+        return map;
     }
 
     //Methods from permissionable and parent permissionable
@@ -264,6 +308,11 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 		accepted.add(new PermissionSummary("publish", "publish-permission-description", PermissionAPI.PERMISSION_PUBLISH));
 		accepted.add(new PermissionSummary("edit-permissions", "edit-permissions-permission-description", PermissionAPI.PERMISSION_EDIT_PERMISSIONS));
 		return accepted;
+	}
+
+	@Override
+	public String getPermissionId() {
+		return getInode();
 	}
 
 	@Override
@@ -295,6 +344,15 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 		}
 	}
 
+	public List<RelatedPermissionableGroup> permissionDependencies(
+			int requiredPermission) {
+		return null;
+	}
+
+	public String getPermissionType() {
+		return this.getClass().getCanonicalName();
+	}
+
 	public String getPath() {
 
 		Identifier id = null;
@@ -308,6 +366,40 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 		}
 
 		return id!=null?id.getPath():null;
+	}
+
+	/**
+	 * Remove the ASSOCIATION between a child and the inode
+	 *
+	 * @param child
+	 *            child to be dissociated
+	 * @return
+	 * @deprecated Association between inodes should be called through their
+	 *             respective API, calling the API ensures the consistency of
+	 *             the relationship and caches
+	 */
+	public boolean deleteChild(Inode child) {
+		Tree tree = TreeFactory.getTree(this.getInode(), child.getInode(), "child");
+		if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
+			return false;
+		}
+		TreeFactory.deleteTree(tree);
+		return true;
+	}
+
+	/**
+	 * @deprecated Association between inodes should be called through their
+	 *             respective API, calling the API ensures the consistency of
+	 *             the relationship and caches
+	 */
+	public void addChild(Inode i) {
+		Tree tree = TreeFactory.getTree(this.getInode(), i.getInode(), "child");
+		if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
+			tree.setParent(this.inode);
+			tree.setChild(i.getInode());
+			tree.setRelationType("child");
+			TreeFactory.saveTree(tree);
+		}
 	}
 	
 	public boolean equals(Object o){
