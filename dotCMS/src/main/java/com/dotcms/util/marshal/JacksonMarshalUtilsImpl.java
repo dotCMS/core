@@ -46,7 +46,7 @@ public class JacksonMarshalUtilsImpl implements MarshalUtils{
     @Override
     public String marshal(final Object object) {
         final String json = Try.of(()-> defaultMapper.get().writeValueAsString(object)).getOrElseThrow(DotRuntimeException::new);
-        Logger.info(this, ()->" ::  "+json);
+        Logger.debug(this, ()->" ::  "+json);
         return json;
     }
 
@@ -61,8 +61,6 @@ public class JacksonMarshalUtilsImpl implements MarshalUtils{
     @Override
     public <T> T unmarshal(final String string, final Class<? extends T> clazz) {
         return Try.of(()-> {
-            System.out.println(string);
-            System.out.println(clazz);
             return defaultMapper.get().readValue(string, clazz);
         }).getOrElseThrow(DotRuntimeException::new);
     }
