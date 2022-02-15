@@ -34,16 +34,16 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import java.util.Objects;
 import org.apache.http.HttpStatus;
 
+import javax.servlet.http.HttpServletResponse;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * Implementation class for the {@link VanityUrlAPI}.
@@ -227,6 +227,18 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     if (vanityURL == null || !vanityURL.isVanityUrl()) {
      return;
     }
+
+    final String previousHostId = vanityURL.getStringProperty("previousHostId");
+    if (null != previousHostId) {
+
+      final Host host = Try.of(()->
+              APILocator.getHostAPI().find(previousHostId, APILocator.systemUser(), false)).getOrNull();
+      final Language lang = Try.of(() -> APILocator.getLanguageAPI().getLanguage(vanityURL.getLanguageId())).getOrNull();
+      if (null != host && null != lang) {
+        cache.remove(host, lang);
+      }
+    }
+
     cache.remove(vanityURL);
   
   }

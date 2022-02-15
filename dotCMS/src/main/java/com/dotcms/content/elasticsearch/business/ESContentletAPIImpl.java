@@ -4611,6 +4611,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             boolean createNewVersion
     ) throws DotDataException, DotSecurityException {
 
+        String actualHostId = null;
         final User user = (incomingUser!=null) ? incomingUser : APILocator.getUserAPI().getAnonymousUser();
 
         if(user.isAnonymousUser() && AnonymousAccess.systemSetting() != AnonymousAccess.WRITE) {
@@ -4667,6 +4668,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
             }
 
+            if (contentlet.isVanityUrl()) {
+                final Identifier identifierObj = APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
+                if (identifierObj != null && UtilMethods.isSet(identifierObj.getId())) {
+                    actualHostId = identifierObj.getHostId(); // we need to save it for later.
+                }
+            }
 
             if (createNewVersion && contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
                 // maybe the user want to save new content with existing inode & identifier comming from somewhere
@@ -4690,6 +4697,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     if(ident==null || !UtilMethods.isSet(ident.getId())) {
                         existingIdentifier=contentlet.getIdentifier();
                         contentlet.setIdentifier(null);
+                        actualHostId = ident.getHostId(); // we need to save it for later.
                     }
                 }
             }
@@ -4998,6 +5006,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             contentlet.setStringProperty(Contentlet.I_WANT_TO, iWantTo);
             if (UtilMethods.isSet(pathToMove)) {
                 contentlet.setStringProperty(Contentlet.PATH_TO_MOVE, pathToMove);
+            }
+
+            if (contentlet.isVanityUrl()) {
+
+                contentlet.setProperty("previousHostId", actualHostId);
             }
 
             //workflowAPI.
