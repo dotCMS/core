@@ -141,6 +141,7 @@ import com.dotmarketing.startup.runonce.Task211012AddCompanyDefaultLanguageTest;
 import com.dotmarketing.startup.runonce.Task220202RemoveFKStructureFolderConstraintTest;
 import com.dotmarketing.startup.runonce.Task211101AddContentletAsJsonColumnTest;
 import com.dotmarketing.startup.runonce.Task211103RenameHostNameLabelTest;
+import com.dotmarketing.startup.runonce.Task220214AddOwnerAndIDateToFolderTableTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -512,7 +513,8 @@ import org.junit.runners.Suite.SuiteClasses;
         XmlToolTest.class,
         LanguageFolderTest.class,
         MailAPIImplTest.class,
-        Task220202RemoveFKStructureFolderConstraintTest.class
+        Task220202RemoveFKStructureFolderConstraintTest.class,
+        Task220214AddOwnerAndIDateToFolderTableTest.class
 })
 public class MainSuite {
 
