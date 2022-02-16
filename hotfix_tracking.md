@@ -116,3 +116,5 @@ This maintenance release includes the following code fixes:
 56. https://github.com/dotCMS/core/issues/21363 : db passwords with characters (specifically @ and possibly others) will break pub/sub due to the connection string #21363
 
 57. https://github.com/dotCMS/core/issues/21252 : Add the ability to stop/abort a workflow on velocity script actionlet #21252
+
+58. https://github.com/dotCMS/core/issues/21097 : Past Time Machine not working #21097
