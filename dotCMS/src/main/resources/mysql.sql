@@ -1358,6 +1358,8 @@ create table folder (
    identifier varchar(36),
    default_file_type varchar(36),
    mod_date datetime,
+   owner varchar(255),
+   idate datetime,
    primary key (inode)
 );
 create table clickstream_404 (

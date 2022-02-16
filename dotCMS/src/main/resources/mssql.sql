@@ -1585,6 +1585,8 @@ create table folder (
    identifier NVARCHAR(36) null,
    default_file_type NVARCHAR(36) null,
    mod_date datetime null,
+   owner NVARCHAR(255) null,
+   idate datetime null,
    primary key (inode)
 );
 create table clickstream_404 (
