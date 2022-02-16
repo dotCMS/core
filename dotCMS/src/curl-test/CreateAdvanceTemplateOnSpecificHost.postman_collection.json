@@ -19,7 +19,7 @@
 							"var jsonData = pm.response.json();",
 							"",
 							"pm.test(\"Host check\", function () {",
-							"    pm.expect(jsonData.entity.siteName).to.eql('postman.host.com');",
+							"    pm.expect(jsonData.entity.siteName).to.eql('templateSpecific.host.com');",
 							"});",
 							"",
 							"pm.collectionVariables.set(\"siteId\", jsonData.entity.identifier);",
@@ -49,7 +49,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"siteName\":\"template.host.com\"\n\n}",
+					"raw": "{\n    \"siteName\":\"templateSpecific.host.com\"\n\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -92,10 +92,10 @@
 							"});",
 							"",
 							"pm.test(\"Title check\", function () {",
-							"    pm.expect(jsonData.entity.title).to.eql('PostMan Test');",
+							"    pm.expect(jsonData.entity.title).to.eql('Template Specific Host');",
 							"});",
 							"",
-							"pm.collectionVariables.set(\"templateIdToEdit\", jsonData.entity.identifier);"
+							"pm.collectionVariables.set(\"templateId\", jsonData.entity.identifier);"
 						],
 						"type": "text/javascript"
 					}
@@ -130,7 +130,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"siteId\":\"{{siteId}}\",\n    \"title\":\"PostMan Test\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n}",
+					"raw": "{\n    \"siteId\":\"{{siteId}}\",\n    \"title\":\"Template Specific Host\",\n    \"friendlyName\":\"This is a postman test description\",\n    \"body\":\"This is the body\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -163,10 +163,14 @@
 							"});",
 							"",
 							"var jsonData = pm.response.json();",
-							"var templateId = pm.collectionVariables.get(\"templateIdToEdit\");",
-							"pm.test(\"body check\", function () {",
-							"    pm.expect(jsonData.entity.length).to.eql(1);",
+							"var templateId = pm.collectionVariables.get(\"templateId\");",
+							"",
+							"pm.test(\"Id check\", function () {",
 							"    pm.expect(jsonData.entity[0].identifier).to.eql(templateId);",
+							"});",
+							"",
+							"pm.test(\"Length check\", function () {",
+							"    pm.expect(jsonData.entity.length).to.eql(1);",
 							"});",
 							"",
 							""
@@ -225,6 +229,10 @@
 		},
 		{
 			"key": "templateInodeToEdit",
+			"value": ""
+		},
+		{
+			"key": "templateId",
 			"value": ""
 		}
 	]
