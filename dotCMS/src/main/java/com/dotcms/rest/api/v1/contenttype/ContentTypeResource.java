@@ -3,15 +3,12 @@ package com.dotcms.rest.api.v1.contenttype;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.CopyContentTypeBean;
 import com.dotcms.contenttype.business.FieldDiffCommand;
 import com.dotcms.contenttype.business.FieldDiffItemsKey;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.field.ColumnField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
-import com.dotcms.contenttype.model.field.LineDividerField;
-import com.dotcms.contenttype.model.field.RowField;
-import com.dotcms.contenttype.model.field.TabDividerField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
@@ -30,9 +27,9 @@ import com.dotcms.util.diff.DiffItem;
 import com.dotcms.util.diff.DiffResult;
 import com.dotcms.util.pagination.ContentTypesPaginator;
 import com.dotcms.util.pagination.OrderDirection;
-import com.dotcms.util.pagination.TemplatePaginator;
 import com.dotcms.workflow.form.WorkflowSystemActionForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
@@ -40,6 +37,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
@@ -74,7 +72,6 @@ import javax.ws.rs.core.Response;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -113,15 +110,15 @@ public class ContentTypeResource implements Serializable {
 	public static final String SELECTED_STRUCTURE_KEY = "selectedStructure";
 
 	@POST
-	@Path("/base/{baseVariableName}/new/{newVariableName}")
+	@Path("/_copy/{baseVariableName}")
 	@JSONP
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public final Response createTypeFromBaseType(@Context final HttpServletRequest req,
-												 @Context final HttpServletResponse res,
-												 @PathParam("baseVariableName") final String baseVariableName,
-												 @PathParam("newVariableName") final String newVariableName) {
+	public final Response copyType(@Context final HttpServletRequest req,
+								   @Context final HttpServletResponse res,
+								   @PathParam("baseVariableName") final String baseVariableName,
+								   final CopyContentTypeForm copyContentTypeForm) {
 
 		final InitDataObject initData = this.webResource.init(null, req, res, true, null);
 		final User user = initData.getUser();
@@ -129,7 +126,7 @@ public class ContentTypeResource implements Serializable {
 
 		try {
 
-			Logger.debug(this, ()->String.format("Creating new content type '%s' based from  '%s' ", baseVariableName, newVariableName));
+			Logger.debug(this, ()->String.format("Creating new content type '%s' based from  '%s' ", baseVariableName,  copyContentTypeForm.getName()));
 			final HttpSession session = req.getSession(false);
 
 			// Validate input
@@ -141,14 +138,7 @@ public class ContentTypeResource implements Serializable {
 				return ExceptionMapperUtil.createResponse(null, "ContentType 'id' if set, should be a uuid");
 			}
 
-			final ContentType contentTypeSaved = contentTypeAPI.saveFrom(type, newVariableName);
-			final List<SystemActionWorkflowActionMapping> systemActionWorkflowActionMappings = this.workflowHelper.findSystemActionsByContentType(type, user);
-			final ImmutableMap<Object, Object> responseMap = ImmutableMap.builder()
-					.putAll(new JsonContentTypeTransformer(contentTypeSaved).mapObject())
-					.put("workflows", this.workflowHelper.findSchemesByContentType(contentTypeSaved.id(), initData.getUser()))
-					.put("systemActionMappings", systemActionWorkflowActionMappings.stream()
-							.collect(Collectors.toMap(mapping-> mapping.getSystemAction(), mapping->mapping)))
-					.build();
+			final ImmutableMap<Object, Object> responseMap = this.copyContentTypeAndDependencies(contentTypeAPI, type, copyContentTypeForm, user);
 
 			// save the last one to the session to be compliant with #13719
 			if(null != session) {
@@ -173,6 +163,52 @@ public class ContentTypeResource implements Serializable {
 		}
 
 		return response;
+	}
+
+	private void setHostAndFolderAsIdentifer (final String folderPathOrIdentifier, final String hostOrId, final User user, final CopyContentTypeBean.Builder builder) {
+
+		final Host site =  Try.of(()->UUIDUtil.isUUID(hostOrId)?APILocator.getHostAPI().find(hostOrId, user, false):
+				APILocator.getHostAPI().findByName(hostOrId, user, false)).getOrElse(APILocator.systemHost());
+
+		builder.host(site.getIdentifier());
+
+		final String folderId =
+				Try.of(()->APILocator.getFolderAPI().findFolderByPath(folderPathOrIdentifier, site, user, false).getIdentifier()).getOrNull();
+
+		builder.folder(null != folderId? folderId: folderPathOrIdentifier);
+	}
+
+	@WrapInTransaction
+	private ImmutableMap<Object, Object> copyContentTypeAndDependencies (final ContentTypeAPI contentTypeAPI, final ContentType type,
+																		 final CopyContentTypeForm copyContentTypeForm, final User user)
+			throws DotDataException, DotSecurityException {
+
+		final CopyContentTypeBean.Builder builder = new CopyContentTypeBean.Builder()
+				.sourceContentType(type).icon(copyContentTypeForm.getIcon()).name(copyContentTypeForm.getName())
+				.newVariable(copyContentTypeForm.getVariable());
+
+		this.setHostAndFolderAsIdentifer(copyContentTypeForm.getFolder(), copyContentTypeForm.getHost(), user, builder);
+		final ContentType contentTypeSaved = contentTypeAPI.copyFrom(builder.build());
+
+		// saving the workflow information
+		final List<WorkflowScheme> workflowSchemes = this.workflowHelper.findSchemesByContentType(type.id(), user);
+		final List<SystemActionWorkflowActionMapping> systemActionWorkflowActionMappings = this.workflowHelper.findSystemActionsByContentType(type, user);
+
+		this.workflowHelper.saveSchemesByContentType(contentTypeSaved.id(), user, workflowSchemes.stream().map(WorkflowScheme::getId).collect(Collectors.toSet()));
+		for (final SystemActionWorkflowActionMapping systemActionWorkflowActionMapping : systemActionWorkflowActionMappings) {
+
+			this.workflowHelper.mapSystemActionToWorkflowAction(new WorkflowSystemActionForm.Builder()
+					.systemAction(systemActionWorkflowActionMapping.getSystemAction())
+					.actionId(systemActionWorkflowActionMapping.getWorkflowAction().getId())
+					.contentTypeVariable(contentTypeSaved.variable()).build(), user);
+		}
+
+		return ImmutableMap.builder()
+				.putAll(new JsonContentTypeTransformer(contentTypeSaved).mapObject())
+				.put("workflows", this.workflowHelper.findSchemesByContentType(contentTypeSaved.id(), user))
+				.put("systemActionMappings", this.workflowHelper.findSystemActionsByContentType(contentTypeSaved, user).stream()
+						.collect(Collectors.toMap(mapping-> mapping.getSystemAction(), mapping->mapping)))
+				.build();
 	}
 
 	@POST

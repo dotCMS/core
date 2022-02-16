@@ -210,13 +210,12 @@ public interface ContentTypeAPI {
 
   /**
    * Saves a new content type based on another existing type
-   * @param type {@link ContentType}
-   * @param newVariableName {@link String}
+   * @param copyContentTypeBean {@link CopyContentTypeBean}
    * @return ContentType
    * @throws DotDataException Error occurred when performing the action.
    * @throws DotSecurityException The user does not have permissions to perform this action.
    */
-  ContentType saveFrom(ContentType type, String newVariableName) throws DotDataException, DotSecurityException;
+  ContentType copyFrom(CopyContentTypeBean copyContentTypeBean) throws DotDataException, DotSecurityException;
 
   /**
    * Saves a new Content Type.

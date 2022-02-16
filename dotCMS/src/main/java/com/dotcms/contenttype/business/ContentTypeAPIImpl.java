@@ -198,32 +198,49 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   @WrapInTransaction
   @Override
-  public ContentType saveFrom(final ContentType currentType, final String newVariableName) throws DotDataException, DotSecurityException {
+  public ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean) throws DotDataException, DotSecurityException {
 
-      final ContentType contentType = ContentTypeBuilder.builder(currentType)
-            .id(null).modDate(new Date())
-            .variable(newVariableName)
-            .build();
+    final ContentType sourceContentType = copyContentTypeBean.getSourceContentType();
+    final ContentTypeBuilder builder = ContentTypeBuilder.builder(sourceContentType).name(copyContentTypeBean.getName()).id(null).modDate(new Date()).variable(null);
 
-      final ContentType newContentType = this.save(contentType);
+    if (UtilMethods.isSet(copyContentTypeBean.getNewVariable())) {
+      builder.variable(copyContentTypeBean.getNewVariable());
+    }
 
-      final List<Field> currentFields = currentType.fields();
-      final List<Field> newFields     = new ArrayList<>();
+    if (UtilMethods.isSet(copyContentTypeBean.getFolder())) {
+      builder.folder(copyContentTypeBean.getFolder());
+    }
 
-      final Map<String, Field> baseFieldMap = newContentType.fieldMap();
-      for (final Field currentField : currentFields) {
+    if (UtilMethods.isSet(copyContentTypeBean.getHost())) {
+      builder.host(copyContentTypeBean.getHost());
+    }
 
-          if(!baseFieldMap.containsKey(currentField.variable())) {
-            newFields.add(FieldBuilder.builder(currentField).contentTypeId(newContentType.id()).id(null).build());
-          } else {
-            newFields.add(baseFieldMap.get(currentField.variable()));
-          }
-      }
+    if (UtilMethods.isSet(copyContentTypeBean.getIcon())) {
+      builder.icon(copyContentTypeBean.getIcon());
+    }
 
+    Logger.debug(this, ()->"Creating the content type: " + copyContentTypeBean.getName()
+            + ", from: " + copyContentTypeBean.getSourceContentType().variable());
 
-      APILocator.getContentTypeFieldAPI().saveFields(newFields, user);
+    final ContentType contentType    = builder.build();
+    final ContentType newContentType = this.save(contentType);
+    final List<Field> currentFields  = sourceContentType.fields();
+    final List<Field> newFields      = new ArrayList<>();
+    final Map<String, Field> baseFieldMap = newContentType.fieldMap();
 
-      return newContentType;
+    for (final Field currentField : currentFields) {
+
+        newFields.add(!baseFieldMap.containsKey(currentField.variable())?
+                FieldBuilder.builder(currentField).contentTypeId(newContentType.id()).id(null).build():
+                baseFieldMap.get(currentField.variable()));
+    }
+
+    Logger.debug(this, ()->"Saving the fields for the the content type: " + copyContentTypeBean.getName()
+            + ", from: " + copyContentTypeBean.getSourceContentType().variable());
+
+    APILocator.getContentTypeFieldAPI().saveFields(newFields, user);
+
+    return newContentType;
   }
 
   @WrapInTransaction
@@ -520,6 +537,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     // Checks if the folder has been set, if so checks the host where that folder lives and set
     // it.
     if (UtilMethods.isSet(contentTypeToSave.folder()) && !contentTypeToSave.folder().equals(Folder.SYSTEM_FOLDER)) {
+
       contentTypeToSave = ContentTypeBuilder.builder(contentTypeToSave)
           .host(APILocator.getFolderAPI().find(contentTypeToSave.folder(), user, false).getHostId()).build();
     } else if (UtilMethods.isSet(contentTypeToSave.host())) {// If there is no folder set, check
