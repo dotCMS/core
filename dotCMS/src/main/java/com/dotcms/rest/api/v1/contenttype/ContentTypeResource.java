@@ -167,15 +167,23 @@ public class ContentTypeResource implements Serializable {
 
 	private void setHostAndFolderAsIdentifer (final String folderPathOrIdentifier, final String hostOrId, final User user, final CopyContentTypeBean.Builder builder) {
 
-		final Host site =  Try.of(()->UUIDUtil.isUUID(hostOrId)?APILocator.getHostAPI().find(hostOrId, user, false):
-				APILocator.getHostAPI().findByName(hostOrId, user, false)).getOrElse(APILocator.systemHost());
+		Host site = APILocator.systemHost();
+		if (null != hostOrId) {
 
-		builder.host(site.getIdentifier());
+			site = Try.of(() -> UUIDUtil.isUUID(hostOrId) ? APILocator.getHostAPI().find(hostOrId, user, false) :
+					APILocator.getHostAPI().findByName(hostOrId, user, false)).getOrElse(APILocator.systemHost());
 
-		final String folderId =
-				Try.of(()->APILocator.getFolderAPI().findFolderByPath(folderPathOrIdentifier, site, user, false).getIdentifier()).getOrNull();
+			builder.host(site.getIdentifier());
+		}
 
-		builder.folder(null != folderId? folderId: folderPathOrIdentifier);
+		if (null != folderPathOrIdentifier) {
+
+			final Host finalSite = site;
+			final String folderId =
+					Try.of(() -> APILocator.getFolderAPI().findFolderByPath(folderPathOrIdentifier, finalSite, user, false).getIdentifier()).getOrNull();
+
+			builder.folder(null != folderId ? folderId : folderPathOrIdentifier);
+		}
 	}
 
 	@WrapInTransaction
@@ -204,7 +212,7 @@ public class ContentTypeResource implements Serializable {
 		}
 
 		return ImmutableMap.builder()
-				.putAll(new JsonContentTypeTransformer(contentTypeSaved).mapObject())
+				.putAll(new JsonContentTypeTransformer(contentTypeAPI.find(contentTypeSaved.variable())).mapObject())
 				.put("workflows", this.workflowHelper.findSchemesByContentType(contentTypeSaved.id(), user))
 				.put("systemActionMappings", this.workflowHelper.findSystemActionsByContentType(contentTypeSaved, user).stream()
 						.collect(Collectors.toMap(mapping-> mapping.getSystemAction(), mapping->mapping)))
