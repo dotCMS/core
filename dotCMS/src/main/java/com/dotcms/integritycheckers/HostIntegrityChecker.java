@@ -323,7 +323,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
 
     /**
      * Perform actual fix in real tables based on hosts_ir table record.
-     *1
+     *
      * @param row map representing a row from hosts_ir table
      * @param isLastConflict flag telling  if this is the last conflict
      * @throws DotDataException
