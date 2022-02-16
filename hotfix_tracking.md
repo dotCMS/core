@@ -118,3 +118,5 @@ This maintenance release includes the following code fixes:
 57. https://github.com/dotCMS/core/issues/21252 : Add the ability to stop/abort a workflow on velocity script actionlet #21252
 
 58. https://github.com/dotCMS/core/issues/21097 : Past Time Machine not working #21097
+
+59. https://github.com/dotCMS/core/issues/20773 : SAML - Allow expression substitution from SAML roles mapped to dotCMS roles by role key #20773
