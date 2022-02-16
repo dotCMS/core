@@ -122,3 +122,5 @@ This maintenance release includes the following code fixes:
 59. https://github.com/dotCMS/core/issues/20773 : SAML - Allow expression substitution from SAML roles mapped to dotCMS roles by role key #20773
 
 60. https://github.com/dotCMS/core/issues/20805 : Unable to push publish user #20805
+
+61. https://github.com/dotCMS/core/issues/20757 : We need to obfuscate some environmental variables #20757
