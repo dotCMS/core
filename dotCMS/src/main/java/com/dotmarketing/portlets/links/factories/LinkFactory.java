@@ -17,6 +17,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.business.query.GenericQueryFactory.BuilderType;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
@@ -116,7 +117,7 @@ public class LinkFactory {
         return list;
     }
  
-    public static java.util.List getLinkChildrenByCondition(Inode o,String condition) {
+    public static java.util.List getLinkChildrenByCondition(Treeable o,String condition) {
         try {
 
             final DotConnect dc = new DotConnect();
@@ -126,7 +127,7 @@ public class LinkFactory {
 			"identifier.host_inode =(select host_inode from identifier where id = ?)" +
                     (condition!=null && !condition.isEmpty()? " and " + condition:"") + " order by url, sort_order");
 
-            dc.addParam(APILocator.getIdentifierAPI().find(o).getPath());
+            dc.addParam(APILocator.getIdentifierAPI().find(o.getIdentifier()).getPath());
             dc.addParam(o.getIdentifier());
 
 
