@@ -120,3 +120,5 @@ This maintenance release includes the following code fixes:
 58. https://github.com/dotCMS/core/issues/21097 : Past Time Machine not working #21097
 
 59. https://github.com/dotCMS/core/issues/20773 : SAML - Allow expression substitution from SAML roles mapped to dotCMS roles by role key #20773
+
+60. https://github.com/dotCMS/core/issues/20805 : Unable to push publish user #20805
