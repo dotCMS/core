@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "1ad3f927-364f-4942-9c07-99f77cdb60dc",
+		"_postman_id": "207c7909-0068-4476-a982-c56d1a8d1018",
 		"name": "CacheResource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -14,6 +14,9 @@
 						"exec": [
 							"var jsonData = pm.response.json();",
 							"var entity = jsonData.entity;",
+							"console.log(entity);",
+							"",
+							"",
 							"pm.test(\"Status code should be 200\", function() {",
 							"    pm.response.to.have.status(200);",
 							"});",
@@ -75,14 +78,14 @@
 						"exec": [
 							"var jsonData = pm.response.json();",
 							"var entity = jsonData.entity;",
+							"",
+							"console.log(entity);",
 							"pm.test(\"Status code should be 200\", function() {",
 							"    pm.response.to.have.status(200);",
 							"});",
-							"pm.test(\"Retrieves providers???\", function() {",
-							"    pm.expect(entity.length).to.greaterThan(0);",
-							"});",
+							"",
 							"pm.test(\"Retrieves groups???\", function() {",
-							"    pm.expect(entity[0].groups.length).to.greaterThan(0);",
+							"    pm.expect(entity.groups.length).to.greaterThan(0);",
 							"});",
 							"",
 							"",
