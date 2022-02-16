@@ -7,15 +7,20 @@ import static org.junit.Assert.assertTrue;
 import com.dotcms.UnitTestBase;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.ByteArrayInputStream;
 import java.io.Serializable;
 import java.io.StringReader;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TimeZone;
 import org.junit.Test;
 
@@ -27,7 +32,9 @@ import org.junit.Test;
  */
 
 public class MarshalUtilsTest extends UnitTestBase {
-	
+
+    private static final String COMPANY_LAST_MODIFIED_371030400000_USER_ID_JSANCA = "{\"companyId\":\"myCompany\",\"lastModified\":371030400000,\"userId\":\"jsanca\"}";
+
     /**
      * Testing the marshall
      */
@@ -58,9 +65,9 @@ public class MarshalUtilsTest extends UnitTestBase {
         assertNotNull(json);
         System.out.println(json);
 
-        assertTrue(
-                new JSONObject("{\"userId\":\"jsanca\",\"lastModified\":371030400000, \"companyId\":\"myCompany\"}").toString().equals
-                        (new JSONObject(json).toString())
+        assertEquals(
+                new JSONObject(COMPANY_LAST_MODIFIED_371030400000_USER_ID_JSANCA).toString(),
+                        new JSONObject(json).toString()
         );
 
 
@@ -89,7 +96,7 @@ public class MarshalUtilsTest extends UnitTestBase {
     @Test
     public void metaDataMarshalTest() throws ParseException, JSONException {
         final MarshalFactory marshalFactory =
-                MarshalFactory.getInstance();
+            MarshalFactory.getInstance();
 
         assertNotNull(marshalFactory);
 
@@ -124,16 +131,17 @@ public class MarshalUtilsTest extends UnitTestBase {
         dateFormat.setLenient(true);
 
         final DotCMSSubjectBean subjectBean =
-                new DotCMSSubjectBean(new java.sql.Date(dateFormat.parse("04/10/1981").getTime()), "jsanca", "myCompany");
+                new DotCMSSubjectBean(new java.sql.Date(dateFormat.parse("04/10/1981").getTime()),
+                        "jsanca", "myCompany");
 
         final String json = marshalUtils.marshal(subjectBean);
 
         assertNotNull(json);
         System.out.println(json);
 
-        assertTrue(
-                new JSONObject("{\"userId\":\"jsanca\",\"lastModified\":371030400000, \"companyId\":\"myCompany\"}").toString().equals
-                        (new JSONObject(json).toString())
+        assertEquals(
+                new JSONObject(COMPANY_LAST_MODIFIED_371030400000_USER_ID_JSANCA).toString(),
+                        new JSONObject(json).toString()
         );
 
 
@@ -176,16 +184,17 @@ public class MarshalUtilsTest extends UnitTestBase {
         dateFormat.setLenient(true);
 
         final DotCMSSubjectBean subjectBean =
-                new DotCMSSubjectBean(new java.sql.Time(dateFormat.parse("04/10/1981").getTime()), "jsanca", "myCompany");
+                new DotCMSSubjectBean(new Time(dateFormat.parse("04/10/1981").getTime()), "jsanca",
+                        "myCompany");
 
         final String json = marshalUtils.marshal(subjectBean);
 
         assertNotNull(json);
         System.out.println(json);
 
-        assertTrue(
-                new JSONObject("{\"userId\":\"jsanca\",\"lastModified\":371030400000, \"companyId\":\"myCompany\"}").toString().equals
-                        (new JSONObject(json).toString())
+        assertEquals(
+                new JSONObject(COMPANY_LAST_MODIFIED_371030400000_USER_ID_JSANCA).toString()
+                        ,new JSONObject(json).toString()
         );
 
 
@@ -229,16 +238,17 @@ public class MarshalUtilsTest extends UnitTestBase {
         dateFormat.setLenient(true);
 
         final DotCMSSubjectBean subjectBean =
-                new DotCMSSubjectBean(new java.sql.Timestamp(dateFormat.parse("04/10/1981").getTime()), "jsanca", "myCompany");
+                new DotCMSSubjectBean(new Timestamp(dateFormat.parse("04/10/1981").getTime()),
+                        "jsanca", "myCompany");
 
         final String json = marshalUtils.marshal(subjectBean);
 
         assertNotNull(json);
         System.out.println(json);
 
-        assertTrue(
-                new JSONObject("{\"userId\":\"jsanca\",\"lastModified\":371030400000, \"companyId\":\"myCompany\"}").toString().equals
-                        (new JSONObject(json).toString())
+        assertEquals(
+                new JSONObject(COMPANY_LAST_MODIFIED_371030400000_USER_ID_JSANCA).toString(),
+                        new JSONObject(json).toString()
         );
 
 
@@ -261,7 +271,7 @@ public class MarshalUtilsTest extends UnitTestBase {
         assertEquals(subjectBean, dotCMSSubjectBean4);
     }
 
-    class DotCMSSubjectBean implements Serializable {
+    static class DotCMSSubjectBean implements Serializable {
 
         private final String userId;
 
@@ -269,7 +279,8 @@ public class MarshalUtilsTest extends UnitTestBase {
 
         private final String companyId;
 
-        public DotCMSSubjectBean(final Date lastModified, final String userId, final String companyId) {
+        @JsonCreator
+        public DotCMSSubjectBean( @JsonProperty("lastModified") final Date lastModified, @JsonProperty("userId") final String userId, @JsonProperty("companyId") final String companyId) {
             this.lastModified = lastModified;
             this.userId = userId;
             this.companyId = companyId;
@@ -294,9 +305,9 @@ public class MarshalUtilsTest extends UnitTestBase {
 
             DotCMSSubjectBean that = (DotCMSSubjectBean) o;
 
-            if (userId != null ? !userId.equals(that.userId) : that.userId != null) return false;
+            if (!Objects.equals(userId, that.userId)) return false;
             if (lastModified != null ? lastModified.getTime() != that.lastModified.getTime() : that.lastModified != null) return false;
-            return companyId != null ? companyId.equals(that.companyId) : that.companyId == null;
+            return Objects.equals(companyId, that.companyId);
 
         }
 
