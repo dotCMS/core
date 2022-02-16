@@ -116,8 +116,8 @@ public class FolderFactoryImpl extends FolderFactory {
 		if (folder == null) {
 			try{
 			     DotConnect dc    = new DotConnect()
-			             .setSQL("select * from folder where f.identifier = ?")
-			             .addParam(folderInode);
+			             .setSQL("select * from folder where identifier = ? or inode = ?")
+			             .addParam(folderInode).addParam(folderInode);
 
 				List<Folder> folders = TransformerLocator.createFolderTransformer(dc.loadObjectResults()).asList();
 
