@@ -353,6 +353,7 @@ public class TemplateResource {
 
         return fillAndSaveTemplate(templateForm, user, host, pageMode, template, false);
     }
+
     @WrapInTransaction
     private Template fillAndSaveTemplate(final TemplateForm templateForm,
             final User user,
@@ -407,6 +408,73 @@ public class TemplateResource {
 
         return template;
     }
+
+    /**
+     * Saves and publish a template. The templateForm must contain the identifier of the template.
+     *
+     * @param request       {@link HttpServletRequest}
+     * @param response      {@link HttpServletResponse}
+     * @param templateForm  {@link TemplateForm}
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @PUT
+    @Path("/_savepublish")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response saveAndPublish(@Context final HttpServletRequest  request,
+                               @Context final HttpServletResponse response,
+                               final TemplateForm templateForm) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).rejectWhenNoUser(true).init();
+        final User user         = initData.getUser();
+        final Host host         = this.hostWebAPI.getCurrentHostNoThrow(request);
+        final PageMode pageMode = PageMode.get(request);
+        final Template currentTemplate = UtilMethods.isSet(templateForm.getIdentifier())?
+                this.templateAPI.findWorkingTemplate(templateForm.getIdentifier(),user,pageMode.respectAnonPerms):null;
+        Template newVersionTemplate = new Template();
+
+        if (null != currentTemplate) {
+
+            newVersionTemplate = currentTemplate;
+        }
+
+        Logger.debug(this, ()-> "Saving & publishing the template: " + templateForm.getIdentifier());
+
+        final Template templateSaved = this.saveAndPublishTemplate(templateForm, user, host, pageMode, newVersionTemplate);
+
+        return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(templateSaved, user))).build();
+
+    }
+
+    @WrapInTransaction
+    private Template saveAndPublishTemplate(final TemplateForm templateForm,
+                                            final User user,
+                                            final Host host,
+                                            final PageMode pageMode, Template newVersionTemplate) {
+
+        try {
+
+            final Template templateSaved =
+                    this.fillAndSaveTemplate(templateForm, user, host, pageMode, newVersionTemplate);
+
+            Logger.debug(this, () -> "Saved the template: " + templateSaved.getIdentifier());
+
+            this.templateAPI.publishTemplate(templateSaved, user, pageMode.respectAnonPerms);
+
+            Logger.debug(this, () -> "Published the template: " + templateSaved.getIdentifier());
+
+            return templateSaved;
+        } catch (Exception e) {
+
+            Logger.error(this, e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
 
     /**
      * Publishes Template(s)
