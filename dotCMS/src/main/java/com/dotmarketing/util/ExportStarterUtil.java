@@ -21,6 +21,7 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.cmsmaintenance.util.AssetFileNameFilter;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -138,6 +139,7 @@ public class ExportStarterUtil {
 
             /* get a list of all our tables */
             //Including classes that are no longer mapped with Hibernate anymore
+            _tablesToDump.add(Folder.class);
             _tablesToDump.add(Identifier.class);
             _tablesToDump.add(Language.class);
             _tablesToDump.add(Relationship.class);
@@ -238,6 +240,10 @@ public class ExportStarterUtil {
                         dc = new DotConnect();
                         dc.setSQL("SELECT * FROM category ORDER BY inode")
                                 .setStartRow(i).setMaxRows(step);
+                    } else if (Folder.class.equals(clazz)) {
+                        dc = new DotConnect();
+                        dc.setSQL("SELECT * FROM folder ORDER BY inode")
+                                .setStartRow(i).setMaxRows(step);
                     } else {
                         _dh.setQuery("from " + clazz.getName() + " order by 1");
                     }
@@ -266,6 +272,10 @@ public class ExportStarterUtil {
                     } else if(Category.class.equals(clazz)) {
                         _list = TransformerLocator
                                 .createCategoryTransformer(dc.loadObjectResults())
+                                .asList();
+                    } else if(Folder.class.equals(clazz)) {
+                        _list = TransformerLocator
+                                .createFolderTransformer(dc.loadObjectResults())
                                 .asList();
                     } else {
                         _list = _dh.list();
