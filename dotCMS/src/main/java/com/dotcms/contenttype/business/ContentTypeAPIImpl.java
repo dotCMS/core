@@ -21,6 +21,7 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.BaseRuntimeInternationalizationException;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.google.common.collect.ImmutableList;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.ContentTypeUtil;
@@ -195,7 +196,35 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     }
   }
 
+  @WrapInTransaction
+  @Override
+  public ContentType saveFrom(final ContentType currentType, final String newVariableName) throws DotDataException, DotSecurityException {
 
+      final ContentType contentType = ContentTypeBuilder.builder(currentType)
+            .id(null).modDate(new Date())
+            .variable(newVariableName)
+            .build();
+
+      final ContentType newContentType = this.save(contentType);
+
+      final List<Field> currentFields = currentType.fields();
+      final List<Field> newFields     = new ArrayList<>();
+
+      final Map<String, Field> baseFieldMap = newContentType.fieldMap();
+      for (final Field currentField : currentFields) {
+
+          if(!baseFieldMap.containsKey(currentField.variable())) {
+            newFields.add(FieldBuilder.builder(currentField).contentTypeId(newContentType.id()).id(null).build());
+          } else {
+            newFields.add(baseFieldMap.get(currentField.variable()));
+          }
+      }
+
+
+      APILocator.getContentTypeFieldAPI().saveFields(newFields, user);
+
+      return newContentType;
+  }
 
   @WrapInTransaction
   @Override

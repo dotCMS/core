@@ -113,6 +113,69 @@ public class ContentTypeResource implements Serializable {
 	public static final String SELECTED_STRUCTURE_KEY = "selectedStructure";
 
 	@POST
+	@Path("/base/{baseVariableName}/new/{newVariableName}")
+	@JSONP
+	@NoCache
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	public final Response createTypeFromBaseType(@Context final HttpServletRequest req,
+												 @Context final HttpServletResponse res,
+												 @PathParam("baseVariableName") final String baseVariableName,
+												 @PathParam("newVariableName") final String newVariableName) {
+
+		final InitDataObject initData = this.webResource.init(null, req, res, true, null);
+		final User user = initData.getUser();
+		Response response = null;
+
+		try {
+
+			Logger.debug(this, ()->String.format("Creating new content type '%s' based from  '%s' ", baseVariableName, newVariableName));
+			final HttpSession session = req.getSession(false);
+
+			// Validate input
+			final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
+			final ContentType type = contentTypeAPI.find(baseVariableName);
+
+			if (null == type || (UtilMethods.isSet(type.id()) && !UUIDUtil.isUUID(type.id()))) {
+
+				return ExceptionMapperUtil.createResponse(null, "ContentType 'id' if set, should be a uuid");
+			}
+
+			final ContentType contentTypeSaved = contentTypeAPI.saveFrom(type, newVariableName);
+			final List<SystemActionWorkflowActionMapping> systemActionWorkflowActionMappings = this.workflowHelper.findSystemActionsByContentType(type, user);
+			final ImmutableMap<Object, Object> responseMap = ImmutableMap.builder()
+					.putAll(new JsonContentTypeTransformer(contentTypeSaved).mapObject())
+					.put("workflows", this.workflowHelper.findSchemesByContentType(contentTypeSaved.id(), initData.getUser()))
+					.put("systemActionMappings", systemActionWorkflowActionMappings.stream()
+							.collect(Collectors.toMap(mapping-> mapping.getSystemAction(), mapping->mapping)))
+					.build();
+
+			// save the last one to the session to be compliant with #13719
+			if(null != session) {
+				session.removeAttribute(SELECTED_STRUCTURE_KEY);
+			}
+
+			response = Response.ok(new ResponseEntityView(responseMap)).build();
+		} catch (IllegalArgumentException e) {
+			Logger.error(this, e.getMessage(), e);
+			response = ExceptionMapperUtil
+					.createResponse(null, "Content-type is not valid (" + e.getMessage() + ")");
+		}catch (DotStateException | DotDataException e) {
+			Logger.error(this, e.getMessage(), e);
+			response = ExceptionMapperUtil
+					.createResponse(null, "Content-type is not valid (" + e.getMessage() + ")");
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e);
+
+		} catch (Exception e) {
+			Logger.error(this, e.getMessage(), e);
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+		}
+
+		return response;
+	}
+
+	@POST
 	@JSONP
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
