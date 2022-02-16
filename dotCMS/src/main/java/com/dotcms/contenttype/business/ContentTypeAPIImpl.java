@@ -12,6 +12,7 @@ import com.dotcms.contenttype.model.event.ContentTypeSavedEvent;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -225,20 +226,30 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     final ContentType contentType    = builder.build();
     final ContentType newContentType = this.save(contentType);
     final List<Field> currentFields  = sourceContentType.fields();
-    final List<Field> newFields      = new ArrayList<>();
     final Map<String, Field> baseFieldMap = newContentType.fieldMap();
-
-    for (final Field currentField : currentFields) {
-
-        newFields.add(!baseFieldMap.containsKey(currentField.variable())?
-                FieldBuilder.builder(currentField).contentTypeId(newContentType.id()).id(null).build():
-                baseFieldMap.get(currentField.variable()));
-    }
 
     Logger.debug(this, ()->"Saving the fields for the the content type: " + copyContentTypeBean.getName()
             + ", from: " + copyContentTypeBean.getSourceContentType().variable());
 
-    APILocator.getContentTypeFieldAPI().saveFields(newFields, user);
+    for (final Field currentField : currentFields) {
+
+      final Field newField = !baseFieldMap.containsKey(currentField.variable())?
+                FieldBuilder.builder(currentField).contentTypeId(newContentType.id()).id(null).build():
+                baseFieldMap.get(currentField.variable());
+
+      final Field savedField = APILocator.getContentTypeFieldAPI().save(newField, user);
+
+        final List<FieldVariable> currentFieldVariables = currentField.fieldVariables();
+        if (UtilMethods.isSet(currentFields)) {
+          for (final FieldVariable fieldVariable : currentFieldVariables) {
+
+            final FieldVariable newFieldVariable = ImmutableFieldVariable.builder().from(fieldVariable).
+                    fieldId(savedField.id()).id(null).userId(user.getUserId()).build();
+
+            APILocator.getContentTypeFieldAPI().save(newFieldVariable, user);
+          }
+        }
+    }
 
     return newContentType;
   }
