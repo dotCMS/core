@@ -2079,19 +2079,28 @@ public class ESContentFactoryImpl extends ContentletFactory {
         upsertValues.add(contentlet.getLanguageId());
         upsertValues.add(jsonContentlet);
 
-        final Map<String, Object> fieldsMap = getFieldsMap(contentlet);
-
-        try {
-            addDynamicFields(upsertValues, fieldsMap,"date");
-            addDynamicFields(upsertValues, fieldsMap,"text");
-            addDynamicFields(upsertValues, fieldsMap,"text_area");
-            addDynamicFields(upsertValues, fieldsMap,"integer");
-            addDynamicFields(upsertValues, fieldsMap,"float");
-            addDynamicFields(upsertValues, fieldsMap,"bool");
-        } catch (JsonProcessingException e) {
-            throw new DotDataException(e);
+        if (APILocator.getContentletJsonAPI().isPersistContentletInColumns()) {
+            try {
+                final Map<String, Object> fieldsMap = getFieldsMap(contentlet);
+                addDynamicFields(upsertValues, fieldsMap, "date");
+                addDynamicFields(upsertValues, fieldsMap, "text");
+                addDynamicFields(upsertValues, fieldsMap, "text_area");
+                addDynamicFields(upsertValues, fieldsMap, "integer");
+                addDynamicFields(upsertValues, fieldsMap, "float");
+                addDynamicFields(upsertValues, fieldsMap, "bool");
+            } catch (JsonProcessingException e) {
+                throw new DotDataException(e);
+            }
+        } else {
+            // Dynamic columns are emptied out so they don't get to save anything.
+            // We're pretty much relying on the stuff we store as json
+            nullOutDynamicFields(upsertValues, "date");
+            nullOutDynamicFields(upsertValues, "text");
+            nullOutDynamicFields(upsertValues, "text_area");
+            nullOutDynamicFields(upsertValues, "integer");
+            nullOutDynamicFields(upsertValues, "float");
+            nullOutDynamicFields(upsertValues, "bool");
         }
-
         return upsertValues;
     }
 
@@ -2143,6 +2152,27 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 upsertValues.add(defaultValue);
             }
         }
+    }
+
+    /**
+     * Sets default values where
+     * 0 is set where there is supposed to be any numeric val,
+     * false is set where there was supposed to be a bool val and null everywhere else.
+     * @param upsertValues
+     * @param prefix
+     */
+    private void nullOutDynamicFields(final List<Object> upsertValues,  final String prefix){
+        Object defaultValue = null;
+        if ("integer".equals(prefix) || "float".equals(prefix)){
+            defaultValue = 0;
+        } else if ("bool".equals(prefix)){
+            defaultValue = Boolean.FALSE;
+        }
+
+        for (int i = 1; i <= MAX_FIELDS_ALLOWED; i++) {
+            upsertValues.add(defaultValue);
+        }
+
     }
 
     private Map<String, Object> getFieldsMap(final Contentlet contentlet) throws DotDataException {
