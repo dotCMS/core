@@ -557,7 +557,7 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 		if (InodeUtils.isSet(currentLink.getInode())) {
 			Identifier identifier = identifierAPI.find(currentLink);
 			WebAssetFactory
-			.createAsset(link, userId, parent, identifier, false);
+			.createAsset(link, userId, identifier, false);
 
 			workingLink = (Link) WebAssetFactory.saveAsset(link, identifier);
 			currentLink = link;
@@ -797,7 +797,7 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 			Folder parent = folderAPI.find(parentInode, user, false); 
 			Folder oldParent = folderAPI.findParentFolder(webAsset, user, false);
 			super._moveWebAsset(req, res, config, form, user, Link.class,WebKeys.LINK_EDIT);			
-			RefreshMenus.deleteMenu(oldParent, parent);
+
 			if (oldParent.isShowOnMenu()) {
 			    CacheLocator.getNavToolCache().removeNav(oldParent.getHostId(), oldParent.getInode());
 			}

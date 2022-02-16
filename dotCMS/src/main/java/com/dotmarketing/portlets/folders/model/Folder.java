@@ -5,8 +5,6 @@ import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.Inode;
-import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
@@ -18,8 +16,6 @@ import com.dotmarketing.business.Treeable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.TreeFactory;
-import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.struts.FolderForm;
 import com.dotmarketing.util.InodeUtils;
@@ -118,7 +114,7 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
     
     @JsonIgnore
     public boolean isSystemFolder() {
-        return Try.of(()->FolderAPI.SYSTEM_FOLDER.equals(identifier)).getOrElse(false);
+        return Try.of(()->FolderAPI.SYSTEM_FOLDER.equals(inode)).getOrElse(false);
     }
     
     
@@ -366,40 +362,6 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
 		}
 
 		return id!=null?id.getPath():null;
-	}
-
-	/**
-	 * Remove the ASSOCIATION between a child and the inode
-	 *
-	 * @param child
-	 *            child to be dissociated
-	 * @return
-	 * @deprecated Association between inodes should be called through their
-	 *             respective API, calling the API ensures the consistency of
-	 *             the relationship and caches
-	 */
-	public boolean deleteChild(Inode child) {
-		Tree tree = TreeFactory.getTree(this.getInode(), child.getInode(), "child");
-		if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
-			return false;
-		}
-		TreeFactory.deleteTree(tree);
-		return true;
-	}
-
-	/**
-	 * @deprecated Association between inodes should be called through their
-	 *             respective API, calling the API ensures the consistency of
-	 *             the relationship and caches
-	 */
-	public void addChild(Inode i) {
-		Tree tree = TreeFactory.getTree(this.getInode(), i.getInode(), "child");
-		if (!InodeUtils.isSet(tree.getParent()) || !InodeUtils.isSet(tree.getChild())) {
-			tree.setParent(this.inode);
-			tree.setChild(i.getInode());
-			tree.setRelationType("child");
-			TreeFactory.saveTree(tree);
-		}
 	}
 	
 	public boolean equals(Object o){

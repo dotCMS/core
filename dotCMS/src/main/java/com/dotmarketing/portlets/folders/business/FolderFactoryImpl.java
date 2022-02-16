@@ -14,7 +14,6 @@ import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
-import com.dotmarketing.beans.Inode.Type;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.*;
 import com.dotmarketing.cache.FolderCache;
@@ -112,14 +111,12 @@ public class FolderFactoryImpl extends FolderFactory {
 
 
 	@Override
-	protected Folder find(String folderInode) throws DotDataException {
+	protected Folder find(final String folderInode) throws DotDataException {
 		Folder folder = folderCache.getFolder(folderInode);
 		if (folder == null) {
 			try{
 			     DotConnect dc    = new DotConnect()
-			             .setSQL("select f.*,i.idate,i.owner from folder f join inode i on f.inode = i.inode where f.inode = ? "+
-								 "UNION select f.*,i.idate,i.owner from folder f join inode i on f.inode = i.inode where f.identifier = ?")
-			             .addParam(folderInode)
+			             .setSQL("select * from folder where f.identifier = ?")
 			             .addParam(folderInode);
 
 				List<Folder> folders = TransformerLocator.createFolderTransformer(dc.loadObjectResults()).asList();
@@ -196,9 +193,8 @@ public class FolderFactoryImpl extends FolderFactory {
 			orderBy.append(order);
 		}
 
-		query.append("SELECT folder.*, folder_1_.* from folder folder, inode folder_1_, identifier identifier ").
+		query.append("SELECT folder.* from folder folder, identifier identifier ").
 				append("where folder.identifier = identifier.id and ").
-				append("folder_1_.type = 'folder' and folder_1_.inode = folder.inode and ").
 				append("identifier.parent_path = ? and identifier.host_inode = ? ");
 
 		query.append((!condition.isEmpty()?" and " + condition:condition) + orderBy);
@@ -254,8 +250,8 @@ public class FolderFactoryImpl extends FolderFactory {
 				siteId = site.getIdentifier();
 
 				DotConnect dc = new DotConnect();
-				dc.setSQL("select folder.*, folder_1_.* from " + Type.FOLDER.getTableName() + " folder, inode folder_1_, identifier i where i.full_path_lc = ? and "
-						+ "folder_1_.type = 'folder' and folder.inode = folder_1_.inode and folder.identifier = i.id and i.host_inode = ?");
+				dc.setSQL("select folder.* from folder, identifier i where i.full_path_lc = ? "
+						+ " and folder.identifier = i.id and i.host_inode = ?");
 
 				dc.addParam((parentPath + assetName).toLowerCase());
 
@@ -301,10 +297,8 @@ public class FolderFactoryImpl extends FolderFactory {
 					}
 
 					dc = new DotConnect();
-					dc.setSQL("select folder.*, folder_1_.* from " + Type.FOLDER.getTableName() + " folder, inode folder_1_, identifier i"
+					dc.setSQL("select folder.* from folder, identifier i"
 							+ " where i.full_path_lc = ?"
-							+ " and folder_1_.type = 'folder'"
-							+ " and folder.inode = folder_1_.inode"
 							+ " and folder.identifier = i.id"
 							+ " and i.host_inode = ?");
 					dc.addParam((parentPath + parentFolder).toLowerCase());
@@ -401,17 +395,17 @@ public class FolderFactoryImpl extends FolderFactory {
 		return menuList;
 	}
 
-	/*@SuppressWarnings("unchecked")
-	protected java.util.List getAllMenuItems(Inode inode) throws DotStateException, DotDataException {
-		return getAllMenuItems(inode, 1);
+	@SuppressWarnings("unchecked")
+	protected java.util.List getAllMenuItems(final Folder folder) throws DotStateException, DotDataException {
+		return getAllMenuItems(folder, 1);
 	}
 
 	@SuppressWarnings("unchecked")
-	protected java.util.List getAllMenuItems(Inode inode, int orderDirection) throws DotStateException, DotDataException {
-	    List<Folder> dummy=new ArrayList<Folder>();
-	    dummy.add((Folder)inode);
+	protected java.util.List getAllMenuItems(Folder folder, int orderDirection) throws DotStateException, DotDataException {
+	    final List<Folder> dummy=new ArrayList<>();
+	    dummy.add(folder);
 	    return getMenuItems(dummy, orderDirection);
-	}*/
+	}
 
 	protected Folder createFolders(String path, Host host) throws DotDataException {
 
@@ -1021,13 +1015,7 @@ public class FolderFactoryImpl extends FolderFactory {
 			dc.addParam(folder1.getType());
 			dc.loadResult();
 
-			String InodeQuery = "INSERT INTO INODE(INODE, OWNER, IDATE, TYPE) VALUES (?,null,?,?)";
-			dc.setSQL(InodeQuery);
-			dc.addParam(folder1.getInode());
-			dc.addParam(folder1.getIDate());
-			dc.addParam(folder1.getType());
-			dc.loadResult();
-			String hostQuery = "INSERT INTO " + Type.FOLDER.getTableName() + "(INODE, NAME,TITLE, SHOW_ON_MENU, SORT_ORDER,FILES_MASKS,IDENTIFIER) VALUES (?,?,?,?,?,?,?,?)";
+			String hostQuery = "INSERT INTO FOLDER (INODE, NAME, TITLE, SHOW_ON_MENU, SORT_ORDER,FILES_MASKS,IDENTIFIER, OWNER, IDATE) VALUES (?,?,?,?,?,?,?,?,null,?)";
 			dc.setSQL(hostQuery);
 			dc.addParam(folder1.getInode());
 			dc.addParam(folder1.getName());
@@ -1036,6 +1024,7 @@ public class FolderFactoryImpl extends FolderFactory {
 			dc.addParam(folder1.getSortOrder());
 			dc.addParam(folder1.getFilesMasks());
 			dc.addParam(uuid);
+			dc.addParam(folder1.getIDate());
 			dc.loadResult();
 			folderCache.addFolder(folder1,APILocator.getIdentifierAPI().find(folder1.getIdentifier()));
 			return folder1;

@@ -95,10 +95,6 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 		// persists the webasset
 		save(webasset);
 
-		// adds the webasset as child of the folder or parent inode
-		if(!parent.getType().equalsIgnoreCase("folder"))
-		  parent.addChild(webasset);
-
 		// create new identifier, with the URI
 		APILocator.getVersionableAPI().setWorking(webasset);
 	}

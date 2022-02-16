@@ -351,21 +351,6 @@ public class DotPortletAction extends PortletAction {
 			// Checking permissions
 			_checkCopyAndMovePermissions(webAsset, parent, user, httpReq, "move");
 
-			// gets old parent
-			final Folder oldParent = APILocator.getFolderAPI().findParentFolder(workingWebAsset, user, false);
-			Logger.debug(this, "Old Parent Folder=" + oldParent.getInode());
-			oldParent.deleteChild(workingWebAsset);
-			if ((liveWebAsset != null) && (InodeUtils.isSet(liveWebAsset.getInode()))) {
-				oldParent.deleteChild(liveWebAsset);
-			}
-
-			// Adding to new parent
-			Logger.debug(this, "Parent Folder=" + parent.getInode());
-			parent.addChild(workingWebAsset);
-			if ((liveWebAsset != null) && (InodeUtils.isSet(liveWebAsset.getInode()))) {
-				parent.addChild(liveWebAsset);
-			}
-
 			// gets identifier for this webasset and changes the uri and
 			// persists it
 			Host newHost = hostAPI.findParentHost(parent, user, false);
