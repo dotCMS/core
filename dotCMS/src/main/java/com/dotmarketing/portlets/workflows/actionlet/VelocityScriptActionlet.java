@@ -36,6 +36,7 @@ public class VelocityScriptActionlet extends WorkFlowActionlet {
 
     private final static String ENGINE = "Velocity";
     private static List<WorkflowActionletParameter> parameterList = createParamList();
+    private boolean stop = false;
 
     private static List<WorkflowActionletParameter> createParamList () {
 
@@ -108,6 +109,7 @@ public class VelocityScriptActionlet extends WorkFlowActionlet {
                             "contentlet", processor.getContentlet(),
                             "content", processor.getContentlet()));
 
+            this.stop = processor.abort();
             if (null != result && null != resultKey) {
                 processor.getContentlet().setProperty(resultKey, result);
             }
@@ -116,5 +118,10 @@ public class VelocityScriptActionlet extends WorkFlowActionlet {
             Logger.error(this, e.getMessage(), e);
             throw new WorkflowActionFailureException(e.getMessage(), e);
         }
+    }
+
+    @Override
+    public boolean stopProcessing() {
+        return stop;
     }
 }
