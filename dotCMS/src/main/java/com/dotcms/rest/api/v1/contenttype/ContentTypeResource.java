@@ -110,7 +110,7 @@ public class ContentTypeResource implements Serializable {
 	public static final String SELECTED_STRUCTURE_KEY = "selectedStructure";
 
 	@POST
-	@Path("/_copy/{baseVariableName}")
+	@Path("/{baseVariableName}/_copy")
 	@JSONP
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)

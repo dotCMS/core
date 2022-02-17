@@ -411,7 +411,7 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"pm.test(\"Content Type has the provided name\", function() {",
-									"    pm.expect(contentType.name).to.eql(\"WysiwygContent Copy\");",
+									"    pm.expect(contentType.name).to.eql(\"WysiwygContent Copy\"); ",
 									"});",
 									"pm.test(\"Content Type should have 4 fields\", function() {",
 									"    pm.expect(contentType.fields.length).to.eql(4);",
@@ -456,7 +456,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/contenttype/_copy/WysiwygContentToCopy",
+							"raw": "{{serverURL}}/api/v1/contenttype/WysiwygContentToCopy/_copy",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -464,8 +464,8 @@
 								"api",
 								"v1",
 								"contenttype",
-								"_copy",
-								"WysiwygContentToCopy"
+								"WysiwygContentToCopy",
+								"_copy"
 							]
 						}
 					},
