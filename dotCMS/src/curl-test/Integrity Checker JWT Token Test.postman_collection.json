@@ -180,7 +180,7 @@
 										}
 									]
 								},
-								"method": "POST",
+								"method": "GET",
 								"header": [
 									{
 										"key": "Content-Type",
@@ -188,12 +188,6 @@
 										"type": "text"
 									}
 								],
-								"body": {
-									"mode": "file",
-									"file": {
-										"src": "resources/Push_publish/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
-									}
-								},
 								"url": {
 									"raw": "{{serverURL}}/api/integrity/{{transactionId}}/integrityData",
 									"host": [
@@ -203,7 +197,7 @@
 										"api",
 										"integrity",
 										"{{transactionId}}",
-										"status"
+										"integrityData"
 									]
 								}
 							},
