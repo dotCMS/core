@@ -1,4 +1,4 @@
-package com.dotcms.content.business;
+package com.dotcms.content.business.json;
 
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;

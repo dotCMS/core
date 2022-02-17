@@ -5,7 +5,7 @@ import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
 import com.dotcms.cache.lettuce.DotObjectCodecTest;
 import com.dotcms.cache.lettuce.LettuceCacheTest;
 import com.dotcms.cache.lettuce.RedisClientTest;
-import com.dotcms.content.business.ContentletJsonAPITest;
+import com.dotcms.content.business.json.ContentletJsonAPITest;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;

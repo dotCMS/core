@@ -1,6 +1,6 @@
 package com.dotmarketing.quartz.job;
 
-import static com.dotcms.content.business.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
+import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 import static com.dotmarketing.quartz.DotStatefulJob.EXECUTION_DATA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;

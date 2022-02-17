@@ -1,6 +1,6 @@
-package com.dotcms.content.business;
+package com.dotcms.content.business.json;
 
-import static com.dotcms.content.business.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
+import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 import static junit.framework.TestCase.assertNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -151,7 +151,6 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
     @Test
     public void Create_Content_Then_Find_It_Then_Create_Json_Content_Then_Recover_And_Compare() throws Exception {
 
-        //TODO: Once we have json capabilities enabled on all the supported dbs we must remove this condition. Currently we only support them on Postgres
         if(!APILocator.getContentletJsonAPI().isPersistContentAsJson()){
             Logger.info(ContentletJsonAPITest.class, ()->"Test Should only run on databases with enabled json capabilities.");
             return;

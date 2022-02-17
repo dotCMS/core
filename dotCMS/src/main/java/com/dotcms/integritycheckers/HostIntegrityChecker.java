@@ -2,6 +2,7 @@ package com.dotcms.integritycheckers;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.repackage.com.csvreader.CsvWriter;
@@ -20,6 +21,8 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
+import java.util.Optional;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
@@ -88,7 +91,20 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                         writer.write(rs.getString("working_inode"));
                         writer.write(rs.getString("live_inode"));
                         writer.write(String.valueOf(rs.getLong("language_id")));
-                        writer.write(rs.getString(hostField));
+                        String hostName = rs.getString("host_name");
+                        if(UtilMethods.isNotSet(hostName)){
+                            final Object contentletAsJson = rs.getString("contentlet_as_json");
+                            if(null != contentletAsJson){
+                                //Access the field name directly from the json
+                                final Optional<String> optionalHostName = ContentletJsonHelper.INSTANCE.get()
+                                        .fieldValue(contentletAsJson.toString(),"hostName");
+                                hostName = optionalHostName.orElse("unknown");
+                            }
+                        }
+                        if("unknown".equals(hostName)){
+                           Logger.error(HostIntegrityChecker.class,String.format("Unable to find hostName from the given inode %s ",rs.getString("inode")));
+                        }
+                        writer.write(hostName);
                         writer.endRecord();
                         count++;
 
@@ -205,6 +221,9 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                 return false;
             }
 
+            final String contentAsJsonPostgres = DbConnectionFactory.isPostgres() ? " or c.contentlet_as_json->'fields'->'hostName'->>'value' = ht.host" : StringPool.BLANK;
+            //TODO: figure out the join that must be used in case we're on ms-sql looking at a content as json instance
+
             // compare the data from the CSV to the local db data AND see if we
             // have conflicts
             final String conflictSql = " FROM identifier i" +
@@ -213,7 +232,8 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                     " AND (c.inode = cvi.working_inode OR c.inode = cvi.live_inode)" +
                     " AND c.language_id = cvi.lang)" +
                     " JOIN structure s ON c.structure_inode = s.inode" +
-                    " JOIN " + tempTableName + " ht ON c." + hostField + " = ht.host" +
+                    " JOIN " + tempTableName + " ht ON ( ( c." + hostField + " = ht.host "+contentAsJsonPostgres+" ) "  +
+                    " AND c.language_id = cvi.lang)" +
                     " WHERE i.asset_type = 'contentlet'" +
                     " AND i.asset_subtype = 'Host'" +
                     " AND i.host_inode = ?" +
@@ -222,6 +242,8 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
             dc.setSQL("SELECT DISTINCT 1" + conflictSql).addParam(Host.SYSTEM_HOST);
             final List<Map<String, Object>> results = dc.loadObjectResults();
 
+            final String nvl = DbConnectionFactory.isPostgres() ? String.format(" COALESCE(c.contentlet_as_json-> 'fields' ->'hostName'->>'value',c.%s)",hostField) : hostField ;
+            //TODO: need to figure out how to extract the hostname from non-postgres db when the contentlet has been stored as json
             if (!results.isEmpty()) {
                 // if we have conflicts, lets create a table out of them
                 final String insertStmt = "INSERT INTO " + getIntegrityType().getResultsTableName() +
@@ -230,7 +252,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                         " SELECT DISTINCT c.identifier as local_identifier, ht.identifier as remote_identifier," +
                         " '" + endpointId + "', cvi.working_inode as local_working_inode," +
                         " cvi.live_inode as local_live_inode, ht.working_inode as remote_working_inode," +
-                        " ht.live_inode as remote_live_inode, c.language_id, c." + hostField + " as host" +
+                        " ht.live_inode as remote_live_inode, c.language_id, " + nvl + " as host" +
                         conflictSql;
                 dc.setSQL(insertStmt)
                         .addParam(Host.SYSTEM_HOST)

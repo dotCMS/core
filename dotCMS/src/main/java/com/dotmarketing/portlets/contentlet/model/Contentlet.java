@@ -897,7 +897,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @throws DotStateException
 	 */
 	public boolean isWorking() throws DotStateException, DotDataException, DotSecurityException {
-		return InodeUtils.isSet(this.getIdentifier())?APILocator.getVersionableAPI().isWorking(this):false;
+		return InodeUtils.isSet(this.getIdentifier()) && APILocator.getVersionableAPI()
+				.isWorking(this);
 	}
 
 	/**

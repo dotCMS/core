@@ -13,7 +13,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
-import com.dotcms.content.business.ContentletJsonAPI;
+import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.elasticsearch.business.event.ContentletArchiveEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;

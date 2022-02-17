@@ -1,4 +1,4 @@
-package com.dotcms.content.business;
+package com.dotcms.content.business.json;
 
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.DISABLED_WYSIWYG_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.FOLDER_KEY;
@@ -56,17 +56,11 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import io.vavr.Lazy;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
@@ -163,7 +157,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
             }
         });
 
-        return objectMapper.get().writeValueAsString(toImmutable(copy));
+        return ContentletJsonHelper.INSTANCE.get().writeAsString(toImmutable(copy));
     }
 
     /**
@@ -541,20 +535,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
      * @throws JsonProcessingException
      */
     public Contentlet immutableFromJson(final String json) throws JsonProcessingException {
-        return objectMapper.get().readValue(json, Contentlet.class);
+        return ContentletJsonHelper.INSTANCE.get().immutableFromJson(json);
     }
-
-    /**
-     * Jackson mapper configuration and lazy initialized instance.
-     */
-    private final Lazy<ObjectMapper> objectMapper = Lazy.of(() -> {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
-        objectMapper.registerModule(new Jdk8Module());
-        objectMapper.registerModule(new GuavaModule());
-        objectMapper.registerModule(new JavaTimeModule());
-        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-        return objectMapper;
-    });
 
 }

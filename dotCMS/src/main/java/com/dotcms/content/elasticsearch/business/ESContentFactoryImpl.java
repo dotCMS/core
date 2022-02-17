@@ -12,7 +12,8 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_IN_
 import static com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTokens;
 
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.content.business.ContentletJsonAPI;
+import com.dotcms.content.business.json.ContentletJsonAPI;
+import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.model.field.DataTypes;
@@ -284,17 +285,19 @@ public class ESContentFactoryImpl extends ContentletFactory {
             return new DotConnect().setSQL(loadJsonFieldValueSQL).addParam(inode)
                     .getString("value");
         } else {
-            //TODO: For other non json supporter dbs we simply parse the content stored
-            /*
-            final String json = new DotConnect()
-                    .setSQL("SELECT contentlet_as_json FROM contentlet WHERE inode=?")
-                    .addParam(inode).getString("contentlet_as_json");
-            final Optional<String> fieldValue = ImmutableContentletHelper
-                    .fieldValue(json, field.variable());
-            if (fieldValue.isPresent()) {
-                return fieldValue.get();
+            if (DbConnectionFactory.isMsSql()) {
+                //TODO: add json support loading on ms-sql
+            } else {
+                //We can still give it a try parsing the fields directly
+                final String json = new DotConnect()
+                        .setSQL("SELECT contentlet_as_json FROM contentlet WHERE inode=?")
+                        .addParam(inode).getString("contentlet_as_json");
+                final Optional<String> fieldValue = ContentletJsonHelper.INSTANCE.get()
+                        .fieldValue(json, field.variable());
+                if (fieldValue.isPresent()) {
+                    return fieldValue.get();
+                }
             }
-            */
         }
         return loadField(inode, field.dbColumn());
     }
