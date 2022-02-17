@@ -1564,7 +1564,6 @@ alter table field add constraint fk5cea0fa5fb51eb foreign key (inode) references
 create index idx_relationship_1 on relationship (parent_structure_inode);
 create index idx_relationship_2 on relationship (child_structure_inode);
 create index idx_folder_1 on folder (name);
-alter table folder add constraint fkb45d1c6e5fb51eb foreign key (inode) references inode;
 create index idx_user_clickstream_404_2 on clickstream_404 (user_id);
 create index idx_user_clickstream_404_3 on clickstream_404 (host_id);
 create index idx_user_clickstream_404_1 on clickstream_404 (request_uri);
