@@ -513,7 +513,8 @@ import org.junit.runners.Suite.SuiteClasses;
         LanguageFolderTest.class,
         MailAPIImplTest.class,
         com.dotcms.rendering.velocity.viewtools.content.BinaryMapTest.class,
-        Task220202RemoveFKStructureFolderConstraintTest.class
+        Task220202RemoveFKStructureFolderConstraintTest.class,
+        PublisherAPIImplTest.class
 })
 public class MainSuite {
 
