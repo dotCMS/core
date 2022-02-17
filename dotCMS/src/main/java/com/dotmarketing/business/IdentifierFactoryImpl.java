@@ -284,6 +284,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		identifier.setHostId(getHost(parent, systemUser, identifier).getIdentifier());
 		identifier.setParentPath(parentId.getPath());
 
+		identifier.setCreateDate(folder.getIDate()!=null? folder.getIDate():new Date());
 		saveIdentifier(identifier);
 		return identifier;
 	}
@@ -297,10 +298,12 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			identifier.setId(UUIDGenerator.generateUuid());
 		}
 
-		identifier.setAssetType(folder.getName());
+		identifier.setAssetType(Identifier.ASSET_TYPE_FOLDER);
+		identifier.setAssetName(folder.getName());
 		identifier.setParentPath( "/" );
 		identifier.setOwner(folder.getOwner());
 		identifier.setHostId( site != null ? site.getIdentifier() : null );
+		identifier.setCreateDate(folder.getIDate()!=null? folder.getIDate():new Date());
 
 		saveIdentifier( identifier );
 
