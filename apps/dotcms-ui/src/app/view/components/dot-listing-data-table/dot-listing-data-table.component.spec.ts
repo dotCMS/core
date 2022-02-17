@@ -228,6 +228,13 @@ describe('DotListingDataTableComponent', () => {
         ];
     });
 
+    it('should have default attributes', () => {
+        hostFixture.detectChanges();
+        expect(de.componentInstance.responsiveLayout).toBe('scroll');
+        expect(de.componentInstance.lazy).toBe(true);
+        expect(de.componentInstance.paginator).toBe(true);
+    });
+
     it('should set active element the global search on load', () => {
         const actionHeader = hostFixture.debugElement.query(By.css('dot-action-header'));
         const globalSearch = actionHeader.query(By.css('input'));

@@ -12,6 +12,7 @@
 </dot-action-header>
 <p-table
     #dataTable
+    [responsiveLayout]="'scroll'"
     [contextMenu]="contextMenu ? cm : null"
     (onLazyLoad)="loadDataPaginationEvent($event)"
     (onRowSelect)="handleRowCheck()"
@@ -56,7 +57,10 @@
         >
             <td *ngIf="checkbox">
                 <p-tableCheckbox
-                    *ngIf="rowData.disableInteraction === undefined || rowData.disableInteraction === false"
+                    *ngIf="
+                        rowData.disableInteraction === undefined ||
+                        rowData.disableInteraction === false
+                    "
                     (click)="$event.stopPropagation()"
                     [value]="rowData"
                 ></p-tableCheckbox>
