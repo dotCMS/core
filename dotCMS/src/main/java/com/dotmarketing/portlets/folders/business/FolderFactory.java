@@ -27,7 +27,7 @@ public abstract class FolderFactory {
 
 	abstract Folder find(String folderInode) throws  DotDataException;
 
-	abstract void save(Folder folderInode) throws DotDataException;
+	public abstract void save(Folder folderInode) throws DotDataException;
 	
 	abstract boolean exists(String folderInode) throws DotDataException;
 

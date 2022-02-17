@@ -66,9 +66,7 @@ public class FolderFactoryImpl extends FolderFactory {
 	private final FolderCache folderCache = CacheLocator.getFolderCache();
 
 	private static final String[] UPSERT_EXTRA_COLUMNS = {"name", "title", "show_on_menu",
-			"sort_order", "files_masks", "identifier", "default_file_type", "mod_date"};
-
-	private static final String[] UPSERT_INODE_EXTRA_COLUMNS = {"owner", "idate", "type"};
+			"sort_order", "files_masks", "identifier", "default_file_type", "mod_date", "owner", "idate"};
 
 
 	@VisibleForTesting
@@ -1191,7 +1189,7 @@ public class FolderFactoryImpl extends FolderFactory {
     }
 
 	@Override
-	protected void save(Folder folder) throws DotDataException {
+	public void save(Folder folder) throws DotDataException {
         if (SYSTEM_FOLDER.equals(folder.getInode()) && !Host.SYSTEM_HOST.equals(folder.getHostId())) {
             throw new DotRuntimeException(String.format("Host ID for SYSTEM_FOLDER must always be SYSTEM_HOST. Value " +
                     "'%s' was set.", folder.getHostId()));
@@ -1228,9 +1226,12 @@ public class FolderFactoryImpl extends FolderFactory {
 		parameters.add(folder.getIdentifier());
 		parameters.add(folder.getDefaultFileType());
 		parameters.add(new Timestamp(folder.getModDate().getTime()));
+		parameters.add(folder.getOwner());
 
 		if (!UtilMethods.isSet(folder.getIDate())){
 			parameters.add(new Timestamp(new Date().getTime()));
+		} else{
+			parameters.add(folder.getIDate());
 		}
 
 		upsertContentletCommand.execute(new DotConnect(), replacements, parameters.toArray());

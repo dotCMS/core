@@ -80,7 +80,7 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 		title = title.replace(/-{2,}/g, "-");
 		ele.value = title;
 		<% if (parentFolder != null) { %>
-		 	dojo.byId("pathToFolder").innerText = "<%= APILocator.getIdentifierAPI().find(parentFolder).getPath() %>"+title;
+		 	dojo.byId("pathToFolder").innerText = "<%= APILocator.getIdentifierAPI().find(parentFolder.getIdentifier()).getPath() %>"+title;
 		<% } else { %>
 		 	dojo.byId("pathToFolder").innerText = "/"+title;
 		<% } %>
@@ -162,7 +162,7 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 						<dt><%= LanguageUtil.get(pageContext, "Path-To-Folder") %>:</dt>
 						<dd style="width:80%">
 							<% if (parentFolder != null) { %>
-								<div id="pathToFolder" style="word-break: break-all;"><%= APILocator.getIdentifierAPI().find(parentFolder).getPath() %><%= folder.getName() %></div>
+								<div id="pathToFolder" style="word-break: break-all;"><%= APILocator.getIdentifierAPI().find(parentFolder.getIdentifier()).getPath() %><%= folder.getName() %></div>
 							<% } else { %>
 								<div id="pathToFolder" style="word-break: break-all;">/<%= folder.getName() %></div>
 							<% } %>
@@ -172,7 +172,7 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 						<dt><%= LanguageUtil.get(pageContext, "Path-To-Folder") %>:</dt>
 							<dd style="width:80%">
 								<% if (parentFolder != null) { %>
-									<div id="pathToFolder" style="word-break: break-all;"><%= APILocator.getIdentifierAPI().find(parentFolder).getPath() %></div>
+									<div id="pathToFolder" style="word-break: break-all;"><%= APILocator.getIdentifierAPI().find(parentFolder.getIdentifier()).getPath() %></div>
 								<% } else { %>
 									<div id="pathToFolder" style="word-break: break-all;">/</div>
 								<% } %>
