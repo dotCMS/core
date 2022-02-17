@@ -394,20 +394,24 @@ public class PermissionAjax {
 			}
 			
 			if(UtilMethods.isSet(assetType)){
-				dc.setSQL("select i.inode, type from inode i," +
-                    Inode.Type.valueOf(assetType.toUpperCase()).getTableName() +
-                    " a where i.inode = a.inode and a.identifier = ?");
-				dc.addParam(assetId);
-				results = dc.loadResults();
-			}
-			
-			if(results.size() > 0) {
-				String type =  (String) ((Map)results.get(0)).get("type");
-				String inode = (String) ((Map)results.get(0)).get("inode");
-				if(assetType.equals(Identifier.ASSET_TYPE_TEMPLATE)){
-					perm = APILocator.getTemplateAPI().find(inode,user,respectFrontendRoles);
-				} else {
-					perm = InodeFactory.getInode(inode, InodeUtils.getClassByDBType(type));
+				if (assetType.equals(Identifier.ASSET_TYPE_FOLDER)){
+					perm = APILocator.getFolderAPI().find(assetId, user,respectFrontendRoles);
+				} else{
+					dc.setSQL("select i.inode, type from inode i," +
+							Inode.Type.valueOf(assetType.toUpperCase()).getTableName() +
+							" a where i.inode = a.inode and a.identifier = ?");
+					dc.addParam(assetId);
+					results = dc.loadResults();
+
+					if(results.size() > 0) {
+						String type =  (String) ((Map)results.get(0)).get("type");
+						String inode = (String) ((Map)results.get(0)).get("inode");
+						if(assetType.equals(Identifier.ASSET_TYPE_TEMPLATE)){
+							perm = APILocator.getTemplateAPI().find(inode,user,respectFrontendRoles);
+						} else {
+							perm = InodeFactory.getInode(inode, InodeUtils.getClassByDBType(type));
+						}
+					}
 				}
 			}
 		}
