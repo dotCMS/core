@@ -310,6 +310,7 @@ public class TaskLocatorUtil {
 		.add(Task211020CreateHostIntegrityCheckerResultTables.class)
 		.add(Task211101AddContentletAsJsonColumn.class)
 		.add(Task211103RenameHostNameLabel.class)
+		.add(Task220202RemoveFKStructureFolderConstraint.class)
 		.build();
         
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());

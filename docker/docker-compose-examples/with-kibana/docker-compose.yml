@@ -25,11 +25,19 @@ services:
       - esdata:/usr/share/elasticsearch/data
     networks:
       - es_net
+      
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.9.1
+    environment:
+      ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+    ports:
+      - "5601:5601"
+    networks:
+      - es_net
 
   dotcms:
     image: dotcms/dotcms:latest
     environment:
-        "CATALINA_OPTS": ' -Xms1g -Xmx1g '
         "DB_BASE_URL": "jdbc:postgresql://db/dotcms"
         "DB_USERNAME": 'dotcmsdbuser'
         "DB_PASSWORD": 'password'

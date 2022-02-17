@@ -1,17 +1,15 @@
 version: '3.5'
 
 networks:
-  db_net:
-  es_net:
-  redis_net:
+  db_net_sender:
+  es_net_sender:
 
 volumes:
-  cms-shared:
-  dbdata:
-  esdata:
+  dbdata_sender:
+  esdata_sender:
 
 services:
-  elasticsearch:
+  elasticsearch-sender:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.9.1
     environment:
       - cluster.name=elastic-cluster
@@ -23,47 +21,33 @@ services:
       - 9200:9200
       - 9600:9600
     volumes:
-      - esdata:/usr/share/elasticsearch/data
+      - esdata_sender:/usr/share/elasticsearch/data
     networks:
-      - es_net
+      - es_net_sender
 
-  dotcms-node-1:
+  dotcms-sender:
     image: dotcms/dotcms:latest
     environment:
-        "CATALINA_OPTS": ' -Xms1g -Xmx1g '
-        "DB_BASE_URL": "jdbc:postgresql://db/dotcms"
+        "DB_BASE_URL": "jdbc:postgresql://db-sender/dotcms"
         "DB_USERNAME": 'dotcmsdbuser'
         "DB_PASSWORD": 'password'
         "DOT_ES_AUTH_BASIC_PASSWORD": 'admin'
-        "DOT_ES_ENDPOINTS": 'http://elasticsearch:9200'
-        "DOT_DOT_PUBSUB_PROVIDER_OVERRIDE": 'com.dotcms.dotpubsub.RedisPubSubImpl'
-        "DOT_REDIS_LETTUCECLIENT_URLS": 'redis://MY_SECRET_P4SS@redis'
-        "DOT_CACHE_DEFAULT_CHAIN": 'com.dotmarketing.business.cache.provider.caffine.CaffineCache,com.dotcms.cache.lettuce.RedisCache'
+        "DOT_ES_ENDPOINTS": 'http://elasticsearch-sender:9200'
         #"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20211201/starter-20211201.zip'
     depends_on:
-      - elasticsearch
-      - db
-      - redis
+      - elasticsearch-sender
+      - db-sender
     volumes:
       #- {local_data_path}:/data/shared
       - {license_local_path}/license.zip:/data/shared/assets/license.zip
     networks:
-      - db_net
-      - es_net
-      - redis_net
+      - db_net_sender
+      - es_net_sender
     ports:
       - "8080:8080"
       - "8443:8443"
-      
-  redis:
-    image: "redis:latest"
-    command: redis-server --requirepass MY_SECRET_P4SS
-    ports:
-      - "6379:6379"
-    networks:
-      - redis_net
 
-  db:
+  db-sender:
     image: postgres:11
     command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
     environment:
@@ -71,6 +55,6 @@ services:
         "POSTGRES_PASSWORD": 'password'
         "POSTGRES_DB": 'dotcms'
     volumes:
-      - dbdata:/var/lib/postgresql/data
+      - dbdata_sender:/var/lib/postgresql/data
     networks:
-      - db_net
+      - db_net_sender

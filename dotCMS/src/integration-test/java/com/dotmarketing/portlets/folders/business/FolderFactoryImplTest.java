@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.folders.business;
 
-import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_PARENT_PATH;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 

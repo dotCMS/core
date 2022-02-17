@@ -25,32 +25,23 @@ services:
       - esdata:/usr/share/elasticsearch/data
     networks:
       - es_net
-      
-  kibana:
-    image: docker.elastic.co/kibana/kibana:7.9.1
-    environment:
-      ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
-    ports:
-      - "5601:5601"
-    networks:
-      - es_net
 
   dotcms:
     image: dotcms/dotcms:latest
     environment:
-        "CATALINA_OPTS": ' -Xms1g -Xmx1g '
+        "CATALINA_OPTS": '-Xmx1g '
         "DB_BASE_URL": "jdbc:postgresql://db/dotcms"
         "DB_USERNAME": 'dotcmsdbuser'
         "DB_PASSWORD": 'password'
         "DOT_ES_AUTH_BASIC_PASSWORD": 'admin'
         "DOT_ES_ENDPOINTS": 'http://elasticsearch:9200'
-        #"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20211201/starter-20211201.zip'
+        "CUSTOM_STARTER_URL": "https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20220209/starter-20220209.zip"
     depends_on:
       - elasticsearch
       - db
     volumes:
-      #- {local_data_path}:/data/shared
-      - {license_local_path}/license.zip:/data/shared/assets/license.zip
+      - cms-shared:/data/shared
+      #- {license_local_path}/license.zip:/data/shared/assets/license.zip
     networks:
       - db_net
       - es_net
@@ -59,7 +50,7 @@ services:
       - "8443:8443"
 
   db:
-    image: postgres:11
+    image: postgres:13
     command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
     environment:
         "POSTGRES_USER": 'dotcmsdbuser'

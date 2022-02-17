@@ -720,6 +720,9 @@ public final class WebKeys {
 
     public static final String PAGE_MODE_PARAMETER= "mode";
 
+    // stores the LoginMode value
+    public static final String LOGIN_MODE_PARAMETER= "login_mode";
+
     public static final String LANGUAGE_ID_PARAMETER= "language_id";
 
     public static final String BACKEND_LANGUAGE_PARAMETER_NAME = "backend_language_id";
