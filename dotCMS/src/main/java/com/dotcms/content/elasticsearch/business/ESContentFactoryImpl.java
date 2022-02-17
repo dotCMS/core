@@ -271,6 +271,34 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	    return m.get(fieldContentlet);
 	}
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected Object loadJsonField(final String inode,
+            final com.dotcms.contenttype.model.field.Field field) throws DotDataException {
+        if (DbConnectionFactory.isPostgres()) {
+            final String loadJsonFieldValueSQL = String
+                    .format("SELECT contentlet_as_json->'fields'->'%s'->>'value' as value  FROM contentlet WHERE contentlet_as_json @> '{\"fields\":{\"%s\":{}}}' and inode = ? ",
+                            field.variable(),field.variable());
+            return new DotConnect().setSQL(loadJsonFieldValueSQL).addParam(inode)
+                    .getString("value");
+        } else {
+            //TODO: For other non json supporter dbs we simply parse the content stored
+            /*
+            final String json = new DotConnect()
+                    .setSQL("SELECT contentlet_as_json FROM contentlet WHERE inode=?")
+                    .addParam(inode).getString("contentlet_as_json");
+            final Optional<String> fieldValue = ImmutableContentletHelper
+                    .fieldValue(json, field.variable());
+            if (fieldValue.isPresent()) {
+                return fieldValue.get();
+            }
+            */
+        }
+        return loadField(inode, field.dbColumn());
+    }
+
 	@Override
 	protected void cleanField(String structureInode, Field field) throws DotDataException, DotStateException, DotSecurityException {
 	    StringBuffer sql = new StringBuffer("update contentlet set " );
@@ -2080,8 +2108,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
         upsertValues.add(jsonContentlet);
 
         if (APILocator.getContentletJsonAPI().isPersistContentletInColumns()) {
+            final Map<String, Object> fieldsMap = getFieldsMap(contentlet);
             try {
-                final Map<String, Object> fieldsMap = getFieldsMap(contentlet);
                 addDynamicFields(upsertValues, fieldsMap, "date");
                 addDynamicFields(upsertValues, fieldsMap, "text");
                 addDynamicFields(upsertValues, fieldsMap, "text_area");

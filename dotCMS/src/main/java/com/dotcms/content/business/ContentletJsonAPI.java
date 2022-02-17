@@ -45,7 +45,7 @@ public interface ContentletJsonAPI {
             throws JsonProcessingException, DotDataException, DotSecurityException;
 
     /**
-     * This basically tells Weather or not we support saving content as json and we have not turned it off
+     * This basically tells Weather or not we support saving content as json and if we have not turned it off.
      * @return
      */
     default boolean isPersistContentAsJson(){

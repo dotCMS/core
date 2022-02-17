@@ -76,9 +76,9 @@ public class UpdatePageTemplatePathJob extends DotStatefulJob {
                     CacheLocator.getContentletCache().remove(contentletInode);
                     CacheLocator.getHTMLPageCache().remove(contentletId);
                 }
-               //The following blocks take care of the json fields
+               //The following blocks takes care of the json fields
                 if(APILocator.getContentletJsonAPI().isPersistContentAsJson()) {
-                    final Set<Tuple3<String, String, String>> found = findPageContentletToUpdate(
+                    final Set<Tuple3<String, String, String>> found = findPageContentletToUpdateForJson(
                             velocityVarName, mappedFieldType,
                             "//" + oldHostName + Constants.TEMPLATE_FOLDER_PATH, dc);
 
@@ -115,7 +115,7 @@ public class UpdatePageTemplatePathJob extends DotStatefulJob {
         }
     }
 
-    private Set<Tuple3<String, String, String>> findPageContentletToUpdate(
+    private Set<Tuple3<String, String, String>> findPageContentletToUpdateForJson(
             final String velocityVarName,
             final String mappedFieldType, final String templateName, final DotConnect dotConnect)
             throws DotDataException {
@@ -123,6 +123,7 @@ public class UpdatePageTemplatePathJob extends DotStatefulJob {
         final String select = String
                 .format("SELECT identifier, inode, contentlet_as_json->'fields'->'template'->>'value' as template FROM contentlet WHERE contentlet_as_json @> '{\"fields\":{\"%s\":{\"type\":\"%s\"}}}' and contentlet_as_json-> 'fields' ->'template'->>'value' LIKE '%s' ",
                         velocityVarName, mappedFieldType, templateName + "%");
+        //TODO: Add ms-sql support down here
 
         dotConnect.setSQL(select);
         return dotConnect.loadObjectResults().stream().map(map ->
