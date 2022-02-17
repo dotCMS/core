@@ -19,7 +19,7 @@ JAVA_OPTS="$JAVA_OPTS -Dpdfbox.fontcache=/data/local/dotsecure"
 JAVA_OPTS="$JAVA_OPTS -Dlog4j2.formatMsgNoLookups=true"
 
 # Use Shenandoah by default
-JAVA_OPTS="$JAVA_OPTS -Dsun.reflect.inflationThreshold=2147483647 -XX:+UseShenandoahGC -XX:+UnlockExperimentalVMOptions -XX:ShenandoahUncommitDelay=5000 -XX:ShenandoahGuaranteedGCInterval=10000 "
+JAVA_OPTS="$JAVA_OPTS -XX:+UseShenandoahGC -XX:+UnlockExperimentalVMOptions -XX:ShenandoahUncommitDelay=5000 -XX:ShenandoahGuaranteedGCInterval=10000 "
 
 
 # Finally, add user-provided JAVA_OPTS
