@@ -161,8 +161,8 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Status code is 200\", function () {",
-											"    pm.response.to.have.status(200);",
+											"pm.test(\"Status code is 202\", function () {",
+											"    pm.response.to.have.status(202);",
 											"});"
 										],
 										"type": "text/javascript"
@@ -181,13 +181,7 @@
 									]
 								},
 								"method": "GET",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "multipart/form-data",
-										"type": "text"
-									}
-								],
+								"header": [],
 								"url": {
 									"raw": "{{serverURL}}/api/integrity/{{transactionId}}/integrityData",
 									"host": [
