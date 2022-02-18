@@ -513,10 +513,8 @@ import org.junit.runners.Suite.SuiteClasses;
         XmlToolTest.class,
         LanguageFolderTest.class,
         MailAPIImplTest.class,
-        BinaryMapTest.class,
         Task220202RemoveFKStructureFolderConstraintTest.class,
-        PublisherAPIImplTest.class,
-        Task220202RemoveFKStructureFolderConstraintTest.class
+        PublisherAPIImplTest.class
 })
 public class MainSuite {
 
