@@ -6,7 +6,7 @@ import { Component, Input, EventEmitter, Output } from '@angular/core';
 })
 export class DotReorderMenuComponent {
     @Input() url: string;
-    @Output() close: EventEmitter<any> = new EventEmitter();
+    @Output() shutdown: EventEmitter<unknown> = new EventEmitter();
 
     /**
      * Handle close event from the iframe
@@ -14,6 +14,6 @@ export class DotReorderMenuComponent {
      * @memberof DotContentletWrapperComponent
      */
     onClose(): void {
-        this.close.emit();
+        this.shutdown.emit();
     }
 }

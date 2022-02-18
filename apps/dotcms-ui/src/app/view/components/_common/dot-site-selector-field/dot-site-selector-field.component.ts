@@ -35,7 +35,7 @@ export class DotSiteSelectorFieldComponent implements ControlValueAccessor {
 
     constructor(private siteService: SiteService) {}
 
-    propagateChange = (_: any) => {};
+    propagateChange = (_: unknown) => undefined;
 
     /**
      * Set the function to be called when the control receives a change event.
@@ -47,7 +47,9 @@ export class DotSiteSelectorFieldComponent implements ControlValueAccessor {
         this.propagateCurrentSiteId();
     }
 
-    registerOnTouched(): void {}
+    registerOnTouched(): void {
+        //
+    }
 
     setValue(site: Site): void {
         /*

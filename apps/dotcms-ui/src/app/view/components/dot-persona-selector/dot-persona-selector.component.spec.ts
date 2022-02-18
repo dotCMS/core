@@ -117,7 +117,7 @@ describe('DotPersonaSelectorComponent', () => {
 
     it('should emit the selected persona', () => {
         spyOn(component.selected, 'emit');
-        dropdown.triggerEventHandler('change', defaultPersona);
+        dropdown.triggerEventHandler('switch', defaultPersona);
         expect(component.selected.emit).toHaveBeenCalledWith(defaultPersona);
     });
 
@@ -242,7 +242,7 @@ describe('DotPersonaSelectorComponent', () => {
 
         it('should call show event on show persona list', () => {
             spyOn(iframeOverlayService, 'show');
-            dropdown.triggerEventHandler('show', {});
+            dropdown.triggerEventHandler('display', {});
 
             expect(iframeOverlayService.show).toHaveBeenCalled();
         });

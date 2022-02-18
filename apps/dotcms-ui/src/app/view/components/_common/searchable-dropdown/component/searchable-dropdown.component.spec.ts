@@ -286,7 +286,7 @@ describe('SearchableDropdownComponent', () => {
         beforeEach(() => {
             hostComp.data = data;
             hostComp.labelPropertyName = 'name';
-            spyOn(comp.change, 'emit');
+            spyOn(comp.switch, 'emit');
 
             hostFixture.detectChanges();
             items = de.queryAll(By.css('.searchable-dropdown__data-list-item'));
@@ -297,7 +297,7 @@ describe('SearchableDropdownComponent', () => {
 
         it('should change the value', () => {
             items[0].triggerEventHandler('click', null);
-            expect(comp.change.emit).toHaveBeenCalledWith(dataExpected);
+            expect(comp.switch.emit).toHaveBeenCalledWith(dataExpected);
         });
 
         it('should emit the same value twice when multiple equal true', () => {
@@ -306,16 +306,16 @@ describe('SearchableDropdownComponent', () => {
             items[0].triggerEventHandler('click', null);
             items[0].triggerEventHandler('click', null);
 
-            expect(comp.change.emit).toHaveBeenCalledWith(dataExpected);
-            expect(comp.change.emit).toHaveBeenCalledTimes(2);
+            expect(comp.switch.emit).toHaveBeenCalledWith(dataExpected);
+            expect(comp.switch.emit).toHaveBeenCalledTimes(2);
         });
 
         it('should emit change the value once when multiple equal false', () => {
             items[0].triggerEventHandler('click', null);
             items[0].triggerEventHandler('click', null);
 
-            expect(comp.change.emit).toHaveBeenCalledWith(dataExpected);
-            expect(comp.change.emit).toHaveBeenCalledTimes(1);
+            expect(comp.switch.emit).toHaveBeenCalledWith(dataExpected);
+            expect(comp.switch.emit).toHaveBeenCalledTimes(1);
         });
     });
 

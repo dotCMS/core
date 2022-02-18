@@ -9,7 +9,7 @@ import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler
     providers: [],
     selector: 'dot-contentlets',
     template:
-        '<dot-edit-contentlet (close)="onCloseEditor()" (custom)="onCustomEvent($event)"></dot-edit-contentlet>'
+        '<dot-edit-contentlet (shutdown)="onCloseEditor()" (custom)="onCustomEvent($event)"></dot-edit-contentlet>'
 })
 export class DotContentletsComponent implements AfterViewInit {
     constructor(

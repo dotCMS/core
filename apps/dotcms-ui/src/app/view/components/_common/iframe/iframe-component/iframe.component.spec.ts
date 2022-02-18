@@ -36,10 +36,8 @@ describe('IframeComponent', () => {
     let iframeEl: DebugElement;
     let dotIframeService: DotIframeService;
     let dotUiColorsService: DotUiColorsService;
-    let dotcmsEventsService: DotcmsEventsServiceMock;
+    const dotcmsEventsService = new DotcmsEventsServiceMock();
     let dotRouterService: DotRouterService;
-
-    dotcmsEventsService = new DotcmsEventsServiceMock();
 
     beforeEach(
         waitForAsync(() => {

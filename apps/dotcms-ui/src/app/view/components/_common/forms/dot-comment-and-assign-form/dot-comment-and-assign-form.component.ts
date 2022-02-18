@@ -12,16 +12,31 @@ enum DotActionInputs {
     MOVEABLE = 'moveable'
 }
 
+interface DotCommentAndAssignData {
+    commentable?: boolean;
+    assignable?: boolean;
+    moveable?: boolean;
+    roleId?: string;
+    roleHierarchy: boolean;
+}
+
+interface DotCommentAndAssignValue {
+    assign: string;
+    comments: string;
+    pathToMove: string;
+}
+
 @Component({
     selector: 'dot-comment-and-assign-form',
     templateUrl: './dot-comment-and-assign-form.component.html',
     styleUrls: ['./dot-comment-and-assign-form.component.scss']
 })
 export class DotCommentAndAssignFormComponent
-    implements OnInit, DotFormModel<{ [key: string]: any }, { [key: string]: string }> {
+    implements OnInit, DotFormModel<DotCommentAndAssignData, DotCommentAndAssignValue>
+{
     form: FormGroup;
-    @Input() data: { [key: string]: any };
-    @Output() value = new EventEmitter<{ [key: string]: string }>();
+    @Input() data: DotCommentAndAssignData;
+    @Output() value = new EventEmitter<DotCommentAndAssignValue>();
     @Output() valid = new EventEmitter<boolean>();
     dotRoles: SelectItem[];
 

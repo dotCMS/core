@@ -53,19 +53,27 @@ export class DotEditLayoutSidebarComponent implements ControlValueAccessor {
         return this.value;
     }
 
-    propagateChange = (_: any) => {};
+    propagateChange = (_: unknown) => {
+        /**/
+    };
 
     /**
      * Set the function to be called when the control receives a change event.
      *
-     * @param * fn
+     * @param ()=>{} fn
      * @memberof DotEditLayoutSidebarComponent
      */
-    registerOnChange(fn: any): void {
+    registerOnChange(
+        fn: () => {
+            /**/
+        }
+    ): void {
         this.propagateChange = fn;
     }
 
-    registerOnTouched(): void {}
+    registerOnTouched(): void {
+        /**/
+    }
 
     /**
      * Update model and propagate changes

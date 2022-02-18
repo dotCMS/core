@@ -3,5 +3,5 @@
             [header]="'compare' |dm"
             width="90vw"
             height="90vh">
-    <dot-content-compare [data]='data$ | async' (close)='close()' ></dot-content-compare>
+    <dot-content-compare [data]='data$ | async' (shutdown)='close()' ></dot-content-compare>
 </dot-dialog>

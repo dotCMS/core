@@ -159,7 +159,7 @@ describe('DotIframeDialogComponent', () => {
 
                 it('should focus in the iframe window on dot-iframe load', () => {
                     const mockEvent = fakeEvent();
-                    dotIframe.triggerEventHandler('load', { ...mockEvent });
+                    dotIframe.triggerEventHandler('charge', { ...mockEvent });
                     expect(mockEvent.target.contentWindow.focus).toHaveBeenCalledTimes(1);
                 });
             });
@@ -177,9 +177,9 @@ describe('DotIframeDialogComponent', () => {
                 describe('dot-iframe', () => {
                     it('should emit events from dot-iframe', () => {
                         const mockEvent = fakeEvent();
-                        dotIframe.triggerEventHandler('load', mockEvent);
+                        dotIframe.triggerEventHandler('charge', mockEvent);
 
-                        dotIframe.triggerEventHandler('keydown', { hello: 'world' });
+                        dotIframe.triggerEventHandler('keyWasDown', { hello: 'world' });
 
                         dotIframe.triggerEventHandler('custom', {
                             detail: {
@@ -199,7 +199,7 @@ describe('DotIframeDialogComponent', () => {
                     });
 
                     it('should call close method on dot-dialog on dot-iframe escape key', () => {
-                        dotIframe.triggerEventHandler('keydown', {
+                        dotIframe.triggerEventHandler('keyWasDown', {
                             key: 'Escape'
                         });
 

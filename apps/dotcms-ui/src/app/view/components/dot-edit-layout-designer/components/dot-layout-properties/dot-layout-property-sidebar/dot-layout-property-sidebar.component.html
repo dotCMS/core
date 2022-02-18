@@ -3,7 +3,7 @@
     [ngModel]="value.location === 'left'"
     [label]="'editpage.layout.properties.sidebar.left' | dm"
     class="property-item__sidebar-left"
-    (change)="setValue($event, 'left')"
+    (switch)="setValue($event, 'left')"
 >
 </dot-layout-properties-item>
 <dot-layout-properties-item
@@ -11,6 +11,6 @@
     [ngModel]="value.location === 'right'"
     [label]="'editpage.layout.properties.sidebar.right' | dm"
     class="property-item__sidebar-right"
-    (change)="setValue($event, 'right')"
+    (switch)="setValue($event, 'right')"
 >
 </dot-layout-properties-item>

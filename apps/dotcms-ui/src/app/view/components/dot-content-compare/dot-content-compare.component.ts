@@ -26,7 +26,7 @@ export class DotContentCompareComponent {
             this.store.loadData(data);
         }
     }
-    @Output() close = new EventEmitter<boolean>();
+    @Output() shutdown = new EventEmitter<boolean>();
     vm$: Observable<DotContentCompareState> = this.store.vm$;
 
     constructor(
@@ -45,7 +45,7 @@ export class DotContentCompareComponent {
         this.dotAlertConfirmService.confirm({
             accept: () => {
                 this.dotIframeService.run({ name: 'getVersionBack', args: [inode] });
-                this.close.emit(true);
+                this.shutdown.emit(true);
             },
             reject: () => {
                 //

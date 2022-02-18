@@ -5,14 +5,7 @@ import { of as observableOf, of, throwError } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
-import {
-    ComponentFixture,
-    tick,
-    fakeAsync,
-    TestBed,
-    discardPeriodicTasks,
-    flush
-} from '@angular/core/testing';
+import { ComponentFixture, tick, fakeAsync, TestBed, flush } from '@angular/core/testing';
 import {
     Component,
     DebugElement,
@@ -90,7 +83,6 @@ import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotPageContainer } from '@models/dot-page-container/dot-page-container.model';
 import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
 import { DotContentTypeService } from '@services/dot-content-type';
-import { DotPaletteModule } from '@dotcms/app/portlets/dot-edit-page/components/dot-palette/dot-palette.module';
 import { DotPaletteComponent } from '@dotcms/app/portlets/dot-edit-page/components/dot-palette/dot-palette.component';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DotGenerateSecurePasswordService } from '@services/dot-generate-secure-password/dot-generate-secure-password.service';
@@ -534,7 +526,7 @@ describe('DotEditContentComponent', () => {
 
             it('should remove Contentlet Placeholder on close', () => {
                 spyOn(dotEditContentHtmlService, 'removeContentletPlaceholder');
-                dotCreateContentlet.triggerEventHandler('close', {});
+                dotCreateContentlet.triggerEventHandler('shutdown', {});
 
                 expect(dotEditContentHtmlService.removeContentletPlaceholder).toHaveBeenCalledTimes(
                     1
@@ -733,8 +725,9 @@ describe('DotEditContentComponent', () => {
                     detectChangesForIframeRender(fixture);
                     fixture.detectChanges();
                     const contentPaletteWrapper = de.query(By.css('.dot-edit-content__palette'));
-                    const contentPalette: DotPaletteComponent = de.query(By.css('dot-palette'))
-                        .componentInstance;
+                    const contentPalette: DotPaletteComponent = de.query(
+                        By.css('dot-palette')
+                    ).componentInstance;
                     const paletteController = de.query(
                         By.css('.dot-edit-content__palette-visibility')
                     );
@@ -1227,11 +1220,15 @@ describe('DotEditContentComponent', () => {
                         spyOn(
                             dotEditContentHtmlService,
                             'setContainterToAppendContentlet'
-                        ).and.callFake(() => {});
+                        ).and.callFake(() => {
+                            /**/
+                        });
                         spyOn(
                             dotEditContentHtmlService,
                             'removeContentletPlaceholder'
-                        ).and.callFake(() => {});
+                        ).and.callFake(() => {
+                            /**/
+                        });
                         spyOn(component, 'addFormContentType').and.callThrough();
 
                         fixture.detectChanges();
@@ -1475,8 +1472,9 @@ describe('DotEditContentComponent', () => {
             });
             detectChangesForIframeRender(fixture);
             fixture.detectChanges();
-            const contentPalette: DotPaletteComponent = de.query(By.css('dot-palette'))
-                .componentInstance;
+            const contentPalette: DotPaletteComponent = de.query(
+                By.css('dot-palette')
+            ).componentInstance;
             expect(contentPalette.items).toEqual(responseData.slice(0, 5));
         }));
     });

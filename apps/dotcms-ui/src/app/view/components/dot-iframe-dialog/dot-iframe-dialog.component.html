@@ -11,8 +11,8 @@
     <dot-iframe
         class="dialog__iframe"
         [src]="url"
-        (load)="onLoad($event)"
-        (keydown)="onKeyDown($event)"
+        (charge)="onLoad($event)"
+        (keyWasDown)="onKeyDown($event)"
         (custom)="custom.emit($event)"
     >
     </dot-iframe>

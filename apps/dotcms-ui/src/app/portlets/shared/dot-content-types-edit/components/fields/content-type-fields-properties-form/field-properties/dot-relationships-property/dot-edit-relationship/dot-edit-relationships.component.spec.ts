@@ -60,7 +60,7 @@ class MockSearchableDropdownComponent {
     placeholder = '';
 
     @Output()
-    change: EventEmitter<any> = new EventEmitter();
+    switch: EventEmitter<any> = new EventEmitter();
     @Output()
     filterChange: EventEmitter<string> = new EventEmitter();
     @Output()
@@ -242,7 +242,7 @@ describe('DotEditRelationshipsComponent', () => {
         });
 
         const dotSearchableDropdown = de.query(By.css('dot-searchable-dropdown'));
-        dotSearchableDropdown.triggerEventHandler('change', {
+        dotSearchableDropdown.triggerEventHandler('switch', {
             relationship: mockRelationships[0]
         });
     });

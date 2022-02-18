@@ -27,7 +27,7 @@ import { SelectItem } from 'primeng/api';
 })
 export class DotTextareaContentComponent implements OnInit, ControlValueAccessor {
     @Input()
-    code: any = {
+    code = {
         mode: 'text',
         options: {}
     };
@@ -45,7 +45,7 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
     width: string;
 
     @Output()
-    monacoInit = new EventEmitter<any>();
+    monacoInit = new EventEmitter<unknown>();
 
     @Input() set language(value: string) {
         this.editorOptions = {
@@ -56,12 +56,13 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
 
     @HostBinding('style')
     get myStyle(): SafeStyle {
+        // @ts-ignore
         return this.sanitizer.bypassSecurityTrustStyle(this.styles);
     }
 
     selectOptions: SelectItem[] = [];
     selected: string;
-    styles: any;
+    styles: Record<string, unknown>;
     editorOptions = {
         theme: 'vs-light',
         minimap: {
@@ -85,7 +86,9 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
 
     constructor(private sanitizer: DomSanitizer) {}
 
-    propagateChange = (_: any) => {};
+    propagateChange = (_: string) => {
+        /**/
+    };
 
     ngOnInit() {
         this.selectOptions = this.getSelectOptions();
@@ -116,10 +119,10 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
     /**
      * Initializes the Monaco Editor
      *
-     * @param {*} editor
+     * @param {unknown} editor
      * @memberof DotTextareaContentComponent
      */
-    onInit(editor: any): void {
+    onInit(editor: unknown): void {
         this.monacoInit.emit(editor);
     }
 
@@ -156,7 +159,9 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
         this.propagateChange = fn;
     }
 
-    registerOnTouched(): void {}
+    registerOnTouched(): void {
+        /**/
+    }
 
     private getSelectOptions() {
         return this.show

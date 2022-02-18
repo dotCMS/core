@@ -53,12 +53,12 @@ describe('DotReorderMenuComponent', () => {
             expect(dotIframeDialogElement.url).toBe('test');
         });
 
-        it('should emit close', () => {
-            spyOn(component.close, 'emit');
+        it('should emit shutdown', () => {
+            spyOn(component.shutdown, 'emit');
             fixture.detectChanges();
             const dotIframeDialogElement = de.query(By.css('dot-iframe-dialog')).componentInstance;
             dotIframeDialogElement.close.emit();
-            expect(component.close.emit).toHaveBeenCalledTimes(1);
+            expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
         });
     });
 });

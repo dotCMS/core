@@ -5,7 +5,7 @@
     class="dot-layout-designer__sidebar-properties"
 ></dot-sidebar-properties>
 <dot-container-selector-layout
-    (change)="updateAndPropagate($event)"
+    (switch)="updateAndPropagate($event)"
     [data]="containers"
     [multiple]="true"
 ></dot-container-selector-layout>

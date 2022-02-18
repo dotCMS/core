@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges } from '@angular/core';
 
 @Component({
     selector: 'dot-content-compare-preview-field',
@@ -10,7 +10,7 @@ export class DotContentComparePreviewFieldComponent implements OnChanges {
     @Input() label: string;
     imageError = false;
 
-    ngOnChanges(changes: SimpleChanges) {
+    ngOnChanges() {
         this.imageError = false;
     }
 

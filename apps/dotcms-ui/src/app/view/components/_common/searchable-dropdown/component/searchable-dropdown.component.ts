@@ -9,7 +9,6 @@ import {
     forwardRef,
     SimpleChanges,
     OnChanges,
-    OnInit,
     SimpleChange,
     TemplateRef,
     ContentChildren,
@@ -44,11 +43,12 @@ import { PrimeTemplate } from 'primeng/api';
     templateUrl: './searchable-dropdown.component.html'
 })
 export class SearchableDropdownComponent
-    implements ControlValueAccessor, OnChanges, OnInit, AfterContentInit, AfterViewInit {
+    implements ControlValueAccessor, OnChanges, AfterContentInit, AfterViewInit
+{
     @Input()
-    data: any[];
+    data: Record<string, unknown>[];
 
-    @Input() action: (action: any) => void;
+    @Input() action: (action: unknown) => void;
 
     @Input()
     labelPropertyName: string | string[];
@@ -99,25 +99,25 @@ export class SearchableDropdownComponent
     disabled = false;
 
     @Input()
-    externalItemListTemplate: TemplateRef<any>;
+    externalItemListTemplate: TemplateRef<unknown>;
 
     @Input()
-    externalFilterTemplate: TemplateRef<any>;
+    externalFilterTemplate: TemplateRef<unknown>;
 
     @Output()
-    change: EventEmitter<any> = new EventEmitter();
+    switch: EventEmitter<unknown> = new EventEmitter();
 
     @Output()
     filterChange: EventEmitter<string> = new EventEmitter();
 
     @Output()
-    hide: EventEmitter<any> = new EventEmitter();
+    hide: EventEmitter<unknown> = new EventEmitter();
 
     @Output()
     pageChange: EventEmitter<PaginationEvent> = new EventEmitter();
 
     @Output()
-    show: EventEmitter<any> = new EventEmitter();
+    display: EventEmitter<unknown> = new EventEmitter();
 
     @ViewChild('searchInput', { static: false })
     searchInput: ElementRef;
@@ -131,14 +131,14 @@ export class SearchableDropdownComponent
     @ViewChild('button')
     button: ElementRef;
 
-    @ContentChildren(PrimeTemplate) templates: QueryList<any>;
+    @ContentChildren(PrimeTemplate) templates: QueryList<unknown>;
 
     valueString = '';
-    value: any;
+    value: unknown;
     overlayPanelMinHeight: string;
-    options: any[];
+    options: unknown[];
     label: string;
-    externalSelectTemplate: TemplateRef<any>;
+    externalSelectTemplate: TemplateRef<unknown>;
 
     keyMap: string[] = [
         'Shift',
@@ -153,7 +153,9 @@ export class SearchableDropdownComponent
 
     constructor(private cd: ChangeDetectorRef) {}
 
-    propagateChange = (_: any) => {};
+    propagateChange = (_: unknown) => {
+        /**/
+    };
 
     ngOnChanges(changes: SimpleChanges): void {
         if (this.usePlaceholder(changes.placeholder) || changes.persistentPlaceholder) {
@@ -162,8 +164,6 @@ export class SearchableDropdownComponent
         this.setOptions(changes);
         this.totalRecords = this.totalRecords || this.data?.length;
     }
-
-    ngOnInit(): void {}
 
     ngAfterViewInit(): void {
         if (this.searchInput) {
@@ -224,7 +224,7 @@ export class SearchableDropdownComponent
                     .height.toString();
             }
         }, 0);
-        this.show.emit();
+        this.display.emit();
         this.dataViewRef.paginate({
             first: 0,
             rows: this.rows
@@ -250,7 +250,7 @@ export class SearchableDropdownComponent
      * @param * value
      * @memberof SearchableDropdownComponent
      */
-    writeValue(value: any): void {
+    writeValue(value: unknown): void {
         this.setValue(value);
     }
 
@@ -264,7 +264,9 @@ export class SearchableDropdownComponent
         this.propagateChange = fn;
     }
 
-    registerOnTouched(): void {}
+    registerOnTouched(): void {
+        /**/
+    }
 
     /**
      * Get labels from container, if labelPropertyName is an array then loop through it and returns
@@ -274,7 +276,7 @@ export class SearchableDropdownComponent
      * @returns {string}
      * @memberof SearchableDropdownComponent
      */
-    getItemLabel(dropDownItem: any): string {
+    getItemLabel(dropDownItem: unknown): string {
         let resultProps;
 
         if (Array.isArray(this.labelPropertyName)) {
@@ -304,11 +306,11 @@ export class SearchableDropdownComponent
      * @param {*} item
      * @memberof SearchableDropdownComponent
      */
-    handleClick(item: any): void {
+    handleClick(item: unknown): void {
         if (this.value !== item || this.multiple) {
             this.setValue(item);
             this.propagateChange(this.getValueToPropagate());
-            this.change.emit(Object.assign({}, this.value));
+            this.switch.emit(Object.assign({}, this.value));
         }
 
         this.toggleOverlayPanel();
@@ -369,7 +371,7 @@ export class SearchableDropdownComponent
         return placeholderChange && placeholderChange.currentValue && !this.value;
     }
 
-    private setValue(newValue: any): void {
+    private setValue(newValue: unknown): void {
         this.value = newValue;
 
         this.setLabel();

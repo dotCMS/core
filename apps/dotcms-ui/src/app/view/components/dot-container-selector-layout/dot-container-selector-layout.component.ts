@@ -12,7 +12,7 @@ import { DotTemplateContainersCacheService } from '@services/dot-template-contai
 export class DotContainerSelectorLayoutComponent implements OnInit {
     @Input() data: DotContainerColumnBox[] = [];
     @Input() multiple: boolean;
-    @Output() change: EventEmitter<DotContainerColumnBox[]> = new EventEmitter();
+    @Output() switch: EventEmitter<DotContainerColumnBox[]> = new EventEmitter();
 
     totalRecords: number;
     currentContainers: DotContainer[] = [];
@@ -37,7 +37,7 @@ export class DotContainerSelectorLayoutComponent implements OnInit {
             this.data.push({
                 container: container
             });
-            this.change.emit(this.data);
+            this.switch.emit(this.data);
         }
     }
 
@@ -56,7 +56,7 @@ export class DotContainerSelectorLayoutComponent implements OnInit {
      * @param any event
      * @memberof DotContainerSelectorLayoutComponent
      */
-    handlePageChange(event: any): void {
+    handlePageChange(event: { filter: string; first: number }): void {
         this.getContainersList(event.filter, event.first);
     }
 
@@ -67,7 +67,7 @@ export class DotContainerSelectorLayoutComponent implements OnInit {
      */
     removeContainerItem(i: number): void {
         this.data.splice(i, 1);
-        this.change.emit(this.data);
+        this.switch.emit(this.data);
     }
 
     /**
@@ -91,11 +91,10 @@ export class DotContainerSelectorLayoutComponent implements OnInit {
         });
     }
 
-    private setIdentifierReference(items: DotContainer[]): any {
+    private setIdentifierReference(items: DotContainer[]): DotContainer[] {
         return items.map((dotContainer) => {
-            dotContainer.identifier = this.templateContainersCacheService.getContainerReference(
-                dotContainer
-            );
+            dotContainer.identifier =
+                this.templateContainersCacheService.getContainerReference(dotContainer);
             return dotContainer;
         });
     }

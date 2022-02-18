@@ -58,7 +58,7 @@ describe('DotLayoutSidebarComponent', () => {
         fixture.detectChanges();
     });
 
-    it('should propagate change after sidebar property item is clicked', () => {
+    it('should propagate switch after sidebar property item is clicked', () => {
         let res = false;
         const dotLayoutPropertiesItem = de.query(
             By.css('dot-layout-properties-item')
@@ -67,7 +67,7 @@ describe('DotLayoutSidebarComponent', () => {
             By.css('dot-layout-properties-item')
         ).nativeElement;
 
-        dotLayoutPropertiesItem.change.subscribe((value) => (res = value));
+        dotLayoutPropertiesItem.switch.subscribe((value) => (res = value));
         layoutPropertyItemEl.click();
         spyOn(comp, 'propagateChange');
         comp.setValue(true, 'left');
@@ -85,7 +85,7 @@ describe('DotLayoutSidebarComponent', () => {
             By.css('dot-layout-properties-item')
         ).nativeElement;
 
-        dotLayoutPropertiesItem.change.subscribe((value) => (res = value));
+        dotLayoutPropertiesItem.switch.subscribe((value) => (res = value));
         layoutPropertyItemEl.click();
 
         spyOn(comp.propertyItemLeft, 'setChecked');
@@ -106,7 +106,7 @@ describe('DotLayoutSidebarComponent', () => {
             By.css('dot-layout-properties-item')
         ).nativeElement;
 
-        dotLayoutPropertiesItem.change.subscribe((value) => (res = value));
+        dotLayoutPropertiesItem.switch.subscribe((value) => (res = value));
         layoutPropertyItemEl.click();
 
         spyOn(comp.propertyItemLeft, 'setUnchecked');

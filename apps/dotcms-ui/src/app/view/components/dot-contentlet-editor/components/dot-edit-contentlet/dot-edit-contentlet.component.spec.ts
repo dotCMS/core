@@ -52,7 +52,7 @@ describe('DotEditContentletComponent', () => {
         component = de.componentInstance;
         dotContentletEditorService = de.injector.get(DotContentletEditorService);
 
-        spyOn(component.close, 'emit');
+        spyOn(component.shutdown, 'emit');
 
         fixture.detectChanges();
 
@@ -65,9 +65,9 @@ describe('DotEditContentletComponent', () => {
             expect(dotEditContentletWrapper).toBeTruthy();
         });
 
-        it('should emit close', () => {
-            dotEditContentletWrapper.triggerEventHandler('close', {});
-            expect(component.close.emit).toHaveBeenCalledTimes(1);
+        it('should emit shutdown', () => {
+            dotEditContentletWrapper.triggerEventHandler('shutdown', {});
+            expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should have url in null', () => {

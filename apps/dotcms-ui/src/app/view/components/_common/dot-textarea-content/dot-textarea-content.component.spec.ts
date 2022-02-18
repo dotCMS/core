@@ -16,17 +16,18 @@ function cleanOptionText(option) {
 }
 
 @Component({
+    // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'ngx-monaco-editor',
     template: '<div>CODE EDITOR</div>',
     providers: [
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => MonacoEditorMock)
+            useExisting: forwardRef(() => MonacoEditorMockComponent)
         }
     ]
 })
-class MonacoEditorMock {
+class MonacoEditorMockComponent {
     @Input() options: any;
 
     writeValue() {}
@@ -44,7 +45,7 @@ describe('DotTextareaContentComponent', () => {
     beforeEach(
         waitForAsync(() => {
             TestBed.configureTestingModule({
-                declarations: [DotTextareaContentComponent, MonacoEditorMock],
+                declarations: [DotTextareaContentComponent, MonacoEditorMockComponent],
                 imports: [SelectButtonModule, InputTextareaModule, FormsModule]
             }).compileComponents();
 

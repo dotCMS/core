@@ -30,7 +30,8 @@ import { DotcmsConfigService, DotTimeZone } from '@dotcms/dotcms-js';
     styleUrls: ['./dot-push-publish-form.component.scss']
 })
 export class DotPushPublishFormComponent
-    implements OnInit, OnDestroy, DotFormModel<DotPushPublishDialogData, DotPushPublishData> {
+    implements OnInit, OnDestroy, DotFormModel<DotPushPublishDialogData, DotPushPublishData>
+{
     dateFieldMinDate = new Date();
     form: FormGroup;
     pushActions: SelectItem[];
@@ -170,7 +171,7 @@ export class DotPushPublishFormComponent
             });
     }
 
-    private loadFilters(): Observable<any> {
+    private loadFilters(): Observable<unknown> {
         return this.dotPushPublishFiltersService.get().pipe(
             map((filterOptions: DotPushPublishFilter[]) => {
                 this._filterOptions = filterOptions
@@ -205,7 +206,7 @@ export class DotPushPublishFormComponent
         );
     }
 
-    private initForm(params?: { [key: string]: any }): void {
+    private initForm(params?: { [key: string]: string }): void {
         this.form = this.fb.group({
             ...params,
             pushActionSelected: [this.pushActions[0].value, [Validators.required]],

@@ -7,8 +7,8 @@ import { mergeMap, map, filter, catchError, pluck, take } from 'rxjs/operators';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
 interface DotAddEditEvents {
-    load?: ($event: any) => void;
-    keyDown?: ($event: any) => void;
+    load?: ($event: Event) => void;
+    keyDown?: ($event: KeyboardEvent) => void;
 }
 
 export interface DotEditorAction {
@@ -34,7 +34,7 @@ export class DotContentletEditorService {
 
     private data: Subject<DotEditorAction> = new Subject();
     private _header: Subject<string> = new Subject();
-    private _load: ($event: any) => void;
+    private _load: ($event: unknown) => void;
     private _keyDown: ($event: KeyboardEvent) => void;
 
     constructor(
@@ -67,11 +67,11 @@ export class DotContentletEditorService {
         return this._header;
     }
 
-    get loadHandler(): ($event: any) => void {
+    get loadHandler(): ($event: unknown) => void {
         return this._load;
     }
 
-    get keyDownHandler(): ($event: any) => void {
+    get keyDownHandler(): ($event: KeyboardEvent) => void {
         return this._keyDown;
     }
 
@@ -132,10 +132,10 @@ export class DotContentletEditorService {
     /**
      * Call load handler
      *
-     * @param * $event
+     * @param unknown $event
      * @memberof DotContentletEditorService
      */
-    load($event: any): void {
+    load($event: unknown): void {
         if (this._load) {
             this._load($event);
         }

@@ -65,8 +65,9 @@ describe('DotEditLayoutSidebarComponent', () => {
 
         hostComponentfixture = DOTTestBed.createComponent(TestHostComponent);
         de = hostComponentfixture.debugElement.query(By.css('dot-edit-layout-sidebar'));
-        component = hostComponentfixture.debugElement.query(By.css('dot-edit-layout-sidebar'))
-            .componentInstance;
+        component = hostComponentfixture.debugElement.query(
+            By.css('dot-edit-layout-sidebar')
+        ).componentInstance;
         hostComponentfixture.detectChanges();
     });
 

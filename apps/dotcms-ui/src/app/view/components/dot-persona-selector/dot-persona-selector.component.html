@@ -1,6 +1,6 @@
 <dot-searchable-dropdown
     #searchableDropdown
-    (change)="personaChange($event)"
+    (switch)="personaChange($event)"
     (filterChange)="handleFilterChange($event)"
     (pageChange)="handlePageChange($event)"
     [(ngModel)]="value"
@@ -12,7 +12,7 @@
     labelPropertyName="name"
     [disabled]="disabled"
     (hide)="iframeOverlayService.hide()"
-    (show)="iframeOverlayService.show()"
+    (display)="iframeOverlayService.show()"
 >
     <ng-template let-persona="item" pTemplate="select">
         <dot-persona-selected-item

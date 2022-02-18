@@ -23,7 +23,9 @@ export class DotWorkflowsSelectorFieldComponent implements ControlValueAccessor,
 
     constructor(private dotWorkflowService: DotWorkflowService) {}
 
-    propagateChange = (_: any) => {};
+    propagateChange = (_: unknown) => {
+        /**/
+    };
 
     /**
      * Set the function to be called when the control receives a change event.
@@ -35,7 +37,9 @@ export class DotWorkflowsSelectorFieldComponent implements ControlValueAccessor,
         this.propagateChange = fn;
     }
 
-    registerOnTouched(): void {}
+    registerOnTouched(): void {
+        /**/
+    }
 
     ngOnInit() {
         this.options$ = this.dotWorkflowService.get();

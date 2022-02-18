@@ -27,9 +27,9 @@
     <div class="p-toolbar-group-right">
         <dot-site-selector
             #siteSelector
-            (change)="siteChange($event)"
+            (switch)="siteChange($event)"
             (hide)="iframeOverlayService.hide()"
-            (show)="iframeOverlayService.show()"
+            (display)="iframeOverlayService.show()"
             [archive]="false"
             class="toolbar__site-selector"
             cssClass="d-secondary"

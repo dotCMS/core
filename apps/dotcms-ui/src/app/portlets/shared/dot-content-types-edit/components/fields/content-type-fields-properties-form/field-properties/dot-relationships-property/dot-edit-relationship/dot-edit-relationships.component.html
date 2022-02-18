@@ -6,7 +6,7 @@
     [totalRecords]="dotPaginatorService.totalRecords"
     [placeholder]="'contenttypes.field.properties.relationship.existing.placeholder' | dm"
     labelPropertyName="label"
-    (change)="triggerChanged($event.relationship)"
+    (switch)="triggerChanged($event.relationship)"
     (filterChange)="handleFilterChange($event)"
     (pageChange)="handlePageChange($event)"
 >

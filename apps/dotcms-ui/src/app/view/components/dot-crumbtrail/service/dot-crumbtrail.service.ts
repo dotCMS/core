@@ -83,13 +83,17 @@ export class DotCrumbtrailService {
 
     private getCrumbtrailSection(sectionKey: string): string {
         const data: Data = this.getData();
-        let currentData: any = data;
+        let currentData: Data = data;
+        let section = '';
 
         if (Object.keys(data).length) {
-            this.portletsTitlePathFinder[sectionKey]
-                .split('.')
-                .forEach((key) => (currentData = currentData[key]));
-            return currentData;
+            this.portletsTitlePathFinder[sectionKey].split('.').forEach((key, index, array) => {
+                if (index === array.length - 1) {
+                    section = currentData[key];
+                }
+                currentData = currentData[key];
+            });
+            return section;
         }
         return null;
     }

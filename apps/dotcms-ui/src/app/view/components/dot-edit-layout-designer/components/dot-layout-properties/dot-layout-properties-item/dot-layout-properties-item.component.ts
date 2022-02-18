@@ -18,17 +18,19 @@ export class DotLayoutPropertiesItemComponent implements ControlValueAccessor {
     label: string;
 
     @Output()
-    change: EventEmitter<boolean> = new EventEmitter();
+    switch: EventEmitter<boolean> = new EventEmitter();
 
     value: boolean;
 
-    propagateChange = (_: any) => {};
+    propagateChange = (_: unknown) => {
+        /**/
+    };
 
     @HostListener('click', ['$event'])
     onClick() {
         this.value = !this.value;
         this.propagateChange(this.value);
-        this.change.emit(this.value);
+        this.switch.emit(this.value);
     }
 
     /**
@@ -60,12 +62,18 @@ export class DotLayoutPropertiesItemComponent implements ControlValueAccessor {
 
     /**
      * Set the function to be called when the control receives a change event
-     * @param any fn
+     * @param ()=> {} fn
      * @memberof DotLayoutPropertiesItemComponent
      */
-    registerOnChange(fn: any): void {
+    registerOnChange(
+        fn: () => {
+            /**/
+        }
+    ): void {
         this.propagateChange = fn;
     }
 
-    registerOnTouched(): void {}
+    registerOnTouched(): void {
+        /**/
+    }
 }

@@ -34,9 +34,9 @@ export class IframeComponent implements OnInit, OnDestroy {
 
     @Input() isLoading = false;
 
-    @Output() load: EventEmitter<any> = new EventEmitter();
+    @Output() charge: EventEmitter<unknown> = new EventEmitter();
 
-    @Output() keydown: EventEmitter<KeyboardEvent> = new EventEmitter();
+    @Output() keyWasDown: EventEmitter<KeyboardEvent> = new EventEmitter();
 
     @Output() custom: EventEmitter<CustomEvent> = new EventEmitter();
 
@@ -159,19 +159,19 @@ export class IframeComponent implements OnInit, OnDestroy {
         ];
 
         const webSocketEvents$ = this.dotcmsEventsService
-            .subscribeToEvents<any>(events)
+            .subscribeToEvents<unknown>(events)
             .pipe(takeUntil(this.destroy$));
 
         webSocketEvents$
             .pipe(filter(() => this.dotRouterService.currentPortlet.id === 'site-browser'))
-            .subscribe((event: DotEventTypeWrapper<any>) => {
+            .subscribe((event: DotEventTypeWrapper<unknown>) => {
                 this.loggerService.debug('Capturing Site Browser event', event.name, event.data);
             });
 
         webSocketEvents$
             .pipe(
                 filter(
-                    (event: DotEventTypeWrapper<any>) =>
+                    (event: DotEventTypeWrapper<unknown>) =>
                         (this.iframeElement.nativeElement.contentWindow &&
                             event.name === 'DELETE_BUNDLE') ||
                         event.name === 'PAGE_RELOAD' // Provinding this event so backend devs can reload the jsp easily
@@ -197,7 +197,7 @@ export class IframeComponent implements OnInit, OnDestroy {
 
     private emitKeyDown($event: KeyboardEvent): void {
         this.ngZone.run(() => {
-            this.keydown.emit($event);
+            this.keyWasDown.emit($event);
         });
     }
 
@@ -215,7 +215,7 @@ export class IframeComponent implements OnInit, OnDestroy {
         return this.getIframeWindow().document;
     }
 
-    private getIframeLocation(): any {
+    private getIframeLocation(): Location {
         return this.iframeElement.nativeElement.contentWindow.location;
     }
 
@@ -243,7 +243,7 @@ export class IframeComponent implements OnInit, OnDestroy {
             'ng-event',
             this.emitCustonEvent.bind(this)
         );
-        this.load.emit($event);
+        this.charge.emit($event);
 
         const doc = this.getIframeDocument();
 
@@ -259,7 +259,7 @@ export class IframeComponent implements OnInit, OnDestroy {
         );
     }
 
-    private setArgs(args: any[]): any[] {
+    private setArgs(args: unknown[]): unknown[] {
         return args ? args : [];
     }
 }

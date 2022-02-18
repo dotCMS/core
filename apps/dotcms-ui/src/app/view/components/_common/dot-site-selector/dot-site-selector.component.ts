@@ -1,4 +1,4 @@
-import { Observable, Subject } from 'rxjs';
+import { Subject } from 'rxjs';
 import {
     Component,
     EventEmitter,
@@ -41,9 +41,9 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
     @Input() pageSize = 10;
     @Input() asField = false;
 
-    @Output() change: EventEmitter<Site> = new EventEmitter();
-    @Output() hide: EventEmitter<any> = new EventEmitter();
-    @Output() show: EventEmitter<any> = new EventEmitter();
+    @Output() switch: EventEmitter<Site> = new EventEmitter();
+    @Output() hide: EventEmitter<unknown> = new EventEmitter();
+    @Output() display: EventEmitter<unknown> = new EventEmitter();
 
     @ViewChild('searchableDropdown') searchableDropdown: SearchableDropdownComponent;
 
@@ -159,12 +159,12 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     /**
-     * Call when the selected site changed and the change event is emmited
+     * Call when the selected site changed and the switch event is emmited
      * @param Site site
      * @memberof SiteSelectorComponent
      */
     siteChange(site: Site): void {
-        this.change.emit(site);
+        this.switch.emit(site);
     }
     /**
      * Updates the current site

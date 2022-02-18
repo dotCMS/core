@@ -20,9 +20,9 @@ export class DotEditContentletComponent implements OnInit {
     @Input()
     inode: string;
     @Output()
-    close: EventEmitter<any> = new EventEmitter();
+    shutdown: EventEmitter<unknown> = new EventEmitter();
     @Output()
-    custom: EventEmitter<any> = new EventEmitter();
+    custom: EventEmitter<unknown> = new EventEmitter();
 
     url$: Observable<string>;
 

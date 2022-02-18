@@ -40,6 +40,13 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { DotPropertiesService } from '@services/dot-properties/dot-properties.service';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 
+interface DotIframeEditEvent {
+    container?: DOMStringMap;
+    dataset?: DOMStringMap;
+    data?: { [key: string]: DOMStringMap };
+    name: string;
+}
+
 /**
  * Edit content page component, render the html of a page and bind all events to make it ediable.
  *
@@ -330,7 +337,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         return null;
     }
 
-    private addContentType($event: any): void {
+    private addContentType($event: DotIframeEditEvent): void {
         const container: DotPageContainer = {
             identifier: $event.data.container.dotIdentifier,
             uuid: $event.data.container.dotUuid
@@ -346,7 +353,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                         data: { url },
                         events: {
                             load: (event) => {
-                                event.target.contentWindow.ngEditContentletEvents = this.dotEditContentHtmlService.contentletEvents$;
+                                (event.target as HTMLIFrameElement).contentWindow[
+                                    'ngEditContentletEvents'
+                                ] = this.dotEditContentHtmlService.contentletEvents$;
                             }
                         }
                     });
@@ -356,7 +365,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         }
     }
 
-    private searchContentlet($event: any): void {
+    private searchContentlet($event: DotIframeEditEvent): void {
         const container: DotPageContainer = {
             identifier: $event.dataset.dotIdentifier,
             uuid: $event.dataset.dotUuid
@@ -374,29 +383,30 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 },
                 events: {
                     load: (event) => {
-                        event.target.contentWindow.ngEditContentletEvents =
-                            this.dotEditContentHtmlService.contentletEvents$;
+                        (event.target as HTMLIFrameElement).contentWindow[
+                            'ngEditContentletEvents'
+                        ] = this.dotEditContentHtmlService.contentletEvents$;
                     }
                 }
             });
         }
     }
 
-    private editContentlet($event: any): void {
+    private editContentlet($event: DotIframeEditEvent): void {
         this.dotContentletEditorService.edit({
             data: {
                 inode: $event.dataset.dotInode
             },
             events: {
                 load: (event) => {
-                    event.target.contentWindow.ngEditContentletEvents =
+                    (event.target as HTMLIFrameElement).contentWindow['ngEditContentletEvents'] =
                         this.dotEditContentHtmlService.contentletEvents$;
                 }
             }
         });
     }
 
-    private iframeActionsHandler(event: any): (contentlet: Record<string, unknown>) => void {
+    private iframeActionsHandler(event: string): (contentlet: DotIframeEditEvent) => void {
         const eventsHandlerMap = {
             edit: this.editContentlet.bind(this),
             code: this.editContentlet.bind(this),
@@ -410,21 +420,20 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 this.reload(null);
             }
         };
-
         return eventsHandlerMap[event];
     }
 
     private subscribeIframeCustomEvents(): void {
         fromEvent(window.document, 'ng-event')
             .pipe(pluck('detail'), takeUntil(this.destroy$))
-            .subscribe((customEvent: any) => {
+            .subscribe((customEvent: { name: string; data: unknown }) => {
                 if (this.customEventsHandler[customEvent.name]) {
                     this.customEventsHandler[customEvent.name](customEvent.data);
                 }
             });
     }
 
-    private removeContentlet($event: any): void {
+    private removeContentlet($event: DotIframeEditEvent): void {
         this.dotDialogService.confirm({
             accept: () => {
                 const pageContainer: DotPageContainer = {
@@ -466,7 +475,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     private subscribeIframeActions(): void {
         this.dotEditContentHtmlService.iframeActions$
             .pipe(takeUntil(this.destroy$))
-            .subscribe((contentletEvent: any) => {
+            .subscribe((contentletEvent: DotIframeEditEvent) => {
                 this.ngZone.run(() => {
                     this.iframeActionsHandler(contentletEvent.name)(contentletEvent);
                 });
@@ -534,9 +543,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         this.dotContentletEditorService.draggedContentType$
             .pipe(takeUntil(this.destroy$))
             .subscribe((contentType: DotCMSContentType | DotCMSContentlet) => {
-                const iframeWindow: any = (this.iframe.nativeElement as HTMLIFrameElement)
+                const iframeWindow: WindowProxy = (this.iframe.nativeElement as HTMLIFrameElement)
                     .contentWindow;
-                iframeWindow.draggedContent = contentType;
+                iframeWindow['draggedContent'] = contentType;
             });
     }
 

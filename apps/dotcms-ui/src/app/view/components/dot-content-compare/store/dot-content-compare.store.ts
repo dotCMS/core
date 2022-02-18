@@ -79,74 +79,6 @@ export class DotContentCompareStore extends ComponentStore<DotContentCompareStat
         return { ...state, showDiff };
     });
 
-    private filterFields(contentType: DotCMSContentType): DotCMSContentTypeField[] {
-        return contentType.fields.filter((field) => FieldWhiteList[field.fieldType] != undefined);
-    }
-
-    private getContentByInode(inode: string, contents: DotCMSContentlet[]): DotCMSContentlet {
-        return contents.find((content) => content.inode === inode);
-    }
-
-    private getWorkingVersion(contents: DotCMSContentlet[]): DotCMSContentlet {
-        return contents.find((content) => content.working === true);
-    }
-
-    private getFieldFormattedValue(value: any, fieldType: string): string {
-        if (value) {
-            switch (fieldType) {
-                case FieldWhiteList.Category: {
-                    return value
-                        .map((obj) => {
-                            return Object.values(obj)[0];
-                        })
-                        .join(',');
-                }
-                case FieldWhiteList['Key-Value']: {
-                    let string = '';
-                    Object.entries(value).forEach(([key, value]) => {
-                        string += `${key}: ${value} <br/>`;
-                    });
-                    return string;
-                }
-                default: {
-                    //is a Date related field.
-                    return this.dotFormatDateService.formatTZ(
-                        new Date(value as string),
-                        DateFormat[fieldType]
-                    );
-                }
-            }
-        }
-        return value;
-    }
-
-    private formatSpecificTypesFields(
-        contents: DotCMSContentlet[],
-        fields: DotCMSContentTypeField[]
-    ): DotCMSContentlet[] {
-        const types = ['Date', 'Time', 'Date-and-Time', 'Category', 'Key-Value'];
-        const fieldNeedFormat: DotCMSContentTypeField[] = [];
-        fields.forEach((field) => {
-            if (types.includes(field.fieldType)) {
-                fieldNeedFormat.push(field);
-            }
-        });
-        contents.forEach((content) => {
-            fieldNeedFormat.forEach((field) => {
-                content[field.variable] = this.getFieldFormattedValue(
-                    content[field.variable],
-                    field.fieldType
-                );
-            });
-            content.modDate = this.dotFormatDateService.formatTZ(
-                new Date(content.modDate),
-                'MM/dd/yyyy - hh:mm aa'
-            );
-        });
-
-        return contents;
-    }
-
     //Effects
     readonly loadData = this.effect((data$: Observable<DotContentCompareEvent>) => {
         return data$.pipe(
@@ -190,4 +122,75 @@ export class DotContentCompareStore extends ComponentStore<DotContentCompareStat
             })
         );
     });
+
+    private filterFields(contentType: DotCMSContentType): DotCMSContentTypeField[] {
+        return contentType.fields.filter((field) => FieldWhiteList[field.fieldType] != undefined);
+    }
+
+    private getContentByInode(inode: string, contents: DotCMSContentlet[]): DotCMSContentlet {
+        return contents.find((content) => content.inode === inode);
+    }
+
+    private getWorkingVersion(contents: DotCMSContentlet[]): DotCMSContentlet {
+        return contents.find((content) => content.working === true);
+    }
+
+    private getFieldFormattedValue(
+        value: string | { [key: string]: string } | [],
+        fieldType: string
+    ): string {
+        if (value) {
+            switch (fieldType) {
+                case FieldWhiteList.Category: {
+                    return (value as [])
+                        .map((obj) => {
+                            return Object.values(obj)[0];
+                        })
+                        .join(',');
+                }
+                case FieldWhiteList['Key-Value']: {
+                    let string = '';
+                    Object.entries(value).forEach(([key, value]) => {
+                        string += `${key}: ${value} <br/>`;
+                    });
+                    return string;
+                }
+                default: {
+                    //is a Date related field.
+                    return this.dotFormatDateService.formatTZ(
+                        new Date(value as string),
+                        DateFormat[fieldType]
+                    );
+                }
+            }
+        }
+        return value as string;
+    }
+
+    private formatSpecificTypesFields(
+        contents: DotCMSContentlet[],
+        fields: DotCMSContentTypeField[]
+    ): DotCMSContentlet[] {
+        const types = ['Date', 'Time', 'Date-and-Time', 'Category', 'Key-Value'];
+        const fieldNeedFormat: DotCMSContentTypeField[] = [];
+        fields.forEach((field) => {
+            if (types.includes(field.fieldType)) {
+                fieldNeedFormat.push(field);
+            }
+        });
+        contents.forEach((content) => {
+            fieldNeedFormat.forEach((field) => {
+                content[field.variable] = this.getFieldFormattedValue(
+                    content[field.variable],
+                    field.fieldType
+                );
+            });
+            content.modDate = this.dotFormatDateService.formatTZ(
+                new Date(content.modDate),
+                'MM/dd/yyyy - hh:mm aa'
+            );
+        });
+
+        return contents;
+    }
 }

@@ -44,7 +44,8 @@ describe('DotCreateContentletComponent', () => {
     let routeService: ActivatedRoute;
     let dotIframeService: DotIframeService;
     let routerService;
-    const dotContentletEditorServiceMock: DotContentletEditorServiceMock = new DotContentletEditorServiceMock();
+    const dotContentletEditorServiceMock: DotContentletEditorServiceMock =
+        new DotContentletEditorServiceMock();
 
     beforeEach(
         waitForAsync(() => {
@@ -96,7 +97,7 @@ describe('DotCreateContentletComponent', () => {
         routeService = TestBed.inject(ActivatedRoute);
         routerService = TestBed.inject(DotRouterService);
         dotIframeService = TestBed.inject(DotIframeService);
-        spyOn(component.close, 'emit');
+        spyOn(component.shutdown, 'emit');
         spyOn(component.custom, 'emit');
         spyOn(dotIframeService, 'reloadData');
     });
@@ -105,10 +106,10 @@ describe('DotCreateContentletComponent', () => {
         expect(dotCreateContentletWrapper).toBeTruthy();
     });
 
-    it('should emit close and redirect to Content page when coming from starter', () => {
+    it('should emit shutdown and redirect to Content page when coming from starter', () => {
         routerService.currentSavedURL = '/c/content/new/';
-        dotCreateContentletWrapper.triggerEventHandler('close', {});
-        expect(component.close.emit).toHaveBeenCalledTimes(1);
+        dotCreateContentletWrapper.triggerEventHandler('shutdown', {});
+        expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
         expect(routerService.goToContent).toHaveBeenCalledTimes(1);
         expect(dotIframeService.reloadData).toHaveBeenCalledWith('123-567');
     });

@@ -26,11 +26,11 @@ import { DotLayout } from '@models/dot-edit-layout-designer';
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => DotEditLayoutGridComponentMock)
+            useExisting: forwardRef(() => MockDotEditLayoutGridComponent)
         }
     ]
 })
-export class DotEditLayoutGridComponentMock implements ControlValueAccessor {
+export class MockDotEditLayoutGridComponent implements ControlValueAccessor {
     propagateChange = (_: any) => {};
     registerOnChange(fn: any): void {
         this.propagateChange = fn;
@@ -46,11 +46,11 @@ export class DotEditLayoutGridComponentMock implements ControlValueAccessor {
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => DotEditLayoutSidebarComponentMock)
+            useExisting: forwardRef(() => MockDotEditLayoutSidebarComponent)
         }
     ]
 })
-export class DotEditLayoutSidebarComponentMock implements ControlValueAccessor {
+export class MockDotEditLayoutSidebarComponent implements ControlValueAccessor {
     propagateChange = (_: any) => {};
     registerOnChange(fn: any): void {
         this.propagateChange = fn;
@@ -95,8 +95,8 @@ describe('DotLayoutDesignerComponent', () => {
                     DotMessagePipe,
                     TestHostComponent,
                     DotLayoutDesignerComponent,
-                    DotEditLayoutGridComponentMock,
-                    DotEditLayoutSidebarComponentMock
+                    MockDotEditLayoutGridComponent,
+                    MockDotEditLayoutSidebarComponent
                 ],
                 imports: [FormsModule, ReactiveFormsModule],
                 providers: [

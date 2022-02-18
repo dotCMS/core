@@ -2,7 +2,6 @@
 import { Component, OnInit, forwardRef, ViewChild, OnDestroy } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormGroup, FormBuilder } from '@angular/forms';
 
-import * as _ from 'lodash';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { NgGrid, NgGridConfig } from '@dotcms/dot-layout-grid';
@@ -194,8 +193,9 @@ export class DotEditLayoutGridComponent implements OnInit, OnDestroy, ControlVal
         }
     }
 
-    // tslint:disable-next-line:no-shadowed-variable
-    propagateChange = (_: any) => {};
+    propagateChange = (_: unknown) => {
+        /**/
+    };
 
     /**
      * Set the function to be called when the control receives a change event.
@@ -203,11 +203,17 @@ export class DotEditLayoutGridComponent implements OnInit, OnDestroy, ControlVal
      * @param * fn
      * @memberof DotEditLayoutGridComponent
      */
-    registerOnChange(fn: any): void {
+    registerOnChange(
+        fn: () => {
+            /**/
+        }
+    ): void {
         this.propagateChange = fn;
     }
 
-    registerOnTouched(): void {}
+    registerOnTouched(): void {
+        /**/
+    }
 
     /**
      * Update the model when the grid is changed
@@ -297,7 +303,11 @@ export class DotEditLayoutGridComponent implements OnInit, OnDestroy, ControlVal
 
         this.addClassDialogActions = {
             accept: {
-                action: (dialog?: any) => {
+                action: (dialog?: {
+                    close: () => {
+                        /**/
+                    };
+                }) => {
                     params.setter.bind(this)(this.form.get('classToAdd').value);
                     this.propagateGridLayoutChange();
                     dialog.close();

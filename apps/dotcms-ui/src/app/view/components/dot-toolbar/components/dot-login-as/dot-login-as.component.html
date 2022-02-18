@@ -19,7 +19,7 @@
                 <!--TODO: get rid of this let autoComplete when this is fixed: https://github.com/primefaces/primeng/issues/745-->
                 <dot-searchable-dropdown
                     #searchableDropdown
-                    (change)="userSelectedHandler($event)"
+                    (switch)="userSelectedHandler($event)"
                     (filterChange)="handleFilterChange($event)"
                     (pageChange)="handlePageChange($event)"
                     [data]="userCurrentPage"

@@ -86,7 +86,7 @@ class MockSearchableDropdownComponent implements ControlValueAccessor {
     @Input() totalRecords: number;
     @Input() placeholder = '';
 
-    @Output() change: EventEmitter<any> = new EventEmitter();
+    @Output() switch: EventEmitter<any> = new EventEmitter();
     @Output() filterChange: EventEmitter<string> = new EventEmitter();
     @Output() pageChange: EventEmitter<PaginationEvent> = new EventEmitter();
 
@@ -256,7 +256,7 @@ describe('DotNewRelationshipsComponent', () => {
             });
 
             const dotSearchableDropdown = de.query(By.css('dot-searchable-dropdown'));
-            dotSearchableDropdown.componentInstance.change.emit(contentTypeMock);
+            dotSearchableDropdown.componentInstance.switch.emit(contentTypeMock);
         });
 
         it('should set the correct labels', () => {

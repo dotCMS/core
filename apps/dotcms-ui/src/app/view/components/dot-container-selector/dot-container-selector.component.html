@@ -1,6 +1,6 @@
 <dot-searchable-dropdown
     data-testId="searchableDropdown"
-    (change)="containerChange($event)"
+    (switch)="containerChange($event)"
     (filterChange)="handleFilterChange($event)"
     (pageChange)="handlePageChange($event)"
     [data]="currentContainers | async"

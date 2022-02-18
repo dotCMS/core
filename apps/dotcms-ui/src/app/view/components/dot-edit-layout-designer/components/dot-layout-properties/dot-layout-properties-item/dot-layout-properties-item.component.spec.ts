@@ -52,10 +52,10 @@ describe('DotLayoutPropertiesItemComponent', () => {
         expect(comp.propagateChange).toHaveBeenCalled();
     });
 
-    it('should emit change value on host click', () => {
+    it('should emit switch value on host click', () => {
         let res: boolean;
 
-        comp.change.subscribe((value) => (res = value));
+        comp.switch.subscribe((value) => (res = value));
         de.nativeElement.click();
 
         expect(res).toEqual(true);

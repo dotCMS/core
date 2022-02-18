@@ -52,14 +52,14 @@ export class DotDialogComponent implements OnChanges {
 
     @Input() bindEvents = true;
 
-    @Output() hide: EventEmitter<any> = new EventEmitter();
+    @Output() hide: EventEmitter<unknown> = new EventEmitter();
 
     @Output()
     beforeClose: EventEmitter<{
         close: () => void;
     }> = new EventEmitter();
 
-    @Output() visibleChange: EventEmitter<any> = new EventEmitter();
+    @Output() visibleChange: EventEmitter<unknown> = new EventEmitter();
 
     isContentScrolled: boolean;
 
@@ -197,7 +197,7 @@ export class DotDialogComponent implements OnChanges {
 }
 
 export interface DialogButton {
-    action?: (dialog?: any) => void;
+    action?: (dialog?: unknown) => void;
     disabled?: boolean;
     label: string;
 }

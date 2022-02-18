@@ -34,7 +34,8 @@ interface DropdownEvent {
     ]
 })
 export class DotWorkflowsActionsSelectorFieldComponent
-    implements ControlValueAccessor, OnChanges, OnInit {
+    implements ControlValueAccessor, OnChanges, OnInit
+{
     @ViewChild('dropdown') dropdown: Dropdown;
     @Input() workflows: DotCMSWorkflow[];
 
@@ -75,7 +76,9 @@ export class DotWorkflowsActionsSelectorFieldComponent
         this.propagateChange(value || '');
     }
 
-    propagateChange = (_: any) => {};
+    propagateChange = (_: unknown) => {
+        /**/
+    };
 
     /**
      * Set the function to be called when the control receives a change event.
@@ -87,7 +90,9 @@ export class DotWorkflowsActionsSelectorFieldComponent
         this.propagateChange = fn;
     }
 
-    registerOnTouched(): void {}
+    registerOnTouched(): void {
+        /**/
+    }
 
     /**
      * Set disable state.

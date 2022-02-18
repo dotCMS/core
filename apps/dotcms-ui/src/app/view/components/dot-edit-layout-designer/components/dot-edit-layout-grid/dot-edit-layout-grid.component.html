@@ -19,7 +19,7 @@
         [(ngGridItem)]="gridBox.config"
     >
         <dot-container-selector-layout
-            (change)="propagateGridLayoutChange($event)"
+            (switch)="propagateGridLayoutChange()"
             (remove)="onRemoveContainer(i)"
             [data]="gridBox.containers"
             [multiple]="true"

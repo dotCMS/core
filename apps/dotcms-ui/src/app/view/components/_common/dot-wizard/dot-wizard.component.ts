@@ -21,6 +21,8 @@ import { DotWizardService } from '@services/dot-wizard/dot-wizard.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { DotWizardInput } from '@models/dot-wizard-input/dot-wizard-input.model';
+import { Type } from '@angular/core';
+import { DotFormModel } from '@models/dot-form/dot-form.model';
 
 @Component({
     selector: 'dot-wizard',
@@ -111,15 +113,20 @@ export class DotWizardComponent implements OnInit, OnDestroy {
     private loadComponents(): void {
         this.componentsHost = this.formHosts.toArray();
         this.stepsValidation = [];
-        this.data.steps.forEach((step: DotWizardStep<any>, index: number) => {
+        this.data.steps.forEach((step: DotWizardStep<Type<unknown>>, index: number) => {
             const comp = this.componentFactoryResolver.resolveComponentFactory(step.component);
             const viewContainerRef = this.componentsHost[index].viewContainerRef;
             viewContainerRef.clear();
-            const componentRef: ComponentRef<any> = viewContainerRef.createComponent(comp);
+            const componentRef: ComponentRef<DotFormModel<unknown, unknown>> =
+                viewContainerRef.createComponent(comp) as ComponentRef<
+                    DotFormModel<unknown, unknown>
+                >;
             componentRef.instance.data = step.data;
             componentRef.instance.value
                 .pipe(takeUntil(this.destroy$))
-                .subscribe((data) => this.consolidateValues(data, index));
+                .subscribe((data: { [key: string]: string }) =>
+                    this.consolidateValues(data, index)
+                );
             componentRef.instance.valid.pipe(takeUntil(this.destroy$)).subscribe((valid) => {
                 this.setValid(valid, index);
             });
@@ -196,11 +203,12 @@ export class DotWizardComponent implements OnInit, OnDestroy {
         let count = 0;
         // need to wait dynamic component to load the form.
         const interval = setInterval(() => {
-            const form: HTMLFormElement = this.componentsHost[
-                this.currentStep
-            ].viewContainerRef.element.nativeElement.parentNode.children[0].getElementsByTagName(
-                'form'
-            )[0];
+            const form: HTMLFormElement =
+                this.componentsHost[
+                    this.currentStep
+                ].viewContainerRef.element.nativeElement.parentNode.children[0].getElementsByTagName(
+                    'form'
+                )[0];
             if (form || count === 10) {
                 clearInterval(interval);
                 (form.elements[0] as HTMLElement).focus();

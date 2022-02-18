@@ -280,7 +280,7 @@ describe('DotLoginAsComponent', () => {
         fixture.detectChanges();
 
         const searchableDropdown = de.query(By.css('dot-searchable-dropdown'));
-        searchableDropdown.triggerEventHandler('change', {
+        searchableDropdown.triggerEventHandler('switch', {
             requestPassword: false
         });
 

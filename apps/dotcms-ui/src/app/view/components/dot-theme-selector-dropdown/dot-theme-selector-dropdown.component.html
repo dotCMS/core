@@ -34,7 +34,7 @@
             #siteSelector
             width="12.8rem"
             [system]="true"
-            (change)="siteChange($event)"
+            (switch)="siteChange($event)"
             data-testId="siteSelector"
         ></dot-site-selector>
         <div class="searchable-dropdown__search-section">
@@ -55,9 +55,9 @@
 <dot-searchable-dropdown
     #searchableDropdown
     (hide)="onHide()"
-    (show)="onShow()"
+    (display)="onShow()"
     [(ngModel)]="value"
-    (change)="onChange($event)"
+    (switch)="onChange($event)"
     [placeholder]="'dot.common.select.themes' | dm"
     [data]="themes"
     [totalRecords]="totalRecords"
