@@ -22,9 +22,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.util.Optional;
-import org.apache.commons.lang.StringUtils;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -38,6 +35,8 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Host integrity checker implementation
@@ -242,7 +241,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
             dc.setSQL("SELECT DISTINCT 1" + conflictSql).addParam(Host.SYSTEM_HOST);
             final List<Map<String, Object>> results = dc.loadObjectResults();
 
-            final String nvl = DbConnectionFactory.isPostgres() ? String.format(" COALESCE(c.contentlet_as_json-> 'fields' ->'hostName'->>'value',c.%s)",hostField) : hostField ;
+            final String nvl = DbConnectionFactory.isPostgres() ? String.format(" COALESCE(c.contentlet_as_json-> 'fields' ->'hostName'->>'value',c.%s)",hostField) : "" ;
             //TODO: need to figure out how to extract the hostname from non-postgres db when the contentlet has been stored as json
             if (!results.isEmpty()) {
                 // if we have conflicts, lets create a table out of them
@@ -327,7 +326,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
     private PreparedStatement getCsvQuery(final String hostField) throws SQLException {
         final Connection conn = DbConnectionFactory.getConnection();
         final String sql =
-                "SELECT c.inode, c.identifier, cvi.working_inode, cvi.live_inode, c.language_id, " + hostField +
+                "SELECT c.inode, c.identifier, cvi.working_inode, cvi.live_inode, c.language_id, " + hostField + " as host_name , c.contentlet_as_json " +
                         " FROM contentlet c" +
                         " JOIN identifier i ON c.identifier = i.id" +
                         " JOIN structure s ON c.structure_inode = s.inode" +

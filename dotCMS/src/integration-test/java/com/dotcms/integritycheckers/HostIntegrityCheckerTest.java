@@ -145,7 +145,7 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
         final String endpointFolder = assetRealPath + "/integrity/" + endpointId;
         final File outputFolder = new File(endpointFolder);
         if (!outputFolder.exists()) {
-            Assert.assertTrue(outputFolder.mkdir());
+            Assert.assertTrue(outputFolder.mkdirs());
         }
         return endpointFolder;
     }
