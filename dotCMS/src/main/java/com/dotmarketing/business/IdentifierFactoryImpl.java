@@ -26,6 +26,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.sql.Connection;
@@ -576,12 +577,19 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
             db.addParam(ident.getId());
             db.addParam(ident.getId());
             db.loadResult();
+
+			//This is valid for folders as they aren't considered inodes anymore
+			final String tableName = Try.of(
+							() -> (Inode.Type.valueOf(ident.getAssetType().toUpperCase()).getTableName()))
+					.getOrElse(ident.getAssetType());
             
-            db.setSQL("select inode from " + Inode.Type.valueOf(ident.getAssetType().toUpperCase()).getTableName() + " where inode=?");
+            db.setSQL("select inode from " + tableName + " where inode=?");
             db.addParam(ident.getId());
             List<Map<String, Object>> deleteme = db.loadResults();
 
-            String versionInfoTable = Inode.Type.valueOf(ident.getAssetType().toUpperCase()).getVersionTableName();
+            final String versionInfoTable = Try.of(
+					() -> (Inode.Type.valueOf(ident.getAssetType().toUpperCase()).getVersionTableName())).getOrNull();
+
             if (versionInfoTable != null) {
                 db.setSQL("delete from " + versionInfoTable + " where identifier = ?");
                 db.addParam(ident.getId());
@@ -594,7 +602,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
                 WorkflowTask wft = APILocator.getWorkflowAPI().findTaskById((String) task.get("id"));
                 APILocator.getWorkflowAPI().deleteWorkflowTask(wft, APILocator.systemUser());
             }
-            db.setSQL("delete from " + Inode.Type.valueOf(ident.getAssetType().toUpperCase()).getTableName() + " where identifier = ?");
+            db.setSQL("delete from " + tableName + " where identifier = ?");
             db.addParam(ident.getId());
             db.loadResult();
 
