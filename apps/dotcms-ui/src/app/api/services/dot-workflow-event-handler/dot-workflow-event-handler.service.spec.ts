@@ -44,6 +44,7 @@ import { DotActionBulkRequestOptions } from '@models/dot-action-bulk-request-opt
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotFormatDateServiceMock } from '@dotcms/app/test/format-date-service.mock';
+import { DotWorkflowPayload, DotProcessedWorkflowPayload } from '@dotcms/dotcms-models';
 
 const mockWAEvent: DotCMSWorkflowActionEvent = {
     workflow: mockWorkflowsActions[0],
@@ -74,7 +75,7 @@ const mockWizardInput: DotWizardInput = {
     steps: mockWizardSteps
 };
 
-const mockWizardOutputData = {
+const mockWizardOutputData: DotWorkflowPayload = {
     assign: '654b0931-1027-41f7-ad4d-173115ed8ec1',
     comments: 'ds',
     pathToMove: '/test/',
@@ -86,7 +87,7 @@ const mockWizardOutputData = {
     timezoneId: 'America/Costa_Rica'
 };
 
-const mockWizardOutputTransformedData: { [key: string]: any } = {
+const mockWizardOutputTransformedData: DotProcessedWorkflowPayload = {
     assign: '654b0931-1027-41f7-ad4d-173115ed8ec1',
     comments: 'ds',
     expireDate: '2020-08-11',

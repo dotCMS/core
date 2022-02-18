@@ -23,14 +23,14 @@
         [velocityVar]="group.get(property.name).value.velocityVar"
         [cardinality]="group.get(property.name).value.cardinality"
         [editing]="editing"
-        (change)="handleChange($event)"
+        (switch)="handleChange($event)"
     >
     </dot-new-relationships>
 
     <ng-template #existing>
         <div class="field">
             <label for="" class="form__label">Relationship</label>
-            <dot-edit-relationships class="relationships__existing" (change)="handleChange($event)">
+            <dot-edit-relationships class="relationships__existing" (switch)="handleChange($event)">
             </dot-edit-relationships>
         </div>
     </ng-template>

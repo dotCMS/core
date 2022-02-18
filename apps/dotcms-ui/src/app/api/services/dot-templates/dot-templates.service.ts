@@ -161,7 +161,7 @@ export class DotTemplatesService {
      */
     copy(identifier: string): Observable<DotTemplate> {
         const url = `${TEMPLATE_API_URL}${identifier}/_copy`;
-        return this.request<any>({ method: 'PUT', url });
+        return this.request<DotTemplate>({ method: 'PUT', url });
     }
 
     private request<T>(options: DotRequestOptionsArgs): Observable<T> {

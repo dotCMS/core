@@ -17,6 +17,7 @@ import { DotBundle } from '@models/dot-bundle/dot-bundle';
 import { Dropdown } from 'primeng/dropdown';
 import { map, tap, take, takeUntil } from 'rxjs/operators';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
+import { DotAjaxActionResponseView } from '@models/ajax-action-response/dot-ajax-action-response';
 
 const LAST_BUNDLE_USED = 'lastSelectedBundle';
 
@@ -105,7 +106,7 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy
             this.addToBundleService
                 .addToBundle(this.assetIdentifier, this.setBundleData())
                 .pipe(takeUntil(this.destroy$))
-                .subscribe((result: any) => {
+                .subscribe((result: DotAjaxActionResponseView) => {
                     if (!result.errors) {
                         sessionStorage.setItem(
                             LAST_BUNDLE_USED,

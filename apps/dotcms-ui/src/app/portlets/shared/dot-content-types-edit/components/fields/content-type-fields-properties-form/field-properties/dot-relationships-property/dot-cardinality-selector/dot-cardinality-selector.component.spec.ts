@@ -35,7 +35,7 @@ class HostTestComponent {
     disabled: boolean;
 
     @Output()
-    change: EventEmitter<DotRelationshipCardinality> = new EventEmitter();
+    switch: EventEmitter<DotRelationshipCardinality> = new EventEmitter();
 }
 
 @Injectable()
@@ -104,7 +104,7 @@ describe('DotCardinalitySelectorComponent', () => {
     it('should trigger a change event p-dropdown', (done) => {
         fixtureHostComponent.detectChanges();
 
-        comp.change.subscribe((change) => {
+        comp.switch.subscribe((change) => {
             expect(change).toEqual(cardinalities[1].id);
             done();
         });

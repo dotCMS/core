@@ -266,7 +266,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
         });
 
         it('should save configuration when Save button clicked', async () => {
-            const transformedData = {
+            const transformedData: DotAppsSaveData = {
                 name: {
                     hidden: false,
                     value: 'John'
@@ -295,11 +295,9 @@ describe('DotAppsConfigurationDetailComponent', () => {
             const saveBtn = fixture.debugElement.query(By.css('[data-testid="saveBtn"]'));
             saveBtn.triggerEventHandler('click', {});
 
-            expect<any>(appsServices.saveSiteConfiguration).toHaveBeenCalledWith(
-                component.apps.key,
-                component.apps.sites[0].id,
-                transformedData
-            );
+            expect<(appKey: string, id: string, params: DotAppsSaveData) => Observable<string>>(
+                appsServices.saveSiteConfiguration
+            ).toHaveBeenCalledWith(component.apps.key, component.apps.sites[0].id, transformedData);
         });
     });
 
@@ -356,7 +354,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
         });
 
         it('should save configuration when Save button clicked', () => {
-            const transformedData = {
+            const transformedData: DotAppsSaveData = {
                 name: {
                     hidden: false,
                     value: 'John'
@@ -387,7 +385,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
             const saveBtn = fixture.debugElement.query(By.css('[data-testid="saveBtn"]'));
 
             saveBtn.triggerEventHandler('click', {});
-            expect<any>(appsServices.saveSiteConfiguration).toHaveBeenCalledWith(
+            expect(appsServices.saveSiteConfiguration).toHaveBeenCalledWith(
                 component.apps.key,
                 component.apps.sites[0].id,
                 transformedData

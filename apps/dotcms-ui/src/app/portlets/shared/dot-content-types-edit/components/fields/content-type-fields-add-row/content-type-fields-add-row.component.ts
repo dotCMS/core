@@ -113,7 +113,7 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
      * Set focus on element sent as param
      * @param elem
      */
-    setFocus(elem: any): void {
+    setFocus(elem: HTMLElement): void {
         elem.focus({ preventScroll: true });
     }
 
@@ -123,7 +123,7 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
      * @returns *
      * @memberof ContentTypeFieldsAddRowComponent
      */
-    removeFocus(elem: any): void {
+    removeFocus(elem: HTMLElement): void {
         elem.blur();
     }
 
@@ -174,7 +174,7 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
         return this.columns[this.selectedColumnIndex];
     }
 
-    private resetState(): any {
+    private resetState(): void {
         this.removeFocus(this.getElementSelected());
         this.selectedColumnIndex = 0;
         this.rowState = 'add';

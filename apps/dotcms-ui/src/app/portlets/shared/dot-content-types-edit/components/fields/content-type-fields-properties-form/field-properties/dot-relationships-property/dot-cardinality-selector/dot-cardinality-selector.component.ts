@@ -32,7 +32,7 @@ export class DotCardinalitySelectorComponent implements OnInit, OnChanges {
     disabled: boolean;
 
     @Output()
-    change: EventEmitter<number> = new EventEmitter();
+    switch: EventEmitter<number> = new EventEmitter();
 
     options: DotRelationshipCardinality[];
 
@@ -67,6 +67,6 @@ export class DotCardinalitySelectorComponent implements OnInit, OnChanges {
      * @memberof DotCardinalitySelectorComponent
      */
     tiggerChanged(cardinality: DotRelationshipCardinality): void {
-        this.change.next(cardinality.id);
+        this.switch.next(cardinality.id);
     }
 }

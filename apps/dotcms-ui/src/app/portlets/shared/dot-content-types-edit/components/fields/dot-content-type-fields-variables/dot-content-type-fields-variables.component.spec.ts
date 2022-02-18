@@ -13,7 +13,6 @@ import {
     mockFieldVariables
 } from '@tests/field-variable-service.mock';
 import { of } from 'rxjs';
-import * as _ from 'lodash';
 import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';

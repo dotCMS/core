@@ -63,7 +63,7 @@ export class DotHttpErrorManagerService {
         return of(result);
     }
 
-    private callErrorHandler(response: HttpErrorResponse | any): boolean {
+    private callErrorHandler(response: HttpErrorResponse): boolean {
         const code = response.status;
 
         return code === HttpCode.FORBIDDEN

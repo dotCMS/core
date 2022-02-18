@@ -22,7 +22,7 @@ import { Subject } from 'rxjs';
     templateUrl: './content-type-fields-properties-form.component.html'
 })
 export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnInit, OnDestroy {
-    @Output() saveField: EventEmitter<any> = new EventEmitter();
+    @Output() saveField: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
 
     @Output() valid: EventEmitter<boolean> = new EventEmitter();
 
@@ -36,7 +36,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     fieldProperties: string[] = [];
     checkboxFields: string[] = ['indexed', 'listed', 'required', 'searchable', 'unique'];
 
-    private originalValue: any;
+    private originalValue: DotCMSContentTypeField;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(private fb: FormBuilder, private fieldPropertyService: FieldPropertyService) {}

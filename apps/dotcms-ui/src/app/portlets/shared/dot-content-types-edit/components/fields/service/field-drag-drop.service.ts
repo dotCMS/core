@@ -23,6 +23,31 @@ interface DragulaCustomEvent {
     target?: Element;
 }
 
+interface DragulaDropModel {
+    name: string;
+    el: Element;
+    target: Element;
+    source: Element;
+    sibling: Element;
+    item: DotCMSContentTypeField;
+    sourceModel: DotCMSContentTypeField[];
+    targetModel: DotCMSContentTypeLayoutRow[] | DotCMSContentTypeField[];
+    sourceIndex: number;
+    targetIndex: number;
+}
+
+export interface DropFieldData {
+    item: DotCMSContentTypeField;
+    source?: {
+        columnId: string;
+        model: DotCMSContentTypeField[];
+    };
+    target: {
+        columnId: string;
+        model: DotCMSContentTypeField[];
+    };
+}
+
 @Injectable()
 export class FieldDragDropService {
     private static readonly FIELD_BAG_NAME = 'fields-bag';
@@ -106,7 +131,7 @@ export class FieldDragDropService {
 
         this._fieldRowDropFromTarget = dragulaDropModel$.pipe(
             filter((data: DragulaDropModel) => this.isFieldBeingDragFromColumns(data)),
-            map((data: DragulaDropModel) => data.targetModel)
+            map((data: DragulaDropModel) => data.targetModel as DotCMSContentTypeLayoutRow[])
         );
 
         this._fieldDropFromTarget = dragulaDropModel$.pipe(
@@ -157,7 +182,7 @@ export class FieldDragDropService {
                 copy: this.shouldCopy.bind(this),
                 accepts: this.shouldAccepts.bind(this),
                 moves: this.shouldMovesField,
-                copyItem: (item: any) => _.cloneDeep(item)
+                copyItem: (item) => _.cloneDeep(item)
             });
         }
     }
@@ -176,15 +201,15 @@ export class FieldDragDropService {
         }
     }
 
-    get fieldDropFromSource$(): Observable<any> {
+    get fieldDropFromSource$(): Observable<DropFieldData> {
         return this._fieldDropFromSource;
     }
 
-    get fieldDropFromTarget$(): Observable<any> {
+    get fieldDropFromTarget$(): Observable<DropFieldData> {
         return this._fieldDropFromTarget;
     }
 
-    get fieldRowDropFromTarget$(): Observable<any> {
+    get fieldRowDropFromTarget$(): Observable<DotCMSContentTypeLayoutRow[]> {
         return this._fieldRowDropFromTarget;
     }
 
@@ -197,7 +222,7 @@ export class FieldDragDropService {
             },
             target: {
                 columnId: (<HTMLElement>data.target).dataset.columnid,
-                model: data.targetModel
+                model: data.targetModel as DotCMSContentTypeField[]
             }
         };
     }
@@ -301,29 +326,4 @@ export class FieldDragDropService {
             this.currentFullRowEl = null;
         }
     }
-}
-
-interface DragulaDropModel {
-    name: string;
-    el: Element;
-    target: Element;
-    source: Element;
-    sibling: Element;
-    item: any;
-    sourceModel: any[];
-    targetModel: any[];
-    sourceIndex: number;
-    targetIndex: number;
-}
-
-export interface DropFieldData {
-    item: DotCMSContentTypeField;
-    source?: {
-        columnId: string;
-        model: DotCMSContentTypeField[];
-    };
-    target: {
-        columnId: string;
-        model: DotCMSContentTypeField[];
-    };
 }

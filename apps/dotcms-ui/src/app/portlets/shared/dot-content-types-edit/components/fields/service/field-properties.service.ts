@@ -4,6 +4,7 @@ import { DATA_TYPE_PROPERTY_INFO } from './data-type-property-info';
 import { ValidationErrors } from '@angular/forms';
 import { FieldService } from './field.service';
 import { FieldType } from '../models';
+import { DotDynamicFieldComponent } from '@dotcms/dotcms-models';
 
 /**
  * Provide method to handle with the Field Types's properties
@@ -33,10 +34,10 @@ export class FieldPropertyService {
     /**
      * Return the component linked whit propertyName
      * @param string propertyName
-     * @returns Type<any>
+     * @returns Type<DotDynamicFieldComponent>
      * @memberof FieldPropertyService
      */
-    getComponent(propertyName: string): Type<any> {
+    getComponent(propertyName: string): Type<DotDynamicFieldComponent> {
         return PROPERTY_INFO[propertyName] ? PROPERTY_INFO[propertyName].component : null;
     }
 
@@ -47,7 +48,7 @@ export class FieldPropertyService {
      * @returns * default value
      * @memberof FieldPropertyService
      */
-    getDefaultValue(propertyName: string, fieldTypeClass?: string): any {
+    getDefaultValue(propertyName: string, fieldTypeClass?: string): unknown {
         return propertyName === 'dataType'
             ? this.getDataType(fieldTypeClass)
             : this.getPropInfo(propertyName);
@@ -59,7 +60,7 @@ export class FieldPropertyService {
      * @returns * property's order
      * @memberof FieldPropertyService
      */
-    getOrder(propertyName: string): any {
+    getOrder(propertyName: string): number {
         return PROPERTY_INFO[propertyName] ? PROPERTY_INFO[propertyName].order : null;
     }
 
@@ -125,13 +126,13 @@ export class FieldPropertyService {
         return DATA_TYPE_PROPERTY_INFO[fieldTypeClass];
     }
 
-    private getDataType(fieldTypeClass: string): any {
+    private getDataType(fieldTypeClass: string): unknown {
         return DATA_TYPE_PROPERTY_INFO[fieldTypeClass]
             ? DATA_TYPE_PROPERTY_INFO[fieldTypeClass][0].value
             : null;
     }
 
-    private getPropInfo(propertyName: string): any {
+    private getPropInfo(propertyName: string): unknown {
         return PROPERTY_INFO[propertyName] ? PROPERTY_INFO[propertyName].defaultValue : null;
     }
 }

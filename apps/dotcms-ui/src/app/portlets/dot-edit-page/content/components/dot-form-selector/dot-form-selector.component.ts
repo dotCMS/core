@@ -26,7 +26,7 @@ export class DotFormSelectorComponent implements OnInit, OnChanges {
 
     @Output() pick = new EventEmitter<DotCMSContentType>();
 
-    @Output() shutdown = new EventEmitter<any>();
+    @Output() shutdown = new EventEmitter<boolean>();
 
     @ViewChild('datatable', { static: true }) datatable: Table;
 

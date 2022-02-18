@@ -23,12 +23,18 @@ import { DotEnvironment } from '@models/dot-environment/dot-environment';
 import { DotActionBulkResult } from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
 import { DotActionBulkRequestOptions } from '@models/dot-action-bulk-request-options/dot-action-bulk-request-options.model';
 import { DotFormatDateService } from '@services/dot-format-date-service';
+import { DotWorkflowPayload, DotProcessedWorkflowPayload } from '@dotcms/dotcms-models';
 
 enum DotActionInputs {
     ASSIGNABLE = 'assignable',
     COMMENTABLE = 'commentable',
     COMMENTANDASSIGN = 'commentAndAssign',
     MOVEABLE = 'moveable'
+}
+
+interface DotAssignableData {
+    roleId: string;
+    roleHierarchy: boolean;
 }
 
 const EDIT_CONTENT_CALLBACK_FUNCTION = 'saveAssignCallBackAngular';
@@ -116,7 +122,9 @@ export class DotWorkflowEventHandlerService {
      * @memberof DotWorkflowEventHandlerService
      */
     setWizardInput(workflow: DotCMSWorkflowAction, title: string): DotWizardInput {
-        const steps: DotWizardStep<any>[] = [];
+        const steps: DotWizardStep<
+            DotCommentAndAssignFormComponent | DotPushPublishFormComponent
+        >[] = [];
         this.mergeCommentAndAssign(workflow).forEach((input: DotCMSWorkflowInput) => {
             if (this.workflowStepMap[input.id]) {
                 steps.push({
@@ -141,33 +149,34 @@ export class DotWorkflowEventHandlerService {
      * @memberof DotWorkflowEventHandlerService
      */
     processWorkflowPayload(
-        data: { [key: string]: any },
+        data: DotWorkflowPayload,
         inputs: DotCMSWorkflowInput[]
-    ): { [key: string]: any } {
+    ): DotProcessedWorkflowPayload {
+        const processedData = { ...data };
         if (this.containsPushPublish(inputs)) {
-            data['whereToSend'] = data.environment.join();
-            data['iWantTo'] = data.pushActionSelected;
-            data['publishTime'] = this.dotFormatDateService.format(
+            processedData['whereToSend'] = data.environment.join();
+            processedData['iWantTo'] = data.pushActionSelected;
+            processedData['publishTime'] = this.dotFormatDateService.format(
                 new Date(data.publishDate),
                 'HH-mm'
             );
-            data['publishDate'] = this.dotFormatDateService.format(
+            processedData['publishDate'] = this.dotFormatDateService.format(
                 new Date(data.publishDate),
                 'yyyy-MM-dd'
             );
-            data['expireTime'] = this.dotFormatDateService.format(
+            processedData['expireTime'] = this.dotFormatDateService.format(
                 data.expireDate ? new Date(data.expireDate) : new Date(),
                 'HH-mm'
             );
-            data['expireDate'] = this.dotFormatDateService.format(
+            processedData['expireDate'] = this.dotFormatDateService.format(
                 data.expireDate ? new Date(data.expireDate) : new Date(),
                 'yyyy-MM-dd'
             );
-            delete data.environment;
-            delete data.pushActionSelected;
+            delete processedData.environment;
+            delete processedData.pushActionSelected;
         }
-        data['contentlet'] = {}; // needed for indexPolicy=WAIT_FOR
-        return data;
+        processedData['contentlet'] = {}; // needed for indexPolicy=WAIT_FOR
+        return processedData as DotProcessedWorkflowPayload;
     }
 
     private mergeCommentAndAssign(workflow: DotCMSWorkflowAction): DotCMSWorkflowInput[] {
@@ -192,19 +201,16 @@ export class DotWorkflowEventHandlerService {
 
     private openWizard(event: DotCMSWorkflowActionEvent): void {
         this.dotWizardService
-            .open(
+            .open<DotWorkflowPayload>(
                 this.setWizardInput(event.workflow, this.dotMessageService.get('Workflow-Action'))
             )
             .pipe(take(1))
-            .subscribe((data: { [key: string]: any }) => {
+            .subscribe((data: DotWorkflowPayload) => {
                 this.fireWorkflowAction(event, data);
             });
     }
 
-    private fireWorkflowAction(
-        event: DotCMSWorkflowActionEvent,
-        data?: { [key: string]: any }
-    ): void {
+    private fireWorkflowAction(event: DotCMSWorkflowActionEvent, data?: DotWorkflowPayload): void {
         if (this.isBulkAction(event)) {
             this.dotIframeService.run({ name: 'fireActionLoadingIndicator' });
             this.dotWorkflowActionsFireService
@@ -260,7 +266,7 @@ export class DotWorkflowEventHandlerService {
         );
     }
 
-    private getAssignableData(workflow: DotCMSWorkflowAction): { [key: string]: any } {
+    private getAssignableData(workflow: DotCMSWorkflowAction): DotAssignableData {
         return { roleId: workflow.nextAssign, roleHierarchy: workflow.roleHierarchyForAssign };
     }
 
@@ -274,27 +280,27 @@ export class DotWorkflowEventHandlerService {
 
     private processBulkData(
         event: DotCMSWorkflowActionEvent,
-        data?: { [key: string]: any }
+        data?: DotWorkflowPayload
     ): DotActionBulkRequestOptions {
-        data = this.processWorkflowPayload(data, event.workflow.actionInputs);
+        const processedData = this.processWorkflowPayload(data, event.workflow.actionInputs);
         const requestOptions: DotActionBulkRequestOptions = {
             workflowActionId: event.workflow.id,
             additionalParams: {
                 assignComment: {
-                    comment: data.comments,
-                    assign: data.assign
+                    comment: processedData.comments,
+                    assign: processedData.assign
                 },
                 pushPublish: {
-                    whereToSend: data.whereToSend,
-                    iWantTo: data.iWantTo,
-                    expireDate: data.expireDate,
-                    expireTime: data.expireTime,
-                    publishDate: data.publishDate,
-                    publishTime: data.publishTime,
-                    filterKey: data.filterKey,
-                    timezoneId: data.timezoneId
+                    whereToSend: processedData.whereToSend,
+                    iWantTo: processedData.iWantTo,
+                    expireDate: processedData.expireDate,
+                    expireTime: processedData.expireTime,
+                    publishDate: processedData.publishDate,
+                    publishTime: processedData.publishTime,
+                    filterKey: processedData.filterKey,
+                    timezoneId: processedData.timezoneId
                 },
-                additionalParamsMap: { _path_to_move: data.pathToMove }
+                additionalParamsMap: { _path_to_move: processedData.pathToMove }
             }
         };
         if (Array.isArray(event.selectedInodes)) {

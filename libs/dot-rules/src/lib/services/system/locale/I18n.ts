@@ -107,13 +107,13 @@ export class I18nService {
         this.root = new TreeNode(null, 'root');
     }
 
-    makeRequest(url): Observable<HttpResponse<any>> {
+    makeRequest<T>(url): Observable<HttpResponse<T>> {
         return this.coreWebService
             .request({
                 url: this._baseUrl + '/' + url
             })
             .pipe(
-                map((res) => {
+                map((res: HttpResponse<T>) => {
                     return res;
                 })
             );

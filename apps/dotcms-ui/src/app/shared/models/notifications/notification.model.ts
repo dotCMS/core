@@ -3,3 +3,9 @@ export interface INotification {
     title: string;
     message: string;
 }
+
+export interface DotNotificationResponse {
+    notifications: INotification[];
+    total: number;
+    totalUnreadNotifications: number;
+}

@@ -214,13 +214,15 @@ export class DotListingDataTableComponent implements OnInit {
         return items.map((item) => {
             this.dateColumns.forEach(
                 (col) =>
-                    (item[col.fieldName] = this.dotFormatDateService.getRelative(item[col.fieldName]))
+                    (item[col.fieldName] = this.dotFormatDateService.getRelative(
+                        item[col.fieldName]
+                    ))
             );
             return item;
         });
     }
 
-    private setItems(items: any[]): void {
+    private setItems(items): void {
         setTimeout(() => {
             // avoid ExpressionChangedAfterItHasBeenCheckedError on p-table on tests.
             // TODO: Double check if versions after prime-ng 11.0.0 solve the need to add this hack.

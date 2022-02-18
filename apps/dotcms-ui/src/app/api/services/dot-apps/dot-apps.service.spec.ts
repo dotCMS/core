@@ -219,7 +219,7 @@ describe('DotAppsService', () => {
         const appKey = '1';
         const hostId = 'abc';
         const params: DotAppsSaveData = {
-            name: { hidden: 'false', value: 'test' }
+            name: { hidden: false, value: 'test' }
         };
         const url = `v1/apps/${appKey}/${hostId}`;
 
@@ -238,8 +238,8 @@ describe('DotAppsService', () => {
     });
 
     it('should throw error on Save a specific app and handle it', () => {
-        const params = {
-            name: { hidden: 'false', value: 'test' }
+        const params: DotAppsSaveData = {
+            name: { hidden: false, value: 'test' }
         };
         const error404 = mockResponseView(400);
         spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();

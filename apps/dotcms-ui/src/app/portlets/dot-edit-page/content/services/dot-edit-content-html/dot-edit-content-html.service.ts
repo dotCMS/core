@@ -14,7 +14,6 @@ import { DotGlobalMessageService } from '@components/_common/dot-global-message/
 import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 import { getEditPageCss } from '../html/libraries/iframe-edit-mode.css';
 import { MODEL_VAR_NAME } from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/iframe-edit-mode.js';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { PageModelChangeEvent, PageModelChangeEventType } from './models';
 import {
     DotAssetPayload,
@@ -32,6 +31,8 @@ import { INLINE_TINYMCE_SCRIPTS } from '@dotcms/app/portlets/dot-edit-page/conte
 import { HttpErrorResponse } from '@angular/common/http';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotPage } from '@dotcms/app/shared/models/dot-page/dot-page.model';
+import { DotAddContentTypePayload } from './models/dot-contentlets-events.model';
+import { DotIframeEditEvent } from '@dotcms/dotcms-models';
 
 export enum DotContentletAction {
     EDIT,
@@ -52,7 +53,9 @@ export class DotEditContentHtmlService {
     currentContainer: DotPageContainer;
     currentContentlet: DotPageContent;
     iframe: ElementRef;
-    iframeActions$: Subject<any> = new Subject();
+    iframeActions$: Subject<
+        DotIframeEditEvent<Record<string, unknown> | DotAddContentTypePayload>
+    > = new Subject();
     pageModel$: Subject<PageModelChangeEvent> = new Subject();
     mutationConfig = { attributes: false, childList: true, characterData: false };
     datasetMissing: string[];
@@ -304,7 +307,7 @@ export class DotEditContentHtmlService {
             return this.dotContainerContentletService
                 .getFormToContainer(this.currentContainer, formId)
                 .pipe(
-                    map(({ content }: { [key: string]: any }) => {
+                    map(({ content }: { content: { [key: string]: string } }) => {
                         const { identifier, inode } = content;
                         containerEl.replaceChild(
                             this.renderFormContentlet(identifier, inode),
@@ -689,7 +692,7 @@ export class DotEditContentHtmlService {
             'add-uploaded-dotAsset': (dotAssetData: DotAssetPayload) => {
                 this.renderAddedContentlet(dotAssetData.contentlet, true);
             },
-            'add-content': (data: any) => {
+            'add-content': (data: DotAddContentTypePayload) => {
                 this.iframeActions$.next({
                     name: 'add-content',
                     data: data

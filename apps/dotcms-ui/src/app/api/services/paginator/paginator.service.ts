@@ -8,6 +8,22 @@ export enum OrderDirection {
     DESC = -1
 }
 
+interface Links {
+    first?: string;
+    last?: string;
+    next?: string;
+    'x-page'?: string;
+    prev?: string;
+}
+
+interface PaginatiorServiceParams {
+    filter?: string;
+    searchParam?: string;
+    orderby?: string;
+    direction?: OrderDirection;
+    per_page?: string;
+}
+
 /**
  * Provides util listing methods
  * @export
@@ -33,7 +49,7 @@ export class PaginatorService {
     private _searchParam: string;
     private _sortField: string;
     private _sortOrder: OrderDirection;
-    private _extraParams: Map<string, any> = new Map();
+    private _extraParams: Map<string, string> = new Map();
 
     constructor(private coreWebService: CoreWebService) {}
 
@@ -77,7 +93,7 @@ export class PaginatorService {
      *
      * @memberof DotThemeSelectorComponent
      */
-    setExtraParams(name: string, value?: any): void {
+    setExtraParams<T = Record<string, unknown>>(name: string, value?: T): void {
         if (value !== null && value !== undefined) {
             this.extraParams.set(name, value.toString());
             this.links = {};
@@ -94,7 +110,7 @@ export class PaginatorService {
         this.extraParams.delete(name);
     }
 
-    get extraParams(): Map<string, any> {
+    get extraParams(): Map<string, string> {
         return this._extraParams;
     }
 
@@ -129,7 +145,7 @@ export class PaginatorService {
      * @param url base url
      */
     // tslint:disable-next-line:cyclomatic-complexity
-    public get(url?: string): Observable<any> {
+    public get<T>(url?: string): Observable<T> {
         const params = {
             ...this.getParams(),
             ...this.getObjectFromMap(this.extraParams)
@@ -141,7 +157,7 @@ export class PaginatorService {
                 url: url || this.url
             })
             .pipe(
-                map((response: ResponseView<any>) => {
+                map((response: ResponseView<T>) => {
                     this.setLinks(response.header(PaginatorService.LINK_HEADER_NAME));
                     this.paginationPerPage = parseInt(
                         response.header(PaginatorService.PAGINATION_PER_PAGE_HEADER_NAME),
@@ -167,29 +183,29 @@ export class PaginatorService {
 
     /**
      * Request the last page
-     * @returns Observable<any[]>
+     * @returns Observable<T>
      * @memberof PaginatorService
      */
-    public getLastPage(): Observable<any[]> {
+    public getLastPage<T>(): Observable<T> {
         return this.get(this.links.last);
     }
 
     /**
      * Request the first page
-     * @returns Observable<any[]>
+     * @returns Observable<T>
      * @memberof PaginatorService
      */
-    public getFirstPage(): Observable<any[]> {
+    public getFirstPage<T>(): Observable<T> {
         return this.get(this.links.first);
     }
 
     /**
      * request the  pageParam page
      * @param number [pageParam=1] Page to request
-     * @returns Observable<any[]>
+     * @returns Observable<T>
      * @memberof PaginatorServic
      */
-    public getPage(pageParam = 1): Observable<any[]> {
+    public getPage<T>(pageParam = 1): Observable<T> {
         const urlPage = this.links['x-page']
             ? this.links['x-page'].replace('pageValue', String(pageParam))
             : undefined;
@@ -198,38 +214,38 @@ export class PaginatorService {
 
     /**
      * Request the current page
-     * @returns Observable<any[]>
+     * @returns Observable<T>
      * @memberof PaginatorService
      */
-    public getCurrentPage(): Observable<any[]> {
+    public getCurrentPage<T>(): Observable<T> {
         return this.getPage(this.currentPage);
     }
 
     /**
      * Request the next page
-     * @returns Observable<any[]>
+     * @returns Observable<T>
      * @memberof PaginatorService
      */
-    public getNextPage(): Observable<any[]> {
+    public getNextPage<T>(): Observable<T> {
         return this.get(this.links.next);
     }
 
     /**
      * Request the previous page
-     * @returns Observable<any[]>
+     * @returns Observable<T>
      * @memberof PaginatorService
      */
-    public getPrevPage(): Observable<any[]> {
+    public getPrevPage<T>(): Observable<T> {
         return this.get(this.links.prev);
     }
 
     /**
      * Use the offset to request a page.
      * @param number offset Offset to be request
-     * @returns Observable<any[]>
+     * @returns Observable<T>
      * @memberof PaginatorService
      */
-    public getWithOffset(offset: number): Observable<any[]> {
+    public getWithOffset<T>(offset: number): Observable<T> {
         const page = this.getPageFromOffset(offset);
         return this.getPage(page);
     }
@@ -250,7 +266,7 @@ export class PaginatorService {
         });
     }
 
-    private getParams(): { [key: string]: any } {
+    private getParams(): PaginatiorServiceParams {
         const params = new Map();
 
         if (this.filter) {
@@ -272,23 +288,17 @@ export class PaginatorService {
         if (this.paginationPerPage) {
             params.set('per_page', String(this.paginationPerPage));
         }
-        return this.getObjectFromMap(params);
+        return this.getObjectFromMap<PaginatiorServiceParams>(params);
     }
 
-    private getObjectFromMap(map: Map<string, any>): { [key: string]: any } {
+    private getObjectFromMap<T = { [key: string]: Record<string, unknown> }>(
+        map: Map<string, unknown>
+    ): T {
         const result = Array.from(map).reduce(
             (obj, [key, value]) => Object.assign(obj, { [key]: value }),
             {}
         );
 
-        return result;
+        return result as T;
     }
-}
-
-interface Links {
-    first?: string;
-    last?: string;
-    next?: string;
-    'x-page'?: string;
-    prev?: string;
 }

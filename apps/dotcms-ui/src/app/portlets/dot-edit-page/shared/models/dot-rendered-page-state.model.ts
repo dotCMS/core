@@ -28,7 +28,7 @@ export class DotPageRenderState extends DotPageRender {
         };
     }
 
-    get canCreateTemplate(): any {
+    get canCreateTemplate(): boolean {
         return this.dotRenderedPage.canCreateTemplate;
     }
 

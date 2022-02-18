@@ -12,6 +12,7 @@ import { DotTemplateItem, DotTemplateState, DotTemplateStore } from './store/dot
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DynamicDialogRef } from 'primeng/dynamicdialog/dynamicdialog-ref';
 import { Site, SiteService } from '@dotcms/dotcms-js';
+import { DotLayout } from '@models/dot-edit-layout-designer/dot-layout.model';
 
 @Component({
     selector: 'dot-template-create-edit',
@@ -181,7 +182,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
         });
     }
 
-    private getFormValue(template: DotTemplateItem): { [key: string]: any } {
+    private getFormValue(template: DotTemplateItem): { [key: string]: string | DotLayout } {
         if (template.type === 'design') {
             return {
                 type: template.type,

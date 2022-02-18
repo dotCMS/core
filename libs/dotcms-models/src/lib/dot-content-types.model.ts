@@ -27,6 +27,7 @@ export interface DotCMSContentType {
     variable: string;
     versionable: boolean;
     workflows: DotCMSWorkflow[];
+    workflow?: string[];
     systemActionMappings?: DotCMSSystemActionMappings;
 }
 

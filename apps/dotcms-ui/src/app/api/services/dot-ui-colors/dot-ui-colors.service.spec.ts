@@ -14,13 +14,13 @@ describe('DotUiColorsService', () => {
         service = injector.get(DotUiColorsService);
 
         setPropertySpy = jasmine.createSpy('setProperty');
-        spyOn<any>(document, 'querySelector').and.returnValue({
+        spyOn(document as Document, 'querySelector').and.returnValue({
             style: {
                 setProperty: setPropertySpy
             }
-        });
+        } as HTMLElement);
 
-        spyOn<any>(window, 'getComputedStyle').and.returnValue({
+        spyOn(window as Window, 'getComputedStyle').and.returnValue({
             getPropertyValue: (cssVar: string) => {
                 const map = {
                     '--color-main': '#C336E5',
@@ -29,7 +29,7 @@ describe('DotUiColorsService', () => {
                 };
                 return map[cssVar];
             }
-        });
+        } as CSSStyleDeclaration);
     });
 
     it('should set all colors', () => {

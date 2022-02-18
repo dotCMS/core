@@ -158,9 +158,9 @@ export class DotLoginAsComponent implements OnInit, OnDestroy {
     getUsersList(filter = '', offset = 0): void {
         this.paginationService.filter = filter;
         this.paginationService
-            .getWithOffset(offset)
+            .getWithOffset<User[]>(offset)
             .pipe(take(1))
-            .subscribe((items) => {
+            .subscribe((items: User[]) => {
                 // items.splice(0) to return a new object and trigger the change detection
                 this.userCurrentPage = items.splice(0);
             });

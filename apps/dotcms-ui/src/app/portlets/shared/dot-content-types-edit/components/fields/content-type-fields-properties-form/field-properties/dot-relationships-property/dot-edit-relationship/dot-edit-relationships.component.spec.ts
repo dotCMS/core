@@ -233,7 +233,7 @@ describe('DotEditRelationshipsComponent', () => {
     it('should tigger change event', (done) => {
         fixture.detectChanges();
 
-        comp.change.subscribe((relationshipSelect: any) => {
+        comp.switch.subscribe((relationshipSelect: any) => {
             expect(relationshipSelect).toEqual({
                 cardinality: 1,
                 velocityVar: 'a'

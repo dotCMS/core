@@ -66,7 +66,7 @@ export class PushPublishService {
         this._lastEnvironmentPushed = pushPublishData.environment;
 
         return this.coreWebService
-            .request({
+            .request<DotAjaxActionResponseView>({
                 body: this.getPublishEnvironmentData(assetIdentifier, pushPublishData),
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
@@ -74,7 +74,7 @@ export class PushPublishService {
                 method: 'POST',
                 url: isBundle ? this.publishBundleURL : this.publishUrl
             })
-            .pipe(map((res: any) => <DotAjaxActionResponseView>res));
+            .pipe(map((res: DotAjaxActionResponseView) => res));
     }
 
     private getPublishEnvironmentData(

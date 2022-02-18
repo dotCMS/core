@@ -6,6 +6,7 @@ import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
 
 export const mockFieldType: FieldType = {
     clazz: 'TextField',
@@ -29,11 +30,9 @@ describe('FieldService', () => {
     });
 
     it('should load field types', () => {
-        const mockResponse = {
-            entity: [mockFieldType]
-        };
+        const mockResponse = [mockFieldType];
 
-        fieldService.loadFieldTypes().subscribe((res: any) => {
+        fieldService.loadFieldTypes().subscribe((res: FieldType[]) => {
             expect(res).toEqual(mockResponse);
         });
 
@@ -61,9 +60,11 @@ describe('FieldService', () => {
             ];
 
             const contentTypeId = '1';
-            fieldService.saveFields(contentTypeId, mockData).subscribe((res: any) => {
-                expect(res).toEqual(mockData);
-            });
+            fieldService
+                .saveFields(contentTypeId, mockData)
+                .subscribe((res: DotCMSContentTypeLayoutRow[]) => {
+                    expect(res).toEqual(mockData);
+                });
 
             const req = httpMock.expectOne(`v3/contenttype/${contentTypeId}/fields/move`);
             expect(req.request.method).toBe('PUT');
@@ -86,9 +87,13 @@ describe('FieldService', () => {
             ];
 
             const contentTypeId = '1';
-            fieldService.deleteFields(contentTypeId, mockData).subscribe((res: any) => {
-                expect(res).toEqual({ deletedIds: ['1', '2'], fields: mockData });
-            });
+            fieldService
+                .deleteFields(contentTypeId, mockData)
+                .subscribe(
+                    (res: { fields: DotCMSContentTypeLayoutRow[]; deletedIds: string[] }) => {
+                        expect(res).toEqual({ deletedIds: ['1', '2'], fields: mockData });
+                    }
+                );
 
             const req = httpMock.expectOne(`v3/contenttype/${contentTypeId}/fields`);
             expect(req.request.method).toBe('DELETE');
@@ -105,19 +110,20 @@ describe('FieldService', () => {
                 sortOrder: 1
             };
 
+            const mockResponse: DotCMSContentTypeLayoutRow = {
+                divider: field
+            };
+
             const contentTypeId = '2';
-            fieldService.updateField(contentTypeId, field).subscribe((res: any) => {
-                expect(res[0]).toEqual({
-                    ...dotcmsContentTypeFieldBasicMock,
-                    name: 'test field',
-                    id: '1',
-                    sortOrder: 1
+            fieldService
+                .updateField(contentTypeId, field)
+                .subscribe((res: DotCMSContentTypeLayoutRow[]) => {
+                    expect(res[0]).toEqual(mockResponse);
                 });
-            });
 
             const req = httpMock.expectOne(`v3/contenttype/${contentTypeId}/fields/1`);
             expect(req.request.method).toBe('PUT');
-            req.flush({ entity: [field] });
+            req.flush({ entity: [mockResponse] });
         });
     });
 

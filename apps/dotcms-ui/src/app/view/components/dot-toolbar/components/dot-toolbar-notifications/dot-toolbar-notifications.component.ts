@@ -73,7 +73,7 @@ export class DotToolbarNotificationsComponent implements OnInit {
 
     loadMore(): void {
         this.notificationService.getAllNotifications().subscribe((res) => {
-            this.notificationsUnreadCount = res.entity.count;
+            this.notificationsUnreadCount = res.entity.totalUnreadNotifications;
             this.notifications = res.entity.notifications;
             this.existsMoreToLoad = false;
         });

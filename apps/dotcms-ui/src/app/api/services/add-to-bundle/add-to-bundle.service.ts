@@ -23,11 +23,11 @@ export class AddToBundleService {
 
     /**
      * Get bundle items
-     * @returns Observable<any[]>
+     * @return {*}  {Observable<DotBundle[]>}
      * @memberof AddToBundleService
      */
-    getBundles(): Observable<any[]> {
-        return <any>this.currentUser.getCurrentUser().pipe(
+    getBundles(): Observable<DotBundle[]> {
+        return this.currentUser.getCurrentUser().pipe(
             mergeMap((user: DotCurrentUser) => {
                 return this.coreWebService
                     .requestView({
@@ -35,7 +35,7 @@ export class AddToBundleService {
                     })
                     .pipe(pluck('bodyJsonObject', 'items'));
             })
-        );
+        ) as Observable<DotBundle[]>;
     }
 
     /**
@@ -58,6 +58,6 @@ export class AddToBundleService {
                 method: 'POST',
                 url: this.addToBundleUrl
             })
-            .pipe(map((res: any) => <DotAjaxActionResponseView>res));
+            .pipe(map((res: DotAjaxActionResponseView) => res));
     }
 }

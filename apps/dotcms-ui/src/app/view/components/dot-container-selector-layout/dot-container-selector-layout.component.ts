@@ -85,10 +85,12 @@ export class DotContainerSelectorLayoutComponent implements OnInit {
 
     private getContainersList(filter = '', offset = 0): void {
         this.paginationService.filter = filter;
-        this.paginationService.getWithOffset(offset).subscribe((items) => {
-            this.currentContainers = this.setIdentifierReference(items.splice(0));
-            this.totalRecords = this.totalRecords || this.paginationService.totalRecords;
-        });
+        this.paginationService
+            .getWithOffset<DotContainer[]>(offset)
+            .subscribe((items: DotContainer[]) => {
+                this.currentContainers = this.setIdentifierReference(items.splice(0));
+                this.totalRecords = this.totalRecords || this.paginationService.totalRecords;
+            });
     }
 
     private setIdentifierReference(items: DotContainer[]): DotContainer[] {

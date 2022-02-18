@@ -22,6 +22,7 @@ import { DotWorkflowsActionsService } from '@services/dot-workflows-actions/dot-
 import { DotWizardService } from '@services/dot-wizard/dot-wizard.service';
 import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import { DotPage } from '@models/dot-page/dot-page.model';
+import { DotWorkflowPayload } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-edit-page-workflows-actions',
@@ -32,7 +33,7 @@ import { DotPage } from '@models/dot-page/dot-page.model';
 export class DotEditPageWorkflowsActionsComponent implements OnChanges {
     @Input() page: DotPage;
 
-    @Output() fired: EventEmitter<any> = new EventEmitter();
+    @Output() fired: EventEmitter<DotCMSContentlet> = new EventEmitter();
 
     actionsAvailable: boolean;
     actions: Observable<MenuItem[]>;
@@ -96,14 +97,14 @@ export class DotEditPageWorkflowsActionsComponent implements OnChanges {
 
     private openWizard(workflow: DotCMSWorkflowAction): void {
         this.dotWizardService
-            .open(
+            .open<DotWorkflowPayload>(
                 this.dotWorkflowEventHandlerService.setWizardInput(
                     workflow,
                     this.dotMessageService.get('Workflow-Action')
                 )
             )
             .pipe(take(1))
-            .subscribe((data: { [key: string]: any }) => {
+            .subscribe((data: DotWorkflowPayload) => {
                 this.fireWorkflowAction(
                     workflow,
                     this.dotWorkflowEventHandlerService.processWorkflowPayload(
@@ -114,9 +115,9 @@ export class DotEditPageWorkflowsActionsComponent implements OnChanges {
             });
     }
 
-    private fireWorkflowAction(
+    private fireWorkflowAction<T = { [key: string]: string }>(
         workflow: DotCMSWorkflowAction,
-        data?: { [key: string]: any }
+        data?: T
     ): void {
         const currentMenuActions = this.actions;
         this.dotWorkflowActionsFireService

@@ -146,6 +146,8 @@ describe('DotPageStateService', () => {
             it('should lock', () => {
                 spyOn(dotContentletLockerService, 'lock').and.returnValue(
                     of({
+                        id: '',
+                        inode: '',
                         message: 'locked'
                     })
                 );
@@ -169,6 +171,8 @@ describe('DotPageStateService', () => {
             it('should unlock', () => {
                 spyOn(dotContentletLockerService, 'unlock').and.returnValue(
                     of({
+                        id: '',
+                        inode: '',
                         message: 'unlocked'
                     })
                 );

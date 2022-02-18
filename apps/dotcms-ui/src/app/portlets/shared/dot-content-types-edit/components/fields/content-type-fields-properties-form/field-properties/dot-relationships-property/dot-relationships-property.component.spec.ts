@@ -36,7 +36,7 @@ class TestNewRelationshipsComponent {
     editing: boolean;
 
     @Output()
-    change: EventEmitter<any> = new EventEmitter();
+    switch: EventEmitter<any> = new EventEmitter();
 }
 
 @Component({
@@ -45,7 +45,7 @@ class TestNewRelationshipsComponent {
 })
 class TestEditRelationshipsComponent {
     @Output()
-    change: EventEmitter<any> = new EventEmitter();
+    switch: EventEmitter<any> = new EventEmitter();
 }
 
 describe('DotRelationshipsPropertyComponent', () => {

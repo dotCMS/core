@@ -26,7 +26,7 @@ export class DotNewRelationshipsComponent implements OnInit, OnChanges {
 
     @Input() editing: boolean;
 
-    @Output() change: EventEmitter<DotRelationshipsPropertyValue> = new EventEmitter();
+    @Output() switch: EventEmitter<DotRelationshipsPropertyValue> = new EventEmitter();
 
     contentTypeCurrentPage: Observable<DotCMSContentType[]>;
 
@@ -59,7 +59,7 @@ export class DotNewRelationshipsComponent implements OnInit, OnChanges {
      * @memberof DotNewRelationshipsComponent
      */
     triggerChanged(): void {
-        this.change.next({
+        this.switch.next({
             velocityVar:
                 this.velocityVar || (this.contentType ? this.contentType.variable : undefined),
             cardinality: this.currentCardinalityIndex

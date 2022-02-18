@@ -7,7 +7,7 @@ import {
     SimpleChanges,
     OnChanges
 } from '@angular/core';
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField, DotDynamicFieldComponent } from '@dotcms/dotcms-models';
 import { FormGroup } from '@angular/forms';
 import { FieldPropertyService } from '../../../service';
 
@@ -34,9 +34,8 @@ export class DynamicFieldPropertyDirective implements OnChanges {
     private createComponent(property): void {
         const component = this.fieldPropertyService.getComponent(property);
         const componentFactory = this.resolver.resolveComponentFactory(component);
-        const componentRef: ComponentRef<any> = this.viewContainerRef.createComponent(
-            componentFactory
-        );
+        const componentRef: ComponentRef<DotDynamicFieldComponent> =
+            this.viewContainerRef.createComponent(componentFactory);
 
         componentRef.instance.property = {
             field: this.field,

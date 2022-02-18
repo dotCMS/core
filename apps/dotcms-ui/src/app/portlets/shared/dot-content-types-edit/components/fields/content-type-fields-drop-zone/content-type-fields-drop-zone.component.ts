@@ -101,9 +101,8 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
                         acc: DotCMSContentTypeLayoutColumn[],
                         current: DotCMSContentTypeLayoutColumn
                     ) => {
-                        const indexOfBreak = ContentTypeFieldsDropZoneComponent.findColumnBreakIndex(
-                            current.fields
-                        );
+                        const indexOfBreak =
+                            ContentTypeFieldsDropZoneComponent.findColumnBreakIndex(current.fields);
                         if (indexOfBreak > -1) {
                             const firstColFields = current.fields.slice(0, indexOfBreak);
                             const secondColFields = current.fields.slice(indexOfBreak + 1);
@@ -273,7 +272,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     removeFieldsWithoutId(): void {
-        const fieldRows: any = this.fieldRows;
+        const fieldRows: DotCMSContentTypeLayoutRow[] = this.fieldRows;
 
         // TODO needs an improvement for performance reasons
         fieldRows.forEach((row, rowIndex) => {

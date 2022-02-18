@@ -1,4 +1,13 @@
-import { Component, EventEmitter, OnDestroy, OnInit, Output, Input, SimpleChanges, OnChanges } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    OnDestroy,
+    OnInit,
+    Output,
+    Input,
+    SimpleChanges,
+    OnChanges
+} from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 
 import { Subject } from 'rxjs';
@@ -8,6 +17,17 @@ import { DotContainer } from '@shared/models/container/dot-container.model';
 import { DotTemplateItem } from '../store/dot-template.store';
 import { DotPortletToolbarActions } from '@models/dot-portlet-toolbar.model/dot-portlet-toolbar-actions.model';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
+
+interface MonacoEditorOperation {
+    range: number;
+    text: string;
+    forceMoveMarkers: boolean;
+}
+
+interface MonacoEditor {
+    getSelection: () => number;
+    executeEdits: (action: string, data: MonacoEditorOperation[]) => void;
+}
 
 @Component({
     selector: 'dot-template-advanced',
@@ -23,28 +43,25 @@ export class DotTemplateAdvancedComponent implements OnInit, OnDestroy, OnChange
     @Input() didTemplateChanged: boolean;
 
     // `any` because the type of the editor in the ngx-monaco-editor package is not typed
-    editor: any;
+    editor: MonacoEditor;
     form: FormGroup;
     actions: DotPortletToolbarActions;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        private fb: FormBuilder,
-        private dotMessageService: DotMessageService
-    ) {}
+    constructor(private fb: FormBuilder, private dotMessageService: DotMessageService) {}
 
     ngOnInit(): void {
         this.form = this.fb.group({ body: this.body });
 
-        this.form
-            .valueChanges.pipe(takeUntil(this.destroy$))
+        this.form.valueChanges
+            .pipe(takeUntil(this.destroy$))
             .subscribe(() => this.updateTemplate.emit(this.form.value));
 
         this.actions = this.getActions(!this.didTemplateChanged);
     }
 
-    ngOnChanges(changes: SimpleChanges){
-        if( changes.didTemplateChanged ) {
+    ngOnChanges(changes: SimpleChanges) {
+        if (changes.didTemplateChanged) {
             this.actions = this.getActions(!changes.didTemplateChanged.currentValue);
         }
     }
@@ -60,7 +77,7 @@ export class DotTemplateAdvancedComponent implements OnInit, OnDestroy, OnChange
      * @param {*} editor
      * @memberof DotTemplateComponent
      */
-    initEditor(editor: any): void {
+    initEditor(editor: MonacoEditor): void {
         this.editor = editor;
     }
 

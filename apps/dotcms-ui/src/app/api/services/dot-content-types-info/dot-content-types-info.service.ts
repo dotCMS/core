@@ -142,7 +142,7 @@ export class DotContentTypesInfoService {
 
     // tslint:disable-next-line:cyclomatic-complexity
     private getItem(type: string, prop: string): string {
-        let result: any;
+        let result: string;
         // TODO: Remove this when set Material Design icons on NgPrime native components - BEGIN
         let oldValue = false;
         if (type.indexOf('_old') > 0) {

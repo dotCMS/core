@@ -90,13 +90,13 @@ class MockSearchableDropdownComponent implements ControlValueAccessor {
     @Output() filterChange: EventEmitter<string> = new EventEmitter();
     @Output() pageChange: EventEmitter<PaginationEvent> = new EventEmitter();
 
-    writeValue(): void {}
+    writeValue(): void {/* */}
 
-    registerOnChange(): void {}
+    registerOnChange(): void {/* */}
 
-    registerOnTouched(): void {}
+    registerOnTouched(): void {/* */}
 
-    setDisabledState?(): void {}
+    setDisabledState?(): void {/* */}
 }
 
 @Component({
@@ -108,7 +108,7 @@ class MockCardinalitySelectorComponent {
 
     @Input() disabled: boolean;
 
-    @Output() change: EventEmitter<DotRelationshipCardinality> = new EventEmitter();
+    @Output() switch: EventEmitter<DotRelationshipCardinality> = new EventEmitter();
 }
 
 @Injectable()
@@ -247,7 +247,7 @@ describe('DotNewRelationshipsComponent', () => {
         it('should tigger change event when content type changed', (done) => {
             fixtureHostComponent.detectChanges();
 
-            comp.change.subscribe((relationshipSelect: any) => {
+            comp.switch.subscribe((relationshipSelect: any) => {
                 expect(relationshipSelect).toEqual({
                     velocityVar: 'banner',
                     cardinality: undefined
@@ -280,7 +280,7 @@ describe('DotNewRelationshipsComponent', () => {
 
                 fixtureHostComponent.detectChanges();
 
-                comp.change.subscribe((relationshipSelect: any) => {
+                comp.switch.subscribe((relationshipSelect: any) => {
                     expect(relationshipSelect).toEqual({
                         velocityVar: `${contentTypeMock.name}.${contentTypeMock.variable}`,
                         cardinality: undefined
@@ -311,7 +311,7 @@ describe('DotNewRelationshipsComponent', () => {
         });
 
         it('should tigger change event when cardinality changed', (done) => {
-            comp.change.subscribe((relationshipSelect: any) => {
+            comp.switch.subscribe((relationshipSelect: any) => {
                 expect(relationshipSelect).toEqual({
                     velocityVar: undefined,
                     cardinality: 0
@@ -320,7 +320,7 @@ describe('DotNewRelationshipsComponent', () => {
             });
 
             const dotCardinalitySelector = de.query(By.css('dot-cardinality-selector'));
-            dotCardinalitySelector.componentInstance.change.emit(0);
+            dotCardinalitySelector.componentInstance.switch.emit(0);
         });
     });
 });

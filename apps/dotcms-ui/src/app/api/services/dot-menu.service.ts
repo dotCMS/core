@@ -31,7 +31,7 @@ export class DotMenuService {
      */
     getUrlById(id: string): Observable<string> {
         return this.getMenuItems().pipe(
-            filter((res: any) => !res.angular && res.id === id),
+            filter((res: DotMenuItem) => !res.angular && res.id === id),
             first(),
             pluck('url')
         );

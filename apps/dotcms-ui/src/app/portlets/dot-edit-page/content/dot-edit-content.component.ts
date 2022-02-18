@@ -39,13 +39,8 @@ import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot
 import { HttpErrorResponse } from '@angular/common/http';
 import { DotPropertiesService } from '@services/dot-properties/dot-properties.service';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
-
-interface DotIframeEditEvent {
-    container?: DOMStringMap;
-    dataset?: DOMStringMap;
-    data?: { [key: string]: DOMStringMap };
-    name: string;
-}
+import { DotContentletEventAddContentType } from './services/dot-edit-content-html/models/dot-contentlets-events.model';
+import { DotIframeEditEvent } from '@dotcms/dotcms-models';
 
 /**
  * Edit content page component, render the html of a page and bind all events to make it ediable.
@@ -337,7 +332,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         return null;
     }
 
-    private addContentType($event: DotIframeEditEvent): void {
+    private addContentType($event: DotContentletEventAddContentType): void {
         const container: DotPageContainer = {
             identifier: $event.data.container.dotIdentifier,
             uuid: $event.data.container.dotUuid

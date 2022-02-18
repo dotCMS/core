@@ -101,11 +101,11 @@ export class DotEditContentToolbarHtmlService {
     /**
      * Return the HTML of the buttons for the contentlets
      *
-     * @param {{ [key: string]: any }} contentletDataset
+     * @param {{ [key: string]: string }} contentletDataset
      * @returns {string}
      * @memberof DotEditContentToolbarHtmlService
      */
-    getContentButton(contentletDataset: { [key: string]: any }): string {
+    getContentButton(contentletDataset: { [key: string]: string }): string {
         const identifier: string = contentletDataset.dotIdentifier;
         const inode: string = contentletDataset.dotInode;
         const canEdit: boolean = contentletDataset.dotCanEdit === 'true';

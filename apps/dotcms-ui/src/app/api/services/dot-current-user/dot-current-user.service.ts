@@ -25,10 +25,10 @@ export class DotCurrentUserService {
      */
     getCurrentUser(): Observable<DotCurrentUser> {
         return this.coreWebService
-            .request({
+            .request<DotCurrentUser>({
                 url: this.currentUsersUrl
             })
-            .pipe(map((res: any) => <DotCurrentUser>res));
+            .pipe(map((res: DotCurrentUser) => res));
     }
 
     /**

@@ -73,7 +73,7 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState> {
         if (!dotRenderedPageState.page.canEdit) {
             return throwError(
                 new HttpErrorResponse(
-                    new HttpResponse<DotCMSResponse<any>>({
+                    new HttpResponse<DotCMSResponse<DotPageRenderState>>({
                         body: null,
                         status: HttpCode.FORBIDDEN,
                         headers: null,
@@ -84,7 +84,7 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState> {
         } else if (!dotRenderedPageState.layout) {
             return throwError(
                 new HttpErrorResponse(
-                    new HttpResponse<DotCMSResponse<any>>({
+                    new HttpResponse<DotCMSResponse<DotPageRenderState>>({
                         body: null,
                         status: HttpCode.FORBIDDEN,
                         headers: new HttpHeaders({

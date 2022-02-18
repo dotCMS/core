@@ -32,7 +32,7 @@ interface CardinalitySorted {
 })
 export class DotEditRelationshipsComponent implements OnInit {
     @Output()
-    change: EventEmitter<DotRelationshipsPropertyValue> = new EventEmitter();
+    switch: EventEmitter<DotRelationshipsPropertyValue> = new EventEmitter();
 
     currentPage: Observable<{ label: string; relationship: DotRelationship }[]>;
 
@@ -75,7 +75,7 @@ export class DotEditRelationshipsComponent implements OnInit {
      * @memberof DotEditRelationshipsComponent
      */
     triggerChanged(relationship: DotRelationship): void {
-        this.change.next({
+        this.switch.next({
             velocityVar: relationship.relationTypeValue,
             cardinality: relationship.cardinality
         });

@@ -102,7 +102,7 @@ export class DotTemplateThumbnailFieldComponent implements ControlValueAccessor 
         }
     }
 
-    propagateChange = (_: any) => {
+    propagateChange = (_: unknown) => {
         // do nothing
     };
 
@@ -110,7 +110,7 @@ export class DotTemplateThumbnailFieldComponent implements ControlValueAccessor 
         this.loading = true;
 
         this.dotCrudService
-            .getDataById('/api/content', id, 'contentlets')
+            .getDataById<DotCMSTemplateThumbnail[]>('/api/content', id, 'contentlets')
             .pipe(
                 finalize(() => {
                     this.loading = false;

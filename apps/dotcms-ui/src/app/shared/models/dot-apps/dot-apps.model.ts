@@ -39,7 +39,7 @@ export interface DotAppsSecrets {
 
 export interface DotAppsSaveData {
     [key: string]: {
-        hidden: string;
+        hidden: boolean;
         value: string;
     };
 }

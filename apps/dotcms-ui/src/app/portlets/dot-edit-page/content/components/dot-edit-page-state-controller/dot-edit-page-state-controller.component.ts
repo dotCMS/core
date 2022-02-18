@@ -223,7 +223,7 @@ export class DotEditPageStateControllerComponent implements OnChanges {
         );
     }
 
-    private showLockConfirmDialog(): Promise<any> {
+    private showLockConfirmDialog(): Promise<string> {
         return new Promise((resolve, reject) => {
             this.dotAlertConfirmService.confirm({
                 accept: resolve,
@@ -238,7 +238,7 @@ export class DotEditPageStateControllerComponent implements OnChanges {
         });
     }
 
-    private showPersonalizationConfirmDialog(): Promise<any> {
+    private showPersonalizationConfirmDialog(): Promise<string> {
         return new Promise((resolve, reject) => {
             this.dotAlertConfirmService.confirm({
                 accept: resolve,

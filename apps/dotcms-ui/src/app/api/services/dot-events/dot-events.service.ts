@@ -27,7 +27,7 @@ export class DotEventsService {
      *
      * @param DotEvent dotEvent
      */
-    notify(name: string, data?: any): void {
+    notify(name: string, data?: unknown): void {
         this.subject.next({
             name: name,
             data: data
