@@ -515,7 +515,8 @@ import org.junit.runners.Suite.SuiteClasses;
         MailAPIImplTest.class,
         BinaryMapTest.class,
         Task220202RemoveFKStructureFolderConstraintTest.class,
-        PublisherAPIImplTest.class
+        PublisherAPIImplTest.class,
+        Task220202RemoveFKStructureFolderConstraintTest.class
 })
 public class MainSuite {
 

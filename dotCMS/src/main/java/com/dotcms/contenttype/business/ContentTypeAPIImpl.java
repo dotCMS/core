@@ -12,6 +12,7 @@ import com.dotcms.contenttype.model.event.ContentTypeSavedEvent;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -21,6 +22,7 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.BaseRuntimeInternationalizationException;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.google.common.collect.ImmutableList;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.ContentTypeUtil;
@@ -195,7 +197,62 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     }
   }
 
+  @WrapInTransaction
+  @Override
+  public ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean) throws DotDataException, DotSecurityException {
 
+    final ContentType sourceContentType = copyContentTypeBean.getSourceContentType();
+    final ContentTypeBuilder builder = ContentTypeBuilder.builder(sourceContentType).name(copyContentTypeBean.getName()).id(null).modDate(new Date()).variable(null);
+
+    if (UtilMethods.isSet(copyContentTypeBean.getNewVariable())) {
+      builder.variable(copyContentTypeBean.getNewVariable());
+    }
+
+    if (UtilMethods.isSet(copyContentTypeBean.getFolder())) {
+      builder.folder(copyContentTypeBean.getFolder());
+    }
+
+    if (UtilMethods.isSet(copyContentTypeBean.getHost())) {
+      builder.host(copyContentTypeBean.getHost());
+    }
+
+    if (UtilMethods.isSet(copyContentTypeBean.getIcon())) {
+      builder.icon(copyContentTypeBean.getIcon());
+    }
+
+    Logger.debug(this, ()->"Creating the content type: " + copyContentTypeBean.getName()
+            + ", from: " + copyContentTypeBean.getSourceContentType().variable());
+
+    final ContentType contentType    = builder.build();
+    final ContentType newContentType = this.save(contentType);
+    final List<Field> currentFields  = sourceContentType.fields();
+    final Map<String, Field> baseFieldMap = newContentType.fieldMap();
+
+    Logger.debug(this, ()->"Saving the fields for the the content type: " + copyContentTypeBean.getName()
+            + ", from: " + copyContentTypeBean.getSourceContentType().variable());
+
+    for (final Field currentField : currentFields) {
+
+      final Field newField = !baseFieldMap.containsKey(currentField.variable())?
+                FieldBuilder.builder(currentField).contentTypeId(newContentType.id()).id(null).build():
+                baseFieldMap.get(currentField.variable());
+
+      final Field savedField = APILocator.getContentTypeFieldAPI().save(newField, user);
+
+        final List<FieldVariable> currentFieldVariables = currentField.fieldVariables();
+        if (UtilMethods.isSet(currentFields)) {
+          for (final FieldVariable fieldVariable : currentFieldVariables) {
+
+            final FieldVariable newFieldVariable = ImmutableFieldVariable.builder().from(fieldVariable).
+                    fieldId(savedField.id()).id(null).userId(user.getUserId()).build();
+
+            APILocator.getContentTypeFieldAPI().save(newFieldVariable, user);
+          }
+        }
+    }
+
+    return newContentType;
+  }
 
   @WrapInTransaction
   @Override
@@ -491,6 +548,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     // Checks if the folder has been set, if so checks the host where that folder lives and set
     // it.
     if (UtilMethods.isSet(contentTypeToSave.folder()) && !contentTypeToSave.folder().equals(Folder.SYSTEM_FOLDER)) {
+
       contentTypeToSave = ContentTypeBuilder.builder(contentTypeToSave)
           .host(APILocator.getFolderAPI().find(contentTypeToSave.folder(), user, false).getHostId()).build();
     } else if (UtilMethods.isSet(contentTypeToSave.host())) {// If there is no folder set, check
