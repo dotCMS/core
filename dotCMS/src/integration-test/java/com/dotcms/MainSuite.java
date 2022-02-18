@@ -12,6 +12,7 @@ import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
+import com.dotcms.csspreproc.CSSCacheTest;
 import com.dotcms.dotpubsub.PostgresPubSubImplTest;
 import com.dotcms.dotpubsub.RedisPubSubImplTest;
 import com.dotcms.ema.EMAWebInterceptorTest;
@@ -512,6 +513,7 @@ import org.junit.runners.Suite.SuiteClasses;
         XmlToolTest.class,
         LanguageFolderTest.class,
         MailAPIImplTest.class,
+        CSSCacheTest.class,
         com.dotcms.rendering.velocity.viewtools.content.BinaryMapTest.class,
         Task220202RemoveFKStructureFolderConstraintTest.class
 })
