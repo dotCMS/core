@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { MessageService } from 'primeng/api';
 
 export interface Car {
@@ -11,7 +11,7 @@ export interface Car {
 }
 
 @Component({
-    selector: 'app-p-defer',
+    selector: 'dot-p-defer',
     template: `
         <div style="height:1200px">Table is not loaded yet, scroll down to initialize it.</div>
 
@@ -41,7 +41,7 @@ export interface Car {
         </div>
     `
 })
-export class DeferComponent {
+export class DeferComponent implements OnInit {
     cars: [];
 
     constructor(private messageService: MessageService) {}

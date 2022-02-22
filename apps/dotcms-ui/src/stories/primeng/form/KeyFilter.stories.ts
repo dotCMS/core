@@ -54,7 +54,10 @@ const KeyFilterTemplate = `
   </form>
 `;
 
-const Template: Story<any> = (props: any) => {
+const Template: Story<{
+    ccRegex: RegExp;
+    inputValue: string;
+}> = (props: { ccRegex: RegExp; inputValue: string }) => {
     const template = KeyFilterTemplate;
     return {
         props,

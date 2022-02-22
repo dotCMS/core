@@ -1,5 +1,12 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { HttpCode, LoggerService, LoginService, User, DotLoginParams } from '@dotcms/dotcms-js';
+import {
+    HttpCode,
+    LoggerService,
+    LoginService,
+    User,
+    DotLoginParams,
+    ResponseView
+} from '@dotcms/dotcms-js';
 import { SelectItem } from 'primeng/api';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { take, takeUntil, tap } from 'rxjs/operators';
@@ -11,6 +18,7 @@ import { ActivatedRoute, Params } from '@angular/router';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotLoginInformation, DotLoginLanguage } from '@dotcms/dotcms-models';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
     selector: 'dot-login-component',
@@ -82,7 +90,7 @@ export class DotLoginComponent implements OnInit, OnDestroy {
                     this.dotRouterService.goToMain(user['editModeUrl']);
                     this.dotFormatDateService.setLang(user.languageId);
                 },
-                (res: any) => {
+                (res: HttpErrorResponse) => {
                     if (this.isBadRequestOrUnathorized(res.status)) {
                         this.setMessage(res.error.errors[0].message, true);
                     } else {

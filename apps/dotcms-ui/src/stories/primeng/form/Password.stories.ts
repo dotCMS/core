@@ -17,13 +17,12 @@ export default {
         moduleMetadata({
             imports: [PasswordModule, BrowserAnimationsModule]
         })
-    ],
-    args: {}
+    ]
 } as Meta;
 
 const PasswordTemplate = `<input type="password" pPassword />`;
 
-const Template: Story<any> = (props: any) => {
+const Template: Story<never> = (props: never) => {
     const template = PasswordTemplate;
     return {
         props,

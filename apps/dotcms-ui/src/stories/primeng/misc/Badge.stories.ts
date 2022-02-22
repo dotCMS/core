@@ -31,7 +31,7 @@ const TooltipSecondaryTemplate = `
   <p><span class="p-badge p-badge-secondary p-badge-xl">6</span></p>
 `;
 
-export const Primary: Story = (props: any) => {
+export const Primary: Story<never> = (props: never) => {
     return {
         props,
         template: TooltipPrimaryTemplate
@@ -46,7 +46,7 @@ Primary.parameters = {
     }
 };
 
-export const Secondary: Story = (props: any) => {
+export const Secondary: Story = (props: never) => {
     return {
         props,
         template: TooltipSecondaryTemplate

@@ -29,9 +29,15 @@ export default {
     }
 } as Meta;
 
+type Message = {
+    severity: string;
+    summary: string;
+    detail: string;
+};
+
 const MessageTemplate = `<p-messages [(value)]="messages"></p-messages>`;
 
-const Template: Story<any> = () => {
+const Template: Story<{ messages: Message[] }> = () => {
     const template = MessageTemplate;
     return {
         props: {

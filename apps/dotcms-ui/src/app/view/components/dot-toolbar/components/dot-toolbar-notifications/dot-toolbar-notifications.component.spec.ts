@@ -58,7 +58,7 @@ class MockDotcmsEventsService {
 
 @Injectable()
 class MockLoginService {
-    public watchUser(_func: Function): void {}
+    public watchUser(_func: (params?: unknown) => void): void {}
 }
 
 @Injectable()

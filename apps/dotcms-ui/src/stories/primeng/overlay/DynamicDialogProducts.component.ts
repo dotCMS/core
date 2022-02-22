@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ProductService } from './SharedProducts.service';
 import { Product } from './Product.interface';
 import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
@@ -27,10 +27,10 @@ export const ProductsTableTemplate = `
 `;
 
 @Component({
-    selector: 'app-p-dynamic-dialog',
+    selector: 'dot-p-dynamic-dialog',
     template: ProductsTableTemplate
 })
-export class DynamicDialogProductsComponent {
+export class DynamicDialogProductsComponent implements OnInit {
     products: Product[];
 
     constructor(

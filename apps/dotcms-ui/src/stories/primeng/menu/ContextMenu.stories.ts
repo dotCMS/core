@@ -25,7 +25,7 @@ const ContextMenuTemplate = `
   <p-contextMenu [target]="img" [model]="items"></p-contextMenu>
 `;
 
-const Template: Story<any> = () => {
+const Template: Story<never> = () => {
     const template = ContextMenuTemplate;
     return {
         props: {

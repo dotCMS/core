@@ -76,7 +76,13 @@ const InPlaceTemplate = `
 </p-inplace>
 `;
 
-const Template: Story<any> = (props: any) => {
+type Car = {
+    brand: string;
+    color: string;
+    vin: string;
+};
+
+const Template: Story<{ records: Car[] }> = (props: { records: Car[] }) => {
     const template = InPlaceTemplate;
     return {
         props,

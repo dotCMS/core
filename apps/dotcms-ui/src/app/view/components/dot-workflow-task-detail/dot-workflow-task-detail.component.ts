@@ -15,10 +15,10 @@ import { DotWorkflowTaskDetailService } from './services/dot-workflow-task-detai
 })
 export class DotWorkflowTaskDetailComponent implements OnInit {
     @Output()
-    close: EventEmitter<any> = new EventEmitter();
+    shutdown: EventEmitter<unknown> = new EventEmitter();
 
     @Output()
-    custom: EventEmitter<any> = new EventEmitter();
+    custom: EventEmitter<CustomEvent<Record<string, unknown>>> = new EventEmitter();
 
     url$: Observable<string>;
     header$: Observable<string>;
@@ -37,6 +37,6 @@ export class DotWorkflowTaskDetailComponent implements OnInit {
      */
     onClose(): void {
         this.dotWorkflowTaskDetailService.clear();
-        this.close.emit();
+        this.shutdown.emit();
     }
 }

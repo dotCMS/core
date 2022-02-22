@@ -120,7 +120,9 @@ const InputGroupTemplate = `
 </div>
 `;
 
-const Template: Story<any> = (props: any) => {
+const Template: Story<{
+    text: string;
+}> = (props: { text: string }) => {
     const template = InputGroupTemplate;
     return {
         props,

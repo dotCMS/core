@@ -18,13 +18,12 @@ export default {
         moduleMetadata({
             imports: [TooltipModule, ButtonModule, BrowserAnimationsModule]
         })
-    ],
-    args: {}
+    ]
 } as Meta;
 
 const TooltipTemplate = `<button pButton label="Submit" icon="pi pi-check" pTooltip="Edit" tooltipPosition="bottom"></button>`;
 
-const Template: Story<any> = (props: any) => {
+const Template: Story<never> = (props: never) => {
     const template = TooltipTemplate;
     return {
         props,

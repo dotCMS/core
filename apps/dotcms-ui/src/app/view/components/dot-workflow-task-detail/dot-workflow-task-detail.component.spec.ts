@@ -72,7 +72,7 @@ describe('DotWorkflowTaskDetailComponent', () => {
 
             spyOn(component, 'onClose').and.callThrough();
             spyOn(dotWorkflowTaskDetailService, 'clear');
-            spyOn(component.close, 'emit');
+            spyOn(component.shutdown, 'emit');
             spyOn(component.custom, 'emit');
             fixture.detectChanges();
         });
@@ -97,12 +97,18 @@ describe('DotWorkflowTaskDetailComponent', () => {
             it('should call clear and emit close', () => {
                 dotIframeDialog.triggerEventHandler('close', {});
                 expect(dotWorkflowTaskDetailService.clear).toHaveBeenCalledTimes(1);
-                expect(component.close.emit).toHaveBeenCalledTimes(1);
+                expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
             });
 
             it('should call clear and emit close', () => {
-                dotIframeDialog.triggerEventHandler('custom', { hello: 'world' });
-                expect(component.custom.emit).toHaveBeenCalledWith({ hello: 'world' });
+                const customEvent = new CustomEvent('custom', {
+                    detail: {
+                        hello: 'world'
+                    }
+                });
+
+                dotIframeDialog.triggerEventHandler('custom', customEvent);
+                expect(component.custom.emit).toHaveBeenCalledWith(customEvent);
             });
         });
     });

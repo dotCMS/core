@@ -43,9 +43,9 @@ export class ProductService {
 
     getProductsSmall() {
         return this.http
-            .get<any>('../../assets/products-small.json')
+            .get<{ data: Product[] }>('../../assets/products-small.json')
             .toPromise()
-            .then((res) => <Product[]>res.data)
+            .then((res) => res.data)
             .then((data) => {
                 return data;
             });
@@ -53,9 +53,9 @@ export class ProductService {
 
     getProducts() {
         return this.http
-            .get<any>('../../assets/products-small.json')
+            .get<{ data: Product[] }>('../../assets/products-small.json')
             .toPromise()
-            .then((res) => <Product[]>res.data)
+            .then((res) => res.data)
             .then((data) => {
                 return data;
             });
@@ -63,9 +63,9 @@ export class ProductService {
 
     getProductsWithOrdersSmall() {
         return this.http
-            .get<any>('../../assets/products-small.json')
+            .get<{ data: Product[] }>('../../assets/products-small.json')
             .toPromise()
-            .then((res) => <Product[]>res.data)
+            .then((res) => res.data)
             .then((data) => {
                 return data;
             });

@@ -87,7 +87,12 @@ const FocusTrapTemplate = `
 </div>
 `;
 
-const Template: Story<any> = (props: any) => {
+type City = {
+    name: string;
+    code: string;
+};
+
+const Template: Story<City[]> = (props: City[]) => {
     const template = FocusTrapTemplate;
     return {
         props,

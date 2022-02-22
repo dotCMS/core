@@ -41,7 +41,12 @@ const DialogTemplate = `
   </p-dialog>
 `;
 
-const Template: Story<any> = (props: any) => {
+type Args = {
+    displayBasic: boolean;
+    showBasicDialog: () => void;
+};
+
+const Template: Story<Args> = (props: Args) => {
     const template = DialogTemplate;
     return {
         props,

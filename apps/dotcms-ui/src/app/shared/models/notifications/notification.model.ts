@@ -9,3 +9,9 @@ export interface DotNotificationResponse {
     total: number;
     totalUnreadNotifications: number;
 }
+
+export interface NotificationIcons {
+    ERROR: string;
+    INFO: string;
+    WARNING: string;
+}

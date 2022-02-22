@@ -10,7 +10,7 @@ import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler
     providers: [],
     selector: 'dot-workflow-task',
     template:
-        '<dot-workflow-task-detail (close)="onCloseWorkflowTaskEditor()" (custom)="onCustomEvent($event)"></dot-workflow-task-detail>'
+        '<dot-workflow-task-detail (shutdown)="onCloseWorkflowTaskEditor()" (custom)="onCustomEvent($event)"></dot-workflow-task-detail>'
 })
 export class DotWorkflowTaskComponent implements OnInit {
     constructor(

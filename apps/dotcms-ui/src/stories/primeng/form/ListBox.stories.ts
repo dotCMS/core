@@ -2,6 +2,7 @@ import { Story, Meta } from '@storybook/angular/types-6-0';
 import { moduleMetadata } from '@storybook/angular';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ListboxModule } from 'primeng/listbox';
+import { NumberSymbol } from '@angular/common';
 
 export default {
     title: 'PrimeNG/Form/ListBox',
@@ -31,9 +32,18 @@ export default {
     }
 } as Meta;
 
+type City = {
+    label: string;
+    value: {
+        id: number;
+        name: string;
+        code: string;
+    };
+};
+
 const ListBoxTemplate = `<p-listbox [options]="cities" [(ngModel)]="selectedCity"></p-listbox>`;
 
-const Template: Story<any> = (props: any) => {
+const Template: Story<City[]> = (props: City[]) => {
     const template = ListBoxTemplate;
     return {
         props,

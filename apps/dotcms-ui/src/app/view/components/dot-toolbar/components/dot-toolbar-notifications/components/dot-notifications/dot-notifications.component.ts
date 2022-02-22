@@ -1,7 +1,6 @@
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 
-import { INotification } from '@models/notifications';
-
+import { INotification, NotificationIcons } from '@models/notifications';
 @Component({
     selector: 'dot-notifications-item',
     styleUrls: ['./dot-notifications-item.component.scss'],
@@ -10,12 +9,12 @@ import { INotification } from '@models/notifications';
 export class DotNotificationsItemComponent implements OnInit {
     @Input() data;
 
-    @Output() clear = new EventEmitter<Object>();
+    @Output() clear = new EventEmitter<Record<string, unknown>>();
 
     showLinkAction = false;
     showTitleLinked = false;
 
-    private notificationIcons: Object = {
+    private notificationIcons: NotificationIcons = {
         ERROR: 'exclamation-triangle',
         INFO: 'info-circle',
         WARNING: 'ban'
@@ -57,9 +56,9 @@ export class DotNotificationsItemComponent implements OnInit {
 })
 export class DotNotificationsListComponent {
     @Input() notifications: INotification[];
-    @Output() dismissNotification = new EventEmitter<Object>();
+    @Output() dismissNotification = new EventEmitter<Record<string, unknown>>();
 
-    onClearNotification($event): void {
+    onClearNotification($event: Record<string, unknown>): void {
         this.dismissNotification.emit($event);
     }
 }

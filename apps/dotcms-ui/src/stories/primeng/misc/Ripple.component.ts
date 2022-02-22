@@ -1,8 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { PrimeNGConfig } from 'primeng/api';
 
 @Component({
-    selector: 'app-p-button-ripple',
+    selector: 'dot-p-button-ripple',
     template: `<button
         type="button"
         pButton
@@ -11,7 +11,7 @@ import { PrimeNGConfig } from 'primeng/api';
         class="p-button-success"
     ></button>`
 })
-export class RippleComponent {
+export class RippleComponent implements OnInit {
     constructor(private primengConfig: PrimeNGConfig) {}
 
     ngOnInit() {

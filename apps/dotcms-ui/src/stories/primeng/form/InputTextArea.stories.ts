@@ -31,7 +31,7 @@ const InputTextAreaTemplateAutoRezise = `
   <textarea [rows]="5" [cols]="30" pInputTextarea autoResize="autoResize"></textarea>
 `;
 
-const Template: Story<any> = (props: any) => {
+const Template: Story<never> = (props: never) => {
     const template = InputTextAreaTemplate;
     return {
         props,

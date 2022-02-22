@@ -42,7 +42,7 @@ const RadioButtonTemplate = `
   </div>
 `;
 
-const Template: Story<any> = (props: any) => {
+const Template: Story<{ selectedValue: string }> = (props: { selectedValue: string }) => {
     const template = RadioButtonTemplate;
     return {
         props,

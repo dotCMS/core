@@ -35,7 +35,7 @@ export class DotIframeDialogComponent implements OnChanges, OnInit {
     close: EventEmitter<any> = new EventEmitter();
 
     @Output()
-    custom: EventEmitter<CustomEvent> = new EventEmitter();
+    custom: EventEmitter<CustomEvent<Record<string, unknown>>> = new EventEmitter();
 
     @Output()
     load: EventEmitter<any> = new EventEmitter();

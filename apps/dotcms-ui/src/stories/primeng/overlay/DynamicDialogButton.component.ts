@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { MessageService } from 'primeng/api';
 import { DynamicDialogProductsComponent } from './DynamicDialogProducts.component';
 import { Product } from './Product.interface';
@@ -6,7 +6,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 
 @Component({
-    selector: 'app-p-dialog-button',
+    selector: 'dpt-p-dialog-button',
     providers: [DialogService, MessageService],
     template: `<button
         type="button"
@@ -16,7 +16,7 @@ import { DynamicDialogRef } from 'primeng/dynamicdialog';
         label="Show"
     ></button>`
 })
-export class DynamicDialogButtonComponent {
+export class DynamicDialogButtonComponent implements OnDestroy {
     constructor(public dialogService: DialogService, public messageService: MessageService) {}
 
     ref: DynamicDialogRef;

@@ -152,7 +152,7 @@ describe('DotWorkflowTaskComponent', () => {
     }));
 
     it('should redirect to /workflow and refresh data when modal closed', () => {
-        taskDetail.triggerEventHandler('close', {});
+        taskDetail.triggerEventHandler('shutdown', {});
         expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/c/workflow');
         expect(dotIframeService.reloadData).toHaveBeenCalledWith('workflow');
     });

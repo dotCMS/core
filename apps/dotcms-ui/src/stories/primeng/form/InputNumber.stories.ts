@@ -28,7 +28,9 @@ const InputNumberTemplate = `
   <p-inputNumber [(ngModel)]="val" mode="decimal"></p-inputNumber>
 `;
 
-const Template: Story<any> = (props: any) => {
+const Template: Story<{
+    checked: boolean;
+}> = (props: { checked: boolean }) => {
     const template = InputNumberTemplate;
     return {
         props,

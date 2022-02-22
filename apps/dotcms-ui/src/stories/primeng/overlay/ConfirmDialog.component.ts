@@ -21,7 +21,7 @@ export const ConfirmDialogTemplate = `
 `;
 
 @Component({
-    selector: 'app-p-confirm-dialog',
+    selector: 'dot-p-confirm-dialog',
     template: ConfirmDialogTemplate
 })
 export class ConfirmDialogComponent {

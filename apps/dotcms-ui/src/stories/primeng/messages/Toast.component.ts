@@ -1,8 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { MessageService } from 'primeng/api';
 
 @Component({
-    selector: 'app-p-toast',
+    selector: 'dot-p-toast',
     template: `
         <p-toast></p-toast>
         <p-toast position="top-left" key="tl"></p-toast>
@@ -22,7 +22,7 @@ import { MessageService } from 'primeng/api';
         </p>
     `
 })
-export class ToastComponent {
+export class ToastComponent implements OnInit {
     constructor(private messageService: MessageService) {}
 
     ngOnInit() {
