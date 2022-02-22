@@ -1,19 +1,16 @@
 package com.dotcms.contenttype.model.type;
 
-import java.util.List;
-
-import com.dotmarketing.util.Config;
-import org.immutables.gson.Gson;
-import org.immutables.value.Value;
-
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.ImmutableCustomField;
 import com.dotcms.contenttype.model.field.ImmutableSelectField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
-import com.google.common.collect.ImmutableList;
+import com.dotmarketing.util.Config;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.common.collect.ImmutableList;
+import java.util.List;
+import org.immutables.value.Value;
 
 /**
  * Provides the basic outline of a Vanity URL Content Type in dotCMS. Vanity
@@ -28,7 +25,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
  */
 @JsonSerialize(as = ImmutableVanityUrlContentType.class)
 @JsonDeserialize(as = ImmutableVanityUrlContentType.class)
-@Gson.TypeAdapters
 @Value.Immutable
 public abstract class VanityUrlContentType extends ContentType implements Expireable,
 		MultilinguableFallback {
