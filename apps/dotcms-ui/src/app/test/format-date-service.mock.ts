@@ -1,24 +1,30 @@
+import { DotLocaleOptions } from '@services/dot-format-date-service';
 import { format } from 'date-fns';
-export class DotFormatDateServiceMock {
-    private _localeOptions: any;
 
-    get localeOptions(): any {
+export class DotFormatDateServiceMock {
+    private _localeOptions: DotLocaleOptions;
+
+    get localeOptions(): DotLocaleOptions {
         return this._localeOptions;
     }
 
-    set localeOptions(locale: any) {
+    set localeOptions(locale: DotLocaleOptions) {
         this._localeOptions = locale;
     }
 
-    setLang(lang: string) {}
+    setLang(_lang: string) {
+        /* */
+    }
 
-    isValid(date: string, formatPattern: string) {}
+    isValid(_date: string, _formatPattern: string) {
+        /* */
+    }
 
     format(date: Date, formatPattern: string) {
         return format(date, formatPattern);
     }
 
-    getRelative(time): string {
+    getRelative(_time): string {
         return '1 hour ago';
     }
 }

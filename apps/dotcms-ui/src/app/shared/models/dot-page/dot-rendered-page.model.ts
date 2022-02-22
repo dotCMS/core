@@ -3,27 +3,24 @@ import { DotEditPageViewAs } from '@models/dot-edit-page-view-as/dot-edit-page-v
 import { DotContainer, DotContainerStructure } from '@shared/models/container/dot-container.model';
 import { DotLayout, DotTemplate } from '@shared/models/dot-edit-layout-designer';
 
-export namespace DotPageRender {
-    export interface Parameters {
-        layout?: DotLayout;
-        page: DotPage;
-        containers?: {
-            [key: string]: {
-                container: DotContainer;
-                containerStructures?: DotContainerStructure[];
-            };
+export interface DotPageRenderParameters {
+    layout?: DotLayout;
+    page: DotPage;
+    containers?: {
+        [key: string]: {
+            container: DotContainer;
+            containerStructures?: DotContainerStructure[];
         };
-        template?: DotTemplate;
-        canCreateTemplate: boolean;
-        viewAs: DotEditPageViewAs;
-        numberContents: number;
-    }
+    };
+    template?: DotTemplate;
+    canCreateTemplate: boolean;
+    viewAs: DotEditPageViewAs;
+    numberContents: number;
 }
-
 export class DotPageRender {
-    constructor(private _params: DotPageRender.Parameters) {}
+    constructor(private _params: DotPageRenderParameters) {}
 
-    get params(): DotPageRender.Parameters {
+    get params(): DotPageRenderParameters {
         return this._params;
     }
 

@@ -21,13 +21,19 @@ import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
+import { DotCMSContentType } from '@dotcms/dotcms-models';
+
+type DotRowActions = {
+    pushPublish: boolean;
+    addToBundle: boolean;
+};
 
 /**
  * List of Content Types
- * use: listing-data-table.component
+ *
  * @export
  * @class DotContentTypesPortletComponent
-
+ * @implements {OnInit}
  */
 @Component({
     selector: 'dot-content-types',
@@ -36,14 +42,14 @@ import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 })
 export class DotContentTypesPortletComponent implements OnInit {
     @ViewChild('listing', { static: false }) listing: DotListingDataTableComponent;
+
     filterBy: string;
     showTable = false;
     paginatorExtraParams: { [key: string]: string };
-    public contentTypeColumns: DataTableColumn[];
-    public item: any;
-    public actionHeaderOptions: ActionHeaderOptions;
-    public rowActions: DotActionMenuItem[];
-    public addToBundleIdentifier: string;
+    contentTypeColumns: DataTableColumn[];
+    actionHeaderOptions: ActionHeaderOptions;
+    rowActions: DotActionMenuItem[];
+    addToBundleIdentifier: string;
 
     constructor(
         private contentTypesInfoService: DotContentTypesInfoService,
@@ -70,7 +76,7 @@ export class DotContentTypesPortletComponent implements OnInit {
             this.route.data.pipe(pluck('filterBy'), take(1))
         ).subscribe(([contentTypes, isEnterprise, environments, filterBy]) => {
             const baseTypes: StructureTypeView[] = contentTypes;
-            const rowActionsMap = {
+            const rowActionsMap: DotRowActions = {
                 pushPublish: isEnterprise && environments,
                 addToBundle: isEnterprise
             };
@@ -90,13 +96,25 @@ export class DotContentTypesPortletComponent implements OnInit {
         });
     }
 
-    editContentType(item: any): void {
+    /**
+     * Handler to edit a content type
+     *
+     * @param {DotCMSContentType} item
+     * @memberof DotContentTypesPortletComponent
+     */
+    editContentType(item: DotCMSContentType): void {
         this.router.navigate([`edit/${item.id}`], {
             relativeTo: this.route
         });
     }
 
-    public changeBaseTypeSelector(value: string) {
+    /**
+     * Change base type to the selected one
+     *
+     * @param {string} value
+     * @memberof DotContentTypesPortletComponent
+     */
+    changeBaseTypeSelector(value: string) {
         value !== ''
             ? this.listing.paginatorService.setExtraParams('type', value)
             : this.listing.paginatorService.deleteExtraParams('type');
@@ -131,7 +149,7 @@ export class DotContentTypesPortletComponent implements OnInit {
             actions.push({
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.content.add_to_bundle'),
-                    command: (item) => this.addToBundleContentType(item)
+                    command: (item: DotCMSContentType) => this.addToBundleContentType(item)
                 }
             });
         }
@@ -139,7 +157,7 @@ export class DotContentTypesPortletComponent implements OnInit {
         return actions;
     }
 
-    private createRowActions(rowActionsMap: any): DotActionMenuItem[] {
+    private createRowActions(rowActionsMap: DotRowActions): DotActionMenuItem[] {
         const listingActions: DotActionMenuItem[] = [
             ...this.getPublishActions(rowActionsMap.pushPublish, rowActionsMap.addToBundle)
         ];
@@ -162,6 +180,7 @@ export class DotContentTypesPortletComponent implements OnInit {
     }
 
     private removeIconsFromMenuItem(action: DotActionMenuItem): DotActionMenuItem {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { icon, ...noIconMenuItem } = action.menuItem;
         return {
             ...action,
@@ -188,7 +207,7 @@ export class DotContentTypesPortletComponent implements OnInit {
             {
                 fieldName: 'name',
                 header: this.dotMessageService.get('contenttypes.fieldname.structure.name'),
-                icon: (item: any): string => item.icon,
+                icon: (item: { icon: string }): string => item.icon,
                 sortable: true
             },
             {
@@ -226,7 +245,7 @@ export class DotContentTypesPortletComponent implements OnInit {
         this.router.navigate(params, { relativeTo: this.route });
     }
 
-    private removeConfirmation(item: any): void {
+    private removeConfirmation(item: DotCMSContentType): void {
         this.dotDialogService.confirm({
             accept: () => {
                 this.removeContentType(item);
@@ -243,7 +262,7 @@ export class DotContentTypesPortletComponent implements OnInit {
         });
     }
 
-    private removeContentType(item): void {
+    private removeContentType(item: DotCMSContentType): void {
         this.crudService
             .delete(`v1/contenttype/id`, item.id)
             .pipe(take(1))
@@ -255,14 +274,14 @@ export class DotContentTypesPortletComponent implements OnInit {
             );
     }
 
-    private pushPublishContentType(item: any) {
+    private pushPublishContentType(item: DotCMSContentType) {
         this.dotPushPublishDialogService.open({
             assetIdentifier: item.id,
             title: this.dotMessageService.get('contenttypes.content.push_publish')
         });
     }
 
-    private addToBundleContentType(item: any) {
+    private addToBundleContentType(item: DotCMSContentType) {
         this.addToBundleIdentifier = item.id;
     }
 }

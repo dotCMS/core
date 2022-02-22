@@ -1,10 +1,9 @@
-import { DotLoginLanguage } from '@models/dot-login/dot-login-language.model';
+export interface DotLoginLanguage {
+    country: string;
+    displayName: string;
+    language: string;
+}
 
-/**
- * Interface for system information.
- *
- * @interface
- */
 export interface DotLoginUserSystemInformation {
     authorizationType: string;
     backgroundColor: string;
@@ -17,4 +16,9 @@ export interface DotLoginUserSystemInformation {
     logo: string;
     serverId: string;
     version: string;
+}
+
+export interface DotLoginInformation {
+    i18nMessagesMap: { [key: string]: string };
+    entity: DotLoginUserSystemInformation;
 }

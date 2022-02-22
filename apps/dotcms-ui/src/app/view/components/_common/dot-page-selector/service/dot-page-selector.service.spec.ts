@@ -107,11 +107,11 @@ const mockGetPagedResponse = {
 export const expectedPagesMap: DotPageSelectorItem[] = [
     {
         label: `//${mockGetPagedResponse.entity[0].hostName}${mockGetPagedResponse.entity[0].path}`,
-        payload: (mockGetPagedResponse.entity[0] as unknown) as DotPageAsset
+        payload: mockGetPagedResponse.entity[0] as unknown as DotPageAsset
     },
     {
         label: `//${mockGetPagedResponse.entity[1].hostName}${mockGetPagedResponse.entity[1].path}`,
-        payload: (mockGetPagedResponse.entity[1] as unknown) as DotPageAsset
+        payload: mockGetPagedResponse.entity[1] as unknown as DotPageAsset
     }
 ];
 
@@ -194,7 +194,7 @@ describe('DotPageSelectorService', () => {
     });
 
     it('should make specific host search', () => {
-        dotPageSelectorService.getSites('//demo.dotcms.com', true).subscribe((res: any) => {
+        dotPageSelectorService.getSites('//demo.dotcms.com', true).subscribe(() => {
             expect(req.request.body).toEqual(hostSpecificQuery);
         });
         const req = httpMock.expectOne(`/api/es/search`);

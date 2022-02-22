@@ -3,8 +3,8 @@
 }}</span>
 
 <dot-dropdown-component
-    (close)="iframeOverlayService.hide()"
-    (open)="iframeOverlayService.show()"
+    (shutdown)="iframeOverlayService.hide()"
+    (wasOpen)="iframeOverlayService.show()"
     (toggle)="toggleNotifications()"
     [disabled]="!notifications.length"
     icon="notifications"

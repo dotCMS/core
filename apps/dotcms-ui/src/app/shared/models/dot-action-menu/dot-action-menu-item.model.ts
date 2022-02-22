@@ -1,6 +1,6 @@
 import { MenuItem } from 'primeng/api';
 
 export interface DotActionMenuItem {
-    shouldShow?: (x?: any) => boolean;
+    shouldShow?: (x?: Record<string, unknown>) => boolean;
     menuItem: MenuItem;
 }

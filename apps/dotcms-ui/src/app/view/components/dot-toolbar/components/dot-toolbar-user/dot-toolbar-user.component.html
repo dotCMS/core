@@ -4,8 +4,8 @@
     position="right"
     *ngIf="auth.user"
     id="dot-toolbar-user"
-    (open)="iframeOverlayService.show()"
-    (close)="iframeOverlayService.hide()"
+    (wasOpen)="iframeOverlayService.show()"
+    (shutdown)="iframeOverlayService.hide()"
 >
     <div class="toolbar-user__content">
         <header class="toolbar-user__header">
@@ -41,7 +41,11 @@
                     [textContent]="'my-account' | dm"
                 ></a>
             </li>
-            <li data-testId="login-as" class="user-menu__item" *ngIf="!auth.loginAsUser && (this.haveLoginAsPermission$ | async)">
+            <li
+                data-testId="login-as"
+                class="user-menu__item"
+                *ngIf="!auth.loginAsUser && (this.haveLoginAsPermission$ | async)"
+            >
                 <a
                     href="#"
                     (click)="tooggleLoginAs($event)"

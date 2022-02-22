@@ -48,7 +48,7 @@ export class DotGlobalMessageComponent implements OnInit, OnDestroy {
                 takeUntil(this.destroy$)
             )
             .subscribe((event: DotEvent) => {
-                this.message = event.data;
+                this.message = event.data as DotGlobalMessage;
                 this.visibility = true;
                 this.message.type = this.icons[this.message.type] || '';
 

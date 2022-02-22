@@ -375,7 +375,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         const dotEventsService: DotEventsService = de.injector.get(DotEventsService);
 
         fixture.detectChanges();
-        dotEventsService.notify('add-tab-divider', {});
+        dotEventsService.notify('add-tab-divider', null);
 
         fixture.detectChanges();
 
@@ -411,7 +411,8 @@ class TestHostComponent {
 // https://github.com/dotCMS/core-web/pull/1085
 
 describe('Load fields and drag and drop', () => {
-    const dotLoadingIndicatorServiceMock: TestDotLoadingIndicatorService = new TestDotLoadingIndicatorService();
+    const dotLoadingIndicatorServiceMock: TestDotLoadingIndicatorService =
+        new TestDotLoadingIndicatorService();
     let hostComp: TestHostComponent;
     let hostDe: DebugElement;
     let comp: ContentTypeFieldsDropZoneComponent;
@@ -663,7 +664,7 @@ describe('Load fields and drag and drop', () => {
         const dotEventsService: DotEventsService = de.injector.get(DotEventsService);
 
         fixture.detectChanges();
-        dotEventsService.notify('add-tab-divider', {});
+        dotEventsService.notify('add-tab-divider', null);
 
         expect(comp.fieldRows.length).toBe(4);
         expect(comp.fieldRows[comp.fieldRows.length - 1].divider.clazz).toBe(

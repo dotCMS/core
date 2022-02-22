@@ -15,11 +15,19 @@ export class DotPageStateServiceMock {
         return of(mockDotRenderedPageState);
     }
 
-    setLock(_options: DotPageRenderOptions, _lock: boolean = null): void {}
+    setLock(_options: DotPageRenderOptions, _lock: boolean = null): void {
+        /* */
+    }
 
-    setDevice(_device: DotDevice): void {}
+    setDevice(_device: DotDevice): void {
+        /* */
+    }
 
-    setLanguage(_language: number): void {}
+    setLanguage(_language: number): void {
+        /* */
+    }
 
-    setPersona(_persona: DotPersona): void {}
+    setPersona(_persona: DotPersona): void {
+        /* */
+    }
 }

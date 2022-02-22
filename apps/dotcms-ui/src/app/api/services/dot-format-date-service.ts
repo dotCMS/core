@@ -1,14 +1,9 @@
 import { Injectable } from '@angular/core';
-import {
-    differenceInCalendarDays,
-    isValid,
-    format,
-    formatDistanceStrict,
-    parse
-} from 'date-fns';
+import { differenceInCalendarDays, isValid, format, formatDistanceStrict, parse } from 'date-fns';
 import { utcToZonedTime, format as formatTZ } from 'date-fns-tz';
 import { DotcmsConfigService, DotTimeZone } from '@dotcms/dotcms-js';
-interface DotLocaleOptions {
+
+export interface DotLocaleOptions {
     locale: Locale;
 }
 
@@ -59,7 +54,7 @@ export class DotFormatDateService {
     }
 
     /**
-     * Get the number of calendar days between the given dates. This means that the 
+     * Get the number of calendar days between the given dates. This means that the
      * times are removed from the dates and then the difference in days is calculated.
      *
      * @param {Date} startDate

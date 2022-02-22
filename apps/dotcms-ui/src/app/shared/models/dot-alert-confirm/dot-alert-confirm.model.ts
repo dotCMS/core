@@ -7,10 +7,10 @@ export interface DotAlertConfirm {
     icon?: string;
     header: string;
     footerLabel?: FooterLabels;
-    accept?: Function;
-    reject?: Function;
+    accept?: (value?: unknown) => void;
+    reject?: (value?: unknown) => void;
     acceptVisible?: boolean;
     rejectVisible?: boolean;
-    acceptEvent?: EventEmitter<any>;
-    rejectEvent?: EventEmitter<any>;
+    acceptEvent?: EventEmitter<unknown>;
+    rejectEvent?: EventEmitter<unknown>;
 }

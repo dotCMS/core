@@ -1,6 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { HttpCode, LoggerService, LoginService, User, DotLoginParams } from '@dotcms/dotcms-js';
-import { DotLoginInformation, DotLoginLanguage } from '@models/dot-login';
 import { SelectItem } from 'primeng/api';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { take, takeUntil, tap } from 'rxjs/operators';
@@ -11,6 +10,7 @@ import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loadi
 import { ActivatedRoute, Params } from '@angular/router';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotFormatDateService } from '@services/dot-format-date-service';
+import { DotLoginInformation, DotLoginLanguage } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-login-component',

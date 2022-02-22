@@ -115,6 +115,7 @@ describe('FieldService', () => {
             };
 
             const contentTypeId = '2';
+
             fieldService
                 .updateField(contentTypeId, field)
                 .subscribe((res: DotCMSContentTypeLayoutRow[]) => {

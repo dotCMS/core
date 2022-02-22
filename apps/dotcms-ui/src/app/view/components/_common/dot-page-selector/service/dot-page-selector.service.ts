@@ -109,7 +109,10 @@ export class DotPageSelectorService {
             );
     }
 
-    private getRequestBodyQuery(query: string, size?: number): { [key: string]: {} } {
+    private getRequestBodyQuery(
+        query: string,
+        size?: number
+    ): { [key: string]: Record<string, unknown> } {
         let obj = {
             query: {
                 query_string: {

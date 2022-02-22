@@ -3,7 +3,7 @@ import { CoreWebService } from '@dotcms/dotcms-js';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
+import { DotPageRenderParameters } from '@models/dot-page/dot-rendered-page.model';
 import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
 
 import { DotPersona } from '@shared/models/dot-persona/dot-persona.model';
@@ -30,7 +30,7 @@ export class DotPageRenderService {
     get(
         { viewAs, mode, url }: DotPageRenderOptions,
         extraParams?: Params
-    ): Observable<DotPageRender.Parameters> {
+    ): Observable<DotPageRenderParameters> {
         const params: DotPageRenderRequestParams = this.getOptionalViewAsParams(viewAs, mode);
         return this.coreWebService
             .requestView({

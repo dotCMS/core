@@ -2,8 +2,8 @@ import { DotLoginPageStateService, LOGIN_LABELS } from './dot-login-page-state.s
 import { LoginService } from '@dotcms/dotcms-js';
 import { LoginServiceMock, mockLoginFormResponse } from '@tests/login-service.mock';
 import { of } from 'rxjs';
-import { DotLoginInformation } from '@models/dot-login';
 import { TestBed } from '@angular/core/testing';
+import { DotLoginInformation } from '@dotcms/dotcms-models';
 
 describe('DotLoginPageStateServiceService', () => {
     let dotloginPageStateService: DotLoginPageStateService;
@@ -20,9 +20,7 @@ describe('DotLoginPageStateServiceService', () => {
 
         dotloginPageStateService = testbed.get(DotLoginPageStateService);
         loginService = testbed.get(LoginService);
-        spyOn(loginService, 'getLoginFormInfo').and.returnValue(
-            of({ bodyJsonObject: mockLoginFormResponse })
-        );
+        spyOn(loginService, 'getLoginFormInfo').and.returnValue(of(mockLoginFormResponse));
     });
 
     it('should set new value to dotLoginInformation$ and call service correctly', () => {

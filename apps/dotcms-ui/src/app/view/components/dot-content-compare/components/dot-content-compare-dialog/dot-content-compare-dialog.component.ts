@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { pluck, takeUntil, tap } from 'rxjs/operators';
+import { map, pluck, takeUntil, tap } from 'rxjs/operators';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { COMPARE_CUSTOM_EVENT } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { Observable, Subject } from 'rxjs';
@@ -21,6 +21,7 @@ export class DotContentCompareDialogComponent implements OnInit, OnDestroy {
         this.data$ = this.dotEventsService.listen(COMPARE_CUSTOM_EVENT).pipe(
             takeUntil(this.destroy$),
             pluck('data'),
+            map((data: DotContentCompareEvent) => data),
             tap(() => {
                 this.show = true;
             })

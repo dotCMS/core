@@ -44,13 +44,13 @@ export class DotActionButtonComponent implements OnInit, OnChanges {
     selected: boolean;
 
     @Output()
-    click: EventEmitter<any> = new EventEmitter();
+    press: EventEmitter<MouseEvent> = new EventEmitter();
 
     @HostBinding('class.action-button--no-label')
     isNotLabeled = true;
 
     @HostListener('click', ['$event'])
-    public onClick(event: any): void {
+    public onClick(event: MouseEvent): void {
         event.stopPropagation();
     }
 
@@ -78,10 +78,10 @@ export class DotActionButtonComponent implements OnInit, OnChanges {
     /**
      * Handle the click to the main button
      *
-     * @param any $event
+     * @param {MouseEvent} $event
      * @memberof DotActionButtonComponent
      */
-    buttonOnClick($event): void {
-        this.isHaveOptions() ? this.menu.toggle($event) : this.click.emit($event);
+    buttonOnClick($event: MouseEvent): void {
+        this.isHaveOptions() ? this.menu.toggle($event) : this.press.emit($event);
     }
 }

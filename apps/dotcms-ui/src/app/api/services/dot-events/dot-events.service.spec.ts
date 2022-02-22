@@ -31,7 +31,7 @@ describe('DotEventsService', () => {
     it('should notify subscribers', () => {
         let numbersArray: number[] = [];
         dotEventsService.listen('test').subscribe((value) => {
-            numbersArray = value.data;
+            numbersArray = value.data as number[];
         });
 
         dotEventsService.notify('test', [1, 2, 3]);

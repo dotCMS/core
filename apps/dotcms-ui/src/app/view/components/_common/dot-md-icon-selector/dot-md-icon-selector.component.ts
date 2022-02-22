@@ -19,17 +19,19 @@ export class DotMdIconSelectorComponent implements ControlValueAccessor {
     onTouched = () => {
         //
     };
-    onChange = (_) => {};
+    onChange = (_) => {
+        /* */
+    };
 
     onBlur() {
         this.onTouched();
     }
 
-    registerOnTouched(fn: any) {
+    registerOnTouched(fn: () => void) {
         this.onTouched = fn;
     }
 
-    registerOnChange(fn: any) {
+    registerOnChange(fn: () => void) {
         this.onChange = fn;
     }
 

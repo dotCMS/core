@@ -17,7 +17,9 @@ import { DotCMSResponse, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
 export class CoreWebServiceMock {
     constructor(private _http: HttpClient) {}
 
-    request<T = any>(options: DotRequestOptionsArgs): Observable<any> {
+    request<T = unknown>(
+        options: DotRequestOptionsArgs
+    ): Observable<HttpResponse<DotCMSResponse<T>> | DotCMSResponse<T>> {
         if (!options.method) {
             options.method = 'GET';
         }
@@ -53,7 +55,7 @@ export class CoreWebServiceMock {
             );
     }
 
-    requestView<T = any>(options: DotRequestOptionsArgs): Observable<ResponseView<T>> {
+    requestView<T = unknown>(options: DotRequestOptionsArgs): Observable<ResponseView<T>> {
         if (!options.method) {
             options.method = 'GET';
         }
@@ -86,7 +88,7 @@ export class CoreWebServiceMock {
             );
     }
 
-    subscribeTo(httpErrorCode: number): Observable<any> {
+    subscribeTo(httpErrorCode: number): Observable<{ error: number }> {
         return of({
             error: httpErrorCode
         });

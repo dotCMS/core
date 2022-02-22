@@ -21,5 +21,7 @@ export class DotCustomReuseStrategyService implements RouteReuseStrategy {
             : false;
     }
 
-    store(_route: ActivatedRouteSnapshot, _handle: DetachedRouteHandle | null): void {}
+    store(_route: ActivatedRouteSnapshot, _handle: DetachedRouteHandle | null): void {
+        /* */
+    }
 }

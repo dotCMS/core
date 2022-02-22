@@ -50,7 +50,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
 
     @Input() layout: DotCMSContentTypeLayoutRow[];
 
-    @Output() onSubmit: EventEmitter<DotCMSContentType> = new EventEmitter();
+    @Output() send: EventEmitter<DotCMSContentType> = new EventEmitter();
 
     @Output() valid: EventEmitter<boolean> = new EventEmitter();
 
@@ -116,7 +116,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
      */
     submitForm(): void {
         if (this.canSave) {
-            this.onSubmit.emit(this.form.value);
+            this.send.emit(this.form.value);
         }
     }
 

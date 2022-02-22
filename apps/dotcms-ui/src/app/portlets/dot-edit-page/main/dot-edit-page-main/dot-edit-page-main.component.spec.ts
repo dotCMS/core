@@ -3,7 +3,6 @@
 import { of as observableOf, Subject } from 'rxjs';
 import { mockUser } from './../../../../test/login-service.mock';
 import { mockDotRenderedPage } from '../../../../test/dot-page-render.mock';
-import { DotPageLayoutService } from '@services/dot-page-layout/dot-page-layout.service';
 import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DotEditPageMainComponent } from './dot-edit-page-main.component';
@@ -14,7 +13,6 @@ import { MockDotMessageService } from '../../../../test/dot-message-service.mock
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { ActivatedRoute } from '@angular/router';
 import { DotEditPageNavComponent } from '../dot-edit-page-nav/dot-edit-page-nav.component';
-import { PageViewServiceMock } from '../../../../test/page-view.mock';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { Injectable, Component, Output, EventEmitter } from '@angular/core';
 import { DotPageStateService } from '../../content/services/dot-page-state/dot-page-state.service';
@@ -131,7 +129,6 @@ describe('DotEditPageMainComponent', () => {
                             }
                         }
                     },
-                    { provide: DotPageLayoutService, useClass: PageViewServiceMock },
                     {
                         provide: DotContentletEditorService,
                         useClass: MockDotContentletEditorService

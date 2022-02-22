@@ -4,7 +4,7 @@
  * @interface
  */
 export interface DotAjaxActionResponseView {
-    _body: any;
+    _body: unknown;
     errorMessages: string[];
     total: number;
     bundleId: string;

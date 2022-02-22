@@ -5,5 +5,5 @@
  */
 export interface DotFunctionInfo {
     name: string;
-    args?: any[];
+    args?: unknown[];
 }

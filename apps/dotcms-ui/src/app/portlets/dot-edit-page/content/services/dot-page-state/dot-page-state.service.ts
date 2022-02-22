@@ -18,7 +18,7 @@ import {
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { PageModelChangeEvent, PageModelChangeEventType } from '../dot-edit-content-html/models';
 import { HttpErrorResponse } from '@angular/common/http';
-import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
+import { DotPageRenderParameters } from '@models/dot-page/dot-rendered-page.model';
 
 @Injectable()
 export class DotPageStateService {
@@ -184,7 +184,7 @@ export class DotPageStateService {
         return this.dotPageRenderService.get(options, extraParams).pipe(
             catchError((err) => this.handleSetPageStateFailed(err)),
             take(1),
-            map((page: DotPageRender.Parameters) => {
+            map((page: DotPageRenderParameters) => {
                 if (page) {
                     const pageState = new DotPageRenderState(this.getCurrentUser(), page);
                     this.setCurrentState(pageState);

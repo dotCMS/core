@@ -61,5 +61,7 @@ export class MockDotRouterService {
     isJSPPortlet = jasmine.createSpy('isJSPPortlet');
     reloadCurrentPortlet = jasmine.createSpy('reloadCurrentPortlet');
     goToEditTemplate = jasmine.createSpy('goToEditTemplate');
-    isEditPage() {}
+    isEditPage() {
+        /* */
+    }
 }

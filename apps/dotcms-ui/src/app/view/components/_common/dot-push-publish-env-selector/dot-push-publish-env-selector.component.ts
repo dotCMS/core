@@ -48,22 +48,23 @@ export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAcce
     }
 
     propagateChange = (_: unknown) => {
-        /**/
+        /* */
     };
     propagateTouched = (_: unknown) => {
-        /**/
+        /* */
     };
 
     /**
      * Set the function to be called when the control receives a change event.
-     * @param () => undefined fn
+     *
+     * @param {() => void} fn
      * @memberof PushPublishEnvSelectorComponent
      */
-    registerOnChange(fn: () => undefined): void {
+    registerOnChange(fn: () => void): void {
         this.propagateChange = fn;
     }
 
-    registerOnTouched(fn: () => undefined): void {
+    registerOnTouched(fn: () => void): void {
         this.propagateTouched = fn;
     }
 

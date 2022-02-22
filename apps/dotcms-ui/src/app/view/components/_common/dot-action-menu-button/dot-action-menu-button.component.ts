@@ -16,7 +16,7 @@ import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-men
 export class DotActionMenuButtonComponent implements OnInit {
     filteredActions: MenuItem[] = [];
 
-    @Input() item: any;
+    @Input() item: Record<string, unknown>;
 
     @Input() icon? = 'more_vert';
 

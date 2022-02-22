@@ -120,7 +120,6 @@ let hostDe: DebugElement;
 let component: DotPageSelectorComponent;
 let de: DebugElement;
 let autocomplete: DebugElement;
-let autocompleteComp: AutoComplete;
 let dotPageSelectorService: DotPageSelectorService;
 
 describe('DotPageSelectorComponent', () => {
@@ -181,7 +180,6 @@ describe('DotPageSelectorComponent', () => {
         hostFixture.detectChanges();
         await hostFixture.whenStable();
         autocomplete = de.query(By.css('[data-testId="p-autoComplete"]'));
-        autocompleteComp = autocomplete.componentInstance;
     });
 
     describe('AutoComplete properties', () => {

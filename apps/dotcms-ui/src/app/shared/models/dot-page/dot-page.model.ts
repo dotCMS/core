@@ -32,7 +32,7 @@ export interface DotPage {
     nextReview?: string;
     owner?: string;
     pageUrl?: string;
-    parentPermissionable?: any;
+    parentPermissionable?: Record<string, unknown>;
     permissionId?: string;
     permissionType?: string;
     redirect?: string;
@@ -41,7 +41,7 @@ export interface DotPage {
     seoKeywords?: string;
     showOnMenu?: boolean;
     sortOrder?: number;
-    structure?: any;
+    structure?: Record<string, unknown>;
     structureInode?: string;
     systemHost: false;
     templateId?: string;

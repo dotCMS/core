@@ -1,12 +1,4 @@
-import {
-    Component,
-    Output,
-    EventEmitter,
-    forwardRef,
-    Input,
-    OnInit,
-    ViewChild
-} from '@angular/core';
+import { Component, Output, EventEmitter, forwardRef, Input, ViewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { switchMap, take } from 'rxjs/operators';
@@ -74,7 +66,9 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
         private dotMessageService: DotMessageService
     ) {}
 
-    propagateChange = (_: any) => {};
+    propagateChange = (_: unknown) => {
+        /* */
+    };
 
     /**
      * Handle clear of the autocomplete
@@ -161,14 +155,16 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
     /**
      * Set the function to be called when the control receives a change event.
      *
-     * @param * fn
+     * @param {(params) => void} fn
      * @memberof DotPageSelectorComponent
      */
-    registerOnChange(fn: any): void {
+    registerOnChange(fn: (params) => void): void {
         this.propagateChange = fn;
     }
 
-    registerOnTouched(_fn: any): void {}
+    registerOnTouched(_fn: () => void): void {
+        /* */
+    }
 
     private handleDataAndErrors(data: DotPageSelectorItem[], query: string): void {
         if (data.length === 0) {

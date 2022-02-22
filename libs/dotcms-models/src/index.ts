@@ -8,6 +8,7 @@ export * from './lib/dot-workflow.model';
 export * from './lib/dot-asset-create-options.model';
 export * from './lib/dot-http-error-response.model';
 export * from './lib/dot-http-request-options.model';
+export * from './lib/dot-login.model';
 export * from './lib/dot-license.model';
 export * from './lib/dot-dynamic-field-component.model';
 export * from './lib/dot-iframe-edit-event.model';

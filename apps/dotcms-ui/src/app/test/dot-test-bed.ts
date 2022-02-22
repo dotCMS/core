@@ -36,7 +36,9 @@ import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-di
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 export class MockDotUiColorsService {
-    setColors() {}
+    setColors() {
+        /* */
+    }
 }
 
 export const dotEventSocketURLFactory = () => {

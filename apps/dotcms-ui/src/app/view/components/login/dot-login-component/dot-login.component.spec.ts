@@ -23,8 +23,8 @@ import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotFormatDateServiceMock } from '@dotcms/app/test/format-date-service.mock';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotLoginInformation } from '@models/dot-login';
 import { ActivatedRoute, Params } from '@angular/router';
+import { DotLoginInformation } from '@dotcms/dotcms-models';
 
 const mockLoginInfo = {
     ...mockLoginFormResponse,

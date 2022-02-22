@@ -195,7 +195,7 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
         }
     }
 
-    private downloadFile(bundleForm: {}) {
+    private downloadFile(bundleForm: Record<string, unknown>) {
         let fileName = '';
 
         fetch(DOWNLOAD_URL, {

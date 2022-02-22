@@ -36,17 +36,18 @@ export class DotAutocompleteTagsComponent implements OnInit, ControlValueAccesso
 
     constructor(private dotTagsService: DotTagsService) {}
 
-    propagateChange = (_: any) => {};
+    propagateChange = (_: unknown) => {
+        /* empty */
+    };
 
     ngOnInit() {
         this.filterTags();
     }
 
     /**
-     * Return the list of tags based on a filter and
-     * checking if is not selected already.
+     * Return the list of tags based on a filter and checking if is not selected already.
      *
-     * @param any event
+     * @param {{ originalEvent?: Event; query: string }} [event]
      * @memberof DotAutocompleteTagsComponent
      */
     filterTags(event?: { originalEvent?: Event; query: string }): void {
@@ -100,7 +101,7 @@ export class DotAutocompleteTagsComponent implements OnInit, ControlValueAccesso
      * @param * fn
      * @memberof DotAutocompleteTagsComponent
      */
-    registerOnChange(fn: any): void {
+    registerOnChange(fn: () => void): void {
         this.propagateChange = fn;
     }
 
@@ -130,7 +131,9 @@ export class DotAutocompleteTagsComponent implements OnInit, ControlValueAccesso
         this.disabled = isDisabled;
     }
 
-    registerOnTouched(): void {}
+    registerOnTouched(): void {
+        /* empty */
+    }
 
     private isUniqueTag(label: string): boolean {
         return !!label.trim() && !this.value.filter((tag: DotTag) => tag.label === label).length;

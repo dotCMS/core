@@ -5,7 +5,7 @@ import { LoginService, CoreWebService } from '@dotcms/dotcms-js';
 
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
-import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
+import { DotPageRenderParameters } from '@models/dot-page/dot-rendered-page.model';
 import { DotPageRenderService } from './dot-page-render.service';
 import { LoginServiceMock } from '@tests/login-service.mock';
 import { mockDotDevices } from '@tests/dot-device.mock';
@@ -36,7 +36,7 @@ describe('DotPageRenderService', () => {
     });
 
     it('should return entity', () => {
-        dotPageRenderService.get({ url }).subscribe((res: DotPageRender.Parameters) => {
+        dotPageRenderService.get({ url }).subscribe((res: DotPageRenderParameters) => {
             expect(res).toEqual(mockDotRenderedPage());
         });
 

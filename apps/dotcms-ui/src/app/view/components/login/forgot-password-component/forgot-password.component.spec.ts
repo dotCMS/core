@@ -79,7 +79,7 @@ describe('ForgotPasswordComponent', () => {
 
     it('should do the request password correctly and redirect to login', () => {
         component.forgotPasswordForm.setValue({ login: 'test' });
-        spyOn(loginService, 'recoverPassword').and.returnValue(of({}));
+        spyOn(loginService, 'recoverPassword').and.returnValue(of(null));
         spyOn(window, 'confirm').and.returnValue(true);
         fixture.detectChanges();
 
@@ -120,7 +120,7 @@ describe('ForgotPasswordComponent', () => {
 
     it('should show go to login if submit is success', () => {
         spyOn(window, 'confirm').and.returnValue(true);
-        spyOn(loginService, 'recoverPassword').and.returnValue(of({}));
+        spyOn(loginService, 'recoverPassword').and.returnValue(of(null));
         component.forgotPasswordForm.setValue({ login: 'test@test.com' });
         fixture.detectChanges();
         requestPasswordButton.triggerEventHandler('click', {});

@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { DotLoginUserSystemInformation } from '@models/dot-login';
 import { pluck, take } from 'rxjs/operators';
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
+import { DotLoginUserSystemInformation } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-login-page-component',
@@ -21,9 +21,10 @@ export class DotLoginPageComponent implements OnInit {
             .subscribe((dotLoginUserSystemInformation: DotLoginUserSystemInformation) => {
                 document.body.style.backgroundColor =
                     dotLoginUserSystemInformation.backgroundColor || '';
-                document.body.style.backgroundImage = dotLoginUserSystemInformation.backgroundPicture
-                    ? `url('${dotLoginUserSystemInformation.backgroundPicture}')`
-                    : '';
+                document.body.style.backgroundImage =
+                    dotLoginUserSystemInformation.backgroundPicture
+                        ? `url('${dotLoginUserSystemInformation.backgroundPicture}')`
+                        : '';
             });
     }
 }

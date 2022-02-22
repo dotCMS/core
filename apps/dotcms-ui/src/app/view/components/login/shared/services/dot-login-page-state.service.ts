@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
-import { DotLoginInformation } from '@models/dot-login';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { LoginService } from '@dotcms/dotcms-js';
 import { map, pluck, take, tap } from 'rxjs/operators';
+import { DotLoginInformation } from '@dotcms/dotcms-models';
 
 export const LOGIN_LABELS = [
     'email-address',
@@ -44,7 +44,6 @@ export class DotLoginPageStateService {
     set(lang: string): Observable<DotLoginInformation> {
         return this.loginService.getLoginFormInfo(lang, LOGIN_LABELS).pipe(
             take(1),
-            pluck('bodyJsonObject'),
             map((loginInfo: DotLoginInformation) => {
                 return {
                     ...loginInfo,

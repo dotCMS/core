@@ -1,5 +1,6 @@
 import { of, Observable, Subject } from 'rxjs';
-import { Auth } from '@dotcms/dotcms-js';
+import { Auth, User } from '@dotcms/dotcms-js';
+import { DotLoginInformation } from '@dotcms/dotcms-models';
 
 export const mockUser = () => {
     return {
@@ -12,8 +13,7 @@ export const mockUser = () => {
     };
 };
 
-export const mockLoginFormResponse = {
-    errors: [],
+export const mockLoginFormResponse: DotLoginInformation = {
     entity: {
         serverId: '860173b0',
         levelName: 'COMMUNITY EDITION',
@@ -37,7 +37,6 @@ export const mockLoginFormResponse = {
         currentLanguage: { language: 'en', country: 'US', displayName: 'English (United States)' },
         companyEmail: '@dotcms.com'
     },
-    messages: [],
     i18nMessagesMap: {
         cancel: 'Cancel',
         'sign-in': 'Sign In',
@@ -61,12 +60,11 @@ export const mockLoginFormResponse = {
         Logout: 'Logout',
         'message.successfully.logout': 'You are logout successfully, click the button to login',
         'reset-password-confirmation-do-not-match': 'password do not match'
-    },
-    permissions: []
+    }
 };
 
-const mockUserWithRedirect = {
-    ...mockUser,
+const mockUserWithRedirect: User = {
+    ...mockUser(),
     editModeUrl: 'redirect/to'
 };
 
@@ -77,7 +75,7 @@ export const mockAuth: Auth = {
 
 export class LoginServiceMock {
     _auth: Subject<Auth> = new Subject();
-    private watchUserFunc: Function;
+    private watchUserFunc: (params: unknown) => void;
 
     constructor() {
         this._auth.next(mockAuth);
@@ -91,25 +89,27 @@ export class LoginServiceMock {
         return this._auth;
     }
 
-    setAuth(): void {}
-
-    loginAs(): Observable<any> {
-        return of({});
+    setAuth(): void {
+        /* */
     }
 
-    logoutAs(): Observable<any> {
-        return of({});
+    loginAs(): Observable<boolean> {
+        return of(true);
     }
 
-    loginUser(): Observable<any> {
+    logoutAs(): Observable<boolean> {
+        return of(true);
+    }
+
+    loginUser(): Observable<User> {
         return of(mockUserWithRedirect);
     }
 
-    logOutUser(): Observable<any> {
-        return of({});
+    logOutUser(): Observable<User> {
+        return of(null);
     }
 
-    watchUser(func: Function): void {
+    watchUser(func: (params: unknown) => void): void {
         this.watchUserFunc = func;
     }
 
@@ -121,25 +121,37 @@ export class LoginServiceMock {
         this._auth.next(auth);
     }
 
-    getLoginFormInfo(): Observable<any> {
+    getLoginFormInfo(): Observable<DotLoginInformation> {
         return of({
             i18nMessagesMap: {
                 'sign-in': 'Sign in'
             },
             entity: {
-                levelName: '',
+                authorizationType: '',
+                backgroundColor: '',
+                backgroundPicture: '',
+                buildDateString: '',
+                companyEmail: '',
                 languages: [],
-                currentLanguage: ''
+                levelName: '',
+                logo: '',
+                serverId: '',
+                version: '',
+                currentLanguage: {
+                    country: 'US',
+                    displayName: 'English (United States)',
+                    language: 'en'
+                }
             }
         });
     }
 
-    recoverPassword(): Observable<any> {
-        return of({});
+    recoverPassword(): Observable<string> {
+        return of('email@dotcms.com');
     }
 
-    changePassword(): Observable<any> {
-        return of({});
+    changePassword(): Observable<string> {
+        return of('email@dotcms.com');
     }
 
     getCurrentUser() {

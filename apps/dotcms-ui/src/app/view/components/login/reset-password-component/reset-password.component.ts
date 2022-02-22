@@ -1,12 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Observable } from 'rxjs';
-import { DotLoginInformation } from '@models/dot-login';
 import { take, tap } from 'rxjs/operators';
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { LoginService } from '@dotcms/dotcms-js';
 import { ActivatedRoute } from '@angular/router';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotLoginInformation } from '@dotcms/dotcms-models';
 
 @Component({
     providers: [],

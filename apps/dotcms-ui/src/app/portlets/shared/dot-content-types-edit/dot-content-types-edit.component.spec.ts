@@ -77,8 +77,7 @@ class TestContentTypeLayoutComponent {
 class TestContentTypesFormComponent {
     @Input() data: DotCMSContentType;
     @Input() layout: DotCMSContentTypeField[];
-    // tslint:disable-next-line:no-output-on-prefix
-    @Output() onSubmit: EventEmitter<any> = new EventEmitter();
+    @Output() send: EventEmitter<DotCMSContentType> = new EventEmitter();
 
     resetForm = jasmine.createSpy('resetForm');
 
@@ -306,7 +305,7 @@ describe('DotContentTypesEditComponent', () => {
                 spyOn(crudService, 'postData').and.returnValue(of([responseContentType]));
                 spyOn<any>(location, 'replaceState').and.returnValue(of([responseContentType]));
 
-                contentTypeForm.triggerEventHandler('onSubmit', mockContentType);
+                contentTypeForm.triggerEventHandler('send', mockContentType);
 
                 const replacedWorkflowsPropContentType = {
                     ...mockContentType
@@ -333,14 +332,14 @@ describe('DotContentTypesEditComponent', () => {
                 spyOn(crudService, 'postData').and.returnValue(throwError(mockResponseView(403)));
                 spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
 
-                contentTypeForm.triggerEventHandler('onSubmit', mockContentType);
+                contentTypeForm.triggerEventHandler('send', mockContentType);
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
             });
 
             it('should update workflows value', () => {
                 spyOn(crudService, 'postData').and.returnValue(of([]));
 
-                contentTypeForm.triggerEventHandler('onSubmit', {
+                contentTypeForm.triggerEventHandler('send', {
                     workflows: [
                         {
                             id: '123',
@@ -768,7 +767,7 @@ describe('DotContentTypesEditComponent', () => {
 
                 spyOn(crudService, 'putData').and.returnValue(of(responseContentType));
 
-                contentTypeForm.triggerEventHandler('onSubmit', fakeContentType);
+                contentTypeForm.triggerEventHandler('send', fakeContentType);
 
                 const replacedWorkflowsPropContentType = {
                     ...fakeContentType
@@ -790,7 +789,7 @@ describe('DotContentTypesEditComponent', () => {
                 spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
                 spyOn(crudService, 'putData').and.returnValue(throwError(mockResponseView(403)));
 
-                contentTypeForm.triggerEventHandler('onSubmit', fakeContentType);
+                contentTypeForm.triggerEventHandler('send', fakeContentType);
 
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
             });

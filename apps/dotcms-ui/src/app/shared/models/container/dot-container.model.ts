@@ -25,3 +25,10 @@ export interface DotContainerStructure {
 export interface DotContainerMap {
     [key: string]: DotContainer;
 }
+
+export interface DotPageContainer {
+    [key: string]: {
+        container: DotContainer;
+        containerStructures?: DotContainerStructure[];
+    };
+}

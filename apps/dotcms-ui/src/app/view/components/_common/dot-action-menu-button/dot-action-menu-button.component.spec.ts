@@ -94,7 +94,7 @@ describe('ActionMenuButtonComponent', () => {
                 }
             }
         ];
-        const mockContentType: DotCMSContentType = {
+        const mockContentType = {
             ...dotcmsContentTypeBasicMock,
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
             id: '1234567890',
@@ -182,7 +182,7 @@ describe('ActionMenuButtonComponent', () => {
                 }
             }
         ];
-        const mockContentType: DotCMSContentType = {
+        const mockContentType = {
             ...dotcmsContentTypeBasicMock,
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
             id: '1234567890',
@@ -231,7 +231,7 @@ describe('ActionMenuButtonComponent', () => {
                 }
             }
         ];
-        const mockContentType: DotCMSContentType = {
+        const mockContentType = {
             ...dotcmsContentTypeBasicMock,
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
             id: '1234567890',

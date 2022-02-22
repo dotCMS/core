@@ -621,7 +621,7 @@ describe('ContentTypesFormComponent', () => {
         let data = null;
         spyOn(comp, 'submitForm').and.callThrough();
 
-        comp.onSubmit.subscribe((res) => (data = res));
+        comp.send.subscribe((res) => (data = res));
         comp.submitForm();
 
         expect(data).toBeNull();
@@ -636,11 +636,11 @@ describe('ContentTypesFormComponent', () => {
         comp.layout = layout;
         fixture.detectChanges();
         spyOn(comp, 'submitForm').and.callThrough();
-        spyOn(comp.onSubmit, 'emit');
+        spyOn(comp.send, 'emit');
 
         comp.submitForm();
 
-        expect(comp.onSubmit.emit).not.toHaveBeenCalled();
+        expect(comp.send.emit).not.toHaveBeenCalled();
     });
 
     it('should have dot-page-selector component and right attrs', () => {
@@ -668,7 +668,7 @@ describe('ContentTypesFormComponent', () => {
             fixture.detectChanges();
             data = null;
             spyOn(comp, 'submitForm').and.callThrough();
-            comp.onSubmit.subscribe((res) => (data = res));
+            comp.send.subscribe((res) => (data = res));
             comp.form.controls.name.setValue('A content type name');
             fixture.detectChanges();
         });

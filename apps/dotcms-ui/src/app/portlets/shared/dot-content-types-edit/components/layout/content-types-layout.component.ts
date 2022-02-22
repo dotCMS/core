@@ -16,7 +16,7 @@ import { Observable } from 'rxjs';
 })
 export class ContentTypesLayoutComponent implements OnChanges, OnInit {
     @Input() contentType: DotCMSContentType;
-    @Output() openEditDialog: EventEmitter<any> = new EventEmitter();
+    @Output() openEditDialog: EventEmitter<unknown> = new EventEmitter();
     permissionURL: string;
     pushHistoryURL: string;
     relationshipURL: string;

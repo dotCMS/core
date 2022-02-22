@@ -5,7 +5,7 @@ import { pluck, map } from 'rxjs/operators';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 
-import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
+import { DotPageRender, DotPageRenderParameters } from '@models/dot-page/dot-rendered-page.model';
 import { DotLayout } from '@shared/models/dot-edit-layout-designer';
 
 /**
@@ -36,7 +36,7 @@ export class DotPageLayoutService {
             .pipe(
                 pluck('entity'),
                 map(
-                    (dotPageRenderResponse: DotPageRender.Parameters) =>
+                    (dotPageRenderResponse: DotPageRenderParameters) =>
                         new DotPageRender(dotPageRenderResponse)
                 )
             );

@@ -37,7 +37,9 @@ export class SiteServiceMock {
         this._switchSite$.next(site || mockSites[0]);
     }
 
-    switchSite(_site: Site) {}
+    switchSite(_site: Site) {
+        /* */
+    }
 
     get loadedSites(): Site[] {
         return mockSites;

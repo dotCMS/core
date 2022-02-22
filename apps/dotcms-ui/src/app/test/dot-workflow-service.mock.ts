@@ -50,8 +50,4 @@ export class DotWorkflowServiceMock {
         const systemWorkflow = mockWorkflows.filter((workflow: DotCMSWorkflow) => workflow.system);
         return observableOf(_.cloneDeep(systemWorkflow[0]));
     }
-
-    fireWorkflowAction(): Observable<any[]> {
-        return observableOf([]);
-    }
 }
