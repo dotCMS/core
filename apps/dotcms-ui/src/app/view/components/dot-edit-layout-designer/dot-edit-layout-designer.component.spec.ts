@@ -1,6 +1,6 @@
 import { By } from '@angular/platform-browser';
 import { Component, Input, EventEmitter, Output, DebugElement } from '@angular/core';
-import { ComponentFixture, TestBed, tick, fakeAsync } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule, FormGroup, ReactiveFormsModule, ControlContainer } from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
 import { of as observableOf, of } from 'rxjs';
@@ -37,7 +37,7 @@ import { DotGlobalMessageService } from '@components/_common/dot-global-message/
     selector: 'dot-template-addtional-actions-menu',
     template: ''
 })
-class AdditionalOptionsComponentMock {
+class AdditionalOptionsMockComponent {
     @Input() inode: '';
 }
 
@@ -45,7 +45,7 @@ class AdditionalOptionsComponentMock {
     selector: 'dot-layout-properties',
     template: ''
 })
-class DotLayoutPropertiesComponentMock {
+class DotLayoutPropertiesMockComponent {
     @Input() group: FormGroup;
 }
 
@@ -53,7 +53,7 @@ class DotLayoutPropertiesComponentMock {
     selector: 'dot-layout-designer',
     template: ''
 })
-class DotLayoutDesignerComponentMock {
+class DotLayoutDesignerMockComponent {
     constructor(public group: ControlContainer) {}
 }
 
@@ -61,7 +61,7 @@ class DotLayoutDesignerComponentMock {
     selector: 'dot-theme-selector',
     template: ''
 })
-class DotThemeSelectorComponentMock {
+class DotThemeSelectorMockComponent {
     @Input() value: DotTheme;
     @Output() selected = new EventEmitter<DotTheme>();
 }
@@ -90,10 +90,10 @@ describe('DotEditLayoutDesignerComponent', () => {
             declarations: [
                 DotMessagePipe,
                 DotEditLayoutDesignerComponent,
-                AdditionalOptionsComponentMock,
-                DotLayoutPropertiesComponentMock,
-                DotThemeSelectorComponentMock,
-                DotLayoutDesignerComponentMock
+                AdditionalOptionsMockComponent,
+                DotLayoutPropertiesMockComponent,
+                DotThemeSelectorMockComponent,
+                DotLayoutDesignerMockComponent
             ],
             imports: [
                 DotActionButtonModule,
@@ -284,7 +284,7 @@ describe('DotEditLayoutDesignerComponent', () => {
     });
 
     describe('themes', () => {
-        let themeSelector: DotThemeSelectorComponentMock;
+        let themeSelector: DotThemeSelectorMockComponent;
         let themeButton;
 
         beforeEach(() => {

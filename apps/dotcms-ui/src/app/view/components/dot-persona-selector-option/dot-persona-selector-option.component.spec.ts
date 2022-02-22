@@ -111,7 +111,7 @@ describe('DotPersonaSelectorOptionComponent', () => {
 
     describe('events', () => {
         beforeEach(() => {
-            spyOn(component.change, 'emit');
+            spyOn(component.switch, 'emit');
             spyOn(component.delete, 'emit');
             fixture.detectChanges();
         });
@@ -122,7 +122,7 @@ describe('DotPersonaSelectorOptionComponent', () => {
                     //
                 }
             });
-            expect(component.change.emit).toHaveBeenCalledWith(mockDotPersona);
+            expect(component.switch.emit).toHaveBeenCalledWith(mockDotPersona);
         });
 
         it('should emit persona when delete clicked', () => {

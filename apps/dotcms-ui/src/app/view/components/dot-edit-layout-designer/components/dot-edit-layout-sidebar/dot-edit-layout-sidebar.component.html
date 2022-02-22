@@ -1,6 +1,6 @@
 <h6>{{ 'editpage.layout.designer.sidebar' | dm }}</h6>
 <dot-sidebar-properties
-    (change)="updateAndPropagate()"
+    (switch)="updateAndPropagate()"
     [(ngModel)]="value"
     class="dot-layout-designer__sidebar-properties"
 ></dot-sidebar-properties>

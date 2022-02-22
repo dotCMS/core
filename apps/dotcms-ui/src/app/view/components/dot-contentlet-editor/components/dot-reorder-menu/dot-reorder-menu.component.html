@@ -1,6 +1,6 @@
 <dot-iframe-dialog
     *ngIf="!!url"
-    (close)="onClose()"
+    (shutdown)="onClose()"
     [header]="'editpage.content.contentlet.menu.reorder.title' | dm"
     [url]="url"
 >

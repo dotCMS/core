@@ -95,7 +95,7 @@ describe('DotWorkflowTaskDetailComponent', () => {
 
         describe('events', () => {
             it('should call clear and emit close', () => {
-                dotIframeDialog.triggerEventHandler('close', {});
+                dotIframeDialog.triggerEventHandler('shutdown', {});
                 expect(dotWorkflowTaskDetailService.clear).toHaveBeenCalledTimes(1);
                 expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
             });

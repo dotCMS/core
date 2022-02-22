@@ -3,6 +3,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DotLayoutSideBar } from '@models/dot-edit-layout-designer';
+import { OverlayPanel } from 'primeng/overlaypanel';
 
 @Component({
     selector: 'dot-sidebar-properties',
@@ -18,12 +19,14 @@ import { DotLayoutSideBar } from '@models/dot-edit-layout-designer';
 })
 export class DotSidebarPropertiesComponent implements OnInit, ControlValueAccessor {
     value: DotLayoutSideBar;
-    @ViewChild('overlay', { static: true }) overlay: any;
-    @Output() change: EventEmitter<string> = new EventEmitter();
+    @ViewChild('overlay', { static: true }) overlay: OverlayPanel;
+    @Output() switch: EventEmitter<string> = new EventEmitter();
 
     constructor(private dotEventsService: DotEventsService) {}
 
-    propagateChange = (_: any) => {};
+    propagateChange = (_: unknown) => {
+        /**/
+    };
 
     ngOnInit() {
         this.value = {
@@ -41,7 +44,7 @@ export class DotSidebarPropertiesComponent implements OnInit, ControlValueAccess
     changeSidebarSize(): void {
         this.overlay.hide();
         this.dotEventsService.notify('layout-sidebar-change');
-        this.change.emit();
+        this.switch.emit();
     }
 
     /**
@@ -57,12 +60,18 @@ export class DotSidebarPropertiesComponent implements OnInit, ControlValueAccess
 
     /**
      * Set the function to be called when the control receives a change event
-     * @param any fn
+     * @param () => {} fn
      * @memberof DotSidebarPropertiesComponent
      */
-    registerOnChange(fn: any): void {
+    registerOnChange(
+        fn: () => {
+            /* */
+        }
+    ): void {
         this.propagateChange = fn;
     }
 
-    registerOnTouched(): void {}
+    registerOnTouched(): void {
+        /* */
+    }
 }

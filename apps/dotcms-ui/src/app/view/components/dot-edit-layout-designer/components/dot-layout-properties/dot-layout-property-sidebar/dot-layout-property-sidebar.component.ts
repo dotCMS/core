@@ -24,7 +24,9 @@ export class DotLayoutSidebarComponent implements ControlValueAccessor {
 
     value: DotLayoutSideBar;
 
-    propagateChange = (_: any) => {};
+    propagateChange = (_: unknown) => {
+        /* */
+    };
 
     /**
      * Write a new value to the property item
@@ -60,12 +62,18 @@ export class DotLayoutSidebarComponent implements ControlValueAccessor {
 
     /**
      * Set the function to be called when the control receives a change event
-     * @param any fn
+     * @param () => {} fn
      * @memberof DotLayoutSidebarComponent
      */
-    registerOnChange(fn: any): void {
+    registerOnChange(
+        fn: () => {
+            /* */
+        }
+    ): void {
         this.propagateChange = fn;
     }
 
-    registerOnTouched(): void {}
+    registerOnTouched(): void {
+        /* */
+    }
 }

@@ -71,7 +71,7 @@ class DotSearchableDropdownMockComponent {
     multiple: boolean;
 
     @Output()
-    change: EventEmitter<any> = new EventEmitter();
+    switch: EventEmitter<any> = new EventEmitter();
 
     @Output()
     filterChange: EventEmitter<string> = new EventEmitter();
@@ -83,7 +83,7 @@ class DotSearchableDropdownMockComponent {
     pageChange: EventEmitter<any> = new EventEmitter();
 
     @Output()
-    show: EventEmitter<any> = new EventEmitter();
+    display: EventEmitter<any> = new EventEmitter();
 
     writeValue() {}
 

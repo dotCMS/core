@@ -62,7 +62,9 @@ export class DotThemeSelectorDropdownComponent
             try {
                 this.currentSiteIdentifier = this.siteService.currentSite.identifier;
                 clearInterval(interval);
-            } catch (e) {}
+            } catch (e) {
+                /* */
+            }
         }, 0);
     }
 
@@ -92,8 +94,12 @@ export class DotThemeSelectorDropdownComponent
         }
     }
 
-    propagateChange = (_: any) => {};
-    registerOnTouched(): void {}
+    propagateChange = (_: unknown) => {
+        /* */
+    };
+    registerOnTouched(): void {
+        /* */
+    }
 
     /**
      * Set the function to be called when the control receives a change event.

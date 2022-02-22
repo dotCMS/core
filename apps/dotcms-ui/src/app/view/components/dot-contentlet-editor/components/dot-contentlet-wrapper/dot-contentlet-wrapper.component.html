@@ -1,8 +1,8 @@
 <dot-iframe-dialog
     (beforeClose)="onBeforeClose($event)"
-    (close)="onClose()"
+    (shutdown)="onClose()"
     (custom)="onCustomEvent($event)"
-    (load)="onLoad($event)"
+    (charge)="onLoad($event)"
     [header]="header"
     [url]="url"
 >

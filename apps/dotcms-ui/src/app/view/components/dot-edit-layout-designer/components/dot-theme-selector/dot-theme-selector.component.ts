@@ -45,7 +45,7 @@ export class DotThemeSelectorComponent implements OnInit, OnDestroy {
     selected = new EventEmitter<DotTheme>();
 
     @Output()
-    close = new EventEmitter<boolean>();
+    shutdown = new EventEmitter<boolean>();
 
     @ViewChild('searchInput', { static: true })
     searchInput: ElementRef;
@@ -168,12 +168,12 @@ export class DotThemeSelectorComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Propagate the close event wen the modal closes.
+     * Propagate the shutdown event when the modal closes.
      *
      * @memberof DotThemeSelectorComponent
      */
     hideDialog(): void {
-        this.close.emit(false);
+        this.shutdown.emit(false);
     }
 
     private filterThemes(searchCriteria?: string): void {

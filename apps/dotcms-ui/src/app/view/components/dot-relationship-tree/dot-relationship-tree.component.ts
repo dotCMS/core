@@ -28,7 +28,7 @@ export class DotRelationshipTreeComponent implements OnInit {
         // If velocityVar has a dot it means it's the child of the relationship
         this.isRelationshipChild = this.velocityVar?.indexOf('.') !== -1;
 
-        const [relatedContentType] = this.velocityVar?.split('.');
+        const [relatedContentType] = this.velocityVar?.split('.') || '';
         const contentTypeName = this.contentType?.name;
 
         this.parent = this.isRelationshipChild ? relatedContentType : contentTypeName;

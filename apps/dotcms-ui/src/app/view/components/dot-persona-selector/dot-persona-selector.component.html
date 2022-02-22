@@ -30,7 +30,7 @@
             [canDespersonalize]="canDespersonalize"
             [persona]="value && value.identifier === personaData.identifier ? value : personaData"
             [selected]="value && value.identifier === personaData.identifier"
-            (change)="personaChange($event)"
+            (switch)="personaChange($event)"
             (delete)="delete.emit(personaData)"
         ></dot-persona-selector-option>
     </ng-template>

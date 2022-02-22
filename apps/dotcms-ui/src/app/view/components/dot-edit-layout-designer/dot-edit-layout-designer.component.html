@@ -2,7 +2,7 @@
     *ngIf="themeDialogVisibility"
     [value]="currentTheme"
     (selected)="changeThemeHandler($event)"
-    (close)="closeThemeDialog()"
+    (shutdown)="closeThemeDialog()"
 >
 </dot-theme-selector>
 <form [formGroup]="form" (ngSubmit)="onSave()" novalidate>

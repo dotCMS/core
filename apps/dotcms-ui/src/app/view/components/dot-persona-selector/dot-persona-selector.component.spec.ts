@@ -172,7 +172,7 @@ describe('DotPersonaSelectorComponent', () => {
         spyOn(component.selected, 'emit');
         openOverlay();
         const personaOption = hostFixture.debugElement.query(By.css('dot-persona-selector-option'));
-        personaOption.triggerEventHandler('change', defaultPersona);
+        personaOption.triggerEventHandler('switch', defaultPersona);
         expect(component.selected.emit).toHaveBeenCalledWith(defaultPersona);
     });
 

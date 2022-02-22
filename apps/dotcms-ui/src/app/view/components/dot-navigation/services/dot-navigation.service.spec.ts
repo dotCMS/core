@@ -48,7 +48,9 @@ class RouterMock {
         this._events.next(new NavigationEnd(0, url || '/url/789', url || '/url/789'));
     }
 
-    navigateByUrl() {}
+    navigateByUrl() {
+        /* */
+    }
 }
 class DotMenuServiceMock {
     loadMenu(): Observable<DotMenu[]> {

@@ -22,7 +22,7 @@ export class ActionHeaderComponent implements OnChanges {
         private dotDialogService: DotAlertConfirmService
     ) {}
 
-    ngOnChanges(changes: SimpleChanges): any {
+    ngOnChanges(changes: SimpleChanges): void {
         if (changes.selected) {
             this.hideDinamycOverflow();
         }

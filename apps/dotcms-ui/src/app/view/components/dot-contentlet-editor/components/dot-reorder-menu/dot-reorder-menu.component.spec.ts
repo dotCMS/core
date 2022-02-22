@@ -57,7 +57,7 @@ describe('DotReorderMenuComponent', () => {
             spyOn(component.shutdown, 'emit');
             fixture.detectChanges();
             const dotIframeDialogElement = de.query(By.css('dot-iframe-dialog')).componentInstance;
-            dotIframeDialogElement.close.emit();
+            dotIframeDialogElement.shutdown.emit();
             expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
         });
     });

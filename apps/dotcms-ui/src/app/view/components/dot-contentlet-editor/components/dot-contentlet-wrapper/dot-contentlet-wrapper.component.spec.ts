@@ -143,7 +143,7 @@ describe('DotContentletWrapperComponent', () => {
 
         describe('events', () => {
             it('should call load', () => {
-                dotIframeDialog.triggerEventHandler('load', { hello: 'world' });
+                dotIframeDialog.triggerEventHandler('charge', { hello: 'world' });
                 expect(dotAddContentletService.load).toHaveBeenCalledWith({ hello: 'world' });
             });
 
@@ -201,7 +201,7 @@ describe('DotContentletWrapperComponent', () => {
                 it('should close without confirmation dialog', () => {
                     dotIframeDialog.triggerEventHandler('beforeClose', {
                         close: () => {
-                            dotIframeDialog.triggerEventHandler('close', {});
+                            dotIframeDialog.triggerEventHandler('shutdown', {});
                         }
                     });
                     expect(dotAddContentletService.clear).toHaveBeenCalledTimes(1);
@@ -222,7 +222,7 @@ describe('DotContentletWrapperComponent', () => {
 
                     dotIframeDialog.triggerEventHandler('beforeClose', {
                         close: () => {
-                            dotIframeDialog.triggerEventHandler('close', {});
+                            dotIframeDialog.triggerEventHandler('shutdown', {});
                         }
                     });
 

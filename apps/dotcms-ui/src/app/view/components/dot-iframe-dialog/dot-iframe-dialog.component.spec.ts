@@ -167,10 +167,10 @@ describe('DotIframeDialogComponent', () => {
             describe('events', () => {
                 beforeEach(() => {
                     spyOn(component.beforeClose, 'emit');
-                    spyOn(component.close, 'emit');
+                    spyOn(component.shutdown, 'emit');
                     spyOn(component.custom, 'emit');
-                    spyOn(component.keydown, 'emit');
-                    spyOn(component.load, 'emit');
+                    spyOn(component.keyWasDown, 'emit');
+                    spyOn(component.charge, 'emit');
                     spyOn(dialog.componentInstance, 'close');
                 });
 
@@ -187,8 +187,8 @@ describe('DotIframeDialogComponent', () => {
                             }
                         });
 
-                        expect(component.load.emit).toHaveBeenCalledWith(mockEvent);
-                        expect<any>(component.keydown.emit).toHaveBeenCalledWith({
+                        expect(component.charge.emit).toHaveBeenCalledWith(mockEvent);
+                        expect<any>(component.keyWasDown.emit).toHaveBeenCalledWith({
                             hello: 'world'
                         });
                         expect<any>(component.custom.emit).toHaveBeenCalledWith({
@@ -203,7 +203,7 @@ describe('DotIframeDialogComponent', () => {
                             key: 'Escape'
                         });
 
-                        expect(component.keydown.emit).toHaveBeenCalledTimes(1);
+                        expect(component.keyWasDown.emit).toHaveBeenCalledTimes(1);
                     });
                 });
 
@@ -218,7 +218,7 @@ describe('DotIframeDialogComponent', () => {
                         expect(component.url).toBe(null);
                         expect(component.show).toBe(false);
                         expect(component.header).toBe('');
-                        expect(component.close.emit).toHaveBeenCalledTimes(1);
+                        expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
                         expect(component.beforeClose.emit).not.toHaveBeenCalled();
                     });
 

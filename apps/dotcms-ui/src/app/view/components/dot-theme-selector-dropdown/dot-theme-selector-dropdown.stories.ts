@@ -33,7 +33,9 @@ export default {
                 {
                     provide: PaginatorService,
                     useValue: {
-                        setExtraParams() {},
+                        setExtraParams() {
+                            /* */
+                        },
                         getWithOffset() {
                             return of([
                                 {

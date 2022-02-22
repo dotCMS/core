@@ -30,12 +30,12 @@ import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { DotMenuService } from '@services/dot-menu.service';
-import { DotAccountService, DotAccountUser } from '@services/dot-account-service';
+import { DotAccountService } from '@services/dot-account-service';
 
 class DotAccountServiceMock {
     addStarterPage() {}
     removeStarterPage() {}
-    updateUser(user: DotAccountUser) {}
+    updateUser() {}
 }
 
 describe('DotMyAccountComponent', () => {
@@ -293,7 +293,7 @@ describe('DotMyAccountComponent', () => {
             of({ entity: { user: mockUser() } })
         );
         spyOn(loginService, 'setAuth');
-        spyOn(comp.close, 'emit');
+        spyOn(comp.shutdown, 'emit');
 
         fixture.detectChanges();
         await fixture.whenStable();
@@ -317,7 +317,7 @@ describe('DotMyAccountComponent', () => {
         const save = de.query(By.css('.dialog__button-accept'));
         save.triggerEventHandler('click', {});
         fixture.detectChanges();
-        expect(comp.close.emit).toHaveBeenCalledTimes(1);
+        expect(comp.shutdown.emit).toHaveBeenCalledTimes(1);
         expect(dotAccountService.updateUser).toHaveBeenCalledWith(comp.dotAccountUser);
         expect(loginService.setAuth).toHaveBeenCalledWith({
             loginAsUser: null,
@@ -331,7 +331,7 @@ describe('DotMyAccountComponent', () => {
         spyOn<any>(dotAccountService, 'updateUser').and.returnValue(
             of({ entity: { reauthenticate: true } })
         );
-        spyOn(comp.close, 'emit');
+        spyOn(comp.shutdown, 'emit');
 
         fixture.detectChanges();
         await fixture.whenStable();
@@ -354,7 +354,7 @@ describe('DotMyAccountComponent', () => {
         const save = de.query(By.css('.dialog__button-accept'));
         save.triggerEventHandler('click', {});
         fixture.detectChanges();
-        expect(comp.close.emit).toHaveBeenCalledTimes(1);
+        expect(comp.shutdown.emit).toHaveBeenCalledTimes(1);
         expect(dotAccountService.updateUser).toHaveBeenCalledWith(comp.dotAccountUser);
         expect(dotRouterService.doLogOut).toHaveBeenCalledTimes(1);
     });

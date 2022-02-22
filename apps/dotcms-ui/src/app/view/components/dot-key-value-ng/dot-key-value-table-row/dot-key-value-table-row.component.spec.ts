@@ -44,7 +44,7 @@ class TestHostComponent {
 }
 
 @Directive({
-    // tslint:disable-next-line:directive-selector
+    // eslint-disable-next-line
     selector: '[pEditableColumn]'
 })
 class MockEditableColumnDirective {
@@ -55,7 +55,7 @@ class MockEditableColumnDirective {
 }
 
 @Component({
-    // tslint:disable-next-line:component-selector
+    // eslint-disable-next-line
     selector: 'p-cellEditor',
     template: `
         <ng-container>

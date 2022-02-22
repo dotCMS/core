@@ -18,7 +18,7 @@
     (onRowUnselect)="handleRowCheck()"
     (onHeaderCheckboxToggle)="handleRowCheck()"
     (onFilter)="handleFilter()"
-    (onContextMenuSelect)="onContextMenuSelect.emit($event.data)"
+    (onContextMenuSelect)="contextMenuSelect.emit($event.data)"
     [columns]="columns"
     [lazy]="true"
     [loading]="loading"

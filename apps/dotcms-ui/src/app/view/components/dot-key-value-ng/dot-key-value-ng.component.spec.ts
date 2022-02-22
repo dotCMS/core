@@ -5,7 +5,6 @@ import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DOTTestBed } from '@tests/dot-test-bed';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { TableModule } from 'primeng/table';
-import * as _ from 'lodash';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotKeyValueTableRowModule } from '@components/dot-key-value-ng/dot-key-value-table-row/dot-key-value-table-row.module';
 import { DotKeyValueComponent } from './dot-key-value-ng.component';

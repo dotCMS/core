@@ -51,11 +51,11 @@ export class DotListingDataTableComponent implements OnInit {
     @Input() actions: DotActionMenuItem[];
     @Input() dataKey = '';
     @Input() checkbox = false;
-    @Input() mapItems: (item: any[]) => any[];
+    @Input() mapItems: <T = Record<string, unknown>[]>(item: T) => T;
     @Input() contextMenu = false;
-    @Output() rowWasClicked: EventEmitter<any> = new EventEmitter();
-    @Output() selectedItems: EventEmitter<any> = new EventEmitter();
-    @Output() onContextMenuSelect: EventEmitter<any> = new EventEmitter();
+    @Output() rowWasClicked: EventEmitter<unknown> = new EventEmitter();
+    @Output() selectedItems: EventEmitter<unknown> = new EventEmitter();
+    @Output() contextMenuSelect: EventEmitter<unknown> = new EventEmitter();
 
     @ViewChild('gf', { static: true })
     globalSearch: ElementRef;
@@ -64,12 +64,12 @@ export class DotListingDataTableComponent implements OnInit {
 
     @ContentChildren(PrimeTemplate) templates: QueryList<ElementRef>;
 
-    @ContentChild('rowTemplate') rowTemplate: TemplateRef<any>;
-    @ContentChild('headerTemplate') headerTemplate: TemplateRef<any>;
+    @ContentChild('rowTemplate') rowTemplate: TemplateRef<unknown>;
+    @ContentChild('headerTemplate') headerTemplate: TemplateRef<unknown>;
 
     readonly DATE_FORMAT = 'date';
-    items: any[];
-    selected: any[];
+    items: unknown[] ;
+    selected: Record<string, unknown>[];
     filter;
     isContentFiltered = false;
     dateColumns: DataTableColumn[];
@@ -117,7 +117,7 @@ export class DotListingDataTableComponent implements OnInit {
      *
      * @memberof DotListingDataTableComponent
      */
-    handleRowClick(rowData: any): void {
+    handleRowClick(rowData: unknown): void {
         this.rowWasClicked.emit(rowData);
     }
 
@@ -207,10 +207,10 @@ export class DotListingDataTableComponent implements OnInit {
      * @memberof ListingDataTableComponent
      */
     handleFilter(): void {
-        this.isContentFiltered = this.dataTable.filters.hasOwnProperty('global');
+        this.isContentFiltered = Object.prototype.hasOwnProperty.call(this.dataTable.filters, 'global');
     }
 
-    private formatData(items: any[]): any[] {
+    private formatData(items: Record<string, string>[]): Record<string, unknown>[] {
         return items.map((item) => {
             this.dateColumns.forEach(
                 (col) =>
