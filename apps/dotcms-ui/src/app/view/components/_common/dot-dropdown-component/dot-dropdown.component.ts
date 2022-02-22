@@ -3,7 +3,6 @@ import {
     EventEmitter,
     Input,
     Output,
-    ViewEncapsulation,
     ElementRef,
     HostListener,
     OnChanges,

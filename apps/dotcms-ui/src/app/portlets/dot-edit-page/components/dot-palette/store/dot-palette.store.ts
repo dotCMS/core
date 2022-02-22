@@ -26,75 +26,6 @@ export const enum LoadingState {
 
 @Injectable()
 export class DotPaletteStore extends ComponentStore<DotPaletteState> {
-    constructor(
-        public paginatorESService: DotESContentService,
-        public paginationService: PaginatorService
-    ) {
-        super({
-            contentlets: null,
-            contentTypes: null,
-            filter: '',
-            languageId: '1',
-            totalRecords: 0,
-            viewContentlet: 'contentlet:out',
-            loading: false
-        });
-    }
-
-    /**
-     * Request contentlets data with filter and pagination params.
-     *
-     * @param LazyLoadEvent [event]
-     * @memberof DotPaletteStore
-     */
-    getContentletsData(event?: LazyLoadEvent): void {
-        this.setLoading();
-
-        this.state$.pipe(take(1)).subscribe(({ filter, languageId }) => {
-            if (this.isFormContentType) {
-                this.paginationService.setExtraParams('filter', filter);
-
-                this.paginationService
-                    .getWithOffset((event && event.first) || 0)
-                    .pipe(take(1))
-                    .subscribe((data: DotCMSContentlet[] | DotCMSContentType[]) => {
-                        data.forEach((item) => (item.contentType = item.variable = 'FORM'));
-                        this.setLoaded();
-                        this.setContentlets(data);
-                        this.setTotalRecords(this.paginationService.totalRecords);
-                    });
-            } else {
-                this.paginatorESService
-                    .get({
-                        itemsPerPage: this.itemsPerPage,
-                        lang: languageId || '1',
-                        filter: filter || '',
-                        offset: (event && event.first.toString()) || '0',
-                        query: `+contentType: ${this.contentTypeVarName}`
-                    })
-                    .pipe(take(1))
-                    .subscribe((response: ESContent) => {
-                        this.setLoaded();
-                        this.setTotalRecords(response.resultsSize);
-                        this.setContentlets(response.jsonObjectView.contentlets);
-                    });
-            }
-        });
-    }
-
-    /**
-     * Sets value to show/hide components, clears filter value and starts loding data
-     *
-     * @param string [variableName]
-     * @memberof DotPaletteContentletsComponent
-     */
-    switchView(variableName?: string): void {
-        const viewContentlet = variableName ? 'contentlet:in' : 'contentlet:out';
-        this.setViewContentlet(viewContentlet);
-        this.setFilter('');
-        this.loadContentlets(variableName);
-    }
-
     private isFormContentType: boolean;
     private itemsPerPage = 25;
     private contentTypeVarName: string;
@@ -184,4 +115,73 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
             })
         );
     });
+
+    constructor(
+        public paginatorESService: DotESContentService,
+        public paginationService: PaginatorService
+    ) {
+        super({
+            contentlets: null,
+            contentTypes: null,
+            filter: '',
+            languageId: '1',
+            totalRecords: 0,
+            viewContentlet: 'contentlet:out',
+            loading: false
+        });
+    }
+
+    /**
+     * Request contentlets data with filter and pagination params.
+     *
+     * @param LazyLoadEvent [event]
+     * @memberof DotPaletteStore
+     */
+    getContentletsData(event?: LazyLoadEvent): void {
+        this.setLoading();
+
+        this.state$.pipe(take(1)).subscribe(({ filter, languageId }) => {
+            if (this.isFormContentType) {
+                this.paginationService.setExtraParams('filter', filter);
+
+                this.paginationService
+                    .getWithOffset((event && event.first) || 0)
+                    .pipe(take(1))
+                    .subscribe((data: DotCMSContentlet[] | DotCMSContentType[]) => {
+                        data.forEach((item) => (item.contentType = item.variable = 'FORM'));
+                        this.setLoaded();
+                        this.setContentlets(data);
+                        this.setTotalRecords(this.paginationService.totalRecords);
+                    });
+            } else {
+                this.paginatorESService
+                    .get({
+                        itemsPerPage: this.itemsPerPage,
+                        lang: languageId || '1',
+                        filter: filter || '',
+                        offset: (event && event.first.toString()) || '0',
+                        query: `+contentType: ${this.contentTypeVarName}`
+                    })
+                    .pipe(take(1))
+                    .subscribe((response: ESContent) => {
+                        this.setLoaded();
+                        this.setTotalRecords(response.resultsSize);
+                        this.setContentlets(response.jsonObjectView.contentlets);
+                    });
+            }
+        });
+    }
+
+    /**
+     * Sets value to show/hide components, clears filter value and starts loding data
+     *
+     * @param string [variableName]
+     * @memberof DotPaletteContentletsComponent
+     */
+    switchView(variableName?: string): void {
+        const viewContentlet = variableName ? 'contentlet:in' : 'contentlet:out';
+        this.setViewContentlet(viewContentlet);
+        this.setFilter('');
+        this.loadContentlets(variableName);
+    }
 }

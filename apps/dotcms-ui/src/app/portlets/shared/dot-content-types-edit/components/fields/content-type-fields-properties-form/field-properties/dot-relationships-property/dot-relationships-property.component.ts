@@ -22,7 +22,7 @@ export class DotRelationshipsPropertyComponent implements OnInit {
     readonly STATUS_NEW = 'NEW';
     readonly STATUS_EXISTING = 'EXISTING';
 
-    property: FieldProperty;
+    property: FieldProperty<{ [key: string]: unknown }>;
     group: FormGroup;
 
     status = this.STATUS_NEW;

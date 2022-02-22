@@ -1,11 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { Observable, of } from 'rxjs';
-import { DotPaletteStore, LoadingState } from './dot-palette.store';
+import { DotPaletteStore } from './dot-palette.store';
 import { Injectable } from '@angular/core';
 import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
 import { PaginatorService } from '@dotcms/app/api/services/paginator';
 import { contentTypeDataMock } from '../dot-palette-content-type/dot-palette-content-type.component.spec';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
+import { ESContent } from '../../../../../shared/models/dot-es-content/dot-es-content.model';
 import {
     contentletFormDataMock,
     contentletProductDataMock
@@ -20,9 +21,11 @@ class MockPaginatorService {
     sortOrder: string;
     totalRecords = 40;
 
-    setExtraParams(): void {}
+    setExtraParams(): void {
+        /** */
+    }
 
-    public getWithOffset(): Observable<any[]> {
+    public getWithOffset(): Observable<DotCMSContentlet[] | DotCMSContentType[]> {
         return null;
     }
 }
@@ -32,7 +35,7 @@ class MockESPaginatorService {
     paginationPerPage = 15;
     totalRecords = 20;
 
-    public get(): Observable<any[]> {
+    public get(): Observable<ESContent> {
         return null;
     }
 }
@@ -120,9 +123,11 @@ describe('DotPaletteStore', () => {
 
     it('should load Product contentlets to store', (done) => {
         spyOn(dotESContentService, 'get').and.returnValue(
-            <any>of({
+            of({
                 contentTook: 0,
-                jsonObjectView: { contentlets: [contentletProductDataMock] },
+                jsonObjectView: {
+                    contentlets: [contentletProductDataMock] as unknown as DotCMSContentlet[]
+                },
                 queryTook: 1,
                 resultsSize: 20
             })
@@ -149,9 +154,11 @@ describe('DotPaletteStore', () => {
 
     it('should set filter value in store', (done) => {
         spyOn(dotESContentService, 'get').and.returnValue(
-            <any>of({
+            of({
                 contentTook: 0,
-                jsonObjectView: { contentlets: [contentletProductDataMock] },
+                jsonObjectView: {
+                    contentlets: [contentletProductDataMock] as unknown as DotCMSContentlet[]
+                },
                 queryTook: 1,
                 resultsSize: 20
             })

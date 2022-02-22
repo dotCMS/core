@@ -2,7 +2,6 @@ import { Story, Meta } from '@storybook/angular/types-6-0';
 import { moduleMetadata } from '@storybook/angular';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ListboxModule } from 'primeng/listbox';
-import { NumberSymbol } from '@angular/common';
 
 export default {
     title: 'PrimeNG/Form/ListBox',

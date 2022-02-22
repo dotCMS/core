@@ -6,7 +6,7 @@ import { DebugElement, Component, Injectable } from '@angular/core';
 import { DotPageSelectorComponent } from './dot-page-selector.component';
 import { DotPageAsset, DotPageSelectorService } from './service/dot-page-selector.service';
 import { FormGroup, FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete';
+import { AutoCompleteModule } from 'primeng/autocomplete';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
 import {
     DotFolder,

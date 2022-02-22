@@ -127,7 +127,7 @@ describe('CategoriesPropertyComponent', () => {
             }
         };
         comp.ngOnInit();
-        expect(comp.placeholder).toBe(comp.property.value);
+        expect(comp.placeholder).toBe(comp.property.value as string);
     });
 
     describe('Pagination events', () => {

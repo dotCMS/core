@@ -5,7 +5,7 @@ import { LazyLoadEvent } from 'primeng/api';
 import { Observable } from 'rxjs';
 import { DotPaletteContentTypeComponent } from './dot-palette-content-type/dot-palette-content-type.component';
 import { DotPaletteContentletsComponent } from './dot-palette-contentlets/dot-palette-contentlets.component';
-import { DotPaletteStore } from './store/dot-palette.store';
+import { DotPaletteStore, DotPaletteState } from './store/dot-palette.store';
 
 @Component({
     selector: 'dot-palette',
@@ -37,7 +37,7 @@ export class DotPaletteComponent implements OnInit {
         }
     }
     @Input() languageId: string;
-    vm$: Observable<any> = this.store.vm$;
+    vm$: Observable<DotPaletteState> = this.store.vm$;
 
     @ViewChild('contentlets') contentlets: DotPaletteContentletsComponent;
     @ViewChild('contentTypes') contentTypes: DotPaletteContentTypeComponent;

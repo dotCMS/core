@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { LoginService } from '@dotcms/dotcms-js';
-import { map, pluck, take, tap } from 'rxjs/operators';
+import { map, take, tap } from 'rxjs/operators';
 import { DotLoginInformation } from '@dotcms/dotcms-models';
 
 export const LOGIN_LABELS = [

@@ -1,12 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import {
-    HttpCode,
-    LoggerService,
-    LoginService,
-    User,
-    DotLoginParams,
-    ResponseView
-} from '@dotcms/dotcms-js';
+import { HttpCode, LoggerService, LoginService, User, DotLoginParams } from '@dotcms/dotcms-js';
 import { SelectItem } from 'primeng/api';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { take, takeUntil, tap } from 'rxjs/operators';

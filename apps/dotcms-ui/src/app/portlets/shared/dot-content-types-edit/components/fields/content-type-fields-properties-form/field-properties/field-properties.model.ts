@@ -1,7 +1,7 @@
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-export interface FieldProperty {
+export interface FieldProperty<T = unknown> {
     name: string;
-    value: any;
+    value: T;
     field: DotCMSContentTypeField;
 }

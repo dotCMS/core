@@ -42,7 +42,7 @@ export class CoreWebServiceMock {
             )
             .pipe(
                 filter(
-                    (event: HttpEvent<HttpResponse<DotCMSResponse<T>> | any>) =>
+                    (event: HttpEvent<HttpResponse<DotCMSResponse<T>> | unknown>) =>
                         event.type === HttpEventType.Response
                 ),
                 map((resp: HttpResponse<DotCMSResponse<T>>) => {
@@ -79,7 +79,7 @@ export class CoreWebServiceMock {
             )
             .pipe(
                 filter(
-                    (event: HttpEvent<HttpResponse<DotCMSResponse<T>> | any>) =>
+                    (event: HttpEvent<HttpResponse<DotCMSResponse<T>> | unknown>) =>
                         event.type === HttpEventType.Response
                 ),
                 map((resp: HttpResponse<DotCMSResponse<T>>) => {

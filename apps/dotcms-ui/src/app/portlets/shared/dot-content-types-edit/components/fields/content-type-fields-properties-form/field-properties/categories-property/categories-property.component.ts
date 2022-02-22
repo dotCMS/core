@@ -32,7 +32,7 @@ export class CategoriesPropertyComponent implements OnInit {
     ngOnInit(): void {
         this.placeholder = !this.property.value
             ? this.dotMessageService.get('contenttypes.field.properties.category.label')
-            : this.property.value;
+            : (this.property.value as string);
         this.paginationService.url = 'v1/categories';
     }
 

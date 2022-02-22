@@ -13,10 +13,10 @@ export class DotWizardService {
 
     /**
      * Notify the data collected in wizard.
-     * @param {{ [key: string]: string }} form
+     * @param {{ [key: string]: string | string[] }} form
      * @memberof DotWizardService
      */
-    output$(form: { [key: string]: any }): void {
+    output$(form: { [key: string]: string | string[] }): void {
         this.output.next(form);
     }
 

@@ -2,7 +2,7 @@
 
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotPaletteComponent } from './dot-palette.component';
-import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Injectable, Input, Output } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { dotcmsContentTypeBasicMock } from '@dotcms/app/test/dot-content-types.mock';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -77,7 +77,9 @@ class MockPaginatorService {
     sortOrder: string;
     totalRecords = 40;
 
-    setExtraParams(): void {}
+    setExtraParams(): void {
+        /* */
+    }
 
     public getWithOffset(): Observable<any[]> {
         return null;
@@ -114,7 +116,6 @@ const storeMock = jasmine.createSpyObj(
 describe('DotPaletteComponent', () => {
     let comp: DotPaletteComponent;
     let fixture: ComponentFixture<DotPaletteComponent>;
-    let de: DebugElement;
     let store: DotPaletteStore;
 
     beforeEach(() => {

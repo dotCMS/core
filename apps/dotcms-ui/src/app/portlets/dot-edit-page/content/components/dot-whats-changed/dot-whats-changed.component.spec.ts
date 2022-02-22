@@ -27,7 +27,6 @@ class TestDotIframeComponent {
 }
 
 describe('DotWhatsChangedComponent', () => {
-    let component: DotWhatsChangedComponent;
     let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
     let dotIframe: IframeComponent;
@@ -69,7 +68,6 @@ describe('DotWhatsChangedComponent', () => {
         fixture = TestBed.createComponent(TestHostComponent);
 
         de = fixture.debugElement.query(By.css('dot-whats-changed'));
-        component = de.componentInstance;
         dotEditPageService = TestBed.inject(DotEditPageService);
         dotDOMHtmlUtilService = TestBed.inject(DotDOMHtmlUtilService);
         fixture.detectChanges();

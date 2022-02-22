@@ -162,7 +162,7 @@ describe('DotPaletteContentletsComponent', () => {
 
     it('should emit paginate event', async () => {
         spyOn(component.paginate, 'emit').and.callThrough();
-        let productsArray = [];
+        const productsArray = [];
         for (let index = 0; index < 30; index++) {
             productsArray.push(contentletProductDataMock);
         }

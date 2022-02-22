@@ -6,7 +6,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 
 @Component({
-    selector: 'dpt-p-dialog-button',
+    selector: 'dot-p-dialog-button',
     providers: [DialogService, MessageService],
     template: `<button
         type="button"
