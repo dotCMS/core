@@ -59,10 +59,10 @@ public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
         final String name;
         final Object fieldValue;
         final String values;
-        final Class fieldType;
+        final Class<?> fieldType;
         final boolean isJsonFields;
 
-        public TestCase(final String name, final Object fieldValue, final String values, final Class fieldType, final boolean isJsonFields) {
+        public TestCase(final String name, final Object fieldValue, final String values, final Class<?> fieldType, final boolean isJsonFields) {
             this.name = name;
             this.fieldValue = fieldValue;
             this.values = values;
@@ -103,8 +103,7 @@ public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
             throws DotDataException, DotSecurityException {
 
         if(!APILocator.getContentletJsonAPI().isPersistContentAsJson() && testCase.isJsonFields){
-            //if we're on a db different from Postgres and this test is marked for jsonFields Skip
-            //Json Fields are only supported on postgres for now.
+            //if we're on a db different from a json supporting db (like Postgres or MS-SQL) and this test is marked for jsonFields. We Skip it.
             return;
         }
 

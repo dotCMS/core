@@ -49,10 +49,13 @@ public interface ContentletJsonAPI {
      * @return
      */
     default boolean isPersistContentAsJson(){
-        return DbConnectionFactory.isPostgres() && Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
+        return DbConnectionFactory.isPostgres() || DbConnectionFactory.isMsSql()
+                && Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
     }
 
     /**
+     * This attribute tells is we also want to save content in the dynamic columns
+     * So we can have a hybrid model
      * if we do not support content as json this has to return true
      * @return
      */
