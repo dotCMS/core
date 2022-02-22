@@ -513,7 +513,6 @@ import org.junit.runners.Suite.SuiteClasses;
         XmlToolTest.class,
         LanguageFolderTest.class,
         MailAPIImplTest.class,
-        com.dotcms.rendering.velocity.viewtools.content.BinaryMapTest.class,
         Task220202RemoveFKStructureFolderConstraintTest.class,
         ContentBundlerTest.class,    
         Task220202RemoveFKStructureFolderConstraintTest.class
