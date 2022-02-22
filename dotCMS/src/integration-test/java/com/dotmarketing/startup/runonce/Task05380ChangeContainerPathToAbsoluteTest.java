@@ -31,6 +31,10 @@ import static com.dotmarketing.startup.runonce.Task05380ChangeContainerPathToAbs
 import static com.dotmarketing.startup.runonce.Task05380ChangeContainerPathToAbsolute.GET_TEMPLATES_QUERY;
 import static org.junit.Assert.*;
 
+/**
+ * On this the "contentlet as json generation" feature has been disconnected
+ * so we can mimic the original behavior of the upgrade task interacting with columns
+ */
 public class Task05380ChangeContainerPathToAbsoluteTest {
     final String body =
         "<html>" +
@@ -553,7 +557,7 @@ public class Task05380ChangeContainerPathToAbsoluteTest {
                     .loadObjectResults()
                     .stream()
                     .map(templateMap -> templateMap.get("host_name"))
-                    .anyMatch(title -> title.equals(oldName));
+                    .anyMatch(oldName::equals);
 
             assertFalse(anyMatchWithOldName);
 
