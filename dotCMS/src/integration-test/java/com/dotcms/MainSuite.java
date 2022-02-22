@@ -19,6 +19,7 @@ import com.dotcms.enterprise.cluster.ClusterFactoryTest;
 import com.dotcms.enterprise.publishing.remote.PushPublishBundleGeneratorTest;
 import com.dotcms.enterprise.publishing.remote.StaticPushPublishBundleGeneratorTest;
 import com.dotcms.enterprise.publishing.remote.bundler.ContainerBundlerTest;
+import com.dotcms.enterprise.publishing.remote.bundler.ContentBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentTypeBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.DependencyBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.FolderBundlerTest;
@@ -59,7 +60,6 @@ import com.dotcms.rendering.velocity.viewtools.FileToolTest;
 import com.dotcms.rendering.velocity.viewtools.JSONToolTest;
 import com.dotcms.rendering.velocity.viewtools.MessageToolTest;
 import com.dotcms.rendering.velocity.viewtools.XmlToolTest;
-import com.dotcms.rendering.velocity.viewtools.content.BinaryMapTest;
 import com.dotcms.rendering.velocity.viewtools.content.StoryBlockMapTest;
 import com.dotcms.rest.BundlePublisherResourceIntegrationTest;
 import com.dotcms.rest.BundleResourceTest;
@@ -514,7 +514,8 @@ import org.junit.runners.Suite.SuiteClasses;
         LanguageFolderTest.class,
         MailAPIImplTest.class,
         Task220202RemoveFKStructureFolderConstraintTest.class,
-        PublisherAPIImplTest.class
+        PublisherAPIImplTest.class,
+        ContentBundlerTest.class,
 })
 public class MainSuite {
 
