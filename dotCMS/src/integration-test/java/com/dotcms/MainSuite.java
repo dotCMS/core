@@ -514,8 +514,7 @@ import org.junit.runners.Suite.SuiteClasses;
         LanguageFolderTest.class,
         MailAPIImplTest.class,
         Task220202RemoveFKStructureFolderConstraintTest.class,
-        ContentBundlerTest.class,    
-        Task220202RemoveFKStructureFolderConstraintTest.class
+        ContentBundlerTest.class
 })
 public class MainSuite {
 
