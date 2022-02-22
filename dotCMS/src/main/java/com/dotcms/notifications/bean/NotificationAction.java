@@ -2,6 +2,8 @@ package com.dotcms.notifications.bean;
 
 import com.dotcms.util.I18NMessage;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 import java.util.Map;
 
@@ -45,7 +47,8 @@ public class NotificationAction implements Serializable {
 	 *            - If more configuration parameters are required, this
 	 *            {@code Map} can be used to define them.
 	 */
-	public NotificationAction(I18NMessage text, String action, NotificationActionType actionType, Map<String, Object> attributes) {
+	@JsonCreator
+	public NotificationAction(@JsonProperty("text") final I18NMessage text, @JsonProperty("action") final String action, @JsonProperty("actionType") final NotificationActionType actionType, @JsonProperty("attributes") final Map<String, Object> attributes) {
 		this.text = text;
 		this.action = action;
 		this.actionType = actionType;

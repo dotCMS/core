@@ -8,15 +8,12 @@ import com.dotcms.contenttype.model.field.ImmutableTagField;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.collect.ImmutableList;
-import org.immutables.gson.Gson;
-import org.immutables.value.Value;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.immutables.value.Value;
 
 @JsonSerialize(as = ImmutableDotAssetContentType.class)
 @JsonDeserialize(as = ImmutableDotAssetContentType.class)
-@Gson.TypeAdapters
 @Value.Immutable
 /**
  * The dotAssets are distinguished from fileAssets in that the only required field in a dotAsset is the asset and they are only addressable via their ids,

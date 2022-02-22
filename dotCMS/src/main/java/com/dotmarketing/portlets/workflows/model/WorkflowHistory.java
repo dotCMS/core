@@ -88,7 +88,8 @@ public class WorkflowHistory  implements Serializable, WorkflowTimelineItem
 
         if (UtilMethods.isSet(this.changeDescription) && StringUtils.isJson(this.changeDescription.trim())) {
             // if it is json
-            return MarshalFactory.getInstance().getMarshalUtils().unmarshal(this.changeDescription, Map.class);
+            return MarshalFactory
+                    .getInstance().getMarshalUtils().unmarshal(this.changeDescription, Map.class);
         }
 
         // if the representation of the json, if it is  json. otherwise is gonna be description, getChangeDescription
