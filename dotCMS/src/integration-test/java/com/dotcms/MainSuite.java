@@ -19,6 +19,7 @@ import com.dotcms.enterprise.cluster.ClusterFactoryTest;
 import com.dotcms.enterprise.publishing.remote.PushPublishBundleGeneratorTest;
 import com.dotcms.enterprise.publishing.remote.StaticPushPublishBundleGeneratorTest;
 import com.dotcms.enterprise.publishing.remote.bundler.ContainerBundlerTest;
+import com.dotcms.enterprise.publishing.remote.bundler.ContentBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentTypeBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.DependencyBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.FolderBundlerTest;
@@ -142,8 +143,6 @@ import com.dotmarketing.startup.runonce.Task220202RemoveFKStructureFolderConstra
 import com.dotmarketing.startup.runonce.Task211101AddContentletAsJsonColumnTest;
 import com.dotmarketing.startup.runonce.Task211103RenameHostNameLabelTest;
 import com.dotmarketing.startup.runonce.Task220202RemoveFolderInodeConstraintTest;
-import com.dotmarketing.startup.runonce.Task220214AddOwnerAndIDateToFolderTableTest;
-import com.dotmarketing.startup.runonce.Task220215MigrateDataFromInodeToFolderTest;
 import com.dotmarketing.startup.runonce.Task220214AddOwnerAndIDateToFolderTableTest;
 import com.dotmarketing.startup.runonce.Task220215MigrateDataFromInodeToFolderTest;
 import com.dotmarketing.util.ConfigTest;
@@ -518,6 +517,7 @@ import org.junit.runners.Suite.SuiteClasses;
         LanguageFolderTest.class,
         MailAPIImplTest.class,
         com.dotcms.rendering.velocity.viewtools.content.BinaryMapTest.class,
+        ContentBundlerTest.class,
         Task220202RemoveFKStructureFolderConstraintTest.class,
         Task220202RemoveFolderInodeConstraintTest.class,
         Task220214AddOwnerAndIDateToFolderTableTest.class,
