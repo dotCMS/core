@@ -1093,15 +1093,6 @@
 //END of CUSTOM_FIELD
 //KEY_VALUE Field
     else if(field.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())){
- 
-    %>
-    <script>
-        dojo.ready(function () {
-            setKVValue('<%=field.getFieldContentlet()%>', '<%=field.getVelocityVarName()%>');
-            recolorTable('<%=field.getFieldContentlet()%>');
-        });
-    </script>
-    <%
 
         java.util.Map<String, Object> keyValueMap = null;
 
@@ -1114,56 +1105,106 @@
         if("metaData".equals(field.getVelocityVarName())){
             keyValueMap.put("content", "...");
         }
+
+        String keyValueDataRaw = "{";
+        String dotKeyValueDataRaw = "";
+
+        for(String key : keyValueMap.keySet()) {
+            keyValueDataRaw += key + ":" + UtilMethods.htmlifyString(UtilMethods.escapeDoubleQuotes(keyValueMap.get(key).toString())) + ",";
+            dotKeyValueDataRaw += key + "|" + UtilMethods.htmlifyString(UtilMethods.escapeDoubleQuotes(keyValueMap.get(key).toString())) + ",";
+        }
+
+        keyValueDataRaw = keyValueDataRaw.substring(0, keyValueDataRaw.length() - 1) + "}";
+        dotKeyValueDataRaw = dotKeyValueDataRaw.substring(0, dotKeyValueDataRaw.length() - 1);
+
+        List<FieldVariable> fieldVariables=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, true);
+        String whiteListKeyValues = "";
+        for(FieldVariable fv : fieldVariables) {
+            if (fv.getKey().equals("white-list")) {
+                whiteListKeyValues = fv.getValue();
+            }
+        }
     %>
-    <div class="key-value-form" style="display:<%=field.isReadOnly()?"none":"flex"%>">
-        <input type="hidden" class ="<%=field.getVelocityVarName()%>" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>" value="" />
-        <input
-                type="text"
-                placeholder="<%=LanguageUtil.get(pageContext, "Key")%>"
-                name="<%=field.getFieldContentlet()%>_key"
-                id="<%=field.getVelocityVarName()%>_key"
-                dojoType='dijit.form.TextBox'
-                value="" <%=field.isReadOnly()?"disabled":""%> />
-        <input
-                type="text"
-                placeholder="<%=LanguageUtil.get(pageContext, "Value")%>"
-                name="<%=field.getFieldContentlet()%>_value"
-                id="<%=field.getVelocityVarName()%>_value"
-                dojoType='dijit.form.TextBox'
-                value="" <%=field.isReadOnly()?"disabled":""%> />
-        <button type="submit" dojoType="dijit.form.Button" id="<%=field.getFieldContentlet()%>_addbutton" onClick="addKVPair('<%=field.getFieldContentlet()%>', '<%=field.getVelocityVarName()%>');emmitFieldDataChange(true);" iconClass="plusIcon" <%=field.isReadOnly()?"disabled":""%> type="button"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add")) %></button>
-    </div>
-    <div id="mainHolder" class="key-value-items">
+        <input type="hidden" class ="<%=field.getVelocityVarName()%>" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>" value="<%=keyValueDataRaw%>" />
+        <style>
+            dot-key-value key-value-table tr {
+                cursor: move;
+            }
+            dot-key-value key-value-table tr:nth-child(even) {
+                background-color: #f3f3f3;
+            }
+            dot-key-value .key-value-table-wc__placeholder-transit {
+                padding: 0;
+            }
+            dot-key-value .key-value-table-wc__key,
+            dot-key-value .key-value-table-wc__value {
+                padding-left: 0.5rem;
+            }
+            dot-key-value key-value-form label {
+                margin-bottom: 0.5rem;
+            }
+            dot-key-value button {
+                background-color: #fff;
+                border: solid 1px var(--color-sec);
+                color: var(--color-sec);
+                font-family: inherit;
+                font-weight: 500;
+                margin: 0.5rem 0;
+                padding: 0.5rem 0.75rem;
+                text-transform: uppercase;
+                width: 100%;
+            }
+            dot-key-value button:focus,
+            dot-key-value button:hover {
+                border: solid 1px var(--color-main);
+                color: var(--color-main);
+            }
+            dot-key-value key-value-form button[disabled] {
+                background: #f3f3f3;
+                border: 1px solid #b3b1b8;
+                color: #b3b1b8;
+                cursor: not-allowed;
+            }
+            dot-key-value input,
+            dot-key-value select {
+                border: 1px solid #b3b1b8;
+                padding: 0.75rem 0.75rem;
+                width: 100%;
+            }
+            dot-key-value button {
+                cursor: pointer;
+            }
+            dot-key-value key-value-form {
+                margin-bottom: 1rem;
+            }
+            dot-key-value key-value-form .key-value-table-form__key,
+            dot-key-value key-value-form .key-value-table-form__value {
+                padding-right: 1.5rem;
+            }
+        </style>
 
-        <table class="listingTable" id="<%=field.getFieldContentlet()%>_kvtable">
-            <% boolean showAlt=false;
-            for(String key : keyValueMap.keySet()){%>
-               <input type="hidden" id="<%=field.getFieldContentlet()+"_"+key+"_k"%>" value="<%= key %>" />
-               <input type="hidden" id="<%=field.getFieldContentlet()+"_"+key+"_v"%>" value="<%= UtilMethods.htmlifyString(UtilMethods.escapeDoubleQuotes(keyValueMap.get(key).toString())) %>" />
-               <tr id="<%=field.getFieldContentlet()+"_"+key%>" class="dojoDndItem <%=showAlt ?  "alternate_1" :"alternate_2"%>">
-                   <td>
-                       <%if(!field.isReadOnly()){ %>
-                        <a href="javascript:deleteKVPair('<%=field.getFieldContentlet()%>','<%=field.getVelocityVarName()%>','<%=UtilMethods.escapeSingleQuotes(key)%>');"><span class="deleteIcon"></span></a>
-                       <%} %>
-                   </td>
-                   <td><span><%= key %></span></td>
-                   <td><span><%= UtilMethods.htmlifyString(keyValueMap.get(key).toString()) %></span></td>
-               </tr>
-                <%showAlt=!showAlt;%>
-            <%}%>
-        </table>
+        <dot-key-value></dot-key-value>
 
-    </div>
-    <%if(!field.isReadOnly()){ %>
-    <script>
-        var source<%=field.getFieldContentlet()%> = new dojo.dnd.Source(dojo.byId('<%=field.getFieldContentlet()%>_kvtable'));
-        dojo.connect(source<%=field.getFieldContentlet()%>, "insertNodes", function(){
-            setKVValue('<%=field.getFieldContentlet()%>', '<%=field.getVelocityVarName()%>');
-            recolorTable('<%=field.getFieldContentlet()%>');
-        });
-    </script>
-    <%}%>
+        <script>
+            var dotKeyValue = document.querySelector('dot-key-value');
+            dotKeyValue.uniqueKeys = "true";
+            dotKeyValue.value = '<%=dotKeyValueDataRaw%>';
+            dotKeyValue.disabled = '<%=field.isReadOnly()%>';
+            dotKeyValue.whiteList = '<%=whiteListKeyValues%>';
+            dotKeyValue.formKeyLabel = '<%= LanguageUtil.get(pageContext, "Key") %>'
+            dotKeyValue.formValueLabel = '<%= LanguageUtil.get(pageContext, "Value") %>'
+            dotKeyValue.formAddButtonLabel = '<%= LanguageUtil.get(pageContext, "Add") %>'
+            dotKeyValue.listDeleteLabel = '<%= LanguageUtil.get(pageContext, "Delete") %>'
+            dotKeyValue.whiteListEmptyOptionLabel = '<%= LanguageUtil.get(pageContext, "Pick-an-option") %>'
+            dotKeyValue.requiredMessage = '<%= LanguageUtil.get(pageContext, "message.fieldvariables.key.required") %>'
 
+                dotKeyValue.addEventListener('dotValueChange', function (event) {
+                    var formattedData = event.detail.value.replace(/[|]/g, ':');
+                    var keyfieldId = document.getElementById('<%=field.getVelocityVarName()%>');
+                    keyfieldId.value = `{${formattedData}}`
+                }, false);
+
+        </script>
     <%}%>
 
 </div>
