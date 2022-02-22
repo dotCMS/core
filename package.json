@@ -41,7 +41,8 @@
         "workspace-generator": "nx workspace-generator",
         "dep-graph": "nx dep-graph",
         "help": "nx help",
-        "pretty-quick": "pretty-quick"
+        "pretty-quick": "pretty-quick",
+        "prepare": "node ./prepare.js"
     },
     "private": false,
     "dependencies": {
@@ -154,7 +155,6 @@
         "eslint-plugin-cypress": "^2.12.1",
         "flatpickr": "^4.5.7",
         "gh-pages": "^3.1.0",
-        "husky": "^5.1.3",
         "install": "^0.13.0",
         "jasmine-core": "^3.6.0",
         "jasmine-spec-reporter": "~6.0.0",
@@ -185,7 +185,8 @@
         "tslint-angular": "^3.0.3",
         "typedoc": "^0.22.11",
         "typescript": "4.5.4",
-        "webpack-bundle-analyzer": "^4.5.0"
+        "webpack-bundle-analyzer": "^4.5.0",
+        "husky": "^7.0.0"
     },
     "resolutions": {
         "weboack": "^5.65.0"

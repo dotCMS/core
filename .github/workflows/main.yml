@@ -6,16 +6,55 @@ on:
         branches:
             - master
             - release-*
+env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    GH_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
+    GITHUB_CONTEXT: ${{ toJson(github) }}
+    PULL_REQUEST_URL: ${{ github.event.pull_request._links.html.href }}
+    IS_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
+    HEAD_REF: ${{ github.head_ref }}
 jobs:
+    lint:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2
+              with:
+                  persist-credentials: false
+                  fetch-depth: 1
+            - uses: actions/cache@v2
+              with:
+                  path: |
+                      **/node_modules
+                  key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
+            - name: Configuring Node.js
+              uses: actions/setup-node@v2-beta
+              with:
+                  node-version: '16.13.2'
+            - name: Installing dependencies
+              run: npm install
+            - name: Running Lint in dotcms-ui
+              id: lint_step
+              run: |
+                  if ! (npm run nx lint -- dotcms-ui) then
+                    echo "::set-output name=status::failure";
+                    echo "::set-output name=color::#ff2400";
+                    exit 1;
+                  fi
+            - name: Slack Notification
+              if: failure()
+              uses: rtCamp/action-slack-notify@master
+              env:
+                  SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+                  SLACK_USERNAME: core-web
+                  SLACK_ICON: https://user-images.githubusercontent.com/751424/155223164-b5f1bd4b-4b99-4f1d-8ae6-bfa47b1b2f54.png
+                  SLACK_COLOR: ${{ steps.lint_step.outputs.color }}
+                  SLACK_TITLE: 'Lint: (FAILED)'
+                  SLACK_MESSAGE: https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}
+                  SLACK_FOOTER: ${{ env.PULL_REQUEST_URL }}
     build:
+        needs: lint
         if: github.event.pull_request.draft == false
-        env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-            GH_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
-            GITHUB_CONTEXT: ${{ toJson(github) }}
-            PULL_REQUEST_URL: ${{ github.event.pull_request._links.html.href }}
-            IS_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
-            HEAD_REF: ${{ github.head_ref }}
         runs-on: ubuntu-latest
         steps:
             - name: Checkout
