@@ -145,6 +145,9 @@ import com.dotmarketing.startup.runonce.Task211103RenameHostNameLabelTest;
 import com.dotmarketing.startup.runonce.Task220202RemoveFolderInodeConstraintTest;
 import com.dotmarketing.startup.runonce.Task220214AddOwnerAndIDateToFolderTableTest;
 import com.dotmarketing.startup.runonce.Task220215MigrateDataFromInodeToFolderTest;
+import com.dotmarketing.startup.runonce.Task220202RemoveFolderInodeConstraintTest;
+import com.dotmarketing.startup.runonce.Task220214AddOwnerAndIDateToFolderTableTest;
+import com.dotmarketing.startup.runonce.Task220215MigrateDataFromInodeToFolderTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -516,7 +519,6 @@ import org.junit.runners.Suite.SuiteClasses;
         XmlToolTest.class,
         LanguageFolderTest.class,
         MailAPIImplTest.class,
-        com.dotcms.rendering.velocity.viewtools.content.BinaryMapTest.class,
         ContentBundlerTest.class,
         Task220202RemoveFKStructureFolderConstraintTest.class,
         Task220202RemoveFolderInodeConstraintTest.class,
