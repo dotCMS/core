@@ -21,6 +21,7 @@ import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -47,6 +48,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.*;
@@ -925,15 +927,28 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
 
         if(APILocator.getContentletJsonAPI().isPersistContentAsJson()){
 
-          //TODO: Here add support for json on ms-sql
-          final String sql ="SELECT cvi.working_inode\n"
-             + "  FROM contentlet_version_info cvi join contentlet c on (c.inode = cvi.working_inode) \n"
-             + "  WHERE c.contentlet_as_json @> '{ \"fields\":{\"isDefault\":{ \"value\":true }} }' \n"
-             + "  and c.structure_inode = ?";
+          String sql = null;
 
+          if(DbConnectionFactory.isPostgres()) {
+                sql = "SELECT cvi.working_inode\n"
+                        + "  FROM contentlet_version_info cvi join contentlet c on (c.inode = cvi.working_inode) \n"
+                        + "  WHERE c.contentlet_as_json @> '{ \"fields\":{\"isDefault\":{ \"value\":true }} }' \n"
+                        + "  and c.structure_inode = ?";
+          }
+          if(DbConnectionFactory.isMsSql()){
+                   sql = "SELECT cvi.working_inode\n"
+                        + "  FROM contentlet_version_info cvi join contentlet c on (c.inode = cvi.working_inode) \n"
+                        + "  WHERE JSON_VALUE(c.contentlet_as_json, '$.fields.isDefault.value') = 'true'  \n"
+                        + "  and c.structure_inode = ?";
+          }
+          if(null == sql) {
+              throw new IllegalStateException("Unable to determine what db with json support we're running on!");
+          }
              dotConnect.setSQL(sql);
              dotConnect.addParam(siteContentType.inode());
-             inode = dotConnect.getString("working_inode");
+             inode = Try.of(()->dotConnect.getString("working_inode")).onFailure(throwable -> {
+                 Logger.warnAndDebug(HostAPIImpl.class,"An Error occurred while fetching the default host. ", throwable);
+             }).getOrNull();
         }
 
        if(UtilMethods.isNotSet(inode)) {

@@ -278,28 +278,39 @@ public class ESContentFactoryImpl extends ContentletFactory {
     @Override
     protected Object loadJsonField(final String inode,
             final com.dotcms.contenttype.model.field.Field field) throws DotDataException {
+
+        String loadJsonFieldValueSQL = null;
         if (DbConnectionFactory.isPostgres()) {
-            final String loadJsonFieldValueSQL = String
+            loadJsonFieldValueSQL = String
                     .format("SELECT contentlet_as_json->'fields'->'%s'->>'value' as value  FROM contentlet WHERE contentlet_as_json @> '{\"fields\":{\"%s\":{}}}' and inode = ? ",
-                            field.variable(),field.variable());
-            return new DotConnect().setSQL(loadJsonFieldValueSQL).addParam(inode)
-                    .getString("value");
+                            field.variable(), field.variable());
         } else {
             if (DbConnectionFactory.isMsSql()) {
-                //TODO: add json support loading on ms-sql
-            } else {
-                //We can still give it a try parsing the fields directly
-                final String json = new DotConnect()
-                        .setSQL("SELECT contentlet_as_json FROM contentlet WHERE inode=?")
-                        .addParam(inode).getString("contentlet_as_json");
-                final Optional<String> fieldValue = ContentletJsonHelper.INSTANCE.get()
-                        .fieldValue(json, field.variable());
-                if (fieldValue.isPresent()) {
-                    return fieldValue.get();
-                }
+                loadJsonFieldValueSQL = String
+                        .format("SELECT JSON_VALUE(contentlet_as_json,'$.fields.%s.value') as value FROM contentlet WHERE JSON_VALUE(contentlet_as_json,'$.fields.%s.value') IS NOT null AND inode = ? ",
+                                field.variable(), field.variable());
             }
         }
-        return loadField(inode, field.dbColumn());
+        //if we were able to set the query then give it a try executing it.
+        if (UtilMethods.isSet(loadJsonFieldValueSQL)) {
+            //if the attribute is missing for some reason ms-sql might not like it. we better try-catch this.
+            final String finalQuery = loadJsonFieldValueSQL;
+            return Try.of(() -> new DotConnect().setSQL(finalQuery).addParam(inode).getString("value"))
+                    .onFailure(throwable -> {
+                        Logger.warnAndDebug(ESContentFactoryImpl.class, String.format(
+                                "There was an error fetching field variable `%s` from inode `%s` null has been returned.",
+                                field.variable(), inode), throwable);
+                    }).getOrNull();
+        } else {
+            //If the db engine does not provide json support
+            //We can try parsing the fields directly.
+            final String json = new DotConnect()
+                    .setSQL("SELECT contentlet_as_json FROM contentlet WHERE inode=?")
+                    .addParam(inode).getString("contentlet_as_json");
+            final Optional<String> fieldValue = ContentletJsonHelper.INSTANCE.get()
+                    .fieldValue(json, field.variable());
+            return fieldValue.orElse(null);
+        }
     }
 
 	@Override
@@ -2850,20 +2861,35 @@ public class ESContentFactoryImpl extends ContentletFactory {
      */
     public Queries getJsonFieldQueries(final Field field, final Date maxDate) {
         final ContentletJsonAPI contentletJsonAPI = APILocator.getContentletJsonAPI();
-        if (!contentletJsonAPI.isPersistContentAsJson()) {
-            return new NullQueries();
+        if (contentletJsonAPI.isPersistContentAsJson()) {
+            //If we have got this far it means we are a running postgres instance that obviously supports json.
+            final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            if (DbConnectionFactory.isPostgres()) {
+                final String select = String
+                        .format("SELECT inode FROM contentlet WHERE structure_inode = ? AND mod_date<='%s' AND contentlet_as_json @> '{\"fields\" : {\"%s\":{}}}'",
+                                format.format(maxDate),
+                                field.getVelocityVarName());
+                //This basically removes from the json structure the particular entry for the field
+                final String update = String
+                        .format("UPDATE contentlet SET contentlet_as_json = contentlet_as_json #- '{fields,%s}' WHERE inode = ?",
+                                field.getVelocityVarName());
+                return new Queries().setSelect(select).setUpdate(update);
+            }
+
+            if (DbConnectionFactory.isMsSql()) {
+                final String select = String
+                        .format("SELECT inode FROM contentlet WHERE structure_inode = ? AND mod_date<='%s' AND JSON_VALUE(contentlet_as_json,'$.fields.%s') IS NOT null ",
+                                format.format(maxDate),
+                                field.getVelocityVarName());
+
+                final String update = String
+                        .format("UPDATE contentlet SET contentlet_as_json = JSON_MODIFY(contentlet_as_json,'$.fields.%s',NULL) WHERE inode = ?",
+                                field.getVelocityVarName());
+                return new Queries().setSelect(select).setUpdate(update);
+            }
         }
-        //If we have got this far it means we are a running postgres instance that obviously supports json.
-        final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        final String select = String
-                .format("SELECT inode FROM contentlet WHERE structure_inode = ? AND mod_date<='%s' AND contentlet_as_json @> '{\"fields\" : {\"%s\":{}}}'",
-                        format.format(maxDate),
-                        field.getVelocityVarName());
-        //This basically removes from the json structure the particular entry for the field
-        final String update = String
-                .format("UPDATE contentlet SET contentlet_as_json = contentlet_as_json #- '{fields,%s}' WHERE inode = ?",
-                        field.getVelocityVarName());
-        return new Queries().setSelect(select).setUpdate(update);
+        //When called on non-json supported dbs return a nullified instance
+        return new NullQueries();
     }
 
 
@@ -2899,6 +2925,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
     private static class NullQueries extends Queries {
+
         public String getSelect() {
             throw new UnsupportedOperationException();
         }

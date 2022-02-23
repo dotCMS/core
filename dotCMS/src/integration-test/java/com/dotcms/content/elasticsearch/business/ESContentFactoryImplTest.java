@@ -44,6 +44,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
@@ -59,6 +60,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -901,6 +903,48 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         contentlet = instance.findInDb(contentlet.getInode()).get();
         
         assertNull(contentlet.getMap().get(Contentlet.TITTLE_KEY));
+    }
+
+    /**
+     * Method to test: {@link ESContentFactoryImpl#loadJsonField(String, Field)} ()} <br>
+     * Lets create a few random Contentlets and test that the properties we know for sure they have
+     * can be fetched via json
+     */
+    @Test
+    public void Test_load_Json_Field() throws DotDataException {
+        final Contentlet fileAssetContent = TestDataUtils.getFileAssetContent(true, 1L);
+        final List<String> fileAssetExpectedFields = ImmutableList
+                .of("fileName", "fileAsset", "title", "sortOrder");
+        validateLoadJsonField(fileAssetContent, fileAssetExpectedFields);
+
+        final List<String> blogExpectedFields = ImmutableList
+                .of("title", "urlTitle", "author", "sysPublishDate", "body", "hostFolder");
+        final Contentlet blogContent = TestDataUtils.getBlogContent(true, 1L);
+        validateLoadJsonField(blogContent, blogExpectedFields);
+
+        final List<String> employeeExpectedFields = ImmutableList
+                .of("firstName", "lastName", "photo", "mobile", "fax", "email");
+        final Contentlet employeeContent = TestDataUtils.getEmployeeContent(true, 1L, null);
+        validateLoadJsonField(employeeContent, employeeExpectedFields);
+    }
+
+    /**
+     * given the list of fields and a contentlet we validate the fields can be retrieved
+     * @param contentlet
+     * @param expectedFields
+     * @throws DotDataException
+     */
+    private void validateLoadJsonField(final Contentlet contentlet,
+            final List<String> expectedFields)
+            throws DotDataException {
+        for (final Field field : contentlet.getContentType().fields().stream()
+                .filter(field -> expectedFields.contains(field.variable()))
+                .collect(Collectors.toList())) {
+            final Object fieldValue = instance.loadJsonField(contentlet.getInode(), field);
+            if (null != contentlet.get(field.variable())) {
+                assertNotNull("field: " + field.variable() + " shouldn't be null", fieldValue);
+            }
+        }
     }
 
 }

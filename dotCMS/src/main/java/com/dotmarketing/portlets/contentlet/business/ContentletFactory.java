@@ -389,7 +389,8 @@ public abstract class ContentletFactory {
     protected abstract Object loadField(String inode, String fieldContentlet) throws DotDataException;
 
 	/**
-	 * Load json Field
+	 * Gives direct access to the fields states on the CT Structure
+	 * Does not load any additional hydrated property
 	 * @param inode
 	 * @param field
 	 * @return
