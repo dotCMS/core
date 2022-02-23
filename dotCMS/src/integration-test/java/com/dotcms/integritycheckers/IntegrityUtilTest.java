@@ -106,8 +106,8 @@ public class IntegrityUtilTest  {
 
         assertEquals(1, results.size());
 
-        assertEquals(folder.getIdentifier(), results.get(0).get("local_inode"));
-        assertEquals(folder.getInode(), results.get(0).get("local_identifier"));
+        assertEquals(folder.getInode(), results.get(0).get("local_inode"));
+        assertEquals(folder.getIdentifier(), results.get(0).get("local_identifier"));
         assertEquals(newInode_1, results.get(0).get("remote_inode"));
         assertEquals(newIdentifier_1, results.get(0).get("remote_identifier"));
         assertEquals(endPointID, results.get(0).get("endpoint_id"));
@@ -198,6 +198,13 @@ public class IntegrityUtilTest  {
         assertEquals(language.getId(), results.get(0).get("language_id"));
     }
 
+
+    /**
+     * Method to test: {@link IntegrityUtil#completeCheckIntegrity(String)}
+     * When: There is a Page with the same path but different inode ad identifier
+     * Should: Insert a register in htmlpages_ir
+     * @throws Exception
+     */
     @Test
     public void pageFileWithConflicts() throws Exception {
         final Language language = new LanguageDataGen().nextPersisted();
