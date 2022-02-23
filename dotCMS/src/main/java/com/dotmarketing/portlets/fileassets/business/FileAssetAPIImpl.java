@@ -127,7 +127,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		}
 
 		final BrowserQuery query = BrowserQuery.builder()
-				.withHostOrFolderId(parent instanceof Folder ? ((Folder) parent).getInode() : ((Host) parent).getIdentifier())
+				.withHostOrFolderId(parent instanceof Folder ? ((Folder) parent).getIdentifier() : ((Host) parent).getIdentifier())
 				.withUser(user)
 				.showFiles(true)
 				.showWorking(working)
