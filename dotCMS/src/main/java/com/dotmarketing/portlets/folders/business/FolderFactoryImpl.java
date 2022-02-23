@@ -1231,7 +1231,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		if (!UtilMethods.isSet(folder.getIDate())){
 			parameters.add(new Timestamp(new Date().getTime()));
 		} else{
-			parameters.add(folder.getIDate());
+			parameters.add(new Timestamp(folder.getIDate().getTime()));
 		}
 
 		upsertContentletCommand.execute(new DotConnect(), replacements, parameters.toArray());
