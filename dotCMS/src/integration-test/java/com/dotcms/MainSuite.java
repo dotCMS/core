@@ -6,6 +6,7 @@ import com.dotcms.cache.lettuce.DotObjectCodecTest;
 import com.dotcms.cache.lettuce.LettuceCacheTest;
 import com.dotcms.cache.lettuce.RedisClientTest;
 import com.dotcms.content.business.ContentletJsonAPITest;
+import com.dotcms.content.business.ObjectMapperTest;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
@@ -516,8 +517,9 @@ import org.junit.runners.Suite.SuiteClasses;
         XmlToolTest.class,
         LanguageFolderTest.class,
         MailAPIImplTest.class,
-        ContentBundlerTest.class,
         Task220202RemoveFKStructureFolderConstraintTest.class,
+        ContentBundlerTest.class,
+        ObjectMapperTest.class,
         Task220202RemoveFolderInodeConstraintTest.class,
         Task220214AddOwnerAndIDateToFolderTableTest.class,
         Task220215MigrateDataFromInodeToFolderTest.class
