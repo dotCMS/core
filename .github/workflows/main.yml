@@ -74,7 +74,9 @@ jobs:
             - name: Installing dependencies
               run: npm install
             - name: Building for production
-              run: npm run nx build dotcms-ui -- --with-deps --prod
+              ## Build dotcms-webcomponents because dotcms-ui doesn't have the lib as a direct dep
+              ## so Nx can't indentified and build it.
+              run: npm run nx build dotcms-webcomponents && npm run nx build dotcms-ui -- --prod
             - name: Running tests
               id: test_run
               run: |
