@@ -17,6 +17,7 @@ import com.dotcms.dotpubsub.PostgresPubSubImplTest;
 import com.dotcms.dotpubsub.RedisPubSubImplTest;
 import com.dotcms.ema.EMAWebInterceptorTest;
 import com.dotcms.enterprise.cluster.ClusterFactoryTest;
+import com.dotcms.enterprise.publishing.bundler.URLMapBundlerTest;
 import com.dotcms.enterprise.publishing.remote.PushPublishBundleGeneratorTest;
 import com.dotcms.enterprise.publishing.remote.StaticPushPublishBundleGeneratorTest;
 import com.dotcms.enterprise.publishing.remote.bundler.ContainerBundlerTest;
@@ -516,7 +517,8 @@ import org.junit.runners.Suite.SuiteClasses;
         MailAPIImplTest.class,
         Task220202RemoveFKStructureFolderConstraintTest.class,
         ContentBundlerTest.class,
-        ObjectMapperTest.class
+        ObjectMapperTest.class,
+        URLMapBundlerTest.class
 })
 public class MainSuite {
 
