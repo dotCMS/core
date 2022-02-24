@@ -33,9 +33,11 @@ import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -731,6 +733,10 @@ public class PublisherAPIImpl extends PublisherAPI{
 	@Override
 	public void deleteElementFromPublishQueueTable(final String identifier, final long languageId) throws DotPublisherException{
 
+		final List<PublishQueueElement> queueElements = getQueueElementsByAsset(identifier);
+
+		String bundleId = Try.of(()->queueElements.get(0).getBundleId()).getOrNull();
+
 		try{
 			final DotConnect dc = new DotConnect();
 			if (languageId > 0) {
@@ -743,9 +749,15 @@ public class PublisherAPIImpl extends PublisherAPI{
 			}
 			dc.loadResult();
 		}catch(Exception e){
-
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to delete element "+identifier+" :"+e.getMessage(), e);
+		}
+
+		List<PublishQueueElement> queueElementsAfterDelete = Try.of(()->PublisherAPI.getInstance()
+				.getQueueElementsByBundleId(bundleId)).getOrElse(Collections::emptyList);
+
+		if(queueElementsAfterDelete.isEmpty()) {
+			APILocator.getPublishAuditAPI().deletePublishAuditStatus(bundleId);
 		}
 	}
 
@@ -799,6 +811,8 @@ public class PublisherAPIImpl extends PublisherAPI{
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to delete element(s) "+bundleId+" :"+e.getMessage(), e);
 		}
+
+		APILocator.getPublishAuditAPI().deletePublishAuditStatus(bundleId);
 	}
 
 	private static final String DELETEALLELEMENTFROMQUEUESQL="DELETE FROM publishing_queue";
