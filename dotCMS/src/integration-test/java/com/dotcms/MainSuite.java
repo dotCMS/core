@@ -6,6 +6,7 @@ import com.dotcms.cache.lettuce.DotObjectCodecTest;
 import com.dotcms.cache.lettuce.LettuceCacheTest;
 import com.dotcms.cache.lettuce.RedisClientTest;
 import com.dotcms.content.business.json.ContentletJsonAPITest;
+import com.dotcms.content.business.ObjectMapperTest;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
@@ -19,6 +20,7 @@ import com.dotcms.enterprise.cluster.ClusterFactoryTest;
 import com.dotcms.enterprise.publishing.remote.PushPublishBundleGeneratorTest;
 import com.dotcms.enterprise.publishing.remote.StaticPushPublishBundleGeneratorTest;
 import com.dotcms.enterprise.publishing.remote.bundler.ContainerBundlerTest;
+import com.dotcms.enterprise.publishing.remote.bundler.ContentBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentTypeBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.DependencyBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.FolderBundlerTest;
@@ -512,8 +514,10 @@ import org.junit.runners.Suite.SuiteClasses;
         XmlToolTest.class,
         LanguageFolderTest.class,
         MailAPIImplTest.class,
-        com.dotcms.rendering.velocity.viewtools.content.BinaryMapTest.class,
-        Task220202RemoveFKStructureFolderConstraintTest.class
+        Task220202RemoveFKStructureFolderConstraintTest.class,
+        PublisherAPIImplTest.class,
+        ContentBundlerTest.class,
+        ObjectMapperTest.class
 })
 public class MainSuite {
 

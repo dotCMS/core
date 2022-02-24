@@ -43,7 +43,8 @@ public class PublishAuditStatus implements Serializable {
 		INVALID_TOKEN(15),
 		LICENSE_REQUIRED(16),
 
-        SUCCESS_WITH_WARNINGS(17);
+        SUCCESS_WITH_WARNINGS(17),
+        FAILED_INTEGRITY_CHECK(18);
 
 		private int code;
 		private Status(int code) {
