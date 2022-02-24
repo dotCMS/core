@@ -1120,7 +1120,7 @@
         List<FieldVariable> fieldVariables=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, true);
         String whiteListKeyValues = "";
         for(FieldVariable fv : fieldVariables) {
-            if (fv.getKey().equals("white-list")) {
+            if (fv.getKey().equals("whiteList")) {
                 whiteListKeyValues = fv.getValue();
             }
         }
