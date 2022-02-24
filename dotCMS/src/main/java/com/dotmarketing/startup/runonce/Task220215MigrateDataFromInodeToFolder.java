@@ -22,7 +22,8 @@ public class Task220215MigrateDataFromInodeToFolder extends AbstractJDBCStartupT
 
         query.append("UPDATE folder SET owner =_owner, idate = _idate from ")
                 .append("(SELECT DISTINCT inode.inode _inode, inode.owner _owner, ")
-                .append("inode.idate _idate FROM inode WHERE inode.type='folder') my_query");
+                .append("inode.idate _idate FROM inode WHERE inode.type='folder') my_query")
+                .append(" where inode=_inode");
 
         return query.toString();
     }

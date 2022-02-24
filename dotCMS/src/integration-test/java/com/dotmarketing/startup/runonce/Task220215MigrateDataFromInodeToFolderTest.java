@@ -4,17 +4,19 @@ import static org.junit.Assert.assertTrue;
 
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Inode;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.liferay.portal.model.User;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -27,17 +29,23 @@ public class Task220215MigrateDataFromInodeToFolderTest {
         IntegrationTestInitService.getInstance().init();
     }
 
-    private Inode getInode() throws DotDataException, DotSecurityException {
+    private Inode getInode(final String inode) throws DotDataException {
 
-        final String inode = UUID.randomUUID().toString();
+        final String owner = "test";
+        final Date iDate = new java.util.Date();
         final DotConnect dotConnect = new DotConnect();
         dotConnect.setSQL("insert into inode (inode, idate, owner, type) values (?,?,?,'folder')");
         dotConnect.addParam(inode);
-        dotConnect.addParam(new java.util.Date());
-        dotConnect.addParam("test");
+        dotConnect.addParam(iDate);
+        dotConnect.addParam(owner);
         dotConnect.loadResult();
 
-        return InodeUtils.getInode(inode);
+        final Inode inodeObject = new Inode();
+        inodeObject.setInode(inode);
+        inodeObject.setIDate(iDate);
+        inodeObject.setOwner(owner);
+
+        return inodeObject;
     }
 
     private boolean areColumnsPopulated(final Inode inode)
@@ -76,11 +84,20 @@ public class Task220215MigrateDataFromInodeToFolderTest {
      * When: Run the Upgrade Task
      * Should: Populate columns owner and idate of the folder table
      * @throws DotDataException
-     * @throws DotSecurityException
      */
     @Test
     public void test_upgradeTask_success() throws DotDataException, DotSecurityException {
-        final Inode inode = getInode();
+        final FolderAPI folderAPI = APILocator.getFolderAPI();
+        final String folderPath = "/myHome/" + System.currentTimeMillis() + "/";
+        final User user = APILocator.getUserAPI().getSystemUser();
+        final Folder myFolder = folderAPI
+                .createFolders(folderPath, APILocator.getHostAPI().findDefaultHost(user, false), user,
+                        false);
+
+        myFolder.setOwner(user.getUserId());
+        folderAPI.save(myFolder, user, false);
+
+        final Inode inode = getInode(myFolder.getInode());
         final Task220215MigrateDataFromInodeToFolder task = new Task220215MigrateDataFromInodeToFolder();
         task.executeUpgrade();
         assertTrue(areColumnsPopulated(inode));

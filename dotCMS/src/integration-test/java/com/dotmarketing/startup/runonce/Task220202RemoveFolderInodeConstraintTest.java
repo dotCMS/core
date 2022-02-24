@@ -4,10 +4,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.common.db.ForeignKey;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import java.sql.SQLException;
 import java.util.Arrays;
 import org.junit.BeforeClass;
@@ -30,7 +32,14 @@ public class Task220202RemoveFolderInodeConstraintTest {
 
         //creates foreign key if not exists
         if (null == foreignKey) {
-            new DotConnect().executeStatement(
+            final DotConnect dotConnect = new DotConnect();
+            try{
+                // re-create the data in inode for already existing folders
+                dotConnect.executeStatement("INSERT INTO inode SELECT inode, null, null, 'folder' FROM folder");
+            } catch (SQLException e){
+                //We ignore the exception as the inodes might already exist
+            }
+            dotConnect.executeStatement(
                     "alter table folder add constraint fkb45d1c6e5fb51eb foreign key (inode) references inode;");
 
             //the foreign key exists before running the upgrade task
