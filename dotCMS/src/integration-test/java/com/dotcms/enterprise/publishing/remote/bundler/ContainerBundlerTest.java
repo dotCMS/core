@@ -24,6 +24,8 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import io.vavr.collection.List;
+import java.util.ArrayList;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -70,8 +72,12 @@ public class ContainerBundlerTest {
                 .site(host)
                 .clearContentTypes()
                 .nextPersisted();
-        containerWithDifferentVersions.setInode("");
+
         ContainerDataGen.publish(containerWithDifferentVersions);
+
+        containerWithDifferentVersions.setFriendlyName("New FriendlyName");
+        APILocator.getContainerAPI()
+               .save(containerWithDifferentVersions, new ArrayList<>(), host, APILocator.systemUser(), false);
 
         return new TestCase[]{
                new TestCase(containerWithoutContentType,
