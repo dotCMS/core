@@ -122,7 +122,7 @@ public class MultiPartUtils {
             final String tmpFileName = part.getContentDisposition().getFileName();
             final String filename = FileUtil.sanitizeFileName(tmpFileName);
             if(!tmpFileName.equals(filename)) {
-                SecurityLogger.logInfo(getClass(), "Invalid filename uploaded, possible RCE: " + tmpFileName);
+                SecurityLogger.logInfo(getClass(), "Invalid filename uploaded, possible exploit attempt: " + tmpFileName);
                 throw new DotRuntimeException("Invalid filename uploaded : " + tmpFileName);
             }
             final File tempFile   = new File(
