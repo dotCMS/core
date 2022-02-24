@@ -5,6 +5,7 @@ import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -45,9 +46,6 @@ public class UpdatePageTemplatePathJob extends DotStatefulJob {
         final String oldHostName = jobDataMap.get("oldHostName").toString();
         final String newHostName = jobDataMap.get("newHostName").toString();
 
-        final String velocityVarName = "template";
-        final String mappedFieldType = "Custom";
-
         try {
             final List<Map<String, Object>> fields = new DotConnect()
                     .setSQL(GET_FIELDS_TO_UPDATE)
@@ -78,16 +76,14 @@ public class UpdatePageTemplatePathJob extends DotStatefulJob {
                 }
                //The following blocks takes care of the json fields
                 if(APILocator.getContentletJsonAPI().isPersistContentAsJson()) {
-                    final Set<Tuple3<String, String, String>> found = findPageContentletToUpdateForJson(
-                            velocityVarName, mappedFieldType,
-                            "//" + oldHostName + Constants.TEMPLATE_FOLDER_PATH, dc);
+                    final Set<Tuple3<String, String, String>> found = findPageContentletToUpdateForJson("//" + oldHostName + Constants.TEMPLATE_FOLDER_PATH, dc);
 
                     final Set<String> templates = found.stream().map(Tuple3::_3)
                             .collect(Collectors.toSet());
                     //This loop is expected to iterate just once
                     for (final String existingTemplate : templates) {
                         try {
-                            updateTemplate(velocityVarName, mappedFieldType,
+                            updateTemplateForJson(
                                     existingTemplate.replaceAll(oldHostName,newHostName) ,existingTemplate, dc);
                         } catch (Exception e) {
                             Logger.error(UpdatePageTemplatePathJob.class, "", e);
@@ -115,15 +111,33 @@ public class UpdatePageTemplatePathJob extends DotStatefulJob {
         }
     }
 
+    /**
+     * Given a template name we retrieve page info containing (inode, identifier, template)
+     * @param templateName
+     * @param dotConnect
+     * @return
+     * @throws DotDataException
+     */
     private Set<Tuple3<String, String, String>> findPageContentletToUpdateForJson(
-            final String velocityVarName,
-            final String mappedFieldType, final String templateName, final DotConnect dotConnect)
+            final String templateName, final DotConnect dotConnect)
             throws DotDataException {
 
-        final String select = String
-                .format("SELECT identifier, inode, contentlet_as_json->'fields'->'template'->>'value' as template FROM contentlet WHERE contentlet_as_json @> '{\"fields\":{\"%s\":{\"type\":\"%s\"}}}' and contentlet_as_json-> 'fields' ->'template'->>'value' LIKE '%s' ",
-                        velocityVarName, mappedFieldType, templateName + "%");
-        //TODO: Add ms-sql support down here
+        String select = null;
+        if (DbConnectionFactory.isPostgres()) {
+            select = String
+                    .format("SELECT identifier, inode, contentlet_as_json->'fields'->'template'->>'value' as template FROM contentlet WHERE contentlet_as_json @> '{\"fields\":{\"template\":{\"type\":\"Custom\"}}}' and contentlet_as_json-> 'fields' ->'template'->>'value' LIKE '%s' ",
+                            templateName + "%");
+        }
+        if (DbConnectionFactory.isMsSql()) {
+            select = String
+                    .format("SELECT identifier, inode, JSON_VALUE(contentlet_as_json,'$.fields.template.value') as template FROM testing.dbo.contentlet WHERE JSON_VALUE(contentlet_as_json,'$.fields.template.type') = 'Custom' AND JSON_VALUE(contentlet_as_json,'$.fields.template.value') LIKE '%s' ",
+                            templateName + "%");
+        }
+
+        if (null == select) {
+            throw new IllegalStateException(
+                    "Unable to determine what database with json support I am on.");
+        }
 
         dotConnect.setSQL(select);
         return dotConnect.loadObjectResults().stream().map(map ->
@@ -134,14 +148,31 @@ public class UpdatePageTemplatePathJob extends DotStatefulJob {
         ).collect(Collectors.toSet());
     }
 
-    private void updateTemplate(final String velocityVarName, final String mappedFieldType,
+    /**
+     * update the template name for a given old template path
+     * @param newTemplateName
+     * @param oldTemplateName
+     * @param dotConnect
+     * @throws DotDataException
+     */
+    private void updateTemplateForJson(
             final String newTemplateName, final String oldTemplateName, final DotConnect dotConnect)
             throws DotDataException {
+        String update = null;
+        if(DbConnectionFactory.isPostgres()) {
+            update = String
+                    .format("UPDATE contentlet SET contentlet_as_json = jsonb_set(contentlet_as_json,'{fields,template}', jsonb '{\"type\":\"Custom\", \"value\":\"%s\" }') WHERE contentlet_as_json @> '{\"fields\":{\"template\":{\"type\":\"Custom\"}}}' and contentlet_as_json-> 'fields' ->'template'->>'value' = '%s' ",
+                            newTemplateName, oldTemplateName);
+        }
+        if(DbConnectionFactory.isMsSql()) {
+            update = String
+                    .format("UPDATE contentlet SET contentlet_as_json = JSON_MODIFY(contentlet_as_json,'$.fields.template.value','%s') WHERE JSON_VALUE(contentlet_as_json,'$.fields.template.type') = 'Custom' AND JSON_VALUE(contentlet_as_json,'$.fields.template.value') = '%s'  ",
+                            newTemplateName, oldTemplateName);
+        }
 
-        final String update = String
-                .format("UPDATE contentlet SET contentlet_as_json = jsonb_set(contentlet_as_json,'{fields,%s}', jsonb '{\"type\":\"%s\", \"value\":\"%s\" }') WHERE contentlet_as_json @> '{\"fields\":{\"%s\":{\"type\":\"%s\"}}}' and contentlet_as_json-> 'fields' ->'template'->>'value' = '%s' ",
-                        velocityVarName, mappedFieldType, newTemplateName,
-                        velocityVarName, mappedFieldType, oldTemplateName);
+        if(null == update){
+           throw new IllegalStateException("Unable to determine what database with json support I am on.");
+        }
 
         Logger.debug(UpdatePageTemplatePathJob.class, update);
 

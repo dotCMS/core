@@ -220,8 +220,10 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                 return false;
             }
 
-            final String contentAsJsonPostgres = DbConnectionFactory.isPostgres() ? " or c.contentlet_as_json->'fields'->'hostName'->>'value' = ht.host" : StringPool.BLANK;
-            //TODO: figure out the join that must be used in case we're on ms-sql looking at a content as json instance
+             String contentAsJson = StringPool.BLANK;
+
+            if(DbConnectionFactory.isPostgres()) { contentAsJson = " or c.contentlet_as_json->'fields'->'hostName'->>'value' = ht.host"; }
+            if(DbConnectionFactory.isMsSql()) { contentAsJson = " or (JSON_VALUE(c.contentlet_as_json,'$.fields.hostName.value') = ht.host)"; }
 
             // compare the data from the CSV to the local db data AND see if we
             // have conflicts
@@ -231,7 +233,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                     " AND (c.inode = cvi.working_inode OR c.inode = cvi.live_inode)" +
                     " AND c.language_id = cvi.lang)" +
                     " JOIN structure s ON c.structure_inode = s.inode" +
-                    " JOIN " + tempTableName + " ht ON ( ( c." + hostField + " = ht.host "+contentAsJsonPostgres+" ) "  +
+                    " JOIN " + tempTableName + " ht ON ( ( c." + hostField + " = ht.host "+contentAsJson+" ) "  +
                     " AND c.language_id = cvi.lang)" +
                     " WHERE i.asset_type = 'contentlet'" +
                     " AND i.asset_subtype = 'Host'" +
@@ -241,8 +243,14 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
             dc.setSQL("SELECT DISTINCT 1" + conflictSql).addParam(Host.SYSTEM_HOST);
             final List<Map<String, Object>> results = dc.loadObjectResults();
 
-            final String nvl = DbConnectionFactory.isPostgres() ? String.format(" COALESCE(c.contentlet_as_json-> 'fields' ->'hostName'->>'value',c.%s)",hostField) : "" ;
-            //TODO: need to figure out how to extract the hostname from non-postgres db when the contentlet has been stored as json
+            String nvl = StringPool.BLANK;
+            if(DbConnectionFactory.isPostgres()) {
+                nvl = String.format(" COALESCE(c.contentlet_as_json-> 'fields' ->'hostName'->>'value',c.%s)", hostField);
+            }
+            if(DbConnectionFactory.isMsSql()) {
+                nvl = String.format(" COALESCE(JSON_VALUE(c.contentlet_as_json,'$.fields.hostName.value'),c.%s)", hostField);
+            }
+
             if (!results.isEmpty()) {
                 // if we have conflicts, lets create a table out of them
                 final String insertStmt = "INSERT INTO " + getIntegrityType().getResultsTableName() +
