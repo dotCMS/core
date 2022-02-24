@@ -2,6 +2,8 @@ package com.dotcms.api.system.event;
 
 import com.dotmarketing.util.UtilMethods;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -20,7 +22,6 @@ import java.util.Date;
  * @since Jul 11, 2016
  *
  */
-@SuppressWarnings("serial")
 public class SystemEvent implements Serializable {
 
 	private final String id;
@@ -63,7 +64,7 @@ public class SystemEvent implements Serializable {
 	 *            - The event ID. If a new event is being created, please use
 	 *            {@link #SystemEvent(SystemEventType, Object, Date)} to let
 	 *            dotCMS generate an appropriate ID.
-	 * @param eventType
+	 * @param event
 	 *            - The {@link SystemEventType} set for this event.
 	 * @param payload
 	 *            - The information containing the details of this event.
@@ -73,19 +74,22 @@ public class SystemEvent implements Serializable {
 	 *             If the system event type or the payload object are not
 	 *             specified.
 	 */
-	public SystemEvent(final String id, final SystemEventType eventType,
-					   final Payload payload,
-					   final Date creationDate,
-					   final String serverId) {
+	@JsonCreator
+	public SystemEvent(
+			@JsonProperty("id") final String id,
+			@JsonProperty("event") final SystemEventType event,
+			@JsonProperty("payload") final Payload payload,
+			@JsonProperty("creationDate") final Date creationDate,
+			@JsonProperty("serverId") final String serverId) {
 
-		if (!UtilMethods.isSet(eventType)) {
+		if (!UtilMethods.isSet(event)) {
 			throw new IllegalArgumentException("System Event type must be specified.");
 		}
 		if (!UtilMethods.isSet(payload)) {
 			throw new IllegalArgumentException("System Event payload must be specified.");
 		}
 		this.id = id;
-		this.event = eventType;
+		this.event = event;
 		this.payload = payload;
 		this.creationDate = creationDate == null ? new Date() : creationDate;
 		this.serverId  = serverId;
@@ -96,6 +100,7 @@ public class SystemEvent implements Serializable {
 	 * 
 	 * @return The event type.
 	 */
+	@JsonProperty("event")
 	public SystemEventType getEventType() {
 		return event;
 	}
@@ -105,6 +110,7 @@ public class SystemEvent implements Serializable {
 	 * 
 	 * @return The payload object.
 	 */
+	@JsonProperty("payload")
 	public Payload getPayload() {
 		return payload;
 	}
@@ -114,6 +120,7 @@ public class SystemEvent implements Serializable {
 	 * 
 	 * @return The creation date.
 	 */
+	@JsonProperty("creationDate")
 	public Date getCreationDate() {
 		return creationDate;
 	}
@@ -123,6 +130,7 @@ public class SystemEvent implements Serializable {
 	 * 
 	 * @return The event ID.
 	 */
+	@JsonProperty("id")
 	public String getId() {
 		return id;
 	}
@@ -131,6 +139,7 @@ public class SystemEvent implements Serializable {
 	 * Get the Server id where the event was created
 	 * @return String
 	 */
+	@JsonProperty("serverId")
 	public String getServerId() {
 		return serverId;
 	}
@@ -143,7 +152,7 @@ public class SystemEvent implements Serializable {
 		result = prime * result + ((event == null) ? 0 : event.hashCode());
 		result = prime * result + ((id == null) ? 0 : id.hashCode());
 		result = prime * result + ((payload == null) ? 0 : payload.hashCode());
-		result = prime * result + ((serverId == null) ? 0 : payload.hashCode());
+		result = prime * result + ((serverId == null) ? 0 : serverId.hashCode());
 		return result;
 	}
 
@@ -170,7 +179,7 @@ public class SystemEvent implements Serializable {
 
 	@Override
 	public String toString() {
-		return "SystemEventDTO [id=" + id + ", event=" + event + ", payload=" + payload + ", creationDate=" + creationDate
+		return "SystemEvent [id=" + id + ", event=" + event + ", payload=" + payload + ", creationDate=" + creationDate
 				+ "]";
 	}
 }

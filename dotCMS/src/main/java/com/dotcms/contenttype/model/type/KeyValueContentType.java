@@ -1,18 +1,15 @@
 package com.dotcms.contenttype.model.type;
 
-import com.dotmarketing.util.Config;
-import java.util.List;
-
-import org.immutables.gson.Gson;
-import org.immutables.value.Value;
-
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
-import com.google.common.collect.ImmutableList;
+import com.dotmarketing.util.Config;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.common.collect.ImmutableList;
+import java.util.List;
+import org.immutables.value.Value;
 
 /**
  * 
@@ -23,7 +20,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
  */
 @JsonSerialize(as = ImmutableKeyValueContentType.class)
 @JsonDeserialize(as = ImmutableKeyValueContentType.class)
-@Gson.TypeAdapters
 @Value.Immutable
 public abstract class KeyValueContentType extends ContentType implements MultilinguableFallback {
 

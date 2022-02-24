@@ -13,6 +13,7 @@ import static org.junit.Assert.fail;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
+import com.dotcms.contenttype.business.CopyContentTypeBean;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -100,6 +101,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -110,6 +112,74 @@ import org.mockito.Mockito;
 
 @RunWith(DataProviderRunner.class)
 public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
+
+	/**
+	 * Method to test: {@link ContentTypeAPI#copyFrom(CopyContentTypeBean)}
+	 * Given Scenario: Creates a content type and makes a copy of it
+	 * ExpectedResult: Expected result will be to have a copy of the original content type
+	 *
+	 */
+	@Test
+	public void test_copy_content_type_expected_copy_success () throws DotDataException, DotSecurityException {
+
+		ContentType movieCopy = null;
+		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+		ImmutableSimpleContentType.Builder builder = ImmutableSimpleContentType.builder();
+		final long millis = System.currentTimeMillis();
+		ContentType movieOriginal = builder.name("MovieOriginal" + millis).folder(APILocator.systemHost().getFolder()).build();
+
+		try {
+			movieOriginal = contentTypeAPI.save(movieOriginal);
+
+			ImmutableTextField imdbid = ImmutableTextField.builder().name("imdbid").required(true).unique(true).build();
+			ImmutableTextField title = ImmutableTextField.builder().name("Title").indexed(true).required(true).build();
+			ImmutableDateField releaseDate = ImmutableDateField.builder().name("Release Date").variable("releaseDate").build();
+			ImmutableTextField poster = ImmutableTextField.builder().name("Poster").build();
+			ImmutableTextField runtime = ImmutableTextField.builder().name("Runtime").build();
+			ImmutableTextAreaField plot = ImmutableTextAreaField.builder().name("Plot").build();
+			ImmutableTextField boxOffice = ImmutableTextField.builder().name("Box Office").variable("boxOffice").build();
+			List<Field> fieldList = new ArrayList<>();
+			fieldList.add(imdbid);
+			fieldList.add(title);
+			fieldList.add(releaseDate);
+			fieldList.add(poster);
+			fieldList.add(runtime);
+			fieldList.add(plot);
+			fieldList.add(boxOffice);
+
+			contentTypeAPI.save(movieOriginal, fieldList);
+
+			final List<Field> fieldsRecovery = APILocator.getContentTypeFieldAPI().byContentTypeId(movieOriginal.id());
+
+			for (final Field field : fieldsRecovery) {
+
+				assertEquals(movieOriginal.id(), field.contentTypeId());
+			}
+
+			final String newVariableName = "MovieOriginalCopy"+ millis;
+			movieCopy = contentTypeAPI.copyFrom(new CopyContentTypeBean.Builder().sourceContentType(movieOriginal).name(newVariableName).newVariable(newVariableName).build());
+
+			Assert.assertEquals("Should be created with a new variable name", newVariableName, movieCopy.variable());
+			final Map<String, Field> movieCopyFieldMap     = movieCopy.fieldMap();
+			final Map<String, Field> movieOriginalFieldMap = movieOriginal.fieldMap();
+
+			Assert.assertEquals("Testing number of fields", movieOriginalFieldMap.size(), movieCopyFieldMap.size());
+			for (final String fieldName : movieOriginalFieldMap.keySet()) {
+
+				Assert.assertTrue("The copy content type should has the field name: " + fieldName, movieCopyFieldMap.containsKey(fieldName));
+			}
+		} finally {
+
+			if (null != movieOriginal) {
+				contentTypeAPI.delete(movieOriginal);
+			}
+
+			if (null != movieCopy) {
+				contentTypeAPI.delete(movieCopy);
+			}
+		}
+
+	}
 
 	@Test
 	public void test_languageFallback_baseTypes_FileAssetContentType_expected_true () {
