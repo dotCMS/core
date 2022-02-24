@@ -38,6 +38,7 @@ import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.filters.interceptor.meta.MetaWebInterceptorTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
 import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
+import com.dotcms.integritycheckers.IntegrityUtilTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mail.MailAPIImplTest;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
@@ -515,6 +516,7 @@ import org.junit.runners.Suite.SuiteClasses;
         XmlToolTest.class,
         LanguageFolderTest.class,
         MailAPIImplTest.class,
+        IntegrityUtilTest.class,
         Task220202RemoveFKStructureFolderConstraintTest.class,
         PublisherAPIImplTest.class,
         ContentBundlerTest.class,
