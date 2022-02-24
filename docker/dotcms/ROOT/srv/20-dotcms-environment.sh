@@ -8,7 +8,7 @@ echo "dotCMS environment ...."
 # Default opts
 JAVA_OPTS="-Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -server -XX:+DisableExplicitGC"
 # Memory opts
-JAVA_OPTS="$JAVA_OPTS -Xms${CMS_HEAP_SIZE} -Xmx${CMS_HEAP_SIZE}"
+JAVA_OPTS="$JAVA_OPTS -Xmx${CMS_HEAP_SIZE}"
 
 # Agent opts
 JAVA_OPTS="$JAVA_OPTS -javaagent:${TOMCAT_HOME}/webapps/ROOT/WEB-INF/lib/byte-buddy-agent-1.9.0.jar"
@@ -17,6 +17,9 @@ JAVA_OPTS="$JAVA_OPTS -Dpdfbox.fontcache=/data/local/dotsecure"
 
 # CVE-2021-44228 mitigation https://nvd.nist.gov/vuln/detail/CVE-2021-44228
 JAVA_OPTS="$JAVA_OPTS -Dlog4j2.formatMsgNoLookups=true"
+
+# Use Shenandoah by default
+JAVA_OPTS="$JAVA_OPTS -XX:+UseShenandoahGC -XX:+UnlockExperimentalVMOptions -XX:ShenandoahUncommitDelay=5000 -XX:ShenandoahGuaranteedGCInterval=10000 "
 
 
 # Finally, add user-provided JAVA_OPTS
