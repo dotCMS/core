@@ -309,6 +309,8 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 		saveIdentifier( identifier );
 
+		folder.setIdentifier(identifier.getId());
+
 		return identifier;
 	}
 

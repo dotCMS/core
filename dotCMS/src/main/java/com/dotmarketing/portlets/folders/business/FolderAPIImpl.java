@@ -1199,4 +1199,10 @@ public class FolderAPIImpl implements FolderAPI  {
 				: findSubFolders((Host)parent, user, respectFrontEndPermissions);
 	} // findSubFolders.
 
+	@Override
+	@CloseDBIfOpened
+	public void updateUserReferences(final String userId, final String replacementUserId)
+			throws DotDataException {
+		folderFactory.updateUserReferences(userId, replacementUserId);
+	}
 }

@@ -120,9 +120,9 @@ public class LegacyShortyIdApiTest {
         final Folder folder1 = new FolderDataGen().nextPersisted();
         final Folder folder2 = new FolderDataGen().nextPersisted();
         builder.add(new String[] { folder1.getIdentifier(), "identifier", "folder" });
-        builder.add(new String[] { folder1.getInode(), "inode", "folder" });
+        builder.add(new String[] { folder1.getInode(), "identifier", "folder" });
         builder.add(new String[] { folder2.getIdentifier(), "identifier", "folder" });
-        builder.add(new String[] { folder2.getInode(), "inode", "folder" });
+        builder.add(new String[] { folder2.getInode(), "identifier", "folder" });
 
         //Create 2 Links, and save the inode and the identifier of them
         new LinkDataGen().nextPersisted();

@@ -142,4 +142,7 @@ public abstract class FolderFactory {
 	 * @throws DotDataException
 	 */
 	abstract public void validateFolderName(final Folder folder) throws DotDataException;
+
+    public abstract void updateUserReferences(String userId, String replacementUserId)
+            throws DotDataException;
 }

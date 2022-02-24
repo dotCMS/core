@@ -49,6 +49,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.sql.Timestamp;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.oro.text.regex.Pattern;
 import org.apache.oro.text.regex.Perl5Compiler;
@@ -1245,5 +1246,26 @@ public class FolderFactoryImpl extends FolderFactory {
 				.anyMatch((name)->name.equalsIgnoreCase(folder.getName()))) {
 			throw new InvalidFolderNameException("Folder can't be saved. You entered a reserved folder name: " + folder.getName());
 		}
+	}
+
+	@Override
+	public void updateUserReferences(final String userId, final String replacementUserId)
+			throws DotDataException {
+		final DotConnect dc = new DotConnect();
+
+		final List<String> folderIDs = dc.setSQL("select identifier from folder where owner=?")
+				.addParam(userId)
+				.loadObjectResults()
+				.stream()
+				.map(r -> String.valueOf(r.get("identifier")))
+				.collect(Collectors.toList());
+
+		dc.setSQL("update folder set owner = ? where owner = ?");
+		dc.addParam(replacementUserId);
+		dc.addParam(userId);
+		dc.loadResult();
+
+		folderIDs.forEach(id -> folderCache.removeFolder(Try.of(() -> find(id)).get(),
+				Try.of(() -> APILocator.getIdentifierAPI().find(id)).get()));
 	}
 }
