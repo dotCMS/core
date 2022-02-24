@@ -1,13 +1,5 @@
 package com.dotcms.rest.api.v1.user;
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import com.dotcms.UnitTestBase;
 import com.dotcms.api.system.user.UserService;
 import com.dotcms.cms.login.LoginServiceAPI;
@@ -18,6 +10,8 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.WebResource.InitBuilder;
+import com.dotcms.rest.exception.ForbiddenException;
+import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.UserUtilTest;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.PermissionAPI;
@@ -33,18 +27,26 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import org.junit.Assert;
+import org.junit.Test;
+import org.mockito.Mockito;
+
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.core.Response;
-import org.junit.Test;
-import org.mockito.Mockito;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * {@link UserResource} test
@@ -64,6 +66,8 @@ public class UserResourceTest extends UnitTestBase {
         final User user = new User();
         final UserAPI userAPI = mock(UserAPI.class);
         final HostAPI siteAPI = mock(HostAPI.class);
+        final RoleAPI roleAPI = mock(RoleAPI.class);
+
         final UserResourceHelper userHelper  = mock(UserResourceHelper.class);
         final ErrorResponseHelper errorHelper  = mock(ErrorResponseHelper.class);
 
@@ -76,8 +80,17 @@ public class UserResourceTest extends UnitTestBase {
         when(request.getSession()).thenReturn(session);
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
+
+        String filter = "filter";
+        int page = 3;
+        int perPage = 4;
+        final List<User> users = new ArrayList<>();
+        Response responseExpected = Response.ok(new ResponseEntityView(users)).build();
+        final PaginationUtil paginationUtil = mock(PaginationUtil.class);
+        when(paginationUtil.getPage(request, user, filter, page, perPage )).thenReturn(responseExpected);
+
         UserResource userResource =
-                new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper);
+                new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper, paginationUtil, roleAPI);
 
         try {
 
@@ -154,8 +167,17 @@ public class UserResourceTest extends UnitTestBase {
         final UserResourceHelper userHelper  = new UserResourceHelper(userService, roleAPI, userAPI, layoutAPI, hostWebAPI,
                 userWebAPI, permissionAPI, userProxyAPI, loginService);
 
+        String filter = "filter";
+        int page = 3;
+        int perPage = 4;
+        final List<User> users = new ArrayList<>();
+        Response responseExpected = Response.ok(new ResponseEntityView(users)).build();
+        final PaginationUtil paginationUtil = mock(PaginationUtil.class);
+        when(paginationUtil.getPage(request, user, filter, page, perPage )).thenReturn(responseExpected);
+
+
         UserResource userResource =
-                new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper);
+                new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper, paginationUtil, roleAPI);
 
         UpdateUserForm updateUserForm = new UpdateUserForm.Builder()
                 .userId("dotcms.org.1")
@@ -219,9 +241,15 @@ public class UserResourceTest extends UnitTestBase {
 
         final UserResourceHelper userHelper  = new UserResourceHelper(userService, roleAPI, userAPI, layoutAPI, hostWebAPI,
                 userWebAPI, permissionAPI, userProxyAPI, loginService);
-
+        String filter = "filter";
+        int page = 3;
+        int perPage = 4;
+        final List<User> users = new ArrayList<>();
+        Response responseExpected = Response.ok(new ResponseEntityView(users)).build();
+        final PaginationUtil paginationUtil = mock(PaginationUtil.class);
+        when(paginationUtil.getPage(request, user, filter, page, perPage )).thenReturn(responseExpected);
         UserResource userResource =
-                new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper);
+                new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper, paginationUtil, roleAPI);
 
         UpdateUserForm updateUserForm = new UpdateUserForm.Builder()
                 .userId("dotcms.org.1")
@@ -288,8 +316,16 @@ public class UserResourceTest extends UnitTestBase {
         final UserResourceHelper userHelper  = new UserResourceHelper(userService, roleAPI, userAPI, layoutAPI, hostWebAPI,
                 userWebAPI, permissionAPI, userProxyAPI, loginService);
 
+        String filter = "filter";
+        int page = 3;
+        int perPage = 4;
+        final List<User> users = new ArrayList<>();
+        Response responseExpected = Response.ok(new ResponseEntityView(users)).build();
+        final PaginationUtil paginationUtil = mock(PaginationUtil.class);
+        when(paginationUtil.getPage(request, user, filter, page, perPage )).thenReturn(responseExpected);
+
         UserResource userResource =
-                new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper);
+                new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper, paginationUtil, roleAPI);
 
         UpdateUserForm updateUserForm = new UpdateUserForm.Builder()
                 .userId("dotcms.org.1")
@@ -305,10 +341,9 @@ public class UserResourceTest extends UnitTestBase {
     }
 
     @Test
-    public void testLoginAsData() throws Exception {
-        String userFilter = "filter";
+    public void testLoginAsData() throws DotDataException {
 
-    	HttpServletRequest request = RestUtilTest.getMockHttpRequest();
+        HttpServletRequest request = RestUtilTest.getMockHttpRequest();
         final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
         final UserService userService = mock(UserService.class);
         final RoleAPI roleAPI  = mock( RoleAPI.class );
@@ -326,64 +361,78 @@ public class UserResourceTest extends UnitTestBase {
         final UserResourceHelper userHelper  = new UserResourceHelper(userService, roleAPI, userAPI, layoutAPI, hostWebAPI,
                 userWebAPI, permissionAPI, userProxyAPI, loginService);
         final ErrorResponseHelper errorHelper  = mock(ErrorResponseHelper.class);
-
-        String userId1 = "admin.role.id";
-        String userId2 = "login.as.id";
-        String userId3 = "admin";
-
-        Map<String,Object> user1Map = new HashMap<String,Object>();
-        user1Map.put("userId", userId1);
-        User user1 = mock(User.class);
-        when( user1.getUserId() ).thenReturn( userId1 );
-        when( user1.toMap() ).thenReturn(user1Map);
-
-        Map<String,Object> user2Map = new HashMap<String,Object>();
-        user2Map.put("userId", userId2);
-        User user2 = mock(User.class);
-        when( user2.getUserId() ).thenReturn( userId2 );
-        when( user2.toMap() ).thenReturn(user2Map);
-        
-        Map<String,Object> user3Map = new HashMap<String,Object>();
-        user3Map.put("userId", userId3);
-        User user3 = mock(User.class);
-        when( user3.getUserId() ).thenReturn( userId3 );
-        when( user3.toMap() ).thenReturn(user3Map);
-
-        List<User> users = list(user1, user2);
-
-        when(userAPI.getUsersByName(userFilter, 1, 100, user3,false)).thenReturn( users );
-
-        List<String> rolesId = new ArrayList<>();
-        rolesId.add( "admin.role.id" );
-        rolesId.add( "login.as.id" );
-
-        Role adminRole = mock(Role.class);
-        Role loginAsRole = mock(Role.class);
-
-        when( adminRole.getId() ).thenReturn( "admin.role.id" );
-        when( loginAsRole.getId() ).thenReturn( "login.as.id" );
-
-        when( roleAPI.loadRoleByKey(Role.ADMINISTRATOR) ).thenReturn( adminRole );
-        when( roleAPI.loadCMSAdminRole() ).thenReturn( loginAsRole );
-        when( roleAPI.doesUserHaveRoles(userId1, rolesId) ).thenReturn( true ) ;
-        when( roleAPI.doesUserHaveRoles(userId2, rolesId) ).thenReturn( false ) ;
-        when( roleAPI.findRoleByFQN(Role.SYSTEM + " --> " + Role.LOGIN_AS) ).thenReturn( loginAsRole ) ;
-        when( roleAPI.doesUserHaveRole(user3, loginAsRole) ).thenReturn( true ) ;
+        final User user = new User();
+        final Role loginAsRole = new Role();
+        when(initDataObject.getUser()).thenReturn(user);
+        // final InitDataObject initData = webResource.init(null, httpServletRequest, httpServletResponse, true, null);
         when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
-        when( initDataObject.getUser()).thenReturn(user3);
-        when( webResource.init(null, request, httpServletResponse, true, null)).thenReturn(initDataObject);
+        when(roleAPI.loadRoleByKey(Role.LOGIN_AS)).thenReturn(loginAsRole);
+        when(roleAPI.doesUserHaveRole(initDataObject.getUser(), loginAsRole)).thenReturn(true);
+
+        String filter = "filter";
+        int page = 3;
+        int perPage = 4;
+
+        List<User> users = new ArrayList<>();
+        Response responseExpected = Response.ok(new ResponseEntityView(users)).build();
+
+        final PaginationUtil paginationUtil = mock(PaginationUtil.class);
+        when(paginationUtil.getPage(request, user, filter, page, perPage )).thenReturn(responseExpected);
+
+        UserResource resource =
+                new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper, paginationUtil, roleAPI);
+        Response response = null;
+
+        RestUtilTest.verifySuccessResponse(
+                response = resource.loginAsData(request, httpServletResponse, filter, page, perPage)
+        );
+
+        Assert.assertEquals(responseExpected.getEntity(), response.getEntity());
+    }
 
 
+    @Test(expected=ForbiddenException.class)
+    public void testLoginAsData_Without_LoginAs_Role() throws DotDataException {
 
-        UserResource userResource =
-                new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper);
+        HttpServletRequest request = RestUtilTest.getMockHttpRequest();
+        final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
+        final UserService userService = mock(UserService.class);
+        final RoleAPI roleAPI  = mock( RoleAPI.class );
+        final UserAPI userAPI  = mock( UserAPI.class );
+        final LayoutAPI layoutAPI  = mock( LayoutAPI.class );
+        final HostWebAPI hostWebAPI  = mock( HostWebAPI.class );
+        final WebResource webResource = mock(WebResource.class);
+        final UserWebAPI userWebAPI = mock(UserWebAPI.class);
+        final PermissionAPI permissionAPI= mock(PermissionAPI.class);
+        final UserProxyAPI userProxyAPI= mock(UserProxyAPI.class);
+        final HostAPI siteAPI = mock(HostAPI.class);
+        final LoginServiceAPI loginService= mock(LoginServiceAPI.class);
+        final InitDataObject initDataObject = mock(InitDataObject.class);
 
-        Response response = userResource
-                .loginAsData(request, httpServletResponse, userFilter, true);
+        final UserResourceHelper userHelper  = new UserResourceHelper(userService, roleAPI, userAPI, layoutAPI, hostWebAPI,
+                userWebAPI, permissionAPI, userProxyAPI, loginService);
+        final ErrorResponseHelper errorHelper  = mock(ErrorResponseHelper.class);
+        final User user = new User();
+        final Role loginAsRole = new Role();
+        when(initDataObject.getUser()).thenReturn(user);
+        when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
+        when(roleAPI.loadRoleByKey(Role.LOGIN_AS)).thenReturn(loginAsRole);
+        // does not have permissions
+        when(roleAPI.doesUserHaveRole(initDataObject.getUser(), loginAsRole)).thenReturn(false);
 
-        RestUtilTest.verifySuccessResponse( response );
+        String filter = "filter";
+        int page = 3;
+        int perPage = 4;
 
-        List<Map<String,Object>> responseUsers = (List<Map<String, Object>>) ((Map) ((ResponseEntityView) response.getEntity()).getEntity()).get("users");
-        assertEquals(2, responseUsers.size());
+        List<User> users = new ArrayList<>();
+        Response responseExpected = Response.ok(new ResponseEntityView(users)).build();
+
+        final PaginationUtil paginationUtil = mock(PaginationUtil.class);
+        when(paginationUtil.getPage(request, user, filter, page, perPage )).thenReturn(responseExpected);
+
+        UserResource resource =
+                new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper, paginationUtil, roleAPI);
+
+        Response response = resource.loginAsData(request, httpServletResponse, filter, page, perPage);
     }
 }
