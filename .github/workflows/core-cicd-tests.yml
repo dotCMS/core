@@ -125,7 +125,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        databaseType: [ postgres, mysql, oracle, mssql ]
+        databaseType: [ postgres ]
     env:
       DOT_CICD_BRANCH: master
       EXPORT_REPORTS: true
