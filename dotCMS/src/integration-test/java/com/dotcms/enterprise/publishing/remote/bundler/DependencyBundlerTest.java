@@ -48,6 +48,7 @@ import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.util.stream.Collectors;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -1054,6 +1055,7 @@ public class DependencyBundlerTest {
      */
     @Test
     @UseDataProvider("configs")
+    @Ignore
     public void excludeContenletChildAssetByModDate(ModDateTestData modDateTestData)
             throws DotBundleException, DotDataException, DotSecurityException {
 

@@ -65,6 +65,7 @@ import java.util.Map;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -129,6 +130,7 @@ public class PublisherAPITest extends IntegrationTestBase {
      * https://github.com/dotCMS/core/issues/12038
      */
     @Test
+    @Ignore
     public void test_publish_fail_retry() throws IOException {
 
         Environment environment = null;
