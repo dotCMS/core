@@ -54,7 +54,7 @@ public interface ContentletJsonAPI {
     }
 
     /**
-     * This tells us if we're running on a db that supports json 
+     * This tells us if we're running on a db that supports json
      * @return
      */
     default boolean isJsonSupportedDatabase(){
