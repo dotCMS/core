@@ -90,8 +90,10 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                         writer.write(rs.getString("working_inode"));
                         writer.write(rs.getString("live_inode"));
                         writer.write(String.valueOf(rs.getLong("language_id")));
+                        //Lets see if the traditional host_name value comes first
                         String hostName = rs.getString("host_name");
                         if(UtilMethods.isNotSet(hostName)){
+                            //if not.. then try parse out the json contentlet
                             final Object contentletAsJson = rs.getString("contentlet_as_json");
                             if(null != contentletAsJson){
                                 //Access the field name directly from the json
@@ -243,12 +245,13 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
             dc.setSQL("SELECT DISTINCT 1" + conflictSql).addParam(Host.SYSTEM_HOST);
             final List<Map<String, Object>> results = dc.loadObjectResults();
 
-            String nvl = StringPool.BLANK;
+            String coalescedHostValue = StringPool.BLANK; //For non json supported databases we do blank string
+            //for other db lets see if we have something stored as json otherwise we rely on the traditional structure dynamic field
             if(DbConnectionFactory.isPostgres()) {
-                nvl = String.format(" COALESCE(c.contentlet_as_json-> 'fields' ->'hostName'->>'value',c.%s)", hostField);
+                coalescedHostValue = String.format(" COALESCE(c.contentlet_as_json-> 'fields' ->'hostName'->>'value',c.%s)", hostField);
             }
             if(DbConnectionFactory.isMsSql()) {
-                nvl = String.format(" COALESCE(JSON_VALUE(c.contentlet_as_json,'$.fields.hostName.value'),c.%s)", hostField);
+                coalescedHostValue = String.format(" COALESCE(JSON_VALUE(c.contentlet_as_json,'$.fields.hostName.value'),c.%s)", hostField);
             }
 
             if (!results.isEmpty()) {
@@ -259,7 +262,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                         " SELECT DISTINCT c.identifier as local_identifier, ht.identifier as remote_identifier," +
                         " '" + endpointId + "', cvi.working_inode as local_working_inode," +
                         " cvi.live_inode as local_live_inode, ht.working_inode as remote_working_inode," +
-                        " ht.live_inode as remote_live_inode, c.language_id, " + nvl + " as host" +
+                        " ht.live_inode as remote_live_inode, c.language_id, " + coalescedHostValue + " as host" +
                         conflictSql;
                 dc.setSQL(insertStmt)
                         .addParam(Host.SYSTEM_HOST)
