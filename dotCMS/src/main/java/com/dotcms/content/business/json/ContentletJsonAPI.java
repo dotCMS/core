@@ -49,8 +49,16 @@ public interface ContentletJsonAPI {
      * @return
      */
     default boolean isPersistContentAsJson(){
-        return DbConnectionFactory.isPostgres() || DbConnectionFactory.isMsSql()
+        return isJsonSupportedDatabase()
                 && Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
+    }
+
+    /**
+     * This tells us if we're running on a db that supports json 
+     * @return
+     */
+    default boolean isJsonSupportedDatabase(){
+       return DbConnectionFactory.isPostgres() || DbConnectionFactory.isMsSql();
     }
 
     /**
