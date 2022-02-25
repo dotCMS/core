@@ -1569,11 +1569,11 @@ public class ContentResource {
         for (final BodyPart part : multipart.getBodyParts()) {
 
             final ContentDisposition contentDisposition = part.getContentDisposition();
-            final String tmpFileName = contentDisposition != null && contentDisposition.getParameters().containsKey("name") ? contentDisposition.getParameters().get("name") : "";
+            final String unsanitizedName = contentDisposition != null && contentDisposition.getParameters().containsKey("name") ? contentDisposition.getParameters().get("name") : "";
 
-            final String name = FileUtil.sanitizeFileName(tmpFileName);
-            if(!tmpFileName.equals(name)) {
-                SecurityLogger.logInfo(getClass(), "Invalid filename uploaded, possible RCE: " + tmpFileName);
+            final String name = FileUtil.sanitizeFileName(unsanitizedName);
+            if(!unsanitizedName.equals(name)) {
+                SecurityLogger.logInfo(getClass(), "Invalid filename uploaded, possible RCE.  Supplied filename: '" + unsanitizedName + "'");
             }
             
             
