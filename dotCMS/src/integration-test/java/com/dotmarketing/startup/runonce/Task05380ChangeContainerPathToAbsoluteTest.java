@@ -499,6 +499,7 @@ public class Task05380ChangeContainerPathToAbsoluteTest {
         final String oldName = host.getHostname();
 
         host.setHostname(String.format("new_host_name_%s", System.currentTimeMillis()));
+        host.setBoolProperty("forceExecution",true);
         APILocator.getHostAPI().save(host, APILocator.systemUser(), false);
 
         checkTemplateLayout(layout);

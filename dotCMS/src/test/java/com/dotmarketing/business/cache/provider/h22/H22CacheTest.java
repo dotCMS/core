@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.apache.commons.lang.RandomStringUtils;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -300,6 +301,7 @@ public class H22CacheTest {
 	 * In any case we should never ever get a RejectedExecutionException
 	 */
 	@Test
+	@Ignore
 	@UseDataProvider("toleranceTestCases")
 	public void Test_Exhaust_Thread_Pool(final ToleranceTestCase testCase) throws Exception {
 

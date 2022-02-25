@@ -1355,10 +1355,10 @@ public class HTMLPageAssetRenderedTest {
 
         final String pageId = page.getIdentifier();
         MultiTree multiTree = new MultiTree(pageId, containerId, contentletsIds.get(0), ContainerUUID.UUID_START_VALUE,0);
-        APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
+        APILocator.getMultiTreeAPI().saveMultiTreeAndReorder(multiTree);
 
         multiTree = new MultiTree(pageId, containerId, contentletsIds.get(1), ContainerUUID.UUID_START_VALUE,0);
-        APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
+        APILocator.getMultiTreeAPI().saveMultiTreeAndReorder(multiTree);
 
         final HttpServletRequest mockRequest = mock(HttpServletRequest.class);
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
@@ -1408,10 +1408,10 @@ public class HTMLPageAssetRenderedTest {
 
         final String pageId = page.getIdentifier();
         MultiTree multiTree = new MultiTree(pageId, containerId, contentletsIds.get(0), ContainerUUID.UUID_LEGACY_VALUE,0);
-        APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
+        APILocator.getMultiTreeAPI().saveMultiTreeAndReorder(multiTree);
 
         multiTree = new MultiTree(pageId, containerId, contentletsIds.get(1), ContainerUUID.UUID_LEGACY_VALUE,0);
-        APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
+        APILocator.getMultiTreeAPI().saveMultiTreeAndReorder(multiTree);
 
         final HttpServletRequest mockRequest = mock(HttpServletRequest.class);
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());

@@ -314,17 +314,14 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
 
         // Expect the correct 'user cannot read' exception
         boolean isErrorExpected = false;
-        final String expectedErrorMsg = String
-                .format("User %s [ID: %s][email:%s] cannot read action action1",
-                        contributor1.getFirstName() + " " + contributor1.getLastName(),
-                        contributor1.getUserId(), contributor1.getEmailAddress());
+        final String expectedErrorMsg = "cannot read action";
         try {
             // Triggering the save content action with a non-authorized user
             workflowAPI.fireWorkflowPreCheckin(contentlet1, contributor1);
         } catch (Exception e) {
             // Get the expected error message that validates if user can use the workflow action
             final String errorMsg = e.getCause().getCause().getMessage();
-            isErrorExpected = expectedErrorMsg.equalsIgnoreCase(errorMsg);
+            isErrorExpected = errorMsg.contains(expectedErrorMsg);
         }
 
         // Cleanup
