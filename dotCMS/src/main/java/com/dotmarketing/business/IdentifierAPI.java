@@ -138,6 +138,8 @@ public interface IdentifierAPI {
 
 	Identifier createNew(final Folder folder, final Treeable parent) throws DotDataException;
 
+	Identifier createNew(final Folder folder, final Treeable parent, final String existingId) throws DotDataException;
+
 	public Identifier createNew(Versionable asset, Treeable parent, String existingId) throws DotDataException;
 
 	/**
