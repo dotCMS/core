@@ -45,6 +45,7 @@ import com.liferay.portal.model.User;
 import java.util.Date;
 import java.util.HashSet;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
@@ -159,6 +160,7 @@ public class DependencyManagerTest {
      * @throws DotDataException
      */
     @Test
+    @Ignore
     public void test_dependencyManager_shouldIncludeRelationships()
             throws DotSecurityException, DotBundleException, DotDataException {
 
