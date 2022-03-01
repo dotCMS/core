@@ -1,5 +1,6 @@
 package com.dotcms.junit;
 
+import com.dotcms.business.bytebuddy.ByteBuddyFactory;
 import com.dotcms.util.StdOutErrLog;
 import com.dotmarketing.db.DbConnectionFactory;
 import java.util.LinkedList;
@@ -31,6 +32,8 @@ public class MainBaseSuite extends Suite {
 
     private static List<Runner> getRunners(Class<?>[] classes) throws InitializationError {
 
+        System.out.println("Register ByteBuddy");
+        ByteBuddyFactory.getInstance();
         List<Runner> runners = new LinkedList<>();
 
         for (Class<?> klazz : classes) {
