@@ -54,6 +54,7 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
     /** nullable persistent field */
     private String hostId = "";
 
+	private String type = "folder";
 
     private String title;
     /** default constructor */
@@ -103,7 +104,11 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
 	 * @return String
 	 */
 	public String getType() {
-		return "folder";
+		return this.type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
 	}
 
     
