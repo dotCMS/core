@@ -1848,7 +1848,11 @@ public class ContentletAjax {
 				String copyOptionsStr = (String)contentletFormData.get("copyOptions");
 				CopyHostContentUtil copyHostContentUtil = new CopyHostContentUtil();
 				if (UtilMethods.isSet(copyOptionsStr)) {
-					copyHostContentUtil.checkHostCopy(contentlet, user, copyOptionsStr);
+					final User finalUser = user;
+					final Contentlet finalContentlet = contentlet;
+					HibernateUtil.addCommitListener(()->{
+						copyHostContentUtil.checkHostCopy(finalContentlet, finalUser, copyOptionsStr);
+					});
 				}
 
 			}
