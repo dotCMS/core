@@ -325,12 +325,10 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
             if (null != metadataMap) {
                 //if check version and the stored ver is lower than current version then re-generate
                 if (checkVersion) {
-                    //We only do the regeneration if we're not looking at custom metadata or an empty map
-                    final boolean onlyHasCustom = (!filterNonCustomMetadataFields(metadataMap).isEmpty());
-                    if (!onlyHasCustom && !metadataMap.isEmpty()) {
+                    if (!metadataMap.isEmpty()) {
                         //Now verify versions
-                        if (getBinaryMetadataVersion() > (int) metadataMap
-                                .getOrDefault(BasicMetadataFields.VERSION_KEY.key(), 0)) {
+                        final Number storedVersionNumber = (Number) metadataMap.getOrDefault(BasicMetadataFields.VERSION_KEY.key(), 0);
+                        if (getBinaryMetadataVersion() > storedVersionNumber.intValue()) {
                             return Try.of(() -> generateContentletMetadata(contentlet, true)
                                     .getFullMetadataMap().get(fieldVariableName)).getOrElseThrow(
                                     DotDataException::new);
