@@ -115,6 +115,7 @@ public class TimeMachineFilter implements Filter {
 				// File not found for the selected language
 				boolean useDefaultLanguage = APILocator.getLanguageAPI().canDefaultPageToDefaultLanguage();
 				if (!useDefaultLanguage) {
+					Logger.error(TimeMachineFilter.class, "Time Machine file NOT found:" + file.getAbsolutePath());
 					// Send page in default language is false, so send an error
 					sendError(request, response, ERROR_404, host.getHostname() + uri, HttpServletResponse.SC_BAD_REQUEST);
 				} else {
@@ -126,6 +127,7 @@ public class TimeMachineFilter implements Filter {
 						// It exists, so send file in the default language
 						sendFile(file, request, response);
 					} else {
+						Logger.error(TimeMachineFilter.class, "Time Machine file NOT found:" + file.getAbsolutePath());
 						sendError(request, response, ERROR_404, host.getHostname() + uri, HttpServletResponse.SC_BAD_REQUEST);
 					}
 				}
@@ -167,7 +169,7 @@ public class TimeMachineFilter implements Filter {
 		basePath.append(ConfigUtils.getTimeMachinePath()).append(sep).append("tm_").append(selectedDate.getTime())
 				.append(sep);
 		// Site and language path (e.g., "live/demo.dotcms.com/1")
-		basePath.append(PageMode.LIVE.name()).append(sep).append(host.getHostname()).append(sep).append(selectedLangId);
+		basePath.append(PageMode.LIVE.name().toLowerCase()).append(sep).append(host.getHostname()).append(sep).append(selectedLangId);
 		// URI (e.g., "/folder/your-page")
 		uri = (java.io.File.separator.equals("\\") ? uri.replaceAll("/", "\\\\") : uri);
 		String completePath = basePath.toString() + uri;
