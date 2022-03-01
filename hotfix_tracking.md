@@ -295,3 +295,8 @@ This maintenance release includes the following code fixes:
 145. COMMIT REVERT: https://github.com/dotCMS/core-web/commit/ed88e1ab786fcea58fec7cf4a2004a7731c88520
 
 146. https://github.com/dotCMS/core/issues/21537 : [Static Publishing] : Problem with multi-language contents #21537
+
+**Release-5.3.8.10**
+
+147. https://github.com/dotCMS/core/issues/20757 : Obfuscate Environmental Variables System Info Portlet #20757
+
