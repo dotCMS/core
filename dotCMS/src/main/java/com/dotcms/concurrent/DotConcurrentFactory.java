@@ -46,7 +46,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     private static final int MAXPOOL_SIZE_VAL = 50;
     private static final int QUEUE_CAPACITY_VAL = Integer.MAX_VALUE;
 
-
+    public static final String DOTCMS_CONCURRENT_CONDITIONAL_EXECUTOR_DEFAULT_SIZE  = "dotcms.concurrent.conditionalexecutor.default.size";
     /**
      * In case you want to override the {@link ThreadFactory}, by default using the {@link Executors}.defaultThreadFactory();
      */
@@ -352,6 +352,25 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     public DotSubmitter getSingleSubmitter () {
 
         return this.getSingleSubmitter(DOT_SINGLE_SYSTEM_THREAD_POOL);
+    }
+
+    /**
+     * Creates a default Conditional executor with the default size
+     * @return ConditionalExecutor
+     */
+    public ConditionalSubmitter createConditionalExecutor() {
+
+        return new ConditionalSubmitterImpl(Config.getIntProperty("DOTCMS_CONCURRENT_CONDITIONAL_EXECUTOR_DEFAULT_SIZE", 10));
+    }
+
+    /**
+     * Creates a default conditional executor with a given size
+     * @param size {@link Integer}
+     * @return ConditionalExecutor
+     */
+    public ConditionalSubmitter createConditionalExecutor(final int size) {
+
+        return new ConditionalSubmitterImpl(size);
     }
 
     /**
