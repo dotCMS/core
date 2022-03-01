@@ -1,5 +1,9 @@
 package com.dotcms.vanityurl.cache;
 
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import java.util.List;
 import java.util.Optional;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
@@ -63,9 +67,22 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
         if (host == null || lang == null) {
             return;
         }
+
         remove(host, lang);
 
+        final String oldHostId = (String) vanityURL.get(Contentlet.OLD_HOST_ID);
 
+        if (UtilMethods.isSet(oldHostId) && !oldHostId.equals(host.getIdentifier())) {
+
+            try {
+                final Host oldHost = APILocator.getHostAPI()
+                        .find(oldHostId, APILocator.systemUser(), false);
+                remove(oldHost, lang);
+            } catch (DotDataException | DotSecurityException e) {
+                Logger.debug(VanityUrlCacheImpl.class, String.format("Host not found: %s", oldHostId));
+            }
+
+        }
     }
 
 
