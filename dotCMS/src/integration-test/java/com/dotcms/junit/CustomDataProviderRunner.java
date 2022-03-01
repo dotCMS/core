@@ -12,7 +12,7 @@ import org.junit.runners.model.InitializationError;
 
 public class CustomDataProviderRunner extends DataProviderRunner {
 
-    CustomDataProviderRunner(Class<?> clazz) throws InitializationError {
+    public CustomDataProviderRunner(Class<?> clazz) throws InitializationError {
         super(clazz);
     }
 

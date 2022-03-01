@@ -1,5 +1,6 @@
 package com.dotcms;
 
+import com.dotcms.business.bytebuddy.ByteBuddyFactory;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
@@ -53,6 +54,7 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
 
     @BeforeClass
     public static void beforeInit() throws Exception {
+        ByteBuddyFactory inst = ByteBuddyFactory.getInstance();
         HibernateUtil.setAsyncCommitListenersFinalization(true);
     }
 
