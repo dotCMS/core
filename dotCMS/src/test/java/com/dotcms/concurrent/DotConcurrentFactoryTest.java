@@ -11,15 +11,60 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 public class DotConcurrentFactoryTest extends UnitTestBase {
+
+    /**
+     * Method to test: {@link ConditionalSubmitter#submit(Supplier, Supplier)}
+     * Given Scenario: run 100 task but only 6 should be submitted as a scenario 1, the rest should be scenario 2
+     * ExpectedResult: 6 ran on scenario 1 and 94 on scenario 2
+     *
+     */
+    @Test
+    public void test_Conditional_Submitter() throws  ExecutionException, InterruptedException {
+
+        final String scenario1String = "scenario1";
+        final String scenario2String = "scenario2";
+        final int slots = 6;
+        ExecutorService executorService = Executors.newFixedThreadPool(10);
+        final ConditionalSubmitter conditionalExecutor = DotConcurrentFactory.getInstance().createConditionalExecutor(slots);
+        final List<Future<String>> futures = new ArrayList<>();
+        int scenarios1Count = 0;
+        int scenarios2Count = 0;
+        final Supplier<String> supplier1 = ()-> {
+
+            DateUtil.sleep(DateUtil.TEN_SECOND_MILLIS);
+            return scenario1String;
+        };
+        final Supplier<String> supplier2 = ()-> scenario2String;
+        for (int i = 0; i < 100; ++i) {
+
+            futures.add(executorService.submit(()-> conditionalExecutor.submit(supplier1, supplier2)));
+        }
+
+        for (final Future<String> future: futures) {
+
+            final String result = future.get();
+            if (scenario2String.equals(result)) {
+                scenarios2Count++;
+            } else {
+                scenarios1Count++;
+            }
+        }
+
+        assertEquals(6, scenarios1Count);
+        assertEquals(94, scenarios2Count);
+    }
 
     /**
      * Method to test: {@link DotSubmitter#submit(Runnable)}
