@@ -7,6 +7,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDUtil;
@@ -119,11 +120,15 @@ public class MultiPartUtils {
                 throw new IOException("Unable to create temp folder to save binaries");
             }
 
-            final String tmpFileName = part.getContentDisposition().getFileName();
-            final String filename = FileUtil.sanitizeFileName(tmpFileName);
-            if(!tmpFileName.equals(filename)) {
-                SecurityLogger.logInfo(getClass(), "Invalid filename uploaded, possible exploit attempt: " + tmpFileName);
-                throw new DotRuntimeException("Invalid filename uploaded : " + tmpFileName);
+            final String badFileName = part.getContentDisposition().getFileName();
+            final String filename = FileUtil.sanitizeFileName(badFileName);
+            if(!badFileName.equals(filename)) {
+                SecurityLogger.logInfo(getClass(), "Invalid filename uploaded, possible exploit attempt: " + badFileName);
+                if(Config.getBooleanProperty("THROW_ON_BAD_FILENAMES", true)) {
+                    throw new IllegalArgumentException("Invalid filename uploaded : " + badFileName);
+                }
+                
+                
             }
             final File tempFile   = new File(
                     tmpFolder.getAbsolutePath() + File.separator + filename);

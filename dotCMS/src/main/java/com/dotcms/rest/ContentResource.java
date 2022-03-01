@@ -41,6 +41,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -1681,11 +1682,13 @@ public class ContentResource {
                              final BodyPart part) throws IOException, DotSecurityException, DotDataException {
 
         try(final InputStream input = part.getEntityAs(InputStream.class)){
-            final String tmpFileName = part.getContentDisposition().getFileName();
-            final String filename = FileUtil.sanitizeFileName(tmpFileName);
-            if(!tmpFileName.equals(filename)) {
-                SecurityLogger.logInfo(getClass(), "Invalid filename uploaded, possible exploit attempt: " + tmpFileName);
-                throw new DotSecurityException("Invalid filename uploaded : " + tmpFileName);
+            final String badFileName = part.getContentDisposition().getFileName();
+            final String filename = FileUtil.sanitizeFileName(badFileName);
+            if(!badFileName.equals(filename)) {
+                SecurityLogger.logInfo(getClass(), "Invalid filename uploaded, possible exploit attempt: " + badFileName);
+                if(Config.getBooleanProperty("THROW_ON_BAD_FILENAMES", true)) {
+                    throw new IllegalArgumentException("Invalid filename uploaded : " + badFileName);
+                }
             }
             
             final File tmpFolder = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + UUIDUtil.uuid());
