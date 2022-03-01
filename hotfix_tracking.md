@@ -300,3 +300,4 @@ This maintenance release includes the following code fixes:
 
 147. https://github.com/dotCMS/core/issues/20757 : Obfuscate Environmental Variables System Info Portlet #20757
 
+148. https://github.com/dotCMS/core/issues/20773 : SAML - Allow expression substitution from SAML roles mapped to dotCMS roles by role key #20773

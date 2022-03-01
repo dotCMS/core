@@ -1,13 +1,7 @@
 package com.dotcms.auth.providers.saml.v1;
 
 import com.dotcms.company.CompanyAPI;
-import com.dotcms.saml.Attributes;
-import com.dotcms.saml.DotSamlConstants;
-import com.dotcms.saml.DotSamlException;
-import com.dotcms.saml.DotSamlProxyFactory;
-import com.dotcms.saml.IdentityProviderConfiguration;
-import com.dotcms.saml.SamlAuthenticationService;
-import com.dotcms.saml.SamlName;
+import com.dotcms.saml.*;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -30,9 +24,13 @@ import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.Encryptor;
+import com.liferay.util.StringPool;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
 
@@ -44,6 +42,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 import static com.dotmarketing.util.UtilMethods.isSet;
 
@@ -58,6 +57,7 @@ public class SAMLHelper {
     private final RoleAPI    roleAPI;
     private final CompanyAPI companyAPI;
     private final SamlAuthenticationService  samlAuthenticationService;
+    private static SamlConfigurationService thirdPartySamlConfigurationService;
 
     public SAMLHelper(final SamlAuthenticationService samlAuthenticationService, final CompanyAPI companyAPI) {
 
@@ -66,6 +66,17 @@ public class SAMLHelper {
         this.hostWebAPI   = WebAPILocator.getHostWebAPI();
         this.companyAPI   = companyAPI;
         this.samlAuthenticationService = samlAuthenticationService;
+    }
+
+    @VisibleForTesting
+    protected static void setThirdPartySamlConfigurationService(final SamlConfigurationService thirdPartySamlConfigurationService) {
+        SAMLHelper.thirdPartySamlConfigurationService = thirdPartySamlConfigurationService;
+    }
+
+    private SamlConfigurationService getSamlConfigurationService() {
+
+        return null != SAMLHelper.thirdPartySamlConfigurationService?
+                SAMLHelper.thirdPartySamlConfigurationService: DotSamlProxyFactory.getInstance().samlConfigurationService();
     }
 
     /*
@@ -137,8 +148,12 @@ public class SAMLHelper {
         }
 
         // check if the client wants synchronization
-        final boolean createUserWhenDoesNotExists = DotSamlProxyFactory.getInstance()
-                .samlConfigurationService().getConfigAsBoolean(identityProviderConfiguration, SamlName.DOT_SAML_ALLOW_USER_SYNCHRONIZATION);
+
+        final SamlConfigurationService samlConfigurationService = this.getSamlConfigurationService();
+
+        final boolean createUserWhenDoesNotExists =
+                null != samlConfigurationService?
+                        samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration, SamlName.DOT_SAML_ALLOW_USER_SYNCHRONIZATION): true;
         if (createUserWhenDoesNotExists) {
 
             user = null == user?
@@ -162,7 +177,8 @@ public class SAMLHelper {
                               final Attributes attributesBean, final IdentityProviderConfiguration identityProviderConfiguration) {
         try {
 
-            if (DotSamlProxyFactory.getInstance().samlConfigurationService()
+            final SamlConfigurationService samlConfigurationService = this.getSamlConfigurationService();
+            if (samlConfigurationService
                     .getConfigAsBoolean(identityProviderConfiguration, SamlName.DOTCMS_SAML_LOGIN_UPDATE_EMAIL)){
 
                 user.setEmailAddress(attributesBean.getEmail());
@@ -185,8 +201,10 @@ public class SAMLHelper {
 
     private String getBuildRoles(final IdentityProviderConfiguration identityProviderConfiguration) {
 
-        final String buildRolesStrategy = DotSamlProxyFactory.getInstance()
-                .samlConfigurationService().getConfigAsString(identityProviderConfiguration, SamlName.DOTCMS_SAML_BUILD_ROLES);
+        final SamlConfigurationService samlConfigurationService = this.getSamlConfigurationService();
+        final String buildRolesStrategy = samlConfigurationService == null?
+                DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_ALL_VALUE: // if not config, use all as a default
+                samlConfigurationService.getConfigAsString(identityProviderConfiguration, SamlName.DOTCMS_SAML_BUILD_ROLES);
 
         return this.checkBuildRoles(buildRolesStrategy)?
                 buildRolesStrategy: this.getDefaultBuildRoles(buildRolesStrategy);
@@ -251,17 +269,17 @@ public class SAMLHelper {
         // the only strategy that does not include the saml user role is the "idp"
         if (!DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_IDP_VALUE.equalsIgnoreCase(buildRolesStrategy)) {
             // Add DOTCMS_SAML_OPTIONAL_USER_ROLE
-            if (DotSamlProxyFactory.getInstance().samlConfigurationService().getConfigAsString(identityProviderConfiguration,
+            if (this.getSamlConfigurationService().getConfigAsString(identityProviderConfiguration,
                     SamlName.DOTCMS_SAML_OPTIONAL_USER_ROLE) != null) {
 
-                final String [] rolesExtra = DotSamlProxyFactory.getInstance().samlConfigurationService().getConfigAsString(identityProviderConfiguration,
+                final String [] rolesExtra = this.getSamlConfigurationService().getConfigAsString(identityProviderConfiguration,
                         SamlName.DOTCMS_SAML_OPTIONAL_USER_ROLE).split(",");
 
                 for (final String roleExtra : rolesExtra){
 
                     this.addRole(user, roleExtra, false, false);
                 Logger.debug(this, ()-> "Optional user role: " +
-                        DotSamlProxyFactory.getInstance().samlConfigurationService().getConfigAsString(identityProviderConfiguration,
+                        this.getSamlConfigurationService().getConfigAsString(identityProviderConfiguration,
                                 SamlName.DOTCMS_SAML_OPTIONAL_USER_ROLE) + " has been assigned");
             }
             }
@@ -314,11 +332,13 @@ public class SAMLHelper {
             final List<String> roleList = this.samlAuthenticationService.getValues(attributesBean.getRoles());
             if (null != roleList && roleList.size() > 0) {
 
-                final String removeRolePrefix = DotSamlProxyFactory.getInstance().samlConfigurationService().getConfigAsString(
+                final String removeRolePrefix = this.getSamlConfigurationService().getConfigAsString(
                         identityProviderConfiguration, SamlName.DOT_SAML_REMOVE_ROLES_PREFIX);
 
-                final String[] rolePatterns = DotSamlProxyFactory.getInstance().samlConfigurationService().getConfigAsArrayString(
+                final String[] rolePatterns = this.getSamlConfigurationService().getConfigAsArrayString(
                         identityProviderConfiguration, SamlName.DOTCMS_SAML_INCLUDE_ROLES_PATTERN);
+
+                final Optional<Tuple2<String, String>> roleKeySubstitutionOpt = this.getRoleKeySubstitution (identityProviderConfiguration);
 
                 Logger.debug(this, () -> "Role Patterns: " + this.toString(rolePatterns) + ", remove role prefix: " + removeRolePrefix);
 
@@ -338,7 +358,7 @@ public class SAMLHelper {
                         }
                     }
 
-                    this.addRole(user, removeRolePrefix, role);
+                    this.addRole(user, removeRolePrefix, this.processReplacement(role, roleKeySubstitutionOpt) );
                 }
             }
 
@@ -347,6 +367,38 @@ public class SAMLHelper {
 
         Logger.info(this, "Roles have been ignore by the build roles strategy: " + buildRolesStrategy
                 + ", or roles have been not set from the IdP");
+    }
+
+    protected String processReplacement(final String role, final Optional<Tuple2<String, String>> roleKeySubstitutionOpt) {
+
+        if (roleKeySubstitutionOpt.isPresent()) {
+
+            final String replace  = roleKeySubstitutionOpt.get()._1();
+            final String replacement      = roleKeySubstitutionOpt.get()._2();
+            return RegEX.replace(role, replacement, replace);
+        }
+
+        return role;
+    }
+
+    private Optional<Tuple2<String, String>> getRoleKeySubstitution(final IdentityProviderConfiguration identityProviderConfiguration) {
+
+        final String roleKeySubstitution = this.getSamlConfigurationService().getConfigAsString(
+                identityProviderConfiguration, SamlName.DOT_SAML_ROLE_KEY_SUBSTITUTION);
+
+        return getRoleKeySubstitution(roleKeySubstitution);
+    }
+
+    protected Optional<Tuple2<String, String>> getRoleKeySubstitution(final String roleKeySubstitution) {
+
+        if (UtilMethods.isSet(roleKeySubstitution) && roleKeySubstitution.startsWith(StringPool.FORWARD_SLASH)
+                && roleKeySubstitution.endsWith(StringPool.FORWARD_SLASH)) {
+
+            final String [] substitutionTokens = roleKeySubstitution.substring(1, roleKeySubstitution.length()-1).split(StringPool.FORWARD_SLASH);
+            return substitutionTokens.length == 2? Optional.ofNullable(Tuple.of(substitutionTokens[0], substitutionTokens[1])): Optional.empty();
+        }
+
+        return Optional.empty();
     }
 
     private void addRole(final User user, final String removeRolePrefix, final String roleObject)
@@ -473,7 +525,7 @@ public class SAMLHelper {
 
         User user;
         final String companyDomain =
-                DotSamlProxyFactory.getInstance().samlConfigurationService().getConfigAsString(
+                this.getSamlConfigurationService().getConfigAsString(
                         identityProviderConfiguration, SamlName.DOTCMS_SAML_COMPANY_EMAIL_DOMAIN, ()->"fakedomain.com");
 
         Logger.warn(this, ()->"NameId " + nameID + " or email: " + attributesBean.getEmail() +
