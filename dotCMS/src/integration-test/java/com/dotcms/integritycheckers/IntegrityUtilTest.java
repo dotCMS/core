@@ -359,7 +359,7 @@ public class IntegrityUtilTest  {
         assertEquals(liveHost.getIdentifier(), results.get(0).get("local_identifier"));
         assertEquals(newIdentifier_1, results.get(0).get("remote_identifier"));
         assertEquals(endPointID, results.get(0).get("endpoint_id"));
-        assertEquals(liveHost.getLanguageId(), results.get(0).get("language_id"));
+        assertEquals(liveHost.getLanguageId(), ((Number)results.get(0).get("language_id")).longValue());
         assertEquals(liveHost.getName(), results.get(0).get("host"));
     }
 
