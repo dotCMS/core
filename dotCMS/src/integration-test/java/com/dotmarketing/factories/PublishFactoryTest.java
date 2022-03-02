@@ -7,7 +7,6 @@ import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
-import com.dotcms.util.TimeUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -102,9 +101,9 @@ public class PublishFactoryTest extends IntegrationTestBase {
 
             //Adding page to block cache.
             CacheLocator.getBlockPageCache().add(page, dummyText, cacheParameters);
-            final HTMLPageAsset finalPage = page;
-            //Wait for the Debouncer to catch up
-            TimeUtil.waitFor(6000,12000,() -> (null != CacheLocator.getBlockPageCache().get(finalPage, cacheParameters)));
+
+            Thread.sleep(2000);//Added b/c of the Debounce change over the BlockPageCache
+
             String cachedPageText = CacheLocator.getBlockPageCache().get(page, cacheParameters);
 
             //Test that page is cached.

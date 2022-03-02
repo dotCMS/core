@@ -3491,6 +3491,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         new ContentletLoader().invalidate(contentlet, PageMode.LIVE);
         CacheLocator.getContentletCache().remove(contentlet.getInode());
+        final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
+        CacheLocator.getCSSCache().remove(identifier.getHostId(), identifier.getPath(), true);
+        CacheLocator.getCSSCache().remove(identifier.getHostId(), identifier.getPath(), false);
         if(contentlet.isVanityUrl()) {
             APILocator.getVanityUrlAPI().invalidateVanityUrl(contentlet);
         }

@@ -1991,6 +1991,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
         REMOVABLE_KEY_SET.forEach(key -> toReturn.getMap().remove(key));
         contentlet.getMap().remove(Contentlet.CONTENTLET_AS_JSON);
         contentletCache.remove(inode);
+        final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
+        CacheLocator.getCSSCache().remove(identifier.getHostId(), identifier.getPath(), true);
+        CacheLocator.getCSSCache().remove(identifier.getHostId(), identifier.getPath(), false);
         return toReturn;
     }
 

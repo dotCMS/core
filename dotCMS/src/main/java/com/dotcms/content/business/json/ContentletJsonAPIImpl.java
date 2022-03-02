@@ -226,8 +226,14 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
                         continue;
                     }
                 }
-                Logger.debug(ContentletJsonAPIImpl.class,
-                        String.format("Unable to set field `%s` as it wasn't set on the source contentlet", field.name()));
+                //finally if the it wasn't included in the contentlet still might have a default value
+                final Optional<FieldValueBuilder> fieldDefaultValue = field.fieldValue(null);
+                //Therefore if a default is present it must be included.
+                if(fieldDefaultValue.isPresent()){
+                    builder.putFields(variable, fieldDefaultValue.get().build());
+                } else {
+                    Logger.debug(ContentletJsonAPIImpl.class, String.format("Unable to set field `%s` as it wasn't set on the source contentlet", field.name()));
+                }
             }
         }
         return builder.build();
