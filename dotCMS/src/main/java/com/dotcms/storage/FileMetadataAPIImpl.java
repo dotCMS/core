@@ -769,7 +769,6 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                                             .path(destMetadataPath).storage(storageType).build()).build()
                     );
                 } else {
-                    System.out.println(":: Saving custom attributes of "+binaryFieldName);
                     fileStorageAPI.setMetadata(new FetchMetadataParams.Builder()
                             .cache(() -> destination.getInode() + StringPool.COLON
                                     + binaryFieldName)
