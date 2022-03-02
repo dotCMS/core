@@ -19,8 +19,12 @@ class ConditionalSubmitterImpl implements ConditionalSubmitter {
         T result = null;
         if (this.semaphore.availablePermits() > 0 && this.semaphore.tryAcquire()) {
 
-            result = onAvailableSupplier.get();
-            this.semaphore.release();
+            try {
+                result = onAvailableSupplier.get();
+            } finally {
+
+                this.semaphore.release();
+            }
         } else {
 
             result = onDefaultSupplier.get();

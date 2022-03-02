@@ -64,6 +64,27 @@ public class DotConcurrentFactoryTest extends UnitTestBase {
 
         assertEquals(6, scenarios1Count);
         assertEquals(94, scenarios2Count);
+
+        scenarios2Count = scenarios1Count = 0;
+        futures.clear();
+        for (int i = 0; i < 100; ++i) {
+
+            futures.add(executorService.submit(()-> conditionalExecutor.submit(supplier1, supplier2)));
+        }
+
+        for (final Future<String> future: futures) {
+
+            final String result = future.get();
+            if (scenario2String.equals(result)) {
+                scenarios2Count++;
+            } else {
+                scenarios1Count++;
+            }
+        }
+
+        assertEquals(6, scenarios1Count);
+        assertEquals(94, scenarios2Count);
+
     }
 
     /**
