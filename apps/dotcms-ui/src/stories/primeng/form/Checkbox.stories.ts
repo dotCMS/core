@@ -24,19 +24,19 @@ export default {
 } as Meta;
 
 const CheckboxTemplate = `
-<div class="p-field-checkbox">
+<div class="field-checkbox">
   <p-checkbox name="group1" value="New York" inputId="ny"></p-checkbox>
   <label for="ny">New York</label>
 </div>
-<div class="p-field-checkbox">
+<div class="field-checkbox">
   <p-checkbox name="group1" value="San Francisco" inputId="sf"></p-checkbox>
   <label for="sf">San Francisco</label>
 </div>
-<div class="p-field-checkbox">
+<div class="field-checkbox">
   <p-checkbox name="group1" value="Los Angeles" inputId="la"></p-checkbox>
   <label for="la">Los Angeles</label>
 </div>
-<div class="p-field-checkbox">
+<div class="field-checkbox">
   <p-checkbox name="group1" value="Chicago" inputId="ch"></p-checkbox>
   <label for="ch">Chicago</label>
 </div>
