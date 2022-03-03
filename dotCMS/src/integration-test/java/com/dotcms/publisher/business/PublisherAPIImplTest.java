@@ -55,7 +55,7 @@ public class PublisherAPIImplTest {
 
         insertPublishAuditStatus(Status.FAILED_TO_BUNDLE,bundle.getId());
 
-        PublisherAPIImpl.getInstance().deleteElementFromPublishQueueTable(contentlet.getIdentifier());
+        PublisherAPIImpl.getInstance().deleteElementsFromPublishQueueTableAndAuditStatus(contentlet.getIdentifier());
 
         Assert.assertNull(APILocator.getPublishAuditAPI().getPublishAuditStatus(bundle.getId()));
     }
@@ -92,7 +92,7 @@ public class PublisherAPIImplTest {
 
         insertPublishAuditStatus(Status.FAILED_TO_BUNDLE,bundle.getId());
 
-        PublisherAPIImpl.getInstance().deleteElementFromPublishQueueTable(contentlet.getIdentifier());
+        PublisherAPIImpl.getInstance().deleteElementFromPublishQueueTableAndAuditStatus(contentlet.getIdentifier());
 
         Assert.assertNotNull(APILocator.getPublishAuditAPI().getPublishAuditStatus(bundle.getId()));
     }
@@ -130,7 +130,7 @@ public class PublisherAPIImplTest {
 
         insertPublishAuditStatus(Status.FAILED_TO_BUNDLE,bundle.getId());
 
-        PublisherAPIImpl.getInstance().deleteElementsFromPublishQueueTable(bundle.getId());
+        PublisherAPIImpl.getInstance().deleteElementsFromPublishQueueTableAndAuditStatus(bundle.getId());
 
         Assert.assertNull(APILocator.getPublishAuditAPI().getPublishAuditStatus(bundle.getId()));
     }
