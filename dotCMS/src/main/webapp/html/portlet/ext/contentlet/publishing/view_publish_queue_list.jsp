@@ -81,13 +81,13 @@
     try{
     	if(deleteQueueElements){
 	    	for(String identifier : deleteQueueElementsStr.split(",")){
-	    		pubAPI.deleteElementFromPublishQueueTable(identifier);
+	    		pubAPI.deleteElementFromPublishQueueTableAndAuditStatus(identifier);
 	    	}
     	}
 
     	if(deleteBundleElements){
 	    	for(String bundleId : deleteBundleElementsStr.split(",")){
-	    		pubAPI.deleteElementsFromPublishQueueTable(bundleId);
+	    		pubAPI.deleteElementsFromPublishQueueTableAndAuditStatus(bundleId);
 	    	}
     	}
 

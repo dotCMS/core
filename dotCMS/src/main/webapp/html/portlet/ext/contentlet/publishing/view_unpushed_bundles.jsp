@@ -40,7 +40,7 @@
 	if(null!=request.getParameter("delAsset")){
 		String assetId = request.getParameter("delAsset");
 		String bundleId = request.getParameter("bundleId");
-		APILocator.getBundleAPI().deleteAssetFromBundle(assetId, bundleId);
+		APILocator.getBundleAPI().deleteAssetFromBundleAndAuditStatus(assetId, bundleId);
 	}
 
 	PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
