@@ -117,7 +117,7 @@ jobs:
             - name: Build dotcms-ui with deps
               run: |
                   cd core-web
-                  npm run nx build dotcms-ui -- --with-deps --prod
+                  npm run nx build dotcms-webcomponents && npm run nx build dotcms-ui -- --prod
                   cp package.json ./dist/apps/dotcms-ui/package.json
             - name: 'publish to npm'
               run: |
