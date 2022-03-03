@@ -1,4 +1,4 @@
-package com.dotcms.content.business;
+package com.dotcms.content.business.json;
 
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -45,14 +45,25 @@ public interface ContentletJsonAPI {
             throws JsonProcessingException, DotDataException, DotSecurityException;
 
     /**
-     * This basically tells Weather or not we support saving content as json and we have not turned it off
+     * This basically tells Weather or not we support saving content as json and if we have not turned it off.
      * @return
      */
     default boolean isPersistContentAsJson(){
-        return DbConnectionFactory.isPostgres() && Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
+        return isJsonSupportedDatabase()
+                && Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
     }
 
     /**
+     * This tells us if we're running on a db that supports json
+     * @return
+     */
+    default boolean isJsonSupportedDatabase(){
+       return DbConnectionFactory.isPostgres() || DbConnectionFactory.isMsSql();
+    }
+
+    /**
+     * This attribute tells is we also want to save content in the dynamic columns
+     * So we can have a hybrid model
      * if we do not support content as json this has to return true
      * @return
      */
