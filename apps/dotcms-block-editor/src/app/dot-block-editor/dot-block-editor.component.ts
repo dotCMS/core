@@ -12,6 +12,7 @@ import {
     ActionsMenu,
     BubbleLinkFormExtension,
     ContentletBlock,
+    DotBubbleMenuExtension,
     DragHandler,
     ImageBlock,
     ImageUpload,
@@ -23,7 +24,6 @@ import { Highlight } from '@tiptap/extension-highlight';
 import { Link } from '@tiptap/extension-link';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
-import BubbleMenu from '@tiptap/extension-bubble-menu';
 
 @Component({
     selector: 'dotcms-block-editor',
@@ -48,7 +48,7 @@ export class DotBlockEditorComponent implements OnInit {
                 DragHandler(this.injector, this.resolver),
                 ImageUpload(this.injector, this.resolver),
                 BubbleLinkFormExtension(this.injector, this.resolver),
-                BubbleMenu.configure({
+                DotBubbleMenuExtension.configure({
                     element: document.querySelector('#bubbleMenu'),
                     shouldShow: shouldShowBubbleMenu,
                     tippyOptions: {
@@ -60,8 +60,8 @@ export class DotBlockEditorComponent implements OnInit {
                 }),
                 // Marks Extensions
                 Underline,
-                TextAlign.configure({ types: ['heading', 'paragraph', 'listItem'] }),
-                Highlight.configure({ HTMLAttributes: { class: 'highlighted '} }),
+                TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'dotImage'] }),
+                Highlight.configure({ HTMLAttributes: { class: 'highlighted' } }),
                 Link.configure({ openOnClick: true })
             ]
         });

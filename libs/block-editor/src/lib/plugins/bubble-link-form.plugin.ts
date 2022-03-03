@@ -9,6 +9,9 @@ import { BubbleMenuLinkFormComponent } from '../extensions/components/bubble-men
 // Interface
 import { PluginStorage } from '../extensions/bubble-link-form.extension';
 
+// Utils
+import { getNodePosition } from '@dotcms/block-editor';
+
 interface PluginState {
     toggle: boolean;
 }
@@ -80,7 +83,7 @@ export class BubbleLinkFormView {
         }
 
         this.createTooltip();
-        
+
         this.tippy?.state.isVisible ? this.hide() : this.show();
         this.detectLinkFormChanges();
     }
@@ -92,11 +95,11 @@ export class BubbleLinkFormView {
     };
 
     createTooltip() {
-        const { element: editorElement } = this.editor.options
-        const editorIsAttached = !!editorElement.parentElement
+        const { element: editorElement } = this.editor.options;
+        const editorIsAttached = !!editorElement.parentElement;
 
         if (this.tippy || !editorIsAttached) {
-            return
+            return;
         }
 
         this.tippy = tippy(editorElement, {
@@ -129,16 +132,18 @@ export class BubbleLinkFormView {
     setTippyPosition() {
         const { view } = this.editor;
         const { state } = view;
-        const { selection } = state;
+        const { doc, selection } = state;
         const { ranges } = selection;
         const from = Math.min(...ranges.map((range) => range.$from.pos));
         const to = Math.max(...ranges.map((range) => range.$to.pos));
         this.tippy.setProps({
             getReferenceClientRect: () => {
-                if (isNodeSelection(state.selection)) {
+                if (isNodeSelection(selection)) {
                     const node = view.nodeDOM(from) as HTMLElement;
+                    const type = doc.nodeAt(from).type.name;
+
                     if (node) {
-                        return node.getBoundingClientRect();
+                        return getNodePosition(node, type);
                     }
                 }
                 return posToDOMRect(view, from, to);
@@ -147,14 +152,20 @@ export class BubbleLinkFormView {
     }
 
     addLink(link: string) {
-        if (link) {
+        if (this.isDotImageNode()) {
+            this.editor.commands.setImageLink({ href: link });
+        } else {
             this.editor.commands.setLink({ href: link });
         }
         this.hide();
     }
 
     removeLink() {
-        this.editor.commands.unsetLink();
+        if (this.isDotImageNode()) {
+            this.editor.commands.unsetImageLink();
+        } else {
+            this.editor.commands.unsetLink();
+        }
         this.hide();
     }
 
@@ -178,7 +189,9 @@ export class BubbleLinkFormView {
     }
 
     getNodeLink(): string {
-        return this.editor.isActive('link') ? this.editor.getAttributes('link').href : '';
+        return this.editor.isActive('link')
+            ? this.editor.getAttributes('link').href
+            : this.editor.getAttributes('dotImage').href || '';
     }
 
     getLinkSelect() {
@@ -200,6 +213,11 @@ export class BubbleLinkFormView {
             'i'
         ); // fragment locator
         return !!pattern.test(nodeText);
+    }
+
+    isDotImageNode() {
+        const { type } = this.editor.state.doc.nodeAt(this.editor.state.selection.from);
+        return type.name === 'dotImage';
     }
 
     destroy() {

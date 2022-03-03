@@ -1,5 +1,6 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { Editor } from '@tiptap/core';
+import { bubbleMenuItems, bubbleMenuImageItems } from '@dotcms/block-editor';
 
 export interface BubbleMenuItem {
     icon: string;
@@ -13,95 +14,32 @@ export interface BubbleMenuItem {
     templateUrl: './bubble-menu.component.html',
     styleUrls: ['./bubble-menu.component.scss']
 })
-export class BubbleMenuComponent implements OnInit {
+export class BubbleMenuComponent implements OnInit, OnDestroy {
     @Input() editor: Editor;
 
     public enabledMarks: string[] = [];
     public textAlings: string[] = ['left', 'center', 'right'];
     public activeMarks: string[] = [];
 
-    public items: BubbleMenuItem[] = [
-        {
-            icon: 'format_bold',
-            markAction: 'bold',
-            active: false
-        },
-        {
-            icon: 'format_underlined',
-            markAction: 'underline',
-            active: false
-        },
-        {
-            icon: 'format_italic',
-            markAction: 'italic',
-            active: false
-        },
-        {
-            icon: 'strikethrough_s',
-            markAction: 'strike',
-            active: false,
-            divider: true
-        },
-        {
-            icon: 'format_align_left',
-            markAction: 'left',
-            active: false
-        },
-        {
-            icon: 'format_align_center',
-            markAction: 'center',
-            active: false
-        },
-        {
-            icon: 'format_align_right',
-            markAction: 'right',
-            active: false,
-            divider: true
-        },
-        {
-            icon: 'format_list_bulleted',
-            markAction: 'bulletList',
-            active: false
-        },
-        {
-            icon: 'format_list_numbered',
-            markAction: 'orderedList',
-            active: false
-        },
-        {
-            icon: 'format_indent_decrease',
-            markAction: 'outdent',
-            active: false
-        },
-        {
-            icon: 'format_indent_increase',
-            markAction: 'indent',
-            active: false,
-            divider: true
-        },
-        {
-            icon: 'link',
-            markAction: 'link',
-            active: false,
-            divider: true
-        },
-        {
-            icon: 'format_clear',
-            markAction: 'clearAll',
-            active: false
-        }
-    ];
+    public items: BubbleMenuItem[] = [];
 
     ngOnInit() {
         this.setEnabledMarks();
 
         /**
-         * Every time the selection is updated, the active state of the buttons must be updated.
+         * Every time the editor is updated, the active state of the buttons must be updated.
          */
-        this.editor.on('transaction', () => {
-            this.setActiveMarks();
-            this.updateActiveItems();
-        });
+        this.editor.on('transaction', this.onUpdate.bind(this));
+
+        /**
+         * Every time the selection is updated, check if it's a dotImage
+         */
+        this.editor.on('selectionUpdate', this.setMenuItems.bind(this));
+    }
+
+    ngOnDestroy(): void {
+        this.editor.off('transaction', this.onUpdate.bind(this));
+        this.editor.off('selectionUpdate', this.setMenuItems.bind(this));
     }
 
     command(item: BubbleMenuItem): void {
@@ -165,6 +103,25 @@ export class BubbleMenuComponent implements OnInit {
         markActions[item.markAction] ? markActions[item.markAction]() : null;
     }
 
+    private onUpdate(): void {
+        this.setActiveMarks();
+        this.updateActiveItems();
+    }
+
+    private setMenuItems({ editor: { state } }: { editor: Editor }): void {
+        const { doc, selection } = state;
+        const { empty } = selection;
+
+        if (empty) {
+            return;
+        }
+
+        const node = doc.nodeAt(selection.from);
+        const isDotImage = node.type.name == 'dotImage';
+
+        this.items = isDotImage ? bubbleMenuImageItems : bubbleMenuItems;
+    }
+
     private updateActiveItems(): void {
         this.items.forEach((item) => {
             if (this.activeMarks.includes(item.markAction)) {
@@ -188,7 +145,10 @@ export class BubbleMenuComponent implements OnInit {
     }
 
     private setEnabledMarks(): void {
-        this.enabledMarks = [...Object.keys(this.editor.schema.marks), ...Object.keys(this.editor.schema.nodes)];
+        this.enabledMarks = [
+            ...Object.keys(this.editor.schema.marks),
+            ...Object.keys(this.editor.schema.nodes)
+        ];
     }
 
     private setActiveMarks(): void {

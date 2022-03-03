@@ -28,35 +28,36 @@ declare module '@tiptap/core' {
 export const LINK_FORM_PLUGIN_KEY = new PluginKey('addLink');
 
 export const BubbleLinkFormExtension = (injector: Injector, resolver: ComponentFactoryResolver) => {
-
     return Extension.create<BubbleLinkFormOptions>({
         name: 'bubbleLinkForm',
         defaultOptions: {
             element: null,
             tippyOptions: {},
-            pluginKey: LINK_FORM_PLUGIN_KEY,
+            pluginKey: LINK_FORM_PLUGIN_KEY
         },
 
         addStorage() {
             return {
-              show: true
-            }
+                show: true
+            };
         },
 
         addCommands() {
             return {
-                toogleLinkForm: () => ({ commands }) => {
-                    this.storage.show = !this.storage.show;
-                    return commands.setHighlight();
-                }
-            }
+                toogleLinkForm:
+                    () =>
+                    ({ commands }) => {
+                        this.storage.show = !this.storage.show;
+                        return commands.setHighlight();
+                    }
+            };
         },
 
         addProseMirrorPlugins() {
             const factory = resolver.resolveComponentFactory(BubbleMenuLinkFormComponent);
             const component = factory.create(injector);
             component.changeDetectorRef.detectChanges();
-            
+
             return [
                 bubbleLinkFormPlugin({
                     pluginKey: this.options.pluginKey,
@@ -65,8 +66,8 @@ export const BubbleLinkFormExtension = (injector: Injector, resolver: ComponentF
                     tippyOptions: this.options.tippyOptions,
                     storage: this.storage,
                     component: component
-                }) 
-            ]
-        },
-    })
-}
+                })
+            ];
+        }
+    });
+};

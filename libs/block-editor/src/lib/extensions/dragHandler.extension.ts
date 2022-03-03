@@ -19,7 +19,7 @@ export const DragHandler = (injector: Injector, resolver: ComponentFactoryResolv
                 if (rect == null) {
                     return null;
                 }
-                let newRect = {
+                const newRect = {
                     left: rect.left + document.body.scrollLeft,
                     top: rect.top + document.body.scrollTop,
                     width: rect.width,
@@ -39,11 +39,11 @@ export const DragHandler = (injector: Injector, resolver: ComponentFactoryResolv
             }
 
             function blockPosAtCoords(coords, view) {
-                let pos = view.posAtCoords(coords);
+                const pos = view.posAtCoords(coords);
                 if (pos) {
-                    let node = getDirectChild(view.nodeDOM(pos.inside));
+                    const node = getDirectChild(view.nodeDOM(pos.inside));
                     if (node && node.nodeType === 1) {
-                        let desc = view.docView.nearestDesc(node, true);
+                        const desc = view.docView.nearestDesc(node, true);
                         if (!(!desc || desc === view.docView)) {
                             return desc.posBefore;
                         }
@@ -54,13 +54,13 @@ export const DragHandler = (injector: Injector, resolver: ComponentFactoryResolv
 
             function dragStart(e, view: EditorView) {
                 if (!e.dataTransfer) return;
-                let coords = { left: e.clientX + HANDLER_GAP, top: e.clientY };
-                let pos = blockPosAtCoords(coords, view);
+                const coords = { left: e.clientX + HANDLER_GAP, top: e.clientY };
+                const pos = blockPosAtCoords(coords, view);
                 if (pos != null) {
                     view.dispatch(
                         view.state.tr.setSelection(NodeSelection.create(view.state.doc, pos))
                     );
-                    let slice = view.state.selection.content();
+                    const slice = view.state.selection.content();
                     e.dataTransfer.clearData();
                     e.dataTransfer.setDragImage(nodeToBeDragged, 10, 10);
                     view.dragging = { slice, move: true };
@@ -110,9 +110,11 @@ export const DragHandler = (injector: Injector, resolver: ComponentFactoryResolv
                     },
                     props: {
                         handleDOMEvents: {
-                            drop(view, event) {
+                            drop() {
                                 setTimeout(() => {
-                                    let node = document.querySelector('.ProseMirror-hideselection');
+                                    const node = document.querySelector(
+                                        '.ProseMirror-hideselection'
+                                    );
                                     if (node) {
                                         node.classList.remove('ProseMirror-hideselection');
                                     }
@@ -120,7 +122,7 @@ export const DragHandler = (injector: Injector, resolver: ComponentFactoryResolv
                                 return false;
                             },
                             mousemove(view, event) {
-                                let coords = {
+                                const coords = {
                                     left: event.clientX + HANDLER_GAP,
                                     top: event.clientY
                                 };
@@ -131,10 +133,10 @@ export const DragHandler = (injector: Injector, resolver: ComponentFactoryResolv
                                         nodeToBeDragged &&
                                         !nodeToBeDragged.classList?.contains('ProseMirror')
                                     ) {
-                                        let rect = createRect(
+                                        const rect = createRect(
                                             nodeToBeDragged.getBoundingClientRect()
                                         );
-                                        let win = nodeToBeDragged.ownerDocument.defaultView;
+                                        const win = nodeToBeDragged.ownerDocument.defaultView;
                                         rect.top += win.pageYOffset;
                                         rect.left += win.pageXOffset;
                                         dragHandler.style.left = rect.left - WIDTH + 'px';

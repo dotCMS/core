@@ -36,8 +36,8 @@ export const ImageUpload = (injector: Injector, resolver: ComponentFactoryResolv
             }
 
             function findPlaceholder(state, id): number {
-                let decorations = PlaceholderPlugin.getState(state);
-                let found = decorations.find(null, null, (spec) => spec.id == id);
+                const decorations = PlaceholderPlugin.getState(state);
+                const found = decorations.find(null, null, (spec) => spec.id == id);
                 return found.length ? found[0].from : null;
             }
 
@@ -45,7 +45,7 @@ export const ImageUpload = (injector: Injector, resolver: ComponentFactoryResolv
                 const loadingBlock: ComponentRef<LoaderComponent> = loaderComponentFactory.create(
                     injector
                 );
-                let tr = view.state.tr;
+                const tr = view.state.tr;
                 loadingBlock.instance.data = {
                     message: 'Uploading...',
                     type: MessageType.INFO
@@ -75,7 +75,7 @@ export const ImageUpload = (injector: Injector, resolver: ComponentFactoryResolv
                         (dotAssets: DotCMSContentlet[]) => {
                             const tr = view.state.tr;
                             const data = dotAssets[0][Object.keys(dotAssets[0])[0]];
-                            let pos = findPlaceholder(view.state, data.name);
+                            const pos = findPlaceholder(view.state, data.name);
                             const imageNode = schema.nodes.dotImage.create({
                                 data: data
                             });
@@ -100,9 +100,6 @@ export const ImageUpload = (injector: Injector, resolver: ComponentFactoryResolv
                 PlaceholderPlugin,
                 new Plugin({
                     key: new PluginKey('imageUpload'),
-                    view: (editorView) => {
-                        return {};
-                    },
                     props: {
                         handleDOMEvents: {
                             paste(view, event) {

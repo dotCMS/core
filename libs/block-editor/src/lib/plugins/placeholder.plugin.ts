@@ -10,9 +10,9 @@ export const PlaceholderPlugin = new Plugin({
             // Adjust decoration positions to changes made by the transaction
             set = set.map(tr.mapping, tr.doc);
             // See if the transaction adds or removes any placeholders
-            let action = tr.getMeta(this);
+            const action = tr.getMeta(this);
             if (action && action.add) {
-                let deco = Decoration.widget(action.add.pos, action.add.element, {
+                const deco = Decoration.widget(action.add.pos, action.add.element, {
                     id: action.add.id
                 });
                 set = set.add(tr.doc, [deco]);
