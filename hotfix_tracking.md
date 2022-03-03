@@ -304,3 +304,4 @@ This maintenance release includes the following code fixes:
 150. https://github.com/dotCMS/core/issues/21097 : Past Time Machine not working #21097
 151. https://github.com/dotCMS/core/issues/21204 : [Site Copy] : Copying a Site randomly fails #21204
 152. https://github.com/dotCMS/core/issues/21252 : Add the ability to stop/abort a workflow on velocity script actionlet #21252
+153. https://github.com/dotCMS/core/issues/21699 : [Push Publishing] : Single quote in content's title breaks JavaScript code in the portlet #21699

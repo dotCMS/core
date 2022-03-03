@@ -436,7 +436,7 @@
 					assetTitleAsObject.toString() : StringPool.BLANK;
 		%>
 				addRow({
-					title: '<%=StringEscapeUtils.escapeHtml(assetTitle)%>',
+					title: '<%=StringEscapeUtils.escapeJavaScript(assetTitle)%>',
 					type: '<%=assetType%>',
 					bundleId: '<%=publishAuditStatus.getBundleId()%>',
 					isHtml: <%=asset.get(PublishQueueElementTransformer.HTML_PAGE_KEY)%>
