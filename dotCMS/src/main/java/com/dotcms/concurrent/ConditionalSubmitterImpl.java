@@ -12,18 +12,24 @@ class ConditionalSubmitterImpl implements ConditionalSubmitter {
 
     private final int slotsNumber;
     private final Semaphore semaphore;
+    private final long timeout;
+    private final TimeUnit timeUnit;
 
     ConditionalSubmitterImpl(final int slotsNumber) {
+        this(slotsNumber, 1, TimeUnit.SECONDS);
+    }
+
+    ConditionalSubmitterImpl(final int slotsNumber, final long timeout, final TimeUnit timeUnit) {
 
         this.slotsNumber = slotsNumber;
+        this.timeout     = timeout;
+        this.timeUnit    = timeUnit;
         this.semaphore   =  new Semaphore(slotsNumber);
     }
 
     private boolean tryAcquire () {
 
-        final long timeout = 1;
-        final TimeUnit unitSeconds = TimeUnit.SECONDS;
-        return Try.of(()->this.semaphore.tryAcquire(timeout, unitSeconds)).getOrElse(false);
+        return Try.of(()->this.semaphore.tryAcquire(this.timeout, this.timeUnit)).getOrElse(false);
     }
 
     @Override
