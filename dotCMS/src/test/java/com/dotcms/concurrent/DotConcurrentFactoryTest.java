@@ -37,7 +37,7 @@ public class DotConcurrentFactoryTest extends UnitTestBase {
         final String scenario2String = "scenario2";
         final int slots = 6;
         ExecutorService executorService = Executors.newFixedThreadPool(10);
-        final ConditionalSubmitter conditionalExecutor = DotConcurrentFactory.getInstance().createConditionalExecutor(slots);
+        final ConditionalSubmitter conditionalExecutor = DotConcurrentFactory.getInstance().createConditionalSubmitter(slots);
         final List<Future<String>> futures = new ArrayList<>();
         int scenarios1Count = 0;
         int scenarios2Count = 0;
