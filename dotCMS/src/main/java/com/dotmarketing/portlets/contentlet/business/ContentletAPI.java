@@ -2034,7 +2034,16 @@ public interface ContentletAPI {
 	 * 
 	 */
     public Object loadField(String inode, Field f) throws DotDataException;
-    
+
+	/**
+	 * provides direct access to the jsonField
+	 * @param inode
+	 * @param field
+	 * @return
+	 * @throws DotDataException
+	 */
+	public Object loadField(String inode, com.dotcms.contenttype.model.field.Field field) throws DotDataException;
+
     /**
      * Allows to count how many records match the specified lucene query and user
      * 
