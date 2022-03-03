@@ -17,9 +17,10 @@
 
 ## Events
 
-| Event    | Description                                      | Type                  |
-| -------- | ------------------------------------------------ | --------------------- |
-| `delete` | Emit the index of the item deleted from the list | `CustomEvent<number>` |
+| Event     | Description                                      | Type                  |
+| --------- | ------------------------------------------------ | --------------------- |
+| `delete`  | Emit the index of the item deleted from the list | `CustomEvent<number>` |
+| `reorder` | Emit the notification of list reordered          | `CustomEvent<any>`    |
 
 
 ## Dependencies

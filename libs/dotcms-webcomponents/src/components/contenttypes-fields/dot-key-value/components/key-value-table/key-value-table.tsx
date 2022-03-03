@@ -30,6 +30,12 @@ export class KeyValueTableComponent {
     @Event()
     delete: EventEmitter<number>;
 
+    /** Emit the notification of list reordered */
+    @Event()
+    reorder: EventEmitter;
+
+    dragSrcEl = null;
+
     render() {
         return (
             <table>
@@ -37,6 +43,126 @@ export class KeyValueTableComponent {
             </table>
         );
     }
+
+    componentDidLoad() {
+        this.bindDraggableEvents();
+    }
+
+    componentDidUpdate() {
+        this.bindDraggableEvents();
+    }
+
+    // D&D - BEGIN
+
+    private bindDraggableEvents() {
+        const rows = document.querySelectorAll('key-value-table tr');
+        rows.forEach((row) => {
+            row.setAttribute('draggable', 'true');
+
+            row.removeEventListener('dragstart', this.handleDragStart.bind(this), false);
+            row.removeEventListener('dragenter', this.handleDragEnter, false);
+            row.removeEventListener('dragover', this.handleDragOver.bind(this), false);
+            row.removeEventListener('dragleave', this.handleDragLeave, false);
+            row.removeEventListener('drop', this.handleDrop.bind(this), false);
+            row.removeEventListener('dragend', this.handleDragEnd.bind(this), false);
+
+            row.addEventListener('dragstart', this.handleDragStart.bind(this), false);
+            row.addEventListener('dragenter', this.handleDragEnter, false);
+            row.addEventListener('dragover', this.handleDragOver.bind(this), false);
+            row.addEventListener('dragleave', this.handleDragLeave, false);
+            row.addEventListener('drop', this.handleDrop.bind(this), false);
+            row.addEventListener('dragend', this.handleDragEnd.bind(this), false);
+        });
+    }
+
+    private removeElementById(elemId) {
+        document.getElementById(elemId).remove();
+    }
+
+    private isPlaceholderInDOM() {
+        return !!document.getElementById('dotKeyValuePlaceholder');
+    }
+
+    private isCursorOnUpperSide(cursor, { top, bottom }) {
+        return cursor.y - top < (bottom - top) / 2;
+    }
+
+    private setPlaceholder() {
+        const placeholder = document.createElement('tr');
+        placeholder.id = 'dotKeyValuePlaceholder';
+        placeholder.classList.add('key-value-table-wc__placeholder-transit');
+        return placeholder;
+    }
+
+    private insertBeforeElement(newElem, element) {
+        element.parentNode.insertBefore(newElem, element);
+    }
+
+    private insertAfterElement(newElem, element) {
+        element.parentNode.insertBefore(newElem, element.nextSibling);
+    }
+
+    private handleDragStart(e) {
+        this.dragSrcEl = e.target;
+    }
+
+    private handleDragOver(e) {
+        if (e.preventDefault) {
+            e.preventDefault();
+        }
+        if (this.dragSrcEl != e.target) {
+            const contentlet = e.target.closest('tr');
+            const contentletPlaceholder = this.setPlaceholder();
+            if (this.isPlaceholderInDOM()) {
+                this.removeElementById('dotKeyValuePlaceholder');
+            }
+
+            if (this.isCursorOnUpperSide(e, contentlet.getBoundingClientRect())) {
+                this.insertBeforeElement(contentletPlaceholder, contentlet);
+            } else {
+                this.insertAfterElement(contentletPlaceholder, contentlet);
+            }
+        }
+        return false;
+    }
+
+    private handleDragEnter(e) {
+        e.target.classList.add('over');
+    }
+
+    private handleDragLeave(e) {
+        e.target.classList.remove('over');
+    }
+
+    private handleDrop(e) {
+        if (e.stopPropagation) {
+            e.stopPropagation(); // stops the browser from redirecting.
+        }
+        if (this.dragSrcEl != e.target) {
+            document
+                .getElementById('dotKeyValuePlaceholder')
+                .insertAdjacentElement('afterend', this.dragSrcEl);
+        }
+
+        return false;
+    }
+
+    private handleDragEnd() {
+        const rows = document.querySelectorAll('key-value-table tr');
+        rows.forEach(function (row) {
+            row.classList.remove('over');
+        });
+
+        try {
+            this.removeElementById('dotKeyValuePlaceholder');
+        } catch (e) {
+            /**/
+        }
+
+        this.reorder.emit();
+    }
+
+    // D&D - END
 
     private onDelete(index: number): void {
         this.delete.emit(index);

@@ -1,22 +1,28 @@
 key-value-form form {
-    display: flex;
-    align-items: center;
-
-    button {
-        margin: 0;
-    }
-
-    input {
-        margin: 0 1rem 0 0.5rem;
-    }
-
     label {
         align-items: center;
         display: flex;
         flex-grow: 1;
+    }
+
+    table {
+        width: 100%;
 
         input {
-            flex-grow: 1;
+            width: 100%;
         }
+    }
+
+    .key-value-table-form__key {
+        width: 45%;
+    }
+
+    .key-value-table-form__value {
+        width: 45%;
+    }
+
+    .key-value-table-form__action {
+        text-align: right;
+        width: 10%;
     }
 }
