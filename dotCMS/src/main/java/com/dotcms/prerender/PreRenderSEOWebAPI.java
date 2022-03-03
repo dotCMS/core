@@ -12,5 +12,12 @@ import javax.servlet.http.HttpServletResponse;
  */
 public interface PreRenderSEOWebAPI {
 
+    /**
+     * Returns true if the current request is elegible for prerender (means it is a robot request).
+     * The current response is overrided at the sametime, so the rest of the workflow should be skipped
+     * @param request {@link HttpServletRequest}
+     * @param response {@link HttpServletResponse}
+     * @return boolean
+     */
     boolean prerenderIfEligible(HttpServletRequest request, HttpServletResponse response);
 }

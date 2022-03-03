@@ -9,7 +9,6 @@ import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.google.common.base.Predicate;
 import com.liferay.util.StringPool;
@@ -166,7 +165,7 @@ public class PreRenderSEOWebAPIImpl implements PreRenderSEOWebAPI {
 
         ConditionalSubmitter conditionalSubmitter =
                 this.conditionalSubmitterMap.computeIfAbsent(hostId,
-                        key -> DotConcurrentFactory.getInstance().createConditionalExecutor(maxRequestNumber));
+                        key -> DotConcurrentFactory.getInstance().createConditionalSubmitter(maxRequestNumber));
 
         // check if the maxRequestNumber has changed, if so destroy the current one and rebuilt the Conditional
         if (maxRequestNumber != conditionalSubmitter.slotsNumber()) {
@@ -175,7 +174,7 @@ public class PreRenderSEOWebAPIImpl implements PreRenderSEOWebAPI {
                     ", creating a new ConditionalSubmitter");
             this.conditionalSubmitterMap.remove(hostId);
             conditionalSubmitter = this.conditionalSubmitterMap.computeIfAbsent(hostId,
-                    key -> DotConcurrentFactory.getInstance().createConditionalExecutor(maxRequestNumber));
+                    key -> DotConcurrentFactory.getInstance().createConditionalSubmitter(maxRequestNumber));
         }
 
         return conditionalSubmitter;

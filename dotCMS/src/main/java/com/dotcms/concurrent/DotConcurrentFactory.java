@@ -358,7 +358,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
      * Creates a default Conditional executor with the default size
      * @return ConditionalExecutor
      */
-    public ConditionalSubmitter createConditionalExecutor() {
+    public ConditionalSubmitter createConditionalSubmitter() {
 
         return new ConditionalSubmitterImpl(Config.getIntProperty("DOTCMS_CONCURRENT_CONDITIONAL_EXECUTOR_DEFAULT_SIZE", 10));
     }
@@ -368,7 +368,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
      * @param size {@link Integer}
      * @return ConditionalExecutor
      */
-    public ConditionalSubmitter createConditionalExecutor(final int size) {
+    public ConditionalSubmitter createConditionalSubmitter(final int size) {
 
         return new ConditionalSubmitterImpl(size);
     }
