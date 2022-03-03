@@ -18,4 +18,11 @@ public interface ConditionalSubmitter {
      * @return T
      */
     <T> T submit(final Supplier<T> onAvailableSupplier, final Supplier<T> onDefaultSupplier);
+
+    /**
+     * Returns the max number slots for this submitter
+     * they are not the current available slot, are just the max number of them.
+     * @return int
+     */
+    int slotsNumber();
 }

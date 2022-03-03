@@ -9,6 +9,7 @@ import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.google.common.base.Predicate;
 import com.liferay.util.StringPool;
@@ -119,7 +120,7 @@ public class PreRenderSEOWebAPIImpl implements PreRenderSEOWebAPI {
     }
 
     @Override
-    public boolean prerenderIfEligible(final HttpServletRequest request, final HttpServletResponse response) {
+    public boolean  prerenderIfEligible(final HttpServletRequest request, final HttpServletResponse response) {
 
         return Try.of(()->handlePrerender(request, response)).getOrElse(false);
     }
@@ -128,38 +129,57 @@ public class PreRenderSEOWebAPIImpl implements PreRenderSEOWebAPI {
 
         final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
         final Optional<AppConfig> appConfig = config(host);
-        final Supplier<Boolean> onAvailableSupplier = () -> {
+
+        if (appConfig.isPresent()) {
 
             final PrerenderConfig prerenderConfig = new PrerenderConfig(appConfig.get(), host);
 
-            if (shouldShowPrerenderedPage(request, prerenderConfig)) {
+            final Supplier<Boolean> onAvailableSupplier = () -> {
+
+                Logger.debug(this, ()->"Running prerender");
 
                 final PreRenderEventHandler preRenderEventHandler = getEventHandler(appConfig.get());
                 return beforeRender(request, response, preRenderEventHandler) ||
                         proxyPrerenderedPageResponse(request, response, preRenderEventHandler, prerenderConfig);
-            }
+            };
 
-            return false;
-        };
+            if (shouldShowPrerenderedPage(request, prerenderConfig)) {
 
-        if (appConfig.isPresent()) {
+                if (appConfig.get().maxRequestNumber > 0) {
 
-            if (appConfig.get().maxRequestNumber > 0) {
+                    final ConditionalSubmitter conditionalSubmitter =
+                            this.getConditionalSubmitter(host.getIdentifier(), appConfig.get().maxRequestNumber);
 
-                final ConditionalSubmitter conditionalSubmitter =
-                        this.conditionalSubmitterMap.computeIfAbsent(host.getIdentifier(),
-                                key-> DotConcurrentFactory.getInstance().createConditionalExecutor(appConfig.get().maxRequestNumber));
+                    return conditionalSubmitter.submit(onAvailableSupplier, () -> false);
+                } else {
 
-                return conditionalSubmitter.submit(onAvailableSupplier, ()-> false);
-            } else {
-
-                return onAvailableSupplier.get();
+                    return onAvailableSupplier.get();
+                }
             }
         }
 
         return false;
     }
 
+    private ConditionalSubmitter getConditionalSubmitter(final String hostId, final int maxRequestNumber) {
+
+
+        ConditionalSubmitter conditionalSubmitter =
+                this.conditionalSubmitterMap.computeIfAbsent(hostId,
+                        key -> DotConcurrentFactory.getInstance().createConditionalExecutor(maxRequestNumber));
+
+        // check if the maxRequestNumber has changed, if so destroy the current one and rebuilt the Conditional
+        if (maxRequestNumber != conditionalSubmitter.slotsNumber()) {
+
+            Logger.info(this, ()->"The maxRequestNumber has changed to: " + maxRequestNumber +
+                    ", creating a new ConditionalSubmitter");
+            this.conditionalSubmitterMap.remove(hostId);
+            conditionalSubmitter = this.conditionalSubmitterMap.computeIfAbsent(hostId,
+                    key -> DotConcurrentFactory.getInstance().createConditionalExecutor(maxRequestNumber));
+        }
+
+        return conditionalSubmitter;
+    }
     /**
      * Gets the secrets from the App - this will check the current host then the SYSTEMM_HOST for a
      * valid configuration. This lookup is low overhead and cached by dotCMS.
