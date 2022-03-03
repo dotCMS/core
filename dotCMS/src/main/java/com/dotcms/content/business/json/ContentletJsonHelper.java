@@ -11,7 +11,25 @@ import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.util.Optional;
 
+/**
+ * Contentlet Json related logic falls here
+ * In case we need to parse stuff outside an API
+ * For example: We do not use APIs in our UpgradeTasks etc..
+ */
 public class ContentletJsonHelper {
+
+    /**
+     * Jackson mapper configuration and lazy initialized instance.
+     */
+    private final Lazy<ObjectMapper> objectMapper = Lazy.of(() -> {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+        objectMapper.registerModule(new Jdk8Module());
+        objectMapper.registerModule(new GuavaModule());
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        return objectMapper;
+    });
 
     /**
      * Short hand to parse the json but access directly the field of interest.
@@ -46,19 +64,6 @@ public class ContentletJsonHelper {
     public String writeAsString(final Object object) throws JsonProcessingException {
         return objectMapper.get().writeValueAsString(object);
     }
-
-    /**
-     * Jackson mapper configuration and lazy initialized instance.
-     */
-    private final Lazy<ObjectMapper> objectMapper = Lazy.of(() -> {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
-        objectMapper.registerModule(new Jdk8Module());
-        objectMapper.registerModule(new GuavaModule());
-        objectMapper.registerModule(new JavaTimeModule());
-        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-        return objectMapper;
-    });
 
     public enum INSTANCE {
         INSTANCE;

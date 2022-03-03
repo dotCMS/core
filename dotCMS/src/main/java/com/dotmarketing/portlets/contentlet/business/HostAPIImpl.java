@@ -919,7 +919,9 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         final Optional<Field> defaultField = fields.stream().filter(field -> "isDefault".equalsIgnoreCase(field.variable())).findFirst();
 
         if(!defaultField.isPresent()){
-            throw new DotDataException("Unable to locate field `isDefault` in the ContentType Host.");
+            final String message = "Unable to locate field `isDefault` in the ContentType Host.";
+            Logger.error(HostAPIImpl.class, message);
+            throw new DotDataException(message);
         }
 
         final DotConnect dotConnect = new DotConnect();

@@ -224,8 +224,12 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
 
              String contentAsJson = StringPool.BLANK;
 
-            if(DbConnectionFactory.isPostgres()) { contentAsJson = " or c.contentlet_as_json->'fields'->'hostName'->>'value' = ht.host"; }
-            if(DbConnectionFactory.isMsSql()) { contentAsJson = " or (JSON_VALUE(c.contentlet_as_json,'$.fields.hostName.value') = ht.host)"; }
+            if (DbConnectionFactory.isPostgres()) {
+                contentAsJson = " or c.contentlet_as_json->'fields'->'hostName'->>'value' = ht.host";
+            }
+            if (DbConnectionFactory.isMsSql()) {
+                contentAsJson = " or (JSON_VALUE(c.contentlet_as_json,'$.fields.hostName.value') = ht.host)";
+            }
 
             // compare the data from the CSV to the local db data AND see if we
             // have conflicts
