@@ -111,16 +111,13 @@ This maintenance release includes the following code fixes:
 
 54. https://github.com/dotcms/core/issues/21267 : ReindexThread dies with bad data #21267, 2nd inclusion with additional fixes
 
-55. https://github.com/dotCMS/core/issues/21204 : [Site Copy] : Copying a Site randomly fails #21204
+**Release-21.06.7**
 
-56. https://github.com/dotCMS/core/issues/21363 : db passwords with characters (specifically @ and possibly others) will break pub/sub due to the connection string #21363
-
-57. https://github.com/dotCMS/core/issues/21252 : Add the ability to stop/abort a workflow on velocity script actionlet #21252
-
-58. https://github.com/dotCMS/core/issues/21097 : Past Time Machine not working #21097
-
-59. https://github.com/dotCMS/core/issues/20773 : SAML - Allow expression substitution from SAML roles mapped to dotCMS roles by role key #20773
-
-60. https://github.com/dotCMS/core/issues/20805 : Unable to push publish user #20805
-
-61. https://github.com/dotCMS/core/issues/20757 : We need to obfuscate some environmental variables #20757
+56. https://github.com/dotCMS/core/issues/21204 : [Site Copy] : Copying a Site randomly fails #21204
+57. https://github.com/dotCMS/core/issues/21363 : db passwords with characters (specifically @ and possibly others) will break pub/sub due to the connection string #21363
+58. https://github.com/dotCMS/core/issues/21252 : Add the ability to stop/abort a workflow on velocity script actionlet #21252
+59. https://github.com/dotCMS/core/issues/21097 : Past Time Machine not working #21097
+60. https://github.com/dotCMS/core/issues/20773 : SAML - Allow expression substitution from SAML roles mapped to dotCMS roles by role key #20773
+61. https://github.com/dotCMS/core/issues/20805 : Unable to push publish user #20805
+62. https://github.com/dotCMS/core/issues/20757 : We need to obfuscate some environmental variables #20757
+63. https://github.com/dotCMS/core/issues/21791 : Sanitizing file name #21791
