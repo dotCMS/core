@@ -18,6 +18,7 @@ import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.notifications.bean.NotificationLevel;
@@ -1940,6 +1941,19 @@ public class ESContentFactoryImpl extends ContentletFactory {
         contentlet.setInode(inode);
         final Contentlet toReturn = findInDb(inode).orElseThrow(()->
                 new DotStateException(String.format("Contentlet with inode '%s' not found in DB", inode)));
+
+        final List<ContentletVersionInfo> contentletVersionInfos = APILocator.getVersionableAPI()
+                .findContentletVersionInfos(contentlet.getIdentifier());
+
+        if (contentlet.isVanityUrl() && UtilMethods.isSet(contentletVersionInfos)) {
+            final Contentlet oldContentlet = APILocator.getContentletAPI()
+                    .findContentletByIdentifier(toReturn.getIdentifier(), toReturn.isLive(),
+                            toReturn.getLanguageId(), APILocator.systemUser(), false);
+
+            if (UtilMethods.isSet(oldContentlet)) {
+                toReturn.setProperty(Contentlet.OLD_HOST_ID, oldContentlet.getHost());
+            }
+        }
 
         if(UtilMethods.isNotSet(contentlet.getIdentifier())) {
             toReturn.setFolder(contentlet.getFolder());
