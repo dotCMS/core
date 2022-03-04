@@ -4,6 +4,7 @@ on:
         branches:
             - release-*
             - master
+            - fix-build-1
 jobs:
     changes:
         runs-on: ubuntu-latest
@@ -11,9 +12,8 @@ jobs:
             dotcms-ui: ${{ steps.filter.outputs.dotcms-ui }}
         steps:
             - name: Checkout core-web
-              uses: actions/checkout@v2
+              uses: actions/checkout@v3
               with:
-                  fetch-depth: 1
                   path: 'core-web'
 
             - name: Get specific changed files

@@ -626,7 +626,7 @@ export class DotEditContentHtmlService {
                 .pipe(take(1))
                 .subscribe(
                     () => {
-                        // on success
+                        // onSuccess
                         content.element.classList.remove('inline-editing--saving');
                         delete this.inlineCurrentContent[content.element.id];
                         this.dotGlobalMessageService.success(
@@ -634,7 +634,7 @@ export class DotEditContentHtmlService {
                         );
                     },
                     (e: HttpErrorResponse) => {
-                        // on error
+                        // onError
                         content.element.innerHTML = this.inlineCurrentContent[content.element.id];
                         const message =
                             e.error.errors[0].message ||
