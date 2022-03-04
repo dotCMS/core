@@ -393,9 +393,9 @@ public class BundleAPIImpl implements BundleAPI {
 
 	@WrapInTransaction
 	@Override
-	public void deleteAssetFromBundle(String assetId, String bundleId)
+	public void deleteAssetFromBundleAndAuditStatus(String assetId, String bundleId)
 			throws DotDataException {
-		bundleFactory.deleteAssetFromBundle(assetId, bundleId);
+		deleteAssetFromBundle(assetId, bundleId);
 
 		List<PublishQueueElement> queueElements = Try.of(()->PublisherAPI.getInstance()
 				.getQueueElementsByBundleId(bundleId)).getOrElse(Collections::emptyList);
@@ -404,6 +404,13 @@ public class BundleAPIImpl implements BundleAPI {
 			Try.run(()->APILocator.getPublishAuditAPI().deletePublishAuditStatus(bundleId))
 					.getOrElseThrow(DotDataException::new);
 		}
+	}
+
+	@WrapInTransaction
+	@Override
+	public void deleteAssetFromBundle(String assetId, String bundleId)
+			throws DotDataException {
+		bundleFactory.deleteAssetFromBundle(assetId, bundleId);
 	}
 
 	/**
