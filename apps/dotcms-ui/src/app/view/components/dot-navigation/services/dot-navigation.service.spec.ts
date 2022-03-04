@@ -15,6 +15,7 @@ import { DotcmsEventsService, LoginService, Auth } from '@dotcms/dotcms-js';
 
 import { Observable, Subject, of } from 'rxjs';
 import { skip } from 'rxjs/operators';
+import { Title } from '@angular/platform-browser';
 
 class RouterMock {
     _events: Subject<any> = new Subject();
@@ -66,6 +67,16 @@ class DotMenuServiceMock {
 
     reloadMenu(): Observable<DotMenu[]> {
         return of([dotMenuMock(), dotMenuMock1()]);
+    }
+}
+
+class TitleServiceMock {
+    getTitle(): string {
+        return 'dotCMS platform';
+    }
+
+    setTitle(_title: string): void {
+        /* */
     }
 }
 
@@ -156,6 +167,7 @@ describe('DotNavigationService', () => {
     let dotMenuService: DotMenuService;
     let loginService: LoginService;
     let router;
+    let titleService: Title;
 
     beforeEach(
         waitForAsync(() => {
@@ -166,6 +178,10 @@ describe('DotNavigationService', () => {
                     {
                         provide: DotcmsEventsService,
                         useClass: DotcmsEventsServiceMock
+                    },
+                    {
+                        provide: Title,
+                        useClass: TitleServiceMock
                     },
                     {
                         provide: DotMenuService,
@@ -208,7 +224,9 @@ describe('DotNavigationService', () => {
             loginService = testbed.inject(LoginService);
             dotEventService = testbed.inject(DotEventsService);
             router = testbed.inject(Router);
+            titleService = testbed.inject(Title);
 
+            spyOn(titleService, 'setTitle');
             spyOn(dotEventService, 'notify');
             spyOn(dotMenuService, 'reloadMenu').and.callThrough();
             localStorage.clear();
@@ -326,7 +344,7 @@ describe('DotNavigationService', () => {
     });
 
     it('should go to first portlet on auth change', () => {
-        ((loginService as unknown) as LoginServiceMock).triggerNewAuth(baseMockAuth);
+        (loginService as unknown as LoginServiceMock).triggerNewAuth(baseMockAuth);
 
         spyOn(dotMenuService, 'loadMenu').and.returnValue(
             of([
@@ -362,6 +380,11 @@ describe('DotNavigationService', () => {
         });
 
         router.triggerNavigationEnd('/123');
+    });
+
+    it('should set Page title based on url', () => {
+        router.triggerNavigationEnd('url/link1');
+        expect(titleService.setTitle).toHaveBeenCalledWith('Label 1 -  dotCMS platform');
     });
 
     // TODO: needs to fix this, looks like the dotcmsEventsService instance is different here not sure why.

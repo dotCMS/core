@@ -13,6 +13,7 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotIframeService } from '../../_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DotLocalstorageService } from '@services/dot-localstorage/dot-localstorage.service';
+import { Title } from '@angular/platform-browser';
 
 export const replaceSectionsMap = {
     'edit-page': 'site-browser'
@@ -67,60 +68,59 @@ function isEditPageFromSiteBrowser(menuId: string, previousUrl: string): boolean
     return menuId === 'edit-page' && previousUrl === '/c/site-browser';
 }
 
-const setActiveItems = ({ url, collapsed, menuId, previousUrl }: DotActiveItemsProps) => (
-    source: Observable<DotMenu[]>
-) => {
-    let urlId = getTheUrlId(url);
+const setActiveItems =
+    ({ url, collapsed, menuId, previousUrl }: DotActiveItemsProps) =>
+    (source: Observable<DotMenu[]>) => {
+        let urlId = getTheUrlId(url);
+        return source.pipe(
+            map((m: DotMenu[]) => {
+                const menus: DotMenu[] = [...m];
+                let isActive = false;
 
-    return source.pipe(
-        map((m: DotMenu[]) => {
-            const menus: DotMenu[] = [...m];
-            let isActive = false;
+                if (
+                    isEditPageFromSiteBrowser(menuId, previousUrl) ||
+                    (isDetailPage(urlId, url) && isMenuActive(menus))
+                ) {
+                    return null;
+                }
 
-            if (
-                isEditPageFromSiteBrowser(menuId, previousUrl) ||
-                (isDetailPage(urlId, url) && isMenuActive(menus))
-            ) {
-                return null;
-            }
+                // When user browse using the navigation (Angular Routing)
+                if (menuId && menuId !== 'edit-page') {
+                    return getActiveMenuFromMenuId({
+                        menus,
+                        menuId,
+                        collapsed,
+                        url: urlId,
+                        previousUrl
+                    });
+                }
 
-            // When user browse using the navigation (Angular Routing)
-            if (menuId && menuId !== 'edit-page') {
-                return getActiveMenuFromMenuId({
-                    menus,
-                    menuId,
-                    collapsed,
-                    url: urlId,
-                    previousUrl
-                });
-            }
+                // When user browse using the browser url bar, direct links or reload page
+                urlId = replaceIdForNonMenuSection(urlId) || urlId;
 
-            // When user browse using the browser url bar, direct links or reload page
-            urlId = replaceIdForNonMenuSection(urlId) || urlId;
+                for (let i = 0; i < menus.length; i++) {
+                    menus[i].active = false;
+                    menus[i].isOpen = false;
 
-            for (let i = 0; i < menus.length; i++) {
-                menus[i].active = false;
-                menus[i].isOpen = false;
+                    for (let k = 0; k < menus[i].menuItems.length; k++) {
+                        // Once we activate the first one all the others are close
+                        if (isActive) {
+                            menus[i].menuItems[k].active = false;
+                        }
 
-                for (let k = 0; k < menus[i].menuItems.length; k++) {
-                    // Once we activate the first one all the others are close
-                    if (isActive) {
-                        menus[i].menuItems[k].active = false;
-                    }
-
-                    if (!isActive && menus[i].menuItems[k].id === urlId) {
-                        isActive = true;
-                        menus[i].active = true;
-                        menus[i].isOpen = true;
-                        menus[i].menuItems[k].active = true;
+                        if (!isActive && menus[i].menuItems[k].id === urlId) {
+                            isActive = true;
+                            menus[i].active = true;
+                            menus[i].isOpen = true;
+                            menus[i].menuItems[k].active = true;
+                        }
                     }
                 }
-            }
 
-            return menus;
-        })
-    );
-};
+                return menus;
+            })
+        );
+    };
 
 const DOTCMS_MENU_STATUS = 'dotcms.menu.status';
 
@@ -133,6 +133,7 @@ function getTheUrlId(url: string): string {
 export class DotNavigationService {
     private _collapsed$: BehaviorSubject<boolean> = new BehaviorSubject(true);
     private _items$: BehaviorSubject<DotMenu[]> = new BehaviorSubject([]);
+    private _appMainTitle: string;
 
     constructor(
         private dotEventsService: DotEventsService,
@@ -142,8 +143,10 @@ export class DotNavigationService {
         private dotcmsEventsService: DotcmsEventsService,
         private loginService: LoginService,
         private router: Router,
-        private dotLocalstorageService: DotLocalstorageService
+        private dotLocalstorageService: DotLocalstorageService,
+        private titleService: Title
     ) {
+        this._appMainTitle = this.titleService.getTitle();
         const savedMenuStatus = this.dotLocalstorageService.getItem<boolean>(DOTCMS_MENU_STATUS);
         this._collapsed$.next(savedMenuStatus === false ? false : true);
 
@@ -153,16 +156,23 @@ export class DotNavigationService {
 
         this.onNavigationEnd()
             .pipe(
-                switchMap((event: NavigationEnd) =>
-                    this.dotMenuService.loadMenu().pipe(
+                switchMap((event: NavigationEnd) => {
+                    return this.dotMenuService.loadMenu().pipe(
+                        tap((menu: DotMenu[]) => {
+                            const pageTitle = this.getPageCurrentTitle(event.url, menu);
+                            this.titleService.setTitle(
+                                `${pageTitle ? pageTitle + ' - ' : ''} ${this._appMainTitle}`
+                            );
+                            return menu;
+                        }),
                         setActiveItems({
                             url: event.url,
                             collapsed: this._collapsed$.getValue(),
                             menuId: this.router.getCurrentNavigation().extras.state?.menuId,
                             previousUrl: this.dotRouterService.previousUrl
                         })
-                    )
-                ),
+                    );
+                }),
                 filter((menu) => !!menu)
             )
             .subscribe((menus: DotMenu[]) => {
@@ -372,5 +382,18 @@ export class DotNavigationService {
 
     private setMenu(menu: DotMenu[]) {
         this._items$.next(this.addMenuLinks(menu));
+    }
+
+    private getPageCurrentTitle(url: string, menu: DotMenu[]): string {
+        let title = '';
+        const flattedMenu = menu
+            .reduce((a, { menuItems }) => [...a, ...menuItems], [])
+            .reduce((a, { label, menuLink }) => ({ ...a, [menuLink]: label }), {});
+
+        Object.entries(flattedMenu).forEach(([menuLink, label]: [string, string]) => {
+            title = url.indexOf(menuLink) >= 0 ? label : title;
+        });
+
+        return title;
     }
 }

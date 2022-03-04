@@ -4,6 +4,7 @@ import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { Title } from '@angular/platform-browser';
 
 export interface DotCMSEditPageEvent {
     name: string;
@@ -49,7 +50,8 @@ export class DotContentletWrapperComponent {
         private dotAlertConfirmService: DotAlertConfirmService,
         private dotMessageService: DotMessageService,
         private dotRouterService: DotRouterService,
-        private dotIframeService: DotIframeService
+        private dotIframeService: DotIframeService,
+        private titleService: Title
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
@@ -83,6 +85,13 @@ export class DotContentletWrapperComponent {
                 },
                 'edit-contentlet-loaded': (e: CustomEvent) => {
                     this.header = e.detail.data.contentType;
+                    this.titleService.setTitle(
+                        `${
+                            e.detail.data.pageTitle
+                                ? e.detail.data.pageTitle + ' - '
+                                : this.titleService.getTitle()
+                        } ${this.titleService.getTitle().split(' - ')[1]}`
+                    );
                 }
             };
         }

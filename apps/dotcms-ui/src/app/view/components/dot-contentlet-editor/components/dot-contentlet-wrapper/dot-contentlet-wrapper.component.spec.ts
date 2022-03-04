@@ -2,7 +2,7 @@
 
 import { of } from 'rxjs';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { By } from '@angular/platform-browser';
+import { By, Title } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
 import { RouterTestingModule } from '@angular/router/testing';
 import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
@@ -50,6 +50,7 @@ describe('DotContentletWrapperComponent', () => {
     let dotAddContentletService: DotContentletEditorService;
     let dotAlertConfirmService: DotAlertConfirmService;
     let dotRouterService: DotRouterService;
+    let titleService: Title;
     let dotIframeService: DotIframeService;
 
     beforeEach(
@@ -66,6 +67,7 @@ describe('DotContentletWrapperComponent', () => {
                     DotcmsConfigService,
                     LoggerService,
                     StringUtils,
+                    Title,
                     { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                     {
                         provide: DotHttpErrorManagerService,
@@ -113,14 +115,21 @@ describe('DotContentletWrapperComponent', () => {
         dotAddContentletService = de.injector.get(DotContentletEditorService);
         dotAlertConfirmService = de.injector.get(DotAlertConfirmService);
         dotRouterService = de.injector.get(DotRouterService);
+        titleService = de.injector.get(Title);
         dotIframeService = de.injector.get(DotIframeService);
 
+        spyOn(titleService, 'setTitle');
         spyOn(dotIframeService, 'reload');
         spyOn(dotAddContentletService, 'clear');
         spyOn(dotAddContentletService, 'load');
         spyOn(dotAddContentletService, 'keyDown');
         spyOn(component.shutdown, 'emit');
         spyOn(component.custom, 'emit');
+    });
+
+    afterEach(() => {
+        component.url = null;
+        fixture.detectChanges();
     });
 
     it('should show dot-iframe-dialog', () => {
@@ -303,6 +312,23 @@ describe('DotContentletWrapperComponent', () => {
 
                     dotIframeDialog.triggerEventHandler('custom', params);
                     expect(dotIframeService.reload).toHaveBeenCalledTimes(1);
+                });
+
+                it('should set Header and Page title', () => {
+                    const params = {
+                        detail: {
+                            name: 'edit-contentlet-loaded',
+                            data: {
+                                contentType: 'Blog',
+                                pageTitle: 'test'
+                            }
+                        }
+                    };
+                    spyOn(titleService, 'getTitle').and.returnValue(' - dotCMS platform');
+                    dotIframeDialog.triggerEventHandler('custom', params);
+
+                    expect(component.header).toBe('Blog');
+                    expect(titleService.setTitle).toHaveBeenCalledWith('test -  dotCMS platform');
                 });
             });
         });
