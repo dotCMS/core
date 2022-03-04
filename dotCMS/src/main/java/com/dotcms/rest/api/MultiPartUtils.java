@@ -3,6 +3,9 @@ package com.dotcms.rest.api;
 import javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.FileUtil;
+import com.dotmarketing.util.SecurityLogger;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
@@ -110,7 +113,16 @@ public class MultiPartUtils {
                 throw new IOException("Unable to create temp folder to save binaries");
             }
 
-            final String filename = part.getContentDisposition().getFileName();
+            final String badFileName = part.getContentDisposition().getFileName();
+            final String filename = FileUtil.sanitizeFileName(badFileName);
+            if(!badFileName.equals(filename)) {
+                SecurityLogger.logInfo(getClass(), "Invalid filename uploaded, possible exploit attempt: " + badFileName);
+                if(Config.getBooleanProperty("THROW_ON_BAD_FILENAMES", true)) {
+                    throw new IllegalArgumentException("Invalid filename uploaded : " + badFileName);
+                }
+
+
+            }
             final File tempFile   = new File(
                     tmpFolder.getAbsolutePath() + File.separator + filename);
 

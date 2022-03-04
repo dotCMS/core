@@ -40,12 +40,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.UUIDUtil;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.Converter;
@@ -1546,7 +1541,13 @@ public class ContentResource {
         for (final BodyPart part : multipart.getBodyParts()) {
 
             final ContentDisposition contentDisposition = part.getContentDisposition();
-            final String name = contentDisposition != null && contentDisposition.getParameters().containsKey("name") ? contentDisposition.getParameters().get("name") : "";
+
+            final String unsanitizedName = contentDisposition != null && contentDisposition.getParameters().containsKey("name") ? contentDisposition.getParameters().get("name") : "";
+            final String name = FileUtil.sanitizeFileName(unsanitizedName);
+            if(!unsanitizedName.equals(name)) {
+                SecurityLogger.logInfo(getClass(), "Invalid filename uploaded, possible RCE.  Supplied filename: '" + unsanitizedName + "'");
+            }
+
             final MediaType mediaType = part.getMediaType();
 
             if (mediaType.equals(MediaType.APPLICATION_JSON_TYPE) || name.equals("json")) {
@@ -1649,35 +1650,44 @@ public class ContentResource {
                              final List<String> binaryFields,
                              final BodyPart part) throws IOException, DotSecurityException, DotDataException {
 
-        final InputStream input = part.getEntityAs(InputStream.class);
-        final String filename = part.getContentDisposition().getFileName();
-        final File tmpFolder = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + UUIDUtil.uuid());
-
-        if(!tmpFolder.mkdirs()) {
-            throw new IOException("Unable to create temp folder to save binaries");
-        }
-
-        final File tempFile = new File(
-                tmpFolder.getAbsolutePath() + File.separator + filename);
-        Files.deleteIfExists(tempFile.toPath());
-
-        FileUtils.copyInputStreamToFile(input, tempFile);
-        final List<Field> fields = new LegacyFieldTransformer(
-                APILocator.getContentTypeAPI(APILocator.systemUser()).
-                        find(contentlet.getContentType().inode()).fields())
-                .asOldFieldList();
-        for (final Field field : fields) {
-            // filling binaries in order. as they come / as field order says
-            final String fieldName = field.getFieldContentlet();
-            if (fieldName.startsWith("binary") && !usedBinaryFields.contains(fieldName)) {
-
-                String fieldVarName = field.getVelocityVarName();
-                if (binaryFields.size() > 0) {
-                    fieldVarName = binaryFields.remove(0);
+        try(final InputStream input = part.getEntityAs(InputStream.class)){
+            final String badFileName = part.getContentDisposition().getFileName();
+            final String filename = FileUtil.sanitizeFileName(badFileName);
+            if(!badFileName.equals(filename)) {
+                SecurityLogger.logInfo(getClass(), "Invalid filename uploaded, possible exploit attempt: " + badFileName);
+                if(Config.getBooleanProperty("THROW_ON_BAD_FILENAMES", true)) {
+                    throw new IllegalArgumentException("Invalid filename uploaded : " + badFileName);
                 }
-                contentlet.setBinary(fieldVarName, tempFile);
-                usedBinaryFields.add(fieldName);
-                break;
+            }
+
+            final File tmpFolder = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + UUIDUtil.uuid());
+
+            if(!tmpFolder.mkdirs()) {
+                throw new IOException("Unable to create temp folder to save binaries");
+            }
+
+            final File tempFile = new File(
+                    tmpFolder.getAbsolutePath() + File.separator + filename);
+            Files.deleteIfExists(tempFile.toPath());
+
+            FileUtils.copyInputStreamToFile(input, tempFile);
+            final List<Field> fields = new LegacyFieldTransformer(
+                    APILocator.getContentTypeAPI(APILocator.systemUser()).
+                            find(contentlet.getContentType().inode()).fields())
+                    .asOldFieldList();
+            for (final Field field : fields) {
+                // filling binaries in order. as they come / as field order says
+                final String fieldName = field.getFieldContentlet();
+                if (fieldName.startsWith("binary") && !usedBinaryFields.contains(fieldName)) {
+
+                    String fieldVarName = field.getVelocityVarName();
+                    if (binaryFields.size() > 0) {
+                        fieldVarName = binaryFields.remove(0);
+                    }
+                    contentlet.setBinary(fieldVarName, tempFile);
+                    usedBinaryFields.add(fieldName);
+                    break;
+                }
             }
         }
     }
