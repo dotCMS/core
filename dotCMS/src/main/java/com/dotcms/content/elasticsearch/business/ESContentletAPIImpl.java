@@ -62,6 +62,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.Role;
@@ -4825,7 +4826,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final IndexPolicy indexPolicy             = contentlet.getIndexPolicy();
             final IndexPolicy indexPolicyDependencies = contentlet.getIndexPolicyDependencies();
 
-            final boolean newIdentifier = createIdentifierIfAbsent(contentlet, existingIdentifier, contentletRaw, htmlPageURL);
+             contentlet = assignIdentifierIfAbsent(contentlet, contentletRaw, existingIdentifier, existingInode, htmlPageURL);
 
             //Include system fields to generate a json representation - these fields are later removed before contentlet gets saved
             contentlet = includeSystemFields(contentlet, contentletRaw, tagsValues, categories, user);
@@ -4840,7 +4841,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             contentlet.setIndexPolicy(indexPolicy);
             contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
 
-            if (!newIdentifier) {
+            if (!isNewContent) {
                 //Existing contentlet getting updated.
                 Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
 
@@ -5008,46 +5009,48 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentlet;
     }
 
-    /**
-     *
-     * @param contentlet
-     * @param existingIdentifier
-     * @param contentletRaw
-     * @param htmlPageURL
-     * @return
-     * @throws DotSecurityException
-     * @throws DotDataException
-     */
-    private boolean createIdentifierIfAbsent(final Contentlet contentlet, final String existingIdentifier, final Contentlet contentletRaw, final String htmlPageURL)
+
+    private Contentlet assignIdentifierIfAbsent(final Contentlet contentlet, final Contentlet contentletRaw,  final String existingIdentifier, final String existingInode, final String htmlPageURL)
             throws DotSecurityException, DotDataException {
-        boolean newContent = false;
+
         if (!InodeUtils.isSet(contentlet.getIdentifier())) {
 
             //Adding back temporarily the page URL to the contentlet, is needed in order to create a proper Identifier
             addURLToContentlet(contentlet, htmlPageURL);
+            try {
+                final User systemUser = APILocator.systemUser();
+                final Treeable parent;
+                if (UtilMethods.isSet(contentletRaw.getFolder()) && !contentletRaw.getFolder()
+                        .equals(FolderAPI.SYSTEM_FOLDER)) {
+                    parent = APILocator.getFolderAPI()
+                            .find(contentletRaw.getFolder(), systemUser, false);
+                } else {
+                    parent = APILocator.getHostAPI().find(contentlet.getHost(), systemUser, false);
+                }
 
-            final User systemUser = APILocator.systemUser();
-            final Treeable parent;
-            if (UtilMethods.isSet(contentletRaw.getFolder()) && !contentletRaw.getFolder()
-                    .equals(FolderAPI.SYSTEM_FOLDER)) {
-                parent = APILocator.getFolderAPI()
-                        .find(contentletRaw.getFolder(), systemUser, false);
-            } else {
-                parent = APILocator.getHostAPI().find(contentlet.getHost(), systemUser, false);
+                //We're gonna need a to assign the inode if we want to generate a valid identifier.
+                //Inode is used internally by identifierFactory to avoid collisions on identifier table generating a unique asset name
+                //Later this very same identifier is grabbed to be used when saving content into the contentlet table
+                if (!InodeUtils.isSet(existingInode)) {
+                    contentlet.setInode(UUIDGenerator.generateUuid());
+                } else {
+                    contentlet.setInode(existingInode);
+                }
+
+                final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
+
+                final Contentlet asset = contentlet.isFileAsset() ? contentletRaw : contentlet;
+                final Identifier identifier = existingIdentifier != null ?
+                        identifierAPI.createNew(asset, parent, existingIdentifier) :
+                        identifierAPI.createNew(asset, parent);
+
+                contentlet.setIdentifier(identifier.getId());
+            }finally {
+                //Clean-up the contentlet object again..., we don' want to persist this URL in the db
+                removeURLFromContentlet(contentlet);
             }
-
-            final Contentlet contPar = contentlet.isFileAsset() ? contentletRaw : contentlet;
-            final Identifier identifier = existingIdentifier != null ?
-                    APILocator.getIdentifierAPI().createNew(contPar, parent, existingIdentifier) :
-                    APILocator.getIdentifierAPI().createNew(contPar, parent);
-
-            //Clean-up the contentlet object again..., we don' want to persist this URL in the db
-            removeURLFromContentlet(contentlet);
-
-            contentlet.setIdentifier(identifier.getId());
-            newContent = true;
         }
-        return newContent;
+        return contentlet;
     }
 
 
