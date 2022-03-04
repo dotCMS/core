@@ -25,6 +25,10 @@
                 margin: 0;
             }
         }
+
+        .p-toast.p-component {
+            z-index: 1100;
+        }
     }
 
     dot-icon {
