@@ -725,10 +725,10 @@ public class RoleAjax {
 				permByInode.put(p.getInode(), permList);
 			}
 			permList.add(p);
-			Identifier ident = APILocator.getIdentifierAPI().findFromInode(p.getInode());
-			if(ident.getAssetType().equals("folder")) {
-				Folder f =  APILocator.getFolderAPI().find(p.getInode(), systemUser, respectFrontendRoles);
-				permAssets.add(f);
+			final Folder folder =  APILocator.getFolderAPI().find(p.getInode(), systemUser, respectFrontendRoles);
+			if(null != folder && UtilMethods.isSet(folder.getIdentifier())) {
+
+				permAssets.add(folder);
 			} else {
 				Host h = hostAPI.find(p.getInode(), systemUser, respectFrontendRoles);
 				if(h != null) {
@@ -743,8 +743,8 @@ public class RoleAjax {
 		for(Object i : permAssets) {
 			if(i instanceof Host && ((Host)i).isSystemHost())
 				systemHostInList = true;
-			Map<String, Object> assetMap = i instanceof Host?((Host)i).getMap():((Inode)i).getMap();
-			String assetId = i instanceof Host?((Host)i).getIdentifier():((Inode)i).getInode();
+			Map<String, Object> assetMap = i instanceof Host?((Host)i).getMap():((Folder)i).getMap();
+			String assetId = i instanceof Host?((Host)i).getIdentifier():((Folder)i).getInode();
 			List<Map<String, Object>> permissionsList = new ArrayList<Map<String,Object>>();
 			for(Permission p: permByInode.get(assetId)) {
 				permissionsList.add(p.getMap());
@@ -994,15 +994,19 @@ public class RoleAjax {
 			if(idResults.size()>0){
 				 assetType = (String)((Map)idResults.get(0)).get("type");
 
-				 dc.setSQL("select inode, type from inode,"+assetType+" asset,identifier where inode.inode = asset.inode and " +
-							  "asset.identifier = identifier.id and asset.identifier = ?");
-				 dc.addParam(assetId);
-				 ArrayList results = dc.loadResults();
+				 if (null != assetType && assetType.equals("folder")){
+					 perm = APILocator.getFolderAPI().find(assetId, user, respectFrontendRoles);
+				 } else{
+					 dc.setSQL("select inode, type from inode,"+assetType+" asset,identifier where inode.inode = asset.inode and " +
+							 "asset.identifier = identifier.id and asset.identifier = ?");
+					 dc.addParam(assetId);
+					 ArrayList results = dc.loadResults();
 
-				if(results.size() > 0) {
-					String inode = (String) ((Map)results.get(0)).get("inode");
-					perm = InodeFactory.getInode(inode, Inode.class);
-				}
+					 if(results.size() > 0) {
+						 String inode = (String) ((Map)results.get(0)).get("inode");
+						 perm = InodeFactory.getInode(inode, Inode.class);
+					 }
+				 }
 			}
 		}
 
