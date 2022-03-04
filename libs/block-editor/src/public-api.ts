@@ -17,6 +17,7 @@ export * from './lib/extensions/components/suggestions/suggestions.component';
 export * from './lib/extensions/components/action-button/action-button.component';
 export * from './lib/extensions/components/loader/loader.component';
 export * from './lib/extensions/components/drag-handler/drag-handler.component';
+export * from './lib/extensions/components/bubble-menu/bubble-menu.component';
 export * from './lib/extensions/components/bubble-menu-link-form/bubble-menu-link-form.component';
 
 export * from './lib/extensions/blocks/contentlet-block/contentlet-block.component';
@@ -39,3 +40,6 @@ export * from './lib/utils/bubble-menu.utils';
 // Services
 export * from './lib/extensions/services/suggestions/suggestions.service';
 export * from './lib/extensions/services/dot-image/dot-image.service';
+
+// Models
+export * from './lib/models/dot-bubble-menu.model';

@@ -1,15 +1,5 @@
-import { Editor, isTextSelection } from '@tiptap/core';
-import { EditorView } from 'prosemirror-view';
-import { EditorState } from 'prosemirror-state';
-
-interface ShouldShowProps {
-    editor: Editor;
-    view: EditorView;
-    state: EditorState;
-    oldState?: EditorState;
-    from: number;
-    to: number;
-}
+import { isTextSelection } from '@tiptap/core';
+import { ShouldShowProps } from '@dotcms/block-editor';
 
 /**
  * Determine when the bubble menu can or cannot be displayed.
@@ -44,6 +34,10 @@ export const getNodePosition = (node: HTMLElement, type: string): DOMRect => {
         return img.getBoundingClientRect();
     }
     return node.getBoundingClientRect();
+};
+
+export const isListNode = (editor): boolean => {
+    return editor.isActive('bulletList') || editor.isActive('orderedList');
 };
 
 /* Bubble Menu Items*/
