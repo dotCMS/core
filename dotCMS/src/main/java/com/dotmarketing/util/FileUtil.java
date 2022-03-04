@@ -19,6 +19,9 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import io.vavr.Lazy;
+import io.vavr.control.Try;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 
 public class FileUtil {
@@ -131,27 +134,51 @@ public class FileUtil {
 
 	}
 
-  final static int[] illegalChars = {34, 60, 62, 124, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
-      24, 25, 26, 27, 28, 29, 30, 31, 58, 42, 63, 92, 47};
+	final static Lazy<int[]> illegalChars= Lazy.of(()-> {
+		int[] illegalCharacters = {34, 60, 62, 124, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
+				24, 25, 26, 27, 28, 29, 30, 31, 58, 42, 63, 92, 47};
+		Arrays.sort(illegalCharacters);
+		return illegalCharacters;
+	});
 
   /**
    * cleans filenames and allows unicode-  taken from
    * https://stackoverflow.com/questions/1155107/is-there-a-cross-platform-java-method-to-remove-filename-special-chars
-   * @param badFileName
+   * @param badFileNameIncoming
    * @return
    */
-  public static String sanitizeFileName(final String badFileName) {
-    Arrays.sort(illegalChars);
-    StringBuilder cleanName = new StringBuilder();
-    int len = badFileName.codePointCount(0, badFileName.length());
-    for (int i = 0; i < len; i++) {
-      final int c = badFileName.codePointAt(i);
-      if (Arrays.binarySearch(illegalChars, c) < 0) {
-        cleanName.appendCodePoint(c);
-      }
-    }
-    final String cleanFileName = cleanName.toString();
-    return (cleanFileName.length()>0) ? cleanFileName : RandomStringUtils.randomAlphabetic(10);
+  public static String sanitizeFileName(final String badFileNameIncoming) {
+
+
+	  final String fileExtention = UtilMethods.isSet(UtilMethods.getFileExtension(badFileNameIncoming))
+			  ? UtilMethods.getFileExtension(badFileNameIncoming)
+			  : "ukn";
+
+
+	  final String replacementFileName = RandomStringUtils.randomAlphabetic(10) + "." + fileExtention;
+	  final String badFileName= Try.of(()-> Paths.get(badFileNameIncoming).getFileName().toString())
+			  .onFailure(e->{
+				  Logger.warn(FileUtil.class, "Invalid File Name: '" + badFileNameIncoming +"' replacing with:" + replacementFileName + " " +  e.getMessage());
+				  SecurityLogger.logInfo(FileUtil.class, "Invalid File Name: '" + badFileNameIncoming +"' replacing with:" + replacementFileName + " " +  e.getMessage());
+			  })
+			  .getOrElse(replacementFileName);
+
+
+	  // remove non-valid characters
+	  final StringBuilder cleanName = new StringBuilder();
+	  int len = badFileName.codePointCount(0, badFileName.length());
+	  for (int i = 0; i < len; i++) {
+		  final int c = badFileName.codePointAt(i);
+		  if (Arrays.binarySearch(illegalChars.get(), c) < 0) {
+			  cleanName.appendCodePoint(c);
+		  }
+	  }
+
+	  //Stripts leading peroids from filename
+	  final String cleanFileName = StringUtils.stripStart( cleanName.toString(), ".");
+
+	  return (cleanFileName.length() > 0) ? cleanFileName : replacementFileName;
+
   }
 
 	/**
