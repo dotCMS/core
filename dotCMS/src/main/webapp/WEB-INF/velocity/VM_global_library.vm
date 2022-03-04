@@ -9,8 +9,9 @@
 #macro(editContentlet $CONTENT_INODE)
     #set($_hasPermission = $contents.doesUserHasPermission($CONTENT_INODE, 2, $EDIT_MODE))
     #if($EDIT_MODE && $_hasPermission)
+    	#set($localContent = $dotcontent.find($!{CONTENT_INODE}))
         <button
-            data-dot-identifier="$!{CONTENT_IDENTIFIER}"
+            data-dot-identifier="$!{localContent.identifier}"
             data-dot-inode="$!{CONTENT_INODE}"
             data-dot-object="edit-content"
             style="box-shadow: 0 1px 3px rgb(0 0 0 / 12%), 0 1px 2px rgb(0 0 0 / 24%) !important; border: none !important; border-radius: 16px !important; cursor: pointer !important; font-size: 0 !important; height: 32px !important; outline: none !important; position: relative !important; width: 32px !important; z-index: 2147483646 !important;
