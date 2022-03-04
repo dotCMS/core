@@ -1,13 +1,9 @@
 <%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
 <%@page import="org.apache.commons.lang.StringEscapeUtils"%>
-<%@page import="com.dotcms.publisher.business.PublishAuditUtil"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.beans.PermissionableProxy"%>
-<%@page import="com.dotcms.publisher.business.PublishQueueElement"%>
 <%@page import="com.dotmarketing.util.DateUtil"%>
 <%@page import="java.text.SimpleDateFormat"%>
-<%@page import="com.dotcms.publisher.business.PublishAuditAPI"%>
-<%@page import="com.dotcms.publisher.business.PublishAuditStatus"%>
 <%@page import="com.dotmarketing.util.URLEncoder"%>
 <%@page import="java.util.Date"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
@@ -15,9 +11,7 @@
 <%@page import="com.liferay.portal.model.User"%>
 <%@page import="com.dotmarketing.business.web.WebAPILocator"%>
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
-<%@page import="com.dotcms.publisher.business.DotPublisherException"%>
 <%@page import="java.util.Map"%>
-<%@page import="com.dotcms.publisher.business.PublisherAPI"%>
 <%@page import="com.dotcms.publisher.bundle.business.BundleAPI"%>
 <%@page import="com.dotcms.publisher.bundle.bean.Bundle"%>
 <%@page import="java.util.List"%>
@@ -30,11 +24,14 @@
 <%@ page import="com.dotmarketing.portlets.templates.model.Template"%>
 <%@ page import="com.dotmarketing.portlets.containers.model.Container"%>
 <%@ page import="com.dotmarketing.portlets.structure.model.Structure"%>
+<%@ page import="com.dotcms.publisher.business.*" %>
+<%@ page import="java.util.stream.Collectors" %>
 <%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
 <%
 
     ContentletAPI conAPI = APILocator.getContentletAPI();
     PublishAuditAPI publishAuditAPI = PublishAuditAPI.getInstance();
+	final int MAX_BUNDLE_ASSET_TO_SHOW = 20;
 
 
 
@@ -268,8 +265,24 @@
 
 
 		</tr>
-		<% for(PublishQueueElement c : bundleAssets) {
-			String errorclass="";
+		<%
+			final PublishQueueElementTransformer publishQueueElementTransformer = new PublishQueueElementTransformer();
+			final List<Map<String, Object>> assets = publishQueueElementTransformer.transform(
+					bundleAssets.stream().limit(MAX_BUNDLE_ASSET_TO_SHOW)
+							.collect(Collectors.toList()));
+		%>
+
+		<%if (bundleAssets.size() > MAX_BUNDLE_ASSET_TO_SHOW){%>
+		<tr>
+			<td colspan="2">
+				<%=LanguageUtil.get("unpublished.bundles.item.show", MAX_BUNDLE_ASSET_TO_SHOW)%> <%=bundleAssets.size()%>
+			</td>
+		</tr>
+		<%}%>
+
+		<%
+			for(final Map<String, Object> asset : assets) {
+				String errorclass="";
 		%>
 			<tr <%=errorclass%>>
 				<td style="width:30px;text-align:center;">
@@ -278,37 +291,28 @@
 							type="checkbox"
 							class="queue_to_delete b<%=bundle.get("bundle_id") %>"
 							name="queue_to_delete"
-							value="<%=c.getAsset() %>$<%=c.getOperation() %>"
-							id="queue_to_delete_<%=c.getAsset() %>$<%=c.getOperation() %>" />
+							value="<%=asset.get(PublishQueueElementTransformer.ASSET_KEY) %>$<%=asset.get(PublishQueueElementTransformer.OPERATION_KEY)  %>"
+							id="queue_to_delete_<%=asset.get(PublishQueueElementTransformer.ASSET_KEY) %>$<%=asset.get(PublishQueueElementTransformer.OPERATION_KEY)  %>" />
 				</td>
 
 
 				<td valign="top">
-					<%=(c.getOperation().toString().equals("1")?"<span class='addIcon' style='opacity:.6'></span>":"<span class='closeIcon' style='opacity:.6'></span>")%>&nbsp;
+					<%=(asset.get(PublishQueueElementTransformer.OPERATION_KEY).equals("1")?"<span class='addIcon' style='opacity:.6'></span>":"<span class='closeIcon' style='opacity:.6'></span>")%>&nbsp;
 					<%try{
-						String identifier = c.getAsset();
-						String assetType = c.getType();
+						String identifier = UtilMethods.isSet(asset.get(PublishQueueElementTransformer.ASSET_KEY)) ?
+								asset.get(PublishQueueElementTransformer.ASSET_KEY).toString() : StringPool.BLANK;
+						String assetType = UtilMethods.isSet(asset.get(PublishQueueElementTransformer.TYPE_KEY)) ?
+								asset.get(PublishQueueElementTransformer.TYPE_KEY).toString() : StringPool.BLANK;
 						String structureName = "";
 						String title = "";
 						String inode = "";
 						if ( assetType.equals( "contentlet" ) ) {
-							Contentlet contentlet=null;
-							Language currentLanguage = APILocator.getLanguageAPI().getLanguage(locale.getLanguage(), locale.getCountry());
-	                        
-                        	if(currentLanguage.getId() != APILocator.getLanguageAPI().getDefaultLanguage().getId()){
-                        		try{
-                        			contentlet = APILocator.getContentletAPI().findContentletByIdentifier(identifier, false, currentLanguage.getId(), user, false);
-                        		}catch(Exception e){
-                        			//Searches and returns for a this Identifier a Contentlet using the default language
-                                	contentlet = PublishAuditUtil.getInstance().findContentletByIdentifier( identifier );
-                        		}
-                        	}else{
-                            	//Searches and returns for a this Identifier a Contentlet using the default language
-                            	contentlet = PublishAuditUtil.getInstance().findContentletByIdentifier( identifier );
-                        	}
-                        	title = contentlet.getTitle();
-                            inode = contentlet.getInode();
-                            structureName = contentlet.getStructure().getName();
+							final Object assetTitleObject = asset.get(PublishQueueElementTransformer.TITLE_KEY);
+							title =  UtilMethods.isSet(assetTitleObject) ? assetTitleObject.toString() : StringPool.BLANK;
+							final Object inodeObject = asset.get(PublishQueueElementTransformer.INODE_KEY);
+							inode =  UtilMethods.isSet(inodeObject) ? inodeObject.toString() : StringPool.BLANK;
+							final Object structureObject = asset.get(PublishQueueElementTransformer.CONTENT_TYPE_NAME_KEY);
+							structureName =  UtilMethods.isSet(structureObject) ? structureObject.toString() : StringPool.BLANK;
                         %>
 						    <a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id="+PortletID.CONTENT+"&p_p_action=1&p_p_state=maximized&p_p_mode=view&_"+PortletID.CONTENT+"_struts_action=/ext/contentlet/edit_contentlet&_"+PortletID.CONTENT+"_cmd=edit&inode=<%=inode %>&referer=<%=referer %>">
 						        <%=StringEscapeUtils.escapeHtml(title)%>

@@ -49,6 +49,12 @@ import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.server.JSONP;
+import com.dotcms.publisher.business.PublishQueueElement;
+import com.dotcms.publisher.business.PublishQueueElementTransformer;
+import com.dotcms.publisher.business.PublisherAPI;
+import com.dotcms.publisher.business.PublisherAPIImpl;
+import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.NotFoundException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -59,6 +65,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.ServerErrorException;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
@@ -70,13 +77,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLDecoder;
-import java.util.Collections;
-import java.util.Date;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
+import static com.dotcms.publisher.business.PublishAuditAPIImpl.NO_LIMIT_ASSETS;
 import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_BUNDLE;
 import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_PUBLISH;
 import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_SEND_TO_ALL_GROUPS;
@@ -92,6 +96,63 @@ public class BundleResource {
     private final WebResource            webResource            = new WebResource();
     private final BundleAPI              bundleAPI              = APILocator.getBundleAPI();
     private final SystemMessageEventUtil systemMessageEventUtil = SystemMessageEventUtil.getInstance();
+
+    private final PublishQueueElementTransformer publishQueueElementTransformer =
+            new PublishQueueElementTransformer();
+
+    /**
+     * Return the assets from a bundleId
+     *
+     * @param bundleId
+     * @param request
+     * @param response
+     * @return
+     */
+    @Path("/{bundleId}/assets")
+    @GET
+    @Produces({MediaType.APPLICATION_JSON})
+    public Response getPublishQueueElements(@PathParam("bundleId") final String bundleId,
+                                            @QueryParam("limit") final Integer limitParam,
+                                            @Context final HttpServletRequest request,
+                                            @Context final HttpServletResponse response) throws DotDataException {
+
+        new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        try {
+            final int limit = UtilMethods.isSet(limitParam) ? limitParam : NO_LIMIT_ASSETS;
+            final Bundle bundleById = APILocator.getBundleAPI().getBundleById(bundleId);
+
+            if (bundleById == null) {
+                throw new NotFoundException(String.format("Bundle %s not exists", bundleId));
+            }
+
+            final List<PublishQueueElement> queueElements = PublisherAPIImpl.getInstance()
+                    .getQueueElementsByBundleId(bundleId);
+
+            final List<Map<String, Object>> detailedAssets;
+
+            if (UtilMethods.isSet(queueElements)) {
+                detailedAssets = publishQueueElementTransformer.transform(queueElements);
+            } else {
+                final PublishAuditStatus publishAuditStatus = PublishAuditAPI.getInstance()
+                        .getPublishAuditStatus(bundleId, limit);
+
+                final Map<String, String> assets = publishAuditStatus.getStatusPojo().getAssets();
+                detailedAssets = assets.entrySet().stream()
+                        .map(entry -> publishQueueElementTransformer.getMap(entry.getKey(), entry.getValue()))
+                        .collect(Collectors.toList());
+            }
+
+            return Response.ok(detailedAssets).build();
+        } catch (DotPublisherException e) {
+            throw new BadRequestException(e, bundleId, e.getMessage());
+        }
+    }
 
 
     /**

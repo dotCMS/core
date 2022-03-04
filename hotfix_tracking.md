@@ -121,3 +121,5 @@ This maintenance release includes the following code fixes:
 61. https://github.com/dotCMS/core/issues/20805 : Unable to push publish user #20805
 62. https://github.com/dotCMS/core/issues/20757 : We need to obfuscate some environmental variables #20757
 63. https://github.com/dotCMS/core/issues/21791 : Sanitizing file name #21791
+64. https://github.com/dotCMS/core/issues/20971 : Large Bundles make the viewing publishing queue slow #20971
+65. https://github.com/dotCMS/core/issues/21699 : [Push Publishing] : Single quote in content's title breaks JavaScript code in the portlet #21699
