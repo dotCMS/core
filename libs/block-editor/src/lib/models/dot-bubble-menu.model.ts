@@ -29,6 +29,6 @@ export declare type DotBubbleMenuPluginProps = BubbleMenuPluginProps & {
     component: ComponentRef<BubbleMenuComponentProps>;
 };
 
-export declare type DotBubbleMenuViewProps<> = BubbleMenuViewProps & {
+export declare type DotBubbleMenuViewProps = BubbleMenuViewProps & {
     component: ComponentRef<BubbleMenuComponentProps>;
 };
