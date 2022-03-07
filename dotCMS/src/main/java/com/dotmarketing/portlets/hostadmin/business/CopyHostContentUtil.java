@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.hostadmin.business;
 
 import com.dotcms.enterprise.HostAssetsJobProxy;
+import com.dotcms.rest.PushPublisherJob;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -8,16 +9,20 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.quartz.DotStatefulJob;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.SimpleScheduledTask;
 import com.dotmarketing.quartz.job.HostCopyOptions;
+import com.dotmarketing.quartz.job.ResetPermissionsJob;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import org.quartz.SchedulerException;
 import org.quartz.SimpleTrigger;
 
+import java.io.Serializable;
 import java.text.ParseException;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -58,38 +63,20 @@ public class CopyHostContentUtil{
 					new HostCopyOptions(copyAll):
 					new HostCopyOptions(copyTemplatesContainers, copyFolders, copyLinks, copyContentOnPages, copyContentOnHost,copyHostVariables);
 
-				final Map<String, Object> parameters = new HashMap<>();
+				final Map<String, Serializable> parameters = new HashMap<>();
 				parameters.put("sourceHostId", source.getIdentifier());
 				parameters.put("destinationHostId", contentlet.getIdentifier());
 				parameters.put("copyOptions", hostCopyOptions);
 
+				try {
 
-				// We make sure we schedule the copy only once even if the
-				// browser for any reason sends the request twice
-
-				if (!QuartzUtils.isJobScheduled("setup-host-" + contentlet.getIdentifier(), "setup-host-group")) {
-
-					final Calendar startTime = Calendar.getInstance();
-					final SimpleScheduledTask task = new SimpleScheduledTask(
-							"setup-host-" + contentlet.getIdentifier(),
-							"setup-host-group",
-							"Setups host " + contentlet.getIdentifier() + " from host " + source.getIdentifier(),
-							HostAssetsJobProxy.class.getCanonicalName(),
-							false,
-							"setup-host-" + contentlet.getIdentifier() + "-trigger",
-							"setup-host-trigger-group",
-							startTime.getTime(),
-							null,
-							SimpleTrigger.MISFIRE_INSTRUCTION_RESCHEDULE_NEXT_WITH_REMAINING_COUNT,
-							5,
-							true,
-							parameters,
-							0,
-							0);
-					QuartzUtils.scheduleTask(task);
+					DotStatefulJob.enqueueTrigger(parameters, HostAssetsJobProxy.class);
+				} catch (Exception e) {
+					Logger.error(HostAssetsJobProxy.class, e.getMessage(), e);
+					throw new DotRuntimeException("Error copying the site: " + source.getHostname() + ", msg: " +
+							e.getMessage(), e);
 				}
-		} catch (SchedulerException | ParseException |
-				ClassNotFoundException | DotDataException | DotSecurityException e) {
+		} catch (Throwable e) {
 
 			Logger.error(this, e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);
