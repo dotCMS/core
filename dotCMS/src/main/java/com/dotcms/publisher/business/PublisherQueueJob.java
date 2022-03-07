@@ -403,6 +403,12 @@ public class PublisherQueueJob implements StatefulJob {
 			final int totalAttemptsFromHistory = localHistory.getNumTries();
 			Logger.info(this, String.format("-> Re-publish attempts: %d out of %d", totalAttemptsFromHistory,
 					MAX_NUM_TRIES));
+
+			if(!UtilMethods.isSet(bundlesInQueue)) {
+				localHistory.addNumTries();
+				pubAuditAPI.updatePublishAuditStatus(auditedBundleId, bundleStatus, localHistory);
+			}
+
 			if (!isBundleInQueue(auditedBundleId, bundlesInQueue) && isInvalidBundleStatus(totalAttemptsFromHistory,
 					bundleStatus)) {
 				// When a bundle has been marked as "failed" but its re-publish attempts have NOT reached
