@@ -2,6 +2,7 @@ package com.dotcms.integritycheckers;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.repackage.com.csvreader.CsvWriter;
@@ -20,8 +21,7 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import org.apache.commons.lang.StringUtils;
-
+import com.liferay.util.StringPool;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -35,6 +35,8 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Host integrity checker implementation
@@ -88,7 +90,22 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                         writer.write(rs.getString("working_inode"));
                         writer.write(rs.getString("live_inode"));
                         writer.write(String.valueOf(rs.getLong("language_id")));
-                        writer.write(rs.getString(hostField));
+                        //Lets see if the traditional host_name value comes first
+                        String hostName = rs.getString("host_name");
+                        if(UtilMethods.isNotSet(hostName)){
+                            //if not.. then try parse out the json contentlet
+                            final Object contentletAsJson = rs.getString("contentlet_as_json");
+                            if(null != contentletAsJson){
+                                //Access the field name directly from the json
+                                final Optional<String> optionalHostName = ContentletJsonHelper.INSTANCE.get()
+                                        .fieldValue(contentletAsJson.toString(),"hostName");
+                                hostName = optionalHostName.orElse("unknown");
+                            }
+                        }
+                        if("unknown".equals(hostName)){
+                           Logger.error(HostIntegrityChecker.class,String.format("Unable to find hostName from the given inode %s ",rs.getString("inode")));
+                        }
+                        writer.write(hostName);
                         writer.endRecord();
                         count++;
 
@@ -205,6 +222,15 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                 return false;
             }
 
+             String contentAsJson = StringPool.BLANK;
+
+            if (DbConnectionFactory.isPostgres()) {
+                contentAsJson = " or c.contentlet_as_json->'fields'->'hostName'->>'value' = ht.host";
+            }
+            if (DbConnectionFactory.isMsSql()) {
+                contentAsJson = " or (JSON_VALUE(c.contentlet_as_json,'$.fields.hostName.value') = ht.host)";
+            }
+
             // compare the data from the CSV to the local db data AND see if we
             // have conflicts
             final String conflictSql = " FROM identifier i" +
@@ -213,7 +239,8 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                     " AND (c.inode = cvi.working_inode OR c.inode = cvi.live_inode)" +
                     " AND c.language_id = cvi.lang)" +
                     " JOIN structure s ON c.structure_inode = s.inode" +
-                    " JOIN " + tempTableName + " ht ON c." + hostField + " = ht.host" +
+                    " JOIN " + tempTableName + " ht ON ( ( c." + hostField + " = ht.host "+contentAsJson+" ) "  +
+                    " AND c.language_id = cvi.lang)" +
                     " WHERE i.asset_type = 'contentlet'" +
                     " AND i.asset_subtype = 'Host'" +
                     " AND i.host_inode = ?" +
@@ -221,6 +248,15 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                     " AND s.name = 'Host'";
             dc.setSQL("SELECT DISTINCT 1" + conflictSql).addParam(Host.SYSTEM_HOST);
             final List<Map<String, Object>> results = dc.loadObjectResults();
+
+            String coalescedHostValue = StringPool.BLANK; //For non json supported databases we do blank string
+            //for other db lets see if we have something stored as json otherwise we rely on the traditional structure dynamic field
+            if(DbConnectionFactory.isPostgres()) {
+                coalescedHostValue = String.format(" COALESCE(c.contentlet_as_json-> 'fields' ->'hostName'->>'value',c.%s)", hostField);
+            }
+            if(DbConnectionFactory.isMsSql()) {
+                coalescedHostValue = String.format(" COALESCE(JSON_VALUE(c.contentlet_as_json,'$.fields.hostName.value'),c.%s)", hostField);
+            }
 
             if (!results.isEmpty()) {
                 // if we have conflicts, lets create a table out of them
@@ -230,7 +266,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                         " SELECT DISTINCT c.identifier as local_identifier, ht.identifier as remote_identifier," +
                         " '" + endpointId + "', cvi.working_inode as local_working_inode," +
                         " cvi.live_inode as local_live_inode, ht.working_inode as remote_working_inode," +
-                        " ht.live_inode as remote_live_inode, c.language_id, c." + hostField + " as host" +
+                        " ht.live_inode as remote_live_inode, c.language_id, " + coalescedHostValue + " as host" +
                         conflictSql;
                 dc.setSQL(insertStmt)
                         .addParam(Host.SYSTEM_HOST)
@@ -305,7 +341,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
     private PreparedStatement getCsvQuery(final String hostField) throws SQLException {
         final Connection conn = DbConnectionFactory.getConnection();
         final String sql =
-                "SELECT c.inode, c.identifier, cvi.working_inode, cvi.live_inode, c.language_id, " + hostField +
+                "SELECT c.inode, c.identifier, cvi.working_inode, cvi.live_inode, c.language_id, " + hostField + " as host_name , c.contentlet_as_json " +
                         " FROM contentlet c" +
                         " JOIN identifier i ON c.identifier = i.id" +
                         " JOIN structure s ON c.structure_inode = s.inode" +
