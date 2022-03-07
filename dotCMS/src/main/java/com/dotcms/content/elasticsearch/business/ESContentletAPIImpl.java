@@ -5010,6 +5010,26 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
 
+    /**
+     * if we're not provided with an identifier this will attempt generating one
+     * The inode is also generated here. For it is used internally to avoid collisions on the identifier table generating a unique asset name.
+     * We're taking advantage of the exising logic on {@link ESContentFactoryImpl}'s save method.
+     * That always explore the given contentlet trying to find a provided inode.
+     * Like this:
+     * <pre>
+     * {@code
+     *     final String inode = getInode(existingInode, contentlet);
+     * }
+     * </pre>
+     * @param contentlet the modified copy contentlet we want to save
+     * @param contentletRaw the incoming copy that holds every value passed from the front-end
+     * @param existingIdentifier if internalCheckin decides we need to use an existing identifier we will use it
+     * @param existingInode if internalCheckin decides we need to use an existing inode we will use it
+     * @param htmlPageURL for pages we use the url to generate a unique asset name wen saving into the the contentlet table
+     * @return the modified copy contentlet we want to save with the new identifier and inode
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     private Contentlet assignIdentifierIfAbsent(final Contentlet contentlet, final Contentlet contentletRaw,  final String existingIdentifier, final String existingInode, final String htmlPageURL)
             throws DotSecurityException, DotDataException {
 
@@ -5030,7 +5050,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 //We're gonna need a to assign the inode if we want to generate a valid identifier.
                 //Inode is used internally by identifierFactory to avoid collisions on identifier table generating a unique asset name
-                //Later this very same identifier is grabbed to be used when saving content into the contentlet table
+                //Later this very same inode is grabbed to be used when saving content into the contentlet table
                 if (!InodeUtils.isSet(existingInode)) {
                     contentlet.setInode(UUIDGenerator.generateUuid());
                 } else {
