@@ -1023,33 +1023,7 @@ public class SiteResource implements Serializable {
                             copySiteForm.isCopyContentOnPages(), copySiteForm.isCopyContentOnSite(),
                             copySiteForm.isCopySiteVariables());
 
-        final Map<String, Object> parameters = new HashMap<>();
-        parameters.put("sourceHostId",      sourceHost.getIdentifier());
-        parameters.put("destinationHostId", newSite.getIdentifier());
-        parameters.put("copyOptions",       hostCopyOptions);
-
-        // We make sure we schedule the copy only once even if the
-        // browser for any reason sends the request twice
-        if (!QuartzUtils.isJobScheduled("setup-host-" + newSite.getIdentifier(), "setup-host-group")) {
-            Calendar startTime = Calendar.getInstance();
-            SimpleScheduledTask task = new SimpleScheduledTask(
-                    "setup-host-" + newSite.getIdentifier(),
-                    "setup-host-group",
-                    "Setups host "+ newSite.getIdentifier() + " from host " + sourceHost.getIdentifier(),
-                    HostAssetsJobProxy.class.getCanonicalName(),
-                    false,
-                    "setup-host-" + newSite.getIdentifier() + "-trigger",
-                    "setup-host-trigger-group",
-                    startTime.getTime(),
-                    null,
-                    SimpleTrigger.MISFIRE_INSTRUCTION_RESCHEDULE_NEXT_WITH_REMAINING_COUNT,
-                    5,
-                    true,
-                    parameters,
-                    0,
-                    0);
-            QuartzUtils.scheduleTask(task);
-        }
+        HostAssetsJobProxy.fireJob(newSite.getIdentifier(), sourceHost.getIdentifier(), hostCopyOptions);
 
         return Response.ok(new ResponseEntityView(newSite)).build();
     }
