@@ -62,6 +62,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.Role;
@@ -4727,13 +4728,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         "The categories cannot be null when trying to checkin. The method was called improperly");
             }
 
-            try {
-                // note: we do this in this way in order to invoke hooks if they are
-                APILocator.getContentletAPI().validateContentlet(contentlet, contentRelationships, categories);
-
-            } catch (DotContentletValidationException ve) {
-                throw ve;
-            }
+            // note: we do this in this way in order to invoke hooks if they are
+            APILocator.getContentletAPI().validateContentlet(contentlet, contentRelationships, categories);
 
             if(contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) == null) {
                 canLock(contentlet, user, respectFrontendRoles);
@@ -4762,10 +4758,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             Boolean dontValidateMe = (Boolean)contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME);
             Boolean disableWorkflow = (Boolean)contentlet.getMap().get(Contentlet.DISABLE_WORKFLOW);
 
-            boolean isNewContent = false;
-            if(!InodeUtils.isSet(workingContentletInode)){
-                isNewContent = true;
-            }
+            final boolean isNewContent = !InodeUtils.isSet(workingContentletInode);
 
             if (contentlet.getLanguageId() == 0) {
                 Language defaultLanguage = languageAPI.getDefaultLanguage();
@@ -4797,7 +4790,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // Keep the 5 properties BEFORE store the contentlet on DB.
             final String contentPushPublishDate = contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE);
             final String contentPushPublishTime = contentlet.getStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME);
-            final String contentPushPublishtimezoneId = contentlet.getStringProperty(Contentlet.WORKFLOW_TIMEZONE_ID);
+            final String contentPushPublishTimeZoneId = contentlet.getStringProperty(Contentlet.WORKFLOW_TIMEZONE_ID);
             final String contentPushExpireDate = contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE);
             final String contentPushExpireTime = contentlet.getStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME);
             final String contentPushNeverExpire = contentlet.getStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE);
@@ -4833,9 +4826,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final IndexPolicy indexPolicy             = contentlet.getIndexPolicy();
             final IndexPolicy indexPolicyDependencies = contentlet.getIndexPolicyDependencies();
 
+             contentlet = assignIdentifierIfAbsent(contentlet, contentletRaw, existingIdentifier, existingInode, htmlPageURL);
+
             //Include system fields to generate a json representation - these fields are later removed before contentlet gets saved
             contentlet = includeSystemFields(contentlet, contentletRaw, tagsValues, categories, user);
-
             contentlet = applyNullProperties(contentlet);
             //This is executed first hand to create the inode-contentlet relationship.
             if(InodeUtils.isSet(existingInode)) {
@@ -4847,37 +4841,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             contentlet.setIndexPolicy(indexPolicy);
             contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
 
-            //Brand new contentlet.
-            if (!InodeUtils.isSet(contentlet.getIdentifier())) {
-
-                //Adding back temporarily the page URL to the contentlet, is needed in order to create a proper Identifier
-                addURLToContentlet( contentlet, htmlPageURL );
-
-                final Treeable parent;
-                if ( UtilMethods.isSet( contentletRaw.getFolder() ) && !contentletRaw.getFolder().equals( FolderAPI.SYSTEM_FOLDER ) ) {
-                    parent = APILocator.getFolderAPI().find( contentletRaw.getFolder(), systemUser, false );
-                } else {
-                    parent = APILocator.getHostAPI().find( contentlet.getHost(), systemUser, false );
-                }
-
-                final Contentlet contPar = contentlet.isFileAsset() ? contentletRaw : contentlet;
-                final Identifier identifier = existingIdentifier != null ?
-                        APILocator.getIdentifierAPI().createNew(contPar, parent, existingIdentifier) :
-                        APILocator.getIdentifierAPI().createNew(contPar, parent);
-
-                //Clean-up the contentlet object again..., we don' want to persist this URL in the db
-                removeURLFromContentlet( contentlet );
-
-                contentlet.setIdentifier(identifier.getId());
-
-                //Include system fields to generate a json representation - these fields are later removed before contentlet gets saved
-                contentlet = includeSystemFields(contentlet, contentletRaw, tagsValues, categories, user);
-
-                contentlet = applyNullProperties(contentlet);
-                contentlet = contentFactory.save(contentlet);
-                contentlet.setIndexPolicy(indexPolicy);
-                contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
-            } else {
+            if (!isNewContent) {
                 //Existing contentlet getting updated.
                 Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
 
@@ -4923,8 +4887,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     final Folder folder = APILocator.getFolderAPI().find(contentletRaw.getFolder(), systemUser, false);
                     Identifier folderIdent = APILocator.getIdentifierAPI().find(folder);
                     identifier.setParentPath(folderIdent.getPath());
-                }
-                else {
+                } else {
                     identifier.setParentPath("/");
                 }
                 identifier = APILocator.getIdentifierAPI().save(identifier);
@@ -5011,7 +4974,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // Set the properties again after the store on DB and before the fire on an Actionlet.
             contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE, contentPushPublishDate);
             contentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME, contentPushPublishTime);
-            contentlet.setStringProperty(Contentlet.WORKFLOW_TIMEZONE_ID, contentPushPublishtimezoneId);
+            contentlet.setStringProperty(Contentlet.WORKFLOW_TIMEZONE_ID, contentPushPublishTimeZoneId);
             contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE, contentPushExpireDate);
             contentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME, contentPushExpireTime);
             contentlet.setStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE, contentPushNeverExpire);
@@ -5045,6 +5008,71 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         return contentlet;
     }
+
+
+    /**
+     * if we're not provided with an identifier this will attempt generating one
+     * The inode is also generated here. For it is used internally to avoid collisions on the identifier table generating a unique asset name.
+     * We're taking advantage of the exising logic on {@link ESContentFactoryImpl}'s save method.
+     * That always explore the given contentlet trying to find a provided inode.
+     * Like this:
+     * <pre>
+     * {@code
+     *     final String inode = getInode(existingInode, contentlet);
+     * }
+     * </pre>
+     * @param contentlet the modified copy contentlet we want to save
+     * @param contentletRaw the incoming copy that holds every value passed from the front-end
+     * @param existingIdentifier if internalCheckin decides we need to use an existing identifier we will use it
+     * @param existingInode if internalCheckin decides we need to use an existing inode we will use it
+     * @param htmlPageURL for pages we use the url to generate a unique asset name wen saving into the the contentlet table
+     * @return the modified copy contentlet we want to save with the new identifier and inode
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    private Contentlet assignIdentifierIfAbsent(final Contentlet contentlet, final Contentlet contentletRaw,  final String existingIdentifier, final String existingInode, final String htmlPageURL)
+            throws DotSecurityException, DotDataException {
+
+        if (!InodeUtils.isSet(contentlet.getIdentifier())) {
+
+            //Adding back temporarily the page URL to the contentlet, is needed in order to create a proper Identifier
+            addURLToContentlet(contentlet, htmlPageURL);
+            try {
+                final User systemUser = APILocator.systemUser();
+                final Treeable parent;
+                if (UtilMethods.isSet(contentletRaw.getFolder()) && !contentletRaw.getFolder()
+                        .equals(FolderAPI.SYSTEM_FOLDER)) {
+                    parent = APILocator.getFolderAPI()
+                            .find(contentletRaw.getFolder(), systemUser, false);
+                } else {
+                    parent = APILocator.getHostAPI().find(contentlet.getHost(), systemUser, false);
+                }
+
+                //We're gonna need a to assign the inode if we want to generate a valid identifier.
+                //Inode is used internally by identifierFactory to avoid collisions on identifier table generating a unique asset name
+                //Later this very same inode is grabbed to be used when saving content into the contentlet table
+                if (!InodeUtils.isSet(existingInode)) {
+                    contentlet.setInode(UUIDGenerator.generateUuid());
+                } else {
+                    contentlet.setInode(existingInode);
+                }
+
+                final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
+
+                final Contentlet asset = contentlet.isFileAsset() ? contentletRaw : contentlet;
+                final Identifier identifier = existingIdentifier != null ?
+                        identifierAPI.createNew(asset, parent, existingIdentifier) :
+                        identifierAPI.createNew(asset, parent);
+
+                contentlet.setIdentifier(identifier.getId());
+            }finally {
+                //Clean-up the contentlet object again..., we don' want to persist this URL in the db
+                removeURLFromContentlet(contentlet);
+            }
+        }
+        return contentlet;
+    }
+
 
     /**
      * This takes the incoming contentlet makes a copy out of it and includes all the system fields in it so they can be used to generate a sound json representation of the contentlet
