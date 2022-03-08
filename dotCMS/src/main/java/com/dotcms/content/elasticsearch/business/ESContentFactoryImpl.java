@@ -1942,17 +1942,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
         final Contentlet toReturn = findInDb(inode).orElseThrow(()->
                 new DotStateException(String.format("Contentlet with inode '%s' not found in DB", inode)));
 
-        final List<ContentletVersionInfo> contentletVersionInfos = APILocator.getVersionableAPI()
-                .findContentletVersionInfos(contentlet.getIdentifier());
 
-        if (contentlet.isVanityUrl() && UtilMethods.isSet(contentletVersionInfos)) {
-            final Contentlet oldContentlet = APILocator.getContentletAPI()
-                    .findContentletByIdentifier(toReturn.getIdentifier(), toReturn.isLive(),
-                            toReturn.getLanguageId(), APILocator.systemUser(), false);
 
-            if (UtilMethods.isSet(oldContentlet)) {
-                toReturn.setProperty(Contentlet.OLD_HOST_ID, oldContentlet.getHost());
-            }
+        if (contentlet.isVanityUrl()) {
+            setOlhHostIDProperty(toReturn);
         }
 
         if(UtilMethods.isNotSet(contentlet.getIdentifier())) {
@@ -1967,6 +1960,22 @@ public class ESContentFactoryImpl extends ContentletFactory {
         CacheLocator.getCSSCache().remove(identifier.getHostId(), identifier.getPath(), true);
         CacheLocator.getCSSCache().remove(identifier.getHostId(), identifier.getPath(), false);
         return toReturn;
+    }
+
+    private void setOlhHostIDProperty(final Contentlet contentlet)
+            throws DotDataException, DotSecurityException {
+        final List<ContentletVersionInfo> contentletVersionInfos = APILocator.getVersionableAPI()
+                .findContentletVersionInfos(contentlet.getIdentifier());
+
+        if (UtilMethods.isSet(contentletVersionInfos)) {
+            final Contentlet oldContentlet = APILocator.getContentletAPI()
+                    .findContentletByIdentifier(contentlet.getIdentifier(), contentlet.isLive(),
+                            contentlet.getLanguageId(), APILocator.systemUser(), false);
+
+            if (UtilMethods.isSet(oldContentlet)) {
+                contentlet.setProperty(Contentlet.OLD_HOST_ID, oldContentlet.getHost());
+            }
+        }
     }
 
     private void setUpContentletAsJson(final Contentlet contentlet, final String inode) {
