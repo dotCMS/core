@@ -3,6 +3,9 @@ on:
   push:
     branches:
       - release-*
+  repository_dispatch:
+    types:
+      - enterprise-update
 jobs:
   publish_image:
     name: Publish DotCMS docker image on release push
@@ -13,22 +16,38 @@ jobs:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
         if: env.DEBUG == 'true'
+      - name: Process Params
+        run: |
+          if [[ "${{ github.event_name }}" == 'repository_dispatch' ]]; then
+            BUILD_ID=${{ github.event.client_payload.build_id }}
+          else
+            BUILD_ID=$(basename "${{ github.ref }}")
+          fi
+
+          if [[ -z "${BUILD_ID}" ]]; then
+            echo 'Could not resolve BUILD_ID, aborting'
+            exit 1
+          else
+            echo "Found BUILD_ID: ${BUILD_ID}"
+          fi
+
+          echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
       - name: Checkout core
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ env.BUILD_ID }}
       - name: Set Common Vars
         run: |
-          BUILD_ID=$(basename "${{ github.ref }}")
           BUILD_HASH=$(git log -1 --pretty=%h)
           eval $(cat dotCMS/gradle.properties| grep dotcmsReleaseVersion)
           DOTCMS_VERSION="${dotcmsReleaseVersion}"
-          jobRun=true
+
           if [[ ${BUILD_ID} =~ ^release-[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$ ]]; then
             jobRun=true
           else
             jobRun=false
           fi
 
-          echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
           echo "BUILD_HASH=${BUILD_HASH}" >> $GITHUB_ENV
           echo "DOTCMS_VERSION=${DOTCMS_VERSION}" >> $GITHUB_ENV
           echo "jobRun=${jobRun}" >> $GITHUB_ENV

@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "7d2bc8c6-69c0-4a67-8a20-06ae6684f17c",
+		"_postman_id": "23daac1e-6145-4274-8b1c-9d3cc34c78ce",
 		"name": "Image",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -61,7 +61,7 @@
 						{
 							"key": "file",
 							"type": "file",
-							"src": "resources/image/dot_asset_image.tar.gz"
+							"src": "/Users/erickgonzalez/Documents/dotcms_master/core/dotCMS/src/curl-test/resources/image/dot_asset_image.tar.gz"
 						}
 					]
 				},
