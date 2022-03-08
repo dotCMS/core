@@ -2572,7 +2572,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 		if (permissionable instanceof ContentType) {
 			APILocator.getReindexQueueAPI()
-					.addStructureReindexEntries(permissionable.getPermissionId());
+					.addStructureReindexEntries((ContentType) permissionable);
 		} else if (permissionable instanceof Contentlet) {
 			APILocator.getReindexQueueAPI().addIdentifierReindex(permissionable.getPermissionId());
 		}
