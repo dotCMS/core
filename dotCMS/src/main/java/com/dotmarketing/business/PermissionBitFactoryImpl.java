@@ -1252,8 +1252,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 
 
-	/* 
-	 * @deprecated Use savePermission(permission) instead.
+	/**
+	 * @deprecated Use {@link PermissionBitFactoryImpl#savePermission(Permission, Permissionable)} instead.
 	 */
 	@Override
     @Deprecated

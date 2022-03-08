@@ -28,6 +28,13 @@ public class PermissionBitFactoryImplTest {
         IntegrationTestInitService.getInstance().init();
     }
 
+    /**
+     * Method to test: {@link PermissionBitFactoryImpl#addPermissionsToCache(Permissionable)}
+     * When: Create a {@link ContentType} and two {@link Contentlet} and assign two new permission to the ContentType
+     * Should: Create a register for each COntentlet in dist_reindex_journal
+     *
+     * @throws DotDataException
+     */
     @Test
     public void assignPermissions() throws DotDataException {
 
