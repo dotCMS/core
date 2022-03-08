@@ -67,7 +67,7 @@ public class CopyHostContentUtil{
 					new HostCopyOptions(copyAll):
 					new HostCopyOptions(copyTemplatesContainers, copyFolders, copyLinks, copyContentOnPages, copyContentOnHost,copyHostVariables);
 
-			    HostAssetsJobProxy.fireJob(newSite.getIdentifier(), sourceHost.getIdentifier(), hostCopyOptions);
+			    HostAssetsJobProxy.fireJob(newSite.getIdentifier(), sourceHost.getIdentifier(), hostCopyOptions, user.getUserId());
 		} catch (Throwable e) {
 
 			Logger.error(this, e.getMessage(), e);
