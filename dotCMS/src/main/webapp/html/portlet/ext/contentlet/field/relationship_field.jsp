@@ -311,13 +311,15 @@
 			}
 			return value;
 	    }
-		
+
+	    function <%= relationJsName%>EditRelatedContentWrap(o, content) {
+            return o != null
+                ? "<a href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "', '"+ o['siblingInode'] +"', '"+ o['langId'] +"');\"" + ">" + content + "</a>"
+                : ""
+        }
+
         function <%= relationJsName%>WriteLinkTitle (o) {
-            var value = "";
-            if (o != null){
-                value = "<a href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "', '"+ o['siblingInode'] +"', '"+ o['langId'] +"');\"" + ">" + o['title'] + "</a>";
-            }
-            return value;
+            return <%= relationJsName%>EditRelatedContentWrap(o, o['title']);
         }
 		
         function numberOfRows<%= relationJsName%> () {
@@ -563,14 +565,16 @@
             imgCell.style.textAlign = 'center';
             var imageValue;
             if (typeof item === 'object') {
-                imgCell.innerHTML = (item.hasTitleImage === 'true')
-                    ? '<img class="listingTitleImg" src="/dA/' + item.inode + '/titleImage/64w"  >'
+                imageValue = item.hasTitleImage === 'true'
+                    ? '<img class="listingTitleImg" src="/dA/' + item.inode + '/titleImage/64w">'
                     : '<span class="'+item.iconClass+'" style="font-size:24px;width:auto;"></span>';
             } else {
-                imgCell.innerHTML = item
-                    ? '<img class="listingTitleImg" src="/dA/' + item + '/titleImage/64w"  >'
+                imageValue = item
+                    ? '<img class="listingTitleImg" src="/dA/' + item + '/titleImage/64w">'
                     : '<span style="font-size:24px;width:auto;"></span>';
             }
+
+            imgCell.innerHTML = <%= relationJsName%>EditRelatedContentWrap(item, imageValue);
         }
 
         function CreateRow<%= relationJsName %>(item, hint) {
@@ -598,9 +602,10 @@
                     } else if (fieldName === 'titleImage') {
                         createImageCell(row, <%= relationJsName %>_specialFields[fieldName]);
                     } else {
-                        fieldValue = <%= relationJsName %>_specialFields[fieldName] || item[fieldName] || '';
                         var fieldCell = row.insertCell(row.cells.length);
-                        fieldCell.innerHTML = '<span>' + fieldValue + '</span>'
+                        fieldCell.innerHTML = <%= relationJsName%>EditRelatedContentWrap(
+                            item,
+                            <%= relationJsName %>_specialFields[fieldName] || item[fieldName] || "");
                     }
                 });
             }
@@ -608,7 +613,7 @@
 			// displays the publish/unpublish/archive status of the content only.
 			var statusTD = document.createElement("td");
 			statusTD.style.whiteSpace="nowrap";
-			statusTD.innerHTML = item.statusIcons;
+			statusTD.innerHTML = <%= relationJsName%>EditRelatedContentWrap(item, item.statusIcons);
 			row.appendChild(statusTD);
 
 			// to hold contentInode to reorder
