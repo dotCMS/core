@@ -9,8 +9,10 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.quartz.CronScheduledTask;
 import com.dotmarketing.quartz.DotStatefulJob;
 import com.dotmarketing.quartz.QuartzUtils;
+import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.quartz.SimpleScheduledTask;
 import com.dotmarketing.quartz.job.HostCopyOptions;
 import com.dotmarketing.quartz.job.ResetPermissionsJob;
@@ -24,10 +26,12 @@ import org.quartz.SimpleTrigger;
 
 import java.io.Serializable;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public class CopyHostContentUtil{
 
@@ -35,7 +39,7 @@ public class CopyHostContentUtil{
 		
 	}
 
-	public void checkHostCopy(final Contentlet contentlet, final User user, final String copyOptions) {
+	public void checkHostCopy(final Contentlet newSite, final User user, final String copyOptions) {
 
 		try {
 				
@@ -58,24 +62,12 @@ public class CopyHostContentUtil{
 				final boolean copyLinks = copyParams.get("copy_links").equals("on");
 				final boolean copyHostVariables = copyParams.get("copy_host_variables").equals("on");
 
-				final Host source = hostAPI.find(copyFromHostId, user, false);
+				final Host sourceHost = hostAPI.find(copyFromHostId, user, false);
 				final HostCopyOptions hostCopyOptions = copyAll?
 					new HostCopyOptions(copyAll):
 					new HostCopyOptions(copyTemplatesContainers, copyFolders, copyLinks, copyContentOnPages, copyContentOnHost,copyHostVariables);
 
-				final Map<String, Serializable> parameters = new HashMap<>();
-				parameters.put("sourceHostId", source.getIdentifier());
-				parameters.put("destinationHostId", contentlet.getIdentifier());
-				parameters.put("copyOptions", hostCopyOptions);
-
-				try {
-
-					DotStatefulJob.enqueueTrigger(parameters, HostAssetsJobProxy.class);
-				} catch (Exception e) {
-					Logger.error(HostAssetsJobProxy.class, e.getMessage(), e);
-					throw new DotRuntimeException("Error copying the site: " + source.getHostname() + ", msg: " +
-							e.getMessage(), e);
-				}
+			    HostAssetsJobProxy.fireJob(newSite.getIdentifier(), sourceHost.getIdentifier(), hostCopyOptions);
 		} catch (Throwable e) {
 
 			Logger.error(this, e.getMessage(), e);

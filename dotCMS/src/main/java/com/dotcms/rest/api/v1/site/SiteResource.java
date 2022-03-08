@@ -1024,7 +1024,6 @@ public class SiteResource implements Serializable {
                             copySiteForm.isCopySiteVariables());
 
         HostAssetsJobProxy.fireJob(newSite.getIdentifier(), sourceHost.getIdentifier(), hostCopyOptions);
-
         return Response.ok(new ResponseEntityView(newSite)).build();
     }
 
