@@ -313,8 +313,9 @@
 	    }
 
 	    function <%= relationJsName%>EditRelatedContentWrap(o, content) {
+	    var siblingInode = o['siblingInode'] || '';
             return o != null
-                ? "<a href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "', '"+ o['siblingInode'] +"', '"+ o['langId'] +"');\"" + ">" + content + "</a>"
+                ? "<a href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "', '"+ siblingInode +"', '"+ o['langId'] +"');\"" + ">" + content + "</a>"
                 : ""
         }
 
@@ -564,15 +565,9 @@
             imgCell.style.whiteSpace="nowrap";
             imgCell.style.textAlign = 'center';
             var imageValue;
-            if (typeof item === 'object') {
-                imageValue = item.hasTitleImage === 'true'
-                    ? '<img class="listingTitleImg" src="/dA/' + item.inode + '/titleImage/64w">'
-                    : '<span class="'+item.iconClass+'" style="font-size:24px;width:auto;"></span>';
-            } else {
-                imageValue = item
-                    ? '<img class="listingTitleImg" src="/dA/' + item + '/titleImage/64w">'
-                    : '<span style="font-size:24px;width:auto;"></span>';
-            }
+			imageValue = item.hasTitleImage === 'true'
+				? '<img class="listingTitleImg" src="/dA/' + item.inode + '/titleImage/64w">'
+				: '<span class="'+item.iconClass+'" style="font-size:24px;width:auto;"></span>';
 
             imgCell.innerHTML = <%= relationJsName%>EditRelatedContentWrap(item, imageValue);
         }
@@ -600,7 +595,7 @@
                     if (fieldName === 'languageId') {
                         createLangTd(row, item);
                     } else if (fieldName === 'titleImage') {
-                        createImageCell(row, <%= relationJsName %>_specialFields[fieldName]);
+                        createImageCell(row, item);
                     } else {
                         var fieldCell = row.insertCell(row.cells.length);
                         fieldCell.innerHTML = <%= relationJsName%>EditRelatedContentWrap(
