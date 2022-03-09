@@ -420,43 +420,52 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			identifier.setId(UUIDGenerator.generateUuid());
 		}
 
-		String uri = versionable.getVersionType() + "." + versionable.getInode();
-		if ( versionable instanceof Contentlet) {
-			Contentlet cont = (Contentlet) versionable;
-			if (cont.getStructure().getStructureType() == BaseContentType.FILEASSET.getType()) {
-				// special case when it is a file asset as contentlet
-				uri = String.class.cast(cont.getMap().get(FileAssetAPI.FILE_NAME_FIELD));
-				if (!UtilMethods.isSet(uri)) {
-					try {
-						// fallback
-						uri = cont.getBinary(FileAssetAPI.BINARY_FIELD) != null ? cont
-								.getBinary(FileAssetAPI.BINARY_FIELD).getName() : StringPool.BLANK;
-					} catch (IOException e) {
-						throw new DotDataException(e.getMessage(), e);
-					}
-				}
-			} else if (cont.getStructure().getStructureType() == BaseContentType.HTMLPAGE.getType()) {
-				uri = cont.getStringProperty(HTMLPageAssetAPI.URL_FIELD) ;
-			}
-			identifier.setAssetType(Identifier.ASSET_TYPE_CONTENTLET);
+		if ( versionable instanceof Folder ) {
+			identifier.setAssetType(Identifier.ASSET_TYPE_FOLDER);
+			identifier.setAssetName(((Folder) versionable).getName());
 			identifier.setParentPath( "/" );
-			identifier.setAssetName( uri );
-			identifier.setAssetSubType(cont.getContentType().variable());
-		} else if ( versionable instanceof Link ) {
-			identifier.setAssetName( versionable.getInode() );
-			identifier.setParentPath("/");
-		} else if(versionable instanceof Host) {
-			identifier.setAssetName(versionable.getInode());
-			identifier.setAssetType(Identifier.ASSET_TYPE_CONTENTLET);
-			identifier.setParentPath("/");
-			identifier.setAssetSubType(Host.HOST_VELOCITY_VAR_NAME);
+			identifier.setOwner(((Folder) versionable).getOwner());
 		} else {
-			identifier.setURI( uri );
+			//If this is going to be moved before the save we have to have a way to know the inode ahead of time
+			String uri = versionable.getVersionType() + "." + versionable.getInode();
+			if (versionable instanceof Contentlet) {
+				Contentlet cont = (Contentlet) versionable;
+				if (cont.isFileAsset()) {
+					// special case when it is a file asset as contentlet
+					uri = String.class.cast(cont.getMap().get(FileAssetAPI.FILE_NAME_FIELD));
+					if (!UtilMethods.isSet(uri)) {
+						try {
+							// fallback
+							uri = cont.getBinary(FileAssetAPI.BINARY_FIELD) != null ? cont
+									.getBinary(FileAssetAPI.BINARY_FIELD).getName()
+									: StringPool.BLANK;
+						} catch (IOException e) {
+							throw new DotDataException(e.getMessage(), e);
+						}
+					}
+				} else if (cont.getStructure().getStructureType()
+						== BaseContentType.HTMLPAGE.getType()) {
+					uri = cont.getStringProperty(HTMLPageAssetAPI.URL_FIELD);
+				}
+				identifier.setAssetType(Identifier.ASSET_TYPE_CONTENTLET);
+				identifier.setParentPath("/");
+				identifier.setAssetName(uri);
+				identifier.setAssetSubType(cont.getContentType().variable());
+			} else if (versionable instanceof Link) {
+				identifier.setAssetName(versionable.getInode());
+				identifier.setParentPath("/");
+			} else if (versionable instanceof Host) {
+				identifier.setAssetName(versionable.getInode());
+				identifier.setAssetType(Identifier.ASSET_TYPE_CONTENTLET);
+				identifier.setParentPath("/");
+				identifier.setAssetSubType(Host.HOST_VELOCITY_VAR_NAME);
+			} else {
+				identifier.setURI(uri);
+			}
+
+			identifier.setOwner((versionable instanceof WebAsset)
+					? ((WebAsset) versionable).getOwner() : versionable.getModUser());
 		}
-
-		identifier.setOwner((versionable instanceof WebAsset)
-				? ((WebAsset) versionable).getOwner() : versionable.getModUser());
-
         identifier.setHostId( site != null ? site.getIdentifier() : null );
 
         final Inode inode;

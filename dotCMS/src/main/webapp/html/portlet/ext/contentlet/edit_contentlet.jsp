@@ -596,11 +596,15 @@
             }
         });
 
+<% 
+    final String titleFieldValue = (contentlet != null ? contentlet.getTitle() : "").replace("'", "\'");
+%>
         var customEvent = document.createEvent("CustomEvent");
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "edit-contentlet-loaded",
             data: {
-                contentType: '<%=CacheLocator.getContentTypeCache().getStructureByInode(structure.getInode() ).getName()%>'
+                contentType: '<%=CacheLocator.getContentTypeCache().getStructureByInode(structure.getInode() ).getName()%>',
+                pageTitle: "<%=titleFieldValue%>"
             }
         });
         setTimeout(function() {
@@ -730,4 +734,3 @@ if(!InodeUtils.isSet(inode) && UtilMethods.isSet(sib) && !UtilMethods.isSet(popu
 
 
 %>
-

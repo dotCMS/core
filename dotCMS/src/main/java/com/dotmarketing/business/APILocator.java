@@ -12,8 +12,8 @@ import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.cms.login.LoginServiceAPIFactory;
 import com.dotcms.company.CompanyAPI;
 import com.dotcms.company.CompanyAPIFactory;
-import com.dotcms.content.business.ContentletJsonAPI;
-import com.dotcms.content.business.ContentletJsonAPIImpl;
+import com.dotcms.content.business.json.ContentletJsonAPI;
+import com.dotcms.content.business.json.ContentletJsonAPIImpl;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
@@ -1086,7 +1086,7 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	/**
-	 * Creates a single instance of the {@link com.dotcms.content.business.ContentletJsonAPI} class.
+	 * Creates a single instance of the {@link ContentletJsonAPI} class.
 	 * @return the instance
 	 */
 	public static ContentletJsonAPI getContentletJsonAPI(){
