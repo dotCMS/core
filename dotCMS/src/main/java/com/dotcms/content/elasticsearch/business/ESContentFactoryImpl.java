@@ -1964,10 +1964,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     private void setOlhHostIDProperty(final Contentlet contentlet)
             throws DotDataException, DotSecurityException {
-        final List<ContentletVersionInfo> contentletVersionInfos = APILocator.getVersionableAPI()
-                .findContentletVersionInfos(contentlet.getIdentifier());
+        final Optional<ContentletVersionInfo> contentletVersionInfoOptional = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
 
-        if (UtilMethods.isSet(contentletVersionInfos)) {
+        if (contentletVersionInfoOptional.isPresent()) {
             final Contentlet oldContentlet = APILocator.getContentletAPI()
                     .findContentletByIdentifier(contentlet.getIdentifier(), contentlet.isLive(),
                             contentlet.getLanguageId(), APILocator.systemUser(), false);
