@@ -18,6 +18,7 @@ export * from './lib/extensions/components/action-button/action-button.component
 export * from './lib/extensions/components/loader/loader.component';
 export * from './lib/extensions/components/drag-handler/drag-handler.component';
 export * from './lib/extensions/components/bubble-menu/bubble-menu.component';
+export * from './lib/extensions/components/bubble-change-dropdown/bubble-change-dropdown.component';
 export * from './lib/extensions/components/bubble-menu-link-form/bubble-menu-link-form.component';
 
 export * from './lib/extensions/blocks/contentlet-block/contentlet-block.component';
@@ -36,6 +37,7 @@ export * from './lib/extensions/blocks/contentlet-block/contentlet-block.extensi
 
 // Editor utils
 export * from './lib/utils/bubble-menu.utils';
+export * from './lib/utils/suggestion.utils';
 
 // Services
 export * from './lib/extensions/services/suggestions/suggestions.service';

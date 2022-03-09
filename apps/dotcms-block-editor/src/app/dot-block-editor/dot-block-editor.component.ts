@@ -49,7 +49,7 @@ export class DotBlockEditorComponent implements OnInit {
                 StarterKit,
                 ContentletBlock(this.injector),
                 ImageBlock(this.injector),
-                ActionsMenu(this.injector, this.resolver),
+                ActionsMenu(this.viewContainerRef),
                 DragHandler(this.injector, this.resolver),
                 ImageUpload(this.injector, this.resolver),
                 BubbleLinkFormExtension(this.injector, this.resolver),

@@ -1,4 +1,7 @@
 <div class="bubble-menu" (mousedown)="preventDeSelection($event)">
+    <dotcms-bubble-change-dropdown #dropdown >
+    </dotcms-bubble-change-dropdown>
+    <div *ngIf="dropdown.selected" class="divider"></div>
     <ng-container *ngFor="let item of items; let i = index">
         <dotcms-bubble-menu-button (click)="command.emit(item)" [active]="item.active" [item]="item">
         </dotcms-bubble-menu-button>

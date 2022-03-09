@@ -37,7 +37,7 @@ export class SuggestionListComponent implements AfterContentInit {
      * @memberof SuggestionListComponent
      */
     execCommand() {
-        this.keyManager.activeItem.command()
+        this.keyManager.activeItem.command();
     }
 
     /**
@@ -62,7 +62,7 @@ export class SuggestionListComponent implements AfterContentInit {
         // Needs to wait until the new items are rendered
         setTimeout(() => {
             this.setFirstItemActive();
-        }, 0)
+        }, 0);
     }
 
     /**
@@ -73,7 +73,6 @@ export class SuggestionListComponent implements AfterContentInit {
      */
     updateActiveItem(index: number): void {
         this.keyManager.activeItem?.unfocus();
-        this.keyManager.setActiveItem(index)
+        this.keyManager.setActiveItem(index);
     }
-
 }

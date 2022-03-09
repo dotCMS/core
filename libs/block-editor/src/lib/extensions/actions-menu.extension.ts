@@ -1,4 +1,4 @@
-import { ComponentFactoryResolver, ComponentRef, Injector } from '@angular/core';
+import { ComponentRef, ViewContainerRef } from '@angular/core';
 
 import { Editor, Extension, Range } from '@tiptap/core';
 import { FloatingMenuPluginProps } from '@tiptap/extension-floating-menu';
@@ -35,9 +35,8 @@ export type FloatingMenuOptions = Omit<FloatingMenuPluginProps, 'editor' | 'elem
     suggestion: Omit<SuggestionOptions, 'editor'>;
 };
 
-function getSuggestionComponent(injector: Injector, resolver: ComponentFactoryResolver) {
-    const factory = resolver.resolveComponentFactory(SuggestionsComponent);
-    const component = factory.create(injector);
+function getSuggestionComponent(viewContainerRef: ViewContainerRef) {
+    const component = viewContainerRef.createComponent(SuggestionsComponent);
     component.changeDetectorRef.detectChanges();
     return component;
 }
@@ -82,13 +81,13 @@ function execCommand({
         heading: () => {
             editor.chain().addHeading({ range, type: props.type }).run();
         },
-        listOrdered: () => {
+        orderedList: () => {
             editor.chain().deleteRange(range).toggleOrderedList().focus().run();
         },
-        listUnordered: () => {
+        bulletList: () => {
             editor.chain().deleteRange(range).toggleBulletList().focus().run();
         },
-        blockQuote: () => {
+        blockquote: () => {
             editor.chain().deleteRange(range).setBlockquote().focus().run();
         },
         codeBlock: () => {
@@ -104,7 +103,7 @@ function execCommand({
         : editor.chain().setTextSelection(range).focus().run();
 }
 
-export const ActionsMenu = (injector: Injector, resolver: ComponentFactoryResolver) => {
+export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
     let myTippy;
     let suggestionsComponent: ComponentRef<SuggestionsComponent>;
 
@@ -114,7 +113,7 @@ export const ActionsMenu = (injector: Injector, resolver: ComponentFactoryResolv
      * @param {(SuggestionProps | FloatingActionsProps)} { editor, range, clientRect }
      */
     function onStart({ editor, range, clientRect }: SuggestionProps | FloatingActionsProps): void {
-        suggestionsComponent = getSuggestionComponent(injector, resolver);
+        suggestionsComponent = getSuggestionComponent(viewContainerRef);
         suggestionsComponent.instance.onSelection = (item) => {
             execCommand({ editor: editor, range: range, props: item });
         };
@@ -161,6 +160,7 @@ export const ActionsMenu = (injector: Injector, resolver: ComponentFactoryResolv
 
     function onExit() {
         myTippy?.destroy();
+        suggestionsComponent.destroy();
     }
 
     return Extension.create<FloatingMenuOptions>({
@@ -184,33 +184,36 @@ export const ActionsMenu = (injector: Injector, resolver: ComponentFactoryResolv
 
         addCommands() {
             return {
-                addHeading: ({ range, type }) => ({ chain }) => {
-                    return chain()
-                        .focus()
-                        .deleteRange(range)
-                        .toggleHeading({ level: type.level })
-                        .focus()
-                        .run();
-                },
-                addContentletBlock: ({ range, payload }) => ({ chain }) => {
-                    return chain()
-                        .deleteRange(range)
-                        .command((data) => {
-                            const node = data.editor.schema.nodes.dotContent.create({
-                                data: payload
-                            });
-                            data.tr.replaceSelectionWith(node);
-                            return true;
-                        })
-                        .focus()
-                        .run();
-                }
+                addHeading:
+                    ({ range, type }) =>
+                    ({ chain }) => {
+                        return chain()
+                            .focus()
+                            .deleteRange(range)
+                            .toggleHeading({ level: type.level })
+                            .focus()
+                            .run();
+                    },
+                addContentletBlock:
+                    ({ range, payload }) =>
+                    ({ chain }) => {
+                        return chain()
+                            .deleteRange(range)
+                            .command((data) => {
+                                const node = data.editor.schema.nodes.dotContent.create({
+                                    data: payload
+                                });
+                                data.tr.replaceSelectionWith(node);
+                                return true;
+                            })
+                            .focus()
+                            .run();
+                    }
             };
         },
 
         addProseMirrorPlugins() {
-            const factoryButton = resolver.resolveComponentFactory(ActionButtonComponent);
-            const button = factoryButton.create(injector);
+            const button = viewContainerRef.createComponent(ActionButtonComponent);
 
             return [
                 FloatingActionsPlugin({

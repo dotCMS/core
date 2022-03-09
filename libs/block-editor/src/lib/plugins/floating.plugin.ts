@@ -131,10 +131,10 @@ export class FloatingActionsView {
         const { $anchor, empty, from, to } = selection;
         const isRootDepth = $anchor.depth === 1;
         const isNodeEmpty =
-        !selection.$anchor.parent.isLeaf && !selection.$anchor.parent.textContent;
+            !selection.$anchor.parent.isLeaf && !selection.$anchor.parent.textContent;
         const isActive = isRootDepth && isNodeEmpty;
         const nodeType = $anchor.parent.type.name;
-        
+
         const next = this.key?.getState(view.state);
         const prev = prevState ? this.key?.getState(prevState) : null;
 
