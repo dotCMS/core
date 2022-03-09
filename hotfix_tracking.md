@@ -306,4 +306,3 @@ This maintenance release includes the following code fixes:
 152. https://github.com/dotCMS/core/issues/21252 : Add the ability to stop/abort a workflow on velocity script actionlet #21252
 153. https://github.com/dotCMS/core/issues/21699 : [Push Publishing] : Single quote in content's title breaks JavaScript code in the portlet #21699
 154. https://github.com/dotCMS/core/issues/21791 : Sanitizing file name #21791
-155. https://github.com/dotCMS/core/issues/21772 : Unable to Change Hosts for Vanity URLS - 5.3.8 and possibily 21.06 #21772
