@@ -7,13 +7,9 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 
@@ -68,19 +64,7 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
             return;
         }
         remove(host, lang);
-        final String oldHostId = (String) vanityURL.get(Contentlet.OLD_HOST_ID);
 
-        if (UtilMethods.isSet(oldHostId) && !oldHostId.equals(host.getIdentifier())) {
-
-            try {
-                final Host oldHost = APILocator.getHostAPI()
-                        .find(oldHostId, APILocator.systemUser(), false);
-                remove(oldHost, lang);
-            } catch (DotDataException | DotSecurityException e) {
-                Logger.debug(VanityUrlCacheImpl.class, String.format("Host not found: %s", oldHostId));
-            }
-
-        }
 
     }
 

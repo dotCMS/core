@@ -1996,7 +1996,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         final Contentlet content = convertFatContentletToContentlet(fatty);
 
         if (InodeUtils.isSet(contentlet.getHost())) {
-            content.setProperty(Contentlet.OLD_HOST_ID, content.getHost());
             content.setHost(contentlet.getHost());
         }
 
