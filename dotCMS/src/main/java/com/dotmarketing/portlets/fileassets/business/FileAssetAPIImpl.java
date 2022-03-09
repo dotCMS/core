@@ -516,11 +516,9 @@ public class FileAssetAPIImpl implements FileAssetAPI {
                     APILocator.getVersionableAPI().setLive( fileAssetCont );
 
                 if ( parent != null ) {
-                    RefreshMenus.deleteMenu( oldParent, parent );
                     CacheLocator.getNavToolCache().removeNav(parent.getHostId(), parent.getInode());
-                } else {
-                    RefreshMenus.deleteMenu( oldParent );
                 }
+
                 CacheLocator.getNavToolCache().removeNav(oldParent.getHostId(), oldParent.getInode());
 
                 CacheLocator.getIdentifierCache().removeFromCacheByVersionable( fileAssetCont );

@@ -320,16 +320,6 @@ public class LinkFactory {
         }catch(Exception e){
         	Logger.debug(LinkFactory.class,"link reference to old parent folder not found");
         }
-        /*oldParent.deleteChild(workingWebAsset);
-          if ((liveWebAsset != null) && (InodeUtils.isSet(liveWebAsset.getInode()))) {
-              oldParent.deleteChild(liveWebAsset);
-          }
-
-          // Adding to new parent
-          parent.addChild(workingWebAsset);
-          if ((liveWebAsset != null) && (InodeUtils.isSet(liveWebAsset.getInode()))) {
-              parent.addChild(liveWebAsset);
-          }*/
 
         if ( parent != null ) {
 
@@ -361,15 +351,9 @@ public class LinkFactory {
 
         //Refresh the menus
         if ( parent != null ) {
-        	if(oldParent != null){
-        		RefreshMenus.deleteMenu( oldParent, parent );
-        	}else{
-        		RefreshMenus.deleteMenu(parent);
-        	}
             CacheLocator.getNavToolCache().removeNav(parent.getHostId(), parent.getInode());
-        } else {
-            RefreshMenus.deleteMenu( oldParent );
         }
+
         if(oldParent != null){
         	CacheLocator.getNavToolCache().removeNav(oldParent.getHostId(), oldParent.getInode());
         }
