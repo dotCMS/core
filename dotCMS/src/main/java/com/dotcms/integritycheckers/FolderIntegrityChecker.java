@@ -178,12 +178,15 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
 
             if (!results.isEmpty()) {
                 // if we have conflicts, lets create a table out of them
-                String fullFolder = " c."+hostNameColumnName+" || iden.parent_path || iden.asset_name ";
+                //By default we assume we're on postgres
+                String fullFolder = " (COALESCE(c.contentlet_as_json-> 'fields' ->'hostName'->>'value',c."+hostNameColumnName+" ) || iden.parent_path || iden.asset_name) ";
 
                 if (DbConnectionFactory.isMySql()) {
+                    //At this point we do not support json on mySQL se we only validate against the dynamic column
                     fullFolder = " concat(c."+hostNameColumnName+",iden.parent_path,iden.asset_name) ";
                 } else if (DbConnectionFactory.isMsSql()) {
-                    fullFolder = " c."+hostNameColumnName+" + iden.parent_path + iden.asset_name ";
+                    //For msSQL we do support both json and dynamic columns so we need to test against both
+                    fullFolder = " (COALESCE(JSON_VALUE(c.contentlet_as_json,'$.fields.hostName.value'),c."+hostNameColumnName+" ) + iden.parent_path + iden.asset_name) ";
                 }
 
                 final String INSERT_INTO_RESULTS_TABLE = "insert into "

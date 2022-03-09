@@ -1,6 +1,6 @@
-package com.dotcms.content.business;
+package com.dotcms.content.business.json;
 
-import static com.dotcms.content.business.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
+import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 import static junit.framework.TestCase.assertNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -151,7 +151,6 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
     @Test
     public void Create_Content_Then_Find_It_Then_Create_Json_Content_Then_Recover_And_Compare() throws Exception {
 
-        //TODO: Once we have json capabilities enabled on all the supported dbs we must remove this condition. Currently we only support them on Postgres
         if(!APILocator.getContentletJsonAPI().isPersistContentAsJson()){
             Logger.info(ContentletJsonAPITest.class, ()->"Test Should only run on databases with enabled json capabilities.");
             return;
@@ -271,7 +270,7 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
      * @throws Exception
      */
     @Test
-    public void Text_Field_Initialize_Test() throws Exception {
+    public void Initialize_Fields_With_Default_Value_Test() throws Exception {
 
         final boolean defaultValue = Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
         Config.setProperty(SAVE_CONTENTLET_AS_JSON, false);
@@ -283,7 +282,7 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
             final ContentType contentType = TestDataUtils
                     .newContentTypeFieldTypesGalore();
 
-            final ContentletJsonAPI impl = APILocator.getContentletJsonAPI();
+            final ContentletJsonAPIImpl impl = (ContentletJsonAPIImpl)APILocator.getContentletJsonAPI();
 
             final Contentlet filledWithZeros = new ContentletDataGen(contentType).host(site)
                     .languageId(1)
@@ -295,13 +294,20 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
                     .nextPersisted();
 
             assertNotNull(filledWithZeros);
+
             final String json = impl.toJson(filledWithZeros);
             assertNotNull(json);
             final Contentlet out = impl.mapContentletFieldsFromJson(json);
-            assertEquals(out.get("textFieldNumeric"),0L );
-            assertEquals(out.get("textFieldFloat"),0F );
-            assertEquals(out.get("hiddenBool"),false );
+            assertEquals(0L, out.get("textFieldNumeric"));
+            assertEquals(0F, out.get("textFieldFloat"));
+            assertEquals(false, out.get("hiddenBool"));
             assertNull(out.get("textField"));
+
+            final ImmutableContentlet immutableContentlet = impl.toImmutable(filledWithZeros);
+            final ImmutableMap<String, FieldValue<?>> fields = immutableContentlet.fields();
+            assertEquals(0L, fields.get("textFieldNumeric").value());
+            assertEquals(0F,fields.get("textFieldFloat").value());
+            assertEquals(false, fields.get("hiddenBool").value());
 
         } finally {
             Config.setProperty(SAVE_CONTENTLET_AS_JSON, defaultValue);
