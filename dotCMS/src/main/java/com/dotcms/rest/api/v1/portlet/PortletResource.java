@@ -24,6 +24,7 @@ import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -89,9 +90,8 @@ public class PortletResource implements Serializable {
     try {
 
       final Portlet contentPortlet = portletApi.findPortlet("content");
-      final Map<String, String> initValues = new HashMap<>();
 
-      initValues.putAll(contentPortlet.getInitParams());
+      final Map<String, String> initValues = new HashMap<>(contentPortlet.getInitParams());
       initValues.put("name", formData.portletName);
       initValues.put("baseTypes", formData.baseTypes);
       initValues.put("contentTypes", formData.contentTypes);
@@ -127,23 +127,43 @@ public class PortletResource implements Serializable {
                 .requiredPortlet("roles")
                 .init();
 
+        final User user = initData.getUser();
+
         Response response = null;
 
         try {
+
             final PortletAPI portletAPI = APILocator.getPortletAPI();
+            final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+
+            if(!portletAPI.canAddPortletToLayout(portletId)){
+                return ResponseUtil.INSTANCE.getErrorResponse(request, Response.Status.UNAUTHORIZED, user.getLocale(),
+                        user.getUserId(),
+                        String.format("Portlet with id %s is restricted and can not be added to a layout.",portletId));
+            }
+
             final Portlet portlet = portletAPI.findPortlet(portletId);
             if (null == portlet) {
                 throw new DoesNotExistException(
                         String.format("Portlet id by %s wasn't found.", portletId));
             }
-            final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
-            final Layout layout = layoutAPI.findLayout(layoutId);
+
+            final Layout layout = layoutAPI.loadLayout(layoutId);
             if (null == layout) {
                 throw new DoesNotExistException(
                         String.format("Layout id by %s wasn't found.", layoutId));
             }
-            layoutAPI.setPortletIdsToLayout(layout,
-                    Collections.singletonList(portlet.getPortletId()));
+
+            final List<Layout> userLayouts = layoutAPI.loadLayoutsForUser(user);
+            if(!userLayouts.contains(layout)){
+                return ResponseUtil.INSTANCE.getErrorResponse(request, Response.Status.UNAUTHORIZED, user.getLocale(),
+                        user.getUserId(),
+                        "Current user does not have access to the given layout.");
+            }
+
+            final List<String> portletIds = new ArrayList<>(layout.getPortletIds());
+            portletIds.add(portlet.getPortletId());
+            layoutAPI.setPortletIdsToLayout(layout, portletIds);
 
             return Response.ok(new ResponseEntityView(
                     map("portlet", portlet.getPortletId(), "layout", layout.getId())))
