@@ -4,44 +4,44 @@ import static com.dotcms.util.CollectionsUtils.map;
 import static com.liferay.portal.model.Portlet.DATA_VIEW_MODE_KEY;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.portlet.WindowState;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.ContentTypeUtil;
-import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.business.Layout;
+import com.dotmarketing.business.LayoutAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.portal.DotPortlet;
+import com.dotmarketing.business.portal.PortletAPI;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.Portlet;
+import com.liferay.portal.model.User;
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.rest.WebResource;
-import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.api.v1.authentication.ResponseUtil;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.ApiProvider;
-import com.dotmarketing.business.Layout;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.portal.DotPortlet;
-import com.dotmarketing.business.portal.PortletAPI;
-import com.liferay.portal.model.Portlet;
-import com.liferay.portal.model.User;
-import io.vavr.control.Try;
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
 import org.glassfish.jersey.server.JSONP;
 
 /**
@@ -108,6 +108,54 @@ public class PortletResource implements Serializable {
 
     return response;
   }
+
+    @PUT
+    @Path("/custom/{portletId}/_addtolayout/{layoutId}")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response addContentPortletToLayout(@Context final HttpServletRequest request,
+            @PathParam("portletId") final String portletId,
+            @PathParam("layoutId") final String layoutId) {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, null)
+                .rejectWhenNoUser(true)
+                .requiredPortlet("roles")
+                .init();
+
+        Response response = null;
+
+        try {
+            final PortletAPI portletAPI = APILocator.getPortletAPI();
+            final Portlet portlet = portletAPI.findPortlet(portletId);
+            if (null == portlet) {
+                throw new DoesNotExistException(
+                        String.format("Portlet id by %s wasn't found.", portletId));
+            }
+            final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+            final Layout layout = layoutAPI.findLayout(layoutId);
+            if (null == layout) {
+                throw new DoesNotExistException(
+                        String.format("Layout id by %s wasn't found.", layoutId));
+            }
+            layoutAPI.setPortletIdsToLayout(layout,
+                    Collections.singletonList(portlet.getPortletId()));
+
+            return Response.ok(new ResponseEntityView(
+                    map("portlet", portlet.getPortletId(), "layout", layout.getId())))
+                    .build();
+
+        } catch (Exception e) {
+            response = ResponseUtil.mapExceptionResponse(e);
+        }
+
+        return response;
+    }
+
 
   @DELETE
   @Path("/custom/{portletId}")
