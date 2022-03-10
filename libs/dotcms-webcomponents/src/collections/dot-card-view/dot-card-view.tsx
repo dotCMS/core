@@ -13,6 +13,7 @@ import {
     DotCardContentletItem,
     DotCardContentletEvent
 } from '../../models/dot-card-contentlet.model';
+
 import { DotContentletItem } from '../../models/dot-contentlet-item.model';
 
 const getValueAsArray = (value: string): string[] => {
@@ -157,5 +158,3 @@ export class DotCardView {
         return this.el.shadowRoot.querySelectorAll('dot-card-contentlet');
     }
 }
-
-
