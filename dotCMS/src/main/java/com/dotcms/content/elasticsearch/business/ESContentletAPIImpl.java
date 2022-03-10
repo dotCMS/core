@@ -71,6 +71,7 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -6716,6 +6717,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
 
                     buffy.append(" +languageId:" + contentlet.getLanguageId());
+
+                    if (Config.getBooleanProperty("unique_per_site", true)) {
+                        if (!UtilMethods.isSet(contentlet.getHost())) {
+                            populateHost(contentlet);
+                        }
+
+                        buffy.append(" +conHost:" + contentlet.getHost());
+                    }
 
                     buffy.append(" +").append(contentlet.getContentType().variable()).append(StringPool.PERIOD)
                             .append(field.getVelocityVarName()).append(ESUtils.SHA_256)
