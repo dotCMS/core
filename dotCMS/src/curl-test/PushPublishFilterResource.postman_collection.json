@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "f13c2f5a-7cc5-4ed8-8b15-f07599894dbf",
+		"_postman_id": "93f937d9-6c07-4d0e-b18a-b863707aaae2",
 		"name": "PushPublishFilterResource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -15,18 +15,9 @@
 							"var jsonData = pm.response.json();",
 							"",
 							"pm.test(\"body check\", function () {",
-							"    pm.expect(jsonData.entity.body).to.eql('This is the body');",
+							"    pm.expect(jsonData.entity[0].key).to.eql('ForcePush.yml');",
+							"    pm.expect(jsonData.entity[0].roles).to.eql('DOTCMS_BACK_END_USER');",
 							"});",
-							"",
-							"pm.test(\"friendlyName check\", function () {",
-							"    pm.expect(jsonData.entity.friendlyName).to.eql('This is a postman test description');",
-							"});",
-							"",
-							"pm.test(\"Title check\", function () {",
-							"    pm.expect(jsonData.entity.title).to.eql('PostMan Test');",
-							"});",
-							"",
-							"pm.collectionVariables.set(\"templateIdToArchive\", jsonData.entity.identifier);",
 							""
 						],
 						"type": "text/javascript"
@@ -158,7 +149,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"key\":\"NoWorkflow3.yml\",\n    \"title\":\"Push without Wofklows\",\n    \"defaultFilter\":\"false\",\n    \"roles\":\"DOTCMS_BACK_END_USER\",\n    \"filters\": {\n        \"excludeQuery\": \"\",\n        \"excludeClasses\": [\"Host\", \"Workflow\", \"OSGI\"],\n        \"dependencies\": true,\n        \"excludeDependencyQuery\": \"\",\n        \"excludeDependencyClasses\": [\"Host\", \"Workflow\"],\n        \"forcePush\": false,\n        \"relationships\": false\n    }\n}",
+					"raw": "{\n    \"key\":\"NoWorkflow.yml\",\n    \"title\":\"Push without Wofklows\",\n    \"defaultFilter\":\"false\",\n    \"roles\":\"DOTCMS_BACK_END_USER\",\n    \"filters\": {\n        \"excludeQuery\": \"\",\n        \"excludeClasses\": [\"Host\", \"Workflow\", \"OSGI\"],\n        \"dependencies\": true,\n        \"excludeDependencyQuery\": \"\",\n        \"excludeDependencyClasses\": [\"Host\", \"Workflow\"],\n        \"forcePush\": false,\n        \"relationships\": false\n    }\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -381,7 +372,7 @@
 				"method": "DELETE",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/pushpublish/filters/NoWorkflow3.yml",
+					"raw": "{{serverURL}}/api/v1/pushpublish/filters/NoWorkflow.yml",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -390,7 +381,7 @@
 						"v1",
 						"pushpublish",
 						"filters",
-						"NoWorkflow3.yml"
+						"NoWorkflow.yml"
 					]
 				}
 			},
@@ -402,7 +393,7 @@
 				"method": "DELETE",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/pushpublish/filters/NoWorkflow3.yml",
+					"raw": "{{serverURL}}/api/v1/pushpublish/filters/TestPPFilter.yml",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -411,7 +402,7 @@
 						"v1",
 						"pushpublish",
 						"filters",
-						"NoWorkflow3.yml"
+						"TestPPFilter.yml"
 					]
 				}
 			},
