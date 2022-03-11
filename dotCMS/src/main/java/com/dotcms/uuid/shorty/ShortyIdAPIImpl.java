@@ -66,7 +66,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
 
 
     try {
-      if(shortStr.startsWith(TempFileAPI.TEMP_RESOURCE_PREFIX) && APILocator.getTempFileAPI().isTempResource(shortStr)) {
+      if(true) {
         return Optional.of(new ShortyId(shortStr, shortStr, ShortType.TEMP_FILE, ShortType.TEMP_FILE));
       }
 
