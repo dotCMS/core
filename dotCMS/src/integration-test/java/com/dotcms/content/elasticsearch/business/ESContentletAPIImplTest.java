@@ -1057,9 +1057,8 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     @Test
     public void savingFieldWithUniqueFieldInTheSameHostUniquePerSiteToFalse() throws DotDataException, DotSecurityException {
 
-        final boolean uniquePerSite = ConfigTestHelper.getBooleanProperty("unique_per_site",
-                true);
-        ConfigTestHelper.setProperty("unique_per_site", false);
+        final boolean uniquePerSite = ESContentletAPIImpl.getUniquePerSite();
+        ESContentletAPIImpl.setUniquePerSite(false);
 
         try {
             final Field uniqueTextField = new FieldDataGen()
@@ -1093,7 +1092,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                         "Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s).");
             }
         } finally {
-            Config.setProperty("unique_per_site", uniquePerSite);
+            ESContentletAPIImpl.setUniquePerSite(uniquePerSite);
         }
     }
 
@@ -1154,16 +1153,15 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      * - Create two  {@link Contentlet} with the same value in the unique field in different hosts
      * - set the unique_per_site properties to false
      *
-     * Should: Save successfully the two {@link Contentlet}
+     * Should: Throw a RuntimeException with the message: "Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s)."
      * @throws DotDataException
      * @throws DotSecurityException
      */
     @Test
     public void savingFieldWithUniqueFieldInDifferentHostUniquePerSiteToFalse() throws DotDataException, DotSecurityException {
 
-        final boolean uniquePerSite = ConfigTestHelper.getBooleanProperty("unique_per_site",
-                true);
-        ConfigTestHelper.setProperty("unique_per_site", false);
+        final boolean uniquePerSite = ESContentletAPIImpl.getUniquePerSite();
+        ESContentletAPIImpl.setUniquePerSite(false);
 
         try {
 
@@ -1200,7 +1198,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                         "Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s).");
             }
         } finally {
-            Config.setProperty("unique_per_site", uniquePerSite);
+            ESContentletAPIImpl.setUniquePerSite(uniquePerSite);
         }
 
     }
