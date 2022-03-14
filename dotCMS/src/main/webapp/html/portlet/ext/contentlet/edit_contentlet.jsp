@@ -223,9 +223,8 @@
 	<input name="whereToSend" id="wfWhereToSend" type="hidden" value="">
 	<input name="wfiWantTo" id="wfiWantTo" type="hidden" value="">
 	<input name="wfFilterKey" id="wfFilterKey" type="hidden" value="">
+	<input name="wfTimezoneId" id="wfTimezoneId" type="hidden" value="">
 
-
-	<!-- HERE -->
 	<div dojoAttachPoint="cmsFileBrowserImage" currentView="thumbnails" jsId="cmsFileBrowserImage" onFileSelected="addFileImageCallback" mimeTypes="image" sortBy="modDate" sortByDesc="true" dojoType="dotcms.dijit.FileBrowserDialog"></div>
 	<div dojoAttachPoint="cmsFileBrowserFile" currentView="list" jsId="cmsFileBrowserFile" onFileSelected="addFileCallback" dojoType="dotcms.dijit.FileBrowserDialog"></div>
 
@@ -597,11 +596,15 @@
             }
         });
 
+<% 
+    final String titleFieldValue = (contentlet != null ? contentlet.getTitle() : "").replace("'", "\'");
+%>
         var customEvent = document.createEvent("CustomEvent");
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "edit-contentlet-loaded",
             data: {
-                contentType: '<%=CacheLocator.getContentTypeCache().getStructureByInode(structure.getInode() ).getName()%>'
+                contentType: '<%=CacheLocator.getContentTypeCache().getStructureByInode(structure.getInode() ).getName()%>',
+                pageTitle: "<%=titleFieldValue%>"
             }
         });
         setTimeout(function() {
@@ -731,4 +734,3 @@ if(!InodeUtils.isSet(inode) && UtilMethods.isSet(sib) && !UtilMethods.isSet(popu
 
 
 %>
-

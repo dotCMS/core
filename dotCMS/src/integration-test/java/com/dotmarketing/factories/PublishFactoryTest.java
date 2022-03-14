@@ -102,6 +102,8 @@ public class PublishFactoryTest extends IntegrationTestBase {
             //Adding page to block cache.
             CacheLocator.getBlockPageCache().add(page, dummyText, cacheParameters);
 
+            Thread.sleep(2000);//Added b/c of the Debounce change over the BlockPageCache
+
             String cachedPageText = CacheLocator.getBlockPageCache().get(page, cacheParameters);
 
             //Test that page is cached.

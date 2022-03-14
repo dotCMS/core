@@ -1,10 +1,7 @@
 package com.dotcms.contenttype.model.field;
 
-import com.dotcms.content.model.FieldValue;
+import com.dotcms.content.model.FieldValueBuilder;
 import com.dotcms.content.model.type.date.DateTimeFieldType;
-import com.dotmarketing.portlets.rules.parameter.type.DateTimeType;
-import java.time.Instant;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -68,11 +65,12 @@ public abstract class DateTimeField extends Field {
 
 	/**
 	 * {@inheritDoc}
-	 */
+     * @return
+     */
 	@Override
-	public Optional<FieldValue<?>> fieldValue(Object value) {
+	public Optional<FieldValueBuilder> fieldValue(final Object value) {
 		if (value instanceof Date) {
-			return Optional.of(DateTimeFieldType.of(((Date) value).toInstant()));
+			return Optional.of(DateTimeFieldType.builder().value(((Date) value).toInstant()));
 		}
 		return Optional.empty();
 	}

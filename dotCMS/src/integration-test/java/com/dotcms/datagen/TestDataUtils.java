@@ -10,6 +10,7 @@ import com.dotcms.contenttype.model.field.CustomField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.HiddenField;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.KeyValueField;
@@ -31,6 +32,7 @@ import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
+import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -2085,8 +2087,19 @@ public class TestDataUtils {
         return newContentTypeFieldTypesGalore(contentTypeName,null);
     }
 
+    public static ContentType newContentTypeFieldTypesGalore(final Category parent) {
+        final String contentTypeName = String.format("WithAllAvailableFieldTypes%s",System.nanoTime());
+        return newContentTypeFieldTypesGalore(contentTypeName,null, parent);
+    }
+
+    public static ContentType newContentTypeFieldTypesGalore(final String contentTypeName, final Set<String> workflowIds) {
+        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+        final Optional<Category> anyTopLevelCategory = Try.of(()->categoryAPI.findTopLevelCategories(APILocator.systemUser(), false).stream().findAny()).get();
+        return newContentTypeFieldTypesGalore(contentTypeName,workflowIds, anyTopLevelCategory.orElse(null));
+    }
+
     @WrapInTransaction
-    public static ContentType newContentTypeFieldTypesGalore(final String contentTypeName, Set<String> workflowIds) {
+    public static ContentType newContentTypeFieldTypesGalore(final String contentTypeName, Set<String> workflowIds, final Category parent) {
 
         ContentType contentType = null;
         try {
@@ -2106,6 +2119,14 @@ public class TestDataUtils {
 
                 List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
 
+                fields.add(
+                        new FieldDataGen()
+                                .name("hiddenBool")
+                                .velocityVarName("hiddenBool")
+                                .type(HiddenField.class)
+                                .dataType(DataTypes.BOOL)
+                                .next()
+                );
                 fields.add(
                         new FieldDataGen()
                                 .name("hostFolder")
@@ -2246,16 +2267,13 @@ public class TestDataUtils {
                 );
 
                 //Category field
-                final Collection<Category> topLevelCategories = APILocator.getCategoryAPI()
-                        .findTopLevelCategories(APILocator.systemUser(), false);
-                final Optional<Category> anyTopLevelCategory = topLevelCategories.stream()
-                        .findAny();
-
-                anyTopLevelCategory.map(category -> new FieldDataGen()
-                        .type(CategoryField.class)
-                        .defaultValue(null)
-                        .values(category.getInode())
-                        .next()).ifPresent(fields::add);
+                if(null != parent) {
+                    fields.add(new FieldDataGen()
+                            .name("categoryField")
+                            .velocityVarName("categoryField")
+                            .type(CategoryField.class)
+                            .values(parent.getInode()).next());
+                }
 
                 contentType = new ContentTypeDataGen()
                         .baseContentType(BaseContentType.CONTENT)

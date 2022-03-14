@@ -47,7 +47,7 @@ public interface FieldAPI {
 	 * 
 	 * @return List of baseFieldTypes
 	 */
-	List<Class> fieldTypes();
+	List<Class<? extends Field>> fieldTypes();
 	
 	/**
 	 * Register a field type to the list of field types. Still not implemented.

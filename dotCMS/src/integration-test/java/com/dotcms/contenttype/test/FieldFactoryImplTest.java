@@ -608,7 +608,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 	@Test
 	public void testFieldImplClasses() throws Exception {
 
-		for (Class clazz : APILocator.getContentTypeFieldAPI().fieldTypes()) {
+		for (Class<? extends Field> clazz : APILocator.getContentTypeFieldAPI().fieldTypes()) {
 			Field newField = FieldBuilder.builder(clazz).contentTypeId("test")
 					.name("test" + clazz.getSimpleName())
 					.variable(TEST_VAR_PREFIX + clazz.getSimpleName()).build();

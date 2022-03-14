@@ -1,5 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 import static com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.ES_TRACK_TOTAL_HITS;
 import static com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.ES_TRACK_TOTAL_HITS_DEFAULT;
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
@@ -20,6 +21,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
@@ -38,12 +40,14 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageDataGen;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
@@ -59,6 +63,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.stream.Collectors;
+import junit.framework.TestCase;
+import org.apache.commons.lang3.BooleanUtils;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -902,5 +909,124 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         
         assertNull(contentlet.getMap().get(Contentlet.TITTLE_KEY));
     }
+
+    /**
+     * Method to test: {@link ESContentFactoryImpl#loadJsonField(String, Field)} ()} <br>
+     * Lets create a few random Contentlets and test that the properties we know for sure they have
+     * can be fetched via json
+     */
+    @Test
+    public void Test_load_Json_Field() throws DotDataException {
+        final Contentlet fileAssetContent = TestDataUtils.getFileAssetContent(true, 1L);
+        final List<String> fileAssetExpectedFields = ImmutableList
+                .of("fileName", "fileAsset", "title", "sortOrder");
+        validateLoadJsonField(fileAssetContent, fileAssetExpectedFields);
+
+        final List<String> blogExpectedFields = ImmutableList
+                .of("title", "urlTitle", "author", "sysPublishDate", "body", "hostFolder");
+        final Contentlet blogContent = TestDataUtils.getBlogContent(true, 1L);
+        validateLoadJsonField(blogContent, blogExpectedFields);
+
+        final List<String> employeeExpectedFields = ImmutableList
+                .of("firstName", "lastName", "photo", "mobile", "fax", "email");
+        final Contentlet employeeContent = TestDataUtils.getEmployeeContent(true, 1L, null);
+        validateLoadJsonField(employeeContent, employeeExpectedFields);
+    }
+
+    /**
+     * given the list of fields and a contentlet we validate the fields can be retrieved
+     * @param contentlet
+     * @param expectedFields
+     * @throws DotDataException
+     */
+    private void validateLoadJsonField(final Contentlet contentlet,
+            final List<String> expectedFields)
+            throws DotDataException {
+        for (final Field field : contentlet.getContentType().fields().stream()
+                .filter(field -> expectedFields.contains(field.variable()))
+                .collect(Collectors.toList())) {
+            final Object fieldValue = instance.loadJsonField(contentlet.getInode(), field);
+            if (null != contentlet.get(field.variable())) {
+                assertNotNull("field: " + field.variable() + " shouldn't be null", fieldValue);
+            }
+        }
+    }
+
+    /**
+     * This test how {@link com.dotcms.content.elasticsearch.business.ESContentFactoryImpl#save(Contentlet)} persists contentlet when instructed to use the contentlet-as-json field
+     * The other dynamic field columns shouldn't be used to store anything
+     * @throws Exception
+     */
+    @Test
+    public void Test_Nulled_Out_Columns() throws Exception {
+
+        final boolean defaultValue = Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
+        Config.setProperty(SAVE_CONTENTLET_AS_JSON, true);
+        try {
+
+            final String hostName = "custom" + System.currentTimeMillis() + ".dotcms.com";
+            final Host site = new SiteDataGen().name(hostName).nextPersisted(true);
+            final Folder folder = new FolderDataGen().site(site).nextPersisted();
+            final ContentType contentType = TestDataUtils
+                    .newContentTypeFieldTypesGalore();
+
+            final Contentlet in = new ContentletDataGen(contentType).host(site)
+                    .languageId(1)
+                    .setProperty("title", "lol")
+                    .setProperty("hostFolder", folder.getIdentifier())
+                    .setProperty("textFieldNumeric",0)
+                    .setProperty("textFieldFloat",0.0F)
+                    .setProperty("textField","text")
+                    .setProperty("textAreaField", "Desc")
+                    .setProperty("dateField",new Date())
+                    .setProperty("dateTimeField",new Date())
+                    .nextPersisted();
+
+            assertNotNull(in);
+            final List<Map<String, Object>> maps = new DotConnect()
+                    .setSQL("select * from contentlet where inode = ?").addParam(in.getInode())
+                    .loadObjectResults();
+            final Map<String, Object> values = maps.get(0);
+            assertNotNull(values.get("contentlet_as_json"));
+
+            validateNulledOutField(values, "date");
+            validateNulledOutField(values, "text");
+            validateNulledOutField(values, "text_area");
+            validateNulledOutField(values, "integer");
+            validateNulledOutField(values, "float");
+            validateNulledOutField(values, "bool");
+
+        } finally {
+            Config.setProperty(SAVE_CONTENTLET_AS_JSON, defaultValue);
+        }
+    }
+
+
+    private void validateNulledOutField(final Map<String, Object> values, final String prefix) {
+        for (int i = 1; i <= 25; i++) {
+            final String key = prefix + i;
+            final Object object = values.get(key);
+            if ("integer".equals(prefix) || "float".equals(prefix)) {
+                final Number number = (Number) object;
+                assertEquals("field : " + key + " should has value 0. ", 0, number.intValue());
+            }
+            if ("text_area".equals(prefix) || "text".equals(prefix)) {
+                junit.framework.TestCase.assertNull("field: " + key + " should be null. ", object);
+            }
+            if ("date".equals(prefix)) {
+                junit.framework.TestCase.assertNull("field : " + key + " should be null. ", object);
+            }
+            if ("bool".equals(prefix)) {
+                if (object instanceof Number) {
+                    final Number number = (Number) object;
+                    assertFalse(BooleanUtils.toBooleanObject(number.intValue()));
+                }
+                if (object instanceof Boolean) {
+                    assertFalse(" field: " + key + " should be false ", (Boolean) object);
+                }
+            }
+        }
+    }
+
 
 }

@@ -23,6 +23,7 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.liferay.portal.util.ReleaseInfo"%>
+<%@ page import="com.dotmarketing.db.DbConnectionFactory" %>
 
 
 <%@ include file="/html/portlet/ext/cmsmaintenance/init.jsp"%>
@@ -388,7 +389,8 @@ function doReplace () {
   }
 }
 
-function doCreateZip(dataOnly){
+<% if (Config.getBooleanProperty("ALLOW_STARTER_ZIP_GENERATION_ON_DISK", false)) { %>
+function doCreateZip(dataOnly) {
    form = document.getElementById('cmsMaintenanceForm');
 	var action = "<portlet:actionURL>";
 	action += "<portlet:param name='struts_action' value='/ext/cmsmaintenance/view_cms_maintenance' />";
@@ -399,7 +401,19 @@ function doCreateZip(dataOnly){
 	form.action = action
 	form.submit();
 }
+<% } %>
 
+function downloadDb(downloadLocation) {
+    fetch('/api/v1/maintenance/_pgDumpAvailable', {method:'GET'} )
+    .then(response => response.text())
+    .then((data) => {
+        if (data !== 'true') {
+            alert("<%= LanguageUtil.get(pageContext,"PG-Dump-Unavailable") %>");
+            return;
+        }
+        location.href = downloadLocation;
+    });
+}
 
 function doDownloadZip(dataOnly){
    form = document.getElementById('cmsMaintenanceForm');
@@ -1428,31 +1442,55 @@ dd.leftdl {
                     <th><%= LanguageUtil.get(pageContext,"Import/Export-dotCMS-Content") %></th>
                     <th style="text-align:center;white-space:nowrap;" width="350"><%= LanguageUtil.get(pageContext,"Action") %></th>
                 </tr>
+                <% if (Config.getBooleanProperty("ALLOW_STARTER_ZIP_GENERATION_ON_DISK", false)) { %>
+                    <tr>
+                        <td><%= LanguageUtil.get(pageContext,"Backup-to-Zip-file") %></td>
+                        <td style="text-align:center;white-space:nowrap;">
+                            <div class="inline-form">
+                                <button dojoType="dijit.form.Button" onClick="doCreateZip('true');" iconClass="backupIcon">
+                                   <%= LanguageUtil.get(pageContext,"Backup-Data-Only") %>
+                                </button>
+                                <button dojoType="dijit.form.Button" onClick="doCreateZip('false');" iconClass="backupIcon">
+                                  <%= LanguageUtil.get(pageContext,"Backup-Data/Assets") %>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                <% } %>
                 <tr>
-                    <td><%= LanguageUtil.get(pageContext,"Backup-to-Zip-file") %></td>
+                    <td><%= LanguageUtil.get(pageContext,"Download-Assets") %></td>
                     <td style="text-align:center;white-space:nowrap;">
-						<div class="inline-form">
-							<button dojoType="dijit.form.Button" onClick="doCreateZip('true');" iconClass="backupIcon">
-							   <%= LanguageUtil.get(pageContext,"Backup-Data-Only") %>
-							</button>
-							<button dojoType="dijit.form.Button" onClick="doCreateZip('false');" iconClass="backupIcon">
-							  <%= LanguageUtil.get(pageContext,"Backup-Data/Assets") %>
-							</button>
-						</div>
+                        <div class="inline-form">
+                            <button dojoType="dijit.form.Button" onclick="location.href='/api/v1/maintenance/_downloadAssets'" iconClass="downloadIcon">
+                                <%= LanguageUtil.get(pageContext,"Download-Assets") %>
+                            </button>
+                        </div>
                     </td>
                 </tr>
+                <% if (DbConnectionFactory.isPostgres()) { %>
+                    <tr>
+                        <td><%= LanguageUtil.get(pageContext,"Download-DB-Dump") %></td>
+                        <td style="text-align:center;white-space:nowrap;">
+                            <div class="inline-form">
+                                <button dojoType="dijit.form.Button" onclick="downloadDb('/api/v1/maintenance/_downloadDb')" iconClass="backupIcon">
+                                    <%= LanguageUtil.get(pageContext,"Download-DB-Dump") %>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                <% } %>
                 <tr>
-                    <td><%= LanguageUtil.get(pageContext,"Download-Zip-file") %></td>
+                    <td><%= LanguageUtil.get(pageContext,"Download-Starter-ZIP") %></td>
                     <td style="text-align:center;white-space:nowrap;">
-						<div class="inline-form">
-							<button dojoType="dijit.form.Button" onClick="doDownloadZip('true');" iconClass="downloadIcon">
-							   <%= LanguageUtil.get(pageContext,"Download-Data-Only") %>
-							</button>
+                        <div class="inline-form">
+                            <button dojoType="dijit.form.Button" onClick="location.href='/api/v1/maintenance/_downloadStarter'" iconClass="downloadIcon">
+                                <%= LanguageUtil.get(pageContext,"Download-Data-Only") %>
+                            </button>
 
-							<button dojoType="dijit.form.Button" onClick="doDownloadZip('false');" iconClass="downloadIcon">
-							  <%= LanguageUtil.get(pageContext,"Download-Data/Assets") %>
-							</button>
-						</div>
+                            <button dojoType="dijit.form.Button" onClick="location.href='/api/v1/maintenance/_downloadStarterWithAssets'" iconClass="downloadIcon">
+                                <%= LanguageUtil.get(pageContext,"Download-Data/Assets") %>
+                            </button>
+                        </div>
                     </td>
                 </tr>
             </table>

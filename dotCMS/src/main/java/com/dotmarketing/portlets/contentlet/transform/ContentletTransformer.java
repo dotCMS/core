@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
-import com.dotcms.content.business.ContentletJsonAPI;
+import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
@@ -23,6 +23,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -265,7 +266,7 @@ public class ContentletTransformer implements DBTransformer {
         APILocator.getContentletAPI().copyProperties(contentlet, fieldsMap);
     }
 
-    private static Object getObjectValue(Map<String, Object> originalMap, Field field) {
+    private static Object getObjectValue(final Map<String, Object> originalMap, final Field field) {
         Object value;
         if (field.getFieldContentlet().startsWith("float") && originalMap
                 .get(field.getFieldContentlet()) instanceof Double) {
@@ -278,9 +279,19 @@ public class ContentletTransformer implements DBTransformer {
             value = originalMap.get(field.getFieldContentlet());
         }
 
-        //KeyValue objects must be returned as Maps
-        if(LegacyFieldTypes.KEY_VALUE.legacyValue().equals(field.getFieldType()) && value instanceof String ){
-            value = com.dotmarketing.portlets.structure.model.KeyValueFieldUtil.JSONValueToHashMap((String)value);
+        //KeyValue Fields must be returned as Maps
+        if (LegacyFieldTypes.KEY_VALUE.legacyValue().equals(field.getFieldType())
+                && value instanceof String) {
+            final String asString = value.toString();
+            try {
+                value = com.dotmarketing.portlets.structure.model.KeyValueFieldUtil
+                        .JSONValueToHashMap(asString);
+            } catch (Throwable e) {
+                Logger.warn(ContentletTransformer.class, () -> String
+                        .format("Failed to convert keyValue field `%s` to an actual json. An Empty will be returned instead. ",
+                                field.getVelocityVarName()));
+                value = Collections.emptyMap();
+            }
         }
 
         return value;

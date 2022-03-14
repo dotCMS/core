@@ -1,5 +1,8 @@
 package com.dotcms.saml;
 
+import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.UtilMethods;
+
 import java.io.Serializable;
 
 /**
@@ -34,9 +37,10 @@ public class Attributes implements Serializable {
 
 	private Attributes(final Builder builder) {
 
-		this.email        = builder.email;
-		this.lastName     = builder.lastName;
-		this.firstName    = builder.firstName;
+		final String uuid = UUIDUtil.uuid();
+		this.email        = UtilMethods.isSet(builder.email)?     builder.email:     uuid+"@dotcms.com";
+		this.lastName     = UtilMethods.isSet(builder.lastName)?  builder.lastName:  uuid+"lastName";
+		this.firstName    = UtilMethods.isSet(builder.firstName)? builder.firstName: uuid+"firstName";
 		this.addRoles     = builder.addRoles;
 		this.roles        = builder.roles;
 		this.nameID       = builder.nameID;

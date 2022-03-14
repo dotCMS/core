@@ -7,12 +7,21 @@ package com.liferay.util;
 public class SystemEnvironmentProperties {
 
     /**
-     * Returns the system environment value for the given variable name
+     * Returns the system environment value for the given variable name if it finds one
+     * otherwise will try to prepend DOT_
+     *
      * @param variableName {@link String}
      * @return
      */
     public String getVariable(final String variableName){
-        return System.getenv(variableName);
+        
+        String variable = System.getenv(variableName);
+        if(variable!=null) {
+            return variable;
+        }
+        return System.getenv("DOT_"+ variableName);
+        
+
     }
 
 }

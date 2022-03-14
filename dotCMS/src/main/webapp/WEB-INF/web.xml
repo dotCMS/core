@@ -79,7 +79,11 @@
 		<filter-class>com.dotmarketing.filters.CMSFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
-	
+    <filter>
+        <filter-name>VisitorFilter</filter-name>
+        <filter-class>com.dotcms.visitor.filter.servlet.VisitorFilter</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
 	<filter>
 		<filter-name>AutoLoginFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.AutoLoginFilter</filter-class>
@@ -158,7 +162,10 @@
         <filter-name>VanityURLFilter</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
-	
+    <filter-mapping>
+        <filter-name>VisitorFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
 	<filter-mapping>
 		<filter-name>AutoLoginFilter</filter-name>
 		<url-pattern>/*</url-pattern>
@@ -228,11 +235,6 @@
 			98
 		</load-on-startup>
 	</servlet>
-	<servlet>
-		<servlet-name>proxy</servlet-name>
-		<servlet-class>com.dotmarketing.osgi.OSGIProxyServlet</servlet-class>
-		<load-on-startup>0</load-on-startup>
-	</servlet>
 	
 	<servlet>
 		<servlet-name>Init</servlet-name>
@@ -256,11 +258,11 @@
 		<servlet-name>CategoriesServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.JSONCategoriesServlet</servlet-class>
 	</servlet>
-	
-	<servlet>
-		<servlet-name>login_edit_mode</servlet-name>
-		<servlet-class>com.dotmarketing.servlets.LoginEditModeServlet</servlet-class>
-	</servlet>
+    
+    <servlet>
+        <servlet-name>login_edit_mode</servlet-name>
+        <servlet-class>com.dotmarketing.servlets.LoginEditModeServlet</servlet-class>
+    </servlet>
 	
 	<servlet>
 		<servlet-name>TailLogServlet</servlet-name>
@@ -302,7 +304,7 @@
 		</init-param>
 		<init-param>
 			<param-name>config</param-name>
-			<param-value>/WEB-INF/struts-config.xml,/WEB-INF/struts-config-ext.xml,/WEB-INF/struts-cms.xml</param-value>
+			<param-value>/WEB-INF/struts-config.xml,/WEB-INF/struts-config-ext.xml</param-value>
 		</init-param>
 		<init-param>
 			<param-name>debug</param-name>
@@ -318,12 +320,11 @@
 		</init-param>
 		<load-on-startup>2</load-on-startup>
 	</servlet>
-	
-	<servlet>
-		<servlet-name>ImageServlet</servlet-name>
-		<servlet-class>com.liferay.portal.servlet.ImageServlet</servlet-class>
-		<load-on-startup>4</load-on-startup>
-	</servlet>
+    <servlet>
+           <servlet-name>ImageServlet</servlet-name>
+           <servlet-class>com.liferay.portal.servlet.ImageServlet</servlet-class>
+           <load-on-startup>400</load-on-startup>
+    </servlet>
 	<servlet>
 		<servlet-name>WebDav</servlet-name>
 		<servlet-class>com.dotcms.repackage.com.bradmcevoy.http.MiltonServlet</servlet-class>
@@ -333,10 +334,6 @@
 		</init-param>
 	</servlet>
 	
-	<servlet>
-		<servlet-name>ScheduledJobs</servlet-name>
-		<servlet-class>com.dotmarketing.servlets.RunScheduledJobServlet</servlet-class>
-	</servlet>
 	<servlet>
 		<servlet-name>BinaryExporterServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.BinaryExporterServlet</servlet-class>
@@ -352,10 +349,6 @@
 		<servlet-name>JSONTagsServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.JSONTagsServlet</servlet-class>
 	</servlet>
-    <servlet>
-       <servlet-name>springmvc</servlet-name>
-       <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
-    </servlet>
     
     <servlet>
     	<servlet-name>CSSPreProcessServlet</servlet-name>
@@ -379,15 +372,6 @@
 		<async-supported>true</async-supported>
 	</servlet>
 	
-    <servlet>
-		<servlet-name>XMLSitemapServlet</servlet-name>
-		<servlet-class>com.dotcms.xmlsitemap.XMLSitemapServlet</servlet-class>
-	</servlet>
-	
-    <servlet>
-    	<servlet-name>PreviewDesignTemplateServlet</servlet-name>
-    	<servlet-class>com.dotmarketing.portlets.templates.design.servlets.PreviewDesignTemplateServlet</servlet-class>
-    </servlet>
 	<servlet>
 		<servlet-name>DotGraphQLHttpServlet</servlet-name>
 		<servlet-class>com.dotcms.graphql.DotGraphQLHttpServlet</servlet-class>
@@ -414,16 +398,7 @@
 	END OF TEST FRAMEWORK SERVLETS -->
 	
     <!-- DOTCMS SERVLET-MAPPINGS -->
-	<servlet-mapping>
-        <servlet-name>proxy</servlet-name>
-        <url-pattern>/app/*</url-pattern>
-    </servlet-mapping>
-    
-    <servlet-mapping>
-      <servlet-name>springmvc</servlet-name>
-      <url-pattern>/spring/*</url-pattern>
-    </servlet-mapping>
-    
+
     <servlet-mapping>
       <servlet-name>CSSPreProcessServlet</servlet-name>
       <url-pattern>/DOTLESS/*</url-pattern>
@@ -447,7 +422,10 @@
         <servlet-name>login_edit_mode</servlet-name>
         <url-pattern>/edit/*</url-pattern>
     </servlet-mapping>
-    
+    <servlet-mapping>
+        <servlet-name>ImageServlet</servlet-name>
+        <url-pattern>/image/company_logo</url-pattern>
+    </servlet-mapping>
 	<servlet-mapping>
         <servlet-name>login_edit_mode</servlet-name>
         <url-pattern>/admin/*</url-pattern>
@@ -462,11 +440,6 @@
         <servlet-name>login_edit_mode</servlet-name>
         <url-pattern>/admin</url-pattern>
     </servlet-mapping>
-    
-	<servlet-mapping>
-		<servlet-name>ScheduledJobs</servlet-name>
-		<url-pattern>/dotScheduledJobs</url-pattern>
-	</servlet-mapping>
 	
 	<servlet-mapping>
 		<servlet-name>TailLogServlet</servlet-name>
@@ -512,17 +485,9 @@
 	</servlet-mapping>
 	<servlet-mapping>
 		<servlet-name>MainServlet</servlet-name>
-		<url-pattern>/dotCMS/*</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>MainServlet</servlet-name>
 		<url-pattern>/dotAdmin/c/*</url-pattern>
 	</servlet-mapping>
-	
-	<servlet-mapping>
-		<servlet-name>ImageServlet</servlet-name>
-		<url-pattern>/image/*</url-pattern>
-	</servlet-mapping>
+
     <servlet-mapping>
 	    <servlet-name>BinaryExporterServlet</servlet-name>
 	    <url-pattern>/contentAsset/*</url-pattern>
@@ -546,15 +511,6 @@
 		<url-pattern>/api/*</url-pattern>
 	</servlet-mapping>
 	
-	<servlet-mapping>
-		<servlet-name>XMLSitemapServlet</servlet-name>
-		<url-pattern>/sitemap_index.xml</url-pattern>
-	</servlet-mapping>
-	
-	<servlet-mapping>
-		<servlet-name>PreviewDesignTemplateServlet</servlet-name>
-		<url-pattern>/servlets/template/design/preview</url-pattern>
-	</servlet-mapping>
 	<!--END DOTMARKETING SERVLET-MAPPING-->
 	
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->

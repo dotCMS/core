@@ -181,7 +181,7 @@ File toUpload
 
 artifacts {
     if (fileToUpload.length() > 0) {
-        toUpload = file(new File(fileToUpload))
+        toUpload = file(project.file(fileToUpload))
         def extension = toUpload.name.substring(toUpload.name.lastIndexOf(".") + 1, toUpload.name.length())
         def fileName = toUpload.name.replace("." + extension, "")
         archives new DefaultPublishArtifact(fileName, extension, extension, null, new Date(), toUpload)

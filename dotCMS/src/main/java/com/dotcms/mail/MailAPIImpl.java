@@ -21,6 +21,8 @@ public class MailAPIImpl implements MailAPI {
             new MailAPIImpl().loadMailSessionFromContext()
                     .orElse(new MailAPIImpl().createNewMailContext()));
 
+    private static Lazy<String> protocol = Lazy.of(() -> new MailAPIImpl().getProtocol());
+
     private final Properties properties;
 
     public MailAPIImpl() {
@@ -35,6 +37,23 @@ public class MailAPIImpl implements MailAPI {
     @Override
     public Session getMailSession() {
         return mailSessionHolder.get();
+    }
+
+    private String getProtocol(){
+        return this.properties.containsKey(Keys.TRANSPORT_PROTOCOL.getValue())
+                ? this.properties.getProperty(Keys.TRANSPORT_PROTOCOL.getValue()) : DEFAULT_MAIL_PROTOCOL;
+    }
+
+    @Override
+    public int getConnectionPort(){
+        return this.properties.containsKey("mail." + protocol.get() + ".port")?
+                Integer.parseInt(this.properties.getProperty("mail." + protocol.get() + ".port")): DEFAULT_MAIL_PORT;
+    }
+
+    @Override
+    public String getConnectionHost(){
+        return this.properties.containsKey("mail." + protocol.get() + ".host")?
+                this.properties.getProperty("mail." + protocol.get() + ".host"):"localhost";
     }
 
     @Override
@@ -62,7 +81,6 @@ public class MailAPIImpl implements MailAPI {
     private Session createNewMailContext() {
 
         final Session session = Session.getInstance(this.properties, createAuthenticator());
-
         // bind session if not already there
         if (!hasMailInContext()) {
             Try.run(() -> new InitialContext().bind(MAIL_JNDI_NAME, session))
@@ -75,19 +93,22 @@ public class MailAPIImpl implements MailAPI {
     @VisibleForTesting
     Authenticator createAuthenticator() {
 
-        final boolean enabled = "true".equalsIgnoreCase(this.properties.getProperty(Keys.ENABLED.getValue()));
+        final boolean enabled = "true".equalsIgnoreCase(this.properties.getProperty("mail." + protocol.get() + ".auth"));
 
         if (!enabled) {
 
             return null;
         }
 
-        final String user = this.properties.containsKey(Keys.SMTP_USER.getValue())?
-                                this.properties.getProperty(Keys.SMTP_USER.getValue()):
+        final String userKey = "mail." + protocol.get() + ".user";
+        final String passwordKey = "mail." + protocol.get() + ".password";
+
+        final String user = this.properties.containsKey(userKey)?
+                                this.properties.getProperty(userKey):
                                 this.properties.getProperty(Keys.USER.getValue());
 
-        final String password = this.properties.containsKey(Keys.SMTP_PASSWORD.getValue())?
-                                this.properties.getProperty(Keys.SMTP_PASSWORD.getValue()):
+        final String password = this.properties.containsKey(passwordKey)?
+                                this.properties.getProperty(passwordKey):
                                 this.properties.getProperty(Keys.PASSWORD.getValue());
 
         if(user==null || password==null) {

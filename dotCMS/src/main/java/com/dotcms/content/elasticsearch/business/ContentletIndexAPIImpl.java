@@ -3,6 +3,7 @@ package com.dotcms.content.elasticsearch.business;
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotmarketing.common.reindex.ReindexThread.ELASTICSEARCH_CONCURRENT_REQUESTS;
 import static com.dotmarketing.util.StringUtils.builder;
+
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
@@ -16,10 +17,10 @@ import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.BulkProcessorListener;
 import com.dotmarketing.common.reindex.ReindexEntry;
@@ -44,9 +45,9 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.ThreadUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-import com.google.gson.Gson;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
@@ -103,6 +104,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     private static final ESIndexAPI esIndexApi = new ESIndexAPI();
     private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
 
+    private static ObjectMapper objectMapper = DotObjectMapperProvider.createDefaultMapper();
 
     public ContentletIndexAPIImpl() {
         queueApi = APILocator.getReindexQueueAPI();
@@ -433,8 +435,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
       long elapsedTime = reindexTimeElapsedInLong();
       if (elapsedTime > 0) {
-        return Optional.ofNullable(
-            Duration.ofMillis(reindexTimeElapsedInLong()).toString().substring(2).replaceAll("(\\d[HMS])(?!$)", "$1 ").toLowerCase());
+        return Optional.of(DateUtil.humanReadableFormat(Duration.ofMillis(reindexTimeElapsedInLong())).toLowerCase());
       }
     } catch (Exception e) {
       Logger.debug(this, "unable to parse time:" + e, e);
@@ -762,13 +763,14 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
             final IndiciesInfo info = Sneaky
                     .sneak(() -> APILocator.getIndiciesAPI().loadIndicies());
-            final Gson gson = new Gson(); // todo why do we create a new Gson everytime
             String mapping = null;
 
             try {
 
                 if (this.isWorking(contentlet)) {
-                    mapping = gson.toJson(mappingAPI.toMap(contentlet));
+
+                    mapping = Try.of(()->objectMapper.writeValueAsString(mappingAPI.toMap(contentlet))).getOrElseThrow(
+                            DotRuntimeException::new);
                     if (!forReindex || info.getReindexWorking() == null) {
                         bulk.add(new IndexRequest(info.getWorking(), "_doc", id)
                                 .source(mapping, XContentType.JSON));
@@ -781,7 +783,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
                 if (this.isLive(contentlet)) {
                     if (mapping == null) {
-                        mapping = gson.toJson(mappingAPI.toMap(contentlet));
+                        mapping = Try.of(()->objectMapper.writeValueAsString(mappingAPI.toMap(contentlet))).getOrElseThrow(
+                                DotRuntimeException::new);
                     }
                     if (!forReindex || info.getReindexLive() == null) {
                         bulk.add(new IndexRequest(info.getLive(), "_doc", id)

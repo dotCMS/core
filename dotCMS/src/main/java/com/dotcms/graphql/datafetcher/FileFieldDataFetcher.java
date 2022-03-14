@@ -10,6 +10,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import io.vavr.control.Try;
 import java.util.Optional;
 
 public class FileFieldDataFetcher implements DataFetcher<Contentlet> {
@@ -29,13 +30,14 @@ public class FileFieldDataFetcher implements DataFetcher<Contentlet> {
                 .findContentletByIdentifierOrFallback(fileAssetIdentifier, contentlet.isLive(), contentlet.getLanguageId(),
                     user, true);
 
-            FileAsset fileAsset = null;
+            Contentlet fileAsset = null;
 
             if(fileAsContentOptional.isPresent()) {
                 final Contentlet fileAsContent =
                 new DotTransformerBuilder().defaultOptions().content(fileAsContentOptional.get()).build().hydrate().get(0);
 
-                fileAsset = APILocator.getFileAssetAPI().fromContentlet(fileAsContent);
+                fileAsset = Try.of(()->(Contentlet)APILocator.getFileAssetAPI()
+                        .fromContentlet(fileAsContent)).getOrElse(fileAsContent);
             }
 
             return fileAsset;

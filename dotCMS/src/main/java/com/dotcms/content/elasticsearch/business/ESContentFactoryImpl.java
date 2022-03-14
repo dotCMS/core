@@ -12,10 +12,13 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_IN_
 import static com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTokens;
 
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.content.business.ContentletJsonAPI;
+import com.dotcms.content.business.json.ContentletJsonAPI;
+import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.notifications.bean.NotificationLevel;
@@ -268,6 +271,47 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	    Map m=(Map)results.get(0);
 	    return m.get(fieldContentlet);
 	}
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected Object loadJsonField(final String inode,
+            final com.dotcms.contenttype.model.field.Field field) throws DotDataException {
+
+        String loadJsonFieldValueSQL = null;
+        if (DbConnectionFactory.isPostgres()) {
+            loadJsonFieldValueSQL = String
+                    .format("SELECT contentlet_as_json->'fields'->'%s'->>'value' as value  FROM contentlet WHERE contentlet_as_json @> '{\"fields\":{\"%s\":{}}}' and inode = ? ",
+                            field.variable(), field.variable());
+        } else {
+            if (DbConnectionFactory.isMsSql()) {
+                loadJsonFieldValueSQL = String
+                        .format("SELECT JSON_VALUE(contentlet_as_json,'$.fields.%s.value') as value FROM contentlet WHERE JSON_VALUE(contentlet_as_json,'$.fields.%s.value') IS NOT null AND inode = ? ",
+                                field.variable(), field.variable());
+            }
+        }
+        //if we were able to set the query then give it a try executing it.
+        if (UtilMethods.isSet(loadJsonFieldValueSQL)) {
+            //if the attribute is missing for some reason ms-sql might not like it. we better try-catch this.
+            final String finalQuery = loadJsonFieldValueSQL;
+            return Try.of(() -> new DotConnect().setSQL(finalQuery).addParam(inode).getString("value"))
+                    .onFailure(throwable -> {
+                        Logger.warnAndDebug(ESContentFactoryImpl.class, String.format(
+                                "There was an error fetching field variable `%s` from inode `%s` null has been returned.",
+                                field.variable(), inode), throwable);
+                    }).getOrNull();
+        } else {
+            //If the db engine does not provide json support
+            //We can try parsing the fields directly.
+            final String json = new DotConnect()
+                    .setSQL("SELECT contentlet_as_json FROM contentlet WHERE inode=?")
+                    .addParam(inode).getString("contentlet_as_json");
+            final Optional<String> fieldValue = ContentletJsonHelper.INSTANCE.get()
+                    .fieldValue(json, field.variable());
+            return fieldValue.orElse(null);
+        }
+    }
 
 	@Override
 	protected void cleanField(String structureInode, Field field) throws DotDataException, DotStateException, DotSecurityException {
@@ -1924,12 +1968,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
 	@Override
-    public Contentlet save(Contentlet contentlet) throws DotDataException, DotStateException, DotSecurityException {
+    public Contentlet save(final Contentlet contentlet) throws DotDataException, DotStateException, DotSecurityException {
 	    return save(contentlet,null);
 	}
 
 	@Override
-    protected Contentlet save(Contentlet contentlet, String existingInode)
+    protected Contentlet save(final Contentlet contentlet, final String existingInode)
             throws DotDataException, DotStateException, DotSecurityException {
 
         final String inode = getInode(existingInode, contentlet);
@@ -1947,6 +1991,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
         REMOVABLE_KEY_SET.forEach(key -> toReturn.getMap().remove(key));
         contentlet.getMap().remove(Contentlet.CONTENTLET_AS_JSON);
         contentletCache.remove(inode);
+        final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
+        CacheLocator.getCSSCache().remove(identifier.getHostId(), identifier.getPath(), true);
+        CacheLocator.getCSSCache().remove(identifier.getHostId(), identifier.getPath(), false);
         return toReturn;
     }
 
@@ -1963,7 +2010,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
                     final String asJson = contentletJsonAPI.toJson(new Contentlet(map));
                     Logger.debug(ESContentletAPIImpl.class, asJson);
+                    //attach the json so it can be grabbed by the upsert downstream
                     contentlet.setProperty(Contentlet.CONTENTLET_AS_JSON, asJson);
+
                 } catch (DotDataException | JsonProcessingException e) {
                     final String error = String
                             .format("Error converting from json to contentlet with id: %s and inode: %s ",
@@ -1971,6 +2020,16 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     Logger.error(ESContentletAPIImpl.class, error, e);
                     throw new DotRuntimeException(error, e);
                 }
+        }
+        final ContentType contentType = contentlet.getContentType();
+        //Now collect all system fields from the content-type so can use them for clean up
+        final List<com.dotcms.contenttype.model.field.Field> systemFields = contentType.fields().stream()
+                .filter(field -> field.dataType() == DataTypes.SYSTEM).collect(Collectors.toList());
+
+        //Remove any system field from the incoming contentlet that could have made it this far.
+        //We need them for the contentlet json representation but down the upsert path they're only nuisance
+        for (final com.dotcms.contenttype.model.field.Field systemField : systemFields) {
+            contentlet.getMap().remove(systemField.variable());
         }
     }
 
@@ -1999,7 +2058,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
     private String getInode(final String existingInode, final Contentlet contentlet)
-            throws DotDataException, DotSecurityException {
+            throws DotDataException {
 
         final String inode;
         if(UtilMethods.isSet(existingInode)){
@@ -2065,19 +2124,28 @@ public class ESContentFactoryImpl extends ContentletFactory {
         upsertValues.add(contentlet.getLanguageId());
         upsertValues.add(jsonContentlet);
 
-        final Map<String, Object> fieldsMap = getFieldsMap(contentlet);
-
-        try {
-            addDynamicFields(upsertValues, fieldsMap,"date");
-            addDynamicFields(upsertValues, fieldsMap,"text");
-            addDynamicFields(upsertValues, fieldsMap,"text_area");
-            addDynamicFields(upsertValues, fieldsMap,"integer");
-            addDynamicFields(upsertValues, fieldsMap,"float");
-            addDynamicFields(upsertValues, fieldsMap,"bool");
-        } catch (JsonProcessingException e) {
-            throw new DotDataException(e);
+        if (APILocator.getContentletJsonAPI().isPersistContentletInColumns()) {
+            final Map<String, Object> fieldsMap = getFieldsMap(contentlet);
+            try {
+                addDynamicFields(upsertValues, fieldsMap, "date");
+                addDynamicFields(upsertValues, fieldsMap, "text");
+                addDynamicFields(upsertValues, fieldsMap, "text_area");
+                addDynamicFields(upsertValues, fieldsMap, "integer");
+                addDynamicFields(upsertValues, fieldsMap, "float");
+                addDynamicFields(upsertValues, fieldsMap, "bool");
+            } catch (JsonProcessingException e) {
+                throw new DotDataException(e);
+            }
+        } else {
+            // Dynamic columns are emptied out so they don't get to save anything.
+            // We're pretty much relying on the stuff we store as json
+            nullOutDynamicFields(upsertValues, "date");
+            nullOutDynamicFields(upsertValues, "text");
+            nullOutDynamicFields(upsertValues, "text_area");
+            nullOutDynamicFields(upsertValues, "integer");
+            nullOutDynamicFields(upsertValues, "float");
+            nullOutDynamicFields(upsertValues, "bool");
         }
-
         return upsertValues;
     }
 
@@ -2129,6 +2197,27 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 upsertValues.add(defaultValue);
             }
         }
+    }
+
+    /**
+     * Sets default values where
+     * 0 is set where there is supposed to be any numeric val,
+     * false is set where there was supposed to be a bool val and null everywhere else.
+     * @param upsertValues
+     * @param prefix
+     */
+    private void nullOutDynamicFields(final List<Object> upsertValues,  final String prefix){
+        Object defaultValue = null;
+        if ("integer".equals(prefix) || "float".equals(prefix)){
+            defaultValue = 0;
+        } else if ("bool".equals(prefix)){
+            defaultValue = Boolean.FALSE;
+        }
+
+        for (int i = 1; i <= MAX_FIELDS_ALLOWED; i++) {
+            upsertValues.add(defaultValue);
+        }
+
     }
 
     private Map<String, Object> getFieldsMap(final Contentlet contentlet) throws DotDataException {
@@ -2775,20 +2864,35 @@ public class ESContentFactoryImpl extends ContentletFactory {
      */
     public Queries getJsonFieldQueries(final Field field, final Date maxDate) {
         final ContentletJsonAPI contentletJsonAPI = APILocator.getContentletJsonAPI();
-        if (!contentletJsonAPI.isPersistContentAsJson()) {
-            return new NullQueries();
+        if (contentletJsonAPI.isPersistContentAsJson()) {
+            //If we have got this far it means we are a running postgres instance that obviously supports json.
+            final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            if (DbConnectionFactory.isPostgres()) {
+                final String select = String
+                        .format("SELECT inode FROM contentlet WHERE structure_inode = ? AND mod_date<='%s' AND contentlet_as_json @> '{\"fields\" : {\"%s\":{}}}'",
+                                format.format(maxDate),
+                                field.getVelocityVarName());
+                //This basically removes from the json structure the particular entry for the field
+                final String update = String
+                        .format("UPDATE contentlet SET contentlet_as_json = contentlet_as_json #- '{fields,%s}' WHERE inode = ?",
+                                field.getVelocityVarName());
+                return new Queries().setSelect(select).setUpdate(update);
+            }
+
+            if (DbConnectionFactory.isMsSql()) {
+                final String select = String
+                        .format("SELECT inode FROM contentlet WHERE structure_inode = ? AND mod_date<='%s' AND JSON_VALUE(contentlet_as_json,'$.fields.%s') IS NOT null ",
+                                format.format(maxDate),
+                                field.getVelocityVarName());
+
+                final String update = String
+                        .format("UPDATE contentlet SET contentlet_as_json = JSON_MODIFY(contentlet_as_json,'$.fields.%s',NULL) WHERE inode = ?",
+                                field.getVelocityVarName());
+                return new Queries().setSelect(select).setUpdate(update);
+            }
         }
-        //If we have got this far it means we are a running postgres instance that obviously supports json.
-        final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        final String select = String
-                .format("SELECT inode FROM contentlet WHERE structure_inode = ? AND mod_date<='%s' AND contentlet_as_json @> '{\"fields\" : {\"%s\":{}}}'",
-                        format.format(maxDate),
-                        field.getVelocityVarName());
-        //This basically removes from the json structure the particular entry for the field
-        final String update = String
-                .format("UPDATE contentlet SET contentlet_as_json = contentlet_as_json #- '{fields,%s}' WHERE inode = ?",
-                        field.getVelocityVarName());
-        return new Queries().setSelect(select).setUpdate(update);
+        //When called on non-json supported dbs return a nullified instance
+        return new NullQueries();
     }
 
 
@@ -2824,6 +2928,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
     private static class NullQueries extends Queries {
+
         public String getSelect() {
             throw new UnsupportedOperationException();
         }

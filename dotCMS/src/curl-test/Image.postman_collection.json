@@ -86,7 +86,7 @@
 						}
 					]
 				},
-				"description": "Imports a Bundle that includes:\n* HTMLPage /blog/index\n* HTMLPage /blog/destinations/costa-rica\n* Contentlet [Blog] Ecotourism in Costa Rica\n* Blog Detail Page /blog/blog-detail"
+				"description": "Imports a Bundle that includes:\n\n*   ContentType\n*   dotAsset\n*   Contentlet of the imported ContentType, that has the uploaded dotAsset"
 			},
 			"response": []
 		},
@@ -110,14 +110,13 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}//dA/cc5c6b40-4030-42f3-8d0b-6fb246cefe88/titleImage/256w",
+					"raw": "{{serverURL}}/dA/1c70cae1-45c5-4562-99a0-f6eb837fb2cd/titleImage/256w",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
-						"",
 						"dA",
-						"cc5c6b40-4030-42f3-8d0b-6fb246cefe88",
+						"1c70cae1-45c5-4562-99a0-f6eb837fb2cd",
 						"titleImage",
 						"256w"
 					]

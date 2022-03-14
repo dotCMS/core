@@ -370,6 +370,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		 */
 		currentContentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_DATE, (String) contentletFormData.get(Contentlet.WORKFLOW_PUBLISH_DATE));
 		currentContentlet.setStringProperty(Contentlet.WORKFLOW_PUBLISH_TIME, (String) contentletFormData.get(Contentlet.WORKFLOW_PUBLISH_TIME));
+		currentContentlet.setStringProperty(Contentlet.WORKFLOW_TIMEZONE_ID, (String) contentletFormData.get(Contentlet.WORKFLOW_TIMEZONE_ID));
 		currentContentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_DATE, (String) contentletFormData.get(Contentlet.WORKFLOW_EXPIRE_DATE));
 		currentContentlet.setStringProperty(Contentlet.WORKFLOW_EXPIRE_TIME, (String) contentletFormData.get(Contentlet.WORKFLOW_EXPIRE_TIME));
 		currentContentlet.setStringProperty(Contentlet.WORKFLOW_NEVER_EXPIRE, (String) contentletFormData.get(Contentlet.WORKFLOW_NEVER_EXPIRE));
@@ -523,6 +524,11 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				if (UtilMethods.isSet((String) contentletFormData.get("wfFilterKey"))) {
 
 					contentletDependencies.workflowFilterKey((String) contentletFormData.get("wfFilterKey"));
+				}
+
+				if (UtilMethods.isSet((String) contentletFormData.get("wfTimezoneId"))) {
+
+					contentletDependencies.workflowTimezoneId((String) contentletFormData.get("wfTimezoneId"));
 				}
 
 				if (UtilMethods.isSet((String) contentletFormData.get("wfiWantTo"))) {

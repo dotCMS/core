@@ -468,7 +468,7 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 		String TEST_VAR_PREFIX = "testField";
 
 		int numFields = 0;
-		for(Class clazz : APILocator.getContentTypeFieldAPI().fieldTypes()){
+		for(Class<? extends Field> clazz : APILocator.getContentTypeFieldAPI().fieldTypes()){
 			Field fakeField = FieldBuilder.builder(clazz).name("fake").variable("fake").contentTypeId(type.id()).build();
 			boolean save = true;
 			if(fakeField instanceof OnePerContentType){

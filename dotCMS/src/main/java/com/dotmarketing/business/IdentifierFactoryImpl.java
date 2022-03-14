@@ -377,10 +377,11 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
             identifier.setParentPath( "/" );
             identifier.setOwner(((Folder) versionable).getOwner());
         } else {
+        	//If this is going to be moved before the save we have to have a way to know the inode ahead of time
             String uri = versionable.getVersionType() + "." + versionable.getInode();
             if ( versionable instanceof Contentlet) {
                 Contentlet cont = (Contentlet) versionable;
-                if (cont.getStructure().getStructureType() == BaseContentType.FILEASSET.getType()) {
+                if (cont.isFileAsset()) {
                     // special case when it is a file asset as contentlet
 					uri = String.class.cast(cont.getMap().get(FileAssetAPI.FILE_NAME_FIELD));
 					if (!UtilMethods.isSet(uri)) {
