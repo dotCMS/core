@@ -277,7 +277,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"key\":\"NoWorkflow.yml\",\n    \"title\":\"Push without Wofklows Updated\",\n    \"defaultFilter\":\"false\",\n    \"roles\":\"DOTCMS_BACK_END_USER\",\n    \"filters\": {\n        \"excludeQuery\": \"\",\n        \"excludeClasses\": [\"Host\", \"Workflow\", \"OSGI\"],\n        \"dependencies\": true,\n        \"excludeDependencyQuery\": \"\",\n        \"excludeDependencyClasses\": [\"Host\", \"Workflow\"],\n        \"forcePush\": false,\n        \"relationships\": false\n    }\n}",
+					"raw": "{\n    \"key\":\"NoWorkflow.yml\",\n    \"title\":\"Push without Wofklows Updated.\",\n    \"defaultFilter\":\"false\",\n    \"roles\":\"DOTCMS_BACK_END_USER\",\n    \"filters\": {\n        \"excludeQuery\": \"\",\n        \"excludeClasses\": [\"Host\", \"Workflow\", \"OSGI\"],\n        \"dependencies\": true,\n        \"excludeDependencyQuery\": \"\",\n        \"excludeDependencyClasses\": [\"Host\", \"Workflow\"],\n        \"forcePush\": false,\n        \"relationships\": false\n    }\n}",
 					"options": {
 						"raw": {
 							"language": "json"
