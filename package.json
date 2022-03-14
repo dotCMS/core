@@ -41,8 +41,7 @@
         "workspace-generator": "nx workspace-generator",
         "dep-graph": "nx dep-graph",
         "help": "nx help",
-        "pretty-quick": "pretty-quick",
-        "prepare": "node ./prepare.js"
+        "pretty-quick": "pretty-quick"
     },
     "private": false,
     "dependencies": {
