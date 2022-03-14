@@ -63,7 +63,7 @@ public class StoragePersistenceAPITest {
             Config.setProperty(DEFAULT_STORAGE_TYPE, null);
             final StoragePersistenceProvider persistenceProvider = INSTANCE.get();
             assertTrue(persistenceProvider
-                    .getStorage() instanceof DataBaseStoragePersistenceAPIImpl);
+                    .getStorage() instanceof FileSystemStoragePersistenceAPIImpl);
         }finally {
             Config.setProperty(DEFAULT_STORAGE_TYPE, stringProperty);
         }

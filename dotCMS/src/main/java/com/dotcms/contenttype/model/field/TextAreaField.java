@@ -2,7 +2,7 @@ package com.dotcms.contenttype.model.field;
 
 import static com.dotcms.util.CollectionsUtils.list;
 
-import com.dotcms.content.model.FieldValue;
+import com.dotcms.content.model.FieldValueBuilder;
 import com.dotcms.content.model.type.TextAreaType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -48,11 +48,12 @@ public abstract class TextAreaField extends Field {
 
 	/**
 	 * {@inheritDoc}
-	 */
+     * @return
+     */
 	@Override
-	public Optional<FieldValue<?>> fieldValue(Object value) {
+	public Optional<FieldValueBuilder> fieldValue(Object value) {
 		if (value instanceof String) {
-			return Optional.of(TextAreaType.of((String) value));
+			return Optional.of(TextAreaType.builder().value((String) value));
 		}
 		return Optional.empty();
 	}

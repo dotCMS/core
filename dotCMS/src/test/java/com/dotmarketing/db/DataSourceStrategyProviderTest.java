@@ -76,9 +76,9 @@ public class DataSourceStrategyProviderTest {
         }
 
         if (testCase.equals("SystemEnv")){
-            Mockito.when(properties.getVariable("connection_db_base_url")).thenReturn("dummy_url");
+            Mockito.when(properties.getVariable("DB_BASE_URL")).thenReturn("dummy_url");
         } else {
-            Mockito.when(properties.getVariable("connection_db_base_url")).thenReturn(null);
+            Mockito.when(properties.getVariable("DB_BASE_URL")).thenReturn(null);
         }
 
         if (testCase.equals("DockerSecret")) {
@@ -157,9 +157,9 @@ public class DataSourceStrategyProviderTest {
         }
 
         if (testCase.equals("SystemEnv")){
-            Mockito.when(properties.getVariable("connection_db_base_url")).thenReturn("dummy_url");
+            Mockito.when(properties.getVariable("DB_BASE_URL")).thenReturn("dummy_url");
         } else {
-            Mockito.when(properties.getVariable("connection_db_base_url")).thenReturn(null);
+            Mockito.when(properties.getVariable("DB_BASE_URL")).thenReturn(null);
         }
 
         if (testCase.equals("DockerSecret")) {

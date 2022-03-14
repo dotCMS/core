@@ -8,8 +8,10 @@ import com.dotcms.cluster.bean.Server;
 import com.dotcms.dotpubsub.DotPubSubEvent;
 import com.dotcms.dotpubsub.DotPubSubProvider;
 import com.dotcms.dotpubsub.DotPubSubProviderLocator;
+import com.dotcms.dotpubsub.QueuingPubSubWrapper;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.cache.transport.CacheTransportException;
 import com.dotmarketing.util.Logger;
@@ -132,6 +134,14 @@ public class PubSubCacheTransport implements CacheTransport {
                 return ClusterFactory.getClusterId();
             }
 
+            
+            
+            @Override
+            public String getCacheTransport() {
+
+                return pubsub.getProviderName();
+            }
+            
             @Override
             public String getAddress() {
                 return "n/a";

@@ -1,6 +1,6 @@
 package com.dotcms.contenttype.model.field;
 
-import com.dotcms.content.model.FieldValue;
+import com.dotcms.content.model.FieldValueBuilder;
 import com.dotcms.content.model.type.date.DateFieldType;
 import java.util.Collection;
 import java.util.Date;
@@ -64,11 +64,12 @@ public abstract class DateField extends Field {
 
     /**
      * {@inheritDoc}
+     * @return
      */
     @Override
-    public Optional<FieldValue<?>> fieldValue(Object value) {
+    public Optional<FieldValueBuilder> fieldValue(final Object value) {
         if (value instanceof Date) {
-            return Optional.of(DateFieldType.of(((Date) value).toInstant()));
+            return Optional.of(DateFieldType.builder().value(((Date) value).toInstant()));
         }
         return Optional.empty();
     }

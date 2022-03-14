@@ -7,7 +7,6 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.portal.model.User;
@@ -26,19 +25,9 @@ public abstract class FolderFactory {
 
 	abstract void delete(Folder f) throws DotDataException;
 
-	/*
-	 * abstract boolean existsFolder(long folderInode) { return
-	 * existsFolder(Long.toString(folderInode)); }
-	 */
-
 	abstract Folder find(String folderInode) throws  DotDataException;
 
 	abstract void save(Folder folderInode) throws DotDataException;
-
-
-	abstract void save(Folder folderInode, String existingId) throws DotDataException;
-
-
 	
 	abstract boolean exists(String folderInode) throws DotDataException;
 
@@ -54,7 +43,7 @@ public abstract class FolderFactory {
 		return null;
 	}
 
-	protected List<Folder> getSubFoldersTitleSort(Folder folder) throws DotHibernateException, DotStateException, DotDataException {
+	protected List<Folder> getSubFoldersTitleSort(Folder folder) throws DotStateException, DotDataException {
 		return null;
 	}
 	protected Folder findFolderByPath(String path, Host host) throws DotDataException {
@@ -71,7 +60,7 @@ public abstract class FolderFactory {
 	 * @deprecated use {@link #getSubFoldersTitleSort(Folder)}
 	 */
 	@Deprecated
-	protected List<Folder> getSubFolders(Folder folder) throws DotHibernateException, DotStateException, DotDataException {
+	protected List<Folder> getSubFolders(Folder folder) throws DotStateException, DotDataException {
 		return null;
 	}
 
@@ -108,13 +97,13 @@ public abstract class FolderFactory {
 	protected List<Folder> getFoldersByParent(Folder folder, User user, boolean respectFrontendRoles) throws DotDataException{
 		return null;
 	}
-	protected List<Folder> findFoldersByHost(Host host) throws DotHibernateException{
+	protected List<Folder> findFoldersByHost(Host host) {
 		return null;
 	}
-	protected List<Folder> findThemesByHost(Host host) throws DotHibernateException{
+	protected List<Folder> findThemesByHost(Host host) {
 		return null;
 	}
-	protected List<Folder> findSubFolders(final Host host, Boolean showOnMenu)throws DotHibernateException  {
+	protected List<Folder> findSubFolders(final Host host, Boolean showOnMenu) {
 		return null;
 	}
 	protected List<Folder> findSubFolders(final Folder folder, Boolean showOnMenu) throws DotStateException, DotDataException{

@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 import static com.dotcms.contenttype.model.type.BaseContentType.FILEASSET;
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.business.APILocator.getContentTypeFieldAPI;
@@ -16,7 +17,6 @@ import static org.junit.Assert.fail;
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
-import com.dotcms.content.business.DotMappingException;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.model.field.*;
@@ -28,13 +28,11 @@ import com.dotcms.datagen.*;
 import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.mock.request.MockInternalRequest;
-import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.storage.FileMetadataAPI;
-import com.dotcms.storage.FileMetadataAPIImpl;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.uuid.shorty.ShortyId;
@@ -48,7 +46,6 @@ import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.common.db.DotConnect;
@@ -57,7 +54,6 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.PersonalizedContentlet;
@@ -1620,14 +1616,14 @@ public class ContentletAPITest extends ContentletBaseTest {
         long defLang=APILocator.getLanguageAPI().getDefaultLanguage().getId();
         
         Host host1=new Host();
-        host1.setHostname("copy.contentlet.t1_"+System.currentTimeMillis());
+        host1.setHostname("copy.contentlet.t1."+System.currentTimeMillis());
         host1.setDefault(false);
         host1.setLanguageId(defLang);
         host1.setIndexPolicy(IndexPolicy.FORCE);
         host1 = APILocator.getHostAPI().save(host1, user, false);
 
         Host host2=new Host();
-        host2.setHostname("copy.contentlet.t2_"+System.currentTimeMillis());
+        host2.setHostname("copy.contentlet.t2."+System.currentTimeMillis());
         host2.setDefault(false);
         host2.setLanguageId(defLang);
         host2.setIndexPolicy(IndexPolicy.FORCE);
@@ -7341,5 +7337,118 @@ public class ContentletAPITest extends ContentletBaseTest {
 
     }
 
+
+    /**
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}
+     * Given scenario: We create a file asset under the default site then we update the site/folder then we call checkin again
+     * Expected result: After the checkin the contentlet should have been moved properly.
+     * @throws Exception
+     */
+    @Test
+    public void Test_Move_Content_Different_Host_And_Folder_On_CheckIn()
+            throws DotDataException, DotSecurityException {
+
+        final Host nextSite = new SiteDataGen().nextPersisted();
+        final Folder nextFolder = new FolderDataGen().site(nextSite).name("any").nextPersisted();
+
+        //Create Contentlet
+        final Contentlet originalContentlet = TestDataUtils.getFileAssetContent(true,1L, TestFile.GIF );
+
+        final Contentlet checkout1 = contentletAPI
+                .checkout(originalContentlet.getInode(), user, false);
+
+        checkout1.setHost(nextSite.getIdentifier());
+        checkout1.setFolder(nextFolder.getInode());
+
+        Contentlet moved = contentletAPI.checkin(checkout1, user, false);
+        final Identifier identifier = APILocator.getIdentifierAPI().find(moved.getIdentifier());
+        assertEquals(nextSite.getIdentifier(),identifier.getHostId());
+        moved = APILocator.getContentletAPI().find(moved.getInode(),APILocator.systemUser(),false);
+        assertEquals(moved.getHost(),identifier.getHostId());
+    }
+
+    /**
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}
+     * Given scenario: We create CT that holds a keyValue then we create two instances. First one takes a well-formed json second one is messed up.
+     * Expected result: This test validates that messed-up json dont break stuff. when keyValues are returned.
+     * @throws Exception
+     */
+    @Test
+    public void Test_Key_Value_As_Map_Test() throws DotDataException, DotSecurityException {
+
+        final Host nextSite = new SiteDataGen().nextPersisted();
+        final Folder nextFolder = new FolderDataGen().site(nextSite).name("any").nextPersisted();
+
+        final boolean defaultValue = Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
+        Config.setProperty(SAVE_CONTENTLET_AS_JSON, false);
+
+        try {
+            String contentTypeName = "KeyValueTest" + System.currentTimeMillis();
+
+            final List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
+
+            fields.add(
+                    new FieldDataGen()
+                            .name("hostFolder")
+                            .velocityVarName("hostFolder")
+                            .type(HostFolderField.class)
+                            .next()
+            );
+
+            fields.add(
+                    new FieldDataGen()
+                            .name("title")
+                            .velocityVarName("TitleField")
+                            .type(TextField.class)
+                            .next()
+            );
+
+            fields.add(
+                    new FieldDataGen()
+                            .name("keyValueField")
+                            .velocityVarName("keyValueField")
+                            .type(KeyValueField.class)
+                            .next()
+            );
+
+            ContentType contentType = new ContentTypeDataGen()
+                    .baseContentType(BaseContentType.CONTENT)
+                    .name(contentTypeName)
+                    .velocityVarName(contentTypeName)
+                    .fields(fields)
+                    .nextPersisted();
+
+            //This is a piece of content with valid json
+            Contentlet withValidKeyValue = new ContentletDataGen(contentType).host(nextSite)
+                    .languageId(1)
+                    .setProperty("title", "lol")
+                    .setProperty("hostFolder", nextFolder.getIdentifier())
+                    .setProperty("keyValueField", "{\"key1\":\"val1\"}")
+                    .nextPersisted();
+
+            Contentlet retrieved = APILocator.getContentletAPI()
+                    .find(withValidKeyValue.getInode(), APILocator.systemUser(), false);
+
+            assertTrue(retrieved.get("keyValueField") instanceof Map);
+            assertFalse(((Map) retrieved.get("keyValueField")).isEmpty());
+
+            //This is a piece of content with invalid json set on the keyValue
+            Contentlet withInvalidKeyValue = new ContentletDataGen(contentType).host(nextSite)
+                    .languageId(1)
+                    .setProperty("title", "lol")
+                    .setProperty("hostFolder", nextFolder.getIdentifier())
+                    .setProperty("keyValueField", "messed-up-json")
+                    .nextPersisted();
+
+            retrieved = APILocator.getContentletAPI()
+                    .find(withInvalidKeyValue.getInode(), APILocator.systemUser(), false);
+
+            assertTrue(retrieved.get("keyValueField") instanceof Map);
+            assertTrue(((Map) retrieved.get("keyValueField")).isEmpty());
+
+        } finally {
+            Config.setProperty(SAVE_CONTENTLET_AS_JSON, defaultValue);
+        }
+    }
 
 }

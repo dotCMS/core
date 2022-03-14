@@ -1635,7 +1635,7 @@
 											"            pm.expect(\"1fc8ad24-f249-40ae-91be-0c6c79e331e9\").to.eq(item.inode);",
 											"            pm.expect(\"Testing\").to.eq(item.title);",
 											"        } else if (item.type === \"contenttype\"){",
-											"            pm.expect(\"asset_test_type\").to.eq(item.title);",
+											"            pm.expect(\"type_1\").to.eq(item.title);",
 											"",
 											"        } else if (item.type === \"language\"){",
 											"            pm.expect(\"Language\").to.eq(item.content_type_name);",
@@ -1671,14 +1671,14 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{serverURL}}/api/bundle/{{bundleId}}/assets",
+									"raw": "{{serverURL}}/api/bundle/get_asset_test/assets",
 									"host": [
 										"{{serverURL}}"
 									],
 									"path": [
 										"api",
 										"bundle",
-										"{{bundleId}}",
+										"get_asset_test",
 										"assets"
 									]
 								}
@@ -1805,11 +1805,11 @@
 	"variable": [
 		{
 			"key": "bundleName",
-			"value": "bundleName-647"
+			"value": "bundleName-544"
 		},
 		{
 			"key": "bundleId",
-			"value": "01FHR10N7R176HHAGHDTNSYF9N"
+			"value": "01FPJVAJE4MHGF9QDDC66SBH9N"
 		}
 	]
 }

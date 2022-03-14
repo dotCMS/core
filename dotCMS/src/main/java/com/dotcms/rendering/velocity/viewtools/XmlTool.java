@@ -22,6 +22,9 @@ package com.dotcms.rendering.velocity.viewtools;
 import com.dotcms.rendering.velocity.viewtools.bean.XmlToolDoc;
 import com.dotcms.rendering.velocity.viewtools.cache.XmlToolCache;
 import com.dotcms.rendering.velocity.viewtools.util.ConversionUtils;
+import com.dotcms.util.network.IPUtils;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Config;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -146,8 +149,17 @@ public class XmlTool implements ViewTool {
 	 * this instance.
 	 */
 	protected void read(URL url) throws Exception {
-		SAXReader reader = new SAXReader();
-		setRoot(reader.read(url));
+	    
+	    
+	    if(IPUtils.isIpPrivateSubnet(url.getHost()) && !Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false)){
+	        throw new DotRuntimeException("XMLTool Cannot access private subnets.  Set ALLOW_ACCESS_TO_PRIVATE_SUBNETS=true to allow");
+	    }
+	    
+	    SAXReader reader = new SAXReader();
+	    reader.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+	    reader.setFeature("http://xml.org/sax/features/external-general-entities", false);
+	    reader.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+	    setRoot(reader.read(url));
 	}
 
 	/**
@@ -488,7 +500,7 @@ public class XmlTool implements ViewTool {
 		List<Node> kids = new ArrayList<Node>();
 		for (Node n : nodes) {
 			if (n instanceof Element) {
-				kids.addAll((List<Node>) ((Element) n).elements());
+				kids.addAll(((Element) n).elements());
 			}
 		}
 		return new XmlTool(kids);

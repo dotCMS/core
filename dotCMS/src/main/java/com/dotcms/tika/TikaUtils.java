@@ -6,6 +6,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.osgi.OSGIConstants;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
@@ -17,9 +18,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.liferay.util.FileUtil;
+import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,7 +45,7 @@ public class TikaUtils {
 
     public static final int SIZE = 1024;
     public static final int DEFAULT_META_DATA_MAX_SIZE = 5;
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = DotObjectMapperProvider.createDefaultMapper();
 
     private TikaProxyService tikaService;
     private Boolean osgiInitialized;
@@ -337,11 +337,13 @@ public class TikaUtils {
                 if (binFile != null) {
 
                     //Parse the metadata from this file
-                    final Map<String, String> metaData = getMetaDataMap(contentlet.getInode(),
-                            binFile);
+                    final Map<String, String> metaData = getMetaDataMap(contentlet.getInode(), binFile);
                     if (null != metaData) {
-                        final Gson gson = new GsonBuilder().disableHtmlEscaping().create();
-                        contentlet.setProperty(FileAssetAPI.META_DATA_FIELD, gson.toJson(metaData));
+
+                        //Testing indicates that jackson does not escape html by default
+                        final String json = Try.of(()->objectMapper.writeValueAsString(metaData)).getOrElseThrow(DotDataException::new);
+                        contentlet.setProperty(FileAssetAPI.META_DATA_FIELD, json);
+
                         //Save the parsed metadata to the contentlet
                         FactoryLocator.getContentletFactory().save(contentlet);
                     }

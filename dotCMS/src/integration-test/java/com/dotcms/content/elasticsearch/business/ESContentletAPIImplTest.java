@@ -17,6 +17,7 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.RelationshipField;
@@ -26,7 +27,9 @@ import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.*;
+import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.ConfigTestHelper;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -49,9 +52,13 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.google.common.io.Files;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 
+import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Date;
@@ -398,6 +405,86 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         esContentletAPI.lock(contentletSaved, user, false);
 
         checkLock(user, contentletSaved);
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#checkin(Contentlet, User, boolean)}
+     * When: You have a {@link ContentType} with a {@link BinaryField}, First save it, and later Update it
+     * with a different file
+     * Should: Save contentlet with the right file's path and should copy the file to
+     * <pre>
+     *     [Abdolute asset root path]/[inode first character]/[inode second character]/[inode]/[field variable name]/[file_name]
+     * </pre>
+     *
+     * @throws IOException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void saveAndUpdateContentletWithBinaryField() throws IOException, DotDataException, DotSecurityException {
+        final Field binaryField = new FieldDataGen()
+                .name("binary")
+                .velocityVarName("binary")
+                .type(BinaryField.class)
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .fields(list(binaryField))
+                .nextPersisted();
+
+        final File testFile = createFile("images/test.jpg", ".jpg");
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .setProperty(binaryField.variable(), testFile)
+                .next();
+
+        final ESContentletAPIImpl esContentletAPI = new ESContentletAPIImpl();
+        esContentletAPI.checkin(contentlet, APILocator.systemUser(), false);
+
+        Contentlet contentletFromDataBase = APILocator.getContentletAPI()
+                .find(contentlet.getInode(), APILocator.systemUser(), false);
+
+        assertFiles(binaryField, testFile, contentletFromDataBase);
+
+        final File testFile_2 = createFile("images/test.png", "v");
+
+        final Contentlet checkout = ContentletDataGen.checkout(contentletFromDataBase);
+        checkout.setProperty(binaryField.variable(), testFile_2);
+
+        esContentletAPI.checkin(checkout, APILocator.systemUser(), false);
+
+        Contentlet contentletFromDataBase_2 = APILocator.getContentletAPI()
+                .find(checkout.getInode(), APILocator.systemUser(), false);
+
+        assertFiles(binaryField, testFile_2, contentletFromDataBase_2);
+    }
+
+    private void assertFiles(Field binaryField, File testFile, Contentlet contentletFromDataBase)
+            throws IOException {
+        final String inode = contentletFromDataBase.getInode();
+        File newDir = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator
+                + inode.charAt(0)
+                + File.separator
+                + inode.charAt(1) + File.separator + inode);
+
+        final String expectedPath =
+                newDir.getAbsolutePath() + File.separator + binaryField.variable()
+                        + File.separator + testFile.getName();
+        assertEquals(expectedPath,
+                contentletFromDataBase.getStringProperty(binaryField.variable()));
+
+        final File newFile = new File(expectedPath);
+        FileTestUtil.compare(testFile, newFile);
+    }
+
+    private static File createFile(final String path, final String suffix) throws IOException {
+        final File originalFile = new File(Thread.currentThread()
+                .getContextClassLoader().getResource(path).getFile());
+
+        final String fileName = "test_" + System.currentTimeMillis() + suffix;
+        final File testFile = new File(Files.createTempDir(), fileName);
+        FileUtil.copyFile(originalFile, testFile);
+
+        return testFile;
     }
 
     private void checkLock(final User user, final Contentlet contentletSaved) throws DotDataException {

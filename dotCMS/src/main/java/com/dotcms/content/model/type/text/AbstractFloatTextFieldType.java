@@ -1,17 +1,16 @@
 package com.dotcms.content.model.type.text;
 
 import com.dotcms.content.model.FieldValue;
-import com.dotcms.content.model.annotation.ValueTypeStyle;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.dotcms.content.model.FieldValueBuilder;
+import com.dotcms.content.model.annotation.ValueType;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.immutables.value.Value.Immutable;
-import org.immutables.value.Value.Parameter;
 
 /**
  * Float Stored Value Text-Field json representation
  */
-@ValueTypeStyle
+@ValueType
 @Immutable
 @JsonDeserialize(as = FloatTextFieldType.class)
 @JsonTypeName(value = AbstractFloatTextFieldType.TYPENAME)
@@ -25,13 +24,7 @@ public interface AbstractFloatTextFieldType extends FieldValue<Float> {
     @Override
     default String type() {
         return TYPENAME;
-    };
+    }
 
-    /**
-     * {@inheritDoc}
-     */
-    @JsonProperty("value")
-    @Parameter
-    Float value();
-
+    abstract class Builder implements FieldValueBuilder {}
 }

@@ -1,0 +1,18 @@
+<CATALOG>
+    <CD>
+        <TITLE>EmpireBurlesque</TITLE>
+        <ARTIST>BobDylan</ARTIST>
+        <COUNTRY>USA</COUNTRY>
+        <COMPANY>Columbia</COMPANY>
+        <PRICE>10.90</PRICE>
+        <YEAR>1985</YEAR>
+    </CD>
+    <CD>
+        <TITLE>Hide_your_heart</TITLE>
+        <ARTIST>Bonnie_Tyler</ARTIST>
+        <COUNTRY>UK</COUNTRY>
+        <COMPANY>CBS Records</COMPANY>
+        <PRICE>9.90</PRICE>
+        <YEAR>1988</YEAR>
+    </CD>
+</CATALOG>

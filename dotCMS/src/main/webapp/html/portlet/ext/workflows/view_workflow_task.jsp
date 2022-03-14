@@ -350,12 +350,7 @@ public String getGravatar(String postedBy){
 		                </table>
 		              </div>
                       <div style="padding:20px;max-width:1024px;border-top:0px solid silver">
-                         <div id="commentFormletShow" class="buttonRow">
-                            <button dojoType="dijit.form.Button" type="button" onClick="document.getElementById('commentFormletShow').style.display='none';document.getElementById('commentFormlet').style.display=''">
-                                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Comment")) %>
-                            </button>
-                         </div>
-                         <form style="display: none; max-width:600px;margin:auto;" id="commentFormlet" method="post" action="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
+                         <form style="max-width: 700px; display: flex; align-items: end; margin-left: 51px" id="commentFormlet" method="post" action="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
                             <portlet:param name="struts_action" value="/ext/workflows/edit_workflow_task" />
                             <portlet:param name="inode" value="<%= String.valueOf(task.getInode()) %>" />
                             </portlet:actionURL>">
@@ -364,11 +359,11 @@ public String getGravatar(String postedBy){
 
                             <textarea id="comment" name="comment" class="mceNoEditor" rows="4" cols="60"></textarea>
 
-                               <div class="buttonRow">
-                                <button dojoType="dijit.form.Button" type="button" onClick="dojo.byId('commentFormlet').submit()">
+                            <div style="margin-left: 16px;">
+                                <button dojoType="dijit.form.Button" class="dijitButtonAction" type="button" onClick="dojo.byId('commentFormlet').submit()">
                                 <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Comment")) %>
                                 </button>
-                               </div>
+                            </div>
                             </div>
                            </form>
 

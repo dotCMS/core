@@ -1,22 +1,20 @@
 package com.dotcms.contenttype.model.field;
 
-import com.dotcms.content.model.FieldValue;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import com.dotcms.content.model.FieldValueBuilder;
 import com.dotcms.content.model.type.radio.BoolRadioFieldType;
 import com.dotcms.content.model.type.radio.FloatRadioFieldType;
 import com.dotcms.content.model.type.radio.LongRadioFieldType;
 import com.dotcms.content.model.type.radio.RadioFieldType;
-import java.util.Collection;
-import java.util.List;
-
-import java.util.Optional;
-import org.immutables.value.Value;
-
-import com.google.common.collect.ImmutableList;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
-import static com.dotcms.util.CollectionsUtils.list;
+import com.google.common.collect.ImmutableList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import org.immutables.value.Value;
 
 @JsonSerialize(as = ImmutableRadioField.class)
 @JsonDeserialize(as = ImmutableRadioField.class)
@@ -58,32 +56,42 @@ public abstract class RadioField extends SelectableValuesField {
 
 	/**
 	 * {@inheritDoc}
-	 */
+     * @return
+     */
 	@Override
-	public Optional<FieldValue<?>> fieldValue(final Object value){
+	public Optional<FieldValueBuilder> fieldValue(final Object value){
+      if(null != value) {
+		  if (value instanceof String) {
+			  return Optional.of(RadioFieldType.builder().value((String) value));
+		  }
 
-		if (value instanceof String) {
-			return Optional.of(RadioFieldType.of((String) value));
-		}
+		  if (value instanceof Boolean) {
+			  return Optional.of(BoolRadioFieldType.builder().value((Boolean) value));
+		  }
 
-		if (value instanceof Boolean) {
-			return Optional.of(BoolRadioFieldType.of((Boolean) value));
-		}
+		  if (value instanceof Long) {
+			  return Optional.of(LongRadioFieldType.builder().value((Long) value));
+		  }
 
-		if (value instanceof Long) {
-			return Optional.of(LongRadioFieldType.of((Long) value));
-		}
+		  if (value instanceof Integer) {
+			  return Optional.of(LongRadioFieldType.builder().value(((Integer) value).longValue()));
+		  }
 
-		if (value instanceof Integer) {
-			return Optional.of(LongRadioFieldType.of(((Integer) value).longValue()));
-		}
-
-		if (value instanceof Float) {
-			return Optional.of(FloatRadioFieldType.of((Float) value));
-		}
-
-		return Optional.empty();
-
+		  if (value instanceof Float) {
+			  return Optional.of(FloatRadioFieldType.builder().value((Float) value));
+		  }
+	  } else {
+		  final DataTypes dataType = dataType();
+		  switch (dataType) {
+			  case BOOL:
+				  return Optional.of(BoolRadioFieldType.builder().value((false)));
+			  case FLOAT:
+				  return Optional.of(FloatRadioFieldType.builder().value((0F)));
+			  case INTEGER:
+				  return Optional.of(LongRadioFieldType.builder().value((0L)));
+		  }
+	  }
+	  return Optional.empty();
 	}
 
 }
