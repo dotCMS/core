@@ -225,6 +225,18 @@ public class ContainerResource implements Serializable {
                 Optional.of(checkedHostId);
     }
 
+    /**
+     * Generates the HTML for a container with a particular contentlet
+     *
+     * @param req
+     * @param res
+     * @param containerId
+     * @param contentletId
+     * @param pageInode
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @GET
     @JSONP
     @NoCache
@@ -639,6 +651,8 @@ public class ContainerResource implements Serializable {
         if(!APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, pageMode.respectAnonPerms)
                 || !APILocator.getPermissionAPI().doesUserHavePermissions(PermissionAPI.PermissionableType.CONTAINERS, PermissionAPI.PERMISSION_EDIT, user)) {
 
+            Logger.debug(this, ()-> "The user: " + user.getUserId() + ", does not have ADD children permissions to the host: " + host.getHostname()
+                                        + " or add containers");
             throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
         }
 
@@ -660,6 +674,8 @@ public class ContainerResource implements Serializable {
         container.setTitle(containerForm.getTitle());
 
         this.containerAPI.save(container, containerForm.getContainerStructures(), host, user, pageMode.respectAnonPerms);
+
+        Logger.debug(this, ()-> "The container: " + container.getIdentifier() + " has been saved");
 
         return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
     }
@@ -691,6 +707,8 @@ public class ContainerResource implements Serializable {
         if(!APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, pageMode.respectAnonPerms)
                 || !APILocator.getPermissionAPI().doesUserHavePermissions(PermissionAPI.PermissionableType.CONTAINERS, PermissionAPI.PERMISSION_EDIT, user)) {
 
+            Logger.error(this, "The user: " + user.getUserId() + ", does not have ADD children permissions to the host: " + host.getHostname()
+                    + " or add containers");
             throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
         }
 
@@ -698,6 +716,7 @@ public class ContainerResource implements Serializable {
 
         if (null == container || !InodeUtils.isSet(container.getInode())) {
 
+            Logger.error(this, "The container: " + containerForm.getIdentifier() + ", does not exists");
             new DoesNotExistException("The container: " + containerForm.getIdentifier() + " does not exists");
         }
 
@@ -719,6 +738,8 @@ public class ContainerResource implements Serializable {
         container.setTitle(containerForm.getTitle());
 
         this.containerAPI.save(container, containerForm.getContainerStructures(), host, user, pageMode.respectAnonPerms);
+
+        Logger.error(this, "The container: " + container.getIdentifier() + " has been updated");
 
         return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
     }
@@ -752,6 +773,7 @@ public class ContainerResource implements Serializable {
 
         if (null == container || UtilMethods.isNotSet(container.getIdentifier())) {
 
+            Logger.error(this, "Live Version of the Container with Id: " + containerId + " does not exist");
             throw new DoesNotExistException("Live Version of the Container with Id: " + containerId + " does not exist");
         }
 
@@ -788,6 +810,7 @@ public class ContainerResource implements Serializable {
 
         if (null == container || UtilMethods.isNotSet(container.getIdentifier())) {
 
+            Logger.error(this, "Working Version of the Container with Id: " + containerId + " does not exist");
             throw new DoesNotExistException("Working Version of the Container with Id: " + containerId + " does not exist");
         }
 
@@ -824,6 +847,7 @@ public class ContainerResource implements Serializable {
 
         if (!UtilMethods.isSet(containerId)) {
 
+            Logger.error(this, "The container id is required");
             throw new IllegalArgumentException("The container id is required");
         }
 
@@ -877,6 +901,7 @@ public class ContainerResource implements Serializable {
 
         if (!UtilMethods.isSet(containerId)) {
 
+            Logger.error(this, "The container id is required");
             throw new IllegalArgumentException("The container id is required");
         }
 
@@ -928,6 +953,7 @@ public class ContainerResource implements Serializable {
 
         if (!UtilMethods.isSet(containerId)) {
 
+            Logger.error(this, "The container id is required");
             throw new IllegalArgumentException("The container id is required");
         }
 
@@ -979,6 +1005,7 @@ public class ContainerResource implements Serializable {
 
         if (!UtilMethods.isSet(containerId)) {
 
+            Logger.error(this, "The container id is required");
             throw new IllegalArgumentException("The container id is required");
         }
 
@@ -1029,6 +1056,7 @@ public class ContainerResource implements Serializable {
 
         if (!UtilMethods.isSet(containerId)) {
 
+            Logger.error(this, "The container id is required");
             throw new IllegalArgumentException("The container id is required");
         }
 
