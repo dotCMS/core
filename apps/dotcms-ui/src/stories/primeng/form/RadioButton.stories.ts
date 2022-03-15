@@ -24,19 +24,19 @@ export default {
 } as Meta;
 
 const RadioButtonTemplate = `
-  <div class="p-field-radiobutton">
+  <div class="field-checkbox">
     <p-radioButton name="city" value="Chicago" [(ngModel)]="city" inputId="city1"></p-radioButton>
     <label for="city1">Chicago</label>
   </div>
-  <div class="p-field-radiobutton">
+  <div class="field-checkbox">
     <p-radioButton name="city" value="Los Angeles" [(ngModel)]="city" inputId="city2"></p-radioButton>
     <label for="city2">Los Angeles</label>
   </div>
-  <div class="p-field-radiobutton">
+  <div class="field-checkbox">
     <p-radioButton name="city" value="New York" [(ngModel)]="city" inputId="city3"></p-radioButton>
     <label for="city3">New York</label>
   </div>
-  <div class="p-field-radiobutton">
+  <div class="field-checkbox">
     <p-radioButton name="city" value="San Francisco" [(ngModel)]="city" inputId="city4"></p-radioButton>
     <label for="city4">San Francisco</label>
   </div>

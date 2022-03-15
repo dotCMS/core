@@ -47,9 +47,9 @@
     font-size: $font-size-small;
 }
 
-.p-formgroup-inline {
-    .p-field-radiobutton,
-    .p-field-checkbox {
+.formgroup-inline {
+    .field-checkbox,
+    .field-checkbox {
         margin-bottom: 0;
     }
 }
