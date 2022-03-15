@@ -22,6 +22,8 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
@@ -842,5 +844,360 @@ public class HostAPITest extends IntegrationTestBase  {
         }
     }
 
+    @Test
+    public void getSitebyItsIdFromContentlet() throws Exception {
+        // Initialization
+        final HostAPI hostAPI = APILocator.getHostAPI();
+        final User systemUser = APILocator.systemUser();
+
+        // Test data
+        final Host originalSite = new SiteDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().host(originalSite).nextPersisted();
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType);
+        contentletDataGen.host(originalSite);
+        final Contentlet testContentlet = contentletDataGen.nextPersisted();
+        final Host siteFromContentlet = hostAPI.find(testContentlet, systemUser, false);
+
+        // Assertions
+        assertTrue("Site ID from Contentlet does NOT match!", originalSite.getIdentifier().equals(siteFromContentlet.getIdentifier()));
+
+        // Cleanup
+        unpublishHost(originalSite, systemUser);
+        archiveHost(originalSite, systemUser);
+        deleteHost(originalSite, systemUser);
+        deleteContentType(contentType);
+    }
+
+    @Test
+    public void getSitebyId() throws Exception {
+        // Initialization
+        final HostAPI hostAPI = APILocator.getHostAPI();
+        final User systemUser = APILocator.systemUser();
+
+        // Test data generation
+        final Host originalSite = new SiteDataGen().nextPersisted();
+        final Host siteFromAPI = hostAPI.find(originalSite.getIdentifier(), systemUser, false);
+
+        // Assertions
+        assertTrue("Site ID does NOT match!", originalSite.getIdentifier().equals(siteFromAPI.getIdentifier()));
+
+        // Un-publish, archive and delete the Site
+        unpublishHost(originalSite, systemUser);
+        archiveHost(originalSite, systemUser);
+        deleteHost(originalSite, systemUser);
+    }
+
+    /**
+     * Utility method used to delete test Content Types.
+     *
+     * @param type
+     * @throws Exception
+     */
+    private void deleteContentType(ContentType type) throws Exception {
+        final User systemUser = APILocator.systemUser();
+        APILocator.getContentTypeAPI(systemUser).delete(type);
+    }
+
+    @Test
+    public void getAllSites() throws DotSecurityException, DotDataException, ExecutionException, InterruptedException {
+        // Initialization
+        final HostAPI hostAPI = APILocator.getHostAPI();
+        final User systemUser = APILocator.systemUser();
+
+        // Test data generation
+        final List<Host> initialSiteList = hostAPI.findAll(systemUser, 0, 0, null, false);
+        final Host testSite = new SiteDataGen().nextPersisted();
+        final List<Host> finalSiteList = hostAPI.findAll(systemUser, 0, 0, null, false);
+
+        // Assertions
+        assertEquals("Site API is returning more Sites than expected",1, (finalSiteList.size() - initialSiteList.size()));
+
+        // Cleanup
+        unpublishHost(testSite, systemUser);
+        archiveHost(testSite, systemUser);
+        deleteHost(testSite, systemUser);
+    }
+
+    @Test
+    public void updateDefaultSite() throws DotSecurityException, DotDataException, ExecutionException,
+            InterruptedException {
+        // Initialization
+        final HostAPI hostAPI = APILocator.getHostAPI();
+        final User systemUser = APILocator.systemUser();
+
+        // Test data generation
+        final Host originalDefaultSite = hostAPI.findDefaultHost(systemUser, false);
+        final Host newDefaultSite = new SiteDataGen().setDefault(true).nextPersisted();
+        hostAPI.updateDefaultHost(newDefaultSite, systemUser, false);
+        final Host updatedDefaultSite = hostAPI.findDefaultHost(systemUser, false);
+
+        // Assertions
+        assertTrue("Default Site and New Default Site are NOT the same", newDefaultSite.getIdentifier().equals(updatedDefaultSite.getIdentifier()));
+
+        // Cleanup
+        hostAPI.updateDefaultHost(originalDefaultSite, systemUser, false);
+        unpublishHost(newDefaultSite, systemUser);
+        archiveHost(newDefaultSite, systemUser);
+        deleteHost(newDefaultSite, systemUser);
+    }
+
+    @Test
+    public void getSitesWithPermission() throws DotSecurityException, DotDataException, ExecutionException,
+            InterruptedException {
+        // Initialization
+        final HostAPI hostAPI = APILocator.getHostAPI();
+        final User systemUser = APILocator.systemUser();
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final UserAPI userAPI = APILocator.getUserAPI();
+
+        // Test data generation
+        final Host testSite = new SiteDataGen().nextPersisted();
+        final Role testRole = new RoleDataGen().nextPersisted();
+        final User dummyUser = new UserDataGen().roles(testRole).nextPersisted();
+        this.addPermission(testRole, testSite);
+        final List<Host> permissionedSites = hostAPI.getHostsWithPermission(PermissionAPI.PERMISSION_READ, false,
+                dummyUser, false);
+
+        // Assertions
+        assertEquals("Only one permissioned Site should've been retrieved", 1, permissionedSites.size());
+        assertTrue("Permissioned Site ID does not match!", testSite.getIdentifier().equals(permissionedSites.get(0).getIdentifier()));
+
+        // Cleanup
+        unpublishHost(testSite, systemUser);
+        archiveHost(testSite, systemUser);
+        deleteHost(testSite, systemUser);
+        userAPI.delete(dummyUser, systemUser, false);
+        roleAPI.delete(testRole);
+    }
+
+    @Test
+    public void getArchivedSitesWithPermission() throws DotSecurityException, DotDataException, ExecutionException,
+            InterruptedException {
+        // Initialization
+        final HostAPI hostAPI = APILocator.getHostAPI();
+        final User systemUser = APILocator.systemUser();
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final UserAPI userAPI = APILocator.getUserAPI();
+
+        // Test data generation
+        final Host testSite = new SiteDataGen().nextPersisted();
+        final Role testRole = new RoleDataGen().nextPersisted();
+        final User dummyUser = new UserDataGen().roles(testRole).nextPersisted();
+        this.addPermission(testRole, testSite);
+        unpublishHost(testSite, systemUser);
+        archiveHost(testSite, systemUser);
+        final List<Host> permissionedSites = hostAPI.getHostsWithPermission(PermissionAPI.PERMISSION_READ, dummyUser,
+                false);
+
+        // Assertions
+        assertEquals("Non-live/archived Sites cannot be verified for permissions", 0, permissionedSites.size());
+
+        // Cleanup
+        deleteHost(testSite, systemUser);
+        userAPI.delete(dummyUser, systemUser, false);
+        roleAPI.delete(testRole);
+    }
+
+    @Test
+    public void findSystemHost() throws DotDataException {
+        // Initialization
+        final HostAPI hostAPI = APILocator.getHostAPI();
+
+        // Test data generation
+        final Host systemHost = hostAPI.findSystemHost();
+
+        // Assertions
+        assertEquals("System Host object NOT found!", "SYSTEM_HOST", systemHost.getIdentifier());
+    }
+
+    @Test
+    public void findSystemHostWithLimitedUser() throws DotDataException, DotSecurityException {
+        // Initialization
+        final HostAPI hostAPI = APILocator.getHostAPI();
+        final Role testRole = new RoleDataGen().nextPersisted();
+        final User dummyUser = new UserDataGen().roles(testRole).nextPersisted();
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final UserAPI userAPI = APILocator.getUserAPI();
+
+        // Test data generation
+        final Host systemHost = hostAPI.findSystemHost(dummyUser, true);
+
+        // Assertions
+        assertEquals("System Host object NOT found!", "SYSTEM_HOST", systemHost.getIdentifier());
+
+        // Cleanup
+        userAPI.delete(dummyUser, APILocator.systemUser(), false);
+        roleAPI.delete(testRole);
+    }
+
+    @Test
+    public void parseHostAliases() throws DotHibernateException, ExecutionException, InterruptedException {
+        // Initialization
+        final HostAPI hostAPI = APILocator.getHostAPI();
+        final SiteDataGen siteDataGen = new SiteDataGen();
+        final User systemUser = APILocator.systemUser();
+
+        // Test data generation #1
+        final Host testSite = siteDataGen.aliases("first.dotcms.com second.dotcms.com third.dotcms.com")
+                .nextPersisted();
+        List<String> aliasList = hostAPI.parseHostAliases(testSite);
+
+        // Assertions
+        assertEquals("There must be three Site aliases separated by blank spaces!", 3, aliasList.size());
+
+        // Test data generation #2
+        testSite.setAliases("first.dotcms.com,second.dotcms.com,third.dotcms.com");
+        siteDataGen.persist(testSite, true);
+        aliasList = hostAPI.parseHostAliases(testSite);
+
+        // Assertions
+        assertEquals("There must be three Site aliases separated by commas!", 3, aliasList.size());
+
+        // Test data generation #3
+        testSite.setAliases("first.dotcms.com\nsecond.dotcms.com\nthird.dotcms.com");
+        siteDataGen.persist(testSite, true);
+        aliasList = hostAPI.parseHostAliases(testSite);
+
+        // Assertions
+        assertEquals("There must be three Site aliases separated by line breaks!", 3, aliasList.size());
+
+        // Cleanup
+        unpublishHost(testSite, systemUser);
+        archiveHost(testSite, systemUser);
+        deleteHost(testSite, systemUser);
+    }
+
+    @Test
+    public void retrieveHostsPerTagStorage() throws DotHibernateException, ExecutionException, InterruptedException {
+        // Initialization
+        final HostAPI hostAPI = APILocator.getHostAPI();
+        final SiteDataGen siteDataGen = new SiteDataGen();
+        final User systemUser = APILocator.systemUser();
+
+        // Test data generation
+        final Host siteOne = siteDataGen.name("parenttagstorage" + System.currentTimeMillis() + "dotcms.com")
+                .nextPersisted(true);
+        final String parentTagStorageId = siteOne.getIdentifier();
+        Host siteTwo = siteDataGen.name("childtagstorage" + System.currentTimeMillis() + "dotcms.com").next();
+        siteTwo.setTagStorage(parentTagStorageId);
+        siteTwo = siteDataGen.persist(siteTwo);
+        final String expectedStorageId = siteTwo.getIdentifier();
+        final String siteTwoName = siteTwo.getHostname();
+        unpublishHost(siteOne, systemUser);
+        archiveHost(siteOne, systemUser);
+        final PaginatedArrayList<Host> updatedSite = hostAPI.search(siteTwoName, false, false, 0, 0, systemUser, false);
+
+        // Assertions
+        assertEquals("Only one Site should've been returned", 1, updatedSite.size());
+        assertTrue("Tag Storage ID does NOT match the Site ID", expectedStorageId.equals(updatedSite.get(0)
+                .getTagStorage()));
+
+        // Cleanup
+        deleteHost(siteOne, systemUser);
+        unpublishHost(siteTwo, systemUser);
+        archiveHost(siteTwo, systemUser);
+        deleteHost(siteTwo, systemUser);
+    }
+
+    @Test
+    public void searchByStopped() throws DotHibernateException, ExecutionException, InterruptedException {
+        // Initialization
+        final HostAPI hostAPI = APILocator.getHostAPI();
+        SiteDataGen siteDataGen = new SiteDataGen();
+        final User systemUser = APILocator.systemUser();
+
+        // Test data generation
+        final PaginatedArrayList<Host> stoppedSites = hostAPI.searchByStopped(null, true, false, 0, 0, systemUser,
+                false);
+        final Host testSite = siteDataGen.nextPersisted();
+        unpublishHost(testSite, systemUser);
+        final PaginatedArrayList<Host> updatedStoppedSites = hostAPI.searchByStopped(null, true, false, 0, 0,
+                systemUser, false);
+
+        // Assertions
+        assertEquals("Stopped Sites count difference is NOT one", 1, updatedStoppedSites.size() - stoppedSites
+                .size());
+
+        // Test data generation #2
+        siteDataGen = new SiteDataGen();
+        final Host testSiteTwo = siteDataGen.nextPersisted();
+        unpublishHost(testSiteTwo, systemUser);
+        archiveHost(testSiteTwo, systemUser);
+        final PaginatedArrayList<Host> updatedStoppedAndArchivedSites = hostAPI.searchByStopped(null, true, false, 0, 0,
+                systemUser, false);
+
+        // Assertions #2
+        assertEquals("Stopped and Archived Sites count difference is NOT two", 2, updatedStoppedAndArchivedSites.size() - stoppedSites.size());
+
+        // Cleanup
+        archiveHost(testSite, systemUser);
+        deleteHost(testSite, systemUser);
+        deleteHost(testSiteTwo, systemUser);
+    }
+
+    @Test
+    public void searchByArchived() throws DotHibernateException, InterruptedException, ExecutionException {
+        // Initialization
+        final HostAPI hostAPI = APILocator.getHostAPI();
+        final SiteDataGen siteDataGen = new SiteDataGen();
+        final User systemUser = APILocator.systemUser();
+
+        // Test data generation
+        final PaginatedArrayList<Host> archivedSites = hostAPI.search(null, true, true, false, 0, 0, systemUser, false);
+        final Host testSite = siteDataGen.nextPersisted();
+        unpublishHost(testSite, systemUser);
+        archiveHost(testSite, systemUser);
+        final PaginatedArrayList<Host> updatedArchivedSites = hostAPI.search(null, true, true, false, 0, 0,
+                systemUser, false);
+
+        // Assertions
+        assertEquals("Archived Sites count difference is NOT one", 1, updatedArchivedSites.size() - archivedSites
+                .size());
+
+        // Cleanup;
+        deleteHost(testSite, systemUser);
+    }
+
+    @Test
+    public void searchByFilter() throws DotHibernateException, ExecutionException, InterruptedException {
+        // Initialization
+        final HostAPI hostAPI = APILocator.getHostAPI();
+        final String siteName = "uniquenamefilteredsite.dotcms.com";
+        final SiteDataGen siteDataGen = new SiteDataGen().name(siteName);
+        final User systemUser = APILocator.systemUser();
+
+        // Test data generation
+        final Host testSite = siteDataGen.nextPersisted();
+        final PaginatedArrayList<Host> filteredSites = hostAPI.search(siteName, false, 0, 0, systemUser, false);
+
+        // Assertions
+        assertEquals("Name-filtered Site count is NOT one", 1, filteredSites.size());
+
+        // Cleanup;
+        unpublishHost(testSite, systemUser);
+        archiveHost(testSite, systemUser);
+        deleteHost(testSite, systemUser);
+    }
+
+    @Test
+    public void count() throws DotHibernateException, ExecutionException, InterruptedException {
+        // Initialization
+        final HostAPI hostAPI = APILocator.getHostAPI();
+        final SiteDataGen siteDataGen = new SiteDataGen();
+        final User systemUser = APILocator.systemUser();
+        final long initialCount = hostAPI.count(systemUser, false);
+
+        // Test data generation
+        final Host testSite = siteDataGen.nextPersisted();
+        final long newCount = hostAPI.count(systemUser, false);
+
+        // Assertions
+        assertEquals("Site count difference is NOT one", 1, newCount - initialCount);
+
+        // Cleanup;
+        unpublishHost(testSite, systemUser);
+        archiveHost(testSite, systemUser);
+        deleteHost(testSite, systemUser);
+    }
 
 }
