@@ -1,9 +1,5 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.Future;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.Treeable;
@@ -13,6 +9,10 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.Future;
 
 /**
  * Encapsulate the Host maintenance operations
@@ -27,13 +27,35 @@ public interface HostAPI {
 	 * @param host Host
 	 * @return List
 	 */
-	public List<String> parseHostAliases(Host host);
 
-	/**
-	 * Find the default host
-	 * @return the default host
-	 */
-	public Host findDefaultHost(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+    /**
+     * Returns the aliases of a given Site in the form of a list. In the Site's properties, aliases can be separated by:
+     * <ul>
+     *     <li>Commas.</li>
+     *     <li>Blank spaces.</li>
+     *     <li>Line breaks.</li>
+     * </ul>
+     *
+     * @param site The Site whose aliases must be returned.
+     *
+     * @return The {@link List} of aliases for a Site.
+     */
+    List<String> parseHostAliases(Host site);
+
+    /**
+     * Returns the "default" Site in the current data repository.
+     *
+     * @param user                 The {@link User} performing this action.
+     * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
+     *                             operation, set to {@code true}. Otherwise, set to {@code false}.
+     *
+     * @return The default host from cache.  If not found, returns from content search and adds to cache
+     *
+     * @throws DotDataException     An error occurred when accessing the data source.
+     * @throws DotSecurityException The specified User does not have the required permissions to perform this
+     *                              operation.
+     */
+    Host findDefaultHost(final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Find the system host
@@ -41,19 +63,54 @@ public interface HostAPI {
 	 */
 	public Host findSystemHost() throws DotDataException;
 
-	/**
-	 * Find a host by name
-	 * @param hostName
-	 * @return the host with the passed in name
-	 */
-	public Host findByName(String hostName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+    /**
+     * Finds a Site in the repository, based on its name. If it cannot be found or if an error ocurred, the "default"
+     * Site will be returned instead.
+     *
+     * @param siteName             The name of the Site
+     * @param user                 The {@link User} that is calling this method.
+     * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
+     *                             operation, set to {@code true}. Otherwise, set to {@code false}.
+     *
+     * @return The Site with the specified name, or the "default" Site.
+     *
+     * @throws DotDataException     An error occurred when accessing the data source.
+     * @throws DotSecurityException The specified User does not have the required permissions to perform this
+     *                              operation.
+     */
+    Host findByName(String siteName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Find a host based on the alias
-	 * @param hostName
+	 * @param alias
 	 * @return the host with the passed in name
 	 */
-	public Host findByAlias(String hostName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+    /**
+     * Returns the Site that matches the specified alias. Depending on the existing data, the result may vary:
+     * <ol>
+     *  <li>If one single Site matches the alias, then such a Site will be returned.</li>
+     *  <li>If no Site matches the alias, then a {@code null} value is returned.</li>
+     *  <li>If two or more Sites matches the alias, then:
+     *      <ol>
+     *          <li>If one of those Sites is the "deault" Site, then it will be returned.</li>
+     *          <li>Otherwise, the first Site in the result set is returned.</li>
+     *      </ol>
+     *  </li>
+     * </ol>
+     *
+     * @param alias                The alias of the Site.
+     * @param user                 The {@link User} that is calling this method.
+     * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
+     *                             operation, set to {@code true}. Otherwise, set to {@code false}.
+     *
+     * @return The {@link Host} object matching the alias, the "default" Site, or the first Site from the result set.
+     *
+     * @throws DotDataException     An error occurred when accessing the data source.
+     * @throws DotSecurityException The specified User does not have the required permissions to perform this
+     *                              operation.
+     */
+    Host findByAlias(final String alias, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
     /**
      * Marks the given host as archived
@@ -111,34 +168,73 @@ public interface HostAPI {
 			  User user,
 			  boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
-	/**
-	 * Retrieves the list of all hosts in the system, that the given user has permissions to see
-	 * @throws DotSecurityException
-	 *
-	 */
-	public List<Host> findAll(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+    /**
+     * @deprecated This method is basically duplicated code. Use one of the following methods instead:
+	 * <ul>
+	 *     <li>{{@link #findAllFromDB(User, boolean)}}</li>
+	 *     <li>{{@link #findAllFromCache(User, boolean)}</li>
+	 *     <li>{{@link #search(String, boolean, boolean, int, int, User, boolean)}</li>
+	 * </ul>
+     *
+     * Retrieves the list of all hosts in the system, that the given user has permissions to see
+     *
+     * @throws DotSecurityException
+     */
+    @Deprecated
+    List<Host> findAll(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
-	 * Retrieves the list of all hosts in the system, that the given user has permissions to see
-	 * @throws DotSecurityException
+	 * Returns the list of Sites in your dotCMS repository retrieved <b>directly from the data source</b> matching the
+	 * specified search criteria.
 	 *
+	 * @param user                 The {@link User} that is calling this method.
+	 * @param limit                Limit of results returned in the response, for pagination purposes. If set equal or
+	 *                             lower than zero, this parameter will be ignored.
+	 * @param offset               Expected offset of results in the response, for pagination purposes. If set equal or
+	 *                             lower than zero, this parameter will be ignored.
+	 * @param sortBy               Optional sorting criterion, as specified by the available columns in: {@link
+	 *                             com.dotmarketing.common.util.SQLUtil#ORDERBY_WHITELIST}
+	 * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
+	 *                             operation, set to {@code true}. Otherwise, set to {@code false}.
+	 *
+	 * @return The list of {@link Host} objects.
+	 *
+	 * @throws DotDataException     An error occurred when accessing the data source.
+	 * @throws DotSecurityException The specified User does not have the required permissions to perform this
+	 *                              operation.
 	 */
-	public List<Host> findAll(User user, int limit, int offset, String sortBy, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	List<Host> findAll(User user, int limit, int offset, String sortBy, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
-	/**
-	 * Retrieves the list of all hosts in the system, that the given user has permissions to see
-	 * @throws DotSecurityException
-	 *
-	 */
-	public List<Host> findAllFromDB(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+    /**
+     * Returns the complete list of Sites in your dotCMS repository retrieved <b>directly from the data source</b>.
+     *
+     * @param user                 The {@link User} that is calling this method.
+     * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
+     *                             operation, set to {@code true}. Otherwise, set to {@code false}.
+     *
+     * @return The list of {@link Host} objects.
+     *
+     * @throws DotDataException     An error occurred when accessing the data source.
+     * @throws DotSecurityException The specified User does not have the required permissions to perform this
+     *                              operation.
+     */
+    List<Host> findAllFromDB(final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
-	/**
-	 *
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return
-	 */
-	public List<Host> findAllFromCache(final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+    /**
+     * Returns the complete list of Sites in your dotCMS repository retrieved from the cache. If no data is currently
+     * available, it will be retrieved from the data source, and put into the respective cache region.
+     *
+     * @param user                 The {@link User} that is calling this method.
+     * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
+     *                             operation, set to {@code true}. Otherwise, set to {@code false}.
+     *
+     * @return The list of {@link Host} objects.
+     *
+     * @throws DotDataException     An error occurred when accessing the data source.
+     * @throws DotSecurityException The specified User does not have the required permissions to perform this
+     *                              operation.
+     */
+    List<Host> findAllFromCache(final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Saves the host into the system
@@ -166,18 +262,61 @@ public interface HostAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public List<Host> getHostsWithPermission(int permissionType, boolean includeArchived, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
-	/**
-	 * Retrieves all host (including archived hosts) the user has the required permission on
-	 * @param permissionType
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return List<Host>
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
-	public List<Host> getHostsWithPermission(int permissionType, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+    /**
+     * Returns all Sites in the dotCMS content repository which match the specified search and permission criteria.
+     * The currently available Permission Types are the following:
+     * <ul>
+     *  <li>{@link com.dotmarketing.business.PermissionAPI#PERMISSION_READ}</li>
+     *  <li>{@link com.dotmarketing.business.PermissionAPI#PERMISSION_USE}</li>
+     *  <li>{@link com.dotmarketing.business.PermissionAPI#PERMISSION_EDIT}</li>
+     *  <li>{@link com.dotmarketing.business.PermissionAPI#PERMISSION_WRITE}</li>
+     *  <li>{@link com.dotmarketing.business.PermissionAPI#PERMISSION_PUBLISH}</li>
+     *  <li>{@link com.dotmarketing.business.PermissionAPI#PERMISSION_EDIT_PERMISSIONS}</li>
+     *  <li>{@link com.dotmarketing.business.PermissionAPI#PERMISSION_CAN_ADD_CHILDREN}</li>
+     * </ul>
+     *
+     * @param permissionType       The type of Permission that must be checked for all the Sites in the result set.
+     * @param includeArchived      If archived Sites must be returned, set to {@code true}. Otherwise, set to {@code
+     *                             false}.
+     * @param user                 The {@link User} performing this action.
+     * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
+     *                             operation, set to {@code true}. Otherwise, set to {@code false}.
+     *
+     * @return The list of {@link Host} objects that match the required filtering criteria.
+     *
+     * @throws DotDataException     An error occurred when accessing the data source.
+     * @throws DotSecurityException The specified User does not have the required permissions to perform this
+     *                              operation.
+     */
+    List<Host> getHostsWithPermission(final int permissionType, final boolean includeArchived, final User user, final
+    boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+    /**
+     * Returns all Sites in the dotCMS content repository which match the specified permission criteria, whether
+	 * they're archived or not. The currently available Permission Types are the following:
+     * <ul>
+     *  <li>{@link com.dotmarketing.business.PermissionAPI#PERMISSION_READ}</li>
+     *  <li>{@link com.dotmarketing.business.PermissionAPI#PERMISSION_USE}</li>
+     *  <li>{@link com.dotmarketing.business.PermissionAPI#PERMISSION_EDIT}</li>
+     *  <li>{@link com.dotmarketing.business.PermissionAPI#PERMISSION_WRITE}</li>
+     *  <li>{@link com.dotmarketing.business.PermissionAPI#PERMISSION_PUBLISH}</li>
+     *  <li>{@link com.dotmarketing.business.PermissionAPI#PERMISSION_EDIT_PERMISSIONS}</li>
+     *  <li>{@link com.dotmarketing.business.PermissionAPI#PERMISSION_CAN_ADD_CHILDREN}</li>
+     * </ul>
+     *
+     * @param permissionType       The type of Permission that must be checked for all the Sites in the result set.
+     * @param user                 The {@link User} performing this action.
+     * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
+     *                             operation, set to {@code true}. Otherwise, set to {@code false}.
+     *
+     * @return The list of {@link Host} objects that match the required filtering criteria.
+     *
+     * @throws DotDataException     An error occurred when accessing the data source.
+     * @throws DotSecurityException The specified User does not have the required permissions to perform this
+     *                              operation.
+     */
+	List<Host> getHostsWithPermission(final int permissionType, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Retrieves the system host
@@ -320,75 +459,124 @@ public interface HostAPI {
 	 */
 	public Optional<Host> resolveHostNameWithoutDefault(String serverName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException ;
 
+    /**
+     * Returns the list of Sites – with pagination capabilities – that match the specified search criteria. This method
+     * allows users to specify three search parameters:
+     * <ol>
+     *  <li>{@code filter}: Finds Sites whose name starts with the specified String.</li>
+     *  <li>{@code showArchived}: Determines if archived Sites are returned in the result set.</li>
+     *  <li>{@code showSystemHost}: Determines whether the System Host must be returned or not.</li>
+     * </ol>
+     *
+     * @param filter               The initial part or full name of the Site you need to look up.
+     * @param showArchived         If archived Sites must be returned, set to {@code true}. Otherwise, se to {@code
+     *                             false}.
+     * @param showSystemHost       If the System Host object must be returned, set to {@code true}. Otherwise, se to
+     *                             {@code false}.
+     * @param limit                Limit of results returned in the response, for pagination purposes. If set equal or
+	 *                             lower than zero, this parameter will be ignored.
+     * @param offset               Expected offset of results in the response, for pagination purposes. If set equal or
+	 *                             lower than zero, this parameter will be ignored.
+     * @param user                 The {@link User} performing this action.
+     * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
+     *                             operation, set to {@code true}. Otherwise, set to {@code false}.
+     *
+     * @return The list of {@link Host} objects that match the specified search criteria.
+     */
+    PaginatedArrayList<Host> search(final String filter, final boolean showArchived, final boolean showSystemHost,
+                                    final int limit, final int offset, final User user, final boolean
+                                            respectFrontendRoles);
 
-	/**
-	 * Retrieves the subset of all hosts in the system
-	 * that matches the current host name filter, offset and limit
-	 * 
-	 * @param filter characters to search in the host name
-	 * @param showArchived boolean true if its requires that also archived content are returned, false if not
-	 * @param showSystemHost boolean true if the system host could be included among the results, false if not 
-	 * @param limit Max number of element to return
-	 * @param offset First element of the subset to return
-	 * @param user Current user to validate permissions
-	 * @param respectFrontendRoles boolean true if its requires that front end role are take in count in the search, false if not
-	 * @return PaginatedArrayList<Host> the subset of hosts that accomplish the search condition
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
-	public PaginatedArrayList<Host> search(String filter, boolean showArchived, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles);
+    /**
+     * Returns the list of Sites – with pagination capabilities – that match the specified search criteria. This method
+     * allows users to specify three search parameters:
+     * <ol>
+     *  <li>{@code filter}: Finds Sites whose name starts with the specified String.</li>
+     *  <li>{@code showStopped}: Determines if stopped Sites are returned in the result set.</li>
+     *  <li>{@code showSystemHost}: Determines whether the System Host must be returned or not.</li>
+     * </ol>
+     *
+     * @param filter               The initial part or full name of the Site you need to look up.
+     * @param showStopped          If stopped Sites must be returned, set to {@code true}. Otherwise, se to {@code
+     *                             false}.
+     * @param showSystemHost       If the System Host object must be returned, set to {@code true}. Otherwise, se to
+     *                             {@code false}.
+     * @param limit                Limit of results returned in the response, for pagination purposes. If set equal or
+	 *                             lower than zero, this parameter will be ignored.
+     * @param offset               Expected offset of results in the response, for pagination purposes. If set equal or
+	 *                             lower than zero, this parameter will be ignored.
+     * @param user                 The {@link User} performing this action.
+     * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
+     *                             operation, set to {@code true}. Otherwise, set to {@code false}.
+     *
+     * @return The list of {@link Host} objects that match the specified search criteria.
+     */
+    PaginatedArrayList<Host> searchByStopped(final String filter, final boolean showStopped, final boolean
+            showSystemHost, final int limit, final int offset, final User user, final boolean respectFrontendRoles);
 
-	/**
-	 * Retrieves the subset of all hosts in the system
-	 * that matches the current host name filter, offset and limit
-	 *
-	 * @param filter characters to search in the host name
-	 * @param showStopped boolean true if its requires that also stopped host are returned, false if not
-	 * @param showSystemHost boolean true if the system host could be included among the results, false if not
-	 * @param limit Max number of element to return
-	 * @param offset First element of the subset to return
-	 * @param user Current user to validate permissions
-	 * @param respectFrontendRoles boolean true if its requires that front end role are take in count in the search, false if not
-	 * @return PaginatedArrayList<Host> the subset of hosts that accomplish the search condition
-	 */
-	public PaginatedArrayList<Host> searchByStopped(String filter, boolean showStopped, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles);
+    /**
+     * Returns the list of Sites – with pagination capabilities – that match the specified search criteria. This method
+     * allows users to specify three search parameters:
+     * <ol>
+     *  <li>{@code filter}: Finds Sites whose name starts with the specified String.</li>
+     *  <li>{@code showArchived}: Determines if archived Sites are returned in the result set.</li>
+     *  <li>{@code showStopped}: Determines if stopped Sites are returned in the result set.</li>
+     *  <li>{@code showSystemHost}: Determines whether the System Host must be returned or not.</li>
+     * </ol>
+     *
+     * @param filter               The initial part or full name of the Site you need to look up.
+     * @param showArchived         If archived Sites must be returned, set to {@code true}. Otherwise, se to {@code
+     *                             false}.
+     * @param showStopped          If stopped Sites must be returned, set to {@code true}. Otherwise, se to {@code
+     *                             false}.
+     * @param showSystemHost       If the System Host object must be returned, set to {@code true}. Otherwise, se to
+     *                             {@code false}.
+     * @param limit                Limit of results returned in the response, for pagination purposes. If set equal or
+	 *                             lower than zero, this parameter will be ignored.
+     * @param offset               Expected offset of results in the response, for pagination purposes. If set equal or
+	 *                             lower than zero, this parameter will be ignored.
+     * @param user                 The {@link User} performing this action.
+     * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
+     *                             operation, set to {@code true}. Otherwise, set to {@code false}.
+     *
+     * @return The list of {@link Host} objects that match the specified search criteria.
+     */
+    PaginatedArrayList<Host> search(final String filter, final boolean showArchived, final boolean showStopped, final
+    boolean showSystemHost, final int limit, final int offset, final User user, final boolean respectFrontendRoles);
 
-	/**
-	 * Retrieves the subset of all hosts in the system
-	 * that matches the current host name filter, offset and limit
-	 *
-	 * @param filter characters to search in the host name
-	 * @param showArchived boolean true if its requires that also archived host are returned, false if not
-	 * @param showStopped boolean true if its requires that also stopped host are returned, false if not
-	 * @param showSystemHost boolean true if the system host could be included among the results, false if not
-	 * @param limit Max number of element to return
-	 * @param offset First element of the subset to return
-	 * @param user Current user to validate permissions
-	 * @param respectFrontendRoles boolean true if its requires that front end role are take in count in the search, false if not
-	 * @return PaginatedArrayList<Host> the subset of hosts that accomplish the search condition
-	 */
-	public PaginatedArrayList<Host> search(String filter, boolean showArchived, boolean showStopped, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles);
+    /**
+     * Returns the list of Sites – with pagination capabilities – that match the specified search criteria. This method
+     * allows users to specify three search parameters:
+     * <ol>
+     *  <li>{@code filter}: Finds Sites whose name starts with the specified String.</li>
+     *  <li>{@code showSystemHost}: Determines whether the System Host must be returned or not.</li>
+     * </ol>
+     *
+     * @param filter               The initial part or full name of the Site you need to look up.
+     * @param showSystemHost       If the System Host object must be returned, set to {@code true}. Otherwise, se to
+     *                             {@code false}.
+     * @param limit                Limit of results returned in the response, for pagination purposes. If set equal or
+	 *                             lower than zero, this parameter will be ignored.
+     * @param offset               Expected offset of results in the response, for pagination purposes. If set equal or
+	 *                             lower than zero, this parameter will be ignored.
+     * @param user                 The {@link User} performing this action.
+     * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
+     *                             operation, set to {@code true}. Otherwise, set to {@code false}.
+     *
+     * @return The list of {@link Host} objects that match the specified search criteria.
+     */
+    PaginatedArrayList<Host> search(final String filter, final boolean showSystemHost, final int limit, final int
+            offset, final User user, final boolean respectFrontendRoles);
 
-	/**
-	 * Retrieves the subset of all hosts in the system
-	 * that matches the current host name filter, offset and limit
-	 *
-	 * @param filter characters to search in the host name
-	 * @param showSystemHost boolean true if the system host could be included among the results, false if not
-	 * @param limit Max number of element to return
-	 * @param offset First element of the subset to return
-	 * @param user Current user to validate permissions
-	 * @param respectFrontendRoles boolean true if its requires that front end role are take in count in the search, false if not
-	 * @return PaginatedArrayList<Host> the subset of hosts that accomplish the search condition
-	 */
-	public PaginatedArrayList<Host> search(String filter, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles);
+    /**
+     * Returns the total number of Sites that exist in your content repository.
+     *
+     * @param user                 The {@link User} performing this action.
+     * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
+     *                             operation, set to {@code true}. Otherwise, set to {@code false}.
+     *
+     * @return The total number of Sites.
+     */
+    long count(final User user, final boolean respectFrontendRoles);
 
-	/**
-	 * Return the number of sites for user
-	 *
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return
-	 */
-	public long count(User user, boolean respectFrontendRoles);
 }

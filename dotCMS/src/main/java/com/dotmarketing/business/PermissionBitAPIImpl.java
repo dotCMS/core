@@ -357,6 +357,8 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		}
         // front end users cannot read content that is not live
         if(!user.isBackendUser() && isContentlet && !isLiveContentlet(permissionable) && permissionType == PERMISSION_READ) {
+            Logger.warn(this, String.format("User '%s' cannot verify READ permissions on Contentlet '%s' because it " +
+                    "is not live.", user.getUserId(), permissionable.getPermissionId()));
             return false;
         }
 
