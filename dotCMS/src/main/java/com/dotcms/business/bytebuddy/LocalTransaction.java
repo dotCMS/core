@@ -28,6 +28,10 @@ public class LocalTransaction {
 
     private final static String WARN_MESSAGE = "Transaction broken - Connection that started the transaction is not the same as the one who is commiting";
 
+    private LocalTransaction() {
+        // Static class
+    }
+
     /**
      *
      * @param delegate {@link ReturnableDelegate}
@@ -43,7 +47,7 @@ public class LocalTransaction {
      *
      *  How to use:
      *
-     *	return new LocalTransaction().externalizeTransaction(() ->{
+     *	LocalTransaction.externalizeTransaction(() ->{
      *		return myDBMethod(args);
      *  });
      */
@@ -105,7 +109,7 @@ public class LocalTransaction {
      *
      *  How to use:
      *
-     *	return new LocalTransaction().wrapReturnWithListeners(() ->{
+     *	LocalTransaction.wrapReturnWithListeners(() ->{
      *		return myDBMethod(args);
      *  });
      */
@@ -158,7 +162,7 @@ public class LocalTransaction {
      *
      *  How to use:
      *
-     *	return new LocalTransaction().wrapReturn(() ->{
+     *	LocalTransaction.wrapReturn(() ->{
      *		return myDBMethod(args);
      *  });
      */
@@ -204,7 +208,7 @@ public class LocalTransaction {
      *
      * 	 *  How to use:
      *
-     *	 new LocalTransaction().wrap(() ->{
+     *	 LocalTransaction.wrap(() ->{
      *		 myDBMethod(args);
      *      return null;
      *  });
