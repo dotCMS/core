@@ -4826,7 +4826,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final IndexPolicy indexPolicy             = contentlet.getIndexPolicy();
             final IndexPolicy indexPolicyDependencies = contentlet.getIndexPolicyDependencies();
 
-             contentlet = assignIdentifierIfAbsent(contentlet, contentletRaw, existingIdentifier, existingInode, htmlPageURL);
+             contentlet = assignIdentifierIfAbsent(contentlet, contentletRaw, existingIdentifier, existingInode, htmlPageURL, changedURI);
 
             //Include system fields to generate a json representation - these fields are later removed before contentlet gets saved
             contentlet = includeSystemFields(contentlet, contentletRaw, tagsValues, categories, user);
@@ -4840,60 +4840,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             contentlet.setIndexPolicy(indexPolicy);
             contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
-
-            if (!isNewContent) {
-                //Existing contentlet getting updated.
-                Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
-
-                final String oldURI = identifier.getURI();
-
-                // make sure the identifier is removed from cache
-                // because changes here may affect URI then IdentifierCache
-                // can't remove it
-                CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
-
-                // Once the contentlet is saved, it gets refresh from the db. for which the incoming data gets lost.
-                // Therefore here we need to make sure we use the original contentlet that comes with the info passed from the ui.
-                final String hostId = UtilMethods.isSet(contentletRaw.getHost()) ? contentletRaw.getHost() : contentlet.getHost();
-                identifier.setHostId(hostId);
-                if(contentlet.isFileAsset()){
-                    try {
-                        if(contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD) == null){
-                            final String binaryIdentifier = contentletRaw.getIdentifier() != null ? contentletRaw.getIdentifier() : StringPool.BLANK;
-                            final String binaryNode = contentletRaw.getInode() != null ? contentletRaw.getInode() : StringPool.BLANK;
-                            throw new FileAssetValidationException("Unable to validate field: " + FileAssetAPI.BINARY_FIELD
-                                    + " identifier: " + binaryIdentifier
-                                    + " inode: " + binaryNode);
-                        } else {
-                            //We no longer use the old BinaryField to recover the file name.
-                            //From now on we'll recover such value from the field "fileName" presented on the screen.
-                            //The physical file asset is just an internal piece that is mapped to the system asset-name.
-                            //The file per-se no longer can be renamed. We can only modify the asset-name that refers to it.
-                            final String assetName = (String) contentletRaw.getMap()
-                                    .get(FileAssetAPI.FILE_NAME_FIELD);
-                            identifier.setAssetName(UtilMethods.isSet(assetName) ?
-                                    assetName :
-                                    contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD).getName()
-                            );
-                        }
-                    } catch (IOException e) {
-                        Logger.error( this.getClass(), "Error handling Binary Field.", e );
-                    }
-                } else if ( contentlet.isHTMLPage() ) {
-                    //For HTML Pages - The asset name maps to the page URL
-                    identifier.setAssetName( htmlPageURL );
-                }
-                if(UtilMethods.isSet(contentletRaw.getFolder()) && !contentletRaw.getFolder().equals(FolderAPI.SYSTEM_FOLDER)){
-                    final Folder folder = APILocator.getFolderAPI().find(contentletRaw.getFolder(), systemUser, false);
-                    Identifier folderIdent = APILocator.getIdentifierAPI().find(folder.getIdentifier());
-                    identifier.setParentPath(folderIdent.getPath());
-                } else {
-                    identifier.setParentPath("/");
-                }
-                identifier = APILocator.getIdentifierAPI().save(identifier);
-
-                changedURI = ! oldURI.equals(identifier.getURI());
-            }
 
             contentlet = relateTags(contentlet, tagsValues, tagsHost);
 
@@ -5030,15 +4976,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    private Contentlet assignIdentifierIfAbsent(final Contentlet contentlet, final Contentlet contentletRaw,  final String existingIdentifier, final String existingInode, final String htmlPageURL)
+    private Contentlet assignIdentifierIfAbsent(final Contentlet contentlet, final Contentlet contentletRaw,
+            final String existingIdentifier, final String existingInode, final String htmlPageURL,
+            boolean changedURI)
             throws DotSecurityException, DotDataException {
 
+        final User systemUser = APILocator.systemUser();
         if (!InodeUtils.isSet(contentlet.getIdentifier())) {
 
             //Adding back temporarily the page URL to the contentlet, is needed in order to create a proper Identifier
             addURLToContentlet(contentlet, htmlPageURL);
             try {
-                final User systemUser = APILocator.systemUser();
+
                 final Treeable parent;
                 if (UtilMethods.isSet(contentletRaw.getFolder()) && !contentletRaw.getFolder()
                         .equals(FolderAPI.SYSTEM_FOLDER)) {
@@ -5069,6 +5018,58 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 //Clean-up the contentlet object again..., we don' want to persist this URL in the db
                 removeURLFromContentlet(contentlet);
             }
+        } else {
+            //Existing contentlet getting updated.
+            Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
+
+            final String oldURI = identifier.getURI();
+
+            // make sure the identifier is removed from cache
+            // because changes here may affect URI then IdentifierCache
+            // can't remove it
+            CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
+
+            // Once the contentlet is saved, it gets refresh from the db. for which the incoming data gets lost.
+            // Therefore here we need to make sure we use the original contentlet that comes with the info passed from the ui.
+            final String hostId = UtilMethods.isSet(contentletRaw.getHost()) ? contentletRaw.getHost() : contentlet.getHost();
+            identifier.setHostId(hostId);
+            if(contentlet.isFileAsset()){
+                try {
+                    if(contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD) == null){
+                        final String binaryIdentifier = contentletRaw.getIdentifier() != null ? contentletRaw.getIdentifier() : StringPool.BLANK;
+                        final String binaryNode = contentletRaw.getInode() != null ? contentletRaw.getInode() : StringPool.BLANK;
+                        throw new FileAssetValidationException("Unable to validate field: " + FileAssetAPI.BINARY_FIELD
+                                + " identifier: " + binaryIdentifier
+                                + " inode: " + binaryNode);
+                    } else {
+                        //We no longer use the old BinaryField to recover the file name.
+                        //From now on we'll recover such value from the field "fileName" presented on the screen.
+                        //The physical file asset is just an internal piece that is mapped to the system asset-name.
+                        //The file per-se no longer can be renamed. We can only modify the asset-name that refers to it.
+                        final String assetName = (String) contentletRaw.getMap()
+                                .get(FileAssetAPI.FILE_NAME_FIELD);
+                        identifier.setAssetName(UtilMethods.isSet(assetName) ?
+                                assetName :
+                                contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD).getName()
+                        );
+                    }
+                } catch (IOException e) {
+                    Logger.error( this.getClass(), "Error handling Binary Field.", e );
+                }
+            } else if ( contentlet.isHTMLPage() ) {
+                //For HTML Pages - The asset name maps to the page URL
+                identifier.setAssetName( htmlPageURL );
+            }
+            if(UtilMethods.isSet(contentletRaw.getFolder()) && !contentletRaw.getFolder().equals(FolderAPI.SYSTEM_FOLDER)){
+                final Folder folder = APILocator.getFolderAPI().find(contentletRaw.getFolder(), systemUser, false);
+                Identifier folderIdent = APILocator.getIdentifierAPI().find(folder.getIdentifier());
+                identifier.setParentPath(folderIdent.getPath());
+            } else {
+                identifier.setParentPath("/");
+            }
+            identifier = APILocator.getIdentifierAPI().save(identifier);
+
+            changedURI = ! oldURI.equals(identifier.getURI());
         }
         return contentlet;
     }
