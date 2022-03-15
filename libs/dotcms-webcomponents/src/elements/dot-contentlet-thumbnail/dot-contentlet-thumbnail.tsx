@@ -24,9 +24,13 @@ export class DotContentletThumbnail {
     @State() renderImage: boolean;
 
     componentWillLoad() {
-        this.renderImage =
-            this.contentlet?.hasTitleImage === 'true' ||
-            this.contentlet?.mimeType === 'application/pdf';
+        const { hasTitleImage, mimeType } = this.contentlet;
+        // Some endpoints return this property as a boolean
+        if (typeof hasTitleImage === 'boolean' && hasTitleImage) {
+            this.renderImage = hasTitleImage;
+        } else {
+            this.renderImage = hasTitleImage === 'true' || mimeType === 'application/pdf';
+        }
     }
 
     render() {
@@ -47,7 +51,11 @@ export class DotContentletThumbnail {
                     </div>
                 ) : (
                     <dot-contentlet-icon
-                        icon={this.contentlet?.baseType !== 'FILEASSET' ? this.contentlet?.contentTypeIcon : this.contentlet?.__icon__}
+                        icon={
+                            this.contentlet?.baseType !== 'FILEASSET'
+                                ? this.contentlet?.contentTypeIcon
+                                : this.contentlet?.__icon__
+                        }
                         size={this.iconSize}
                         aria-label={this.alt}
                     />

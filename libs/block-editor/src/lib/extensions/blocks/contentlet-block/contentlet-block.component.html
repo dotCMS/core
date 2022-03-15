@@ -1,10 +1,20 @@
 <!-- <img src="https://demo.dotcms.com/dA/${data.identifier}/100wh" /> -->
 <p-card>
     <ng-template pTemplate="header">
-        Title: {{ data.title }}
+        <dot-contentlet-thumbnail [width]="94" [height]="94" [iconSize]="'72px'" [contentlet]="data">
+        </dot-contentlet-thumbnail>
     </ng-template>
-    <p>I am a angular component that uses primeng</p>
+
+    <h3 *pTemplate="'title'">{{data.title}}</h3>
+    <span *pTemplate="'subtitle'">{{ data.contentType }}</span>
+
     <ng-template pTemplate="footer">
-        Inode: {{ data.inode }}
+
+        <div class="state">
+            <dot-state-icon [state]="data | contentletState" size="16px">
+            </dot-state-icon>
+            <dot-badge [bordered]="true">{{ data.language | lowercase}}</dot-badge>
+        </div>
+
     </ng-template>
 </p-card>

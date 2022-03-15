@@ -42,6 +42,7 @@ export * from './lib/utils/suggestion.utils';
 // Services
 export * from './lib/extensions/services/suggestions/suggestions.service';
 export * from './lib/extensions/services/dot-image/dot-image.service';
+export * from './lib/extensions/services/dot-language/dot-language.service';
 
 // Models
 export * from './lib/models/dot-bubble-menu.model';

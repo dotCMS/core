@@ -9,14 +9,11 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 
 @Injectable()
 export class SuggestionsService {
-
     constructor(private http: HttpClient) {}
 
     get defaultHeaders() {
         const headers = new HttpHeaders();
-        headers
-            .set('Accept', '*/*')
-            .set('Content-Type', 'application/json');
+        headers.set('Accept', '*/*').set('Content-Type', 'application/json');
         return headers;
     }
 
@@ -29,12 +26,16 @@ export class SuggestionsService {
     }
 
     getContentlets(contentType = ''): Observable<DotCMSContentlet[]> {
-        return this.http
-            // eslint-disable-next-line max-len
-            .get(`/api/content/render/false/query/+contentType:${contentType}%20+languageId:1%20+deleted:false%20+working:true/orderby/modDate%20desc`, {
-                headers: this.defaultHeaders
-            })
-            .pipe(pluck('contentlets'));
+        return (
+            this.http
+                // eslint-disable-next-line max-len
+                .get(
+                    `/api/content/render/false/query/+contentType:${contentType}%20+languageId:1%20+deleted:false%20+working:true/orderby/modDate%20desc`,
+                    {
+                        headers: this.defaultHeaders
+                    }
+                )
+                .pipe(pluck('contentlets'))
+        );
     }
-
 }

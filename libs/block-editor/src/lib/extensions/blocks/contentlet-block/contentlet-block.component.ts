@@ -1,5 +1,6 @@
 import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { AngularNodeViewComponent } from '../../../NodeViewRenderer';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dotcms-contentlet-block',
@@ -8,10 +9,7 @@ import { AngularNodeViewComponent } from '../../../NodeViewRenderer';
     encapsulation: ViewEncapsulation.None
 })
 export class ContentletBlockComponent extends AngularNodeViewComponent implements OnInit {
-    data: {
-        title: string;
-        inode: string;
-    };
+    public data: DotCMSContentlet;
 
     ngOnInit() {
         this.data = this.node.attrs.data;

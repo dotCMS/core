@@ -27,7 +27,7 @@ export interface DotContentletItem {
     __type__: string;
     __icon__: string;
     ownerCanRead: string;
-    hasTitleImage: string;
+    hasTitleImage: string | boolean;
     modUser: string;
     ownerCanWrite: string;
     ownerCanPublish: string;
