@@ -3,6 +3,8 @@ package com.dotcms.api.system.event.message.builder;
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Objects;
@@ -27,11 +29,12 @@ public class SystemMessage implements Serializable {
     private final MessageSeverity severity;
     private final MessageType type;
 
-    protected SystemMessage(final Object message,
-                         final String[] portletIdList,
-                         final long life,
-                         final MessageSeverity severity,
-                         final MessageType type) {
+    @JsonCreator
+    protected SystemMessage( @JsonProperty("message") final Object message,
+            @JsonProperty("portletIdList") final String[] portletIdList,
+            @JsonProperty("life") final long life,
+            @JsonProperty("severity") final MessageSeverity severity,
+            @JsonProperty("type") final MessageType type) {
         this.message = message;
         this.portletIdList = portletIdList;
         this.life = life;
