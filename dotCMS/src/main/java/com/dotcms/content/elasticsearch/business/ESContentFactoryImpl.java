@@ -18,7 +18,6 @@ import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.notifications.bean.NotificationLevel;
@@ -1945,7 +1944,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 
         if (contentlet.isVanityUrl()) {
-            setOlhHostIDProperty(toReturn);
+            setOldHostIDProperty(toReturn);
         }
 
         if(UtilMethods.isNotSet(contentlet.getIdentifier())) {
@@ -1962,7 +1961,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return toReturn;
     }
 
-    private void setOlhHostIDProperty(final Contentlet contentlet)
+    private void setOldHostIDProperty(final Contentlet contentlet)
             throws DotDataException, DotSecurityException {
         final Optional<ContentletVersionInfo> contentletVersionInfoOptional = APILocator.getVersionableAPI()
                 .getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
