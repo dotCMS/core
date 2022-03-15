@@ -6863,11 +6863,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 field.getVelocityVarName(), fieldValue, contentletSearch.getIdentifier());
     }
 
-    public static void setUniquePerSite(final boolean uniquePerSite){
+    @VisibleForTesting
+    public static void setUniquePerSite(final Boolean uniquePerSite){
         ESContentletAPIImpl.uniquePerSite = uniquePerSite;
     }
 
-    public static boolean getUniquePerSite(){
+    @VisibleForTesting
+    public static Boolean getUniquePerSite(){
         return uniquePerSite;
     }
 

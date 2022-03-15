@@ -1057,7 +1057,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     @Test
     public void savingFieldWithUniqueFieldInTheSameHostUniquePerSiteToFalse() throws DotDataException, DotSecurityException {
 
-        final boolean uniquePerSite = ESContentletAPIImpl.getUniquePerSite();
+        final Boolean uniquePerSite = ESContentletAPIImpl.getUniquePerSite();
         ESContentletAPIImpl.setUniquePerSite(false);
 
         try {
@@ -1160,7 +1160,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     @Test
     public void savingFieldWithUniqueFieldInDifferentHostUniquePerSiteToFalse() throws DotDataException, DotSecurityException {
 
-        final boolean uniquePerSite = ESContentletAPIImpl.getUniquePerSite();
+        final Boolean uniquePerSite = ESContentletAPIImpl.getUniquePerSite();
         ESContentletAPIImpl.setUniquePerSite(false);
 
         try {
