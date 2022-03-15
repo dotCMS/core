@@ -230,10 +230,6 @@ public class FolderAPITest {//24 contentlets
 		final List<IHTMLPage> pages = htmlPageAssetAPI.getLiveHTMLPages(newftest1,user, false);
 		Assert.assertEquals(3, pages.size());
 		Assert.assertTrue(pages.stream().anyMatch(page -> page.getName().equals(page0Name)));
-
-		contentletAPI.destroy(contentAsset1, user, false);
-		contentletAPI.destroy(contentAsset2, user, false);
-		contentletAPI.destroy(contentAsset4, user, false);
 	}
 
 	/**
