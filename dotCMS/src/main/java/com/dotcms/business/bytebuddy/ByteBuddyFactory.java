@@ -69,7 +69,7 @@ public class ByteBuddyFactory {
     }
 
 
-    public  void premain(String arg, Instrumentation inst)  throws Exception  {
+    public void premain(String arg, Instrumentation inst)  throws Exception  {
 
         AgentBuilder.LocationStrategy bootFallbackLocationStrategy = new AgentBuilder.LocationStrategy() {
             @Override
@@ -85,7 +85,8 @@ public class ByteBuddyFactory {
                 //.disableClassFormatChanges()
                 .ignore(nameEndsWith("LocalTransactionAndCloseDBIfOpenedFactoryTest"))
                 .or(nameStartsWith("net.bytebuddy.")
-                        .or(nameStartsWith("sun.reflect.")).or(isSynthetic()), any(), any())
+                        .or(nameStartsWith("sun.reflect."))
+                        .or(isSynthetic()), any(), any())
                 .or(nameStartsWith("com.dotcms.repackage."))
                 .with(AgentBuilder.InitializationStrategy.Minimal.INSTANCE)
                 .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
@@ -98,6 +99,7 @@ public class ByteBuddyFactory {
                 //.with(AgentBuilder.InstallationListener.StreamWriting.toSystemError())
                 .with(bootFallbackLocationStrategy)
                 .type(ElementMatchers.nameStartsWith("com.dotcms"))
+                
 
 
                 .transform(
@@ -118,7 +120,8 @@ public class ByteBuddyFactory {
                         new AgentBuilder.Transformer.ForAdvice()
 
                                 .withExceptionHandler(Advice.ExceptionHandler.Default.RETHROWING)
-                                .advice(isMethod().and(isAnnotatedWith(WrapInTransaction.class).and(ByteBuddyFactory::matchTest))
+                                .advice(isMethod().and(isAnnotatedWith(WrapInTransaction.class))
+                                              //  .and(ByteBuddyFactory::matchTest))
                                         , WrapInTransactionAdvice.class.getName())
                 )
 
@@ -140,7 +143,7 @@ public class ByteBuddyFactory {
     }
 
     private static <U extends MethodDescription> boolean matchTest(U a) {
-        Logger.error(ByteBuddyFactory.class,"Tester="+a.getDeclaringType().getTypeName()+":"+a.getName());
+        Logger.error(ByteBuddyFactory.class, "Tester=" + a.getDeclaringType().getTypeName() + ":" + a.getName());
         return true;
     }
 
