@@ -1192,10 +1192,10 @@
             }
         </style>
 
-        <dot-key-value></dot-key-value>
+        <dot-key-value id="<%=field.getVelocityVarName()%>KeyValue"></dot-key-value>
 
         <script>
-            var dotKeyValue = document.querySelector('dot-key-value');
+            var dotKeyValue = document.querySelector('#<%=field.getVelocityVarName()%>KeyValue');
             dotKeyValue.uniqueKeys = "true";
             dotKeyValue.value = '<%=dotKeyValueDataRaw.toString()%>';
             dotKeyValue.disabled = '<%=field.isReadOnly()%>';
