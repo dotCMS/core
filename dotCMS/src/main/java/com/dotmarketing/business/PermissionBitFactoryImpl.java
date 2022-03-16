@@ -61,6 +61,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.Lazy;
 import io.vavr.Tuple;
@@ -911,7 +912,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				else {
 					parentHost = (Contentlet) permissionable;
 				}
-				final String path = isFolder ? APILocator.getIdentifierAPI().find(((Folder) permissionable).getIdentifier()).getPath() : "";
+				final String path = isFolder ? APILocator.getIdentifierAPI().find(((Folder) permissionable).getIdentifier()).getPath() : StringPool.BLANK;
 
 				// Only if permissions were updated to a host != to the system
 				// host

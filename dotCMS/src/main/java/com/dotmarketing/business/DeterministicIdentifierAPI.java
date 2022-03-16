@@ -17,14 +17,19 @@ import java.util.function.Supplier;
 public interface DeterministicIdentifierAPI {
 
     /**
-     * Entry point for (Contentlets, Host, Persona, Templates, Folders, FileAsset)
+     * Entry point for (Contentlets, Host, Persona, Templates, FileAsset)
      * @param asset
      * @param parent
      * @return
      */
     String generateDeterministicIdBestEffort(Versionable asset, Treeable parent);
 
-    @CloseDBIfOpened
+    /**
+     * Entry point for folders
+     * @param folder
+     * @param parent
+     * @return
+     */
     String generateDeterministicIdBestEffort(Folder folder,
             Treeable parent);
 
