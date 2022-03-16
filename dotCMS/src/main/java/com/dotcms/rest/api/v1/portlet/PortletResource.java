@@ -21,8 +21,10 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -139,22 +141,24 @@ public class PortletResource implements Serializable {
         if (!portletAPI.canAddPortletToLayout(portletId)) {
             return ResponseUtil.INSTANCE
                     .getErrorResponse(request, Response.Status.UNAUTHORIZED, user.getLocale(),
-                            user.getUserId(),
-                            String.format(
-                                    "Portlet with id %s is restricted and can not be added to a layout.",
-                                    portletId));
+                            user.getUserId(), "custom.content.portlet.add.restricted", portletId);
         }
 
         final Portlet portlet = portletAPI.findPortlet(portletId);
         if (null == portlet) {
-            throw new DoesNotExistException(
-                    String.format("Portlet id by %s wasn't found.", portletId));
+
+           final String errorMessage = Try.of(()->LanguageUtil.get( request.getLocale(), "custom.content.portlet.not.found", portletId ))
+                    .getOrElse(String.format("Portlet with id %s wasn't found.", portletId)); //fallback message
+
+            throw new DoesNotExistException(errorMessage);
         }
 
         final Layout layout = layoutAPI.loadLayout(layoutId);
         if (null == layout) {
-            throw new DoesNotExistException(
-                    String.format("Layout id by %s wasn't found.", layoutId));
+            final String errorMessage = Try.of(()->LanguageUtil.get( request.getLocale(), "custom.content.portlet.layout.not.found", layoutId ))
+                    .getOrElse(String.format("Layout with id %s wasn't found.", portletId)); //fallback message
+
+            throw new DoesNotExistException(errorMessage);
         }
 
         final List<Layout> userLayouts = layoutAPI.loadLayoutsForUser(user);
@@ -162,7 +166,7 @@ public class PortletResource implements Serializable {
             return ResponseUtil.INSTANCE
                     .getErrorResponse(request, Response.Status.UNAUTHORIZED, user.getLocale(),
                             user.getUserId(),
-                            "Current user does not have access to the given layout.");
+                            "custom.content.portlet.user.layout.permission",user.getUserId(), layout.getId());
         }
 
         final List<String> portletIds = new ArrayList<>(layout.getPortletIds());
