@@ -121,8 +121,6 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 		this.systemTemplate.setFriendlyName(SYSTEM_TEMPLATE_NAME);
 		this.systemTemplate.setDrawed(true);
 		this.systemTemplate.setDrawedBody(this.readLayout());
-
-		//this.checkSystemTemplateVersionInfo(userId);
 	}
 
 	private String readLayout () {
@@ -160,56 +158,6 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 					"  \"sidebar\":null\n" +
 					"}\n";
 		}
-	}
-
-	// todo: this did not work, b/c the template version info, needs a reference to the template table
-	// we are mocking the template
-	private void checkSystemTemplateVersionInfo(final String userId) {
-
-		VersionInfo info = null;
-
-		try {
-
-			info = this.versionableAPI.get().getVersionInfo(Template.SYSTEM_TEMPLATE);
-		} catch (DotDataException e) {
-
-			Logger.error(this, e.getMessage(), e);
-		}
-
-		if (null == info) {
-
-			try {
-				this.createSystemTemplate(userId);
-			} catch (DotDataException e) {
-
-				Logger.error(this, e.getMessage(), e);
-			}
-		}
-	}
-
-	@WrapInTransaction
-	private void createSystemTemplate (final String userId) throws DotDataException {
-
-		final Date now = new Date();
-		final String hostIdentifier = APILocator.systemHost().getIdentifier();
-		final Identifier identifier = new Identifier();
-		identifier.setId(Template.SYSTEM_TEMPLATE);
-		identifier.setAssetName(SYSTEM_TEMPLATE_NAME);
-		identifier.setCreateDate(now);
-		identifier.setAssetType("template");
-		identifier.setOwner(userId);
-		identifier.setParentPath("/");
-		identifier.setHostId(hostIdentifier);
-
-		this.identifierAPI.save(identifier);
-
-		final VersionInfo info = new VersionInfo();
-		info.setLiveInode(Template.SYSTEM_TEMPLATE);
-		info.setWorkingInode(Template.SYSTEM_TEMPLATE);
-		info.setVersionTs(now);
-		info.setIdentifier(Template.SYSTEM_TEMPLATE);
-
-		this.versionableAPI.get().saveVersionInfo(info);
 	}
 
 	private List<Template> includeSystemTemplate (final List<Template> inTemplates) {
