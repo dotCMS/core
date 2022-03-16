@@ -1983,6 +1983,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
         final Contentlet toReturn = findInDb(inode).orElseThrow(()->
                 new DotStateException(String.format("Contentlet with inode '%s' not found in DB", inode)));
 
+
+
+        if (contentlet.isVanityUrl()) {
+            setOldHostIDProperty(toReturn);
+        }
+
         if(UtilMethods.isNotSet(contentlet.getIdentifier())) {
             toReturn.setFolder(contentlet.getFolder());
             toReturn.setHost(contentlet.getHost());
@@ -1995,6 +2001,22 @@ public class ESContentFactoryImpl extends ContentletFactory {
         CacheLocator.getCSSCache().remove(identifier.getHostId(), identifier.getPath(), true);
         CacheLocator.getCSSCache().remove(identifier.getHostId(), identifier.getPath(), false);
         return toReturn;
+    }
+
+    private void setOldHostIDProperty(final Contentlet contentlet)
+            throws DotDataException, DotSecurityException {
+        final Optional<ContentletVersionInfo> contentletVersionInfoOptional = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
+
+        if (contentletVersionInfoOptional.isPresent()) {
+            final Contentlet oldContentlet = APILocator.getContentletAPI()
+                    .findContentletByIdentifier(contentlet.getIdentifier(), contentlet.isLive(),
+                            contentlet.getLanguageId(), APILocator.systemUser(), false);
+
+            if (UtilMethods.isSet(oldContentlet)) {
+                contentlet.setProperty(Contentlet.OLD_HOST_ID, oldContentlet.getHost());
+            }
+        }
     }
 
     private void setUpContentletAsJson(final Contentlet contentlet, final String inode) {

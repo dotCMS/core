@@ -33,9 +33,11 @@ import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -728,10 +730,24 @@ public class PublisherAPIImpl extends PublisherAPI{
 		deleteElementFromPublishQueueTable(identifier, 0);
 	}
 
+	@Override
+	public void deleteElementFromPublishQueueTableAndAuditStatus(final String identifier) throws DotPublisherException{
+		final List<PublishQueueElement> queueElements = getQueueElementsByAsset(identifier);
+		String bundleId = Try.of(()->queueElements.get(0).getBundleId()).getOrNull();
+
+		deleteElementFromPublishQueueTable(identifier, 0);
+
+		List<PublishQueueElement> queueElementsAfterDelete = Try.of(()->PublisherAPI.getInstance()
+				.getQueueElementsByBundleId(bundleId)).getOrElse(Collections::emptyList);
+
+		if(queueElementsAfterDelete.isEmpty()) {
+			APILocator.getPublishAuditAPI().deletePublishAuditStatus(bundleId);
+		}
+	}
+
 	@WrapInTransaction
 	@Override
 	public void deleteElementFromPublishQueueTable(final String identifier, final long languageId) throws DotPublisherException{
-
 		try{
 			final DotConnect dc = new DotConnect();
 			if (languageId > 0) {
@@ -744,7 +760,6 @@ public class PublisherAPIImpl extends PublisherAPI{
 			}
 			dc.loadResult();
 		}catch(Exception e){
-
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to delete element "+identifier+" :"+e.getMessage(), e);
 		}
@@ -785,6 +800,16 @@ public class PublisherAPIImpl extends PublisherAPI{
 	 * Delete element(s) from publishing_queue table by id
 	 */
 	private static final String DELETEELEMENTSFROMQUEUESQL="DELETE FROM publishing_queue where bundle_id=?";
+
+
+	@WrapInTransaction
+	@Override
+	public void deleteElementsFromPublishQueueTableAndAuditStatus(final String bundleId) throws DotPublisherException{
+
+		deleteElementsFromPublishQueueTable(bundleId);
+
+		APILocator.getPublishAuditAPI().deletePublishAuditStatus(bundleId);
+	}
 
 	@WrapInTransaction
 	@Override

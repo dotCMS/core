@@ -406,7 +406,9 @@ public class PermissionAjax {
 				String inode = (String) ((Map)results.get(0)).get("inode");
 				if(assetType.equals(Identifier.ASSET_TYPE_TEMPLATE)){
 					perm = APILocator.getTemplateAPI().find(inode,user,respectFrontendRoles);
-				} else {
+				} else if (assetType.equals(Identifier.ASSET_TYPE_FOLDER)){
+					perm = APILocator.getFolderAPI().find(inode,user,respectFrontendRoles);
+				}else {
 					perm = InodeFactory.getInode(inode, InodeUtils.getClassByDBType(type));
 				}
 			}
