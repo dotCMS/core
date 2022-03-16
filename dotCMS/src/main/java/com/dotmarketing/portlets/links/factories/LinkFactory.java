@@ -358,7 +358,7 @@ public class LinkFactory {
         	CacheLocator.getNavToolCache().removeNav(oldParent.getHostId(), oldParent.getInode());
         }
 
-		systemEventsAPI.pushAsync(SystemEventType.MOVE_LINK, new Payload(currentLink, Visibility.EXCLUDE_OWNER,
+		systemEventsAPI.pushAsync(SystemEventType.MOVE_LINK, new Payload(currentLink.getMap(), Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(currentLink.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 
         return true;

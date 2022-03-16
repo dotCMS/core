@@ -527,7 +527,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                 }
             }
 
-            systemEventsAPI.pushAsync(SystemEventType.MOVE_PAGE_ASSET, new Payload(page, Visibility.EXCLUDE_OWNER,
+            systemEventsAPI.pushAsync(SystemEventType.MOVE_PAGE_ASSET, new Payload(page.getMap(), Visibility.EXCLUDE_OWNER,
                     new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 
             return true;

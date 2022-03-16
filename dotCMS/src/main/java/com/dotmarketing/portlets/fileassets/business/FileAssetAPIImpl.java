@@ -523,15 +523,9 @@ public class FileAssetAPIImpl implements FileAssetAPI {
                 CacheLocator.getNavToolCache().removeNav(oldParent.getHostId(), oldParent.getInode());
 
                 CacheLocator.getIdentifierCache().removeFromCacheByVersionable( fileAssetCont );
-				HibernateUtil.addCommitListener(
-					() -> {
-						try {
-							this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FILE_ASSET, new Payload(fileAsset, Visibility.EXCLUDE_OWNER,
+
+				this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FILE_ASSET, new Payload(fileAsset.getMap(), Visibility.EXCLUDE_OWNER,
 					new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
-						} catch (DotDataException e) {
-							Logger.error(this, "Error executing system event for file asset with ID=" + fileAsset.getIdentifier(), e);
-						}
-				});
 
                 return true;
             }
