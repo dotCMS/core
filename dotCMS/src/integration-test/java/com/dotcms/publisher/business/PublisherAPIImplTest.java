@@ -20,7 +20,6 @@ import java.util.Date;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
