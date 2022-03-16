@@ -385,7 +385,9 @@ public class BinaryExporterServlet extends HttpServlet {
 
       if(params.get("quality_q")!=null) {
       	final UserAgent userAgent = new UserAgent(req.getHeader("user-agent"));
-        if(userAgent.getBrowser() == Browser.SAFARI || userAgent.getOperatingSystem().getGroup() == OperatingSystem.IOS){
+        if((userAgent.getBrowser() == Browser.SAFARI
+				&& Integer.parseInt(userAgent.getBrowserVersion().getMajorVersion())<14)
+				|| userAgent.getOperatingSystem().getGroup() == OperatingSystem.IOS){
           params.put("jpeg_q", params.get("quality_q"));
           params.put("jpeg_p",  new String[] {"1"});
         }else {

@@ -12,7 +12,9 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockServletPathRequest;
 import com.dotcms.mock.request.MockSessionRequest;
+import com.dotcms.mock.response.MockHeaderResponse;
 import com.dotcms.mock.response.MockHttpCaptureResponse;
+import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.mock.response.MockHttpStatusResponse;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
@@ -187,6 +189,42 @@ public class BinaryExporterServletTest {
                 + "\u0006�@\tĥ5���mx1����/1��.<%��bߞ�p�E;\u0007S�l�<�\u0011�\u000F��\"\u0003��\u007FY�%�%\u0003�\"O��Ǡ�\u0096�\b'�\u000FU~x�S\u0014��b���S�9��v�Xmo�ڢ}��A��3��L~\u0000\u0000\u0000\u0000";
 
         assertTrue(equalsIgnoreNewlineStyle(expectedContent, new String(responseContent, StandardCharsets.UTF_8)));
+
+    }
+
+    @DataProvider
+    public static Object[][] testCasesWebp() {
+        return new Object[][] {
+                { "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.3 Safari/605.1.15", "image/webp" },
+                { "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) Apple WebKit/605.1.15 (HTML, like Gecko) Version/ 13 .0.3 Safari /605.1.15", "image/jpeg" },
+        };
+    }
+
+    @UseDataProvider("testCasesWebp")
+    @Test
+    public void requestWebpImage(final String userAgent, final String expectedContentType)
+            throws DotDataException, DotSecurityException, ServletException, IOException {
+
+        File png = new File("src/integration-test/resources/images/issue21652.png");
+
+        final Contentlet fileContentlet = new FileAssetDataGen(png).host(host)
+                .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+
+        final String fileURI = "/contentAsset/image/"+fileContentlet.getInode()+"/fileAsset/byInode/true/600w/webp/75q";
+        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
+        Mockito.when(request.getHeader("user-agent")).thenReturn(userAgent);
+        Mockito.when(request.getAttribute(WebKeys.USER)).thenReturn(APILocator.systemUser());
+        Mockito.when(request.getRequestURI()).thenReturn(fileURI);
+        Mockito.when(request.getServletPath()).thenReturn("/contentAsset");
+
+        final HttpServletResponse response = new MockHeaderResponse(new MockHttpResponse().response());
+
+        // Send servlet request
+        final BinaryExporterServlet binaryExporterServlet = new BinaryExporterServlet();
+        binaryExporterServlet.init();
+        binaryExporterServlet.doGet(request, response);
+
+        assertEquals(expectedContentType, response.getHeader("Content-Type"));
 
     }
 
