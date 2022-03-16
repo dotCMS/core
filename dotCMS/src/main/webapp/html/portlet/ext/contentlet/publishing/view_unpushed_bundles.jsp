@@ -40,7 +40,7 @@
 	if(null!=request.getParameter("delAsset")){
 		String assetId = request.getParameter("delAsset");
 		String bundleId = request.getParameter("bundleId");
-		APILocator.getBundleAPI().deleteAssetFromBundle(assetId, bundleId);
+		APILocator.getBundleAPI().deleteAssetFromBundleAndAuditStatus(assetId, bundleId);
 	}
 
 	PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
@@ -157,12 +157,12 @@
 						for(Map<String, Object> asset : assetsTransformed){
 
 							final String title = UtilMethods.isSet(asset.get(PublishQueueElementTransformer.TITLE_KEY)) ?
-								StringEscapeUtils.escapeHtml(asset.get(PublishQueueElementTransformer.TITLE_KEY).toString()) : StringPool.BLANK;
+								StringEscapeUtils.escapeJavaScript(asset.get(PublishQueueElementTransformer.TITLE_KEY).toString()) : StringPool.BLANK;
 
 							if (!title.equals( "" ) ) {%>
 
 								addRow({
-									title:'<%=asset.get(PublishQueueElementTransformer.TITLE_KEY)%>',
+									title:'<%= title %>',
 									inode:'<%=asset.get(PublishQueueElementTransformer.INODE_KEY)%>',
 									type:'<%=asset.get(PublishQueueElementTransformer.TYPE_KEY)%>',
 									content_type_name:'<%= asset.get(PublishQueueElementTransformer.CONTENT_TYPE_NAME_KEY) %>',

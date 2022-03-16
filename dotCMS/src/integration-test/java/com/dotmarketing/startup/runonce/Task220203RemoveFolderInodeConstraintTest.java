@@ -4,18 +4,16 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.common.db.ForeignKey;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
 import java.sql.SQLException;
 import java.util.Arrays;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class Task220202RemoveFolderInodeConstraintTest {
+public class Task220203RemoveFolderInodeConstraintTest {
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -47,7 +45,7 @@ public class Task220202RemoveFolderInodeConstraintTest {
                     Arrays.asList("inode"), Arrays.asList("inode")));
         }
 
-        final Task220202RemoveFolderInodeConstraint task = new Task220202RemoveFolderInodeConstraint();
+        final Task220203RemoveFolderInodeConstraint task = new Task220203RemoveFolderInodeConstraint();
 
         task.executeUpgrade();
 

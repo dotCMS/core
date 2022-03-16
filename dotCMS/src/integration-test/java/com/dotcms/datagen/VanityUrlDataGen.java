@@ -8,6 +8,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 
+import com.dotmarketing.util.UtilMethods;
 import io.vavr.control.Try;
 
 /**
@@ -80,7 +81,7 @@ public class VanityUrlDataGen extends ContentletDataGen {
     url.setOrder(order);
     url.setURI(uri);
     url.setLanguageId(language);
-    url.setTitle(title);
+    url.setTitle(UtilMethods.isSet(title) ? title : "Vanuty Test " + System.currentTimeMillis());
     url.setForwardTo(forwardTo);
     url.setFolder(folder.getIdentifier());
     url.setSite(this.host.getIdentifier());
@@ -104,5 +105,9 @@ public class VanityUrlDataGen extends ContentletDataGen {
     }
   }
 
-  
+
+  public VanityUrlDataGen allSites() {
+    host = APILocator.systemHost();
+    return this;
+  }
 }

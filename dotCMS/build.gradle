@@ -613,6 +613,7 @@ javadoc {
     options.charSet 'utf-8'
     options.linkSource false
     options.links 'https://docs.oracle.com/javase/8/docs/api/'
+    options.addBooleanOption("-allow-script-in-comments", true)
 }
 
 //Task meant to be use from a distribution structure using the buildwar.sh script.

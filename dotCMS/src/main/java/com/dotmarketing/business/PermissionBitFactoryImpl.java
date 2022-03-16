@@ -1253,20 +1253,37 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 
 
-	/* 
-	 * @deprecated Use savePermission(permission) instead.
+	/**
+	 * @deprecated Use {@link PermissionBitFactoryImpl#savePermission(Permission, Permissionable)} instead.
 	 */
 	@Override
     @Deprecated
 	protected void assignPermissions(List<Permission> permissions, Permissionable permissionable) throws DotDataException {
+		boolean anyNew = false;
 
-    for(Permission permission:permissions) {
-      savePermission(permission, permissionable);
-    }
+		for(Permission permission:permissions) {
+			final PermissionSaveResult permissionSaveResult = savePermission(permission,
+					permissionable, false);
+
+			if (permissionSaveResult.result == PersistResult.NEW) {
+				anyNew = true;
+			}
+		}
+
+		if(anyNew) {
+			resetPermissionReferences(permissionable);
+		} else {
+			refreshPermissionable(permissionable);
+		}
 	}
 
 	@Override
 	protected Permission savePermission(Permission permission, Permissionable permissionable) throws DotDataException {
+		return savePermission(permission, permissionable, true).permission;
+	}
+
+	private PermissionSaveResult savePermission(final  Permission permission, final  Permissionable permissionable, final boolean refreshPermissionable) throws DotDataException {
+
 
 		if(!permission.getInode().equals(permissionable.getPermissionId()))
 			throw new DotDataException("You cannot update permissions of a different permissionable id than the one you are passing to the method");
@@ -1286,26 +1303,33 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 					break;
 				}
 		} else {
-			if(result == PersistResult.NEW) {
+			if(result == PersistResult.NEW && refreshPermissionable) {
 			  resetPermissionReferences(permissionable);
 			}
 		}
 
 		permissionCache.remove(permissionable.getPermissionId());
 
+		if (refreshPermissionable) {
+			refreshPermissionable(permissionable);
+		}
+
+		return new PermissionSaveResult(findPermissionByInodeAndRole(permission.getInode(), permission.getRoleId(), permission.getType()), result);
+	}
+
+	private void refreshPermissionable(Permissionable permissionable) throws DotDataException {
 		if(permissionable instanceof Structure) {
 			ContentletAPI contAPI = APILocator.getContentletAPI();
-			contAPI.refresh((Structure)permissionable);
+			contAPI.refresh((Structure) permissionable);
 		} else if (permissionable instanceof ContentType) {
-            final Structure contentType = new StructureTransformer(ContentType.class.cast(permissionable)).asStructure();
+            final Structure contentType = new StructureTransformer(ContentType.class.cast(
+					permissionable)).asStructure();
             APILocator.getContentletAPI().refresh(contentType);
         } else if(permissionable instanceof Contentlet) {
 			ContentletAPI contAPI = APILocator.getContentletAPI();
-			((Contentlet)permissionable).setLowIndexPriority(true);
-			contAPI.refresh((Contentlet)permissionable);
+			((Contentlet) permissionable).setLowIndexPriority(true);
+			contAPI.refresh((Contentlet) permissionable);
 		}
-
-		return findPermissionByInodeAndRole(permission.getInode(), permission.getRoleId(), permission.getType());
 	}
 
 	@SuppressWarnings("unchecked")
@@ -2546,7 +2570,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 		if (permissionable instanceof ContentType) {
 			APILocator.getReindexQueueAPI()
-					.addStructureReindexEntries(permissionable.getPermissionId());
+					.addStructureReindexEntries((ContentType) permissionable);
 		} else if (permissionable instanceof Contentlet) {
 			APILocator.getReindexQueueAPI().addIdentifierReindex(permissionable.getPermissionId());
 		}
@@ -3187,6 +3211,17 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				    "	where ident.id = ids.id"
 
 			;
+		}
+	}
+
+	private static class PermissionSaveResult {
+		Permission permission;
+		PersistResult result;
+
+		public PermissionSaveResult(Permission permission,
+				PersistResult result) {
+			this.permission = permission;
+			this.result = result;
 		}
 	}
 
