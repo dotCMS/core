@@ -22,11 +22,11 @@ At this point, you can use `buildx` to build your image and target the platform(
 
 Use the version specified
 ```
-docker buildx build --platform linux/amd64,linux/arm64 --pull --push -t dotcms/java-base .
+docker buildx build --platform linux/amd64,linux/arm64 --pull --push -t dotcms/java-base:11.0.14.10.1-amzn .
 ```
 
 or specify a version
 ```
-docker buildx build --platform linux/amd64,linux/arm64 --pull --push --build-arg JAVA_VERSION=21.2.0.r11-grl  -t dotcms/java-base .
+docker buildx build --platform linux/amd64,linux/arm64 --pull --push --build-arg JAVA_VERSION=21.2.0.r11-grl  -t dotcms/java-base:21.2.0.r11-grl .
 
 ```

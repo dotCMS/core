@@ -987,14 +987,13 @@ public class RoleAjax {
 		}
 		if(perm == null) {
 			DotConnect dc = new DotConnect();
-			String assetType ="";
 			dc.setSQL("select asset_type as type from identifier where id = ?");
 			dc.addParam(assetId);
 			ArrayList idResults = dc.loadResults();
 			if(idResults.size()>0){
-				 assetType = (String)((Map)idResults.get(0)).get("type");
+				String assetType = (String)((Map)idResults.get(0)).get("type");
 
-				 if (null != assetType && assetType.equals("folder")){
+				 if (Folder.FOLDER_TYPE.equals(assetType)){
 					 perm = APILocator.getFolderAPI().find(assetId, user, respectFrontendRoles);
 				 } else{
 					 dc.setSQL("select inode, type from inode,"+assetType+" asset,identifier where inode.inode = asset.inode and " +

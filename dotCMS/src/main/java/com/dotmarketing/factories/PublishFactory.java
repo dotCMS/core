@@ -217,7 +217,7 @@ public class PublishFactory {
 			return false;
 		}
 
-		Logger.debug(PublishFactory.class, "*****I'm a Folder -- Publishing" + folder.getName());
+		Logger.debug(PublishFactory.class, ()-> "*****I'm a Folder -- Publishing" + folder.getName());
 
 		//gets all links for this folder
 		java.util.List foldersListSubChildren = APILocator.getFolderAPI()

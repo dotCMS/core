@@ -1201,6 +1201,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	@CloseDBIfOpened
 	public void updateUserReferences(final String userId, final String replacementUserId)
 			throws DotDataException {
+		Logger.debug(this, () -> "Updating references for user " + userId);
 		folderFactory.updateUserReferences(userId, replacementUserId);
 	}
 }

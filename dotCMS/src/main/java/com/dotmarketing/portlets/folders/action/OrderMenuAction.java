@@ -414,26 +414,27 @@ public class OrderMenuAction extends DotPortletAction {
 			} else{
 
 				final Inode item = (Inode) currentItem;
-				Contentlet c = null;
+				Contentlet contentlet = null;
 				try {
-					c = APILocator.getContentletAPI().find(item.getInode(), user, false);
+					contentlet = APILocator.getContentletAPI().find(item.getInode(), user, false);
 				} catch(ClassCastException cce) {
+					Logger.warn(this, cce.getMessage(), cce);
 				}
 
 				if (item.getInode().equalsIgnoreCase( itemInode)) {
 					if(item instanceof WebAsset) {
 						((WebAsset)item).setSortOrder(x + increment);
-					} if (APILocator.getFileAssetAPI().isFileAsset(c))  {
-						c.setSortOrder(x + increment);
-						APILocator.getContentletAPI().refresh(c);
+					} if (APILocator.getFileAssetAPI().isFileAsset(contentlet))  {
+						contentlet.setSortOrder(x + increment);
+						APILocator.getContentletAPI().refresh(contentlet);
 					}
 				}
 				else {
 					if(item instanceof WebAsset) {
 						((WebAsset)item).setSortOrder(x);
-					}  if (APILocator.getFileAssetAPI().isFileAsset(c))  {
-						c.setSortOrder(x);
-						APILocator.getContentletAPI().refresh(c);
+					}  if (APILocator.getFileAssetAPI().isFileAsset(contentlet))  {
+						contentlet.setSortOrder(x);
+						APILocator.getContentletAPI().refresh(contentlet);
 					}
 				}
 			}

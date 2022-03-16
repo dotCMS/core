@@ -4,7 +4,12 @@ import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.rest.WebResource;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.FileUtil;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDUtil;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.StringPool;
@@ -80,6 +85,11 @@ public class MultiPartUtils {
                             contentDisposition.getParameters().get(NAME):
                             StringPool.BLANK;
 
+            
+            
+            
+            
+            
             if (MediaType.APPLICATION_JSON_TYPE.equals(part.getMediaType()) || JSON.equalsIgnoreCase(name)) {
 
                 bodyMap.putAll(WebResource.processJSON(part.getEntityAs(InputStream.class)));
@@ -110,7 +120,16 @@ public class MultiPartUtils {
                 throw new IOException("Unable to create temp folder to save binaries");
             }
 
-            final String filename = part.getContentDisposition().getFileName();
+            final String badFileName = part.getContentDisposition().getFileName();
+            final String filename = FileUtil.sanitizeFileName(badFileName);
+            if(!badFileName.equals(filename)) {
+                SecurityLogger.logInfo(getClass(), "Invalid filename uploaded, possible exploit attempt: " + badFileName);
+                if(Config.getBooleanProperty("THROW_ON_BAD_FILENAMES", true)) {
+                    throw new IllegalArgumentException("Invalid filename uploaded : " + badFileName);
+                }
+                
+                
+            }
             final File tempFile   = new File(
                     tmpFolder.getAbsolutePath() + File.separator + filename);
 

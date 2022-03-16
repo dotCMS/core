@@ -23,6 +23,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -54,7 +55,9 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
     /** nullable persistent field */
     private String hostId = "";
 
-	private String type = "folder";
+	public static final String FOLDER_TYPE = "folder";
+
+	private String type;
 
     private String title;
     /** default constructor */
@@ -128,6 +131,7 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
     
 	public Folder() {
     	modDate = new Date();
+		type = FOLDER_TYPE;
     }
 
 	/**
@@ -283,7 +287,7 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
 	public Map<String, Object> getMap() throws DotStateException, DotDataException, DotSecurityException {
 		final Map<String, Object> map = new HashMap<>();
 		map.put("inode", this.identifier);
-		map.put("type", "folder");
+		map.put("type", FOLDER_TYPE);
 		map.put("identifier", this.identifier);
 		map.put("owner", this.owner);
 		map.put("iDate", iDate);
@@ -387,7 +391,7 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
 				return false;
 			if(!this.title.equals(((Folder) o).title))
 				return false;
-			if((this.filesMasks == null && ((Folder) o).filesMasks != null && ((Folder)o).filesMasks != "")
+			if((this.filesMasks == null && ((Folder) o).filesMasks != null && ((Folder)o).filesMasks != StringPool.BLANK)
                     || (this.filesMasks != null && !this.filesMasks.equals(((Folder) o).filesMasks)))
 				return false;				
 		}else if(o instanceof FolderForm){

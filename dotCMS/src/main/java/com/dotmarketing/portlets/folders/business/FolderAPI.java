@@ -567,7 +567,12 @@ import java.util.function.Predicate;
     List<Folder> findSubFoldersByParent(Parentable parent, User user, boolean respectFrontEndPermissions)
             throws DotDataException, DotSecurityException;
 
-    @CloseDBIfOpened
+	/**
+	 * Updates folder's owner when a user is replaced by another
+	 * @param userId ID of the user to be replace
+	 * @param replacementUserId ID of the new folder's owner
+	 * @throws DotDataException
+	 */
     void updateUserReferences(String userId, String replacementUserId)
             throws DotDataException;
 }

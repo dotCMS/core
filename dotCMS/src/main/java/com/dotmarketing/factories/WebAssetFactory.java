@@ -864,8 +864,9 @@ public class WebAssetFactory {
 	public static void changeAssetMenuOrder(Folder folder, int newValue, User user) throws ActionException, DotDataException {
 
 		// Checking permissions
-		if (!permissionAPI.doesUserHavePermission(folder, PERMISSION_WRITE, user))
+		if (!permissionAPI.doesUserHavePermission(folder, PERMISSION_WRITE, user)) {
 			throw new ActionException(WebKeys.USER_PERMISSIONS_EXCEPTION);
+		}
 
 		if (newValue == -1) {
 			folder.setShowOnMenu(false);
@@ -873,9 +874,8 @@ public class WebAssetFactory {
 			folder.setShowOnMenu(true);
 		}
 		folder.setSortOrder(newValue);
-		RefreshMenus.deleteMenu(folder);
 
-		Identifier ident=APILocator.getIdentifierAPI().find(folder.getIdentifier());
+		final Identifier ident=APILocator.getIdentifierAPI().find(folder.getIdentifier());
 		CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
 
 		try {

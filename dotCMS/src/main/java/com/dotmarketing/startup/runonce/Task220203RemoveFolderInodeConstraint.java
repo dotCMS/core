@@ -13,7 +13,7 @@ import java.util.Arrays;
 /**
  * Upgrade task to remove foreign key `fkb45d1c6e5fb51eb`
  */
-public class Task220202RemoveFolderInodeConstraint implements StartupTask {
+public class Task220203RemoveFolderInodeConstraint implements StartupTask {
     @Override
     public boolean forceRun() {
         return true;

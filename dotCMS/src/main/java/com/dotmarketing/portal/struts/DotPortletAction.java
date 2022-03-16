@@ -879,10 +879,10 @@ public class DotPortletAction extends PortletAction {
 	}
 
 	protected static void _checkUserPermissions(String inode, int permission) throws ActionException {
-		PermissionAPI perAPI = APILocator.getPermissionAPI();
+		final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
-		List<Role> rolesPublish = perAPI.getRoles(inode, PermissionAPI.PERMISSION_PUBLISH, "CMS Owner", 0, -1);
-		List<Role> rolesWrite = perAPI.getRoles(inode, PermissionAPI.PERMISSION_WRITE, "CMS Owner", 0, -1);
+		final List<Role> rolesPublish = permissionAPI.getRoles(inode, PermissionAPI.PERMISSION_PUBLISH, "CMS Owner", 0, -1);
+		final List<Role> rolesWrite = permissionAPI.getRoles(inode, PermissionAPI.PERMISSION_WRITE, "CMS Owner", 0, -1);
 
 		Role cmsOwner;
 		try {
@@ -908,6 +908,7 @@ public class DotPortletAction extends PortletAction {
 				}
 			}
 			if(!isCMSOwner){
+				Logger.error(DotPortletAction.class, "The user does not have permission to execute this action.");
 				throw new ActionException(WebKeys.USER_PERMISSIONS_EXCEPTION);
 			}
 		}else {
@@ -923,21 +924,23 @@ public class DotPortletAction extends PortletAction {
 	 * @throws DotDataException
 	 */
 	protected static void _checkUserPermissions(Inode webAsset, User user, int permission) throws ActionException, DotDataException {
-		PermissionAPI perAPI = APILocator.getPermissionAPI();
+		final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 		// Checking permissions
 		if (!InodeUtils.isSet(webAsset.getInode()))
 			return;
-		if (!perAPI.doesUserHavePermission(webAsset, permission, user)) {
+		if (!permissionAPI.doesUserHavePermission(webAsset, permission, user)) {
 			_checkUserPermissions(webAsset.getInode(), permission);
 		}
 	}
 
 	protected static void _checkUserPermissions(final Folder folder, final User user, final int permission) throws ActionException, DotDataException {
-		final PermissionAPI perAPI = APILocator.getPermissionAPI();
+		final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 		// Checking permissions
-		if (!InodeUtils.isSet(folder.getInode()))
+		if (!InodeUtils.isSet(folder.getInode())) {
 			return;
-		if (!perAPI.doesUserHavePermission(folder, permission, user)) {
+		}
+
+		if (!permissionAPI.doesUserHavePermission(folder, permission, user)) {
 			_checkUserPermissions(folder.getInode(), permission);
 		}
 	}
