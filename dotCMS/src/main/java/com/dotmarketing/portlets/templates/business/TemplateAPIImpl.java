@@ -366,7 +366,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 		if(Template.SYSTEM_TEMPLATE.equals(template.getIdentifier())) {
 
 			Logger.info(this, "System template can not be published");
-			return;
+			throw new IllegalArgumentException("System template can not be published");
 		}
 
 		Logger.debug(this, ()-> "Publishing the template: " + template.getIdentifier());
@@ -1336,7 +1336,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 	@Subscriber
 	public void onCopySite(final SiteCreatedEvent event)
 			throws DotDataException, DotSecurityException {
-		
+
 		final Folder appTemplateFolder = APILocator.getFolderAPI().findFolderByPath(
 				Constants.TEMPLATE_FOLDER_PATH,
 				APILocator.getHostAPI().find(event.getSiteIdentifier(),APILocator.systemUser(),false),
