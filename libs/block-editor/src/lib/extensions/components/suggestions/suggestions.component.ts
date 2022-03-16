@@ -28,6 +28,7 @@ export interface DotMenuItem extends Omit<MenuItem, 'icon'> {
     icon: string | SafeUrl;
     isActive?: () => boolean;
     attributes?: Record<string, unknown>;
+    data?: Record<string, unknown>;
 }
 
 @Component({
@@ -211,7 +212,10 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
                                                 this.getContentletLanguage(languageId);
                                             return {
                                                 label: contentlet.title,
-                                                icon: 'image',
+                                                icon: 'contentlet/image',
+                                                data: {
+                                                    contentlet: contentlet
+                                                },
                                                 command: () => {
                                                     this.onSelection({
                                                         payload: contentlet,

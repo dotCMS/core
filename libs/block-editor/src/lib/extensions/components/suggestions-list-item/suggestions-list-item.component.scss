@@ -19,4 +19,40 @@
     height: 32px;
     justify-content: center;
     width: 32px;
+
+    dot-contentlet-thumbnail {
+        align-items: center;
+        display: block;
+        position: relative;
+        width: 42px;
+        height: 42px;
+    }
+
+    &.dot-contentlet{
+        width: 42px;
+        height: 42px;
+        flex-basis: 42px;
+    }
+
+
+}
+
+.data-wrapper {
+    overflow: hidden;
+
+    >span {
+        overflow: hidden;
+        display: block;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .state {
+        margin-top: $spacing-1;
+        display: flex;
+
+        dot-state-icon {
+            margin-right: $spacing-1;
+        }
+    }
 }
