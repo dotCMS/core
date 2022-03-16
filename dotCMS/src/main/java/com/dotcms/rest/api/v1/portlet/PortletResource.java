@@ -147,7 +147,7 @@ public class PortletResource implements Serializable {
         final Portlet portlet = portletAPI.findPortlet(portletId);
         if (null == portlet) {
 
-           final String errorMessage = Try.of(()->LanguageUtil.get( request.getLocale(), "custom.content.portlet.not.found", portletId ))
+           final String errorMessage = Try.of(()->LanguageUtil.get( user.getLocale(), "custom.content.portlet.not.found", portletId ))
                     .getOrElse(String.format("Portlet with id %s wasn't found.", portletId)); //fallback message
 
             throw new DoesNotExistException(errorMessage);
@@ -155,7 +155,7 @@ public class PortletResource implements Serializable {
 
         final Layout layout = layoutAPI.loadLayout(layoutId);
         if (null == layout) {
-            final String errorMessage = Try.of(()->LanguageUtil.get( request.getLocale(), "custom.content.portlet.layout.not.found", layoutId ))
+            final String errorMessage = Try.of(()->LanguageUtil.get( user.getLocale(), "custom.content.portlet.layout.not.found", layoutId ))
                     .getOrElse(String.format("Layout with id %s wasn't found.", portletId)); //fallback message
 
             throw new DoesNotExistException(errorMessage);
