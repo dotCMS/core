@@ -26,6 +26,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.sql.Connection;
@@ -70,7 +71,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	@Override
 	protected void updateIdentifierURI(Versionable webasset, Folder folder) throws DotDataException {
 		Identifier identifier = find(webasset);
-		Identifier folderId = find(folder);
+		Identifier folderId = find(folder.getIdentifier());
 		ic.removeFromCacheByVersionable(webasset);
 		identifier.setURI(folderId.getPath() + identifier.getInode());
 		if (webasset instanceof Contentlet){
@@ -269,73 +270,103 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	}
 
 	@Override
+	protected Identifier createNewIdentifier(final Folder folder, final Folder parent, final String existingId) throws DotDataException {
+		final User systemUser = APILocator.getUserAPI().getSystemUser();
+		final Identifier identifier = new Identifier();
+
+		identifier.setId(existingId!=null?existingId:UUIDGenerator.generateUuid());
+
+		final Identifier parentId = APILocator.getIdentifierAPI().find(parent.getIdentifier());
+
+		identifier.setAssetType(Identifier.ASSET_TYPE_FOLDER);
+		identifier.setAssetName(folder.getName());
+		identifier.setOwner(folder.getOwner());
+
+		identifier.setHostId(getHost(parent, systemUser, identifier).getIdentifier());
+		identifier.setParentPath(parentId.getPath());
+
+		identifier.setCreateDate(folder.getIDate()!=null? folder.getIDate():new Date());
+		saveIdentifier(identifier);
+		folder.setIdentifier(identifier.getId());
+		return identifier;
+	}
+
+	@Override
+	protected Identifier createNewIdentifier (final Folder folder, final Host site, final String existingId) throws DotDataException {
+		Identifier identifier = new Identifier();
+		if (existingId !=  null) {
+			identifier.setId(existingId);
+		}else {
+			identifier.setId(UUIDGenerator.generateUuid());
+		}
+
+		identifier.setAssetType(Identifier.ASSET_TYPE_FOLDER);
+		identifier.setAssetName(folder.getName());
+		identifier.setParentPath( "/" );
+		identifier.setOwner(folder.getOwner());
+		identifier.setHostId( site != null ? site.getIdentifier() : null );
+		identifier.setCreateDate(folder.getIDate()!=null? folder.getIDate():new Date());
+
+		saveIdentifier( identifier );
+
+		folder.setIdentifier(identifier.getId());
+
+		return identifier;
+	}
+
+	@Override
 	protected Identifier createNewIdentifier(final Versionable versionable, final Folder folder, final String existingId) throws DotDataException {
 		final User systemUser = APILocator.getUserAPI().getSystemUser();
 		final Identifier identifier = new Identifier();
 
 		identifier.setId(existingId!=null?existingId:UUIDGenerator.generateUuid());
 
-		final Identifier parentId = APILocator.getIdentifierAPI().find(folder);
-		if(versionable instanceof Folder) {
-			identifier.setAssetType(Identifier.ASSET_TYPE_FOLDER);
-			identifier.setAssetName(((Folder) versionable).getName());
-            identifier.setOwner(((Folder) versionable).getOwner());
-		} else {
-			String uri = versionable.getVersionType() + "." + versionable.getInode();
-			if(versionable instanceof Contentlet){
-				final Contentlet contentlet = (Contentlet)versionable;
-				final boolean isCopyContentlet = contentlet.getBoolProperty(Contentlet.IS_COPY_CONTENTLET);
-				if (contentlet.isFileAsset()) {
-					final String contentletAssetNameCopy = contentlet.getStringProperty(Contentlet.CONTENTLET_ASSET_NAME_COPY);
-					if (isCopyContentlet && UtilMethods.isSet(contentletAssetNameCopy)) {
-						uri = contentletAssetNameCopy;
-					} else {
-						try {
-							uri = contentlet.getBinary(FileAssetAPI.BINARY_FIELD) != null
-									? contentlet.getBinary(FileAssetAPI.BINARY_FIELD).getName()
-									: StringPool.BLANK;
-							if (UtilMethods.isSet(contentlet
-									.getStringProperty(FileAssetAPI.FILE_NAME_FIELD))) {
-								uri = contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD);
-							}
-						} catch (IOException e) {
-							Logger.debug(this,
-									"An error occurred while assigning Binary Field: " + e
-											.getMessage());
+		final Identifier parentId = APILocator.getIdentifierAPI().find(folder.getIdentifier());
+
+		String uri = versionable.getVersionType() + "." + versionable.getInode();
+		if(versionable instanceof Contentlet){
+			final Contentlet contentlet = (Contentlet)versionable;
+			final boolean isCopyContentlet = contentlet.getBoolProperty(Contentlet.IS_COPY_CONTENTLET);
+			if (contentlet.isFileAsset()) {
+				final String contentletAssetNameCopy = contentlet.getStringProperty(Contentlet.CONTENTLET_ASSET_NAME_COPY);
+				if (isCopyContentlet && UtilMethods.isSet(contentletAssetNameCopy)) {
+					uri = contentletAssetNameCopy;
+				} else {
+					try {
+						uri = contentlet.getBinary(FileAssetAPI.BINARY_FIELD) != null
+								? contentlet.getBinary(FileAssetAPI.BINARY_FIELD).getName()
+								: StringPool.BLANK;
+						if (UtilMethods.isSet(contentlet
+								.getStringProperty(FileAssetAPI.FILE_NAME_FIELD))) {
+							uri = contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD);
 						}
+					} catch (IOException e) {
+						Logger.debug(this,
+								"An error occurred while assigning Binary Field: " + e
+										.getMessage());
 					}
-				} else if (contentlet.isHTMLPage()) {
-				    uri = contentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD) ;
 				}
-				identifier.setAssetType(Identifier.ASSET_TYPE_CONTENTLET);
-				identifier.setParentPath(parentId.getPath());
-				identifier.setAssetName(uri);
-				identifier.setAssetSubType(contentlet.getContentType().variable());
-			} else if (versionable instanceof WebAsset) {
-				identifier.setURI(((WebAsset) versionable).getURI(folder));
-				identifier.setAssetType(versionable.getVersionType());
-				if(versionable instanceof Link)
-				    identifier.setAssetName(versionable.getInode());
-			} else{
-				identifier.setURI(uri);
-				identifier.setAssetType(versionable.getVersionType());
+			} else if (contentlet.isHTMLPage()) {
+				uri = contentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD) ;
 			}
+			identifier.setAssetType(Identifier.ASSET_TYPE_CONTENTLET);
+			identifier.setParentPath(parentId.getPath());
+			identifier.setAssetName(uri);
+			identifier.setAssetSubType(contentlet.getContentType().variable());
+		} else if (versionable instanceof WebAsset) {
+			identifier.setURI(((WebAsset) versionable).getURI(folder));
+			identifier.setAssetType(versionable.getVersionType());
+			if(versionable instanceof Link)
+				identifier.setAssetName(versionable.getInode());
+		} else{
+			identifier.setURI(uri);
+			identifier.setAssetType(versionable.getVersionType());
+		}
 
-            identifier.setOwner((versionable instanceof WebAsset)
-                    ? ((WebAsset) versionable).getOwner() : versionable.getModUser());
-		}
-		Host site;
-		try {
-			site = APILocator.getHostAPI().findParentHost(folder, systemUser, false);
-		} catch (DotSecurityException e) {
-			throw new DotStateException(
-					String.format("Parent site of folder '%s' could not be found.", folder.getName()));
-		}
-		if(Identifier.ASSET_TYPE_FOLDER.equals(identifier.getAssetType()) && APILocator.getHostAPI().findSystemHost().getIdentifier().equals(site.getIdentifier())){
-			throw new DotStateException("A folder cannot be saved on the system host.");
+		identifier.setOwner((versionable instanceof WebAsset)
+				? ((WebAsset) versionable).getOwner() : versionable.getModUser());
 
-		}
-		identifier.setHostId(site.getIdentifier());
+		identifier.setHostId(getHost(folder, systemUser, identifier).getIdentifier());
 		identifier.setParentPath(parentId.getPath());
 
         final Inode inode;
@@ -357,10 +388,32 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		return identifier;
 	}
 
+	private Host getHost(Folder folder, User systemUser, Identifier identifier)
+			throws DotDataException {
+		Host site;
+		try {
+			site = APILocator.getHostAPI().findParentHost(folder, systemUser, false);
+		} catch (DotSecurityException e) {
+			Logger.error(this, e.getMessage(), e);
+			throw new DotStateException(
+					String.format("Parent site of folder '%s' could not be found.", folder.getName()));
+		}
+		if (Identifier.ASSET_TYPE_FOLDER.equals(identifier.getAssetType())
+				&& APILocator.getHostAPI().findSystemHost().getIdentifier()
+				.equals(site.getIdentifier())) {
+			Logger.error(this, "A folder cannot be saved on the system host.");
+			throw new DotStateException("A folder cannot be saved on the system host.");
+
+		}
+		return site;
+	}
+
 	@Override
 	protected Identifier createNewIdentifier ( Versionable versionable, Host site ) throws DotDataException {
 	    return createNewIdentifier(versionable,site,UUIDGenerator.generateUuid());
 	}
+
+
 
 	@Override
     protected Identifier createNewIdentifier ( Versionable versionable, Host site, String existingId) throws DotDataException {
@@ -371,50 +424,52 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			identifier.setId(UUIDGenerator.generateUuid());
 		}
 
-        if ( versionable instanceof Folder ) {
-            identifier.setAssetType(Identifier.ASSET_TYPE_FOLDER);
+		if ( versionable instanceof Folder ) {
+			identifier.setAssetType(Identifier.ASSET_TYPE_FOLDER);
 			identifier.setAssetName(((Folder) versionable).getName());
-            identifier.setParentPath( "/" );
-            identifier.setOwner(((Folder) versionable).getOwner());
-        } else {
-        	//If this is going to be moved before the save we have to have a way to know the inode ahead of time
-            String uri = versionable.getVersionType() + "." + versionable.getInode();
-            if ( versionable instanceof Contentlet) {
-                Contentlet cont = (Contentlet) versionable;
-                if (cont.isFileAsset()) {
-                    // special case when it is a file asset as contentlet
+			identifier.setParentPath( "/" );
+			identifier.setOwner(((Folder) versionable).getOwner());
+		} else {
+			//If this is going to be moved before the save we have to have a way to know the inode ahead of time
+			String uri = versionable.getVersionType() + "." + versionable.getInode();
+			if (versionable instanceof Contentlet) {
+				Contentlet cont = (Contentlet) versionable;
+				if (cont.isFileAsset()) {
+					// special case when it is a file asset as contentlet
 					uri = String.class.cast(cont.getMap().get(FileAssetAPI.FILE_NAME_FIELD));
 					if (!UtilMethods.isSet(uri)) {
 						try {
-						    // fallback
+							// fallback
 							uri = cont.getBinary(FileAssetAPI.BINARY_FIELD) != null ? cont
-									.getBinary(FileAssetAPI.BINARY_FIELD).getName() : StringPool.BLANK;
+									.getBinary(FileAssetAPI.BINARY_FIELD).getName()
+									: StringPool.BLANK;
 						} catch (IOException e) {
 							throw new DotDataException(e.getMessage(), e);
 						}
 					}
-                } else if (cont.getStructure().getStructureType() == BaseContentType.HTMLPAGE.getType()) {
-                    uri = cont.getStringProperty(HTMLPageAssetAPI.URL_FIELD) ;
-                }
-                identifier.setAssetType(Identifier.ASSET_TYPE_CONTENTLET);
-                identifier.setParentPath( "/" );
-                identifier.setAssetName( uri );
-                identifier.setAssetSubType(cont.getContentType().variable());
-            } else if ( versionable instanceof Link ) {
-                identifier.setAssetName( versionable.getInode() );
-                identifier.setParentPath("/");
-            } else if(versionable instanceof Host) {
+				} else if (cont.getStructure().getStructureType()
+						== BaseContentType.HTMLPAGE.getType()) {
+					uri = cont.getStringProperty(HTMLPageAssetAPI.URL_FIELD);
+				}
+				identifier.setAssetType(Identifier.ASSET_TYPE_CONTENTLET);
+				identifier.setParentPath("/");
+				identifier.setAssetName(uri);
+				identifier.setAssetSubType(cont.getContentType().variable());
+			} else if (versionable instanceof Link) {
+				identifier.setAssetName(versionable.getInode());
+				identifier.setParentPath("/");
+			} else if (versionable instanceof Host) {
 				identifier.setAssetName(versionable.getInode());
 				identifier.setAssetType(Identifier.ASSET_TYPE_CONTENTLET);
 				identifier.setParentPath("/");
 				identifier.setAssetSubType(Host.HOST_VELOCITY_VAR_NAME);
 			} else {
-                identifier.setURI( uri );
-            }
+				identifier.setURI(uri);
+			}
 
-            identifier.setOwner((versionable instanceof WebAsset)
-                    ? ((WebAsset) versionable).getOwner() : versionable.getModUser());
-        }
+			identifier.setOwner((versionable instanceof WebAsset)
+					? ((WebAsset) versionable).getOwner() : versionable.getModUser());
+		}
         identifier.setHostId( site != null ? site.getIdentifier() : null );
 
         final Inode inode;
@@ -538,12 +593,19 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
             db.addParam(ident.getId());
             db.addParam(ident.getId());
             db.loadResult();
+
+			//This is valid for folders as they aren't considered inodes anymore
+			final String tableName = Try.of(
+							() -> (Inode.Type.valueOf(ident.getAssetType().toUpperCase()).getTableName()))
+					.getOrElse(ident.getAssetType());
             
-            db.setSQL("select inode from " + Inode.Type.valueOf(ident.getAssetType().toUpperCase()).getTableName() + " where inode=?");
+            db.setSQL("select inode from " + tableName + " where inode=?");
             db.addParam(ident.getId());
             List<Map<String, Object>> deleteme = db.loadResults();
 
-            String versionInfoTable = Inode.Type.valueOf(ident.getAssetType().toUpperCase()).getVersionTableName();
+            final String versionInfoTable = Try.of(
+					() -> (Inode.Type.valueOf(ident.getAssetType().toUpperCase()).getVersionTableName())).getOrNull();
+
             if (versionInfoTable != null) {
                 db.setSQL("delete from " + versionInfoTable + " where identifier = ?");
                 db.addParam(ident.getId());
@@ -556,7 +618,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
                 WorkflowTask wft = APILocator.getWorkflowAPI().findTaskById((String) task.get("id"));
                 APILocator.getWorkflowAPI().deleteWorkflowTask(wft, APILocator.systemUser());
             }
-            db.setSQL("delete from " + Inode.Type.valueOf(ident.getAssetType().toUpperCase()).getTableName() + " where identifier = ?");
+            db.setSQL("delete from " + tableName + " where identifier = ?");
             db.addParam(ident.getId());
             db.loadResult();
 

@@ -164,12 +164,6 @@ public class ShortyIdApiTest {
 		res = dc.loadObjectResults();
 		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "field" });
 
-        new FolderDataGen().nextPersisted();
-        new FolderDataGen().nextPersisted();
-		dc.setSQL(GET_INODE, 2);
-		dc.addParam("folder");
-		res = dc.loadObjectResults();
-		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "folder" });
 		dc.setSQL(GET_INODE, 2);
 		dc.addParam("links");
 		res = dc.loadObjectResults();
@@ -225,14 +219,6 @@ public class ShortyIdApiTest {
 		res = dc.loadObjectResults();
 		builder.add(new String[] { res.get(0).get("inode").toString(), "inode", "contentlet" });
 		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "contentlet" });
-
-        new FolderDataGen().nextPersisted();
-        new FolderDataGen().nextPersisted();
-        dc.setSQL(GET_INODE, 2);
-		dc.addParam("folder");
-		res = dc.loadObjectResults();
-		builder.add(new String[] { res.get(0).get("inode").toString(), "inode", "folder" });
-		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "folder" });
 
         new LinkDataGen().nextPersisted();
         new LinkDataGen().nextPersisted();

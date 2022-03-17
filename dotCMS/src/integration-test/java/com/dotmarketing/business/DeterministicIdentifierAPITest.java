@@ -23,8 +23,6 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.cms.urlmap.URLMapAPIImpl;
-import com.dotmarketing.cms.urlmap.UrlMapContext;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
@@ -44,7 +42,6 @@ import com.liferay.util.FileUtil;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import io.vavr.control.Try;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -52,8 +49,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -195,7 +190,6 @@ public class DeterministicIdentifierAPITest {
             return new Object[]{
 
                 new AssetTestCase(site, systemHost, site.getName(), "Host", site),
-                new AssetTestCase(folder, site, folder.getName(), "Folder", site),
                 new AssetTestCase(fileAsset, folder, fileAsset.getName(), "FileAsset", site),
                 new AssetTestCase(template, site, template.getName(), "Template", site),
                 new AssetTestCase(pageAsset, folder, pageAsset.getPageUrl(), "htmlpageasset", site),
@@ -545,6 +539,53 @@ public class DeterministicIdentifierAPITest {
 
             final String identifier1 = defaultGenerator.generateDeterministicIdBestEffort(category,(Category) null);
             assertTrue(defaultGenerator.isDeterministicId(identifier1));
+    }
+
+
+    /**
+     * Given Scenario: Generate id for folders having {@link Host} or another {@link Folder} as parent
+     * methodToTest {@link DeterministicIdentifierAPIImpl#generateDeterministicIdBestEffort(Folder, Treeable)}
+     * Expected Results: The method must be idempotent for a given set of inputs the outcome should always remain the same and the id returned must be valid
+     */
+    @Test
+    public void Test_Generate_Folder_Identifier() throws DotDataException {
+        final boolean generateConsistentIdentifiers = Config
+                .getBooleanProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+        try {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+
+            final Host systemHost = APILocator.getHostAPI().findSystemHost();
+
+            final String hostName = String.format("my.host%s.com", System.currentTimeMillis());
+
+            final Host site = new SiteDataGen().name(hostName).nextPersisted();
+
+            Folder folder = new FolderDataGen().site(site).next();
+
+            final String generatedId1 = defaultGenerator
+                    .generateDeterministicIdBestEffort(folder, site);
+            assertTrue(UUIDUtil.isUUID(generatedId1));
+            final String generatedId2 = defaultGenerator
+                    .generateDeterministicIdBestEffort(folder,
+                            site);
+            //Test it is idempotent
+            assertEquals(generatedId1, generatedId2);
+
+            final Folder parentFolder = new FolderDataGen().site(site).nextPersisted();
+            //Get Id for folder having a parent folder
+            assertTrue(UUIDUtil.isUUID(defaultGenerator
+                    .generateDeterministicIdBestEffort(folder, parentFolder)));
+
+            folder = new FolderDataGen().site(systemHost).next();
+            //Get Id for folder with SYSTEM_HOST as parent
+            assertTrue(UUIDUtil.isUUID(defaultGenerator
+                    .generateDeterministicIdBestEffort(folder, systemHost)));
+
+
+
+        } finally {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, generateConsistentIdentifiers);
+        }
     }
 
 }

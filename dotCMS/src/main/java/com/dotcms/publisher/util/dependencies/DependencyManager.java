@@ -392,7 +392,7 @@ public class DependencyManager {
 			return contentlet.getIdentifier();
 		} else if (Folder.class.isInstance(asset)) {
 			final Folder folder = Folder.class.cast(asset);
-			return folder.getInode();
+			return folder.getIdentifier();
 		} else if (Template.class.isInstance(asset)) {
 			final Template template = Template.class.cast(asset);
 			return template.getIdentifier();

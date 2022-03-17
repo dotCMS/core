@@ -194,7 +194,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
             Folder folder = APILocator.getFolderAPI()
                 .find(folderId, sysuser, true);
             Identifier ident = APILocator.getIdentifierAPI()
-                .find(folder);
+                .find(folder.getIdentifier());
             NavResult lazyMe = new NavTool().getNav(host, ident.getPath(), languageId, sysuser);
 
             children = lazyMe.getChildren();
@@ -233,7 +233,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
         Folder folder = APILocator.getFolderAPI()
             .find(parent, sysuser, true);
         Identifier ident = APILocator.getIdentifierAPI()
-            .find(folder);
+            .find(folder.getIdentifier());
         return ident.getURI();
     }
 
