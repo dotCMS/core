@@ -34,6 +34,8 @@ class DotEditLayoutDesignerMockComponent {
 
     @Input() layout;
 
+    @Input() disablePublish: boolean;
+
     @Output() cancel: EventEmitter<MouseEvent> = new EventEmitter();
 
     @Output() save: EventEmitter<Event> = new EventEmitter();
@@ -149,7 +151,8 @@ describe('DotTemplateBuilderComponent', () => {
         beforeEach(() => {
             component.item = {
                 ...EMPTY_TEMPLATE_DESIGN,
-                theme: '123'
+                theme: '123',
+                live: true
             };
             fixture.detectChanges();
         });
@@ -162,6 +165,7 @@ describe('DotTemplateBuilderComponent', () => {
         it('should show dot-edit-layout-designer and pass attr', () => {
             const builder = de.query(By.css('dot-edit-layout-designer')).componentInstance;
             expect(builder.theme).toBe('123');
+            expect(builder.disablePublish).toBe(true);
             expect(builder.layout).toEqual({
                 header: true,
                 footer: true,

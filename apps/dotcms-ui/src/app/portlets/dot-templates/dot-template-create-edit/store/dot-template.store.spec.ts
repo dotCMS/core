@@ -333,6 +333,7 @@ describe('DotTemplateStore', () => {
                     friendlyName: '',
                     type: 'advanced',
                     drawed: false,
+                    live: true,
                     body: '<h1>Hello</h1>'
                 });
 
@@ -343,6 +344,7 @@ describe('DotTemplateStore', () => {
                             identifier: '23423-234as-sd-w3sd-sd-srzcxsd',
                             title: 'New advaced',
                             friendlyName: '',
+                            live: true,
                             drawed: false,
                             body: '<h1>Hello</h1>'
                         },
@@ -351,6 +353,7 @@ describe('DotTemplateStore', () => {
                             identifier: '23423-234as-sd-w3sd-sd-srzcxsd',
                             title: 'New advaced',
                             friendlyName: '',
+                            live: true,
                             drawed: false,
                             body: '<h1>Hello</h1>'
                         },

@@ -36,6 +36,7 @@ interface DotTemplateItemDesign {
     friendlyName: string;
     identifier: string;
     layout: DotLayout;
+    live?: boolean;
     theme: string;
     title: string;
     type?: 'design';
@@ -47,6 +48,7 @@ interface DotTemplateItemadvanced {
     drawed?: boolean;
     friendlyName: string;
     identifier: string;
+    live?: boolean;
     title: string;
     type?: 'advanced';
     image?: string;
@@ -352,6 +354,7 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
                 theme: template.theme,
                 containers: template.containers,
                 drawed: true,
+                live: template.live,
                 image: template.image
             };
         } else {

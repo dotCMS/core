@@ -66,6 +66,9 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
     @Input()
     url: string;
 
+    @Input()
+    disablePublish = true;
+
     @Output()
     save: EventEmitter<DotTemplate> = new EventEmitter();
 
@@ -82,7 +85,6 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
     currentTheme: DotTheme;
 
     saveAsTemplate: boolean;
-    disablePublish = true;
     showTemplateLayoutSelectionDialog = false;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
