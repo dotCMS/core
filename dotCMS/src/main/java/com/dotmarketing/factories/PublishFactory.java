@@ -103,6 +103,29 @@ public class PublishFactory {
 		return publishAsset(webAsset, user, false);
 	}
 
+
+	/**
+	 * This method publish a given folder and its related assets, if a user is passed the method will check permissions to publish,
+	 * if the user doesn't have permission to publish one of the related assets then that one will be skipped.
+	 *
+	 * @param folder
+	 * @param req
+	 * @return
+	 * @throws WebAssetException
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	public static boolean publishAsset(Folder folder,HttpServletRequest req) throws WebAssetException, DotSecurityException, DotDataException {
+		User user;
+		try {
+			user = PortalUtil.getUser(req);
+		} catch (Exception e1) {
+			Logger.error(PublishFactory.class, "publishAsset: Cannot obtain the user from the request.", e1);
+			return false;
+		}
+
+		return publishAsset(folder, user, false, true);
+	}
     /**
      * Publishes a given html page (if is HTMLPageAsset) and its related content (Applies to the legacy and new HTML pages).<br/>
      * <strong>NOTE: </strong> Don't call this method directly for legacy HTMLPages, instead call publishAsset, that publishAsset method will
@@ -165,6 +188,74 @@ public class PublishFactory {
 		return publishAsset(webAsset,user,respectFrontendRoles, true);
 
 	}
+
+	/**
+	 * This method publish a given and asset and its related assets
+	 * if a user is passed the method will check permissions to publish
+	 * if the user doesn't have permission to publish one of the related assets
+	 * then that one will be skipped
+	 * @param folder
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @param isNewVersion  - if passed false then the webasset's mod user and mod date will NOT be altered. @see {@link ContentletAPI#checkinWithoutVersioning(Contentlet, java.util.Map, List, List, User, boolean)}checkinWithoutVersioning.
+	 * @return
+	 * @throws WebAssetException
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	@SuppressWarnings("unchecked")
+	public static boolean publishAsset(Folder folder, User user, boolean respectFrontendRoles,
+			boolean isNewVersion) throws WebAssetException, DotSecurityException, DotDataException {
+		ContentletAPI conAPI = APILocator.getContentletAPI();
+
+		//http://jira.dotmarketing.net/browse/DOTCMS-6325
+		if (user != null &&
+				!permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_EDIT,
+						user)) {
+			Logger.debug(PublishFactory.class, "publishAsset: user = " + user.getEmailAddress()
+					+ ", don't have permissions to publish: " + folder);
+			return false;
+		}
+
+		Logger.debug(PublishFactory.class, ()-> "*****I'm a Folder -- Publishing" + folder.getName());
+
+		//gets all links for this folder
+		java.util.List foldersListSubChildren = APILocator.getFolderAPI()
+				.findSubFolders(folder, APILocator.getUserAPI().getSystemUser(), false);
+		//gets all links for this folder
+		java.util.List linksListSubChildren = APILocator.getFolderAPI()
+				.getWorkingLinks(folder, user, false);
+
+		//gets all subitems
+		java.util.List elements = new java.util.ArrayList();
+		elements.addAll(foldersListSubChildren);
+		elements.addAll(linksListSubChildren);
+
+		java.util.Iterator elementsIter = elements.iterator();
+		while (elementsIter.hasNext()) {
+			Inode inode = (Inode) elementsIter.next();
+			Logger.debug(PublishFactory.class,
+					"*****I'm a Folder -- Publishing my Inode Child=" + inode.getInode());
+			publishAsset(inode, user, respectFrontendRoles, isNewVersion);
+		}
+
+		java.util.List<Contentlet> contentlets = conAPI.findContentletsByFolder(folder, user,
+				false);
+		java.util.Iterator<Contentlet> contentletsIter = contentlets.iterator();
+		while (contentletsIter.hasNext()) {
+			//publishes each one
+			Contentlet contentlet = (Contentlet) contentletsIter.next();
+			Logger.debug(PublishFactory.class,
+					"*****I'm a Folder -- Publishing my Inode Child=" + contentlet.getInode());
+			if (!contentlet.isLive() && !contentlet.isArchived()
+					&& (permissionAPI.doesUserHavePermission(contentlet, PERMISSION_PUBLISH, user,
+					respectFrontendRoles))) {
+				APILocator.getContentletAPI().publish(contentlet, user, false);
+			}
+		}
+
+		return true;
+	}
 	
 	/**
 	 * This method publish a given and asset and its related assets 
@@ -185,16 +276,7 @@ public class PublishFactory {
 	{
 		ContentletAPI conAPI = APILocator.getContentletAPI();
 		HostAPI hostAPI = APILocator.getHostAPI();
-		
-		//http://jira.dotmarketing.net/browse/DOTCMS-6325
-		if (user != null && 
-				((webAsset instanceof Folder)?
-				!permissionAPI.doesUserHavePermission(webAsset, PermissionAPI.PERMISSION_EDIT, user):
-				!permissionAPI.doesUserHavePermission(webAsset, PERMISSION_PUBLISH, user))) {
-			Logger.debug(PublishFactory.class, "publishAsset: user = " + user.getEmailAddress() + ", don't have permissions to publish: " + webAsset);
-			return false;
-		}
-		
+
 		if (webAsset instanceof WebAsset)
 		{
 			try {
@@ -244,47 +326,6 @@ public class PublishFactory {
             relatedNotPublished = getUnpublishedRelatedAssets( webAsset, relatedNotPublished, user, respectFrontendRoles );
             //Publish the page
             publishHTMLPage( (IHTMLPage) webAsset, relatedNotPublished, user, respectFrontendRoles );
-		}
-
-		if (webAsset instanceof Folder) {
-
-			Folder parentFolder = (Folder) webAsset;
-
-		    Logger.debug(PublishFactory.class, "*****I'm a Folder -- Publishing" + parentFolder.getName());
-
-			//gets all links for this folder
-			java.util.List foldersListSubChildren = APILocator.getFolderAPI().findSubFolders(parentFolder,APILocator.getUserAPI().getSystemUser(),false);
-			//gets all links for this folder
-			java.util.List linksListSubChildren = APILocator.getFolderAPI().getWorkingLinks(parentFolder, user, false);
-			//gets all templates for this folder
-			//java.util.List templatesListSubChildren = APILocator.getFolderAPI().getWorkingChildren(parentFolder,Template.class);
-			//gets all containers for this folder
-			//java.util.List containersListSubChildren = APILocator.getFolderAPI().getWorkingChildren(parentFolder,Container.class);
-
-			//gets all subitems
-			java.util.List elements = new java.util.ArrayList();
-			elements.addAll(foldersListSubChildren);
-			elements.addAll(linksListSubChildren);
-			//elements.addAll(templatesListSubChildren);
-			//elements.addAll(containersListSubChildren);
-
-			java.util.Iterator elementsIter = elements.iterator();
-			while (elementsIter.hasNext()) {
-				Inode inode = (Inode) elementsIter.next();
-			    Logger.debug(PublishFactory.class, "*****I'm a Folder -- Publishing my Inode Child=" + inode.getInode());
-				publishAsset(inode,user, respectFrontendRoles, isNewVersion);
-			}
-			
-			java.util.List<Contentlet> contentlets = conAPI.findContentletsByFolder(parentFolder, user, false);
-			java.util.Iterator<Contentlet> contentletsIter = contentlets.iterator();
-			while (contentletsIter.hasNext()) {
-				//publishes each one
-				Contentlet contentlet = (Contentlet)contentletsIter.next();
-				Logger.debug(PublishFactory.class, "*****I'm a Folder -- Publishing my Inode Child=" + contentlet.getInode());
-				if(!contentlet.isLive() && !contentlet.isArchived() && (permissionAPI.doesUserHavePermission(contentlet, PERMISSION_PUBLISH, user, respectFrontendRoles))) {
-					APILocator.getContentletAPI().publish(contentlet, user, false);
-				}
-			}
 		}
 
 		final ContentletLoader contentletLoader = new ContentletLoader();
@@ -393,9 +434,9 @@ public class PublishFactory {
 	public static List getUnpublishedRelatedAssets(Inode webAsset, List relatedAssets, boolean checkPublishPermissions, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		return getUnpublishedRelatedAssets(webAsset, relatedAssets, true,checkPublishPermissions, user, respectFrontendRoles);
 	}
-	
+
 	/**
-	 * Retrieves a list of dependent object (dependent of object of the given webAsset param) 
+	 * Retrieves a list of dependent object (dependent of object of the given webAsset param)
 	 * that the given user has permissions to publish
 	 * @param webAsset
 	 * @param relatedAssets
@@ -404,8 +445,8 @@ public class PublishFactory {
 	 * @param user
 	 * @param respectFrontendRoles
 	 * @return
-	 * @throws DotDataException 
-	 * @throws DotSecurityException 
+	 * @throws DotDataException
+	 * @throws DotSecurityException
 	 */
 	@SuppressWarnings("unchecked")
 	public static List getUnpublishedRelatedAssets(Inode webAsset, List relatedAssets, boolean returnOnlyWebAssets, boolean checkPublishPermissions, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -414,7 +455,7 @@ public class PublishFactory {
 
 		if (webAsset instanceof Template) {
 
-		    Logger.debug(PublishFactory.class, "*****I'm a Template -- PrePublishing");
+			Logger.debug(PublishFactory.class, "*****I'm a Template -- PrePublishing");
 
 			//gets all identifier children
 
@@ -429,59 +470,81 @@ public class PublishFactory {
 			}
 
 		}
-
 		if (webAsset instanceof IHTMLPage ) {
-            //Search for the unpublished related content to this HTML page
-            getUnpublishedRelatedAssetsForPage( (IHTMLPage) webAsset, relatedAssets, checkPublishPermissions, user, respectFrontendRoles );
+			//Search for the unpublished related content to this HTML page
+			getUnpublishedRelatedAssetsForPage( (IHTMLPage) webAsset, relatedAssets, checkPublishPermissions, user, respectFrontendRoles );
 		}
 
-		if (webAsset instanceof Folder) {
+		return relatedAssets;
+	}
 
-			Folder parentFolder = (Folder) webAsset;
+	@SuppressWarnings("unchecked")
+	public static List getUnpublishedRelatedAssets(Folder folder, List relatedAssets, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		return getUnpublishedRelatedAssets(folder, relatedAssets, true, false, user, respectFrontendRoles);
+	}
+	
+	/**
+	 * Retrieves a list of dependent object (dependent of object of the given folder param)
+	 * that the given user has permissions to publish
+	 * @param folder
+	 * @param relatedAssets
+	 * @param returnOnlyWebAssets
+	 * @param checkPublishPermissions
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 * @throws DotDataException 
+	 * @throws DotSecurityException 
+	 */
+	@SuppressWarnings("unchecked")
+	public static List getUnpublishedRelatedAssets(final Folder folder, List relatedAssets,
+			final boolean returnOnlyWebAssets, final boolean checkPublishPermissions,
+			final User user, final boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException {
 
-		    Logger.debug(PublishFactory.class, "*****I'm a Folder -- PrePublishing" + parentFolder.getName());
-		    
-			//gets all links for this folder
-			java.util.List foldersListSubChildren = APILocator.getFolderAPI().findSubFolders(parentFolder,APILocator.getUserAPI().getSystemUser(),false);
-			//gets all links for this folder
-			java.util.List linksListSubChildren = APILocator.getFolderAPI().getWorkingLinks(parentFolder,user,false);
-			//gets all templates for this folder
-			//java.util.List templatesListSubChildren = APILocator.getFolderAPI().getWorkingChildren(parentFolder,Template.class);
-			//gets all containers for this folder
-			//java.util.List containersListSubChildren = APILocator.getFolderAPI().getWorkingChildren(parentFolder,Container.class);
+		ContentletAPI conAPI = APILocator.getContentletAPI();
 
-			//gets all subitems
-			java.util.List elements = new java.util.ArrayList();
-			elements.addAll(foldersListSubChildren);
-			elements.addAll(linksListSubChildren);
-            //elements.addAll(templatesListSubChildren);
-			//elements.addAll(containersListSubChildren);
+		Logger.debug(PublishFactory.class, "*****I'm a Folder -- PrePublishing" + folder.getName());
 
+		//gets all links for this folder
+		java.util.List foldersListSubChildren = APILocator.getFolderAPI()
+				.findSubFolders(folder, APILocator.getUserAPI().getSystemUser(), false);
+		//gets all links for this folder
+		java.util.List linksListSubChildren = APILocator.getFolderAPI()
+				.getWorkingLinks(folder, user, false);
 
+		//gets all subitems
+		java.util.List elements = new java.util.ArrayList();
+		elements.addAll(foldersListSubChildren);
+		elements.addAll(linksListSubChildren);
 
-			java.util.Iterator elementsIter = elements.iterator();
-			while (elementsIter.hasNext()) {
-				Inode asset = (Inode) elementsIter.next();
-				if (asset instanceof WebAsset) {
-					if(!((WebAsset)asset).isLive() && (permissionAPI.doesUserHavePermission(((WebAsset)asset), PERMISSION_PUBLISH, user, respectFrontendRoles) || !checkPublishPermissions)) {
-						relatedAssets.add(asset);
-					}
-				}else if(!returnOnlyWebAssets){
+		java.util.Iterator elementsIter = elements.iterator();
+		while (elementsIter.hasNext()) {
+			Inode asset = (Inode) elementsIter.next();
+			if (asset instanceof WebAsset) {
+				if (!((WebAsset) asset).isLive() && (
+						permissionAPI.doesUserHavePermission(((WebAsset) asset), PERMISSION_PUBLISH,
+								user, respectFrontendRoles) || !checkPublishPermissions)) {
 					relatedAssets.add(asset);
 				}
-				//if it exists it prepublishes it
-				relatedAssets = getUnpublishedRelatedAssets(asset,relatedAssets, returnOnlyWebAssets, checkPublishPermissions, user, respectFrontendRoles);
+			} else if (!returnOnlyWebAssets) {
+				relatedAssets.add(asset);
 			}
-			
-			java.util.List<Contentlet> contentlets = conAPI.findContentletsByFolder(parentFolder, user, false);
-			java.util.Iterator<Contentlet> contentletsIter = contentlets.iterator();
-			while (contentletsIter.hasNext()) {
-				Contentlet contentlet = (Contentlet)contentletsIter.next();
-				if(!contentlet.isLive() && (permissionAPI.doesUserHavePermission(contentlet, PERMISSION_PUBLISH, user, respectFrontendRoles) || !checkPublishPermissions)) {
-					relatedAssets.add(contentlet);
-				}
-			}
+			//if it exists it prepublishes it
+			relatedAssets = getUnpublishedRelatedAssets(asset, relatedAssets, returnOnlyWebAssets,
+					checkPublishPermissions, user, respectFrontendRoles);
+		}
 
+		java.util.List<Contentlet> contentlets = conAPI.findContentletsByFolder(folder, user,
+				false);
+		java.util.Iterator<Contentlet> contentletsIter = contentlets.iterator();
+		while (contentletsIter.hasNext()) {
+			Contentlet contentlet = (Contentlet) contentletsIter.next();
+			if (!contentlet.isLive() && (
+					permissionAPI.doesUserHavePermission(contentlet, PERMISSION_PUBLISH, user,
+							respectFrontendRoles) || !checkPublishPermissions)) {
+				relatedAssets.add(contentlet);
+			}
 		}
 
 		return relatedAssets;

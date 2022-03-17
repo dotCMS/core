@@ -102,7 +102,7 @@ public class Template extends WebAsset implements Serializable, Comparable, Mani
     public String getURI(Folder folder) {
     	String folderPath = "";
 		try {
-			folderPath = APILocator.getIdentifierAPI().find(folder).getPath();
+			folderPath = APILocator.getIdentifierAPI().find(folder.getIdentifier()).getPath();
 		} catch (Exception e) {
 			Logger.error(this,e.getMessage());
 			throw new DotRuntimeException(e.getMessage(),e);

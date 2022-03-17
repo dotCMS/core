@@ -283,13 +283,6 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
 
             // THIS IS THE NEW CODE
 
-            // 1.1) Insert dummy temp row on INODE table
-            if ( DbConnectionFactory.isOracle() ) {
-                dc.executeStatement("insert into inode (inode, owner, idate, type) values ('TEMP_INODE', 'DUMMY_OWNER', to_date('1900-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'), 'DUMMY_TYPE') ");
-            } else {
-                dc.executeStatement("insert into inode (inode, owner, idate, type) values ('TEMP_INODE', 'DUMMY_OWNER', '1900-01-01 00:00:00.00', 'DUMMY_TYPE') ");
-            }
-
             Structure fileAssetSt = CacheLocator.getContentTypeCache()
                     .getStructureByVelocityVarName("FileAsset");
 
@@ -304,31 +297,31 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
                 hostForDummyFolder = st.getHost();
             }
 
-            // 1.2) Insert dummy temp row on IDENTIFIER table
+            // 1.1) Insert dummy temp row on IDENTIFIER table
 
             dc.executeStatement("insert into identifier (id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date) values ('TEMP_IDENTIFIER', '/', 'DUMMY_ASSET_NAME', '"
                     + hostForDummyFolder + "', " + "'folder', NULL, NULL) ");
 
-            // 1.3) Insert dummy temp row on FOLDER table
+            // 1.2) Insert dummy temp row on FOLDER table
 
             if ( DbConnectionFactory.isOracle() ) {
-                dc.executeStatement("insert into folder (inode, name, title, show_on_menu, sort_order, files_masks, identifier, default_file_type, mod_date) values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', '"
+                dc.executeStatement("insert into folder (inode, name, title, show_on_menu, sort_order, files_masks, identifier, default_file_type, mod_date, owner, idate) values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', '"
                         + DbConnectionFactory.getDBFalse()
                         + "', '0', '', 'TEMP_IDENTIFIER', '"
                         + fileAssetSt.getInode()
-                        + "', to_date('1900-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'))");
+                        + "', to_date('1900-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'), 'DUMMY_OWNER', to_date('1900-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'))");
             } else if ( DbConnectionFactory.isPostgres() ) {
-                dc.executeStatement("insert into folder (inode, name, title, show_on_menu, sort_order, files_masks, identifier, default_file_type, mod_date) values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', "
+                dc.executeStatement("insert into folder (inode, name, title, show_on_menu, sort_order, files_masks, identifier, default_file_type, mod_date, owner, idate) values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', "
                         + DbConnectionFactory.getDBFalse()
                         + ", '0', '', 'TEMP_IDENTIFIER', '"
                         + fileAssetSt.getInode()
-                        + "', '1900-01-01 00:00:00.00')");
+                        + "', '1900-01-01 00:00:00.00', 'DUMMY_OWNER', '1900-01-01 00:00:00.00')");
             } else {
-                dc.executeStatement("insert into folder (inode, name, title, show_on_menu, sort_order, files_masks, identifier, default_file_type, mod_date) values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', '"
+                dc.executeStatement("insert into folder (inode, name, title, show_on_menu, sort_order, files_masks, identifier, default_file_type, mod_date, owner, idate) values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', '"
                         + DbConnectionFactory.getDBFalse()
                         + "', '0', '', 'TEMP_IDENTIFIER', '"
                         + fileAssetSt.getInode()
-                        + "', '1900-01-01 00:00:00.00')");
+                        + "', '1900-01-01 00:00:00.00', 'DUMMY_OWNER', '1900-01-01 00:00:00.00')");
             }
 
             // 2) Update references to the new dummies temps
@@ -359,6 +352,8 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
             String filesMasks = (String) oldFolderRow.get("files_masks");
             String defaultFileType = (String) oldFolderRow.get("default_file_type");
             Date modDate = (Date) oldFolderRow.get("mod_date");
+            String owner = (String) oldFolderRow.get("owner");
+            Date idate = (Date) oldFolderRow.get("idate");
 
             // lets save old identifier columns values first
             dc.setSQL("select * from identifier where id = ?");
@@ -380,26 +375,10 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
 
             dc.executeStatement("delete from folder where inode = '" + oldFolderInode + "'");
 
-            // 3.2) delete old INODE row
-
-            dc.setSQL("select * from inode where inode = ?");
-            dc.addParam(oldFolderInode);
-            Map<String, Object> oldInodeRow = dc.loadObjectResults().get(0);
-            String owner = (String) oldInodeRow.get("owner");
-            Date idate = (Date) oldInodeRow.get("idate");
-            String type = (String) oldInodeRow.get("type");
-
+            //Deletes the old inode in case it exists
             dc.executeStatement("delete from inode where inode = '" + oldFolderInode + "'");
 
-            // 4.1) insert real new INODE row
-            dc.setSQL("insert into inode (inode, owner, idate, type) values (?, ?, ?, ?) ");
-            dc.addParam(newFolderInode);
-            dc.addParam(owner);
-            dc.addParam(idate);
-            dc.addParam(type);
-            dc.loadResult();
-
-            // 4.2) insert real new IDENTIFIER row
+            // 4.1) insert real new IDENTIFIER row
             dc.setSQL("insert into identifier (id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date) values (?, ?, ?, ?, ?, ?, ?) ");
             dc.addParam(newFolderIdentifier);
             dc.addParam(parentPath);
@@ -410,8 +389,8 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
             dc.addParam(sysexpireDate);
             dc.loadResult();
 
-            // 4.3) insert real new FOLDER row
-            dc.setSQL("insert into folder (inode, name, title, show_on_menu, sort_order, files_masks, identifier, default_file_type, mod_date) values (?, ?, ?, ?, ?, ?, ?, ?, ?) ");
+            // 4.2) insert real new FOLDER row
+            dc.setSQL("insert into folder (inode, name, title, show_on_menu, sort_order, files_masks, identifier, default_file_type, mod_date, owner, idate) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ");
             dc.addParam(newFolderInode);
             dc.addParam(name);
             dc.addParam(title);
@@ -421,6 +400,8 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
             dc.addParam(newFolderIdentifier);
             dc.addParam(defaultFileType);
             dc.addParam(modDate);
+            dc.addParam(owner);
+            dc.addParam(idate);
             dc.loadResult();
 
             // 5) update foreign tables references to the new real row
@@ -433,7 +414,6 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
 
             // 6) delete dummy temp
             dc.executeStatement("delete from folder where inode = 'TEMP_INODE'");
-            dc.executeStatement("delete from inode where inode = 'TEMP_INODE'");
 
             /*
              Lets reindex all the content under the fixed folder

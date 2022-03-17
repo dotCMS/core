@@ -325,15 +325,16 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
             if (null != metadataMap) {
                 //if check version and the stored ver is lower than current version then re-generate
                 if (checkVersion) {
-                    //We only do the regeneration if we're not looking at custom metadata or an empty map
-                    final boolean onlyHasCustom = (!filterNonCustomMetadataFields(metadataMap).isEmpty());
-                    if (!onlyHasCustom && !metadataMap.isEmpty()) {
+                    if (!metadataMap.isEmpty()) {
                         //Now verify versions
-                        if (getBinaryMetadataVersion() > (int) metadataMap
-                                .getOrDefault(BasicMetadataFields.VERSION_KEY.key(), 0)) {
-                            return Try.of(() -> generateContentletMetadata(contentlet, true)
-                                    .getFullMetadataMap().get(fieldVariableName)).getOrElseThrow(
-                                    DotDataException::new);
+                        final Number storedVersionNumber = (Number) metadataMap
+                                .getOrDefault(BasicMetadataFields.VERSION_KEY.key(), 0);
+                        if (getBinaryMetadataVersion() > storedVersionNumber.intValue()) {
+                            //If we find there's a higher version we re-generate the md for all binaries on this contentlet
+                            final ContentletMetadata contentletMetadata = Try
+                                    .of(() -> generateContentletMetadata(contentlet, true))
+                                    .getOrElseThrow(DotDataException::new);
+                            return get(contentletMetadata, fieldVariableName);
                         }
                     }
                 }
@@ -350,6 +351,23 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
 
     }
 
+    /**
+     * Given that at this point we dont know exactly if the fieldVariableName corresponds to the first indexed binary (Which would make it part of the FullMetadata)
+     * So we check both maps to make sure we're returning the proper entry.
+     * @param contentletMetadata
+     * @param fieldVariableName
+     * @return
+     */
+    private Metadata get(final ContentletMetadata contentletMetadata, final String fieldVariableName){
+        Metadata metadata = null;
+        if(contentletMetadata.getFullMetadataMap().get(fieldVariableName)!=null){
+           metadata = contentletMetadata.getFullMetadataMap().get(fieldVariableName);
+        }
+        if(contentletMetadata.getBasicMetadataMap().get(fieldVariableName)!=null){
+            metadata = contentletMetadata.getBasicMetadataMap().get(fieldVariableName);
+        }
+        return metadata;
+    }
 
     /**
      * {@inheritDoc}

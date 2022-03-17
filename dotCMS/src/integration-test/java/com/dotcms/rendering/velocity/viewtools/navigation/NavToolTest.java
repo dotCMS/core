@@ -93,7 +93,7 @@ public class NavToolTest extends IntegrationTestBase{
         createData();
 
         //Using Identifier to get the path.
-        Identifier folderIdentifier = APILocator.getIdentifierAPI().find(folder);
+        Identifier folderIdentifier = APILocator.getIdentifierAPI().find(folder.getIdentifier());
         NavResult navResult = new NavTool().getNav(site, folderIdentifier.getPath(), 1, user);
         assertNotNull(navResult);
 
@@ -122,7 +122,7 @@ public class NavToolTest extends IntegrationTestBase{
         createData();
 
         //Using Identifier to get the path.
-        Identifier folderIdentifier = APILocator.getIdentifierAPI().find(folder);
+        Identifier folderIdentifier = APILocator.getIdentifierAPI().find(folder.getIdentifier());
         NavResult navResult = new NavTool().getNav(site, folderIdentifier.getPath(), 1, user);
         assertNotNull(navResult);
 

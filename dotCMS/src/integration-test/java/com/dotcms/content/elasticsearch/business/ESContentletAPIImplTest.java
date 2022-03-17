@@ -28,12 +28,18 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.model.type.SimpleContentType;
+import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.*;
+import com.dotcms.mock.response.MockHttpResponse;
+import com.dotcms.mock.response.MockHttpStatusAndHeadersResponse;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConfigTestHelper;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.vanityurl.filters.VanityURLFilter;
+import com.dotcms.vanityurl.model.DefaultVanityUrl;
+import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
@@ -74,7 +80,17 @@ import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
 import javax.servlet.http.HttpServletRequest;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.http.HttpStatus;
+
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsRequest;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -1001,6 +1017,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     }
 
     /**
+<<<<<<< HEAD
      * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}  }
      * When:
      * - Create a ContentType with a unique field
@@ -1199,6 +1216,74 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             }
         } finally {
             ESContentletAPIImpl.setUniquePerSite(uniquePerSite);
+
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}
+     * When:
+     * - Create two sites
+     * - Create a VanityURL to all sites to return 301
+     * - Check that it return 301 for each sites
+     * - Update the Vanity URL to just one of the sites created in the first steps
+     *
+     * Should:
+     * - Return 301 for the Site in the Vanity URL
+     * - Call the {@link FilterChain#doFilter(ServletRequest, ServletResponse)} for the site out of the Vanity URL
+     *
+     * @throws ServletException
+     * @throws IOException
+     */
+    @Test
+    public void flushVanityURLCacheRight() throws ServletException, IOException {
+        final Host host_1 = new SiteDataGen().nextPersisted();
+        final Host host_2 = new SiteDataGen().nextPersisted();
+
+        final String vanityURI = "/my-test_" + System.currentTimeMillis();
+
+        final DefaultVanityUrl vanityURL = (DefaultVanityUrl) new VanityUrlDataGen()
+                .allSites()
+                .uri(vanityURI)
+                .action(HttpStatus.SC_MOVED_PERMANENTLY)
+                .forwardTo("/test-url.html")
+                .nextPersisted();
+
+        ContentletDataGen.publish(vanityURL);
+
+        checkFilter(host_1, vanityURL, HttpStatus.SC_MOVED_PERMANENTLY);
+        checkFilter(host_2, vanityURL, HttpStatus.SC_MOVED_PERMANENTLY);
+
+        final Contentlet checkout = ContentletDataGen.checkout(vanityURL);
+        checkout.setHost(host_1.getIdentifier());
+        checkout.setProperty(VanityUrlContentType.SITE_FIELD_VAR, host_1.getIdentifier());
+        checkout.setProperty(VanityUrlContentType.FORWARD_TO_FIELD_VAR, "/test-url_2.html");
+
+        ContentletDataGen.checkin(checkout);
+
+        ContentletDataGen.publish(checkout);
+
+        final VanityUrl vanityUrlUpdated = APILocator.getVanityUrlAPI().fromContentlet(checkout);
+        checkFilter(host_1, vanityUrlUpdated, HttpStatus.SC_MOVED_PERMANENTLY);
+        checkFilter(host_2, vanityUrlUpdated, -1);
+    }
+
+    private void checkFilter(final Host host, final VanityUrl vanityURL, final int statusExpected)
+            throws IOException, ServletException {
+
+        final VanityURLFilter vanityURLFilter = new VanityURLFilter();
+
+        final HttpServletRequest req = createMockRequest(host, vanityURL.getURI());
+        final HttpServletResponse res = new MockHttpStatusAndHeadersResponse(
+                mock(HttpServletResponse.class));
+        final FilterChain filterChain = mock(FilterChain.class);
+
+        vanityURLFilter.doFilter(req, res, filterChain);
+
+        if (statusExpected != -1) {
+            checkResponse(vanityURL, statusExpected, res);
+        } else {
+            verify(filterChain).doFilter(req, res);
         }
 
     }
@@ -1298,9 +1383,24 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         try {
             APILocator.getContentletAPI().checkin(contentlet_2, APILocator.systemUser(), false);
             throw new AssertionError("DotRuntimeException Expected");
-        }catch (DotRuntimeException e) {
-            assertEquals(e.getMessage(), "Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s).");
+        } catch (DotRuntimeException e) {
+            assertEquals(e.getMessage(),
+                    "Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s).");
         }
+    }
+
+    @NotNull
+    private HttpServletRequest createMockRequest(Host host_1, String vanityURI) {
+        final HttpServletRequest req = mock(HttpServletRequest.class);
+        when(req.getRequestURI()).thenReturn(vanityURI);
+        when(req.getParameter("host_id")).thenReturn(host_1.getIdentifier());
+        return req;
+    }
+
+    private void checkResponse(final VanityUrl vanityURL, final int statusExpected, final HttpServletResponse res) {
+        assertEquals(statusExpected, res.getStatus());
+        assertEquals(vanityURL.getForwardTo(), res.getHeader("Location"));
+        assertEquals(vanityURL.getIdentifier(), res.getHeader("X-DOT-VanityUrl"));
     }
 
     private void assertRelatedContents(Relationship relationship, Contentlet contentletParent,

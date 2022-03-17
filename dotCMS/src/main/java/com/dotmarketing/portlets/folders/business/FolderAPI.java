@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.folders.business;
 
 import com.dotcms.api.tree.Parentable;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.DotIdentifierStateException;
@@ -566,4 +567,12 @@ import java.util.function.Predicate;
     List<Folder> findSubFoldersByParent(Parentable parent, User user, boolean respectFrontEndPermissions)
             throws DotDataException, DotSecurityException;
 
+	/**
+	 * Updates folder's owner when a user is replaced by another
+	 * @param userId ID of the user to be replace
+	 * @param replacementUserId ID of the new folder's owner
+	 * @throws DotDataException
+	 */
+    void updateUserReferences(String userId, String replacementUserId)
+            throws DotDataException;
 }

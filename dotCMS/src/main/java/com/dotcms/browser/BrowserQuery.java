@@ -3,6 +3,7 @@ package com.dotcms.browser;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.Theme;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -157,7 +158,7 @@ public class BrowserQuery {
         private long languageId = 0;
         private final StringBuilder luceneQuery = new StringBuilder();
         private Set<BaseContentType> baseTypes = new HashSet<>();
-        private String hostFolderId = Folder.SYSTEM_FOLDER;
+        private String hostFolderId = FolderAPI.SYSTEM_FOLDER_ID;
         private String hostIdSystemFolder = null;
         private List<String> mimeTypes = new ArrayList<>();
         private List<String> extensions = new ArrayList<>();

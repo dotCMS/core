@@ -5,6 +5,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 import com.dotcms.browser.BrowserAPI;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -1337,6 +1338,7 @@ public class BrowserAjax {
 
     }
 
+	@CloseDBIfOpened
     public Map<String, Object> renameLink (String inode, String newName) throws Exception {
 
     	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
@@ -1413,6 +1415,7 @@ public class BrowserAjax {
      * @return true if success, false otherwise
      * @throws Exception
      */
+	@CloseDBIfOpened
     public boolean copyLink ( String inode, String newFolder ) throws Exception {
 
         HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
@@ -1460,6 +1463,7 @@ public class BrowserAjax {
      * @return true if success, false otherwise
      * @throws Exception
      */
+	@CloseDBIfOpened
     public boolean moveLink ( String inode, String newFolder ) throws Exception {
 
         HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
@@ -1569,6 +1573,7 @@ public class BrowserAjax {
 		return false;
 	}
 
+	@CloseDBIfOpened
     public boolean unPublishAsset (String inode) throws Exception {
     	HibernateUtil.startTransaction();
     	boolean ret = false;
@@ -1599,6 +1604,7 @@ public class BrowserAjax {
     	return ret;
     }
 
+	@CloseDBIfOpened
     public boolean archiveAsset (String inode) throws Exception {
 
     	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
@@ -1622,6 +1628,7 @@ public class BrowserAjax {
         return WebAssetFactory.archiveAsset(asset, user.getUserId());
     }
 
+	@CloseDBIfOpened
     public boolean unArchiveAsset (String inode) throws Exception {
 
     	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
@@ -1649,7 +1656,7 @@ public class BrowserAjax {
         return true;
     }
 
-
+	@CloseDBIfOpened
     public boolean unlockAsset (String inode) throws Exception {
 
     	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
@@ -1671,6 +1678,7 @@ public class BrowserAjax {
         return true;
     }
 
+	@CloseDBIfOpened
     public boolean deleteAsset(String inode) throws Exception
     {
     	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
@@ -1763,9 +1771,8 @@ public class BrowserAjax {
 		return result;
 	}
 
-
-
-	public Map<String, Object> changeAssetMenuOrder (String inode, int newValue) throws ActionException, DotDataException {
+	@CloseDBIfOpened
+	public Map<String, Object> changeAssetMenuOrder (final String inode, final int newValue) throws ActionException, DotDataException {
     	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
         User user = null;
         try {
@@ -1775,16 +1782,24 @@ public class BrowserAjax {
             throw new DotRuntimeException ("Error trying to obtain the current liferay user from the request.");
         }
 
-    	HashMap<String, Object> result = new HashMap<String, Object> ();
-    	Inode asset = (Inode) InodeFactory.getInode(inode, Inode.class);
-    	if (asset instanceof Folder) {
-    		Folder folder = (Folder) asset;
+    	final Map<String, Object> result = new HashMap<> ();
+		Folder folder = null;
+		try {
+			folder = APILocator.getFolderAPI().find(inode, user, false);
+		} catch (DotSecurityException e) {
+			Logger.error(this, "Error trying to get info for folder with inode: " + inode, e);
+			throw new DotRuntimeException ("Error changing asset menu order.");
+		}
+
+		if (null != folder) {
     		result.put("lastValue", folder.getSortOrder());
-    		WebAssetFactory.changeAssetMenuOrder (asset, newValue, user);
+    		WebAssetFactory.changeAssetMenuOrder (folder, newValue, user);
     	} else {
+			Inode asset = InodeFactory.getInode(inode, Inode.class);
     		result.put("lastValue", ((WebAsset)asset).getSortOrder());
     		WebAssetFactory.changeAssetMenuOrder (asset, newValue, user);
     	}
+
        	result.put("result", 0);
     	return result;
     }

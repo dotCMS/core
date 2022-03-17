@@ -502,6 +502,9 @@ public class UserAPIImpl implements UserAPI {
 
         InodeFactory.updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
 
+        //replace the user reference in Folders
+        APILocator.getFolderAPI().updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
+
         logDelete(DeletionStage.END, userToDelete, user, "Inodes");
 
         //replace the user reference in Identifier
