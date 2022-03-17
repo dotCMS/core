@@ -12,6 +12,7 @@ import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherI
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getLivePage;
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getLivePageWithDifferentLang;
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getLivePageWithDifferentLangIncludingJustOne;
+import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getPageWithCSS;
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getPageWithImage;
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getTwoPageDifferentHostSamePath;
 
@@ -40,14 +41,17 @@ import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.FileUtil;
@@ -59,6 +63,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -99,15 +104,16 @@ public class StaticPublisherIntegrationTest {
                 getWorkingContentWithURlMap(),
                 getLiveContentWithURlMap(),
                 getPageWithImage(),
-                getURLMapPageWithImage()
+                getURLMapPageWithImage(),
+                getPageWithCSS()
         };
 
        final TestCase[] testCasesWitLangFilter = {
-                getLivePageWithDifferentLangIncludingJustOne(),
+               getLivePageWithDifferentLangIncludingJustOne(),
                 getLiveFileAssetDifferentLangIncludingJustOneg()
         };
 
-        final List<TestCase> testCaseWithEmptyLang = Arrays.stream(testCasesWithoutLangFilter)
+       final List<TestCase> testCaseWithEmptyLang = Arrays.stream(testCasesWithoutLangFilter)
                 .map(testCase -> {
                     testCase.languages = Collections.emptyList();
                     return testCase;
@@ -189,30 +195,90 @@ public class StaticPublisherIntegrationTest {
         assertTrue(bundleXMLFile.exists());
 
         for (File file : files) {
+            assertFile(testCase, file);
+        }
+    }
 
-            final Optional<FileExpected> fileExpectedOptional = testCase.getFileExpected(
-                    file.getAbsolutePath());
+    private void assertFile(TestCase testCase, File file) throws IOException {
+        final Optional<FileExpected> fileExpectedOptional = testCase.getFileExpected(
+                file.getAbsolutePath());
 
-            if (!fileExpectedOptional.isPresent()) {
-                throw new AssertionError(String.format("File %s Expected", file.getAbsolutePath()));
-            }
+        if (!fileExpectedOptional.isPresent()) {
+            throw new AssertionError(String.format("File %s Expected", file.getAbsolutePath()));
+        }
 
-            final FileExpected fileExpected = fileExpectedOptional.get();
+        final FileExpected fileExpected = fileExpectedOptional.get();
 
-            if (UtilMethods.isSet(fileExpected.content)) {
-                if (String.class.isInstance(fileExpected.content)) {
-                    String fileContent = FileTestUtil.removeSpace(
-                            FileTestUtil.getFileContent(file));
+        if (UtilMethods.isSet(fileExpected.content)) {
+            if (String.class.isInstance(fileExpected.content)) {
+                String fileContent = FileTestUtil.removeSpace(
+                        FileTestUtil.getFileContent(file));
 
-                    if (file.getAbsolutePath().endsWith(HTMLPAGE_ASSET_EXTENSION)) {
-                        fileContent = FileTestUtil.removeContent(fileContent, getXMLFileToRemove());
-                    }
-
-                    Assert.assertEquals(fileExpected.content, fileContent);
-                } else {
-                    FileTestUtil.compare(file, (File) fileExpected.content);
+                if (file.getAbsolutePath().endsWith(HTMLPAGE_ASSET_EXTENSION)) {
+                    fileContent = FileTestUtil.removeContent(fileContent, getXMLFileToRemove());
                 }
+
+                Assert.assertEquals(fileExpected.content, fileContent);
+            } else {
+                FileTestUtil.compare(file, (File) fileExpected.content);
             }
+        }
+    }
+
+
+    @Test
+    @UseDataProvider("assets")
+    public void createStaticBundleWithUnPublishOperation(final TestCase testCase)
+            throws DotPublishingException, DotPublisherException, IOException {
+
+        final Class<? extends Publisher> publisher = StaticPublisher.class;
+
+        final PublisherAPIImpl publisherAPI = new PublisherAPIImpl();
+
+        final PushPublisherConfig config = new PushPublisherConfig();
+        config.setPublishers(list(publisher));
+        config.setOperation(Operation.UNPUBLISH);
+        config.setLuceneQueries(list());
+        config.setId("StaticPublisher" + System.currentTimeMillis());
+        config.setStatic(true);
+
+        config.setLanguages(
+                testCase.languages.stream()
+                        .map(language -> String.valueOf(language.getId()))
+                        .collect(Collectors.toSet())
+        );
+
+        final Bundle bundle = new BundleDataGen()
+                .operation(Operation.UNPUBLISH)
+                .pushPublisherConfig(config)
+                .addAssets(list(testCase.addToBundle))
+                .nextPersisted();
+
+        final PublishAuditStatus status = new PublishAuditStatus(bundle.getId());
+
+        final PublishAuditHistory historyPojo = new PublishAuditHistory();
+        historyPojo.setAssets(testCase.assetsMap);
+        status.setStatusPojo(historyPojo);
+        PublishAuditAPI.getInstance().insertPublishAuditStatus(status);
+
+        final PublishStatus publish = publisherAPI.publish(config);
+
+        final File bundleRoot = BundlerUtil.getBundleRoot(config);
+        final List<File> files = FileUtil.listFilesRecursively(bundleRoot)
+                .stream()
+                .filter(file -> !file.getName().equals(BUNDLE_METADA_FILE_NAME))
+                .filter(file -> file.isFile())
+                .collect(Collectors.toList());
+
+        final Collection<FileExpected> bundleFiles = testCase.getAddToBundleFiles();
+
+        assertEquals(bundleFiles.size(), files.size());
+
+        final File bundleXMLFile = new File(bundleRoot, BUNDLE_METADA_FILE_NAME);
+        assertTrue(bundleXMLFile.exists());
+
+        for (File file : files) {
+            assertFile(testCase, file);
         }
     }
 
