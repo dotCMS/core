@@ -22,6 +22,7 @@ Contentlet contentlet = APILocator.getContentletAPI().find(x, user, false);
 if(null==contentlet){
     return;
 }
+final String titleFieldValue = (contentlet != null ? contentlet.getTitle() : "").replace("'", "\'");
 PermissionAPI conPerAPI = APILocator.getPermissionAPI();
 boolean canUserPublishContentlet = conPerAPI.doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_PUBLISH,user);
 
@@ -66,9 +67,12 @@ if (isLocked) {
 
 <script>
 
-
-
-
+    try {
+        var newTitle = '<%= titleFieldValue %> - ' + window.parent.document.title.split('-')[1];
+        window.parent.document.title = newTitle;
+    } catch (error) {
+        console.error('Error trying to change window title')
+    }
 
 	toggleLockedMessage(<%=isLocked%>, "<%=userLocked%>", "<%=lockedSince%>");
 
