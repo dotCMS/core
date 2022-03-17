@@ -1,6 +1,6 @@
 import { Plugin, PluginKey } from 'prosemirror-state';
 import { ComponentRef, Injector, ViewContainerRef } from '@angular/core';
-import { Extension } from '@tiptap/core';
+import { Extension, getNodeType } from '@tiptap/core';
 import { DotImageService } from './services/dot-image/dot-image.service';
 import { EditorView } from 'prosemirror-view';
 import { LoaderComponent, MessageType } from './components/loader/loader.component';
@@ -23,7 +23,7 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                     //paste
                     files = (event as ClipboardEvent).clipboardData.files;
                 }
-                if (!!files.length) {
+                if (files.length > 0) {
                     for (let i = 0; i < files.length; i++) {
                         if (!files[i].type.startsWith('image/')) {
                             return false;
@@ -34,16 +34,9 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                 return !!files.length;
             }
 
-            function findPlaceholder(state, id): number {
-                const decorations = PlaceholderPlugin.getState(state);
-                const found = decorations.find(null, null, (spec) => spec.id == id);
-                return found.length ? found[0].from : null;
-            }
-
             function setPlaceHolder(view: EditorView, position: number, id: string) {
                 const loadingBlock: ComponentRef<LoaderComponent> =
                     viewContainerRef.createComponent(LoaderComponent);
-
                 const tr = view.state.tr;
                 loadingBlock.instance.data = {
                     message: 'Uploading...',
@@ -62,7 +55,7 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                 view.dispatch(tr);
             }
 
-            function uploadImages(view: EditorView, files: File[], position = 0) {
+            function uploadImages(view: EditorView, files: File[], position: number) {
                 const { schema } = view.state;
 
                 setPlaceHolder(view, position, files[0].name);
@@ -74,14 +67,15 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                         (dotAssets: DotCMSContentlet[]) => {
                             const tr = view.state.tr;
                             const data = dotAssets[0][Object.keys(dotAssets[0])[0]];
-                            const pos = findPlaceholder(view.state, data.name);
-                            const imageNode = schema.nodes.dotImage.create({
+                            const imageNode = getNodeType('dotImage', schema).create({
                                 data: data
                             });
                             view.dispatch(
-                                tr.replaceWith(pos, pos, imageNode).setMeta(PlaceholderPlugin, {
-                                    remove: { id: data.name }
-                                })
+                                tr
+                                    .replaceRangeWith(position, position, imageNode)
+                                    .setMeta(PlaceholderPlugin, {
+                                        remove: { id: data.name }
+                                    })
                             );
                         },
                         (error) => {
@@ -93,6 +87,21 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                             );
                         }
                     );
+            }
+
+            /**
+             * Get position from cursor current position when pasting an image
+             *
+             * @param {EditorView} view
+             * @return {*}  {{ from: number; to: number }}
+             */
+            function getPositionFromCursor(view: EditorView): { from: number; to: number } {
+                const { state } = view;
+                const { selection } = state;
+                const { ranges } = selection;
+                const from = Math.min(...ranges.map((range) => range.$from.pos));
+                const to = Math.max(...ranges.map((range) => range.$to.pos));
+                return { from, to };
             }
 
             return [
@@ -107,12 +116,9 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                                         alert('Can paste just one image at a time');
                                         return false;
                                     }
-                                    event.preventDefault();
-                                    uploadImages(
-                                        view,
-                                        Array.from(event.clipboardData.files),
-                                        view.state.selection.to
-                                    );
+                                    const { from } = getPositionFromCursor(view);
+                                    const files = Array.from(event.clipboardData.files);
+                                    uploadImages(view, files, from);
                                 }
 
                                 return false;
@@ -125,11 +131,13 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                                         alert('Can drop just one image at a time');
                                         return false;
                                     }
-                                    const { pos } = view.posAtCoords({
+                                    const { pos: position } = view.posAtCoords({
                                         left: event.clientX,
                                         top: event.clientY
                                     });
-                                    uploadImages(view, Array.from(event.dataTransfer.files), pos);
+
+                                    const files = Array.from(event.dataTransfer.files);
+                                    uploadImages(view, files, position);
                                 }
                                 return false;
                             }
