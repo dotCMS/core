@@ -1,10 +1,4 @@
-import {
-    Component,
-    OnInit,
-    ComponentFactoryResolver,
-    Injector,
-    ViewEncapsulation
-} from '@angular/core';
+import { Component, OnInit, Injector, ViewEncapsulation } from '@angular/core';
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 
@@ -37,11 +31,7 @@ export class DotBlockEditorComponent implements OnInit {
 
     value = ''; // can be HTML or JSON, see https://www.tiptap.dev/api/editor#content
 
-    constructor(
-        private injector: Injector,
-        private resolver: ComponentFactoryResolver,
-        public viewContainerRef: ViewContainerRef
-    ) {}
+    constructor(private injector: Injector, public viewContainerRef: ViewContainerRef) {}
 
     ngOnInit() {
         this.editor = new Editor({
@@ -50,9 +40,9 @@ export class DotBlockEditorComponent implements OnInit {
                 ContentletBlock(this.injector),
                 ImageBlock(this.injector),
                 ActionsMenu(this.viewContainerRef),
-                DragHandler(this.injector, this.resolver),
-                ImageUpload(this.injector, this.resolver),
-                BubbleLinkFormExtension(this.injector, this.resolver),
+                DragHandler(this.viewContainerRef),
+                ImageUpload(this.injector, this.viewContainerRef),
+                BubbleLinkFormExtension(this.injector, this.viewContainerRef),
                 DotBubbleMenuExtension(BubbleMenuComponent, this.viewContainerRef),
                 // Marks Extensions
                 Underline,

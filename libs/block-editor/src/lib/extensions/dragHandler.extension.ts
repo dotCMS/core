@@ -1,10 +1,10 @@
 import { Extension } from '@tiptap/core';
 import { NodeSelection, Plugin, PluginKey } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
-import { ComponentFactoryResolver, Injector } from '@angular/core';
+import { ViewContainerRef } from '@angular/core';
 import { DragHandlerComponent } from './components/drag-handler/drag-handler.component';
 
-export const DragHandler = (injector: Injector, resolver: ComponentFactoryResolver) => {
+export const DragHandler = (viewContainerRef: ViewContainerRef) => {
     return Extension.create({
         name: 'dragHandler',
 
@@ -12,8 +12,8 @@ export const DragHandler = (injector: Injector, resolver: ComponentFactoryResolv
             let nodeToBeDragged = null;
             const WIDTH = 24;
             const HANDLER_GAP = 50;
-            const dragHandlerFactory = resolver.resolveComponentFactory(DragHandlerComponent);
-            const dragHandler = dragHandlerFactory.create(injector).location.nativeElement;
+            const dragHandler =
+                viewContainerRef.createComponent(DragHandlerComponent).location.nativeElement;
 
             function createRect(rect) {
                 if (rect == null) {
@@ -94,6 +94,7 @@ export const DragHandler = (injector: Injector, resolver: ComponentFactoryResolv
             function bindEventsToDragHandler(editorView: EditorView) {
                 dragHandler.setAttribute('draggable', 'true');
                 dragHandler.addEventListener('dragstart', (e) => dragStart(e, editorView));
+                dragHandler.style.display = 'none';
                 document.body.appendChild(dragHandler);
             }
 
@@ -118,6 +119,7 @@ export const DragHandler = (injector: Injector, resolver: ComponentFactoryResolv
                                     if (node) {
                                         node.classList.remove('ProseMirror-hideselection');
                                     }
+                                    dragHandler.style.display = 'none';
                                 });
                                 return false;
                             },
@@ -141,13 +143,13 @@ export const DragHandler = (injector: Injector, resolver: ComponentFactoryResolv
                                         rect.left += win.pageXOffset;
                                         dragHandler.style.left = rect.left - WIDTH + 'px';
                                         dragHandler.style.top = rect.top - 4 + 'px';
-                                        dragHandler.style.visibility = 'visible';
+                                        dragHandler.style.display = 'block';
                                     } else {
-                                        dragHandler.style.visibility = 'hidden';
+                                        dragHandler.style.display = 'none';
                                     }
                                 } else {
                                     nodeToBeDragged = null;
-                                    dragHandler.style.visibility = 'hidden';
+                                    dragHandler.style.display = 'none';
                                 }
                                 return false;
                             }

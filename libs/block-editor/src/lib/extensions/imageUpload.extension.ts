@@ -1,5 +1,5 @@
 import { Plugin, PluginKey } from 'prosemirror-state';
-import { ComponentFactoryResolver, ComponentRef, Injector } from '@angular/core';
+import { ComponentRef, Injector, ViewContainerRef } from '@angular/core';
 import { Extension } from '@tiptap/core';
 import { DotImageService } from './services/dot-image/dot-image.service';
 import { EditorView } from 'prosemirror-view';
@@ -8,13 +8,12 @@ import { PlaceholderPlugin } from '../plugins/placeholder.plugin';
 import { take } from 'rxjs/operators';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
-export const ImageUpload = (injector: Injector, resolver: ComponentFactoryResolver) => {
+export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerRef) => {
     return Extension.create({
         name: 'imageUpload',
 
         addProseMirrorPlugins() {
             const dotImageService = injector.get(DotImageService);
-            const loaderComponentFactory = resolver.resolveComponentFactory(LoaderComponent);
 
             function areImageFiles(event: ClipboardEvent | DragEvent): boolean {
                 let files: FileList;
@@ -42,9 +41,9 @@ export const ImageUpload = (injector: Injector, resolver: ComponentFactoryResolv
             }
 
             function setPlaceHolder(view: EditorView, position: number, id: string) {
-                const loadingBlock: ComponentRef<LoaderComponent> = loaderComponentFactory.create(
-                    injector
-                );
+                const loadingBlock: ComponentRef<LoaderComponent> =
+                    viewContainerRef.createComponent(LoaderComponent);
+
                 const tr = view.state.tr;
                 loadingBlock.instance.data = {
                     message: 'Uploading...',
