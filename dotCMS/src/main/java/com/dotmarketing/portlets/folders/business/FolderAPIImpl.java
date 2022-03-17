@@ -459,8 +459,6 @@ public class FolderAPIImpl implements FolderAPI  {
 
 			// delete the menus using the fake proxy inode
 			if (folder.isShowOnMenu()) {
-				// RefreshMenus.deleteMenus();
-				RefreshMenus.deleteMenu(faker);
 				CacheLocator.getNavToolCache().removeNav(faker.getHostId(), faker.getInode());
 				
 				CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());

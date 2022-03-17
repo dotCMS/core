@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.fileassets.business;
 
 import com.dotcms.api.tree.Parentable;
 import com.dotcms.browser.BrowserQuery;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.portlets.structure.model.Field.DataType;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -480,7 +481,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
         return moveFile( fileAssetCont, parent, null, user, respectFrontendRoles );
     }
 
-    private boolean moveFile ( Contentlet fileAssetCont, Folder parent, Host host, User user, boolean respectFrontendRoles ) throws DotStateException, DotDataException, DotSecurityException {
+    private boolean moveFile (Contentlet fileAssetCont, Folder parent, Host host, User user, boolean respectFrontendRoles ) throws DotStateException, DotDataException, DotSecurityException {
 
         boolean isfileAssetContLive = false;
 
@@ -511,22 +512,20 @@ public class FileAssetAPIImpl implements FileAssetAPI {
                 fileAssetCont.setInode( null );
                 fileAssetCont.setHost( host != null ? host.getIdentifier() : (parent != null ? parent.getHostId() : fileAssetCont.getHost()) );
                 fileAssetCont.setFolder( parent != null ? parent.getInode() : null );
-                fileAssetCont = APILocator.getContentletAPI().checkin( fileAssetCont, user, respectFrontendRoles );
+                final Contentlet fileAsset = APILocator.getContentletAPI().checkin( fileAssetCont, user, respectFrontendRoles );
                 if ( isfileAssetContLive )
                     APILocator.getVersionableAPI().setLive( fileAssetCont );
 
                 if ( parent != null ) {
-                    RefreshMenus.deleteMenu( oldParent, parent );
                     CacheLocator.getNavToolCache().removeNav(parent.getHostId(), parent.getInode());
-                } else {
-                    RefreshMenus.deleteMenu( oldParent );
                 }
+
                 CacheLocator.getNavToolCache().removeNav(oldParent.getHostId(), oldParent.getInode());
 
                 CacheLocator.getIdentifierCache().removeFromCacheByVersionable( fileAssetCont );
 
-				this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FILE_ASSET, new Payload(fileAssetCont, Visibility.EXCLUDE_OWNER,
-						new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+				this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FILE_ASSET, new Payload(fileAsset.getMap(), Visibility.EXCLUDE_OWNER,
+					new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 
                 return true;
             }

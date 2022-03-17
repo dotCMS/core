@@ -144,10 +144,11 @@ public class ShortyServletAndTitleImageTest {
 
         
         // Set binarys, first binary field is a text file, then an image field, then a binary
+        contentlet = APILocator.getContentletAPI().checkout(contentlet.getInode(), user, false);
         contentlet.setBinary(binary1, txtFile);
         contentlet.setStringProperty(image2, fileAsset.getIdentifier());
         contentlet.setBinary(binary3, gifFile);
-        contentlet.setInode(null);
+
         contentlet = APILocator.getContentletAPI().checkin(contentlet, user, false);
         
         // title image is the image field
@@ -185,8 +186,8 @@ public class ShortyServletAndTitleImageTest {
         
         
         // null out image field
+        contentlet = APILocator.getContentletAPI().checkout(contentlet.getInode(), user, false);
         contentlet.setStringProperty(image2, null);
-        contentlet.setInode(null);
         contentlet = APILocator.getContentletAPI().checkin(contentlet, user, false);
         
         // title image is now the last binary field (the first image on content)

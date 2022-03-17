@@ -4676,7 +4676,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final ContentType contentType = contentlet.getContentType();
 
         String existingInode = null, existingIdentifier = null;
-        boolean changedURI = false;
 
         Contentlet workingContentlet = contentlet;
         try {
@@ -4830,7 +4829,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final IndexPolicy indexPolicy             = contentlet.getIndexPolicy();
             final IndexPolicy indexPolicyDependencies = contentlet.getIndexPolicyDependencies();
 
-             contentlet = assignIdentifierIfAbsent(contentlet, contentletRaw, existingIdentifier, existingInode, htmlPageURL);
+            boolean changedURI = addOrUpdateContentletIdentifier(contentlet, contentletRaw, existingIdentifier, existingInode, htmlPageURL);
 
             //Include system fields to generate a json representation - these fields are later removed before contentlet gets saved
             contentlet = includeSystemFields(contentlet, contentletRaw, tagsValues, categories, user);
@@ -4844,60 +4843,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             contentlet.setIndexPolicy(indexPolicy);
             contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
-
-            if (!isNewContent) {
-                //Existing contentlet getting updated.
-                Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
-
-                final String oldURI = identifier.getURI();
-
-                // make sure the identifier is removed from cache
-                // because changes here may affect URI then IdentifierCache
-                // can't remove it
-                CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
-
-                // Once the contentlet is saved, it gets refresh from the db. for which the incoming data gets lost.
-                // Therefore here we need to make sure we use the original contentlet that comes with the info passed from the ui.
-                final String hostId = UtilMethods.isSet(contentletRaw.getHost()) ? contentletRaw.getHost() : contentlet.getHost();
-                identifier.setHostId(hostId);
-                if(contentlet.isFileAsset()){
-                    try {
-                        if(contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD) == null){
-                            final String binaryIdentifier = contentletRaw.getIdentifier() != null ? contentletRaw.getIdentifier() : StringPool.BLANK;
-                            final String binaryNode = contentletRaw.getInode() != null ? contentletRaw.getInode() : StringPool.BLANK;
-                            throw new FileAssetValidationException("Unable to validate field: " + FileAssetAPI.BINARY_FIELD
-                                    + " identifier: " + binaryIdentifier
-                                    + " inode: " + binaryNode);
-                        } else {
-                            //We no longer use the old BinaryField to recover the file name.
-                            //From now on we'll recover such value from the field "fileName" presented on the screen.
-                            //The physical file asset is just an internal piece that is mapped to the system asset-name.
-                            //The file per-se no longer can be renamed. We can only modify the asset-name that refers to it.
-                            final String assetName = (String) contentletRaw.getMap()
-                                    .get(FileAssetAPI.FILE_NAME_FIELD);
-                            identifier.setAssetName(UtilMethods.isSet(assetName) ?
-                                    assetName :
-                                    contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD).getName()
-                            );
-                        }
-                    } catch (IOException e) {
-                        Logger.error( this.getClass(), "Error handling Binary Field.", e );
-                    }
-                } else if ( contentlet.isHTMLPage() ) {
-                    //For HTML Pages - The asset name maps to the page URL
-                    identifier.setAssetName( htmlPageURL );
-                }
-                if(UtilMethods.isSet(contentletRaw.getFolder()) && !contentletRaw.getFolder().equals(FolderAPI.SYSTEM_FOLDER)){
-                    final Folder folder = APILocator.getFolderAPI().find(contentletRaw.getFolder(), systemUser, false);
-                    Identifier folderIdent = APILocator.getIdentifierAPI().find(folder.getIdentifier());
-                    identifier.setParentPath(folderIdent.getPath());
-                } else {
-                    identifier.setParentPath("/");
-                }
-                identifier = APILocator.getIdentifierAPI().save(identifier);
-
-                changedURI = ! oldURI.equals(identifier.getURI());
-            }
 
             contentlet = relateTags(contentlet, tagsValues, tagsHost);
 
@@ -5015,7 +4960,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 
     /**
-     * if we're not provided with an identifier this will attempt generating one
+     * if we're not provided with an identifier this will attempt generating one.
+     * In case an identifier already exists, it will be updated if needed. For example: when a folder path or host is changed
      * The inode is also generated here. For it is used internally to avoid collisions on the identifier table generating a unique asset name.
      * We're taking advantage of the exising logic on {@link ESContentFactoryImpl}'s save method.
      * That always explore the given contentlet trying to find a provided inode.
@@ -5025,31 +4971,38 @@ public class ESContentletAPIImpl implements ContentletAPI {
      *     final String inode = getInode(existingInode, contentlet);
      * }
      * </pre>
-     * @param contentlet the modified copy contentlet we want to save
+     * @param contentlet the modified copy contentlet we want to save. After this method execution, this contentlet will contain the new identifier and inode (if applies)
      * @param contentletRaw the incoming copy that holds every value passed from the front-end
      * @param existingIdentifier if internalCheckin decides we need to use an existing identifier we will use it
      * @param existingInode if internalCheckin decides we need to use an existing inode we will use it
      * @param htmlPageURL for pages we use the url to generate a unique asset name wen saving into the the contentlet table
-     * @return the modified copy contentlet we want to save with the new identifier and inode
+     * @return A boolean indicating if the contentlet's URI changed
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    private Contentlet assignIdentifierIfAbsent(final Contentlet contentlet, final Contentlet contentletRaw,  final String existingIdentifier, final String existingInode, final String htmlPageURL)
+    private boolean addOrUpdateContentletIdentifier(final Contentlet contentlet, final Contentlet contentletRaw,
+            final String existingIdentifier, final String existingInode, final String htmlPageURL)
             throws DotSecurityException, DotDataException {
 
+        final FolderAPI folderAPI = APILocator.getFolderAPI();
+        final HostAPI hostAPI     = APILocator.getHostAPI();
+        final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
+        final User systemUser     = APILocator.systemUser();
+
+        Identifier identifier;
         if (!InodeUtils.isSet(contentlet.getIdentifier())) {
 
             //Adding back temporarily the page URL to the contentlet, is needed in order to create a proper Identifier
             addURLToContentlet(contentlet, htmlPageURL);
             try {
-                final User systemUser = APILocator.systemUser();
+
                 final Treeable parent;
                 if (UtilMethods.isSet(contentletRaw.getFolder()) && !contentletRaw.getFolder()
                         .equals(FolderAPI.SYSTEM_FOLDER)) {
-                    parent = APILocator.getFolderAPI()
+                    parent = folderAPI
                             .find(contentletRaw.getFolder(), systemUser, false);
                 } else {
-                    parent = APILocator.getHostAPI().find(contentlet.getHost(), systemUser, false);
+                    parent = hostAPI.find(contentlet.getHost(), systemUser, false);
                 }
 
                 //We're gonna need a to assign the inode if we want to generate a valid identifier.
@@ -5061,10 +5014,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentlet.setInode(existingInode);
                 }
 
-                final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
-
                 final Contentlet asset = contentlet.isFileAsset() ? contentletRaw : contentlet;
-                final Identifier identifier = existingIdentifier != null ?
+                identifier = existingIdentifier != null ?
                         identifierAPI.createNew(asset, parent, existingIdentifier) :
                         identifierAPI.createNew(asset, parent);
 
@@ -5073,8 +5024,60 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 //Clean-up the contentlet object again..., we don' want to persist this URL in the db
                 removeURLFromContentlet(contentlet);
             }
+            return false;
+        } else {
+            //Existing contentlet getting updated.
+            identifier = identifierAPI.find(contentlet);
+
+            final String oldURI = identifier.getURI();
+
+            // make sure the identifier is removed from cache
+            // because changes here may affect URI then IdentifierCache
+            // can't remove it
+            CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
+
+            // Once the contentlet is saved, it gets refresh from the db. for which the incoming data gets lost.
+            // Therefore here we need to make sure we use the original contentlet that comes with the info passed from the ui.
+            final String hostId = UtilMethods.isSet(contentletRaw.getHost()) ? contentletRaw.getHost() : contentlet.getHost();
+            identifier.setHostId(hostId);
+            if(contentlet.isFileAsset()){
+                try {
+                    if(contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD) == null){
+                        final String binaryIdentifier = contentletRaw.getIdentifier() != null ? contentletRaw.getIdentifier() : StringPool.BLANK;
+                        final String binaryNode = contentletRaw.getInode() != null ? contentletRaw.getInode() : StringPool.BLANK;
+                        throw new FileAssetValidationException("Unable to validate field: " + FileAssetAPI.BINARY_FIELD
+                                + " identifier: " + binaryIdentifier
+                                + " inode: " + binaryNode);
+                    } else {
+                        //We no longer use the old BinaryField to recover the file name.
+                        //From now on we'll recover such value from the field "fileName" presented on the screen.
+                        //The physical file asset is just an internal piece that is mapped to the system asset-name.
+                        //The file per-se no longer can be renamed. We can only modify the asset-name that refers to it.
+                        final String assetName = (String) contentletRaw.getMap()
+                                .get(FileAssetAPI.FILE_NAME_FIELD);
+                        identifier.setAssetName(UtilMethods.isSet(assetName) ?
+                                assetName :
+                                contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD).getName()
+                        );
+                    }
+                } catch (IOException e) {
+                    Logger.error( this.getClass(), "Error handling Binary Field.", e );
+                }
+            } else if ( contentlet.isHTMLPage() ) {
+                //For HTML Pages - The asset name maps to the page URL
+                identifier.setAssetName( htmlPageURL );
+            }
+            if(UtilMethods.isSet(contentletRaw.getFolder()) && !contentletRaw.getFolder().equals(FolderAPI.SYSTEM_FOLDER)){
+                final Folder folder = folderAPI.find(contentletRaw.getFolder(), systemUser, false);
+                Identifier folderIdent = identifierAPI.find(folder.getIdentifier());
+                identifier.setParentPath(folderIdent.getPath());
+            } else {
+                identifier.setParentPath(StringPool.FORWARD_SLASH);
+            }
+            identifier = identifierAPI.save(identifier);
+
+            return ! oldURI.equals(identifier.getURI());
         }
-        return contentlet;
     }
 
 

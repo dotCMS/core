@@ -7,6 +7,7 @@ import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER
 import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_PARENT_PATH;
 
 import com.dotcms.browser.BrowserQuery;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.system.SimpleMapAppContext;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.transform.DBTransformer;
@@ -15,6 +16,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.common.db.DotConnect;
@@ -29,16 +31,17 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.exception.InvalidFolderNameException;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.factories.LinkFactory;
 import com.dotmarketing.portlets.links.model.Link;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.AssetsComparator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
@@ -48,6 +51,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.mutable.MutableBoolean;
@@ -102,10 +106,10 @@ public class FolderFactoryImpl extends FolderFactory {
            new DotConnect()
             .setSQL("delete from inode where inode = ? ")
             .addParam(folder.getInode()).loadResult();
+
            folderCache.removeFolder(folder, id);
 
-        
-	   CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(folder.getIdentifier());
+		   APILocator.getIdentifierAPI().delete(id);
 	}
 
 
@@ -604,7 +608,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		this.cleanUpTheFolderCache(folder, folderId);
 
 		final User systemUser = APILocator.systemUser();
-		boolean contains = false;
+		boolean contains;
 		String newParentPath;
 		String newParentHostId;
 
@@ -617,6 +621,7 @@ public class FolderFactoryImpl extends FolderFactory {
 			if(!contains) {
 				CacheLocator.getNavToolCache().removeNavByPath(destinationId.getHostId(), destinationId.getPath());
 			}
+
 		} else {
 
 			contains = APILocator.getHostAPI().doesHostContainsFolder((Host) destination, folder.getName());
@@ -637,21 +642,73 @@ public class FolderFactoryImpl extends FolderFactory {
 		final List<Contentlet> contentlets = contentletAPI.
 								findContentletsByFolder(folder, systemUser, false);
 
+		final Folder newFolder = getNewFolderRecord(folder, systemUser,
+				newParentPath, newParentHostId);
 
-		folderId.setParentPath(newParentPath);
-		folderId.setHostId    (newParentHostId);
-		identifierAPI.save    (folderId);
+		this.moveLinks(newFolder, links);
+		this.moveChildContentlets(newFolder, systemUser, contentlets);
 
-		this.moveLinks(folder, links);
-		this.moveChildContentlets(folder, systemUser, contentlets);
-		successOperation.setValue(this.moveChildFolders(folder, subFolders));
+		successOperation.setValue(this.moveChildFolders(newFolder, subFolders));
 
-		CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(folderId.getId());
+		//update permission and structure references
+		updateOtherFolderReferences(newFolder.getInode(), folder.getInode());
 
-		folder.setModDate(new Date());
-		save(folder);
+		delete(folder);
 
 		return successOperation.getValue();
+	}
+
+	private void updateOtherFolderReferences(final String newFolderInode, final String oldFolderInode) {
+		final DotConnect dotConnect = new DotConnect();
+		try {
+			dotConnect.executeStatement("update structure set folder = '" + newFolderInode
+					+ "' where folder = '" + oldFolderInode + "'");
+			dotConnect.executeStatement("update permission set inode_id = '" + newFolderInode
+					+ "' where inode_id = '" + oldFolderInode + "'");
+			dotConnect.executeStatement("update permission_reference set asset_id = '"
+					+ newFolderInode + "' where asset_id = '" + oldFolderInode + "'");
+
+		}catch (SQLException e){
+			Logger.error(FolderFactoryImpl.class, e.getMessage(), e);
+			throw new DotRuntimeException(e.getMessage(), e);
+		}
+	}
+
+	/**
+	 * This method creates a new initialFolder based on another folder. This new folder will be in a new path/host
+	 * @param initialFolder Folder to based on
+	 * @param systemUser
+	 * @param newParentPath New path where the folder will be in (if applies)
+	 * @param newParentHostId New host where the folder will be in (if applies)
+	 * @return New folder
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	private Folder getNewFolderRecord(final Folder initialFolder, final User systemUser,
+			final String newParentPath, final String newParentHostId) throws DotDataException, DotSecurityException {
+
+		final Host newHost = APILocator.getHostAPI().find(newParentHostId, systemUser, false);
+
+		final Folder newParentFolder = findFolderByPath(newParentPath, newHost);
+
+		final Folder newFolder = new Folder();
+		newFolder.setName(initialFolder.getName());
+		newFolder.setTitle(initialFolder.getTitle());
+		newFolder.setShowOnMenu(initialFolder.isShowOnMenu());
+		newFolder.setSortOrder(initialFolder.getSortOrder());
+		newFolder.setFilesMasks(initialFolder.getFilesMasks());
+		newFolder.setDefaultFileType(initialFolder.getDefaultFileType());
+		newFolder.setOwner(initialFolder.getOwner());
+		newFolder.setIDate(initialFolder.getIDate());
+
+		final Identifier newIdentifier = !UtilMethods.isSet(newParentFolder)?
+				APILocator.getIdentifierAPI().createNew(newFolder, newHost):
+				APILocator.getIdentifierAPI().createNew(newFolder, newParentFolder);
+
+		newFolder.setIdentifier(newIdentifier.getId());
+		newFolder.setModDate(new Date());
+		save(newFolder);
+		return newFolder;
 	}
 
 	private boolean moveChildFolders(final Object folder, final List<Folder> subFolders) throws DotDataException, DotSecurityException {
@@ -675,15 +732,16 @@ public class FolderFactoryImpl extends FolderFactory {
 
 		for(final Contentlet contentlet : contentlets) {
 
-		    if(contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) {
-
+			if (contentlet.isFileAsset()) {
 				fileAssetAPI.moveFile(contentlet, folder, systemUser, false);
-		    } else {
-
+		    } else if (contentlet.isHTMLPage()) {
+				HTMLPageAssetAPI pageAssetAPI = APILocator.getHTMLPageAssetAPI();
+				pageAssetAPI.move(pageAssetAPI.fromContentlet(contentlet), folder, systemUser);
+			} else {
     			final boolean isLive = contentlet.isLive();
-    			contentlet.setFolder(folder.getInode());
-    			contentlet.setInode (null);
-    			final Contentlet newContentlet = contentletAPI.checkin(contentlet, systemUser, false);
+				Contentlet newContentlet  = contentletAPI.checkout(contentlet.getInode(), systemUser, false);
+				newContentlet.setFolder(folder.getInode());
+				newContentlet = contentletAPI.checkin(newContentlet, systemUser, false);
     			if(isLive) {
 
 					contentletAPI.publish(newContentlet, systemUser, false);
