@@ -4586,7 +4586,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final String title = contentletIn.getTitle();
             final String actionId = workflowActionOpt.get().getId();
 
-            // if the default action is in the avalable actions for the content.
+            // if the default action is in the available actions for the content.
             if (!isDefaultActionOnAvailableActions(contentletIn, user, workflowAPI, actionId)) {
                 return Optional.empty();
             }
@@ -4832,7 +4832,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             boolean changedURI = addOrUpdateContentletIdentifier(contentlet, contentletRaw, existingIdentifier, existingInode, htmlPageURL);
 
             //Include system fields to generate a json representation - these fields are later removed before contentlet gets saved
-            contentlet = includeSystemFields(contentlet, contentletRaw, tagsValues, categories, user);
+            //contentlet = includeSystemFields(contentlet, contentletRaw, tagsValues, categories, user);
             contentlet = applyNullProperties(contentlet);
             //This is executed first hand to create the inode-contentlet relationship.
             if(InodeUtils.isSet(existingInode)) {
