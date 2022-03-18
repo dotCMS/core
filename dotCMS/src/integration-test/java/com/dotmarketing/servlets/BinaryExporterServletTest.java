@@ -200,10 +200,19 @@ public class BinaryExporterServletTest {
         return new Object[][] {
                 { "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.3 Safari/605.1.15", "image/webp" },
                 { "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1 Safari/605.1.15", "image/jpeg" },
+                { "Mozilla/5.0 (X11; CrOS x86_64 13982.82.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.157 Safari/537.36", "image/webp" },
+                { "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.85 Safari/537.36 Edg/90.0.818.46", "image/webp" },
+                { "Mozilla/5.0 (iPhone; CPU iPhone OS 14_7_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/36.0  Mobile/15E148 Safari/605.1.15", "image/webp" },
 
         };
     }
 
+    /**
+     * Method to test: BinaryExporterServlet.doGet
+     * Given scenario: Given a webp request
+     * Expected result: Should resolve as webp on any browser different than Safari version < 14.
+     * On Safari version below 14 should resolve as jpg
+     */
     @UseDataProvider("testCasesWebp")
     @Test
     public void requestWebpImage(final String userAgent, final String expectedContentType)
