@@ -7,17 +7,12 @@ import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
-import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -27,28 +22,17 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Treeable;
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.common.util.SQLUtil;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.containers.business.ContainerAPI;
-import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.web.UpdateContainersPathsJob;
 import com.dotmarketing.portlets.contentlet.business.web.UpdatePageTemplatePathJob;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.links.model.Link;
-import com.dotmarketing.portlets.templates.business.TemplateAPI;
-import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
@@ -56,23 +40,15 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
-import io.vavr.control.Try;
-import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
-
-import static com.dotmarketing.db.DbConnectionFactory.getDBFalse;
-import static com.dotmarketing.db.DbConnectionFactory.getDBTrue;
 
 /**
  * This API allows developers to access information related to Sites objects in your dotCMS content repository.
@@ -92,6 +68,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     private final SystemEventsAPI systemEventsAPI;
     private final DotConcurrentFactory concurrentFactory = DotConcurrentFactory.getInstance();
     private LanguageAPI languageAPI;
+    private HostFactory hostFactory = FactoryLocator.getHostFactory();
 
     public HostAPIImpl() {
         this(APILocator.getSystemEventsAPI(),APILocator.getLanguageAPI());
@@ -218,119 +195,32 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
      * @return The {@link Host} object that matches the specified name.
      */
     private Host findByNameNotDefault(final String siteName, final User user, final boolean respectFrontendRoles) {
-        Host site = hostCache.get(siteName);
-        if (null == site) {
-            final DotConnect dc = new DotConnect();
-            final StringBuilder sqlQuery = new StringBuilder().append("SELECT c.inode FROM contentlet c ");
-            sqlQuery.append("INNER JOIN identifier i ");
-            sqlQuery.append("ON c.identifier = i.id AND i.asset_subtype = ? ");
-            sqlQuery.append("INNER JOIN contentlet_version_info cvi ");
-            sqlQuery.append("ON c.inode = cvi.working_inode ");
-            if (APILocator.getContentletJsonAPI().isJsonSupportedDatabase()) {
-                sqlQuery.append("WHERE LOWER(contentlet_as_json->'fields'->'hostName'->>'value') = ?");
-            } else {
-                sqlQuery.append("WHERE LOWER(c.text1) = ?");
-            }
-            dc.setSQL(sqlQuery.toString());
-            dc.addParam(Host.HOST_VELOCITY_VAR_NAME);
-            dc.addParam(siteName.toLowerCase());
+        final Host site = this.hostFactory.bySiteName(siteName);
+        if (null != site) {
             try {
-                final List<Map<String, String>> dbResults = dc.loadResults();
-                if (dbResults.isEmpty()) {
-                    return null;
-                }
-                if (dbResults.size() > 1) {
-                    // This situation should not happen at all
-                    final StringBuilder warningMsg = new StringBuilder().append("ERROR: ").append(dbResults.size())
-                            .append(" Sites have the same name '").append(siteName).append("':\n");
-                    for (final Map<String, String> siteInfo : dbResults) {
-                        warningMsg.append("-> Inode = ").append(siteInfo.get("inode")).append("\n");
-                    }
-                    Logger.fatal(this, warningMsg.toString());
-                }
-                final Contentlet siteAsContentlet = APILocator.getContentletAPI().find(dbResults.get(0).get("inode"),
-                        user, respectFrontendRoles);
-                site = new Host(siteAsContentlet);
-                this.hostCache.add(site);
-            } catch (final Exception e) {
-                throw new DotRuntimeException(String.format("An error occurred when retrieving non-default Site '%s': %s",
-                        siteName, e.getMessage()), e);
+                checkHostPermission(user, respectFrontendRoles, site);
+                return site;
+            } catch (final DotDataException | DotSecurityException e) {
+                Logger.error(this, String.format("An error occurred when checking READ permission from User '%s' on " +
+                        "Site '%s': %s", user.getUserId(), siteName, e.getMessage()), e);
             }
         }
-        return site;
+        return null;
     }
 
     @Override
     public Host findByAlias(final String alias, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        Host site = this.hostCache.getHostByAlias(alias);
-        if (null == site) {
-            final DotConnect dc = new DotConnect();
-            final StringBuilder sqlQuery = new StringBuilder().append("SELECT c.inode, ");
-            if (APILocator.getContentletJsonAPI().isJsonSupportedDatabase()) {
-                sqlQuery.append("c.contentlet_as_json->'fields'->'aliases'->>'value' ");
-            } else {
-                sqlQuery.append("c.text_area1 ");
-            }
-            sqlQuery.append("AS data FROM contentlet c ");
-            sqlQuery.append("INNER JOIN identifier i ");
-            sqlQuery.append("ON c.identifier = i.id AND i.asset_subtype = ? ");
-            sqlQuery.append("INNER JOIN contentlet_version_info cvi ");
-            sqlQuery.append("ON c.inode = cvi.working_inode ");
-            if (APILocator.getContentletJsonAPI().isJsonSupportedDatabase()) {
-                sqlQuery.append("WHERE LOWER(c.contentlet_as_json->'fields'->'aliases'->>'value') LIKE ?");
-            } else {
-                sqlQuery.append("WHERE LOWER(c.text_area4) LIKE ?");
-            }
-            dc.setSQL(sqlQuery.toString());
-            dc.addParam(Host.HOST_VELOCITY_VAR_NAME);
-            dc.addParam("%" + alias.toLowerCase() + "%");
+        final Host site = this.hostFactory.byAlias(alias);
+        if (null != site) {
             try {
-                final List<Map<String, String>> dbResults = dc.loadResults();
-                if (dbResults.isEmpty()) {
-                    return null;
-                }
-                if (dbResults.size() == 1) {
-                    final Set<String> siteAliases = new HashSet<>(parseSiteAliases(dbResults.get(0).get("data")));
-                    if (siteAliases.contains(alias)) {
-                        site = new Host(APILocator.getContentletAPI().find(dbResults.get(0).get("inode"), user,
-                                respectFrontendRoles));
-                    }
-                } else {
-                    final List<Contentlet> siteAsContentletList = new ArrayList<>();
-                    for (final Map<String, String> siteInfo : dbResults) {
-                        final Set<String> siteAliases = new HashSet<>(parseSiteAliases(siteInfo.get("data")));
-                        if (siteAliases.contains(alias)) {
-                            siteAsContentletList.add(APILocator.getContentletAPI().find(siteInfo.get("inode"), user, respectFrontendRoles));
-                        }
-                    }
-                    if (siteAsContentletList.size() == 1) {
-                        site = new Host(siteAsContentletList.get(0));
-                    } else {
-                        for (final Contentlet siteAsContentlet : siteAsContentletList) {
-                            if (Boolean.class.cast(siteAsContentlet.get(Host.IS_DEFAULT_KEY))) {
-                                site = new Host(siteAsContentlet);
-                                break;
-                            }
-                        }
-                        if (null == site) {
-                            final StringBuilder warningMsg = new StringBuilder().append("ERROR: ").append(siteAsContentletList.size())
-                                    .append(" Sites have the same alias '").append(alias).append("':\n");
-                            for (final Contentlet siteAsContentlet : siteAsContentletList) {
-                                warningMsg.append("-> Inode = ").append(siteAsContentlet.getInode()).append("\n");
-                            }
-                            Logger.fatal(this, warningMsg.toString());
-                            site = new Host(siteAsContentletList.get(0));
-                        }
-                    }
-                }
-                this.hostCache.add(site);
-                this.hostCache.addHostAlias(alias, site);
-            } catch (final Exception e) {
-                throw new DotRuntimeException(String.format("An error occurred when retrieving Site with alias '%s': " +
-                        "%s", alias, e.getMessage()), e);
+                checkHostPermission(user, respectFrontendRoles, site);
+                return site;
+            } catch (final DotDataException | DotSecurityException e) {
+                Logger.error(this, String.format("An error occurred when checking READ permission from User '%s' on " +
+                        "Site Alias '%s': %s", user.getUserId(), alias, e.getMessage()), e);
             }
         }
-        return site;
+        return null;
     }
 
     /**
@@ -435,47 +325,20 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     @CloseDBIfOpened
     private List<Host> findPaginatedSitesFromDB(final User user, final int limit, final int offset, final String
             sortBy, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        final StringBuffer sqlQuery = new StringBuffer();
-        sqlQuery.append("SELECT cvi.working_inode FROM contentlet_version_info cvi, identifier i ");
-        sqlQuery.append("WHERE i.asset_subtype = ? AND cvi.identifier = i.id AND i.id <> ? ");
-        final String sanitizedSortBy = SQLUtil.sanitizeSortBy(sortBy);
-        if (UtilMethods.isSet(sanitizedSortBy)) {
-            sqlQuery.append("ORDER BY ? ");
+        final List<Host> siteList = this.hostFactory.findAll(limit, offset, sortBy);
+        if (null != siteList && !siteList.isEmpty()) {
+            return siteList.stream().filter(site -> {
+                try {
+                    checkHostPermission(user, respectFrontendRoles, site);
+                    return true;
+                } catch (final DotDataException | DotSecurityException e) {
+                    Logger.warn(this, String.format("An error occurred when checking permissions from User '%s' on " +
+                            "Site '%s': %s", user.getUserId(), site.getInode(), e.getMessage()));
+                }
+                return false;
+            }).collect(Collectors.toList());
         }
-        final DotConnect dc = new DotConnect();
-        dc.setSQL(sqlQuery.toString());
-        dc.addParam(Host.HOST_VELOCITY_VAR_NAME);
-        dc.addParam(Host.SYSTEM_HOST);
-        if (UtilMethods.isSet(sanitizedSortBy)) {
-            dc.addParam(sanitizedSortBy);
-        }
-        if (limit > 0) {
-            dc.setMaxRows(limit);
-        }
-        if (offset > 0) {
-            dc.setStartRow(offset);
-        }
-        final List<Map<String, String>> dbResults = dc.loadResults();
-        final List<Host> siteList = new ArrayList<>();
-        for (final Map<String, String> siteInfo : dbResults) {
-            final Contentlet contentlet = APILocator.getContentletAPI().find(siteInfo.get("working_inode"), user,
-                    respectFrontendRoles);
-            siteList.add(new Host(contentlet));
-        }
-
-        List<Host> collect = dbResults.stream().map(data -> {
-            try {
-                final Contentlet contentlet = APILocator.getContentletAPI().find(data.get("working_inode"), user,
-                        respectFrontendRoles);
-                return new Host(contentlet);
-            } catch (final DotDataException | DotSecurityException e) {
-                Logger.warn(this, String.format("Contentlet with Inode '%s' could not be retrieved from Content API: " +
-                        "%s", data.get("working_inode"), e.getMessage()));
-                return null;
-            }
-        }).collect(Collectors.toList());
-
-        return collect;
+        return null;
     }
 
     @Override
@@ -580,76 +443,35 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
 
     @Override
     @CloseDBIfOpened
-    public List<Host> getHostsWithPermission(int permissionType, boolean includeArchived, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        List<Host> siteList = new ArrayList<>();
-        List<Contentlet> siteAsContentletList = new ArrayList<>();
-        String sql = "SELECT working_inode FROM contentlet_version_info cvi, identifier i WHERE i" +
-                ".asset_subtype = ? AND cvi.identifier = i.id ";
-        if (includeArchived) {
-            sql += "AND cvi.live_inode IS NULL AND cvi.deleted IS TRUE ";
-        }
-        final DotConnect dc = new DotConnect();
-        dc.setSQL(sql);
-        dc.addParam(Host.HOST_VELOCITY_VAR_NAME);
-        final List<Map<String,String>> dbResults = dc.loadResults();
-        if (!UtilMethods.isSet(dbResults)) {
-            return siteList;
-        }
-        for (final Map<String, String> siteInfo : dbResults) {
-            final Contentlet siteAsContentlet = APILocator.getContentletAPI().find(siteInfo.get("working_inode"),
-                    APILocator.systemUser(), respectFrontendRoles);
-            siteAsContentletList.add(siteAsContentlet);
-        }
-        siteAsContentletList = APILocator.getPermissionAPI().filterCollection(siteAsContentletList, permissionType,
-                respectFrontendRoles, user);
-        siteList = this.convertToHostList(siteAsContentletList);
-        if (!includeArchived) {
-            siteList = siteList.stream().filter(site -> {
-                try {
-                    return !site.isArchived();
-                } catch (DotDataException | DotSecurityException e) {
-                    Logger.warn(this, String.format("An error occurred when checking permissions on Site '%s': %s",
-                            site, e.getMessage()));
-                    return false;
-                }
-            }).collect(Collectors.toList());
-            return siteList;
-        }
-        return siteList;
+    @Deprecated
+    public List<Host> getHostsWithPermission(int permissionType, boolean includeArchived, final User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        return getHostsWithPermission(permissionType, user, respectFrontendRoles);
     }
 
+    @CloseDBIfOpened
     @Override
-    public List<Host> getHostsWithPermission(int permissionType, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        return getHostsWithPermission(permissionType, true, user, respectFrontendRoles);
+    public List<Host> getHostsWithPermission(int permissionType, final User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        final List<Host> siteList = this.hostFactory.findAll();
+        List<Host> filteredSiteList = new ArrayList<>();
+        if (null != siteList && !siteList.isEmpty()) {
+            filteredSiteList = APILocator.getPermissionAPI().filterCollection(siteList, permissionType,
+                    respectFrontendRoles, user);
+        }
+        return filteredSiteList;
     }
 
     @Override
     @CloseDBIfOpened
-    public Host findSystemHost (User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        if(systemHost != null){
-            return systemHost;
+    public Host findSystemHost(final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        if (null != this.systemHost) {
+            return this.systemHost;
         }
-
-        try {
-            String systemHostSql = "select id from identifier where id = ?";
-            DotConnect db  = new DotConnect();
-            db.setSQL(systemHostSql);
-            db.addParam(Host.SYSTEM_HOST);
-            List<Map<String, Object>> rs = db.loadObjectResults();
-            if(rs.isEmpty()) {
-                createSystemHost();
-            } else {
-                final String systemHostId = (String) rs.get(0).get("id");
-                this.systemHost = DBSearch(systemHostId, user, respectFrontendRoles);
-            }
-            if(rs.size() > 1){
-                Logger.fatal(this, "There is more than one working version of the system host!!");
-            }
-        } catch (Exception e) {
-            Logger.error(HostAPIImpl.class, e.getMessage(), e);
-            throw new DotRuntimeException(e.getMessage(), e);
+        this.systemHost = this.hostFactory.findSystemHost(user, respectFrontendRoles);
+        if (null == this.systemHost) {
+            this.systemHost = this.hostFactory.createSystemHost();
         }
-        return systemHost;
+        this.hostCache.add(this.systemHost);
+        return this.systemHost;
     }
 
     @Override
@@ -711,7 +533,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
                                    final boolean respectFrontendRoles,
                                    final boolean runAsSeparatedThread) {
 
-        Optional<Future<Boolean>> future = Optional.empty();
+        //Optional<Future<Boolean>> future = Optional.empty();
         try {
             Logger.info(this, ()-> "Deleting Site: " + site);
             APILocator.getPermissionAPI().checkPermission(site, PermissionLevel.PUBLISH, deletingUser);
@@ -723,191 +545,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         }
 
         final User user = (null != deletingUser)?deletingUser:APILocator.systemUser();
-        class DeleteHostThread implements Callable<Boolean> {
-
-            @WrapInTransaction
-            @Override
-            public Boolean call() {
-
-                try {
-                    deleteHost();
-                    HibernateUtil.addCommitListener
-                            (() -> generateNotification());
-                } catch (Exception e) {
-                    // send notification
-                    try {
-
-                        APILocator.getNotificationAPI().generateNotification(
-                                new I18NMessage("notification.hostapi.delete.error.title"), // title = Host Notification
-                                new I18NMessage("notifications_host_deletion_error", site.getHostname(), e.getMessage()),
-                                null, // no actions
-                                NotificationLevel.ERROR,
-                                NotificationType.GENERIC,
-                                user.getUserId(),
-                                user.getLocale()
-                        );
-
-                    } catch (final DotDataException e1) {
-                        Logger.error(HostAPIImpl.class, String.format("An error occurred when saving Site Deletion " +
-                                "Notification for site '%s': %s", site, e.getMessage()), e);
-                    }
-                    final String errorMsg = String.format("An error occurred when User '%s' tried to delete Site " +
-                            "'%s': %s", deletingUser.getUserId(), site, e.getMessage());
-                    Logger.error(HostAPIImpl.class, errorMsg, e);
-                    throw new DotRuntimeException(errorMsg, e);
-                }
-
-                return Boolean.TRUE;
-            }
-
-            private void generateNotification() {
-                try {
-
-                    APILocator.getNotificationAPI().generateNotification(
-                            new I18NMessage("message.host.delete.title"), // title = Host Notification
-                            new I18NMessage("message.host.delete",
-                                    "Site deleted: " + site, site.getHostname()),
-                            null, // no actions
-                            NotificationLevel.INFO,
-                            NotificationType.GENERIC,
-                            user.getUserId(),
-                            user.getLocale());
-                } catch (Exception e) {
-
-                    Logger.debug(this, e.getMessage(), e);
-                }
-            }
-
-            public void deleteHost() throws Exception {
-                if(site != null){
-                    hostCache.remove(site);
-                }
-
-                final DotConnect dc = new DotConnect();
-
-                // Remove Links
-                MenuLinkAPI linkAPI = APILocator.getMenuLinkAPI();
-                List<Link> links = linkAPI.findLinks(user, true, null, site.getIdentifier(), null, null, null, 0, -1, null);
-                for (Link link : links) {
-                    linkAPI.delete(link, user, respectFrontendRoles);
-                }
-
-                // Remove Contentlet
-                ContentletAPI contentAPI = APILocator.getContentletAPI();
-                contentAPI.deleteByHost(site, APILocator.systemUser(), respectFrontendRoles);
-
-                // Remove Folders
-                FolderAPI folderAPI = APILocator.getFolderAPI();
-                List<Folder> folders = folderAPI.findFoldersByHost(site, user, respectFrontendRoles);
-                for (Folder folder : folders) {
-                    folderAPI.delete(folder, user, respectFrontendRoles);
-                }
-
-                // Remove Templates
-                TemplateAPI templateAPI = APILocator.getTemplateAPI();
-                List<Template> templates = templateAPI.findTemplatesAssignedTo(site, true);
-                for (Template template : templates) {
-                    dc.setSQL("delete from template_containers where template_id = ?");
-                    dc.addParam(template.getIdentifier());
-                    dc.loadResult();
-
-                    templateAPI.delete(template, user, respectFrontendRoles);
-                }
-
-                // Remove Containers
-                ContainerAPI containerAPI = APILocator.getContainerAPI();
-                List<Container> containers = containerAPI.findContainers(user, true, null, site.getIdentifier(), null, null, null, 0, -1, null);
-                for (Container container : containers) {
-                    containerAPI.delete(container, user, respectFrontendRoles);
-                }
-
-                // Remove Structures
-                List<ContentType> types = APILocator.getContentTypeAPI(user, respectFrontendRoles).search(" host = '" + site.getIdentifier() + "'");
-
-                for (ContentType type : types) {
-                    List<Contentlet> structContent = contentAPI.findByStructure(new StructureTransformer(type).asStructure(), APILocator.systemUser(), false, 0, 0);
-                    for (Contentlet c : structContent) {
-                        //We are deleting a site/host, we don't need to validate anything.
-                        c.setProperty(Contentlet.DONT_VALIDATE_ME, true);
-                        contentAPI.delete(c, user, respectFrontendRoles);
-                    }
-
-                    ContentTypeAPI contentTypeAPI = APILocator
-                            .getContentTypeAPI(user, respectFrontendRoles);
-                    //Validate if are allow to delete this content type
-                    if (!type.system() && !type.defaultType()) {
-                        contentTypeAPI.delete(type);
-                    } else {
-                        //If we can not delete it we need to change the host to SYSTEM_HOST
-                        ContentType clonedContentType = ContentTypeBuilder.builder(type)
-                                .host(findSystemHost(user, false).getIdentifier()).build();
-                        contentTypeAPI.save(clonedContentType);
-                    }
-
-                }
-
-                // wipe bad old containers
-                dc.setSQL("delete from container_structures where exists (select * from identifier where host_inode=? and container_structures.container_id=id)");
-                dc.addParam(site.getIdentifier());
-                dc.loadResult();
-
-                Inode.Type[] assets = {Inode.Type.CONTAINERS, Inode.Type.TEMPLATE, Inode.Type.LINKS};
-                for(Inode.Type asset : assets) {
-                    dc.setSQL("select inode from "+asset.getTableName()+" where exists (select * from identifier where host_inode=? and id="+asset.getTableName()+".identifier)");
-                    dc.addParam(site.getIdentifier());
-                    for(Map row : (List<Map>)dc.loadResults()) {
-                        dc.setSQL("delete from "+asset.getVersionTableName()+" where working_inode=? or live_inode=?");
-                        dc.addParam(row.get("inode"));
-                        dc.addParam(row.get("inode"));
-                        dc.loadResult();
-
-                        dc.setSQL("delete from "+asset.getTableName()+" where inode=?");
-                        dc.addParam(row.get("inode"));
-                        dc.loadResult();
-                    }
-                }
-
-                //Remove Tags
-                APILocator.getTagAPI().deleteTagsByHostId(site.getIdentifier());
-
-                // Double-check that ALL contentlets are effectively removed  
-                // before using dotConnect to kill bad identifiers
-                List<Contentlet> remainingContenlets = contentAPI
-                        .findContentletsByHost(site, user, respectFrontendRoles);
-                if (remainingContenlets != null
-                        && remainingContenlets.size() > 0) {
-                    contentAPI.deleteByHost(site, user, respectFrontendRoles);
-                }
-                
-                // kill bad identifiers pointing to the host
-                dc.setSQL("delete from identifier where host_inode=?");
-                dc.addParam(site.getIdentifier());
-                dc.loadResult();
-
-                // Remove Host
-                Contentlet c = contentAPI.find(site.getInode(), user, respectFrontendRoles);
-                contentAPI.delete(c, user, respectFrontendRoles);
-
-                try {
-                    APILocator.getAppsAPI().removeSecretsForSite(site, APILocator.systemUser());
-                } catch (final Exception e) {
-                    Logger.warn(HostAPIImpl.class, String.format("An error occurred when removing secrets for site " +
-                            "'%s': %s", site, e.getMessage()), e);
-                }
-                flushAllCaches(site);
-            }
-        }
-        final DeleteHostThread deleteHostThread = new DeleteHostThread();
-
-        if(runAsSeparatedThread) {
-
-            future = Optional.of(this.concurrentFactory.getSubmitter
-                    (DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL).submit(deleteHostThread));
-        } else {
-            deleteHostThread.call();
-        }
-
-        return future;
+        return this.hostFactory.delete(site, user, respectFrontendRoles, runAsSeparatedThread);
     } // delete.
 
     @Override
@@ -992,72 +630,23 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             Logger.error(HostAPIImpl.class, message);
             throw new DotDataException(message);
         }
-
-        final DotConnect dotConnect = new DotConnect();
-        String inode = null;
-
-        if(APILocator.getContentletJsonAPI().isPersistContentAsJson()){
-
-          String sql = null;
-
-          if(DbConnectionFactory.isPostgres()) {
-                sql = "SELECT cvi.working_inode\n"
-                        + "  FROM contentlet_version_info cvi join contentlet c on (c.inode = cvi.working_inode) \n"
-                        + "  WHERE c.contentlet_as_json @> '{ \"fields\":{\"isDefault\":{ \"value\":true }} }' \n"
-                        + "  and c.structure_inode = ?";
-          }
-          if(DbConnectionFactory.isMsSql()){
-                   sql = "SELECT cvi.working_inode\n"
-                        + "  FROM contentlet_version_info cvi join contentlet c on (c.inode = cvi.working_inode) \n"
-                        + "  WHERE JSON_VALUE(c.contentlet_as_json, '$.fields.isDefault.value') = 'true'  \n"
-                        + "  and c.structure_inode = ?";
-          }
-          if(null == sql) {
-              throw new IllegalStateException("Unable to determine what db with json support we're running on!");
-          }
-             dotConnect.setSQL(sql);
-             dotConnect.addParam(siteContentType.inode());
-             inode = Try.of(()->dotConnect.getString("working_inode")).onFailure(throwable -> {
-                 Logger.warnAndDebug(HostAPIImpl.class,"An Error occurred while fetching the default host. ", throwable);
-             }).getOrNull();
+        final Optional<Host> defaultHostOpt = this.hostFactory.findDefaultHost(siteContentType.inode(), defaultField.get().dbColumn());
+        if (defaultHostOpt.isPresent()) {
+            return defaultHostOpt.get();
         }
-
-       if(UtilMethods.isNotSet(inode)) {
-           dotConnect
-                   .setSQL("select working_inode from contentlet_version_info join contentlet on (contentlet.inode = contentlet_version_info.working_inode) "
-                           + " where " + defaultField.get().dbColumn()  + " = ? and structure_inode =?");
-           dotConnect.addParam(true);
-           dotConnect.addParam(siteContentType.inode());
-           inode = dotConnect.getString("working_inode");
-       }
-
-        Host defaultHost;
-
-        if(UtilMethods.isSet(inode)) {
-
-            defaultHost = new Host(APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false));
-            hostCache.add(defaultHost);
-        } else {
-            defaultHost = new Host();
-            defaultHost.setDefault(true);
-            defaultHost.setHostname("noDefault-"  + System.currentTimeMillis());
-
-            for(final Field field : fields) {
-
-                if(field.required() && UtilMethods.isSet(field.defaultValue())) {
-                    defaultHost.setProperty(field.variable(), field.defaultValue());
-                }
+        // If the Default Host doesn't exist or was removed, just go ahead and re-create it
+        Host defaultHost = new Host();
+        defaultHost.setDefault(true);
+        defaultHost.setHostname("noDefault-"  + System.currentTimeMillis());
+        for (final Field field : fields) {
+            if (field.required() && UtilMethods.isSet(field.defaultValue())) {
+                defaultHost.setProperty(field.variable(), field.defaultValue());
             }
-
-            defaultHost.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
-            defaultHost = save(defaultHost, APILocator.systemUser(), false);
-
-            sendNotification();
         }
-
-
+        defaultHost.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
+        defaultHost = save(defaultHost, APILocator.systemUser(), false);
+        sendNotification();
         return defaultHost;
-
     }
 
     private void sendNotification() {
@@ -1081,49 +670,6 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
         }
-    }
-
-    @WrapInTransaction
-    private synchronized Host createSystemHost() throws DotDataException,
-    DotSecurityException {
-
-        User systemUser = APILocator.systemUser();
-
-        String systemHostSql = "select id from identifier where id = ?";
-        DotConnect db  = new DotConnect();
-        db.setSQL(systemHostSql);
-        db.addParam(Host.SYSTEM_HOST);
-        List<Map<String, Object>> rs = db.loadObjectResults();
-        if(rs.isEmpty()) {
-            Host systemHost = new Host();
-            systemHost.setDefault(false);
-            systemHost.setHostname("system");
-            systemHost.setSystemHost(true);
-            systemHost.setHost(null);
-            systemHost.setLanguageId(languageAPI.getDefaultLanguage().getId());
-            systemHost = new Host(contentletFactory.save(systemHost));
-            systemHost.setIdentifier(Host.SYSTEM_HOST);
-            systemHost.setModDate(new Date());
-            systemHost.setModUser(systemUser.getUserId());
-            systemHost.setOwner(systemUser.getUserId());
-            systemHost.setHost(null);
-            systemHost.setFolder(null);
-            contentletFactory.save(systemHost);
-            APILocator.getVersionableAPI().setWorking(systemHost);
-            this.systemHost = systemHost;
-        } else {
-            final String systemHostId = (String) rs.get(0).get("id");
-            this.systemHost = DBSearch(systemHostId, systemUser, false);
-        }
-        return systemHost;
-    }
-    
-    private List<Host> convertToHostList(List<Contentlet> list) {
-        List<Host> hosts = new ArrayList<Host>();
-        for(Contentlet c : list) {
-            hosts.add(new Host(c));
-        }
-        return hosts;
     }
 
     @WrapInTransaction
@@ -1155,41 +701,10 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     @CloseDBIfOpened
     public Host DBSearch(String id, User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
-
         if (!UtilMethods.isSet(id)) {
             return null;
         }
-
-        Host host = null;
-
-        final List<ContentletVersionInfo> verInfos = APILocator.getVersionableAPI()
-                .findContentletVersionInfos(id);
-        if (!verInfos.isEmpty()) {
-            final Language defaultLang = languageAPI.getDefaultLanguage();
-
-            final ContentletVersionInfo versionInfo = verInfos.stream()
-                    .filter(contentletVersionInfo -> contentletVersionInfo.getLang() == defaultLang
-                            .getId()).findFirst().orElseGet(() -> {
-                        Logger.warn(HostAPIImpl.class,
-                                String.format(
-                                        "Unable to find ContentletVersionInfo for site with id [%s] using default language [%s]. fallback to first entry found.",
-                                        id, defaultLang.getId()));
-                        return verInfos.get(0);
-                    });
-
-            final User systemUser = APILocator.systemUser();
-            final String hostInode = versionInfo.getWorkingInode();
-            final Contentlet cont = APILocator.getContentletAPI()
-                    .find(hostInode, systemUser, respectFrontendRoles);
-            final ContentType type = APILocator.getContentTypeAPI(systemUser, respectFrontendRoles)
-                    .find(Host.HOST_VELOCITY_VAR_NAME);
-            if (cont.getStructureInode().equals(type.inode())) {
-                host = new Host(cont);
-                hostCache.add(host);
-            }
-        }
-
-        return host;
+        return this.hostFactory.DBSearch(id, user, respectFrontendRoles);
     }
 
     @Override
@@ -1271,132 +786,122 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     @Override
     public PaginatedArrayList<Host> searchByStopped(final String filter, final boolean showStopped, final boolean
             showSystemHost, final int limit, final int offset, final User user, final boolean respectFrontendRoles) {
-        final String condition = showStopped ? "AND cvi.live_inode IS NULL " : "AND cvi.live_inode IS NOT NULL ";
-        return search(filter, condition, showSystemHost, limit, offset, user, respectFrontendRoles);
+        PaginatedArrayList<Host> paginatedSiteList = new PaginatedArrayList<>();
+        final Optional<List<Host>> siteListOpt = showStopped ? this.hostFactory.findStoppedSites(filter, true, limit, offset, user,
+                respectFrontendRoles) : this.hostFactory.findLiveSites(filter, limit, offset, user, respectFrontendRoles);
+        if (siteListOpt.isPresent()) {
+            if (showStopped) {
+                return convertToSitePaginatedList(siteListOpt.get());
+            }
+            try {
+                // Permissions can only be checked on LIVE contents
+                final List<Host> filteredSiteList = APILocator.getPermissionAPI().filterCollection(siteListOpt.get(), PermissionAPI
+                        .PERMISSION_READ, respectFrontendRoles, user);
+                paginatedSiteList = convertToSitePaginatedList(filteredSiteList);
+            } catch (final DotDataException | DotSecurityException e) {
+                Logger.error(HostAPIImpl.class, String.format("An error occurred when searching for Sites based on " +
+                        "the following criteria: filter[ %s ], showStopped[ %s ], showSystemHost [ %s ]: %s", filter,
+                        showStopped, showSystemHost, e.getMessage()), e);
+                throw new DotRuntimeException(String.format("An error occurred when searching for Sites: %s", e
+                        .getMessage()), e);
+            }
+        }
+        return paginatedSiteList;
     }
 
     @Override
     public PaginatedArrayList<Host> search(final String filter, final boolean showArchived, final boolean
             showStopped, final boolean showSystemHost, final int limit, final int offset, final User user, final
                                            boolean respectFrontendRoles) {
-        final String showArchivedCondition = showArchived ? "cvi.deleted = " + getDBTrue() : "cvi.deleted = " +
-                getDBFalse();
-        final String showStoppedCondition = showStopped ? "cvi.live_inode IS NULL" : "cvi.live_inode IS NOT NULL";
-        final String condition = "AND " + showArchivedCondition + " AND " + showStoppedCondition + " ";
-        return search(filter, condition, showSystemHost, limit, offset, user, respectFrontendRoles);
+        PaginatedArrayList<Host> paginatedSiteList = new PaginatedArrayList<>();
+        Optional<List<Host>> siteListOpt;
+        if (!showStopped && !showArchived) {
+            // Return live Sites
+            siteListOpt = this.hostFactory.findLiveSites(filter, limit, offset, user, respectFrontendRoles);
+            if (siteListOpt.isPresent()) {
+                try {
+                    // Permissions can only be checked on LIVE contents
+                    final List<Host> filteredSiteList = APILocator.getPermissionAPI().filterCollection(siteListOpt.get(), PermissionAPI
+                            .PERMISSION_READ, respectFrontendRoles, user);
+                    paginatedSiteList = convertToSitePaginatedList(filteredSiteList);
+                } catch (final DotDataException | DotSecurityException e) {
+                    Logger.error(HostAPIImpl.class, String.format("An error occurred when searching for Sites based " +
+                            "on the following criteria: filter[ %s ], showArchived [ %s ], showStopped[ %s ], " +
+                            "showSystemHost [ %s ]: %s", filter, showArchived, showStopped, showSystemHost, e
+                            .getMessage()), e);
+                    throw new DotRuntimeException(String.format("An error occurred when searching for Sites: %s", e
+                            .getMessage()), e);
+                }
+            }
+        }
+        if (showStopped && !showArchived) {
+            // Return stopped Sites
+            siteListOpt = this.hostFactory.findStoppedSites(filter, false, limit, offset, user, respectFrontendRoles);
+            if (siteListOpt.isPresent()) {
+                paginatedSiteList = convertToSitePaginatedList(siteListOpt.get());
+            }
+        }
+        if (showStopped && showArchived) {
+            // Return archived Sites
+            siteListOpt = this.hostFactory.findArchivedSites(filter, limit, offset, user, respectFrontendRoles);
+            if (siteListOpt.isPresent()) {
+                paginatedSiteList = convertToSitePaginatedList(siteListOpt.get());
+            }
+        }
+        return paginatedSiteList;
     }
 
     @Override
     public PaginatedArrayList<Host> search(String filter, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles){
-        return search(filter, StringUtils.EMPTY, showSystemHost, limit, offset, user, respectFrontendRoles);
+        PaginatedArrayList<Host> paginatedSiteList = new PaginatedArrayList<>();
+        final Optional<List<Host>> siteListOpt = this.hostFactory.findLiveSites(filter, limit, offset, user, respectFrontendRoles);
+        if (siteListOpt.isPresent()) {
+            try {
+                List<Host> filteredSiteList = APILocator.getPermissionAPI().filterCollection(siteListOpt.get(), PermissionAPI
+                        .PERMISSION_READ, respectFrontendRoles, user);
+                paginatedSiteList = convertToSitePaginatedList(filteredSiteList);
+            } catch (final DotDataException | DotSecurityException e) {
+                Logger.error(HostAPIImpl.class, String.format("An error occurred when searching for Sites based on " +
+                                "the following criteria: filter[ %s ], showSystemHost [ %s ]: %s", filter,
+                        showSystemHost, e.getMessage()), e);
+                throw new DotRuntimeException(String.format("An error occurred when searching for Sites: %s", e
+                        .getMessage()), e);
+            }
+        }
+        return paginatedSiteList;
     }
 
     @Override
     public PaginatedArrayList<Host> search(final String filter, boolean showArchived, boolean showSystemHost, int
             limit, int offset, User user, boolean respectFrontendRoles) {
-        String showArchivedCondition = "AND cvi.deleted = ";
-        showArchivedCondition += showArchived ? getDBTrue() + " " : getDBFalse() + " ";
-        return search(filter, showArchivedCondition, showSystemHost, limit, offset, user, respectFrontendRoles);
-    }
-
-    /**
-     * Returns the list of Sites – with pagination capabilities – that match the specified search criteria. This method
-     * allows users to specify three search parameters:
-     * <ol>
-     *  <li>{@code filter}: Finds Sites whose name starts with the specified String.</li>
-     *  <li>{@code condition}: Determines if live, stopped, or archived Sites are returned in the result set.</li>
-     *  <li>{@code showSystemHost}: Determines whether the System Host must be returned or not.</li>
-     * </ol>
-     *
-     * @param filter               The initial part or full name of the Site you need to look up. If not required, set
-     *                             as {@code null} or empty.
-     * @param condition            The status of the Site determined via SQL conditions.
-     * @param showSystemHost       If the System Host object must be returned, set to {@code true}. Otherwise, se to
-     *                             {@code false}.
-     * @param limit                Limit of results returned in the response, for pagination purposes. If set equal or
-     *                             lower than zero, this parameter will be ignored.
-     * @param offset               Expected offset of results in the response, for pagination purposes.  If set equal or
-     *                             lower than zero, this parameter will be ignored.
-     * @param user                 The {@link User} performing this action.
-     * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
-     *                             operation, set to {@code true}. Otherwise, set to {@code false}.
-     *
-     * @return The list of {@link Host} objects that match the specified search criteria.
-     */
-    @CloseDBIfOpened
-    private PaginatedArrayList<Host> search(final String filter, final String condition, final boolean
-            showSystemHost, final int limit, final int offset, final User user, final boolean respectFrontendRoles) {
-        Logger.debug(this, () -> "");
-        final DotConnect dc = new DotConnect();
-        final StringBuilder sqlQuery = new StringBuilder().append("SELECT c.inode FROM contentlet c ");
-        sqlQuery.append("INNER JOIN identifier i ");
-        sqlQuery.append("ON c.identifier = i.id AND i.asset_subtype = ? ");
-        sqlQuery.append("INNER JOIN contentlet_version_info cvi ");
-        sqlQuery.append("ON c.inode = cvi.working_inode ");
-        sqlQuery.append("WHERE cvi.identifier = i.id ");
-        if (UtilMethods.isSet(filter)) {
-            if (APILocator.getContentletJsonAPI().isJsonSupportedDatabase()) {
-                sqlQuery.append("AND LOWER(contentlet_as_json->'fields'->'hostName'->>'value') LIKE ? ");
-            } else {
-                sqlQuery.append("AND LOWER(c.text1) LIKE ? ");
+        PaginatedArrayList<Host> paginatedSiteList = new PaginatedArrayList<>();
+        final Optional<List<Host>> siteListOpt = showArchived ? this.hostFactory.findArchivedSites(filter, limit, offset, user,
+                respectFrontendRoles) : this.hostFactory.findLiveSites(filter, limit, offset, user, respectFrontendRoles);
+        if (siteListOpt.isPresent()) {
+            if (showArchived) {
+                return convertToSitePaginatedList(siteListOpt.get());
+            }
+            try {
+                // Permissions can only be checked on LIVE contents
+                final List<Host> filteredSiteList = APILocator.getPermissionAPI().filterCollection(siteListOpt.get(), PermissionAPI
+                        .PERMISSION_READ, respectFrontendRoles, user);
+                paginatedSiteList = convertToSitePaginatedList(filteredSiteList);
+            } catch (final DotDataException | DotSecurityException e) {
+                Logger.error(HostAPIImpl.class, String.format("An error occurred when searching for Sites based on " +
+                                "the following criteria: filter[ %s ], showArchived[ %s ], showSystemHost [ %s ]: %s", filter,
+                        showArchived, showSystemHost, e.getMessage()), e);
+                throw new DotRuntimeException(String.format("An error occurred when searching for Sites: %s", e
+                        .getMessage()), e);
             }
         }
-        if (UtilMethods.isSet(condition)) {
-            sqlQuery.append(condition);
-        }
-        if (!showSystemHost) {
-            sqlQuery.append("AND i.id <> ?");
-        }
-        dc.setSQL(sqlQuery.toString());
-        dc.addParam(Host.HOST_VELOCITY_VAR_NAME);
-        if (UtilMethods.isSet(filter)) {
-            dc.addParam("%" + filter.trim() + "%");
-        }
-        if (!showSystemHost) {
-            dc.addParam(Host.SYSTEM_HOST);
-        }
-        if (limit > 0) {
-            dc.setMaxRows(limit);
-        }
-        if (offset > 0) {
-            dc.setStartRow(offset);
-        }
-        try {
-            final List<Map<String, String>> dbResults = dc.loadResults();
-            if (dbResults.isEmpty()) {
-                return new PaginatedArrayList<>();
-            }
-            List<Contentlet> siteAsContentletList = new ArrayList<>();
-            for (final Map<String, String> siteInfo : dbResults) {
-                final Contentlet siteAsContentlet = APILocator.getContentletAPI().find(siteInfo.get("inode"), user,
-                        respectFrontendRoles);
-                siteAsContentletList.add(siteAsContentlet);
-            }
-            siteAsContentletList = APILocator.getPermissionAPI().filterCollection(siteAsContentletList, PermissionAPI
-                    .PERMISSION_READ, respectFrontendRoles, user);
-            return convertToSitePaginatedArrayList(siteAsContentletList);
-        } catch (final Exception e) {
-            Logger.error(HostAPIImpl.class, String.format("An error occurred when searching for Sites based on the " +
-                    "following criteria: filter[ %s ], condition[ %s ], showSystemHost [ %s ]: %s", filter,
-                    condition, showSystemHost, e.getMessage()), e);
-            throw new DotRuntimeException(String.format("An error occurred when searching for Sites: %s", e.getMessage
-                    ()), e);
-        }
+        return paginatedSiteList;
     }
 
     @CloseDBIfOpened
     @Override
     public long count(final User user, final boolean respectFrontendRoles) {
-        final DotConnect dc = new DotConnect();
-        final StringBuilder sqlQuery = new StringBuilder().append("SELECT COUNT(cvi.working_inode) ");
-        sqlQuery.append("FROM contentlet_version_info cvi, identifier i ");
-        sqlQuery.append("WHERE i.asset_subtype = ? AND cvi.identifier = i.id ");
-        dc.setSQL(sqlQuery.toString());
-        dc.addParam(Host.HOST_VELOCITY_VAR_NAME);
         try {
-            final List<Map<String, String>> dbResults = dc.loadResults();
-            final String total = dbResults.get(0).get("count");
-            return ConversionUtils.toLong(total, 0L);
+            return this.hostFactory.count();
         } catch (final Exception e) {
             final String errorMsg = String.format("An error occurred when User '%s' attempted to get the total number " +
                     "of Sites: %s", user.getUserId(), e.getMessage());
@@ -1406,18 +911,18 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     }
 
     /**
-     * Utility method used to convert a list of Sites as Contentlets into paginated Site objects.
+     * Utility method used to convert a list of Sites into paginated Site objects.
      *
-     * @param list The list of {@link Contentlet} objects representing a Site.
+     * @param list The list of {@link Host} objects.
      *
      * @return The paginated list of {@link Host} objects.
      */
-    private PaginatedArrayList<Host> convertToSitePaginatedArrayList(final List<Contentlet> list) {
-		final PaginatedArrayList<Host> paginatedSites = new PaginatedArrayList<>();
-		paginatedSites.addAll(list.stream().map(content -> new Host(content)).collect(Collectors.toList()));
-		paginatedSites.setTotalResults(list.size());
-		return paginatedSites;
-	}
+    private PaginatedArrayList<Host> convertToSitePaginatedList(final List<Host> list) {
+        final PaginatedArrayList<Host> paginatedSites = new PaginatedArrayList<>();
+        paginatedSites.addAll(list);
+        paginatedSites.setTotalResults(list.size());
+        return paginatedSites;
+    }
 
     @Override
     public void flushAll() {

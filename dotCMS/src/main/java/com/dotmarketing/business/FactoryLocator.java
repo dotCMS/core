@@ -39,6 +39,8 @@ import com.dotmarketing.portlets.categories.business.CategoryFactoryImpl;
 import com.dotmarketing.portlets.containers.business.ContainerFactory;
 import com.dotmarketing.portlets.containers.business.ContainerFactoryImpl;
 import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
+import com.dotmarketing.portlets.contentlet.business.HostFactory;
+import com.dotmarketing.portlets.contentlet.business.HostFactoryImpl;
 import com.dotmarketing.portlets.dashboard.business.DashboardFactory;
 import com.dotmarketing.portlets.fileassets.business.FileAssetFactory;
 import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryImpl;
@@ -233,6 +235,15 @@ public class FactoryLocator extends Locator<FactoryIndex>{
         return (FileAssetFactory)getInstance(FactoryIndex.FileAsset_Factory);
     }
 
+    /**
+     * Returns the Factory object that handles operations related to Sites in dotCMS.
+     *
+     * @return An instance of the {@link HostFactory} object.
+     */
+    public static HostFactory getHostFactory() {
+        return (HostFactory) getInstance(FactoryIndex.HOST_FACTORY);
+    }
+
     private static Object getInstance(FactoryIndex index) {
 
 		if(instance == null){
@@ -346,6 +357,7 @@ enum FactoryIndex
             case RELATIONSHIP_FACTORY: return RelationshipFactoryImpl.instance();
             case TAG_FACTORY: return new TagFactoryImpl();
             case FileAsset_Factory: return new FileAssetFactoryImpl();
+            case HOST_FACTORY : return new HostFactoryImpl();
 		}
 		throw new AssertionError("Unknown Factory Index: " + this);
 	}

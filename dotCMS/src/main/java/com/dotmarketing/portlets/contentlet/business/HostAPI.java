@@ -80,12 +80,6 @@ public interface HostAPI {
      */
     Host findByName(String siteName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
-	/**
-	 * Find a host based on the alias
-	 * @param alias
-	 * @return the host with the passed in name
-	 */
-
     /**
      * Returns the Site that matches the specified alias. Depending on the existing data, the result may vary:
      * <ol>
@@ -252,43 +246,15 @@ public interface HostAPI {
 	 */
 	public void updateDefaultHost(Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
-	/**
-	 * Retrieves all host the user has the required permission on
-	 * @param permissionType
-	 * @param includeArchived
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return List<Host>
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
-
     /**
-     * Returns all Sites in the dotCMS content repository which match the specified search and permission criteria.
-     * The currently available Permission Types are the following:
+     * @deprecated The {@code includeArchived} parameter allows you to retrieve archived Sites. However, non-live
+     * contents cannot be checked for permissions, and an empty list will always be returned. Use the following method
+     * instead:
      * <ul>
-     *  <li>{@link com.dotmarketing.business.PermissionAPI#PERMISSION_READ}</li>
-     *  <li>{@link com.dotmarketing.business.PermissionAPI#PERMISSION_USE}</li>
-     *  <li>{@link com.dotmarketing.business.PermissionAPI#PERMISSION_EDIT}</li>
-     *  <li>{@link com.dotmarketing.business.PermissionAPI#PERMISSION_WRITE}</li>
-     *  <li>{@link com.dotmarketing.business.PermissionAPI#PERMISSION_PUBLISH}</li>
-     *  <li>{@link com.dotmarketing.business.PermissionAPI#PERMISSION_EDIT_PERMISSIONS}</li>
-     *  <li>{@link com.dotmarketing.business.PermissionAPI#PERMISSION_CAN_ADD_CHILDREN}</li>
+     *     <li>{{@link #getHostsWithPermission(int, User, boolean)}</li>
      * </ul>
-     *
-     * @param permissionType       The type of Permission that must be checked for all the Sites in the result set.
-     * @param includeArchived      If archived Sites must be returned, set to {@code true}. Otherwise, set to {@code
-     *                             false}.
-     * @param user                 The {@link User} performing this action.
-     * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
-     *                             operation, set to {@code true}. Otherwise, set to {@code false}.
-     *
-     * @return The list of {@link Host} objects that match the required filtering criteria.
-     *
-     * @throws DotDataException     An error occurred when accessing the data source.
-     * @throws DotSecurityException The specified User does not have the required permissions to perform this
-     *                              operation.
      */
+    @Deprecated
     List<Host> getHostsWithPermission(final int permissionType, final boolean includeArchived, final User user, final
     boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
@@ -545,8 +511,8 @@ public interface HostAPI {
     boolean showSystemHost, final int limit, final int offset, final User user, final boolean respectFrontendRoles);
 
     /**
-     * Returns the list of Sites – with pagination capabilities – that match the specified search criteria. This method
-     * allows users to specify three search parameters:
+     * Returns the list of live Sites – with pagination capabilities – that match the specified search criteria. This
+	 * method allows users to specify three search parameters:
      * <ol>
      *  <li>{@code filter}: Finds Sites whose name starts with the specified String.</li>
      *  <li>{@code showSystemHost}: Determines whether the System Host must be returned or not.</li>
