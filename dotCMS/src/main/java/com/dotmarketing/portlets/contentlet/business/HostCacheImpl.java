@@ -100,6 +100,7 @@ public class HostCacheImpl extends HostCache {
         // clear the cache
         cache.flushGroup(PRIMARY_GROUP);
         cache.flushGroup(ALIAS_GROUP);
+        Logger.info(this, "Primary and Alias cache groups have been flushed!");
     }
 
     /* (non-Javadoc)
@@ -132,7 +133,7 @@ public class HostCacheImpl extends HostCache {
     		        	
     	clearAliasCache();
     	clearSitesList();
-    	 
+        Logger.info(this, "All Host Cache regions have been flushed!");
     }
 
     public String[] getGroups() {
