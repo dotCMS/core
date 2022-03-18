@@ -15,6 +15,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -22,6 +23,7 @@ import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
@@ -43,6 +45,7 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
@@ -57,6 +60,7 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.io.Files;
@@ -76,6 +80,9 @@ import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import javax.servlet.http.HttpServletRequest;
+
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
@@ -83,6 +90,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.http.HttpStatus;
+
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsRequest;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -1009,6 +1017,210 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     }
 
     /**
+<<<<<<< HEAD
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}  }
+     * When:
+     * - Create a ContentType with a unique field
+     * - Create two Contentlet with the same value in the unique field in the same host
+     *
+     * Should: Throw a RuntimeException with the message: "Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s)."
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void savingFieldWithUniqueFieldInTheSameHost() throws DotDataException, DotSecurityException {
+        final Field uniqueTextField = new FieldDataGen()
+                .unique(true)
+                .type(TextField.class)
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(uniqueTextField)
+                .nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType)
+                .host(host)
+                .setProperty(uniqueTextField.variable(), "unique-value")
+                .next();
+
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType)
+                .host(host)
+                .setProperty(uniqueTextField.variable(), "unique-value")
+                .next();
+
+        APILocator.getContentletAPI().checkin(contentlet_1, APILocator.systemUser(), false);
+
+        try {
+            APILocator.getContentletAPI().checkin(contentlet_2, APILocator.systemUser(), false);
+            throw new AssertionError("DotRuntimeException Expected");
+        }catch (DotRuntimeException e) {
+            assertEquals(e.getMessage(), "Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s).");
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}  }
+     * When:
+     * - Create a ContentType with a unique field
+     * - Create two Contentlet with the same value in the unique field in the same host
+     * - set the unique_per_site properties to false
+     *
+     * Should: Throw a RuntimeException with the message: "Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s)."
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void savingFieldWithUniqueFieldInTheSameHostUniquePerSiteToFalse() throws DotDataException, DotSecurityException {
+
+        final Boolean uniquePerSite = ESContentletAPIImpl.getUniquePerSite();
+        ESContentletAPIImpl.setUniquePerSite(false);
+
+        try {
+            final Field uniqueTextField = new FieldDataGen()
+                    .unique(true)
+                    .type(TextField.class)
+                    .next();
+
+            final ContentType contentType = new ContentTypeDataGen()
+                    .field(uniqueTextField)
+                    .nextPersisted();
+
+            final Host host = new SiteDataGen().nextPersisted();
+
+            final Contentlet contentlet_1 = new ContentletDataGen(contentType)
+                    .host(host)
+                    .setProperty(uniqueTextField.variable(), "unique-value")
+                    .next();
+
+            final Contentlet contentlet_2 = new ContentletDataGen(contentType)
+                    .host(host)
+                    .setProperty(uniqueTextField.variable(), "unique-value")
+                    .next();
+
+            APILocator.getContentletAPI().checkin(contentlet_1, APILocator.systemUser(), false);
+
+            try {
+                APILocator.getContentletAPI().checkin(contentlet_2, APILocator.systemUser(), false);
+                throw new AssertionError("DotRuntimeException Expected");
+            } catch (DotRuntimeException e) {
+                assertEquals(e.getMessage(),
+                        "Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s).");
+            }
+        } finally {
+            ESContentletAPIImpl.setUniquePerSite(uniquePerSite);
+        }
+    }
+
+
+    /**
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}  }
+     * When:
+     * - Create a {@link ContentType} with a unique field
+     * - Create two  {@link Contentlet} with the same value in the unique field in different hosts
+     *
+     * Should: Save successfully the two {@link Contentlet}
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void savingFieldWithUniqueFieldInDifferentHost() throws DotDataException, DotSecurityException {
+        final Field uniqueTextField = new FieldDataGen()
+                .unique(true)
+                .type(TextField.class)
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(uniqueTextField)
+                .nextPersisted();
+
+        final Host host1 = new SiteDataGen().nextPersisted();
+        final Host host2 = new SiteDataGen().nextPersisted();
+
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType)
+                .host(host1)
+                .setProperty(uniqueTextField.variable(), "unique-value")
+                .next();
+
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType)
+                .host(host2)
+                .setProperty(uniqueTextField.variable(), "unique-value")
+                .next();
+
+        APILocator.getContentletAPI().checkin(contentlet_1, APILocator.systemUser(), false);
+        APILocator.getContentletAPI().checkin(contentlet_2, APILocator.systemUser(), false);
+
+        final Optional<Contentlet> contentlet1FromDB = APILocator.getContentletAPI()
+                .findInDb(contentlet_1.getInode());
+
+        assertTrue(contentlet1FromDB.isPresent());
+
+        final Optional<Contentlet> contentlet2FromDB = APILocator.getContentletAPI()
+                .findInDb(contentlet_2.getInode());
+
+        assertTrue(contentlet2FromDB.isPresent());
+
+    }
+
+    /**
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}  }
+     * When:
+     * - Create a {@link ContentType} with a unique field
+     * - Create two  {@link Contentlet} with the same value in the unique field in different hosts
+     * - set the unique_per_site properties to false
+     *
+     * Should: Throw a RuntimeException with the message: "Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s)."
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void savingFieldWithUniqueFieldInDifferentHostUniquePerSiteToFalse() throws DotDataException, DotSecurityException {
+
+        final Boolean uniquePerSite = ESContentletAPIImpl.getUniquePerSite();
+        ESContentletAPIImpl.setUniquePerSite(false);
+
+        try {
+
+
+            final Field uniqueTextField = new FieldDataGen()
+                    .unique(true)
+                    .type(TextField.class)
+                    .next();
+
+            final ContentType contentType = new ContentTypeDataGen()
+                    .field(uniqueTextField)
+                    .nextPersisted();
+
+            final Host host1 = new SiteDataGen().nextPersisted();
+            final Host host2 = new SiteDataGen().nextPersisted();
+
+            final Contentlet contentlet_1 = new ContentletDataGen(contentType)
+                    .host(host1)
+                    .setProperty(uniqueTextField.variable(), "unique-value")
+                    .next();
+
+            final Contentlet contentlet_2 = new ContentletDataGen(contentType)
+                    .host(host2)
+                    .setProperty(uniqueTextField.variable(), "unique-value")
+                    .next();
+
+            APILocator.getContentletAPI().checkin(contentlet_1, APILocator.systemUser(), false);
+
+            try {
+                APILocator.getContentletAPI().checkin(contentlet_2, APILocator.systemUser(), false);
+                throw new AssertionError("DotRuntimeException Expected");
+            } catch (DotRuntimeException e) {
+                assertEquals(e.getMessage(),
+                        "Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s).");
+            }
+        } finally {
+            ESContentletAPIImpl.setUniquePerSite(uniquePerSite);
+
+        }
+    }
+
+    /**
      * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}
      * When:
      * - Create two sites
@@ -1074,6 +1286,107 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             verify(filterChain).doFilter(req, res);
         }
 
+    }
+
+    /**
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}  }
+     * When:
+     * - Create a {@link ContentType} with a unique field
+     * - Create two  {@link Contentlet} with the same value in the unique field in different hosts, but one of the contentlet not have the host set
+     *
+     * Should: Save successfully the two {@link Contentlet}
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void savingFieldWithUniqueFieldInDifferentHostUsingContentTypeHost() throws DotDataException, DotSecurityException {
+        final Field uniqueTextField = new FieldDataGen()
+                .unique(true)
+                .type(TextField.class)
+                .next();
+
+        final Host host1 = new SiteDataGen().nextPersisted();
+        final Host host2 = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .host(host2)
+                .field(uniqueTextField)
+                .nextPersisted();
+
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType)
+                .host(host1)
+                .setProperty(uniqueTextField.variable(), "unique-value")
+                .next();
+
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType)
+                .host(host2)
+                .setProperty(uniqueTextField.variable(), "unique-value")
+                .next();
+
+        contentlet_2.setHost(null);
+        contentlet_2.setFolder(null);
+
+        APILocator.getContentletAPI().checkin(contentlet_1, APILocator.systemUser(), false);
+        APILocator.getContentletAPI().checkin(contentlet_2, APILocator.systemUser(), false);
+
+        final Optional<Contentlet> contentlet1FromDB = APILocator.getContentletAPI()
+                .findInDb(contentlet_1.getInode());
+
+        assertTrue(contentlet1FromDB.isPresent());
+
+        final Optional<Contentlet> contentlet2FromDB = APILocator.getContentletAPI()
+                .findInDb(contentlet_2.getInode());
+
+        assertTrue(contentlet2FromDB.isPresent());
+
+    }
+
+    /**
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}  }
+     * When:
+     * - Create a ContentType with a unique field
+     * - Create two Contentlet with the same value in the unique field in the same host, but one of the contentlet not have the host set
+     *
+     * Should: Throw a RuntimeException with the message: "Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s)."
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void savingFieldWithUniqueFieldInTheSameHostTakingContentTypeHost() throws DotDataException, DotSecurityException {
+        final Field uniqueTextField = new FieldDataGen()
+                .unique(true)
+                .type(TextField.class)
+                .next();
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .host(host)
+                .field(uniqueTextField)
+                .nextPersisted();
+
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType)
+                .host(host)
+                .setProperty(uniqueTextField.variable(), "unique-value")
+                .next();
+
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType)
+                .host(host)
+                .setProperty(uniqueTextField.variable(), "unique-value")
+                .next();
+
+        contentlet_2.setHost(null);
+        contentlet_2.setFolder(null);
+
+        APILocator.getContentletAPI().checkin(contentlet_1, APILocator.systemUser(), false);
+
+        try {
+            APILocator.getContentletAPI().checkin(contentlet_2, APILocator.systemUser(), false);
+            throw new AssertionError("DotRuntimeException Expected");
+        } catch (DotRuntimeException e) {
+            assertEquals(e.getMessage(),
+                    "Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s).");
+        }
     }
 
     @NotNull
