@@ -43,9 +43,7 @@ public class Theme extends Folder  {
         this.setSortOrder(baseFolder.getSortOrder());
         this.setTitle(baseFolder.getTitle());
         this.setIDate(baseFolder.getIDate());
-        this.setType(baseFolder.getType());
         this.setOwner(baseFolder.getOwner());
-        this.setVersionId(baseFolder.getVersionId());
     }
 
     @Override

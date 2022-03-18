@@ -141,7 +141,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		try {
 			renamed = folderFactory.renameFolder(folder, newName, user, respectFrontEndPermissions);
 			CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
-			Identifier folderId = APILocator.getIdentifierAPI().find(folder);
+			Identifier folderId = APILocator.getIdentifierAPI().find(folder.getIdentifier());
 			CacheLocator.getNavToolCache().removeNavByPath(folderId.getHostId(), folderId.getParentPath());
 			return renamed;
 		} catch (InvalidFolderNameException e) {
@@ -459,8 +459,6 @@ public class FolderAPIImpl implements FolderAPI  {
 
 			// delete the menus using the fake proxy inode
 			if (folder.isShowOnMenu()) {
-				// RefreshMenus.deleteMenus();
-				RefreshMenus.deleteMenu(faker);
 				CacheLocator.getNavToolCache().removeNav(faker.getHostId(), faker.getInode());
 				
 				CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
@@ -518,7 +516,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			}
 
 			/******** delete possible orphaned identifiers under the folder *********/
-			Identifier ident=APILocator.getIdentifierAPI().find(folder);
+			Identifier ident=APILocator.getIdentifierAPI().find(folder.getIdentifier());
 			List<Identifier> orphanList=APILocator.getIdentifierAPI().findByParentPath(folder.getHostId(), ident.getURI());
 			for(Identifier orphan : orphanList) {
 			    APILocator.getIdentifierAPI().delete(orphan);
@@ -1199,4 +1197,11 @@ public class FolderAPIImpl implements FolderAPI  {
 				: findSubFolders((Host)parent, user, respectFrontEndPermissions);
 	} // findSubFolders.
 
+	@Override
+	@CloseDBIfOpened
+	public void updateUserReferences(final String userId, final String replacementUserId)
+			throws DotDataException {
+		Logger.debug(this, () -> "Updating references for user " + userId);
+		folderFactory.updateUserReferences(userId, replacementUserId);
+	}
 }

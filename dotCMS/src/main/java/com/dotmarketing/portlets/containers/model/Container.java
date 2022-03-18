@@ -1,7 +1,5 @@
 package com.dotmarketing.portlets.containers.model;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotmarketing.beans.*;
@@ -58,7 +56,7 @@ public class Container extends WebAsset implements Serializable, ManifestItem {
 	public String getURI(Folder folder) {
 		String folderPath = "";
 		try {
-			folderPath = APILocator.getIdentifierAPI().find(folder).getPath();
+			folderPath = APILocator.getIdentifierAPI().find(folder.getIdentifier()).getPath();
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage());
 			throw new DotRuntimeException(e.getMessage(), e);

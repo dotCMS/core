@@ -436,7 +436,7 @@
 					assetTitleAsObject.toString() : StringPool.BLANK;
 		%>
 				addRow({
-					title: '<%=StringEscapeUtils.escapeHtml(assetTitle)%>',
+					title: '<%=StringEscapeUtils.escapeJavaScript(assetTitle)%>',
 					type: '<%=assetType%>',
 					bundleId: '<%=publishAuditStatus.getBundleId()%>',
 					isHtml: <%=asset.get(PublishQueueElementTransformer.HTML_PAGE_KEY)%>
@@ -461,28 +461,31 @@
 
 	function addShowMoreMessage(bundleId, nAssets){
 		let td = document.getElementById("td_assets_" + bundleId);
-
+		let MAX_ASSETS_TO_SHOW = <%= MAX_ASSETS_TO_SHOW %>;
 		let newRow = td.insertRow();
 		let newCell = newRow.insertCell();
-
-		newCell.innerHTML += nAssets + ' <%=LanguageUtil.get(pageContext, "publisher_audit_more_assets") %>&nbsp;' +
-				"<a href=\"javascript:requestAssets('" + bundleId + "')\">" +
+		var remaining = 0;
+		if (nAssets > MAX_ASSETS_TO_SHOW) {
+			remaining = nAssets - MAX_ASSETS_TO_SHOW;
+		}
+		newCell.innerHTML += remaining + ' <%=LanguageUtil.get(pageContext, "publisher_audit_more_assets") %>&nbsp;' +
+				"<a href=\"javascript:requestAssets('" + bundleId + "', -1, " + nAssets + ")\">" +
 				"<strong id='view_all_" + bundleId + "' class='view_link' style=\"text-decoration: underline;\"><%=LanguageUtil.get(pageContext, "bundles.view.all") %></strong>" +
 				"</a>";
 	}
 
 
-	function addShowLessMessage(bundleId){
+	function addShowLessMessage(bundleId, numberToShow){
 		let td = document.getElementById("td_assets_" + bundleId);
 		let newRow = td.insertRow();
 		let newCell = newRow.insertCell();
 		newCell.innerHTML +=  '<%=LanguageUtil.get(pageContext, "bundles.item.all.show") %>&nbsp;' +
-				"<a href=\"javascript:requestAssets('" + bundleId + "', 3)\">" +
+				"<a href=\"javascript:requestAssets('" + bundleId + "', <%= MAX_ASSETS_TO_SHOW %>, " + numberToShow + ")\">" +
 				"<strong id='view_less_" + bundleId + "' class='view_link' style=\"text-decoration: underline;\"><%=LanguageUtil.get(pageContext, "bundles.item.less.show")%></strong>" +
 				"</a>";
 	}
 
-	function requestAssets(bundleId, numberToShow = -1){
+	function requestAssets(bundleId, numberToShow = -1, totalAssets){
 		let viewAllNode = (numberToShow === -1) ? document.getElementById('view_all_' + bundleId) : document.getElementById('view_less_' + bundleId);
 
 		if (viewAllNode) {
@@ -496,10 +499,10 @@
 			}
 
 			if (numberToShow !== -1) {
-				addShowMoreMessage(bundleId, data.length);
+				addShowMoreMessage(bundleId, totalAssets);
 				data = data.slice(0, numberToShow);
 			} else {
-				addShowLessMessage(bundleId);
+				addShowLessMessage(bundleId, totalAssets);
 			}
 
 			data.forEach(asset => addRow({

@@ -27,7 +27,7 @@ public abstract class FolderFactory {
 
 	abstract Folder find(String folderInode) throws  DotDataException;
 
-	abstract void save(Folder folderInode) throws DotDataException;
+	public abstract void save(Folder folderInode) throws DotDataException;
 	
 	abstract boolean exists(String folderInode) throws DotDataException;
 
@@ -142,4 +142,13 @@ public abstract class FolderFactory {
 	 * @throws DotDataException
 	 */
 	abstract public void validateFolderName(final Folder folder) throws DotDataException;
+
+	/**
+	 * Updates folder's owner when a user is replaced by another
+	 * @param userId ID of the user to be replace
+	 * @param replacementUserId ID of the new folder's owner
+	 * @throws DotDataException
+	 */
+    public abstract void updateUserReferences(String userId, String replacementUserId)
+            throws DotDataException;
 }

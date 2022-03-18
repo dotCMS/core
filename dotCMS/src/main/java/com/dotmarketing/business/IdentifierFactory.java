@@ -149,7 +149,10 @@ public abstract class IdentifierFactory {
 	 */
 	abstract protected Identifier createNewIdentifier(Versionable webasset, Folder folder) throws DotDataException;
 
-	/**
+    protected abstract Identifier createNewIdentifier(Folder folder, Folder parent,
+            String existingId) throws DotDataException;
+
+    /**
 	 * Creates a new Identifier for a given versionable asset under a given
 	 * folder. In this method, the ID value will <b>NOT</b> be randomly
 	 * generated as it is specified as a parameter.
@@ -180,6 +183,8 @@ public abstract class IdentifierFactory {
 	 *             An error occurred when interacting with the data source.
 	 */
 	abstract protected Identifier createNewIdentifier(Versionable versionable, Host site) throws DotDataException;
+
+	protected abstract Identifier createNewIdentifier (Folder folder, Host site, String existingId) throws DotDataException;
 
 	/**
 	 * Creates a new Identifier for a given versionable asset under a given
