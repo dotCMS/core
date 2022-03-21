@@ -23,12 +23,15 @@ import com.github.jonpeterson.jackson.module.versioning.JsonVersionedModel;
 @JsonInclude(Include.NON_NULL)
 @JsonSerialize(as = ImmutableContentlet.class)
 @JsonDeserialize(as = ImmutableContentlet.class)
-@JsonVersionedModel(currentVersion = "2", defaultDeserializeToVersion = "1", toCurrentConverterClass = ToCurrentVersionConverter.class)
+@JsonVersionedModel(currentVersion = Contentlet.CURRENT_MODEL_VERSION, defaultDeserializeToVersion = "1", toCurrentConverterClass = ToCurrentVersionConverter.class)
 public interface Contentlet {
 
+    String CURRENT_MODEL_VERSION = "2";
+
+    @Value.Default
     @JsonProperty
     @JsonSerializeToVersion(defaultToSource = true)
-    String modelVersion();
+    default String modelVersion() {return CURRENT_MODEL_VERSION;}
 
     @Nullable
     String title();

@@ -8,12 +8,14 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.content.business.json.ContentletJsonHelper.INSTANCE;
 import com.dotcms.content.model.FieldValue;
 import com.dotcms.content.model.ImmutableContentlet;
 import com.dotcms.content.model.type.ImageFieldType;
 import com.dotcms.content.model.type.system.AbstractCategoryFieldType;
 import com.dotcms.content.model.type.system.AbstractTagFieldType;
 import com.dotcms.content.model.type.system.BinaryFieldType;
+import com.dotcms.content.model.version.ToCurrentVersionConverter;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TagField;
@@ -26,6 +28,7 @@ import com.dotcms.datagen.TagDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.storage.model.Metadata;
+import com.dotcms.util.ConfigTestHelper;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -42,6 +45,7 @@ import com.google.common.collect.ImmutableMap;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Date;
@@ -493,5 +497,30 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
         }
     }
 
+    private final static String RESOURCE = "json/system-fields-v1.json";
+
+    /**
+     * Test the conversion class that takes contentlet-json v1 that has all the system fields
+     * and have it migrated to v2 which simply lacks those fields.
+     * @throws IOException
+     */
+    @Test
+    public void Test_Remove_System_Fields_From_v1_Version_Conversion()
+            throws IOException {
+        final String resource = ConfigTestHelper.getPathToTestResource(RESOURCE);
+        final String resourceAsString = new String(Files.readAllBytes(new File(resource).toPath()));
+        final com.dotcms.content.model.Contentlet immutableFromJson = INSTANCE.get()
+                .immutableFromJson(resourceAsString);
+        //Even though we could have this patched and return the new version..
+        //it will still get override by the VersionModelDeserializer
+        assertEquals("1", immutableFromJson.modelVersion());
+        final Map<String, FieldValue<?>> fields = immutableFromJson.fields();
+        final List<String> systemFieldTypes = ToCurrentVersionConverter.systemFieldTypes;
+        for(final String type:systemFieldTypes) {
+            assertTrue(String.format("unexpected field of %s found.",type),fields.entrySet().stream()
+                    .filter(fieldValueEntry -> type.equals(fieldValueEntry.getValue().type()))
+                    .findAny().isEmpty());
+        }
+    }
 
 }
