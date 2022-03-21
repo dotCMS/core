@@ -226,6 +226,23 @@ public class StaticPublisherIntegrationTest {
     }
 
 
+    /**
+     * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig)}
+     * When: A {@link PushPublisherConfig}  is created with:
+     * - A {@link StaticPublisher} setting in {@link PushPublisherConfig#setPublishers(List)}
+     * - A Bundle with the assets in {@link TestCase#addToBundle}
+     * - All the languages in {@link TestCase#languages} are set in {@link PublisherConfig#setLanguages(Set)}}
+     * - Setting {@link Operation#UNPUBLISH}
+     * should: Create a static bundle with all the files in {@link TestCase#filesExpected}
+     *
+     * @param testCase
+     * @throws DotPublishingException
+     * @throws DotPublisherException
+     * @throws DotDataException
+     * @throws IOException
+     * @throws WebAssetException
+     * @throws DotSecurityException
+     */
     @Test
     @UseDataProvider("assets")
     public void createStaticBundleWithUnPublishOperation(final TestCase testCase)
