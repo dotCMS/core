@@ -3,6 +3,7 @@ package com.dotcms.content.business.json;
 import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 import static junit.framework.TestCase.assertNull;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -517,10 +518,13 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
         final Map<String, FieldValue<?>> fields = immutableFromJson.fields();
         final List<String> systemFieldTypes = ToCurrentVersionConverter.systemFieldTypes;
         for(final String type:systemFieldTypes) {
-            assertTrue(String.format("unexpected field of %s found.",type),fields.entrySet().stream()
-                    .filter(fieldValueEntry -> type.equals(fieldValueEntry.getValue().type()))
-                    .findAny().isEmpty());
+            assertFalse(String.format("unexpected field of type %s found.",type), fields.entrySet().stream()
+                    .anyMatch(fieldValueEntry -> type.equals(fieldValueEntry.getValue().type())));
         }
+
+        assertTrue(" I was expecting to find 1 field of type 'Text'.", fields.entrySet().stream()
+                .anyMatch(fieldValueEntry -> "Text".equals(fieldValueEntry.getValue().type())));
+
     }
 
 }
