@@ -121,7 +121,8 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
     private void mapsAreEqual(final Map<String, Object> in, final Map<String, Object> out) {
         assertEquals(in.get("title"),out.get("title"));
         assertEquals(in.get("hostFolder"),out.get("hostFolder"));
-        assertEquals(in.get("folder"),out.get("folder"));
+        //Folder is no longer saved in the json it is injected in an upper layer. Therefore it shouldn't be expected here.
+        //assertEquals(in.get("folder"),out.get("folder"));
         assertEquals(in.get("textFieldNumeric"),out.get("textFieldNumeric"));
         assertEquals(in.get("textFieldFloat"),out.get("textFieldFloat"));
         assertEquals(in.get("textField"),out.get("textField"));
@@ -411,13 +412,13 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
 
     /**
      * Method to test {@link ContentletJsonAPI#toJson(Contentlet)} && {@link ContentletJsonAPI#mapContentletFieldsFromJson(String)}
-     * This test is intended to create a content with tags and categories then serialize it to json and do the inverse process read and compare
+     * This test is intended to create a content with tags and categories then serialize it Then test we're not saving categories nor tags
      * @throws DotDataException
      * @throws JsonProcessingException
      * @throws DotSecurityException
      */
     @Test
-    public void Test_Category_And_Tags_Serialization_And_Recovery()
+    public void Test_Category_And_Tags_Are_Not_Serialized()
             throws DotDataException, JsonProcessingException, DotSecurityException {
         final boolean defaultValue = Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
         Config.setProperty(SAVE_CONTENTLET_AS_JSON, false);
@@ -481,17 +482,8 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
             final ImmutableMap<String, FieldValue<?>> fields = immutableContentlet.fields();
             final AbstractTagFieldType tagsFieldValue =  (AbstractTagFieldType)fields.get("tagField");
             final AbstractCategoryFieldType categoryFieldValue =  (AbstractCategoryFieldType)fields.get("categoryField");
-            assertNotNull(tagsFieldValue);
-            assertEquals(Arrays.asList("mtb","road"),tagsFieldValue.value());
-            assertNotNull(categoryFieldValue);
-            final List<String> categories = categoryFieldValue.value();
-            assertNotNull(categories);
-            assertTrue(categories.contains(childCategory.getCategoryVelocityVarName()));
-            final String json = impl.toJson(persisted);
-            assertNotNull(json);
-            final Contentlet out = impl.mapContentletFieldsFromJson(json);
-            final List<?> recoveredCategories =  (List<?>)out.get("categoryField");
-            assertTrue(recoveredCategories.contains(childCategory.getCategoryVelocityVarName()));
+            assertNull(tagsFieldValue);
+            assertNull(categoryFieldValue);
 
         } finally {
             Config.setProperty(SAVE_CONTENTLET_AS_JSON, defaultValue);
