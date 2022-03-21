@@ -80,6 +80,8 @@ import com.dotcms.saml.SamlConfigurationServiceTest;
 import com.dotcms.security.ContentSecurityPolicyUtilTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotcms.security.apps.AppsCacheImplTest;
+import com.dotcms.security.multipart.ContentDispositionFileNameParserTest;
+import com.dotcms.security.multipart.SecureFileValidatorTest;
 import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
@@ -532,7 +534,9 @@ import org.junit.runners.Suite.SuiteClasses;
         PermissionBitFactoryImplTest.class,
         Task220203RemoveFolderInodeConstraintTest.class,
         Task220214AddOwnerAndIDateToFolderTableTest.class,
-        Task220215MigrateDataFromInodeToFolderTest.class
+        Task220215MigrateDataFromInodeToFolderTest.class,
+        ContentDispositionFileNameParserTest.class,
+        SecureFileValidatorTest.class
 })
 public class MainSuite {
 

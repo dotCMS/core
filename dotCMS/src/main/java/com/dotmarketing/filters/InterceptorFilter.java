@@ -5,6 +5,8 @@ import com.dotcms.filters.interceptor.AbstractWebInterceptorSupportFilter;
 import com.dotcms.filters.interceptor.WebInterceptorDelegate;
 import com.dotcms.filters.interceptor.meta.ResponseMetaDataWebInterceptor;
 import com.dotcms.graphql.GraphqlCacheWebInterceptor;
+import com.dotcms.security.multipart.MultiPartRequestSecurityWebInterceptor;
+
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 
@@ -27,6 +29,7 @@ public class InterceptorFilter extends AbstractWebInterceptorSupportFilter {
         final WebInterceptorDelegate delegate =
                 this.getDelegate(config.getServletContext());
 
+        delegate.add(new MultiPartRequestSecurityWebInterceptor());
         delegate.add(new EMAWebInterceptor());
         delegate.add(new GraphqlCacheWebInterceptor());
         delegate.add(new ResponseMetaDataWebInterceptor());
