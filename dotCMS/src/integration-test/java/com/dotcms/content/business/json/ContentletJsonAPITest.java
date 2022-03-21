@@ -120,9 +120,14 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
 
     private void mapsAreEqual(final Map<String, Object> in, final Map<String, Object> out) {
         assertEquals(in.get("title"),out.get("title"));
-        assertEquals(in.get("hostFolder"),out.get("hostFolder"));
-        //Folder is no longer saved in the json it is injected in an upper layer. Therefore it shouldn't be expected here.
+
+        //Host and Folder are no longer saved in the json they're injected in an upper layer.
+        //That injection takes place inContentletTransformer  Therefore it shouldn't be expected here.
         //assertEquals(in.get("folder"),out.get("folder"));
+        //assertEquals(in.get("host"),out.get("host"));
+        //System fields are now outside of the json so we should never expect a tag nor category here
+        //assertEquals(in.get("tagField"),out.get("tagField"));
+
         assertEquals(in.get("textFieldNumeric"),out.get("textFieldNumeric"));
         assertEquals(in.get("textFieldFloat"),out.get("textFieldFloat"));
         assertEquals(in.get("textField"),out.get("textField"));
@@ -132,10 +137,9 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
         assertEquals(in.get("inode"),out.get("inode"));
         assertEquals(in.get("identifier"),out.get("identifier"));
         assertEquals(in.get("stInode"),out.get("stInode"));
-        assertEquals(in.get("host"),out.get("host"));
         assertEquals(in.get("languageId"),out.get("languageId"));
         assertEquals(in.get("owner"),out.get("owner"));
-        assertEquals(in.get("tagField"),out.get("tagField"));
+
         assertEquals(in.get("keyValueField"),out.get("keyValueField"));
 
         if (null != in.get("dateField") && null != out.get("dateField")) {
@@ -336,7 +340,7 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
             final ContentType contentType = TestDataUtils
                     .newContentTypeFieldTypesGalore();
 
-            new TagDataGen().name("tag1").nextPersisted();
+            //new TagDataGen().name("tag1").nextPersisted();
             final Contentlet imageFileAsset = TestDataUtils.getFileAssetContent(true, 1, TestFile.JPG);
 
             final Contentlet in = new ContentletDataGen(contentType).host(site)
@@ -374,7 +378,7 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
             final ContentType contentType = TestDataUtils
                     .newContentTypeFieldTypesGalore();
 
-            new TagDataGen().name("tag1").nextPersisted();
+            //new TagDataGen().name("tag1").nextPersisted();
             final Contentlet imageFileAsset = TestDataUtils.getFileAssetContent(true, 1, TestFile.JPG);
 
             final Metadata metadataNoCache = APILocator.getFileMetadataAPI()
