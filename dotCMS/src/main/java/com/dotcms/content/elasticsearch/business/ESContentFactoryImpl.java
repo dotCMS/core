@@ -246,18 +246,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
         // if the title was not intentionally set to null.
         final boolean allowTitle = null == cont.getNullProperties() || !cont.getNullProperties().contains(Contentlet.TITTLE_KEY);
 
-	    String name = "";
-	    if (allowTitle) {
-            try {
-                // If the contentlet doesn't have the identifier is pointless to call ContentletAPI().getName().
-                if (UtilMethods.isSet(cont) && UtilMethods.isSet(cont.getIdentifier())) {
-                    name = APILocator.getContentletAPI().getName(
-                            cont, APILocator.getUserAPI().getSystemUser(), true);
-                }
-            } catch (DotSecurityException e) {
+        String name = (String) cont.getMap().get(Contentlet.TITTLE_KEY);
 
-            }
-        }
         List<Field> fields = FieldsCache.getFieldsByStructureInode(cont.getStructureInode());
         for (Field f : fields) {
             if (f.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
