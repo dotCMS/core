@@ -168,6 +168,15 @@ public interface BundleAPI {
 	 */
 	public void deleteAssetFromBundle(String assetId, String bundleId) throws DotDataException;
 
+	/**
+	 * deletes the Asset with the given assetId from the Bundle with the given bundleId and also
+	 * the {@link PublishAuditStatus} if it's the last asset of the bundle
+	 *
+	 *
+	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
+	 */
+	public void deleteAssetFromBundleAndAuditStatus(String assetId, String bundleId) throws DotDataException;
+
     /**
      * This takes a bundle and generates the tar.gzipped output file.  The resulting file will be placed under
      * the ConfigUtils.getBundlePath() + "/" + bundleId + ".tar.gz"

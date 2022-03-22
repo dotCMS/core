@@ -15,6 +15,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -102,6 +103,8 @@ public class DependencyModDateUtil {
 			return excludeByModDate(WorkflowScheme.class.cast(asset));
 		} else 	if (Relationship.class.isInstance(asset)) {
 			return excludeByModDate(Relationship.class.cast(asset));
+		} else 	if (Folder.class.isInstance(asset)) {
+			return excludeByModDate(Folder.class.cast(asset));
 		} else if (Versionable.class.isInstance(asset)) {
 			return excludeByModDate((Versionable) asset, pusheableAsset);
 		} else {
@@ -120,6 +123,18 @@ public class DependencyModDateUtil {
 	public boolean excludeByModDate ( final Relationship relationship) {
 		return excludeByModDate(DependencyManager.getBundleKey(relationship), PusheableAsset.RELATIONSHIP,
 				relationship.getModDate());
+	}
+
+	/**
+	 * Return true if a {@link Folder} should be exclude from a bundle create today
+	 * because it was not modified after the last Push.
+	 *
+	 * @param folder
+	 * @return
+	 */
+	public boolean excludeByModDate ( final Folder folder) {
+		return excludeByModDate(DependencyManager.getBundleKey(folder), PusheableAsset.FOLDER,
+				folder.getModDate());
 	}
 
 	/**

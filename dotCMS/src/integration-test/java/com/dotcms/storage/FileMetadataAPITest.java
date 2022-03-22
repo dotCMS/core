@@ -735,7 +735,7 @@ public class FileMetadataAPITest {
             assertEquals(dest.getBinaryMetadata(FILE_ASSET_1).getCustomMeta().get("lol"),"kek");
             //Now lets try setting an empty map and verify they're gone.
             fileMetadataAPI.putCustomMetadataAttributes(dest,ImmutableMap.of(FILE_ASSET_1, ImmutableMap.of()));
-            assertTrue(dest.getBinaryMetadata(FILE_ASSET_1).getMap().isEmpty());
+            assertTrue(dest.getBinaryMetadata(FILE_ASSET_1).getCustomMeta().isEmpty());
             //And last
             fileMetadataAPI.putCustomMetadataAttributes(source,ImmutableMap.of(FILE_ASSET_1, ImmutableMap.of("foo","bar", "bar","foo")));
             fileMetadataAPI.copyCustomMetadata(source, dest);
@@ -922,6 +922,14 @@ public class FileMetadataAPITest {
             final Metadata metadata = contentletMetadata.getFullMetadataMap().get(FILE_ASSET);
             //Verify it was generated with the version we just mocked
             assertEquals(100, metadata.getVersion());
+
+            //Let's add some custom attributes
+            fileMetadataAPI.putCustomMetadataAttributes(source, ImmutableMap
+                    .of(
+                            FILE_ASSET, ImmutableMap.of("foo", "bar", "bar", "foo")
+                    )
+            );
+
             //Now lets mock a newer version
             Config.setProperty(BINARY_METADATA_VERSION,101);
             //And request the Metadata
@@ -929,6 +937,9 @@ public class FileMetadataAPITest {
             //Since the version has changed we should expect the metadata coming back with the newer version
             assertNotNull(binaryMetadata);
             assertEquals(101, binaryMetadata.getVersion());
+            //Now test the custom attributes survived the regeneration triggered by the new version
+            assertEquals("bar",binaryMetadata.getCustomMeta().get("foo"));
+            assertEquals("foo",binaryMetadata.getCustomMeta().get("bar"));
 
         }finally {
             Config.setProperty(DEFAULT_STORAGE_TYPE, savedStorageType);

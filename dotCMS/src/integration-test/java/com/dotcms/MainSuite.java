@@ -147,6 +147,9 @@ import com.dotmarketing.startup.runonce.Task211012AddCompanyDefaultLanguageTest;
 import com.dotmarketing.startup.runonce.Task220202RemoveFKStructureFolderConstraintTest;
 import com.dotmarketing.startup.runonce.Task211101AddContentletAsJsonColumnTest;
 import com.dotmarketing.startup.runonce.Task211103RenameHostNameLabelTest;
+import com.dotmarketing.startup.runonce.Task220203RemoveFolderInodeConstraintTest;
+import com.dotmarketing.startup.runonce.Task220214AddOwnerAndIDateToFolderTableTest;
+import com.dotmarketing.startup.runonce.Task220215MigrateDataFromInodeToFolderTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -526,7 +529,10 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentBundlerTest.class,
         ObjectMapperTest.class,
         URLMapBundlerTest.class,
-        PermissionBitFactoryImplTest.class
+        PermissionBitFactoryImplTest.class,
+        Task220203RemoveFolderInodeConstraintTest.class,
+        Task220214AddOwnerAndIDateToFolderTableTest.class,
+        Task220215MigrateDataFromInodeToFolderTest.class
 })
 public class MainSuite {
 

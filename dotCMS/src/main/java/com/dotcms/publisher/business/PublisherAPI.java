@@ -304,6 +304,14 @@ public abstract class PublisherAPI {
 	public abstract void deleteElementFromPublishQueueTable(String identifier) throws DotPublisherException;
 
 	/**
+	 * Delete element from publishing_queue table by identifier
+	 * If the element is the last in the bundle, it will also delete the {@link PublishAuditStatus}
+	 * @param id ID of the element in the table
+	 * @return boolean
+	 */
+	public abstract void deleteElementFromPublishQueueTableAndAuditStatus(String identifier) throws DotPublisherException;
+
+	/**
 	 * Deletes a record from the {@code publishing_queue} table based on its
 	 * Identifier and language ID.
 	 * 
@@ -326,6 +334,14 @@ public abstract class PublisherAPI {
 	 * @return boolean
 	 */
 	public abstract void deleteElementsFromPublishQueueTable(String bundleId) throws DotPublisherException;
+
+	/**
+	 * Delete element(s) from publishing_queue table by bundleId
+	 * It also deletes the {@link PublishAuditStatus} for the given bundleId
+	 * @param bundleId Id of the bundle
+	 * @return boolean
+	 */
+	public abstract void deleteElementsFromPublishQueueTableAndAuditStatus(String bundleId) throws DotPublisherException;
 
 	/**
 	 * Delete all elements from publishing_queue table

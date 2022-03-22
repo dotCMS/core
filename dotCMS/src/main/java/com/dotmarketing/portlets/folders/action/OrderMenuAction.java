@@ -402,37 +402,43 @@ public class OrderMenuAction extends DotPortletAction {
 		int x = 0;
 		while (i.hasNext()) {
 
-			Inode item = (Inode) i.next();
-			Contentlet c = null;
-			try {
-				c = APILocator.getContentletAPI().find(item.getInode(), user, false);
-			} catch(ClassCastException cce) {
+			Object currentItem = i.next();
+
+			if (currentItem instanceof Folder){
+				Folder item = (Folder) currentItem;
+				if (item.getInode().equalsIgnoreCase( itemInode)) {
+					item.setSortOrder(x + increment);
+				} else{
+					item.setSortOrder(x);
+				}
+			} else{
+
+				final Inode item = (Inode) currentItem;
+				Contentlet contentlet = null;
+				try {
+					contentlet = APILocator.getContentletAPI().find(item.getInode(), user, false);
+				} catch(ClassCastException cce) {
+					Logger.warn(this, cce.getMessage(), cce);
+				}
+
+				if (item.getInode().equalsIgnoreCase( itemInode)) {
+					if(item instanceof WebAsset) {
+						((WebAsset)item).setSortOrder(x + increment);
+					} if (APILocator.getFileAssetAPI().isFileAsset(contentlet))  {
+						contentlet.setSortOrder(x + increment);
+						APILocator.getContentletAPI().refresh(contentlet);
+					}
+				}
+				else {
+					if(item instanceof WebAsset) {
+						((WebAsset)item).setSortOrder(x);
+					}  if (APILocator.getFileAssetAPI().isFileAsset(contentlet))  {
+						contentlet.setSortOrder(x);
+						APILocator.getContentletAPI().refresh(contentlet);
+					}
+				}
 			}
 
-			if (item.getInode().equalsIgnoreCase( itemInode)) {
-				//this is the item to move
-				if (item instanceof Folder) {
-					((Folder)item).setSortOrder(x + increment);
-				}
-				else if(item instanceof WebAsset) {
-					((WebAsset)item).setSortOrder(x + increment);
-				} if (APILocator.getFileAssetAPI().isFileAsset(c))  {
-					c.setSortOrder(x + increment);
-					APILocator.getContentletAPI().refresh(c);
-				}
-			}
-			else {
-				//all other items
-				if (item instanceof Folder) {
-					((Folder)item).setSortOrder(x);
-				}
-				else if(item instanceof WebAsset) {
-					((WebAsset)item).setSortOrder(x);
-				}  if (APILocator.getFileAssetAPI().isFileAsset(c))  {
-					c.setSortOrder(x);
-					APILocator.getContentletAPI().refresh(c);
-				}
-			}
 			x = x + 2;
 		}
 

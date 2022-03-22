@@ -371,7 +371,7 @@ public class ReindexQueueFactory {
         dc.addParam(Priority.NORMAL.dbValue());
         dc.addParam(ReindexAction.REINDEX.ordinal());
         dc.addParam(folder.getHostId());
-        String folderPath = APILocator.getIdentifierAPI().find(folder).getPath();
+        String folderPath = APILocator.getIdentifierAPI().find(folder.getIdentifier()).getPath();
         dc.addParam(folderPath + "%");
         dc.loadResult();
         if (!Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false)) {
