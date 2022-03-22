@@ -418,7 +418,7 @@ public class Config {
      * @param defaultValue
      * @return
      */
-    public static String[] getStringArrayProperty(final String name, final String[] defaultValue) {
+    public static String[] getStringArrayProperty(final String name, final String... defaultValue) {
         _refreshProperties();
 
         return props.containsKey(envKey(name)) 

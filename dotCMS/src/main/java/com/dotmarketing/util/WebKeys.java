@@ -352,6 +352,7 @@ public final class WebKeys {
     public static final String WORKFLOW_FILTER_TASKS_LIST = "com.dotmarketing.workflowtasks.filter.list";
     public static final String WORKFLOW_FILTER_TASKS_COUNT = "com.dotmarketing.workflowtasks.filter.count";
     public static final String WORKFLOW_ACTIONLET_CLASSES = "WORKFLOW_ACTIONLET_CLASSES";
+    public static final String WORKFLOW_BASE_PACKAGES_ACTIONLET_CLASSES = "WORKFLOW_BASE_PACKAGES_ACTIONLET_CLASSES";
     public static final String WORKFLOW_SEARCHER = "com.dotmarketing.workflowtasks.WORKFLOW_SEARCHER";
     public static enum WorkflowStatuses { OPEN, RESOLVED, CANCELLED };
 
