@@ -11,6 +11,7 @@ import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.rest.api.v1.template.TemplateView;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -42,6 +43,7 @@ import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -672,7 +674,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                                                         null, null, 0, 1000, null);
 
             assertFalse(templates.isEmpty());
-            for (final Template temp : templates) {
+            for (final Template temp : this.removeSystemTemplate(templates)) {
                 assertTrue(temp.isTemplate());
             }
 
@@ -693,6 +695,21 @@ public class TemplateAPITest extends IntegrationTestBase {
                 templateAPI.delete(layout, user, false);
             }
         }
+    }
+
+    private List<Template> removeSystemTemplate(final List<Template> paginatedArrayList) {
+
+        final List<Template> paginatedArrayListWithoutSystemTemplate = new ArrayList<>();
+
+        for(Template templateObject : paginatedArrayList) {
+
+            if (!Template.SYSTEM_TEMPLATE.equals(templateObject.getIdentifier())) {
+
+                paginatedArrayListWithoutSystemTemplate.add(templateObject);
+            }
+        }
+
+        return paginatedArrayListWithoutSystemTemplate;
     }
 
     /**
@@ -719,11 +736,11 @@ public class TemplateAPITest extends IntegrationTestBase {
             anotherTemplate = templateAPI.saveTemplate(anotherTemplate, host, user, false);
 
             final List<Template> filteredTemplates = APILocator.getTemplateAPI().findTemplatesUserCanUse(user, host.getIdentifier(), uniqueString, true,0, 1000);
-
-            assertEquals(1, filteredTemplates.size());
-            assertEquals(uniqueTitle, filteredTemplates.get(0).getTitle());
-            assertFalse(filteredTemplates.get(0).getOwner().isEmpty());//check owner was pulled
-            assertFalse(filteredTemplates.get(0).getIDate().toString().isEmpty());//check idate was pulled
+            final List<Template> filteredTemplatesWithoutSystemTemplate = this.removeSystemTemplate(filteredTemplates);
+            assertEquals(1, filteredTemplatesWithoutSystemTemplate.size());
+            assertEquals(uniqueTitle, filteredTemplatesWithoutSystemTemplate.get(0).getTitle());
+            assertFalse(filteredTemplatesWithoutSystemTemplate.get(0).getOwner().isEmpty());//check owner was pulled
+            assertFalse(filteredTemplatesWithoutSystemTemplate.get(0).getIDate().toString().isEmpty());//check idate was pulled
 
         } finally {
             if (template != null) {
