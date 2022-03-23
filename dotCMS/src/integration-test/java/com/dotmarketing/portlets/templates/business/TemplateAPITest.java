@@ -683,7 +683,7 @@ public class TemplateAPITest extends IntegrationTestBase {
                                                         0, 1000);
 
             assertFalse(templates.isEmpty());
-            for (final Template temp : templates) {
+            for (final Template temp : this.removeSystemTemplate(templates)) {
                 assertTrue(temp.isTemplate());
             }
 
