@@ -5027,7 +5027,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/templates?filter=gettemplate&archive=true",
+							"raw": "{{serverURL}}/api/v1/templates?filter=gettemplat&archive=true",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -5039,7 +5039,7 @@
 							"query": [
 								{
 									"key": "filter",
-									"value": "gettemplate"
+									"value": "gettemplat"
 								},
 								{
 									"key": "archive",
