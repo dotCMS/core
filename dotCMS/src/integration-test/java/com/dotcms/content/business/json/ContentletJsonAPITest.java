@@ -338,7 +338,6 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
             final ContentType contentType = TestDataUtils
                     .newContentTypeFieldTypesGalore();
 
-            //new TagDataGen().name("tag1").nextPersisted();
             final Contentlet imageFileAsset = TestDataUtils.getFileAssetContent(true, 1, TestFile.JPG);
 
             final Contentlet in = new ContentletDataGen(contentType).host(site)
@@ -376,7 +375,6 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
             final ContentType contentType = TestDataUtils
                     .newContentTypeFieldTypesGalore();
 
-            //new TagDataGen().name("tag1").nextPersisted();
             final Contentlet imageFileAsset = TestDataUtils.getFileAssetContent(true, 1, TestFile.JPG);
 
             final Metadata metadataNoCache = APILocator.getFileMetadataAPI()
