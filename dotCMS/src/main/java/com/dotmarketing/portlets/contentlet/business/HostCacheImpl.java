@@ -100,14 +100,13 @@ public class HostCacheImpl extends HostCache {
         // clear the cache
         cache.flushGroup(PRIMARY_GROUP);
         cache.flushGroup(ALIAS_GROUP);
-        Logger.info(this, "Primary and Alias cache groups have been flushed!");
     }
 
     /* (non-Javadoc)
 	 * @see com.dotmarketing.business.PermissionCache#remove(java.lang.String)
 	 */
     protected void remove(Host host){
-    	
+
     	// always remove default host
     	String _defaultHost =PRIMARY_GROUP +DEFAULT_HOST;
     	cache.remove(_defaultHost,PRIMARY_GROUP);
@@ -115,25 +114,25 @@ public class HostCacheImpl extends HostCache {
     	//remove aliases from host in cache
     	Host h = get(host.getIdentifier());
 
-    	
+
     	String key = host.getIdentifier();
     	String key2 = host.getHostname();
-    	
+
     	try{
     		cache.remove(key,PRIMARY_GROUP);
     	}catch (Exception e) {
 			Logger.debug(this, "Cache not able to be removed", e);
-		} 
-    	
+		}
+
     	try{
     		cache.remove(key2,PRIMARY_GROUP);
     	}catch (Exception e) {
 			Logger.debug(this, "Cache not able to be removed", e);
-    	} 
-    		        	
+    	}
+
     	clearAliasCache();
     	clearSitesList();
-        Logger.info(this, "All Host Cache regions have been flushed!");
+
     }
 
     public String[] getGroups() {
