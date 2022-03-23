@@ -1037,7 +1037,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 		Logger.debug(this, ()->"Calling findTemplates, params " + params + ", user:" + user.getUserId() +
 						", inode = " + inode + ", id: " + identifier + ", parent: " + parent);
-		return  offset == 0?//Host.SYSTEM_HOST.equals(hostId) || Template.SYSTEM_TEMPLATE.equals(inode)?
+		return  offset == 0 && !includeArchived? // if it is the first page and do not include archived, include the system template
 				this.includeSystemTemplate(templateFactory.findTemplates(user, includeArchived, params, hostId, inode, identifier, parent, offset, limit, orderBy)):
 				this.templateFactory.findTemplates(user, includeArchived, params, hostId, inode, identifier, parent, offset, limit, orderBy);
 	}
