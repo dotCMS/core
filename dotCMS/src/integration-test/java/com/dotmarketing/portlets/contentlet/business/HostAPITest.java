@@ -1,10 +1,5 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import static com.dotmarketing.portlets.templates.model.Template.ANONYMOUS_PREFIX;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -12,7 +7,14 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.datagen.*;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.StructureDataGen;
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.enterprise.HostAssetsJobProxy;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
@@ -31,14 +33,11 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.init.DotInitScheduler;
-import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPIImpl;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.quartz.job.HostCopyOptions;
@@ -46,20 +45,27 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UUIDGenerator;
-import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+
+import static com.dotmarketing.portlets.templates.model.Template.ANONYMOUS_PREFIX;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * This class will test operations related with interacting with hosts: Deleting
@@ -804,10 +810,7 @@ public class HostAPITest extends IntegrationTestBase  {
         final Language mockDefaultLang = mock(Language.class);
         when(mockDefaultLang.getId()).thenReturn(newRandomDefaultLangId);
 
-        final LanguageAPI mockLanguageAPI = mock(LanguageAPI.class);
-        when(mockLanguageAPI.getDefaultLanguage()).thenReturn(mockDefaultLang);
-
-        final HostAPI hostAPIWithMockedLangAPI = new HostAPIImpl(APILocator.getSystemEventsAPI(), mockLanguageAPI);
+        final HostAPI hostAPIWithMockedLangAPI = new HostAPIImpl(APILocator.getSystemEventsAPI()/*, FactoryLocator.getHostFactory()*/);
         final Host dbSearchNoDefaultLang = hostAPIWithMockedLangAPI.DBSearch(host.getIdentifier(), systemUser, false);
 
         //Since Default language is changed now we still get something here.
@@ -934,7 +937,6 @@ public class HostAPITest extends IntegrationTestBase  {
         // Assertions
         assertTrue("Default Site and New Default Site are NOT the same", newDefaultSite.getIdentifier().equals(updatedDefaultSite.getIdentifier()));
 
-        // Cleanup
         hostAPI.updateDefaultHost(originalDefaultSite, systemUser, false);
         unpublishHost(newDefaultSite, systemUser);
         archiveHost(newDefaultSite, systemUser);
@@ -1162,7 +1164,7 @@ public class HostAPITest extends IntegrationTestBase  {
     public void searchByFilter() throws DotHibernateException, ExecutionException, InterruptedException {
         // Initialization
         final HostAPI hostAPI = APILocator.getHostAPI();
-        final String siteName = "uniquenamefilteredsite.dotcms.com";
+        final String siteName = "uniquenamefilteredsite.dotcms.com" + System.currentTimeMillis();
         final SiteDataGen siteDataGen = new SiteDataGen().name(siteName);
         final User systemUser = APILocator.systemUser();
 

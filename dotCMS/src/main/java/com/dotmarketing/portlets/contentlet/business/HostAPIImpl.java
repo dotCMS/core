@@ -6,7 +6,6 @@ import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.notifications.bean.NotificationLevel;
@@ -31,7 +30,6 @@ import com.dotmarketing.portlets.contentlet.business.web.UpdatePageTemplatePathJ
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
@@ -55,33 +53,42 @@ import java.util.stream.Collectors;
  * <p>
  * A single dotCMS instance may manage multiple different web sites. Each “site” is actually a separate website, but all
  * sites are managed and the content for all sites is served from a single dotCMS instance. A single dotCMS server can
- * manage literally hundreds of sites. </p>
+ * manage literally hundreds of sites.</p>
  *
  * @author jtesser
  * @author david torres
  */
 public class HostAPIImpl implements HostAPI, Flushable<Host> {
 
-    private ContentletFactory contentletFactory = FactoryLocator.getContentletFactory();
     private HostCache hostCache = CacheLocator.getHostCache();
     private Host systemHost;
     private final SystemEventsAPI systemEventsAPI;
-    private final DotConcurrentFactory concurrentFactory = DotConcurrentFactory.getInstance();
-    private LanguageAPI languageAPI;
-    private HostFactory hostFactory = FactoryLocator.getHostFactory();
+    private HostFactory hostFactory;
 
     public HostAPIImpl() {
-        this(APILocator.getSystemEventsAPI(),APILocator.getLanguageAPI());
+        this(APILocator.getSystemEventsAPI());
     }
 
     @VisibleForTesting
-    HostAPIImpl(final SystemEventsAPI systemEventsAPI, final LanguageAPI languageAPI) {
+    HostAPIImpl(final SystemEventsAPI systemEventsAPI) {
         this.systemEventsAPI = systemEventsAPI;
-        this.languageAPI = languageAPI;
     }
 
     private ContentType hostType() throws DotDataException, DotSecurityException{
         return APILocator.getContentTypeAPI(APILocator.systemUser()).find(Host.HOST_VELOCITY_VAR_NAME);
+    }
+
+    /**
+     * Lazy initialization of the Host Factory service. This helps prevent startup issues when several factories or APIs
+     * are initialized during the initialization phase of the Host Factory.
+     *
+     * @return An instance of the {@link HostFactory} service.
+     */
+    private HostFactory getHostFactory() {
+        if (null == this.hostFactory) {
+            this.hostFactory = FactoryLocator.getHostFactory();
+        }
+        return this.hostFactory;
     }
 
     @Override
@@ -127,7 +134,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             }
         }
 
-        checkHostPermission(user, respectFrontendRoles, host);
+        checkSitePermission(user, respectFrontendRoles, host);
         return host;
     }
 
@@ -151,17 +158,30 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         }
 
         if (host != null) {
-            checkHostPermission(user, respectFrontendRoles, host);
+            checkSitePermission(user, respectFrontendRoles, host);
         }
 
         return Optional.ofNullable(host);
     }
 
-    private void checkHostPermission(User user, boolean respectFrontendRoles, Host host) throws DotDataException, DotSecurityException {
-        if (!APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-            String u = (user != null) ? user.getUserId() : null;
-            String h = (host != null) ? host.getHostname() : null;
-            throw new DotSecurityException("User: " + u + " does not have read permissions to " + h);
+    /**
+     * Verifies that the specified User has READ permission on a given Site.
+     *
+     * @param user                 The {@link User} whose READ permission needs to be checked.
+     * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
+     *                             operation, set to {@code true}. Otherwise, set to {@code false}.
+     * @param site                 The {@link Host} that will be validated.
+     *
+     * @throws DotDataException     An error occurred when accessing the data source.
+     * @throws DotSecurityException The specified User does not have the required permissions to perform this
+     *                              operation.
+     */
+    private void checkSitePermission(final User user, final boolean respectFrontendRoles, final Host site) throws DotDataException, DotSecurityException {
+        if (!APILocator.getPermissionAPI().doesUserHavePermission(site, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
+            String userId = (user != null) ? user.getUserId() : null;
+            String siteName = (site != null) ? site.getHostname() : null;
+            throw new DotSecurityException(String.format("User '%s' does not have read permissions on '%s'", userId,
+                    siteName));
         }
     }
 
@@ -195,10 +215,10 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
      * @return The {@link Host} object that matches the specified name.
      */
     private Host findByNameNotDefault(final String siteName, final User user, final boolean respectFrontendRoles) {
-        final Host site = this.hostFactory.bySiteName(siteName);
+        final Host site = this.getHostFactory().bySiteName(siteName);
         if (null != site) {
             try {
-                checkHostPermission(user, respectFrontendRoles, site);
+                checkSitePermission(user, respectFrontendRoles, site);
                 return site;
             } catch (final DotDataException | DotSecurityException e) {
                 Logger.error(this, String.format("An error occurred when checking READ permission from User '%s' on " +
@@ -210,10 +230,10 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
 
     @Override
     public Host findByAlias(final String alias, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        final Host site = this.hostFactory.byAlias(alias);
+        final Host site = this.getHostFactory().byAlias(alias);
         if (null != site) {
             try {
-                checkHostPermission(user, respectFrontendRoles, site);
+                checkSitePermission(user, respectFrontendRoles, site);
                 return site;
             } catch (final DotDataException | DotSecurityException e) {
                 Logger.error(this, String.format("An error occurred when checking READ permission from User '%s' on " +
@@ -325,11 +345,11 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     @CloseDBIfOpened
     private List<Host> findPaginatedSitesFromDB(final User user, final int limit, final int offset, final String
             sortBy, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        final List<Host> siteList = this.hostFactory.findAll(limit, offset, sortBy);
+        final List<Host> siteList = this.getHostFactory().findAll(limit, offset, sortBy);
         if (null != siteList && !siteList.isEmpty()) {
             return siteList.stream().filter(site -> {
                 try {
-                    checkHostPermission(user, respectFrontendRoles, site);
+                    checkSitePermission(user, respectFrontendRoles, site);
                     return true;
                 } catch (final DotDataException | DotSecurityException e) {
                     Logger.warn(this, String.format("An error occurred when checking permissions from User '%s' on " +
@@ -451,7 +471,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     @CloseDBIfOpened
     @Override
     public List<Host> getHostsWithPermission(int permissionType, final User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        final List<Host> siteList = this.hostFactory.findAll();
+        final List<Host> siteList = this.getHostFactory().findAll();
         List<Host> filteredSiteList = new ArrayList<>();
         if (null != siteList && !siteList.isEmpty()) {
             filteredSiteList = APILocator.getPermissionAPI().filterCollection(siteList, permissionType,
@@ -466,11 +486,10 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         if (null != this.systemHost) {
             return this.systemHost;
         }
-        this.systemHost = this.hostFactory.findSystemHost(user, respectFrontendRoles);
+        this.systemHost = this.getHostFactory().findSystemHost(user, respectFrontendRoles);
         if (null == this.systemHost) {
-            this.systemHost = this.hostFactory.createSystemHost();
+            this.systemHost = this.getHostFactory().createSystemHost();
         }
-        this.hostCache.add(this.systemHost);
         return this.systemHost;
     }
 
@@ -532,10 +551,8 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     public Optional<Future<Boolean>> delete(final Host site, final User deletingUser,
                                    final boolean respectFrontendRoles,
                                    final boolean runAsSeparatedThread) {
-
-        //Optional<Future<Boolean>> future = Optional.empty();
+        Logger.info(this, ()-> "Deleting Site: " + site);
         try {
-            Logger.info(this, ()-> "Deleting Site: " + site);
             APILocator.getPermissionAPI().checkPermission(site, PermissionLevel.PUBLISH, deletingUser);
         } catch (final DotSecurityException e) {
             final String errorMsg = String.format("An error occurred when User '%s' tried to delete Site '%s': %s",
@@ -545,7 +562,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         }
 
         final User user = (null != deletingUser)?deletingUser:APILocator.systemUser();
-        return this.hostFactory.delete(site, user, respectFrontendRoles, runAsSeparatedThread);
+        return this.getHostFactory().delete(site, user, respectFrontendRoles, runAsSeparatedThread);
     } // delete.
 
     @Override
@@ -617,7 +634,6 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         }
     }
 
-
     @CloseDBIfOpened
     private synchronized Host getOrCreateDefaultHost() throws DotDataException, DotSecurityException {
 
@@ -630,7 +646,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             Logger.error(HostAPIImpl.class, message);
             throw new DotDataException(message);
         }
-        final Optional<Host> defaultHostOpt = this.hostFactory.findDefaultHost(siteContentType.inode(), defaultField.get().dbColumn());
+        final Optional<Host> defaultHostOpt = this.getHostFactory().findDefaultHost(siteContentType.inode(), defaultField.get().dbColumn());
         if (defaultHostOpt.isPresent()) {
             return defaultHostOpt.get();
         }
@@ -704,7 +720,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         if (!UtilMethods.isSet(id)) {
             return null;
         }
-        return this.hostFactory.DBSearch(id, user, respectFrontendRoles);
+        return this.getHostFactory().DBSearch(id, user, respectFrontendRoles);
     }
 
     @Override
@@ -787,8 +803,8 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     public PaginatedArrayList<Host> searchByStopped(final String filter, final boolean showStopped, final boolean
             showSystemHost, final int limit, final int offset, final User user, final boolean respectFrontendRoles) {
         PaginatedArrayList<Host> paginatedSiteList = new PaginatedArrayList<>();
-        final Optional<List<Host>> siteListOpt = showStopped ? this.hostFactory.findStoppedSites(filter, true, limit, offset, user,
-                respectFrontendRoles) : this.hostFactory.findLiveSites(filter, limit, offset, user, respectFrontendRoles);
+        final Optional<List<Host>> siteListOpt = showStopped ? this.getHostFactory().findStoppedSites(filter, true, limit, offset, user,
+                respectFrontendRoles) : this.getHostFactory().findLiveSites(filter, limit, offset, user, respectFrontendRoles);
         if (siteListOpt.isPresent()) {
             if (showStopped) {
                 return convertToSitePaginatedList(siteListOpt.get());
@@ -817,7 +833,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         Optional<List<Host>> siteListOpt;
         if (!showStopped && !showArchived) {
             // Return live Sites
-            siteListOpt = this.hostFactory.findLiveSites(filter, limit, offset, user, respectFrontendRoles);
+            siteListOpt = this.getHostFactory().findLiveSites(filter, limit, offset, user, respectFrontendRoles);
             if (siteListOpt.isPresent()) {
                 try {
                     // Permissions can only be checked on LIVE contents
@@ -836,14 +852,14 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         }
         if (showStopped && !showArchived) {
             // Return stopped Sites
-            siteListOpt = this.hostFactory.findStoppedSites(filter, false, limit, offset, user, respectFrontendRoles);
+            siteListOpt = this.getHostFactory().findStoppedSites(filter, false, limit, offset, user, respectFrontendRoles);
             if (siteListOpt.isPresent()) {
                 paginatedSiteList = convertToSitePaginatedList(siteListOpt.get());
             }
         }
         if (showStopped && showArchived) {
             // Return archived Sites
-            siteListOpt = this.hostFactory.findArchivedSites(filter, limit, offset, user, respectFrontendRoles);
+            siteListOpt = this.getHostFactory().findArchivedSites(filter, limit, offset, user, respectFrontendRoles);
             if (siteListOpt.isPresent()) {
                 paginatedSiteList = convertToSitePaginatedList(siteListOpt.get());
             }
@@ -854,7 +870,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     @Override
     public PaginatedArrayList<Host> search(String filter, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles){
         PaginatedArrayList<Host> paginatedSiteList = new PaginatedArrayList<>();
-        final Optional<List<Host>> siteListOpt = this.hostFactory.findLiveSites(filter, limit, offset, user, respectFrontendRoles);
+        final Optional<List<Host>> siteListOpt = this.getHostFactory().findLiveSites(filter, limit, offset, user, respectFrontendRoles);
         if (siteListOpt.isPresent()) {
             try {
                 List<Host> filteredSiteList = APILocator.getPermissionAPI().filterCollection(siteListOpt.get(), PermissionAPI
@@ -875,8 +891,8 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     public PaginatedArrayList<Host> search(final String filter, boolean showArchived, boolean showSystemHost, int
             limit, int offset, User user, boolean respectFrontendRoles) {
         PaginatedArrayList<Host> paginatedSiteList = new PaginatedArrayList<>();
-        final Optional<List<Host>> siteListOpt = showArchived ? this.hostFactory.findArchivedSites(filter, limit, offset, user,
-                respectFrontendRoles) : this.hostFactory.findLiveSites(filter, limit, offset, user, respectFrontendRoles);
+        final Optional<List<Host>> siteListOpt = showArchived ? this.getHostFactory().findArchivedSites(filter, limit, offset, user,
+                respectFrontendRoles) : this.getHostFactory().findLiveSites(filter, limit, offset, user, respectFrontendRoles);
         if (siteListOpt.isPresent()) {
             if (showArchived) {
                 return convertToSitePaginatedList(siteListOpt.get());
@@ -901,7 +917,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     @Override
     public long count(final User user, final boolean respectFrontendRoles) {
         try {
-            return this.hostFactory.count();
+            return this.getHostFactory().count();
         } catch (final Exception e) {
             final String errorMsg = String.format("An error occurred when User '%s' attempted to get the total number " +
                     "of Sites: %s", user.getUserId(), e.getMessage());
