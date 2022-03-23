@@ -1,8 +1,6 @@
 package com.dotcms.content.business.json;
 
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.DISABLED_WYSIWYG_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.FOLDER_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.HOST_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.IDENTIFIER_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.INODE_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.LANGUAGEID_KEY;
@@ -27,7 +25,6 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.ColumnField;
-import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.HiddenField;
@@ -37,7 +34,6 @@ import com.dotcms.contenttype.model.field.LineDividerField;
 import com.dotcms.contenttype.model.field.PermissionTabField;
 import com.dotcms.contenttype.model.field.RelationshipsTabField;
 import com.dotcms.contenttype.model.field.TabDividerField;
-import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
@@ -65,7 +61,6 @@ import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.File;
 import java.time.Instant;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -258,10 +253,6 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
         map.put(TITTLE_KEY, immutableContentlet.title());
         map.put(SORT_ORDER_KEY, immutableContentlet.sortOrder());
         map.put(LANGUAGEID_KEY, immutableContentlet.languageId());
-        /*
-        map.put(HOST_KEY,immutableContentlet.host());
-        map.put(FOLDER_KEY,immutableContentlet.folder());
-        */
         map.put(DISABLED_WYSIWYG_KEY, immutableContentlet.disabledWysiwyg());
 
         final ContentType contentType = contentTypeAPI.find(contentTypeId);

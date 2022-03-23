@@ -122,11 +122,9 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
         assertEquals(in.get("title"),out.get("title"));
 
         //Host and Folder are no longer saved in the json they're injected in an upper layer.
-        //That injection takes place inContentletTransformer  Therefore it shouldn't be expected here.
-        //assertEquals(in.get("folder"),out.get("folder"));
-        //assertEquals(in.get("host"),out.get("host"));
-        //System fields are now outside of the json so we should never expect a tag nor category here
-        //assertEquals(in.get("tagField"),out.get("tagField"));
+        //That injection takes place in ContentletTransformer
+        //Therefore they shouldn't be expected here.
+        //Also System fields are now outside of the json so we should never expect a tag nor category here either.
 
         assertEquals(in.get("textFieldNumeric"),out.get("textFieldNumeric"));
         assertEquals(in.get("textFieldFloat"),out.get("textFieldFloat"));
