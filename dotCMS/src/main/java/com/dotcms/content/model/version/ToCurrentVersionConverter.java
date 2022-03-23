@@ -5,16 +5,20 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.jonpeterson.jackson.module.versioning.VersionedModelConverter;
+import io.vavr.control.Try;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
 /**
- *
+ * This is a Version migration handler class. It serves as the entry point comparing the
+ * modelVersion between whatever is currently registered in the Contentlet class (modelVersion) and
+ * whatever is indicated in the source json
  */
 public class ToCurrentVersionConverter implements VersionedModelConverter {
 
-    public static final List<String> systemFieldTypes = Arrays.asList("Tags", "Categories", "Constant");
+    public static final List<String> systemFieldTypes = Arrays
+            .asList("Tags", "Categories", "Constant");
 
     @Override
     public ObjectNode convert(final ObjectNode modelData, final String modelVersion,
@@ -25,12 +29,14 @@ public class ToCurrentVersionConverter implements VersionedModelConverter {
         final int target = Integer.parseInt(targetModelVersion);
         if (version < target) {
             removeSystemFields(modelData);
+            //Add additional version migration code down here.
         }
         return modelData;
     }
 
     /**
-     *
+     * On V2 We decided that SystemFields could easily grow out of sync quite easily For which we
+     * remove them.
      */
     private void removeSystemFields(final ObjectNode modelData) {
         modelData.remove("host");
@@ -42,8 +48,14 @@ public class ToCurrentVersionConverter implements VersionedModelConverter {
                 final ObjectNode next = (ObjectNode) elements.next();
                 final String type = next.get("type").asText();
                 if (systemFieldTypes.contains(type)) {
-                    Logger.debug(ToCurrentVersionConverter.class, "");
                     elements.remove();
+                    Logger.debug(ToCurrentVersionConverter.class, () -> {
+                        final String inode = Try.of(() -> modelData.get("inode").asText())
+                                .getOrElse("unknown");
+                        return String.format(
+                                "field of type %s has been suppressed from the source json, for inode %s",
+                                type, inode);
+                    });
                 }
             }
         }
