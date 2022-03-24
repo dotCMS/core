@@ -4991,8 +4991,8 @@
 									"",
 									"var jsonData = pm.response.json();",
 									"",
-									"pm.test(\"Size must be 3\", function () {",
-									"    pm.expect(jsonData.entity.length).to.be.eql(3);",
+									"pm.test(\"Size must be at least 3\", function () {",
+									"    pm.expect(jsonData.entity.length).to.greaterThan(2);",
 									"});"
 								],
 								"type": "text/javascript"
