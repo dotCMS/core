@@ -861,7 +861,7 @@ public class HostAPITest extends IntegrationTestBase  {
         final HostAPI hostAPI = APILocator.getHostAPI();
         final User systemUser = APILocator.systemUser();
         Host originalSite = new Host();
-        ContentType contentType = ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass()).build();
+        ContentType contentType = ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass()).name("testContentType").build();
 
         // Test data
         try {
