@@ -40,6 +40,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -191,8 +192,9 @@ public class HostFactoryImpl implements HostFactory {
                 site = new Host(siteAsContentlet);
                 this.siteCache.add(site);
             } catch (final Exception e) {
-                throw new DotRuntimeException(String.format("An error occurred when retrieving Site by name '%s': %s",
-                        siteName, e.getMessage()), e);
+                final String errorMsg = String.format("An error occurred when retrieving Site by name '%s': %s",
+                        siteName, e.getMessage());
+                throw new DotRuntimeException(errorMsg, e);
             }
         }
         return site;
@@ -563,7 +565,7 @@ public class HostFactoryImpl implements HostFactory {
             future = Optional.of(concurrentFactory.getSubmitter
                     (DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL).submit(deleteHostThread));
         } else {
-            deleteHostThread.call();
+            future = Optional.of(ConcurrentUtils.constantFuture(deleteHostThread.call()));
         }
 
         return future;
@@ -670,7 +672,6 @@ public class HostFactoryImpl implements HostFactory {
      *
      * @return The list of {@link Host} objects that match the specified search criteria.
      */
-    @CloseDBIfOpened
     private Optional<List<Host>> search(final String siteNameFilter, final String condition, final boolean
             showSystemHost, final int limit, final int offset, final User user, final boolean respectFrontendRoles) {
         final DotConnect dc = new DotConnect();

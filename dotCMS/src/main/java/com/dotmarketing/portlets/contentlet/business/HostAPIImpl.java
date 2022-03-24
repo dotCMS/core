@@ -229,6 +229,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     }
 
     @Override
+    @CloseDBIfOpened
     public Host findByAlias(final String alias, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         final Host site = this.getHostFactory().byAlias(alias);
         if (null != site) {
@@ -317,7 +318,6 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     }
 
     @Override
-    @CloseDBIfOpened
     public List<Host> findAllFromDB(final User user, final boolean respectFrontendRoles) throws DotDataException,
             DotSecurityException {
         return this.findPaginatedSitesFromDB(user, 0, 0, null, respectFrontendRoles);
@@ -635,6 +635,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     }
 
     @CloseDBIfOpened
+    @WrapInTransaction
     private synchronized Host getOrCreateDefaultHost() throws DotDataException, DotSecurityException {
 
         final ContentType siteContentType = hostType();
@@ -799,6 +800,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         return siteList;
     }
 
+    @CloseDBIfOpened
     @Override
     public PaginatedArrayList<Host> searchByStopped(final String filter, final boolean showStopped, final boolean
             showSystemHost, final int limit, final int offset, final User user, final boolean respectFrontendRoles) {
@@ -825,6 +827,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         return paginatedSiteList;
     }
 
+    @CloseDBIfOpened
     @Override
     public PaginatedArrayList<Host> search(final String filter, final boolean showArchived, final boolean
             showStopped, final boolean showSystemHost, final int limit, final int offset, final User user, final
@@ -867,6 +870,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         return paginatedSiteList;
     }
 
+    @CloseDBIfOpened
     @Override
     public PaginatedArrayList<Host> search(String filter, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles){
         PaginatedArrayList<Host> paginatedSiteList = new PaginatedArrayList<>();
@@ -887,6 +891,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         return paginatedSiteList;
     }
 
+    @CloseDBIfOpened
     @Override
     public PaginatedArrayList<Host> search(final String filter, boolean showArchived, boolean showSystemHost, int
             limit, int offset, User user, boolean respectFrontendRoles) {
