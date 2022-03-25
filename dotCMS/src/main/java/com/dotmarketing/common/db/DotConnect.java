@@ -692,6 +692,9 @@ public class DotConnect {
                                     objvars.put(x, rs.getString(x));
                                 } else if (DbConnectionFactory.isOracle() && rs.getObject(x) instanceof oracle.sql.TIMESTAMP) {
                                     objvars.put(x, new Date(((oracle.sql.TIMESTAMP) rs.getObject(x)).timeValue().getTime()));
+                                } else  if (DbConnectionFactory.isMsSql() && rs.getObject(x) instanceof microsoft.sql.DateTimeOffset){
+                                    microsoft.sql.DateTimeOffset timeOffset = (microsoft.sql.DateTimeOffset)rs.getObject(x);
+                                    objvars.put(x, timeOffset.getTimestamp());
                                 } else {
                                     objvars.put(x, rs.getObject(x));
                                 }
@@ -703,6 +706,9 @@ public class DotConnect {
                                     objvars.put(x, rs.getString(x));
                                 } else if (DbConnectionFactory.isOracle() && rs.getObject(x) instanceof oracle.sql.TIMESTAMP) {
                                     objvars.put(x, new Date(((oracle.sql.TIMESTAMP) rs.getObject(x)).timestampValue().getTime()));
+                                } else  if (DbConnectionFactory.isMsSql() && rs.getObject(x) instanceof microsoft.sql.DateTimeOffset){
+                                    microsoft.sql.DateTimeOffset timeOffset = (microsoft.sql.DateTimeOffset)rs.getObject(x);
+                                    objvars.put(x, timeOffset.getTimestamp());
                                 } else {
                                     objvars.put(x, rs.getObject(x));
                                 }
