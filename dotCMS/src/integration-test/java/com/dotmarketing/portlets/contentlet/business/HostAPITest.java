@@ -810,7 +810,7 @@ public class HostAPITest extends IntegrationTestBase  {
         final Language mockDefaultLang = mock(Language.class);
         when(mockDefaultLang.getId()).thenReturn(newRandomDefaultLangId);
 
-        final HostAPI hostAPIWithMockedLangAPI = new HostAPIImpl(APILocator.getSystemEventsAPI()/*, FactoryLocator.getHostFactory()*/);
+        final HostAPI hostAPIWithMockedLangAPI = new HostAPIImpl(APILocator.getSystemEventsAPI());
         final Host dbSearchNoDefaultLang = hostAPIWithMockedLangAPI.DBSearch(host.getIdentifier(), systemUser, false);
 
         //Since Default language is changed now we still get something here.

@@ -7,6 +7,8 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
 import java.util.Map;
+
+import com.liferay.util.StringPool;
 import org.apache.commons.lang.StringUtils;
 
 /**
@@ -44,7 +46,8 @@ public class SitePaginator implements PaginatorOrdered<Host> {
         }
 
         String sanitizedFilter = "all".equals(filter) ? StringUtils.EMPTY : filter;
-        sanitizedFilter = sanitizedFilter.startsWith("*") ? sanitizedFilter.replace("*", "%") : sanitizedFilter;
+        sanitizedFilter = sanitizedFilter.startsWith(StringPool.STAR) ? sanitizedFilter.replace(StringPool.STAR,
+                StringPool.PERCENT) : sanitizedFilter;
         PaginatedArrayList<Host> sites;
 
         if (showArchived != null && showLive != null) {
