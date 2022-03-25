@@ -1,39 +1,30 @@
 package com.dotcms.ema;
 
-import com.dotcms.security.apps.AppSecrets;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
-import org.apache.http.Header;
-
-import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.ema.proxy.MockHttpCaptureResponse;
 import com.dotcms.ema.proxy.ProxyResponse;
 import com.dotcms.ema.proxy.ProxyTool;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
+import com.dotcms.security.apps.AppSecrets;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableMap;
-import com.liferay.portal.model.User;
+import org.apache.http.Header;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Intercepts a content managers's request to dotCMS EDIT_MODE in the admin of dotCMS,
@@ -43,13 +34,14 @@ import com.liferay.portal.model.User;
  *
  * More info on how EMA works https://github.com/dotcms-plugins/com.dotcms.ema#dotcms-edit-mode-anywhere---ema
  */
-public class EMAWebInterceptor  implements WebInterceptor{
+public class EMAWebInterceptor  implements WebInterceptor {
 
     public  static final String      PROXY_EDIT_MODE_URL_VAR = "proxyEditModeURL";
     private static final String      API_CALL                = "/api/v1/page/render";
     public static final String EMA_APP_CONFIG_KEY = "dotema-config";
     private static final ProxyTool   proxy                   = new ProxyTool();
 
+    public static final String EMA_REQUEST_ATTR = "EMA_REQUEST";
 
     @Override
     public String[] getFilters() {
@@ -62,7 +54,7 @@ public class EMAWebInterceptor  implements WebInterceptor{
     public Result intercept(final HttpServletRequest request, final HttpServletResponse response) {
 
         final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-
+        request.setAttribute(EMA_REQUEST_ATTR, true);
         if (!this.existsConfiguration(currentHost.getIdentifier())) {
             return Result.NEXT;
         }
