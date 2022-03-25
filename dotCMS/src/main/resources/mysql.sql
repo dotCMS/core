@@ -1358,6 +1358,8 @@ create table folder (
    identifier varchar(36),
    default_file_type varchar(36),
    mod_date datetime,
+   owner varchar(255),
+   idate datetime,
    primary key (inode)
 );
 create table clickstream_404 (
@@ -1569,7 +1571,6 @@ alter table field add index fk5cea0fa5fb51eb (inode), add constraint fk5cea0fa5f
 create index idx_relationship_1 on relationship (parent_structure_inode);
 create index idx_relationship_2 on relationship (child_structure_inode);
 create index idx_folder_1 on folder (name);
-alter table folder add index fkb45d1c6e5fb51eb (inode), add constraint fkb45d1c6e5fb51eb foreign key (inode) references inode (inode);
 create index idx_user_clickstream_404_2 on clickstream_404 (user_id);
 create index idx_user_clickstream_404_3 on clickstream_404 (host_id);
 create index idx_user_clickstream_404_1 on clickstream_404 (request_uri);

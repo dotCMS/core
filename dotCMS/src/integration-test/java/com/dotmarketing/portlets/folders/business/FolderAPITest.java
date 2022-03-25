@@ -140,10 +140,10 @@ public class FolderAPITest {//24 contentlets
 
 		// make sure the rename is properly propagated on children (that's done in a db trigger)
 
-		final Identifier ident = identifierAPI.loadFromDb(ftest.getVersionId());
-		final Identifier ident1 = identifierAPI.loadFromDb(ftest1.getVersionId());
-		final Identifier ident2 = identifierAPI.loadFromDb(ftest2.getVersionId());
-		final Identifier ident3 = identifierAPI.loadFromDb(ftest3.getVersionId());
+		final Identifier ident = identifierAPI.loadFromDb(ftest.getIdentifier());
+		final Identifier ident1 = identifierAPI.loadFromDb(ftest1.getIdentifier());
+		final Identifier ident2 = identifierAPI.loadFromDb(ftest2.getIdentifier());
+		final Identifier ident3 = identifierAPI.loadFromDb(ftest3.getIdentifier());
 
 		Assert.assertTrue(ident.getAssetName().startsWith("folderTestXX"));
 		Assert.assertEquals(ident.getPath(),ident1.getParentPath());
@@ -230,10 +230,6 @@ public class FolderAPITest {//24 contentlets
 		final List<IHTMLPage> pages = htmlPageAssetAPI.getLiveHTMLPages(newftest1,user, false);
 		Assert.assertEquals(3, pages.size());
 		Assert.assertTrue(pages.stream().anyMatch(page -> page.getName().equals(page0Name)));
-
-		contentletAPI.destroy(contentAsset1, user, false);
-		contentletAPI.destroy(contentAsset2, user, false);
-		contentletAPI.destroy(contentAsset4, user, false);
 	}
 
 	/**
@@ -1209,7 +1205,7 @@ public class FolderAPITest {//24 contentlets
 
 		folderAPI.save(folder, user, false);
 
-		fc.removeFolder(folder, identifierAPI.find(folder));
+		fc.removeFolder(folder, identifierAPI.find(folder.getIdentifier()));
 		final Folder folderByPath = folderAPI.findFolderByPath(folderPath, newHost, user,false);
 
 		Assert.assertNotNull(folderByPath);
@@ -1262,7 +1258,7 @@ public class FolderAPITest {//24 contentlets
 		folder.setOwner("folder's owner");
 
 		folderAPI.save(folder, user, false);
-		fc.removeFolder(folder, identifierAPI.find(folder));
+		fc.removeFolder(folder, identifierAPI.find(folder.getIdentifier()));
 
 		final User limitedUser = new UserDataGen().nextPersisted();
 
@@ -1286,7 +1282,7 @@ public class FolderAPITest {//24 contentlets
 		folder.setOwner("folder's owner");
 
 		folderAPI.save(folder, user, false);
-		fc.removeFolder(folder, identifierAPI.find(folder));
+		fc.removeFolder(folder, identifierAPI.find(folder.getIdentifier()));
 
 		final User limitedUser = new UserDataGen().nextPersisted();
 
@@ -1317,7 +1313,7 @@ public class FolderAPITest {//24 contentlets
 		folder.setOwner("folder's owner");
 
 		folderAPI.save(folder, user, false);
-		fc.removeFolder(folder, identifierAPI.find(folder));
+		fc.removeFolder(folder, identifierAPI.find(folder.getIdentifier()));
 
 		final User limitedUser = new UserDataGen().nextPersisted();
 

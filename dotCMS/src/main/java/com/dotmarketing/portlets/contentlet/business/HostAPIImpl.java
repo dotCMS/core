@@ -21,6 +21,7 @@ import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -47,6 +48,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.*;
@@ -910,40 +912,70 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
 
 
     @CloseDBIfOpened
-    private synchronized Host getOrCreateDefaultHost() throws DotDataException,
-    DotSecurityException {
-        
-        final List<Field> fields = hostType().fields();
-        Field isDefault = null;
-        for(final Field field : fields) {
+    private synchronized Host getOrCreateDefaultHost() throws DotDataException, DotSecurityException {
 
-            if("isDefault".equalsIgnoreCase(field.variable())){
-                isDefault = field;
-            }
+        final ContentType siteContentType = hostType();
+        final List<Field> fields = siteContentType.fields();
+        final Optional<Field> defaultField = fields.stream().filter(field -> "isDefault".equalsIgnoreCase(field.variable())).findFirst();
+
+        if(!defaultField.isPresent()){
+            final String message = "Unable to locate field `isDefault` in the ContentType Host.";
+            Logger.error(HostAPIImpl.class, message);
+            throw new DotDataException(message);
         }
 
-        final DotConnect dc = new DotConnect();
-        dc.setSQL("select working_inode from contentlet_version_info join contentlet on (contentlet.inode = contentlet_version_info.working_inode) " +
-                  " where " + isDefault.dbColumn() +" = ? and structure_inode =?");
-        dc.addParam(true);
-        dc.addParam(hostType().inode());
-        final String inode = dc.getString("working_inode");
+        final DotConnect dotConnect = new DotConnect();
+        String inode = null;
 
-        Host defaultHost = new Host();
+        if(APILocator.getContentletJsonAPI().isPersistContentAsJson()){
+
+          String sql = null;
+
+          if(DbConnectionFactory.isPostgres()) {
+                sql = "SELECT cvi.working_inode\n"
+                        + "  FROM contentlet_version_info cvi join contentlet c on (c.inode = cvi.working_inode) \n"
+                        + "  WHERE c.contentlet_as_json @> '{ \"fields\":{\"isDefault\":{ \"value\":true }} }' \n"
+                        + "  and c.structure_inode = ?";
+          }
+          if(DbConnectionFactory.isMsSql()){
+                   sql = "SELECT cvi.working_inode\n"
+                        + "  FROM contentlet_version_info cvi join contentlet c on (c.inode = cvi.working_inode) \n"
+                        + "  WHERE JSON_VALUE(c.contentlet_as_json, '$.fields.isDefault.value') = 'true'  \n"
+                        + "  and c.structure_inode = ?";
+          }
+          if(null == sql) {
+              throw new IllegalStateException("Unable to determine what db with json support we're running on!");
+          }
+             dotConnect.setSQL(sql);
+             dotConnect.addParam(siteContentType.inode());
+             inode = Try.of(()->dotConnect.getString("working_inode")).onFailure(throwable -> {
+                 Logger.warnAndDebug(HostAPIImpl.class,"An Error occurred while fetching the default host. ", throwable);
+             }).getOrNull();
+        }
+
+       if(UtilMethods.isNotSet(inode)) {
+           dotConnect
+                   .setSQL("select working_inode from contentlet_version_info join contentlet on (contentlet.inode = contentlet_version_info.working_inode) "
+                           + " where " + defaultField.get().dbColumn()  + " = ? and structure_inode =?");
+           dotConnect.addParam(true);
+           dotConnect.addParam(siteContentType.inode());
+           inode = dotConnect.getString("working_inode");
+       }
+
+        Host defaultHost;
 
         if(UtilMethods.isSet(inode)) {
 
             defaultHost = new Host(APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false));
             hostCache.add(defaultHost);
         } else {
-
+            defaultHost = new Host();
             defaultHost.setDefault(true);
             defaultHost.setHostname("noDefault-"  + System.currentTimeMillis());
 
             for(final Field field : fields) {
 
                 if(field.required() && UtilMethods.isSet(field.defaultValue())) {
-
                     defaultHost.setProperty(field.variable(), field.defaultValue());
                 }
             }

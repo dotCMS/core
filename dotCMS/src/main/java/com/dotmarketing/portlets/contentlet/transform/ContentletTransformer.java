@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
-import com.dotcms.content.business.ContentletJsonAPI;
+import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
@@ -22,7 +22,6 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
-import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;

@@ -101,7 +101,7 @@ public class NavTool implements ViewTool {
             if (!folder.getInode()
                 .equals(FolderAPI.SYSTEM_FOLDER)) {
                 Identifier ident = APILocator.getIdentifierAPI()
-                    .find(folder);
+                    .find(folder.getIdentifier());
                 parentId = ident.getParentPath()
                     .equals("/") ? FolderAPI.SYSTEM_FOLDER
                             : APILocator.getFolderAPI()
@@ -115,7 +115,7 @@ public class NavTool implements ViewTool {
             result = new NavResult(parentId, host.getIdentifier(), folder.getInode(), languageId);
 
             Identifier ident = APILocator.getIdentifierAPI()
-                .find(folder);
+                .find(folder.getIdentifier());
             result.setHref(ident.getURI());
             result.setTitle(folder.getTitle());
             result.setOrder(folder.getSortOrder());
@@ -242,7 +242,7 @@ public class NavTool implements ViewTool {
             List<String> folderIds, Folder itemFolder) throws DotDataException {
         Identifier ident;
         ident = APILocator.getIdentifierAPI()
-                .find(itemFolder);
+                .find(itemFolder.getIdentifier());
         NavResult nav = new NavResult(folder.getInode(), host.getIdentifier(),
                 itemFolder.getInode(), languageId);
 

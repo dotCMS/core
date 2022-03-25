@@ -5,7 +5,7 @@ import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
 import com.dotcms.cache.lettuce.DotObjectCodecTest;
 import com.dotcms.cache.lettuce.LettuceCacheTest;
 import com.dotcms.cache.lettuce.RedisClientTest;
-import com.dotcms.content.business.ContentletJsonAPITest;
+import com.dotcms.content.business.json.ContentletJsonAPITest;
 import com.dotcms.content.business.ObjectMapperTest;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
@@ -86,6 +86,7 @@ import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
 import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
 import com.dotmarketing.beans.HostTest;
 import com.dotmarketing.business.DeterministicIdentifierAPITest;
+import com.dotmarketing.business.PermissionBitFactoryImplTest;
 import com.dotmarketing.business.helper.PermissionHelperTest;
 import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
 import com.dotmarketing.common.db.DBTimeZoneCheckTest;
@@ -146,6 +147,9 @@ import com.dotmarketing.startup.runonce.Task211012AddCompanyDefaultLanguageTest;
 import com.dotmarketing.startup.runonce.Task220202RemoveFKStructureFolderConstraintTest;
 import com.dotmarketing.startup.runonce.Task211101AddContentletAsJsonColumnTest;
 import com.dotmarketing.startup.runonce.Task211103RenameHostNameLabelTest;
+import com.dotmarketing.startup.runonce.Task220203RemoveFolderInodeConstraintTest;
+import com.dotmarketing.startup.runonce.Task220214AddOwnerAndIDateToFolderTableTest;
+import com.dotmarketing.startup.runonce.Task220215MigrateDataFromInodeToFolderTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -524,7 +528,11 @@ import org.junit.runners.Suite.SuiteClasses;
         PublisherAPIImplTest.class,
         ContentBundlerTest.class,
         ObjectMapperTest.class,
-        URLMapBundlerTest.class
+        URLMapBundlerTest.class,
+        PermissionBitFactoryImplTest.class,
+        Task220203RemoveFolderInodeConstraintTest.class,
+        Task220214AddOwnerAndIDateToFolderTableTest.class,
+        Task220215MigrateDataFromInodeToFolderTest.class
 })
 public class MainSuite {
 

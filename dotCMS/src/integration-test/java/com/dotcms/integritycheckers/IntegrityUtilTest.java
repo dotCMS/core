@@ -1,5 +1,6 @@
 package com.dotcms.integritycheckers;
 
+import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 import static org.junit.Assert.assertEquals;
 
 import com.dotcms.IntegrationTestBase;
@@ -27,7 +28,11 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -40,7 +45,9 @@ import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+@RunWith(DataProviderRunner.class)
 public class IntegrityUtilTest  {
 
     @Before
@@ -50,68 +57,77 @@ public class IntegrityUtilTest  {
 
     /**
      * Method to test: {@link IntegrityUtil#completeCheckIntegrity(String)}
-     * When: There is a folder with the same path but different inode ad identifier
+     * When: There is a folder with the same path but different inode and identifier
      * Should: Insert a register in folders_ir
      * @throws Exception
      */
     @Test
-    public void folderWithConflicts() throws Exception {
-        final Host host = new SiteDataGen().nextPersisted();
-        final Folder folderParent = new FolderDataGen()
-                .site(host)
-                .name("parent_" + System.currentTimeMillis())
-                .nextPersisted();
+    @UseDataProvider("getUseJsonTestCases")
+    public void folderWithConflicts(final Boolean useContentletAsJson) throws Exception {
+        final boolean defaultValue = Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
+        Config.setProperty(SAVE_CONTENTLET_AS_JSON, useContentletAsJson);
+        try {
+            final Host host = new SiteDataGen().nextPersisted();
+            final Folder folderParent = new FolderDataGen()
+                    .site(host)
+                    .name("parent_" + System.currentTimeMillis())
+                    .nextPersisted();
 
-        final Folder folder = new FolderDataGen()
-                .site(host)
-                .parent(folderParent)
-                .nextPersisted();
+            final Folder folder = new FolderDataGen()
+                    .site(host)
+                    .parent(folderParent)
+                    .nextPersisted();
 
-        final Identifier identifier = APILocator.getIdentifierAPI().find(folder.getIdentifier());
-        final String endPointID = "endpointID_" + System.currentTimeMillis();
+            final Identifier identifier = APILocator.getIdentifierAPI()
+                    .find(folder.getIdentifier());
+            final String endPointID = "endpointID_" + System.currentTimeMillis();
 
-        final String path = createCSVFile(endPointID).get(IntegrityType.FOLDERS);
+            final String path = createCSVFile(endPointID).get(IntegrityType.FOLDERS);
 
-        final CsvWriter foldersCsvWriter = new CsvWriter(path, '|', StandardCharsets.UTF_8);
-        final long currentTimeMillis = System.currentTimeMillis();
-        final String newInode_1 = String.valueOf(currentTimeMillis);
-        final String newIdentifier_1 = String.valueOf(currentTimeMillis + 1);
+            final CsvWriter foldersCsvWriter = new CsvWriter(path, '|', StandardCharsets.UTF_8);
+            final long currentTimeMillis = System.currentTimeMillis();
+            final String newInode_1 = String.valueOf(currentTimeMillis);
+            final String newIdentifier_1 = String.valueOf(currentTimeMillis + 1);
 
-        foldersCsvWriter.write(newInode_1);
-        foldersCsvWriter.write(newIdentifier_1);
-        foldersCsvWriter.write(identifier.getParentPath());
-        foldersCsvWriter.write(folder.getName());
-        foldersCsvWriter.write(folder.getHostId());
-        foldersCsvWriter.endRecord();
+            foldersCsvWriter.write(newInode_1);
+            foldersCsvWriter.write(newIdentifier_1);
+            foldersCsvWriter.write(identifier.getParentPath());
+            foldersCsvWriter.write(folder.getName());
+            foldersCsvWriter.write(folder.getHostId());
+            foldersCsvWriter.endRecord();
 
-        final String newInode_2 = String.valueOf(currentTimeMillis + 2);
-        final String newIdentifier_2 = String.valueOf(currentTimeMillis + 3);
+            final String newInode_2 = String.valueOf(currentTimeMillis + 2);
+            final String newIdentifier_2 = String.valueOf(currentTimeMillis + 3);
 
-        foldersCsvWriter.write(newInode_2);
-        foldersCsvWriter.write(newIdentifier_2);
-        foldersCsvWriter.write("/any-path");
-        foldersCsvWriter.write("folder-name");
-        foldersCsvWriter.write(folder.getHostId());
-        foldersCsvWriter.endRecord();
+            foldersCsvWriter.write(newInode_2);
+            foldersCsvWriter.write(newIdentifier_2);
+            foldersCsvWriter.write("/any-path");
+            foldersCsvWriter.write("folder-name");
+            foldersCsvWriter.write(folder.getHostId());
+            foldersCsvWriter.endRecord();
 
-        foldersCsvWriter.flush();
-        foldersCsvWriter.close();
+            foldersCsvWriter.flush();
+            foldersCsvWriter.close();
 
-        IntegrityUtil.completeCheckIntegrity(endPointID);
+            IntegrityUtil.completeCheckIntegrity(endPointID);
 
-        DotConnect dc = new DotConnect();
-        dc.setSQL("select * from folders_ir where endpoint_id = ?");
-        dc.addObject(endPointID);
-        final List<Map<String, Object>> results = dc.loadObjectResults();
+            DotConnect dc = new DotConnect();
+            dc.setSQL("select * from folders_ir where endpoint_id = ?");
+            dc.addObject(endPointID);
+            final List<Map<String, Object>> results = dc.loadObjectResults();
 
-        assertEquals(1, results.size());
+            assertEquals(1, results.size());
 
-        assertEquals(folder.getInode(), results.get(0).get("local_inode"));
-        assertEquals(folder.getIdentifier(), results.get(0).get("local_identifier"));
-        assertEquals(newInode_1, results.get(0).get("remote_inode"));
-        assertEquals(newIdentifier_1, results.get(0).get("remote_identifier"));
-        assertEquals(endPointID, results.get(0).get("endpoint_id"));
-        assertEquals(host.getHostname() + folder.getPath(), results.get(0).get("folder") + File.separator);
+            assertEquals(folder.getInode(), results.get(0).get("local_inode"));
+            assertEquals(folder.getIdentifier(), results.get(0).get("local_identifier"));
+            assertEquals(newInode_1, results.get(0).get("remote_inode"));
+            assertEquals(newIdentifier_1, results.get(0).get("remote_identifier"));
+            assertEquals(endPointID, results.get(0).get("endpoint_id"));
+            assertEquals(host.getHostname() + folder.getPath(),
+                    results.get(0).get("folder") + File.separator);
+        }finally {
+            Config.setProperty(SAVE_CONTENTLET_AS_JSON, defaultValue);
+        }
     }
 
     /**
@@ -343,7 +359,7 @@ public class IntegrityUtilTest  {
         assertEquals(liveHost.getIdentifier(), results.get(0).get("local_identifier"));
         assertEquals(newIdentifier_1, results.get(0).get("remote_identifier"));
         assertEquals(endPointID, results.get(0).get("endpoint_id"));
-        assertEquals(liveHost.getLanguageId(), results.get(0).get("language_id"));
+        assertEquals(liveHost.getLanguageId(), ((Number)results.get(0).get("language_id")).longValue());
         assertEquals(liveHost.getName(), results.get(0).get("host"));
     }
 
@@ -466,5 +482,18 @@ public class IntegrityUtilTest  {
         }
 
         return files;
+    }
+
+    /**
+     * Make sure test are executed under a contentlet stored as json and contentlet stored in column scenarios
+     * @return
+     * @throws Exception
+     */
+    @DataProvider
+    public static Object[] getUseJsonTestCases() throws Exception {
+        return new Object[]{
+                true,
+                false
+        };
     }
 }
