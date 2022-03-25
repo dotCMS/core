@@ -365,7 +365,7 @@ public class EditFolderAction extends DotPortletAction {
 			}
 
 			if (parentFolder instanceof Folder){
-				if(folder.getName().equalsIgnoreCase("admin")){
+				if("admin".equalsIgnoreCase(folder.getName())){
 
 				SessionMessages.add(req, "message",
 				"message.folder.admin.doesnotallow");

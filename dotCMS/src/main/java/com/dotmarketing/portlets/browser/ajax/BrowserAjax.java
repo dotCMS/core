@@ -765,7 +765,7 @@ public class BrowserAjax {
 		try {
 			children = folderAPI.findSubFolders(parent,userAPI.getSystemUser(),false);
 		} catch (Exception e) {
-			Logger.error(this, "Could not load folders : ",e);
+			Logger.error(this, "Could not load subfolders for folder with ID: " + parent.getIdentifier(),e);
 		}
         return getFoldersTree(parent.getIdentifier(), children, roles);
     }
@@ -795,7 +795,7 @@ public class BrowserAjax {
         	try {
         		permissions = permissionAPI.getPermissionIdsFromRoles(folder, roles, usr);
         	} catch (DotDataException e) {
-        		Logger.error(this, "Could not load permissions : ",e);
+        		Logger.error(this, "Could not load permissions for folder with ID: " + folder.getIdentifier(),e);
         	}
 
         	folderMap.put("permissions", permissions);
@@ -1947,7 +1947,7 @@ public class BrowserAjax {
 						try {
 							permissions = permissionAPI.getPermissionIdsFromRoles(folder, roles, user);
 						} catch (DotDataException e) {
-							Logger.error(this, "Could not load permissions : ",e);
+							Logger.error(this, "Could not load permissions for folder with ID: " + folder.getIdentifier(),e);
 						}
 						if(permissions.contains(PERMISSION_READ)){
 							Map<String, Object> folderMap = new HashMap<String, Object>();
