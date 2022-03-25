@@ -281,54 +281,59 @@ public class EditFolderAction extends DotPortletAction {
 	 */
 	public boolean _updateFolder(ActionRequest req, ActionResponse res,PortletConfig config, ActionForm form) throws Exception 
 	{
-		Folder f = (Folder) req.getAttribute(WebKeys.FOLDER_EDIT);
-		Folder parentFolder = (Folder) req.getAttribute(WebKeys.FOLDER_PARENT);
-		Host parentHost = (Host) req.getAttribute(WebKeys.HOST_PARENT);
-		User user = _getUser(req);
+		final Folder folder = (Folder) req.getAttribute(WebKeys.FOLDER_EDIT);
+		final Folder parentFolder = (Folder) req.getAttribute(WebKeys.FOLDER_PARENT);
+		final Host parentHost = (Host) req.getAttribute(WebKeys.HOST_PARENT);
+		final User user = _getUser(req);
 
-		PermissionAPI permAPI = APILocator.getPermissionAPI();
-		if(!InodeUtils.isSet(f.getInode()) && parentFolder != null && !permAPI.doesUserHavePermission(parentFolder, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user)){
-			if(!InodeUtils.isSet(f.getInode()) && parentHost != null && !permAPI.doesUserHavePermission(parentHost, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user)){
+		final PermissionAPI permAPI = APILocator.getPermissionAPI();
+		if(!InodeUtils.isSet(folder.getInode()) && parentFolder != null && !permAPI.doesUserHavePermission(parentFolder, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user)){
+			if(!InodeUtils.isSet(folder.getInode()) && parentHost != null && !permAPI.doesUserHavePermission(parentHost, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user)){
 				throw new DotSecurityException("You don't have permissions to add this folder");
 			}
-		} else if(InodeUtils.isSet(f.getInode()) && !permAPI.doesUserHavePermission(f, PermissionAPI.PERMISSION_EDIT, user)){
+		} else if(InodeUtils.isSet(folder.getInode()) && !permAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_EDIT, user)){
 			throw new DotSecurityException("You don't have permissions to edit this folder");
 		}
 
-		FolderForm folderForm = (FolderForm) form;
+		final FolderForm folderForm = (FolderForm) form;
 		// the folders is new or there are changes
-		if(UtilMethods.isSet(f.getIdentifier()) && f.equals(folderForm)){
+		if(UtilMethods.isSet(folder.getIdentifier()) && folder.equals(folderForm)){
 			// no changes to save, the message is shown and nothing saved.
 			SessionMessages.add(req, "message", "message.folder.nochanges");
 			return true;
 		}
-		String parentPath = parentFolder != null ? parentFolder.getPath() : "/";
+		final String parentPath = parentFolder != null ? parentFolder.getPath() : "/";
 		HibernateUtil.startTransaction();
 		try {
 			if (folderForm.getName().length() >= MAX_FOLDER_NAME_LENGTH) {
 				SessionMessages.add(req, "message", "message.folder.namelength");
 				return false;
 			}
-			String newPath = parentPath + folderForm.getName();
+			final String newPath = parentPath + folderForm.getName();
 			if (newPath.length() >= MAX_FOLDER_PATH_LENGTH) {
 				SessionMessages.add(req, "message", "message.folder.pathlength");
 				return false;
 			}
-			if (InodeUtils.isSet(f.getInode()) && !folderForm.getName().equalsIgnoreCase(f.getName())) {
-				if (!folderAPI.renameFolder(f,folderForm.getName(),user,false)) {
+
+			folder.setTitle(folderForm.getTitle());
+			folder.setFilesMasks(folderForm.getFilesMasks());
+			folder.setShowOnMenu(folderForm.isShowOnMenu());
+			folder.setSortOrder(folderForm.getSortOrder());
+			folder.setOwner(folderForm.getOwner());
+			final String defaultFileType = req.getParameter("defaultFileType");
+
+			if (InodeUtils.isSet(folder.getInode()) && !folderForm.getName().equalsIgnoreCase(folder.getName())) {
+				if (!folderAPI.renameFolder(folder,folderForm.getName(),user,false)) {
 					// For messages to be displayed on messages page
 					SessionMessages.add(req, "message", "message.folder.alreadyexists");
 					return false;
+				}else{
+					return true;
 				}
 			}
 			
-			f.setName(folderForm.getName());
-			f.setTitle(folderForm.getTitle());
-			f.setFilesMasks(folderForm.getFilesMasks());
-			f.setShowOnMenu(folderForm.isShowOnMenu());
-			f.setSortOrder(folderForm.getSortOrder());
-			f.setOwner(folderForm.getOwner());
-			String defaultFileType = req.getParameter("defaultFileType");
+			folder.setName(folderForm.getName());
+
 			if(!InodeUtils.isSet(defaultFileType)){
 				SessionMessages.add(req, "message", "message.folder.defaultfiletype.required");
 				return false;
@@ -338,16 +343,16 @@ public class EditFolderAction extends DotPortletAction {
 				SessionMessages.add(req, "message", "message.folder.defaultfiletype.required");
 				return false;
 			}
-			f.setDefaultFileType(defaultFileType);
+			folder.setDefaultFileType(defaultFileType);
 			
-			if(!InodeUtils.isSet(f.getInode())) {
+			if(!InodeUtils.isSet(folder.getInode())) {
 				// check if the new folder already exists
 				Identifier prevId = null;
 				if (parentFolder != null) {
-					String uri=APILocator.getIdentifierAPI().find(parentFolder.getIdentifier()).getPath()+ f.getName();
+					String uri=APILocator.getIdentifierAPI().find(parentFolder.getIdentifier()).getPath()+ folder.getName();
 					prevId = APILocator.getIdentifierAPI().find(parentHost, uri);
 				} else {
-					String uri="/" + f.getName();
+					String uri="/" + folder.getName();
 					prevId = APILocator.getIdentifierAPI().find(parentHost, uri);
 				}
 
@@ -360,20 +365,20 @@ public class EditFolderAction extends DotPortletAction {
 			}
 
 			if (parentFolder instanceof Folder){
-				if(f.getName().equalsIgnoreCase("admin")){
+				if(folder.getName().equalsIgnoreCase("admin")){
 
 				SessionMessages.add(req, "message",
 				"message.folder.admin.doesnotallow");
 				return false;
 				}
 			}
-			if(!InodeUtils.isSet(f.getInode())){
-				f.setOwner(_getUser(req).getUserId());
+			if(!InodeUtils.isSet(folder.getInode())){
+				folder.setOwner(_getUser(req).getUserId());
 			}
 
 			//set hostId to folder to persist in Identifier table.
-			f.setHostId(parentHost.getIdentifier());
-			final boolean isNew=!UtilMethods.isSet(f.getIdentifier());
+			folder.setHostId(parentHost.getIdentifier());
+			final boolean isNew=!UtilMethods.isSet(folder.getIdentifier());
 			if(isNew) {
 				Treeable parent;
 				if(UtilMethods.isSet(parentFolder))
@@ -381,12 +386,12 @@ public class EditFolderAction extends DotPortletAction {
 				else
 					parent=parentHost;
 
-				Identifier id=APILocator.getIdentifierAPI().createNew(f, parent);
-				f.setIdentifier(id.getId());
+				Identifier id=APILocator.getIdentifierAPI().createNew(folder, parent);
+				folder.setIdentifier(id.getId());
 			}
 
-			folderAPI.save(f,user,false);
-			CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(f.getIdentifier());
+			folderAPI.save(folder,user,false);
+			CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(folder.getIdentifier());
 			// For messages to be displayed on messages page
 			SessionMessages.add(req, "message", "message.folder.save");
 			HibernateUtil.closeAndCommitTransaction();
