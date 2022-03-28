@@ -137,7 +137,7 @@ public class WebAssetFactory {
 		HibernateUtil.saveOrUpdate(webasset);
         APILocator.getVersionableAPI().setWorking(webasset);
 
-		systemEventsAPI.pushAsync(SystemEventType.SAVE_LINK, new Payload(webasset, Visibility.EXCLUDE_OWNER,
+		systemEventsAPI.pushAsync(SystemEventType.SAVE_LINK, new Payload(webasset.getMap(), Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(userId, PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
@@ -158,7 +158,7 @@ public class WebAssetFactory {
 
 		APILocator.getVersionableAPI().setWorking(webasset);
 
-		systemEventsAPI.pushAsync(SystemEventType.SAVE_LINK, new Payload(webasset, Visibility.EXCLUDE_OWNER,
+		systemEventsAPI.pushAsync(SystemEventType.SAVE_LINK, new Payload(webasset.getMap(), Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(userId, PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
@@ -505,7 +505,7 @@ public class WebAssetFactory {
 		}
 
 
-		systemEventsAPI.pushAsync(SystemEventType.PUBLISH_LINK, new Payload(currWebAsset, Visibility.EXCLUDE_OWNER,
+		systemEventsAPI.pushAsync(SystemEventType.PUBLISH_LINK, new Payload(currWebAsset.getMap(), Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 
 		return livewebasset;
@@ -578,7 +578,7 @@ public class WebAssetFactory {
 				HibernateUtil.saveOrUpdate(workingwebasset);
 			}
 
-			systemEventsAPI.pushAsync(SystemEventType.ARCHIVE_LINK, new Payload(currWebAsset, Visibility.EXCLUDE_OWNER,
+			systemEventsAPI.pushAsync(SystemEventType.ARCHIVE_LINK, new Payload(currWebAsset.getMap(), Visibility.EXCLUDE_OWNER,
 					new ExcludeOwnerVerifierBean(userId, PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 
 			return true;
@@ -1000,7 +1000,7 @@ public class WebAssetFactory {
 			//### Delete the Identifier ###
 			returnValue = true;
 
-			systemEventsAPI.pushAsync(SystemEventType.DELETE_LINK, new Payload(currWebAsset, Visibility.EXCLUDE_OWNER,
+			systemEventsAPI.pushAsync(SystemEventType.DELETE_LINK, new Payload(currWebAsset.getMap(), Visibility.EXCLUDE_OWNER,
 					new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 		}
 		else
