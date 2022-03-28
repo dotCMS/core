@@ -3,6 +3,8 @@ package com.dotmarketing.common.db;
 import static com.dotcms.util.CollectionsUtils.map;
 
 import com.dotcms.util.CloseUtils;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap.Builder;
 import java.math.BigDecimal;
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -65,8 +67,7 @@ public class DotConnect {
 
     boolean forceQuery = false;
 
-    private static Map<Class, StatementObjectSetter> statementSetterHandlerMap =
-            map(DotTimezonedTimestamp.class, DotConnect::setTimestampWithTimezone);
+    private static final Map<Class<?>, StatementObjectSetter> statementSetterHandlerMap = customStatementObjectSetterMap();
 
     public DotConnect() {
         Logger.debug(this, "------------ DotConnect() --------------------");
@@ -606,6 +607,7 @@ public class DotConnect {
 
                 // statement.setMaxRows(maxRows);
                 Logger.debug(this, "SQL = " + statement.toString());
+                /*
                 for (int i = 0; i < paramList.size(); i++) {
                     Object param = paramList.get(i);
                     if (param != null && statementSetterHandlerMap.containsKey(param.getClass())) {
@@ -613,7 +615,8 @@ public class DotConnect {
                     } else {
                         statement.setObject(i + 1, paramList.get(i));
                     }
-                }
+                }*/
+                setParams(statement, paramList.toArray());
                 if (!starter.toLowerCase().trim().contains("select")) { // if it is NOT a read operation
                     beforeQueryExecution = System.nanoTime();
                     statement.execute();
@@ -1105,11 +1108,36 @@ public class DotConnect {
         return results;
     } // executeBatch.
 
+    /**
+     * Sets the "params" contained in the Params Wrapper object
+     * Calling the underlying setParameter method that considers StatementSetters
+     * @param preparedStatement
+     * @param params
+     * @throws SQLException
+     */
     private void setParams(final PreparedStatement preparedStatement, final Params params) throws SQLException {
-
+        final List<Object> list = new ArrayList<>();
         for (int i = 0; i < params.size(); ++i) {
+            list.add(params.get(i));
+        }
+        setParams(preparedStatement, list.toArray());
+    }
 
-            preparedStatement.setObject(i + 1, params.get(i));
+    /**
+     * Only one setParams method holds the actual logic.
+     * This one applies any custom setter created to handle special parameter assignment
+     * @param preparedStatement
+     * @param params
+     * @throws SQLException
+     */
+    private void setParams(final PreparedStatement preparedStatement, final Object... params) throws SQLException {
+        for (int i = 0; i < params.length; ++i) {
+            final Object param = params[i];
+            if (param != null && statementSetterHandlerMap.containsKey(param.getClass())) {
+                statementSetterHandlerMap.get(param.getClass()).execute(preparedStatement, i + 1, param);
+            } else {
+                preparedStatement.setObject(i + 1, param);
+            }
         }
     }
 
@@ -1134,13 +1162,6 @@ public class DotConnect {
         }
     }
 
-    private void setParams(final PreparedStatement preparedStatement, final Object... params) throws SQLException {
-
-        for (int i = 0; i < params.length; ++i) {
-
-            preparedStatement.setObject(i + 1, params[i]);
-        }
-    }
 
     /**
      * Executes an update operation for a preparedStatement, returns the number of affected rows. If the
@@ -1243,17 +1264,37 @@ public class DotConnect {
 
     } // executeUpdate.
 
-    private static void setTimestampWithTimezone(PreparedStatement statement, int parameterIndex, Object timestamp) {
+    static Map<Class<?>, StatementObjectSetter> customStatementObjectSetterMap() {
+        final Builder<Class<?>, StatementObjectSetter> builder = ImmutableMap.builder();
+        if (DbConnectionFactory.isMsSql()) {
+            final StatementObjectSetter dateSetter = new TimestampTimeZoneAware();
+            builder.put(Date.class, dateSetter)
+                .put(java.sql.Date.class, dateSetter)
+                .put(java.sql.Timestamp.class, dateSetter);
+        }
+        return builder.build();
+    }
 
-        final DotTimezonedTimestamp dotTimezonedTimestamp = (DotTimezonedTimestamp) timestamp;
-        final Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(dotTimezonedTimestamp.getTimezone()));
+    static class TimestampTimeZoneAware implements StatementObjectSetter {
 
-        try {
-            statement.setTimestamp(parameterIndex, dotTimezonedTimestamp.getTimestamp(), calendar);
-        } catch (SQLException e) {
-            Logger.error(DotConnect.class,
-                    "Error setting Timestamp to PreparedStatement. " + "Parameter Index " + parameterIndex + "; Timestamp: " + timestamp,
-                    e);
+        @Override
+        public void execute(PreparedStatement statement, int parameterIndex, Object parameter) {
+            if (parameter instanceof Date) {
+                try {
+                    Logger.info(TimestampTimeZoneAware.class, String.format(
+                            "Setting param %s with index %d through StatementObjectSetter",
+                            parameter, parameterIndex));
+                    final Date date = (Date) parameter;
+                    final Calendar utc = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+                    final Timestamp timestamp = new Timestamp(date.getTime());
+                    statement.setTimestamp(parameterIndex, timestamp, utc);
+                } catch (SQLException e) {
+                    Logger.error(DotConnect.class,
+                            "Error setting Date to PreparedStatement. " + "Parameter Index "
+                                    + parameterIndex + "; Date: " + parameter,
+                            e);
+                }
+            }
         }
     }
 
