@@ -529,7 +529,7 @@
 									</button>
 								</td>
 								<td>
-									<%=field.getFieldName()%>
+									<%=field.getFieldName()%> <%= LanguageUtil.get(pageContext, "html-render") %>
 								</td>
 							</tr>
 
