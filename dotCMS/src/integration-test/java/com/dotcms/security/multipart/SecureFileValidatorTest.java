@@ -5,6 +5,10 @@ import com.dotmarketing.exception.DotSecurityException;
 import org.junit.Assert;
 import org.junit.Test;
 
+/**
+ * {@link SecureFileValidator} Test
+ * @author jsanca
+ */
 public class SecureFileValidatorTest {
 
     /**

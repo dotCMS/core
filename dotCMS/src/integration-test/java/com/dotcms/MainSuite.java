@@ -80,6 +80,7 @@ import com.dotcms.saml.SamlConfigurationServiceTest;
 import com.dotcms.security.ContentSecurityPolicyUtilTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotcms.security.apps.AppsCacheImplTest;
+import com.dotcms.security.multipart.BoundedBufferedReaderTest;
 import com.dotcms.security.multipart.ContentDispositionFileNameParserTest;
 import com.dotcms.security.multipart.SecureFileValidatorTest;
 import com.dotcms.storage.FileMetadataAPITest;
@@ -536,7 +537,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task220214AddOwnerAndIDateToFolderTableTest.class,
         Task220215MigrateDataFromInodeToFolderTest.class,
         ContentDispositionFileNameParserTest.class,
-        SecureFileValidatorTest.class
+        SecureFileValidatorTest.class,
+        BoundedBufferedReaderTest.class
 })
 public class MainSuite {
 
