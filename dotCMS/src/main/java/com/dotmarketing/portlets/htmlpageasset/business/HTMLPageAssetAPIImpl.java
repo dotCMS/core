@@ -34,6 +34,7 @@ import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -53,6 +54,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -497,35 +499,14 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         Identifier targetIdent = identifierAPI.find(host,
                 targetFolderIdent.getURI() + sourceIdent.getAssetName());
         if (targetIdent == null || !InodeUtils.isSet(targetIdent.getId())) {
-            Contentlet contentlet = contentletAPI
-                    .find(page.getInode(), user, false);
 
-            /*
-             * Enable multi-language support when cut a page
-             */
-            Map<String, Boolean> inodesToMove = new HashMap<String, Boolean>();
-            // Getting all working contentlet version languages
-            for(Contentlet workingContentlet : contentletAPI.getAllLanguages(contentlet, false,
-                    user, false)) {
-                inodesToMove.put(workingContentlet.getInode(), false);
+            if(null != parent && !parent.equals(FolderAPI.SYSTEM_FOLDER)){
+                sourceIdent.setParentPath(targetFolderIdent.getPath());
+            } else {
+                sourceIdent.setParentPath(StringPool.FORWARD_SLASH);
             }
-            // Getting all live contentlet version languages
-            for(Contentlet liveContentlet : contentletAPI.getAllLanguages(contentlet, true,
-                    user, false)) {
-                inodesToMove.put(liveContentlet.getInode(), true);
-            }
-
-            for (String contentletInode : inodesToMove.keySet()) {
-                Contentlet cont = contentletAPI.checkout(contentletInode, user, false);
-
-                cont.setFolder(parent.getInode());
-                cont.setHost(host.getIdentifier());
-                cont = contentletAPI.checkin(cont, user, false);
-                if (inodesToMove.get(contentletInode)) {
-                    // We need to publish those that were live
-                    contentletAPI.publish(cont, user, false);
-                }
-            }
+            sourceIdent.setHostId(host != null ? host.getIdentifier() : (parent != null ? parent.getHostId() : page.getHost()) );
+            identifierAPI.save(sourceIdent);
 
             systemEventsAPI.pushAsync(SystemEventType.MOVE_PAGE_ASSET, new Payload(page.getMap(), Visibility.EXCLUDE_OWNER,
                     new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));

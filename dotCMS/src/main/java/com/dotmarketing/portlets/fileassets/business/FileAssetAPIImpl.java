@@ -483,38 +483,38 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
     private boolean moveFile (Contentlet fileAssetCont, Folder parent, Host host, User user, boolean respectFrontendRoles ) throws DotStateException, DotDataException, DotSecurityException {
 
-        boolean isfileAssetContLive = false;
+		final FolderAPI folderAPI = APILocator.getFolderAPI();
 
         //Getting the contentlet identifier
         Identifier id = APILocator.getIdentifierAPI().find( fileAssetCont );
-        if ( id != null && InodeUtils.isSet( id.getId() ) ) {
+		if ( id != null && InodeUtils.isSet( id.getId() ) ) {
 
-            FileAsset fa = fromContentlet( fileAssetCont );
-            if ( fa.isLive() )
-                isfileAssetContLive = true;
+			final Folder oldParent = APILocator.getFolderAPI().findFolderByPath( id.getParentPath(), host, user, respectFrontendRoles );
+
+			final FileAsset fileAsset = fromContentlet( fileAssetCont );
 
             if ( host == null ) {
                 host = APILocator.getHostAPI().find( id.getHostId(), user, respectFrontendRoles );
             }
 
-            //Verify if the file already exist
+            //Verify if the file already exists
             Boolean fileNameExists;
             if ( parent != null ) {
-                fileNameExists = fileNameExists( host, parent, fa.getFileName(), id.getId() );
+                fileNameExists = fileNameExists( host, parent, fileAsset.getFileName(), id.getId() );
             } else {
-                fileNameExists = fileNameExists( host, APILocator.getFolderAPI().findSystemFolder(), fa.getFileName(), id.getId() );
+                fileNameExists = fileNameExists( host, APILocator.getFolderAPI().findSystemFolder(), fileAsset.getFileName(), id.getId() );
             }
 
             if ( !fileNameExists ) {
+				if(null != parent && !parent.equals(FolderAPI.SYSTEM_FOLDER)){
+					Folder parentFolder = folderAPI.find(parent.getIdentifier(), user, respectFrontendRoles);
+					id.setParentPath(parentFolder.getPath());
+				} else {
+					id.setParentPath(StringPool.FORWARD_SLASH);
+				}
+				id.setHostId(host != null ? host.getIdentifier() : (parent != null ? parent.getHostId() : fileAssetCont.getHost()) );
+				id = identifierAPI.save(id);
 
-                Folder oldParent = APILocator.getFolderAPI().findFolderByPath( id.getParentPath(), host, user, respectFrontendRoles );
-
-                fileAssetCont.setInode( null );
-                fileAssetCont.setHost( host != null ? host.getIdentifier() : (parent != null ? parent.getHostId() : fileAssetCont.getHost()) );
-                fileAssetCont.setFolder( parent != null ? parent.getInode() : null );
-                final Contentlet fileAsset = APILocator.getContentletAPI().checkin( fileAssetCont, user, respectFrontendRoles );
-                if ( isfileAssetContLive )
-                    APILocator.getVersionableAPI().setLive( fileAssetCont );
 
                 if ( parent != null ) {
                     CacheLocator.getNavToolCache().removeNav(parent.getHostId(), parent.getInode());
@@ -522,9 +522,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
                 CacheLocator.getNavToolCache().removeNav(oldParent.getHostId(), oldParent.getInode());
 
-                CacheLocator.getIdentifierCache().removeFromCacheByVersionable( fileAssetCont );
-
-				this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FILE_ASSET, new Payload(fileAsset.getMap(), Visibility.EXCLUDE_OWNER,
+				this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FILE_ASSET, new Payload(fileAssetCont.getMap(), Visibility.EXCLUDE_OWNER,
 					new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 
                 return true;
