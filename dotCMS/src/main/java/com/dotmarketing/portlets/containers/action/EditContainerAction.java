@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.containers.action;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
@@ -55,7 +56,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+
+import io.vavr.control.Try;
 import org.apache.commons.beanutils.BeanUtils;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Portlet action used to maintain the containers
@@ -488,10 +492,10 @@ public class EditContainerAction extends DotPortletAction implements
 			PortletConfig config, ActionForm form, User user) throws Exception {
 
 		// wraps request to get session object
-		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
-		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
+		final ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+		final HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 
-		ContainerForm fm = (ContainerForm) form;
+		final ContainerForm fm = (ContainerForm) form;
 
 		// gets the new information for the container from the request object
 		req.setAttribute(WebKeys.CONTAINER_FORM_EDIT,
@@ -502,21 +506,24 @@ public class EditContainerAction extends DotPortletAction implements
 		Container container = (Container) req.getAttribute(WebKeys.CONTAINER_FORM_EDIT);
 
 		// gets the current container being edited from the request object
-		Container currentContainer = (Container) req.getAttribute(WebKeys.CONTAINER_EDIT);
+		final Container currentContainer = (Container) req.getAttribute(WebKeys.CONTAINER_EDIT);
 
 		//Is a new container?
-		boolean isNew = !InodeUtils.isSet(currentContainer.getInode());
+		final boolean isNew = !InodeUtils.isSet(currentContainer.getInode());
 
 		//Getting the container host
-        Host host = hostAPI.find(fm.getHostId(), user, false);
+		final Host host = hostAPI.find(fm.getHostId(), user, false);
 
 		//Checking permissions
 		if (!isNew) {
+
 			_checkWritePermissions(currentContainer, user, httpReq);
 		} else {
+
 			//If the asset is new checking that the user has permission to add children to the parent host
 			if(!permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, false)
 					|| !permissionAPI.doesUserHavePermissions(PermissionableType.CONTAINERS, PermissionAPI.PERMISSION_EDIT, user)) {
+
 				SessionMessages.add(httpReq, "message", "message.insufficient.permissions.to.save");
 				throw new ActionException(WebKeys.USER_PERMISSIONS_EXCEPTION);
 			}
@@ -526,47 +533,10 @@ public class EditContainerAction extends DotPortletAction implements
 		final List<Template> currentTemplates = APILocator.getTemplateAPI().findTemplatesByContainerInode(currentContainer.getInode());
 
 		// gets user id from request for mod user
-		String userId = user.getUserId();
-
-		// Associating the current structure
-		Structure currentStructure = null;
-		if (!InodeUtils.isSet(fm.getStructureInode())) {
-			currentStructure = StructureFactory.getDefaultStructure();
-		} else {
-			currentStructure = CacheLocator.getContentTypeCache().getStructureByInode(fm.getStructureInode());
-		}
+		final String userId = user.getUserId();
 
 		// it saves or updates the asset
-		if (InodeUtils.isSet(currentContainer.getInode())) {
-			Identifier identifier = APILocator.getIdentifierAPI().find(currentContainer);
-			WebAssetFactory.createAsset(container, userId, identifier, false);
-			container = (Container) WebAssetFactory.saveAsset(container,
-					identifier);
-		} else {
-			WebAssetFactory.createAsset(container, userId, host);
-		}
-
-		req.setAttribute(WebKeys.CONTAINER_FORM_EDIT, container);
-
-		// Get templates of the old version so you can update the working
-		// information to this new version.
-		Iterator<Template> it = currentTemplates.iterator();
-
-		// update templates to new version
-		while (it.hasNext()) {
-			Template parentInode = (Template) it.next();
-			parentInode.addChild(container);
-		}
-		Identifier identifier = APILocator.getIdentifierAPI().find(container);
-
-		//Saving the host of the container
-		identifier.setHostId(host.getIdentifier());
-		APILocator.getIdentifierAPI().save(identifier);
-
-
-		//Save/Update/Delete the ContainerStructures associated
-		saveContainerStructures(req, currentContainer, container);
-
+		container = saveContainerInternal(req, container, currentContainer, host, currentTemplates, userId);
 
 		SessionMessages.add(httpReq, "message", "message.containers.save");
 		ActivityLogger.logInfo(this.getClass(), "Save WebAsset action", "User " + user.getPrimaryKey() + " saved " + container.getTitle(), HostUtil.hostNameUtil(req, _getUser(req)));
@@ -577,12 +547,53 @@ public class EditContainerAction extends DotPortletAction implements
 		BeanUtils.copyProperties(form, req
 				.getAttribute(WebKeys.CONTAINER_FORM_EDIT));
 
-		APILocator.getVersionableAPI().setWorking(container);
+		final Container finalContainer = container;
+		HibernateUtil.addCommitListener(()-> {
+			Try.run(()->APILocator.getVersionableAPI().setWorking(finalContainer));
+			Try.run(()->HibernateUtil.flush());
+		});
+	}
 
+	@WrapInTransaction
+	private Container saveContainerInternal(final ActionRequest req,
+											Container container,
+											final Container currentContainer,
+											final Host host,
+											final List<Template> currentTemplates, final String userId) throws Exception {
 
+		if (InodeUtils.isSet(currentContainer.getInode())) {
 
+			final Identifier identifier = APILocator.getIdentifierAPI().find(currentContainer);
+			WebAssetFactory.createAsset(container, userId, identifier, false);
+			container = (Container) WebAssetFactory.saveAsset(container,
+					identifier);
+		} else {
 
-		HibernateUtil.flush();
+			WebAssetFactory.createAsset(container, userId, host);
+		}
+
+		req.setAttribute(WebKeys.CONTAINER_FORM_EDIT, container);
+
+		// Get templates of the old version so you can update the working
+		// information to this new version.
+		final Iterator<Template> it = currentTemplates.iterator();
+
+		// update templates to new version
+		while (it.hasNext()) {
+
+			final Template parentInode =  it.next();
+			parentInode.addChild(container);
+		}
+
+		final Identifier identifier = APILocator.getIdentifierAPI().find(container);
+
+		//Saving the host of the container
+		identifier.setHostId(host.getIdentifier());
+		APILocator.getIdentifierAPI().save(identifier);
+
+		//Save/Update/Delete the ContainerStructures associated
+		saveContainerStructures(req, currentContainer, container);
+		return container;
 	}
 
 	/**

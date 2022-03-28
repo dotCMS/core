@@ -67,6 +67,8 @@ import java.util.Map;
 
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
+import io.vavr.control.Try;
+
 import java.util.Optional;
 
 /**
@@ -504,9 +506,10 @@ public class WebAssetFactory {
 			Logger.debug(WebAssetFactory.class, "HibernateUtil.saveOrUpdate(workingwebasset)");
 		}
 
-
-		systemEventsAPI.pushAsync(SystemEventType.PUBLISH_LINK, new Payload(currWebAsset, Visibility.EXCLUDE_OWNER,
-				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+		HibernateUtil.addCommitListener(identifier.getId(), ()-> {
+			Try.run(()->systemEventsAPI.pushAsync(SystemEventType.PUBLISH_LINK, new Payload(currWebAsset, Visibility.EXCLUDE_OWNER,
+					new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION))));
+		});
 
 		return livewebasset;
 	}
@@ -761,9 +764,11 @@ public class WebAssetFactory {
 
 		 APILocator.getVersionableAPI().setWorking(newWebAsset);
 
-		SystemEventType systemEventType = newWebAsset.getInode() == null ? SystemEventType.SAVE_LINK : SystemEventType.UPDATE_LINK;
-		systemEventsAPI.pushAsync(systemEventType, new Payload(newWebAsset, Visibility.EXCLUDE_OWNER,
-				new ExcludeOwnerVerifierBean(newWebAsset.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+		final SystemEventType systemEventType = newWebAsset.getInode() == null ? SystemEventType.SAVE_LINK : SystemEventType.UPDATE_LINK;
+		HibernateUtil.addCommitListener(()-> {
+			Try.run(()-> systemEventsAPI.pushAsync(systemEventType, new Payload(newWebAsset, Visibility.EXCLUDE_OWNER,
+					new ExcludeOwnerVerifierBean(newWebAsset.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION))));
+		});
 
 		return newWebAsset;
 	}

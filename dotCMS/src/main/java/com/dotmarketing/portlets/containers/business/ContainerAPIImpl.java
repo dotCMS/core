@@ -467,8 +467,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 				
 				//Add the list to the cache.
                 final VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(containerIdentifier);
-				CacheLocator.getContainerCache().remove(info);
-
+				HibernateUtil.addCommitListener(containerIdentifier, ()-> CacheLocator.getContainerCache().remove(info));
 			} catch(DotHibernateException e){
 				throw new DotDataException(e.getMessage(),e);
 
