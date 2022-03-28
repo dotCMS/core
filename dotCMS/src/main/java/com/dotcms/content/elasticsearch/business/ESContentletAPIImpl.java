@@ -5076,8 +5076,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             if(UtilMethods.isSet(contentletRaw.getFolder()) && !contentletRaw.getFolder().equals(FolderAPI.SYSTEM_FOLDER)){
                 final Folder folder = folderAPI.find(contentletRaw.getFolder(), systemUser, false);
-                Identifier folderIdent = identifierAPI.find(folder.getIdentifier());
-                identifier.setParentPath(folderIdent.getPath());
+                if (null != folder) {
+                    Identifier folderIdent = identifierAPI.find(folder.getIdentifier());
+                    identifier.setParentPath(folderIdent.getPath());
+                }
             } else {
                 identifier.setParentPath(StringPool.FORWARD_SLASH);
             }
