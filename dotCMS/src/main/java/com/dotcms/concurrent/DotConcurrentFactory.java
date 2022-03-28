@@ -374,6 +374,17 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     }
 
     /**
+     * Creates a default conditional executor with a given size
+     * @param size {@link Integer}
+     * @return ConditionalExecutor
+     */
+    public ConditionalSubmitter createConditionalSubmitter(final int size, long secondsTimeOut) {
+
+        return new ConditionalSubmitterImpl(size, secondsTimeOut, TimeUnit.SECONDS);
+    }
+
+
+    /**
      * Get the default single thread submitter by name
      * @param name {@link String} name of the {@link DotSubmitter}
      * @return DotSubmitter

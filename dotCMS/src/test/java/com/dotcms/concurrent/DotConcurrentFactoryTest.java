@@ -43,11 +43,13 @@ public class DotConcurrentFactoryTest extends UnitTestBase {
         int scenarios2Count = 0;
         final Supplier<String> supplier1 = ()-> {
 
-            DateUtil.sleep(DateUtil.TEN_SECOND_MILLIS);
+            System.out.println("Supplier1, a " + System.currentTimeMillis());
+            DateUtil.sleep(DateUtil.EIGHT_SECOND_MILLIS);
+            System.out.println("Supplier1, b " + System.currentTimeMillis());
             return scenario1String;
         };
         final Supplier<String> supplier2 = ()-> scenario2String;
-        for (int i = 0; i < 100; ++i) {
+        for (int i = 0; i < 20; ++i) {
 
             futures.add(executorService.submit(()-> conditionalExecutor.submit(supplier1, supplier2)));
         }
@@ -63,11 +65,11 @@ public class DotConcurrentFactoryTest extends UnitTestBase {
         }
 
         assertEquals(6, scenarios1Count);
-        assertEquals(94, scenarios2Count);
+        assertEquals(14, scenarios2Count);
 
         scenarios2Count = scenarios1Count = 0;
         futures.clear();
-        for (int i = 0; i < 100; ++i) {
+        for (int i = 0; i < 20; ++i) {
 
             futures.add(executorService.submit(()-> conditionalExecutor.submit(supplier1, supplier2)));
         }
@@ -83,7 +85,7 @@ public class DotConcurrentFactoryTest extends UnitTestBase {
         }
 
         assertEquals(6, scenarios1Count);
-        assertEquals(94, scenarios2Count);
+        assertEquals(14, scenarios2Count);
 
     }
 
