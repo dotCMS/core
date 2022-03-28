@@ -13,6 +13,8 @@ import com.dotcms.rest.api.v1.personalization.PersonalizationPersonaPageViewPagi
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.security.apps.AppSecrets;
+import com.dotcms.security.apps.AppsAPI;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.PaginationUtil;
@@ -221,9 +223,11 @@ public class PageResource {
             @QueryParam(WebKeys.PAGE_MODE_PARAMETER) final String modeParam,
             @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
             @QueryParam(WebKeys.LANGUAGE_ID_PARAMETER) final String languageId,
-            @QueryParam("device_inode") final String deviceInode) throws DotSecurityException, DotDataException {
+            @QueryParam("device_inode") final String deviceInode) throws DotSecurityException, DotDataException, SystemException, PortalException {
         if (HttpRequestDataUtil.getAttribute(originalRequest, EMAWebInterceptor.EMA_REQUEST_ATTR, Boolean.FALSE)) {
-            return loadJson(originalRequest, response, uri, modeParam, personaId, languageId, deviceInode);
+            if (!includeRenderedAttrFromEMA(originalRequest, uri)) {
+                return loadJson(originalRequest, response, uri, modeParam, personaId, languageId, deviceInode);
+            }
         }
         Logger.debug(this, ()->String.format(
                 "Rendering page: uri -> %s mode-> %s language -> persona -> %s device_inode -> %s live -> %b",
@@ -754,4 +758,40 @@ public class PageResource {
 
         return result.values();
     }
+
+    /**
+     * Checks whether the {@code rendered} attribute in the JSON data must be posted to the EMA service or not.
+     * <p>
+     * When dotCMS executes a POST to the EMA Service, it is sending the {@code page.rendered} property as part of the
+     * JSON payload. This is not required, and dotCMS should not do it. However, if the user needs it anyway, it can be
+     * re-added to the JSON data via UI in the {@code Include 'rendered' attribute?} box in the EMA APP configuration
+     * portlet.
+     * </p>
+     *
+     * @param request The current instance of the {@link HttpServletRequest} object.
+     * @param uri     The URI to the HTML Page that will be sent to the EMA Service.
+     * @return If the {@code rendered} attribute must be added to the JSON data, return {@code true}. Otherwise, return {@code false}.
+     */
+    private boolean includeRenderedAttrFromEMA(final HttpServletRequest request, final String uri) {
+        final AppsAPI appsAPI = APILocator.getAppsAPI();
+        boolean includeRenderedAttr = Boolean.FALSE;
+        Host currentSite = null;
+        try {
+            currentSite = WebAPILocator.getHostWebAPI().getCurrentHost(request);
+            final Optional<AppSecrets> secretsOpt = appsAPI.getSecrets(EMAWebInterceptor.EMA_APP_CONFIG_KEY, true, currentSite, APILocator.systemUser());
+            if (secretsOpt.isPresent()) {
+                AppSecrets secrets = secretsOpt.get();
+                Optional<Boolean> renderedOpt = secrets.getSecrets().containsKey(EMAWebInterceptor.INCLUDE_RENDERED_VAR) ?
+                        Optional.ofNullable(secrets.getSecrets().get(EMAWebInterceptor.INCLUDE_RENDERED_VAR).getBoolean()) : Optional.empty();
+                if (renderedOpt.isPresent() && renderedOpt.get()) {
+                    includeRenderedAttr = Boolean.TRUE;
+                }
+            }
+        } catch (final DotDataException | DotSecurityException | SystemException | PortalException e) {
+            final String siteName = null != currentSite ? currentSite.getHostname() : "N/A";
+            Logger.warn(this, String.format("An error occurred when checking the 'rendered' attribute in site '%s' for URI '%s': %s", siteName, uri, e.getMessage()));
+        }
+        return includeRenderedAttr;
+    }
+
 }
