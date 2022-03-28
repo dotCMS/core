@@ -488,6 +488,7 @@ public class EditContainerAction extends DotPortletAction implements
     /**
      * Method called to save container in the system
      */
+	@WrapInTransaction
 	public void _saveWebAsset(ActionRequest req, ActionResponse res,
 			PortletConfig config, ActionForm form, User user) throws Exception {
 
