@@ -149,7 +149,7 @@
 
         // STORY BLOCK
         else if (field.getFieldType().equals(Field.FieldType.STORY_BLOCK_FIELD.toString())) {
-            
+
             // The extra single quotes indicate that it will return an empty string -> "''"
             String textValue = UtilMethods.isSet(value) ? value.toString() : (UtilMethods.isSet(defaultValue) ? defaultValue : "''");
             %>
@@ -162,19 +162,19 @@
                 /**
                  * Do not use "<%=textValue%>" or '<%=textValue%>'
                  * If we put it in quotes and the user adds a content that has quotes,
-                 * it will throw a syntax error 
+                 * it will throw a syntax error
                  */
                 const data = <%=textValue%>;
 
-                const block = document.querySelector('dotcms-block-editor .ProseMirror');
+                const blockEditor = document.querySelector('dotcms-block-editor').editor;
                 const field = document.querySelector('#<%=field.getVelocityVarName()%>');
 
                 if (data) {
-                    block.editor.commands.setContent(data);
+                    blockEditor.commands.setContent(data);
                     field.value = JSON.stringify(data);
                 }
 
-                block.editor.on('update', ({ editor }) => {
+                blockEditor.on('update', ({ editor }) => {
                     field.value = JSON.stringify(editor.getJSON());
                 })
             </script>
@@ -321,7 +321,7 @@
                         contentlet, LegacyFieldTransformer.from(field),
                         user);
                 defaultPathFolderPathIds.add(0, "root");
-                
+
                 boolean dragAndDrop = true;
 
                 List<FieldVariable> fieldVariables=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, true);
@@ -415,7 +415,7 @@
                 year = cal.get(GregorianCalendar.YEAR) ;
             }%>
 
-         
+
         <input type="hidden" id="<%=field.getVelocityVarName()%>"
                name="<%=field.getFieldContentlet()%>"
                value="<%= dateValue!=null ? df.format(dateValue) : "" %>" />
@@ -432,7 +432,7 @@
                    dojoType="dijit.form.DateTextBox"
                    name="<%=field.getFieldContentlet()%>Date"
                    id="<%=field.getVelocityVarName()%>Date">
-            
+
             <% }
 
                 if (field.getFieldType().equals(Field.FieldType.TIME.toString()) || field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
@@ -454,9 +454,9 @@
                     <%=field.isReadOnly()?"disabled=\"disabled\"":""%>/>
                     <div style="font-size: 85%;padding:5px 0px 0px 5px;color:#888">
                         <%=APILocator.systemTimeZone().getDisplayName()%>
-                    </div>  
+                    </div>
             </div>
-                  
+
 
         <%if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {%>
             </div>
@@ -536,8 +536,8 @@
             //END FILE Field
 
 
-            
-            
+
+
             //BINARY kind of field rendering  http://jira.dotmarketing.net/browse/DOTCMS-1073
         } else if (field.getFieldType().equals(Field.FieldType.BINARY.toString())) {
             String fileName = "";
@@ -579,7 +579,7 @@
            <div id="thumbnailParent<%=field.getVelocityVarName()%>">
                <%
                    String src = String.format("/contentAsset/image/%s/%s/?filter=Thumbnail&thumbnail_w=%d&thumbnail_h=%d&language_id=%s&r=%d", contentlet.getIdentifier(), field.getVelocityVarName(), showDim, showDim, contentlet.getLanguageId(), System.currentTimeMillis());
-   
+
                %>
                <img src="<%=src%>"
                     class="thumbnailDiv thumbnailDiv<%=field.getVelocityVarName()%>"
@@ -587,7 +587,7 @@
                     onmouseout="dojo.attr(this, 'className', 'thumbnailDiv');"
                     onclick="dijit.byId('fileDia<%=field.getVelocityVarName()%>').show()">
            </div>
-   
+
            <div dojoType="dijit.Dialog" id="fileDia<%=field.getVelocityVarName()%>" title="<%=LanguageUtil.get(pageContext,"Image") %>"  style="width:90%;height:80%;display:none;"">
            <div style="text-align:center;margin:auto;overflow:auto;width:700px;height:400px;">
                <img src="/contentAsset/image/<%=binInode %>/<%=field.getVelocityVarName() %>/" />
@@ -641,7 +641,7 @@
 
     <%
        String maxFileLength="-1";
-       String accept="*/*"; 
+       String accept="*/*";
        List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
        for(FieldVariable fv : acceptTypes){
            if("accept".equalsIgnoreCase(fv.getKey())){
@@ -650,12 +650,12 @@
            }
            if("maxFileLength".equalsIgnoreCase(fv.getKey())){
              maxFileLength=fv.getValue();
-             
+
            }
        }
-    
+
     %>
-    
+
 
     <%-- File uploader --%>
 
@@ -681,9 +681,9 @@
             inodeShorty="<%=APILocator.getShortyAPI().shortify(contentlet.getInode())%>"
             idShorty="<%=APILocator.getShortyAPI().shortify(contentlet.getIdentifier())%>"
             onRemove="removeThumbnail('<%=field.getVelocityVarName()%>', '<%= binInode %>')"
-            dojoType="dotcms.dijit.form.FileAjaxUploader" 
-            maxFileLength="<%= maxFileLength%>" 
-            licenseLevel="<%=LicenseUtil.getLevel() %>" 
+            dojoType="dotcms.dijit.form.FileAjaxUploader"
+            maxFileLength="<%= maxFileLength%>"
+            licenseLevel="<%=LicenseUtil.getLevel() %>"
             accept="<%=accept %>" >
     </div>
     <script type="text/javascript">
@@ -858,7 +858,7 @@
     <select multiple="multiple" size="scrollable"
             name="<%=field.getFieldContentlet()%>MultiSelect"
             id="<%=field.getVelocityVarName()%>MultiSelect"
-            onchange="update<%=field.getVelocityVarName()%>MultiSelect();emmitFieldDataChange(true)" 
+            onchange="update<%=field.getVelocityVarName()%>MultiSelect();emmitFieldDataChange(true)"
             style="width: 200px;""<%=field.isReadOnly()?"readonly=\"readonly\"":""%>">
     <%
         String compareValue = (UtilMethods.isSet(value) ? value.toString() : (UtilMethods.isSet(defaultValue) ? defaultValue : ""));
