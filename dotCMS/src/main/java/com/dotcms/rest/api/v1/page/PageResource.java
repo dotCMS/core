@@ -789,7 +789,7 @@ public class PageResource {
             }
         } catch (final DotDataException | DotSecurityException | SystemException | PortalException e) {
             final String siteName = null != currentSite ? currentSite.getHostname() : "N/A";
-            Logger.warn(this, String.format("An error occurred when checking the 'rendered' attribute in site '%s' for URI '%s': %s", siteName, uri, e.getMessage()));
+            Logger.debug(this, String.format("An error occurred when checking the 'rendered' attribute in site '%s' for URI '%s': %s", siteName, uri, e.getMessage()));
         }
         return includeRenderedAttr;
     }
