@@ -25,7 +25,7 @@ public class Task220424UpdateDateTimezonesTest {
      * timezone
      */
     @Test
-    public void test() throws Exception {
+    public void Test_Upgrade_Task() throws Exception {
 
         final Task220424UpdateDateTimezones task = new Task220424UpdateDateTimezones();
         if (task.forceRun()) {
@@ -39,13 +39,12 @@ public class Task220424UpdateDateTimezonesTest {
             final DotConnect dotConnect = new DotConnect();
             final String tableName = "a1_"+System.currentTimeMillis();
 
-            dotConnect.executeStatement(String.format("CREATE TABLE %s (lol  datetime)",tableName));
-            dotConnect.executeStatement(String.format("INSERT INTO %s (lol) VALUES(GetDate())",tableName));
+            dotConnect.executeStatement(String.format("CREATE TABLE %s (test  datetime)",tableName));
+            dotConnect.executeStatement(String.format("INSERT INTO %s (test) VALUES(GetDate())",tableName));
 
             task.executeUpgrade();
             assertTrue(task.getTablesCount() >= 1);
         }
-        assertTrue("Timezones have been updated", true);
     }
 
 }

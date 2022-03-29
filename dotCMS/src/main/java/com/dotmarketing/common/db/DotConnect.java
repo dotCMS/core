@@ -1260,14 +1260,9 @@ public class DotConnect {
      * @return the read only map
      */
     static Map<Class<?>, StatementObjectSetter> customStatementObjectSetterMap() {
-        final Builder<Class<?>, StatementObjectSetter> builder = ImmutableMap.builder();
-        if (DbConnectionFactory.isMsSql()) {
-            final StatementObjectSetter dateSetter = new TimestampTimeZoneAware();
-            builder.put(Date.class, dateSetter)
-                .put(java.sql.Date.class, dateSetter)
-                .put(java.sql.Timestamp.class, dateSetter);
-        }
-        return builder.build();
+        final StatementObjectSetter dateSetter = new TimestampTimeZoneAware();
+        return ImmutableMap.of(java.util.Date.class, dateSetter, java.sql.Date.class, dateSetter,
+                java.sql.Timestamp.class, dateSetter);
     }
 
     static class TimestampTimeZoneAware implements StatementObjectSetter {
