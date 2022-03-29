@@ -86,6 +86,51 @@ public class StaticPublisherIntegrationTest {
         IntegrationTestInitService.getInstance().init();
     }
 
+    /**
+     * Cases:
+     * - Add to the bundle a Live Page with no dependencies, Should create two files no matter the bundle operation:
+     *   a xml file with the page properties, and no ext files with the html code
+     * - Add to the bundle a Working page no dependencies should not create any files because just
+     *   the LIVE page are include in a static bundle.
+     * - Add to the bundle a Live Page with versions in two different lang, should create 4 files no matter the Bundle's Operation: a xml and a html for each page version.
+     * - Add a Host to the bundle, this Host has:
+     *      - Two Folders.
+     *      - Two page in each folders, The first one LIVE and the second WORKING
+     *      - Two File Asset for each folder, The first one LIVE and the second WORKING
+     *      Should include into the bundle two files for each LIVE pages: xml and html files for each one
+     *      Also should include one file for each File Asset with the content
+     *      No matter the Bundle's Operation
+     *  - Add into the bundle a Folder with:
+     *      - Two pages, The first one LIVE and the second WORKING
+     *      - Two Files Asset, The first one LIVE and the second WORKING
+     *      Should include into the bundle two files for LIVE page: xml and html files for each one
+     *      Also should include one file for the LIVE File Asset with the content
+     *      No matter the Bundle's Operation
+     * - Add into the bundle one LIVE FIle Asset, Should include one file into the bundle with the file's content no matter the Bundle's Operation
+     * - Add into the bundle a WORKING File Asset, should not include any files in the bundle.
+     * - Add a FileAsset with version in two different languages, Should include two files one for each languages
+     * - Add into the bundle a LIVE page meanwhile there is anther page in a different hist with the same path
+     * should include two files (just to the page that was add into the bundle directly): a xml file with the page property and another file with the page's content
+     * No matter the Bundle's Operation
+     * - Add a ContentType with an url Map into the bundle but there is not any contentlet from this ContentType, Should not generate any files into the bundle, No matter the Bundle's Operation
+     * - Add into the bundle a WORKING Contentlet that is from a ContenTType with a URL MAP, should not generate any files into the bundle
+     * - Add into the bundle a LIVE Contentlet that is from a ContenTType with a URL MAP, should generate two files into the bundle: a xml file with the COntentlet's properties and another file with the html content
+     * - Create a File Image Contentlet and Add into the bundle a LIVE PAge with a Widget with the follow code:
+     *  <code><img src="/dA/[File Image contentlet's ID]" style="width:33px;" class="img-circles border mr-2"></code>
+     *  Should generate into the bundle three files when the Operation is equals to PUBLISH: two for the page (xml and page's html content) and another one for the Image
+     *  Should generate into the bundle two files when the Operation is equals to UN_PUBLISH: just the page's files
+     * - Create a Page with a Image (like the previous case), and Create a ContentType with the page as detail page, finally create a LIVE Contentlet and add it into the Bundle
+     * Should create: thre file when the Operation is PUBLISH and two files when the operation is UN_PUBLISH (liek the previous case)
+     * - Create a CSS File Asset, and Add into the bundle a LIVE PAge with a Widget with the follow code:
+     *   <code><link rel="preload" as="style" href="[File asset's PATH]"></code>
+     *  Should generate into the bundle three files when the Operation is equals to PUBLISH: two for the page (xml and page's html content) and another one for the CSS file
+     *  Should generate into the bundle two files when the Operation is equals to UN_PUBLISH: just the page's files
+     * - Add into the bundle a LIVE Page with version in two different languages but Add into the bundle just one of the lang: should include just two files for the page's version in the lang included
+     * - Add into the bundle a LIVE FileAsset with version in two different languages but Add into the bundle just one of the lang: should include just one file for File's version in the lang included
+     *
+     * @return
+     * @throws Exception
+     */
     @DataProvider
     public static Object[] assets() throws Exception {
         prepare();
