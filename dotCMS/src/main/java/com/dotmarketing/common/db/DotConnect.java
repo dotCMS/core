@@ -1255,6 +1255,10 @@ public class DotConnect {
 
     } // executeUpdate.
 
+    /**
+     * Creates the Map with custom Statement Object Setters
+     * @return the read only map
+     */
     static Map<Class<?>, StatementObjectSetter> customStatementObjectSetterMap() {
         final Builder<Class<?>, StatementObjectSetter> builder = ImmutableMap.builder();
         if (DbConnectionFactory.isMsSql()) {
