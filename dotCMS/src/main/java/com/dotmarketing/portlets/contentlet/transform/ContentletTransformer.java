@@ -146,20 +146,6 @@ public class ContentletTransformer implements DBTransformer {
             contentlet.setHost(identifier.getHostId());
             contentlet.setFolder(folder.getInode());
 
-            // lets check if we have publish/expire fields to set
-            final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
-                    .find(contentTypeId);
-
-            if (UtilMethods.isSet(contentType.publishDateVar())) {
-                contentlet.setDateProperty(contentType.publishDateVar(),
-                        identifier.getSysPublishDate());
-            }
-
-            if (UtilMethods.isSet(contentType.expireDateVar())) {
-                contentlet
-                        .setDateProperty(contentType.expireDateVar(),
-                                identifier.getSysExpireDate());
-            }
         } else {
             if (contentlet.isSystemHost()) {
                 // When we are saving a systemHost we cannot call

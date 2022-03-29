@@ -397,10 +397,11 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			//add workflow to map
 			contentletMap.putAll(getWorkflowInfoForContentlet(contentlet));
 
-			if(UtilMethods.isSet(contentIdentifier.getSysPublishDate())) {
-				contentletMap.put(ESMappingConstants.PUBLISH_DATE, elasticSearchDateTimeFormat.format(contentIdentifier.getSysPublishDate()));
+			final String publishDateVar = contentType.publishDateVar();
+			if(UtilMethods.isSet(publishDateVar) && UtilMethods.isSet(contentlet.getDateProperty(publishDateVar))) {
+				contentletMap.put(ESMappingConstants.PUBLISH_DATE, elasticSearchDateTimeFormat.format(contentlet.getDateProperty(publishDateVar)));
 				contentletMap.put(ESMappingConstants.PUBLISH_DATE + TEXT,
-						datetimeFormat.format(contentIdentifier.getSysPublishDate()));
+						datetimeFormat.format(contentlet.getDateProperty(publishDateVar)));
 			}else {
 				contentletMap.put(ESMappingConstants.PUBLISH_DATE,
 						elasticSearchDateTimeFormat.format(versionInfo.get().getVersionTs()));
@@ -408,10 +409,11 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 						datetimeFormat.format(versionInfo.get().getVersionTs()));
 			}
 
-			if(UtilMethods.isSet(contentIdentifier.getSysExpireDate())) {
-				contentletMap.put(ESMappingConstants.EXPIRE_DATE, elasticSearchDateTimeFormat.format(contentIdentifier.getSysExpireDate()));
+			final String expireDateVar = contentType.expireDateVar();
+			if(UtilMethods.isSet(expireDateVar) &&  UtilMethods.isSet(contentlet.getDateProperty(expireDateVar))) {
+				contentletMap.put(ESMappingConstants.EXPIRE_DATE, elasticSearchDateTimeFormat.format(contentlet.getDateProperty(expireDateVar)));
 				contentletMap.put(ESMappingConstants.EXPIRE_DATE + TEXT,
-						datetimeFormat.format(contentIdentifier.getSysExpireDate()));
+						datetimeFormat.format(contentlet.getDateProperty(expireDateVar)));
 			}else {
 				contentletMap.put(ESMappingConstants.EXPIRE_DATE, elasticSearchDateTimeFormat.format(29990101000000L));
 				contentletMap.put(ESMappingConstants.EXPIRE_DATE + TEXT, "29990101000000");
@@ -746,7 +748,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	public static final FastDateFormat dateFormat = FastDateFormat.getInstance("yyyyMMdd");
 	public static final FastDateFormat datetimeFormat = FastDateFormat.getInstance("yyyyMMddHHmmss");
 
-	public static final String elasticSearchDateTimeFormatPattern="yyyy-MM-dd'T'HH:mm:ss";
+	public static final String elasticSearchDateTimeFormatPattern="yyyy-MM-dd'T'HH:mm:ss'Z";
 	public static final FastDateFormat elasticSearchDateTimeFormat = FastDateFormat.getInstance(elasticSearchDateTimeFormatPattern);
 
 	public static final FastDateFormat timeFormat = FastDateFormat.getInstance("HH:mm:ss");

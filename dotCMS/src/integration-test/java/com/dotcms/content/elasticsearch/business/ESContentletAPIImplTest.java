@@ -20,6 +20,7 @@ import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.RelationshipField;
@@ -72,6 +73,7 @@ import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -1266,6 +1268,142 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         final VanityUrl vanityUrlUpdated = APILocator.getVanityUrlAPI().fromContentlet(checkout);
         checkFilter(host_1, vanityUrlUpdated, HttpStatus.SC_MOVED_PERMANENTLY);
         checkFilter(host_2, vanityUrlUpdated, -1);
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#checkin(Contentlet, User, boolean)}
+     * When:
+     * - Create a ContentType with publish date
+     * - Create two Language
+     * - Create a {@link Contentlet} with the first language and publish date for tomorrow
+     * - Create a {@link Contentlet} with the second language and publish date for after tomorrow
+     * Should: Each {@link Contentlet} be saved and index with the right publish date
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void differentVersionWithDifferentPublishDate() throws DotDataException, DotSecurityException {
+
+        final Language language1 = new LanguageDataGen().nextPersisted();
+        final Language language2 = new LanguageDataGen().nextPersisted();
+
+        final Field publishField = new FieldDataGen().defaultValue(null).type(DateTimeField.class).next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(publishField)
+                .publishDateFieldVarName(publishField.variable())
+                .nextPersisted();
+
+        final Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DATE, 1);
+        final Date tomorrow = calendar.getTime();
+
+        calendar.add(Calendar.DATE, 1);
+        final Date afterTomorrow = calendar.getTime();
+
+        final Contentlet contentlet1 = new ContentletDataGen(contentType)
+                .setProperty(publishField.variable(), tomorrow)
+                .languageId(language1.getId())
+                .nextPersisted();
+
+        final Contentlet contentlet2 = ContentletDataGen.checkout(contentlet1);
+        contentlet2.setLanguageId(language2.getId());
+        contentlet2.setProperty(publishField.variable(), afterTomorrow);
+        ContentletDataGen.checkin(contentlet2);
+
+        final List<Contentlet> search = APILocator.getContentletAPI()
+                .search("+identifier:" + contentlet1.getIdentifier(), 0, 0, null,
+                        APILocator.systemUser(), false);
+
+        assertEquals(2, search.size());
+        for (Contentlet contentlet : search) {
+            if (contentlet.getInode().equals(contentlet1.getInode())) {
+                assertEquals(tomorrow, contentlet.getDateProperty(publishField.variable()));
+            } else {
+                assertEquals(afterTomorrow, contentlet.getDateProperty(publishField.variable()));
+            }
+        }
+
+        final List<Versionable> allVersions = APILocator.getVersionableAPI()
+                .findAllVersions(contentlet1.getIdentifier());
+
+        assertEquals(2, allVersions.size());
+        for (Versionable versionable : allVersions) {
+            if (versionable.getInode().equals(contentlet1.getInode())) {
+                assertEquals(tomorrow, ((Contentlet) versionable).getDateProperty(publishField.variable()));
+            } else {
+                assertEquals(afterTomorrow, ((Contentlet) versionable).getDateProperty(publishField.variable()));
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#checkin(Contentlet, User, boolean)}
+     * When:
+     * - Create a ContentType with expire date
+     * - Create two Language
+     * - Create a {@link Contentlet} with the first language and expire date for tomorrow
+     * - Create a {@link Contentlet} with the second language and expire date for after tomorrow
+     * Should: Each {@link Contentlet} be saved and index with the right expire date
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void differentVersionWithDifferentExpireDate() throws DotDataException, DotSecurityException {
+
+        final Language language1 = new LanguageDataGen().nextPersisted();
+        final Language language2 = new LanguageDataGen().nextPersisted();
+
+        final Field expireField = new FieldDataGen().defaultValue(null).type(DateTimeField.class).next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(expireField)
+                .expireDateFieldVarName(expireField.variable())
+                .nextPersisted();
+
+        final Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DATE, 1);
+        final Date tomorrow = calendar.getTime();
+
+        calendar.add(Calendar.DATE, 1);
+        final Date afterTomorrow = calendar.getTime();
+
+        final Contentlet contentlet1 = new ContentletDataGen(contentType)
+                .setProperty(expireField.variable(), tomorrow)
+                .languageId(language1.getId())
+                .nextPersisted();
+
+        final Contentlet contentlet2 = ContentletDataGen.checkout(contentlet1);
+        contentlet2.setLanguageId(language2.getId());
+        contentlet2.setProperty(expireField.variable(), afterTomorrow);
+        ContentletDataGen.checkin(contentlet2);
+
+        final List<Contentlet> search = APILocator.getContentletAPI()
+                .search("+identifier:" + contentlet1.getIdentifier(), 0, 0, null,
+                        APILocator.systemUser(), false);
+
+        assertEquals(2, search.size());
+        for (Contentlet contentlet : search) {
+            if (contentlet.getInode().equals(contentlet1.getInode())) {
+                assertEquals(tomorrow, contentlet.getDateProperty(expireField.variable()));
+            } else {
+                assertEquals(afterTomorrow, contentlet.getDateProperty(expireField.variable()));
+            }
+        }
+
+        final List<Versionable> allVersions = APILocator.getVersionableAPI()
+                .findAllVersions(contentlet1.getIdentifier());
+
+        assertEquals(2, allVersions.size());
+        for (Versionable versionable : allVersions) {
+            if (versionable.getInode().equals(contentlet1.getInode())) {
+                assertEquals(tomorrow, ((Contentlet) versionable).getDateProperty(expireField.variable()));
+            } else {
+                assertEquals(afterTomorrow, ((Contentlet) versionable).getDateProperty(expireField.variable()));
+            }
+        }
     }
 
     private void checkFilter(final Host host, final VanityUrl vanityURL, final int statusExpected)
