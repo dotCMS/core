@@ -306,3 +306,8 @@ This maintenance release includes the following code fixes:
 152. https://github.com/dotCMS/core/issues/21252 : Add the ability to stop/abort a workflow on velocity script actionlet #21252
 153. https://github.com/dotCMS/core/issues/21699 : [Push Publishing] : Single quote in content's title breaks JavaScript code in the portlet #21699
 154. https://github.com/dotCMS/core/issues/21791 : Sanitizing file name #21791
+
+**Release-5.3.8.11**
+
+155. https://github.com/dotCMS/core/issues/18996 : Contentlet buttons doesn't show on edit mode with an EMA page #18996
+156. https://github.com/dotCMS/core/issues/19711 : Lazy load buttons for edit contentlets in the page #19711
