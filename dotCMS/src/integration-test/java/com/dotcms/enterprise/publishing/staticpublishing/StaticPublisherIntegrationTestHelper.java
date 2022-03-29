@@ -339,7 +339,7 @@ public class StaticPublisherIntegrationTestHelper {
             livePageWithContent = new PageWithDependenciesBuilder()
                     .host(host)
                     .folder(folder)
-                    .language(APILocator.getLanguageAPI().getDefaultLanguage())
+                    .language(language)
                     .contentlet(contentlet)
                     .buildAndPublish();
 
