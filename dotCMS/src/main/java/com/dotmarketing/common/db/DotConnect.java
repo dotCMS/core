@@ -607,15 +607,6 @@ public class DotConnect {
 
                 // statement.setMaxRows(maxRows);
                 Logger.debug(this, "SQL = " + statement.toString());
-                /*
-                for (int i = 0; i < paramList.size(); i++) {
-                    Object param = paramList.get(i);
-                    if (param != null && statementSetterHandlerMap.containsKey(param.getClass())) {
-                        statementSetterHandlerMap.get(param.getClass()).execute(statement, i + 1, param);
-                    } else {
-                        statement.setObject(i + 1, paramList.get(i));
-                    }
-                }*/
                 setParams(statement, paramList.toArray());
                 if (!starter.toLowerCase().trim().contains("select")) { // if it is NOT a read operation
                     beforeQueryExecution = System.nanoTime();
