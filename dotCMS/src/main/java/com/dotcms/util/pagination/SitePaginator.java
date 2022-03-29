@@ -7,6 +7,8 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
 import java.util.Map;
+
+import com.liferay.util.StringPool;
 import org.apache.commons.lang.StringUtils;
 
 /**
@@ -40,26 +42,29 @@ public class SitePaginator implements PaginatorOrdered<Host> {
         if (extraParams != null) {
             showArchived = (Boolean) extraParams.get(ARCHIVED_PARAMETER_NAME);
             showLive = (Boolean) extraParams.get(LIVE_PARAMETER_NAME);
-            showSystem = (Boolean) Boolean.valueOf(String.valueOf(extraParams.get(SYSTEM_PARAMETER_NAME)));
+            showSystem = Boolean.valueOf(String.valueOf(extraParams.get(SYSTEM_PARAMETER_NAME)));
         }
 
-        final String sanitizedFilter = "all".equals(filter) ? StringUtils.EMPTY : filter;
+        String sanitizedFilter = "all".equals(filter) ? StringUtils.EMPTY : filter;
+        sanitizedFilter = sanitizedFilter.startsWith(StringPool.STAR) ? sanitizedFilter.replace(StringPool.STAR,
+                StringPool.PERCENT) : sanitizedFilter;
+        PaginatedArrayList<Host> sites;
 
-        PaginatedArrayList<Host> hosts = null;
-
-        if (showArchived != null && showLive != null){
-            hosts = this.hostAPI.search(sanitizedFilter, showArchived, !showLive, showSystem, limit, offset,
+        if (showArchived != null && showLive != null) {
+            sites = this.hostAPI.search(sanitizedFilter, showArchived, !showLive, showSystem, limit, offset,
                     user, false);
-        } else if (showArchived != null){
-            hosts = this.hostAPI.search(sanitizedFilter, showArchived, showSystem, limit, offset,
+        } else if (showArchived != null) {
+            // If archived Sites must be returned, then the showStopped flag must be "true". Otherwise, it must be "false"
+            final boolean showStopped = showArchived ? true : false;
+            sites = this.hostAPI.search(sanitizedFilter, showArchived, showStopped, showSystem, limit, offset,
                     user, false);
         } else if (showLive != null) {
-            hosts = this.hostAPI.searchByStopped(sanitizedFilter, !showLive, showSystem, limit, offset,
+            sites = this.hostAPI.searchByStopped(sanitizedFilter, !showLive, showSystem, limit, offset,
                     user, false);
         } else {
-            hosts = this.hostAPI.search(sanitizedFilter, showSystem, limit, offset, user, false);
+            sites = this.hostAPI.search(sanitizedFilter, showSystem, limit, offset, user, false);
         }
 
-        return hosts;
+        return sites;
     }
 }
