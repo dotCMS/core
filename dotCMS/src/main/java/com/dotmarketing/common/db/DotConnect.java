@@ -1276,7 +1276,7 @@ public class DotConnect {
         public void execute(PreparedStatement statement, int parameterIndex, Object parameter) {
             if (parameter instanceof Date) {
                 try {
-                    Logger.info(TimestampTimeZoneAware.class, String.format(
+                    Logger.debug(TimestampTimeZoneAware.class, String.format(
                             "Setting param %s with index %d through StatementObjectSetter",
                             parameter, parameterIndex));
                     final Date date = (Date) parameter;
