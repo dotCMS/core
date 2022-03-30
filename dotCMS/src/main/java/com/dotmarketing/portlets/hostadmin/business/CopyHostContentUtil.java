@@ -70,7 +70,7 @@ public class CopyHostContentUtil{
 			    HostAssetsJobProxy.fireJob(newSite.getIdentifier(), sourceHost.getIdentifier(), hostCopyOptions, user.getUserId());
 		} catch (Throwable e) {
 
-			Logger.error(this, e.getMessage(), e);
+			Logger.error(this, "Site: " + newSite.getIdentifier() + ", msg: " + e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);
 		}
 	}
