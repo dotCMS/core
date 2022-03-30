@@ -673,25 +673,16 @@ public class FolderFactoryImpl extends FolderFactory {
 									  final User systemUser,
 									  final List<Contentlet> contentlets) throws DotDataException, DotSecurityException {
 
-		final ContentletAPI contentletAPI = APILocator.getContentletAPI();
-		final FileAssetAPI  fileAssetAPI  = APILocator.getFileAssetAPI();
-
 		for(final Contentlet contentlet : contentlets) {
-
 			if (contentlet.isFileAsset()) {
+				final FileAssetAPI  fileAssetAPI  = APILocator.getFileAssetAPI();
 				fileAssetAPI.moveFile(contentlet, folder, systemUser, false);
 		    } else if (contentlet.isHTMLPage()) {
 				HTMLPageAssetAPI pageAssetAPI = APILocator.getHTMLPageAssetAPI();
 				pageAssetAPI.move(pageAssetAPI.fromContentlet(contentlet), folder, systemUser);
 			} else {
-    			final boolean isLive = contentlet.isLive();
-				Contentlet newContentlet  = contentletAPI.checkout(contentlet.getInode(), systemUser, false);
-				newContentlet.setFolder(folder.getInode());
-				newContentlet = contentletAPI.checkin(newContentlet, systemUser, false);
-    			if(isLive) {
-
-					contentletAPI.publish(newContentlet, systemUser, false);
-    			}
+				final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+				contentletAPI.move(contentlet, systemUser, folder.getHost(), folder, false);
 		    }
 		}
 	}
