@@ -339,11 +339,12 @@
 					"listen": "test",
 					"script": {
 						"exec": [
+							"var inode = pm.collectionVariables.get(\"inode\");",
 							"pm.test(\"Information Saved Correctly\", function () {",
 							"    ",
 							"    var jsonData = pm.response.json();",
 							"    pm.expect(jsonData.entity.versionType).to.eql(\"content\");",
-							"    pm.expect(jsonData.entity.body).to.eql(\"test1\");",
+							"    pm.expect(jsonData.entity.inode).to.eql(inode);",
 							"});"
 						],
 						"type": "text/javascript"
