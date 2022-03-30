@@ -203,6 +203,8 @@ public class ContentletTransformer implements DBTransformer {
         for (final Field field : fields) {
             // DO NOT map these types of fields
             if (!APILocator.getFieldAPI().valueSettable(field) ||
+                    LegacyFieldTypes.HOST_OR_FOLDER.legacyValue().equals(field.getFieldType())
+                    ||
                     LegacyFieldTypes.TAG.legacyValue().equals(field.getFieldType()) ||
                     (field.getFieldContentlet() != null && field.getFieldContentlet()
                             .startsWith(SYSTEM_FIELD) &&
