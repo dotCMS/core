@@ -17,7 +17,9 @@
     <div class="template-listing__header-options">
         <div>
             <p-checkbox
+                data-testid="archiveCheckbox"
                 [label]="'Show-Archived' | dm"
+                [binary]="true"
                 (onChange)="handleArchivedFilter($event.checked)"
             ></p-checkbox>
             <button

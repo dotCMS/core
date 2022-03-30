@@ -344,6 +344,14 @@ describe('DotTemplateListComponent', () => {
         dotSiteBrowserService = TestBed.inject(DotSiteBrowserService);
     });
 
+    it('should reload portlet only when the site change', () => {
+        const checkbox = fixture.debugElement.query(By.css('[data-testId="archiveCheckbox"]')).componentInstance;
+
+        fixture.detectChanges();
+
+        expect(checkbox.binary).toBeTruthy();
+    });
+    
     describe('with data', () => {
         beforeEach(fakeAsync(() => {
             spyOn<any>(coreWebService, 'requestView').and.returnValue(
