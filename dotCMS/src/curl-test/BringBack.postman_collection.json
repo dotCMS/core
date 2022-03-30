@@ -1190,7 +1190,10 @@
 							"    var jsonData = pm.response.json();",
 							"    pm.expect(jsonData.entity.versionType).to.eql(\"containers\");",
 							"    ",
-							"});"
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"pm.collectionVariables.set(\"inode\", jsonData.entity.inode);"
 						],
 						"type": "text/javascript"
 					}
@@ -1247,7 +1250,7 @@
 							"    ",
 							"    var jsonData = pm.response.json();",
 							"      pm.expect(jsonData.entity.title).to.eql(\"Test1\");",
-							"    pm.expect(jsonData.entity.notes).to.eql(\"Notes\");",
+							"    pm.expect(jsonData.entity.notes).to.eql(\"Notes 1\");",
 							"});",
 							"",
 							"",
