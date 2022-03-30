@@ -229,7 +229,7 @@ public class PageResource {
             @QueryParam("device_inode") final String deviceInode) throws DotSecurityException, DotDataException, SystemException, PortalException {
 
         if (HttpRequestDataUtil.getAttribute(originalRequest, EMAWebInterceptor.EMA_REQUEST_ATTR, Boolean.FALSE)) {
-            if (LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level &&  !includeRenderedAttrFromEMA(originalRequest, uri)) {
+            if (!includeRenderedAttrFromEMA(originalRequest, uri)) {
                 return loadJson(originalRequest, response, uri, modeParam, personaId, languageId, deviceInode);
             }
         }

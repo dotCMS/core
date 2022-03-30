@@ -55,7 +55,7 @@ public class EMAWebInterceptor  implements WebInterceptor {
     public Result intercept(final HttpServletRequest request, final HttpServletResponse response) {
 
         final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-        request.setAttribute(EMA_REQUEST_ATTR, true);
+
         if (!this.existsConfiguration(currentHost.getIdentifier())) {
             return Result.NEXT;
         }
@@ -68,7 +68,7 @@ public class EMAWebInterceptor  implements WebInterceptor {
         }
 
         Logger.info(this.getClass(), "GOT AN EMA Call --> " + request.getRequestURI());
-
+        request.setAttribute(EMA_REQUEST_ATTR, true);
         return new Result.Builder().wrap(new MockHttpCaptureResponse(response)).next().build();
     }
 
