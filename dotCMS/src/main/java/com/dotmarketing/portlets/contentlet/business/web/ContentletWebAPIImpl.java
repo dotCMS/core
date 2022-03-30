@@ -885,7 +885,6 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				}
 				if ((value != null || field.getFieldType().equals(Field.FieldType.BINARY.toString()))
 						&& APILocator.getFieldAPI().valueSettable(field)
-						&& !field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())
 						&& !field.getFieldContentlet().startsWith("system")) {
 					conAPI.setContentletProperty(contentlet, field, value);
 				}
