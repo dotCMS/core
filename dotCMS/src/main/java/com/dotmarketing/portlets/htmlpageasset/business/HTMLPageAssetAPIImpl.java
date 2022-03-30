@@ -34,7 +34,6 @@ import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -54,10 +53,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -423,7 +420,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     }
 
     /**
-     * @see HTMLPageAssetAPI#findPage(inode, User, boolean)
+     * @see HTMLPageAssetAPI#findPage(String, User, boolean)
      */
     @CloseDBIfOpened
     @Override
@@ -499,14 +496,18 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         Identifier targetIdent = identifierAPI.find(host,
                 targetFolderIdent.getURI() + sourceIdent.getAssetName());
         if (targetIdent == null || !InodeUtils.isSet(targetIdent.getId())) {
+            final Contentlet contentlet = contentletAPI
+                    .find(page.getInode(), user, false);
 
-            if(null != parent && !parent.equals(FolderAPI.SYSTEM_FOLDER)){
-                sourceIdent.setParentPath(targetFolderIdent.getPath());
-            } else {
-                sourceIdent.setParentPath(StringPool.FORWARD_SLASH);
+            contentletAPI.move(contentlet, user, host, parent, false);
+
+            if ( parent != null ) {
+                CacheLocator.getNavToolCache().removeNav(parent.getHostId(), parent.getInode());
             }
-            sourceIdent.setHostId(host != null ? host.getIdentifier() : (parent != null ? parent.getHostId() : page.getHost()) );
-            identifierAPI.save(sourceIdent);
+
+            final Folder oldParent = APILocator.getFolderAPI().findFolderByPath( sourceIdent.getParentPath(), host, user, false);
+
+            CacheLocator.getNavToolCache().removeNav(oldParent.getHostId(), oldParent.getInode());
 
             systemEventsAPI.pushAsync(SystemEventType.MOVE_PAGE_ASSET, new Payload(page.getMap(), Visibility.EXCLUDE_OWNER,
                     new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
