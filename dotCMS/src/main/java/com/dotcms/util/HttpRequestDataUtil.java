@@ -70,15 +70,7 @@ public class HttpRequestDataUtil {
 	 */
 	public static InetAddress getIpAddress(HttpServletRequest request)
 			throws UnknownHostException {
-		return InetAddress.getByName(getAddressFromRequest(request));
-	}
-
-	public static String getAddressFromRequest(HttpServletRequest request) {
-		String forwardedFor = request.getHeader("X-Forwarded-For");
-//		if (forwardedFor != null && (forwardedFor = findNonPrivateIpAddress(forwardedFor)) != null)
-//			return forwardedFor;
-		Logger.info(HttpRequestDataUtil.class, "X-Forwarded-For: " + forwardedFor);
-		return request.getRemoteAddr();
+		return InetAddress.getByName(request.getRemoteAddr());
 	}
 
 	/**
