@@ -73,6 +73,7 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -171,6 +172,7 @@ import com.liferay.util.StringUtil;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
+import io.vavr.Lazy;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.BufferedOutputStream;
@@ -245,6 +247,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private static final boolean INCLUDE_DEPENDENCIES = true;
 
     private static final String backupPath = ConfigUtils.getBackupPath() + File.separator + "contentlets";
+
+    private static final Lazy<Boolean> UNIQUE_PER_SITE_CONFIG = Lazy.of(()->Config
+            .getBooleanProperty("unique_per_site", true));
+
+    private static Boolean uniquePerSite;
 
     /**
      * Property to fetch related content from database (only applies for relationship fields)
@@ -4586,7 +4593,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final String title = contentletIn.getTitle();
             final String actionId = workflowActionOpt.get().getId();
 
-            // if the default action is in the avalable actions for the content.
+            // if the default action is in the available actions for the content.
             if (!isDefaultActionOnAvailableActions(contentletIn, user, workflowAPI, actionId)) {
                 return Optional.empty();
             }
@@ -4831,8 +4838,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             boolean changedURI = addOrUpdateContentletIdentifier(contentlet, contentletRaw, existingIdentifier, existingInode, htmlPageURL);
 
-            //Include system fields to generate a json representation - these fields are later removed before contentlet gets saved
-            contentlet = includeSystemFields(contentlet, contentletRaw, tagsValues, categories, user);
             contentlet = applyNullProperties(contentlet);
             //This is executed first hand to create the inode-contentlet relationship.
             if(InodeUtils.isSet(existingInode)) {
@@ -6724,6 +6729,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                     buffy.append(" +languageId:" + contentlet.getLanguageId());
 
+                    if (getUniquePerSiteConfig()) {
+                        if (!UtilMethods.isSet(contentlet.getHost())) {
+                            populateHost(contentlet);
+                        }
+
+                        buffy.append(" +conHost:" + contentlet.getHost());
+                    }
+
                     buffy.append(" +").append(contentlet.getContentType().variable()).append(StringPool.PERIOD)
                             .append(field.getVelocityVarName()).append(ESUtils.SHA_256)
                             .append(StringPool.COLON)
@@ -6771,16 +6784,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                     {
                                         cve.addUniqueField(field);
                                         hasError = true;
-                                        Logger.warn(this, "Field [" + field.getVelocityVarName() + "] with value '" +
-                                                fieldValue + "'must be unique");
+                                        Logger.warn(this, getUniqueFieldErrorMessage(field, fieldValue, cont));
                                         break;
                                     }
                                 }
                             }else{
                                 cve.addUniqueField(field);
                                 hasError = true;
-                                Logger.warn(this, "Field [" + field.getVelocityVarName() + "] with value '" +
-                                        fieldValue + "'must be unique");
+                                Logger.warn(this, getUniqueFieldErrorMessage(field, fieldValue, contentlets.get(0)));
                                 break;
                             }
                         }
@@ -6848,6 +6859,27 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(hasError){
             throw cve;
         }
+    }
+
+    @NotNull
+    private String getUniqueFieldErrorMessage(final Field field, final Object fieldValue, final ContentletSearch contentletSearch) {
+
+        return String.format("Value of Field [%s] must be unique. Contents having the same value (%s): %s",
+                field.getVelocityVarName(), fieldValue, contentletSearch.getIdentifier());
+    }
+
+    @VisibleForTesting
+    public static void setUniquePerSite(final Boolean uniquePerSite){
+        ESContentletAPIImpl.uniquePerSite = uniquePerSite;
+    }
+
+    @VisibleForTesting
+    public static Boolean getUniquePerSite(){
+        return uniquePerSite;
+    }
+
+    private boolean getUniquePerSiteConfig() {
+        return UtilMethods.isSet(uniquePerSite) ? uniquePerSite : UNIQUE_PER_SITE_CONFIG.get();
     }
 
     private void validateBinary(final File binary, final String fieldName, final Field legacyField, final ContentType contentType) {

@@ -990,7 +990,27 @@ public class TemplateResourceTest {
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final PaginatedArrayList paginatedArrayList = PaginatedArrayList.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(1,paginatedArrayList.size());
+        final PaginatedArrayList paginatedArrayListWithoutSystemTemplate =  this.removeSystemTemplate(paginatedArrayList);
+        Assert.assertEquals(1,paginatedArrayListWithoutSystemTemplate.size());
+    }
+
+    private PaginatedArrayList removeSystemTemplate(final PaginatedArrayList paginatedArrayList) {
+
+        final PaginatedArrayList paginatedArrayListWithoutSystemTemplate = new PaginatedArrayList();
+
+        paginatedArrayListWithoutSystemTemplate.setQuery(paginatedArrayList.getQuery());
+        paginatedArrayListWithoutSystemTemplate.setTotalResults(paginatedArrayList.getTotalResults());
+
+        for(Object templateObject : paginatedArrayList) {
+
+            if (templateObject instanceof TemplateView &&
+                    !Template.SYSTEM_TEMPLATE.equals(TemplateView.class.cast(templateObject).getIdentifier())) {
+
+                paginatedArrayListWithoutSystemTemplate.add(templateObject);
+            }
+        }
+
+        return paginatedArrayListWithoutSystemTemplate;
     }
 
     /**
@@ -1019,9 +1039,10 @@ public class TemplateResourceTest {
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         final PaginatedArrayList paginatedArrayList = PaginatedArrayList.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(1,paginatedArrayList.size());
+        final PaginatedArrayList paginatedArrayListWihoutSystemTemplate = removeSystemTemplate(paginatedArrayList);
+        Assert.assertEquals(1,paginatedArrayListWihoutSystemTemplate.size());
         Assert.assertEquals(APILocator.getIdentifierAPI().find(templateA.getIdentifier()).getHostId(),
-                APILocator.getIdentifierAPI().find(((TemplateView) paginatedArrayList.get(0)).getIdentifier()).getHostId());
+                APILocator.getIdentifierAPI().find(((TemplateView) paginatedArrayListWihoutSystemTemplate.get(0)).getIdentifier()).getHostId());
     }
 
     /**
@@ -1046,7 +1067,7 @@ public class TemplateResourceTest {
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         PaginatedArrayList paginatedArrayList = PaginatedArrayList.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(2,paginatedArrayList.size());
+        Assert.assertEquals(2, this.removeSystemTemplate(paginatedArrayList).size());
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
         final String password = "admin";
@@ -1064,6 +1085,6 @@ public class TemplateResourceTest {
         Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
         responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
         paginatedArrayList = PaginatedArrayList.class.cast(responseEntityView.getEntity());
-        Assert.assertEquals(1,paginatedArrayList.size());
+        Assert.assertEquals(1, this.removeSystemTemplate(paginatedArrayList).size());
     }
 }
