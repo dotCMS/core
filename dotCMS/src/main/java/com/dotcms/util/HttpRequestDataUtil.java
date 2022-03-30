@@ -4,6 +4,8 @@ import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils.SubnetInfo;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import io.netty.util.NetUtil;
+import io.vavr.control.Try;
 import java.io.UnsupportedEncodingException;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
@@ -23,6 +25,7 @@ import javax.management.ObjectName;
 import javax.management.Query;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.StringUtils;
+import org.elasticsearch.common.network.InetAddresses;
 
 /**
  * Provides quick access to information that can be obtained from the HTTP
@@ -70,7 +73,10 @@ public class HttpRequestDataUtil {
 	 */
 	public static InetAddress getIpAddress(HttpServletRequest request)
 			throws UnknownHostException {
-		return InetAddress.getByName(request.getRemoteAddr());
+		byte[] remoteAddr = Try.of(()->InetAddresses.isInetAddress(request.getRemoteAddr())).getOrElse(false)
+				? NetUtil.createByteArrayFromIpAddressString(request.getRemoteAddr())
+				: new byte[]{127, 0, 0, 1};
+		return InetAddress.getByAddress(remoteAddr);
 	}
 
 	/**
