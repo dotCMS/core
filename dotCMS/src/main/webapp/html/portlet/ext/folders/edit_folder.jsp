@@ -39,7 +39,7 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 
 	var formName;
 	function save(formName) {
-
+        dijit.byId('processingDialog').show();
 		this.formName = formName;
 
 		var form = document.getElementById(this.formName);
@@ -266,6 +266,10 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 	%>
 	<!-- END permissions -->
 	</div>
+</div>
+
+<div id="processingDialog" dojoType="dijit.Dialog" disableCloseButton="true" title="<%=LanguageUtil.get(pageContext,"Processing")%>" style="display: none;">
+    <div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="processingLoading" id="processingLoading"></div>
 </div>
 
 </liferay:box>
