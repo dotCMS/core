@@ -6,7 +6,7 @@ import java.util.List;
 public class Task220330ChangeVanityURLSiteFieldType extends AbstractJDBCStartupTask  {
 
     private String getScript(){
-        return "UPDATE field SET field_type = 'com.dotcms.contenttype.model.field.HostFolderField' "
+        return "UPDATE field SET field_type = 'com.dotcms.contenttype.model.field.HostFolderField', field_contentlet = 'system_field' "
                 + "WHERE velocity_var_name = 'site' and structure_inode in (select inode from structure where structuretype = 7)";
     }
 
