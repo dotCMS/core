@@ -17,14 +17,10 @@ import io.vavr.control.Try;
  * @author Nollymar Longa
  */
 public class VanityUrlDataGen extends ContentletDataGen {
-
-
-
   private String uri;
   private String forwardTo;
   private int action;
   private int order;
-  private long language;
   private String title;
   private Folder folder;
   
@@ -70,7 +66,7 @@ public class VanityUrlDataGen extends ContentletDataGen {
     return this;
   }
   public VanityUrlDataGen language(final long language) {
-    this.language = language;
+    this.languageId = language;
     return this;
   }
   @Override
@@ -80,8 +76,8 @@ public class VanityUrlDataGen extends ContentletDataGen {
     url.setContentTypeId(this.contentTypeId);
     url.setOrder(order);
     url.setURI(uri);
-    url.setLanguageId(language);
-    url.setTitle(UtilMethods.isSet(title) ? title : "Vanuty Test " + System.currentTimeMillis());
+    url.setLanguageId(languageId);
+    url.setTitle(UtilMethods.isSet(title) ? title : "Vanity Test " + System.currentTimeMillis());
     url.setForwardTo(forwardTo);
     url.setFolder(folder.getIdentifier());
     url.setSite(this.host.getIdentifier());

@@ -7,7 +7,7 @@ public class Task220330ChangeVanityURLSiteFieldType extends AbstractJDBCStartupT
 
     private String getScript(){
         return "UPDATE field SET field_type = 'com.dotcms.contenttype.model.field.HostFolderField' "
-                + "WHERE velocity_var_name = site' and structure_inode in (select inode from structure where structuretype = 7)";
+                + "WHERE velocity_var_name = 'site' and structure_inode in (select inode from structure where structuretype = 7)";
     }
 
     @Override
