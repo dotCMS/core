@@ -3,10 +3,10 @@ package com.dotcms.proxy;
 import com.dotmarketing.quartz.job.HostCopyOptions;
 
 /**
- * Proxy to interact with site ee implementations
+ * Proxy to interact with copy site ee implementation
  * @author jsanca
  */
-public interface SiteJobProxy {
+public interface CopySiteJobProxy {
 
     /**
      * Fires the job

@@ -7,7 +7,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 
 /**
- * Proxy to access the proxies on EE
+ * Locator to access the proxies on EE
  * @author jsanca
  */
 public class ProxyLocator extends Locator<ProxyLocator.APIIndex> {
@@ -74,19 +74,19 @@ public class ProxyLocator extends Locator<ProxyLocator.APIIndex> {
 
         final Object serviceRef = apiLocatorInstance.getServiceInstance(index);
 
-        if( Logger.isDebugEnabled(APILocator.class) ) {
-            Logger.debug(APILocator.class, apiLocatorInstance.audit(index));
+        if( Logger.isDebugEnabled(ProxyLocator.class) ) {
+            Logger.debug(ProxyLocator.class, apiLocatorInstance.audit(index));
         }
 
         return serviceRef;
     }
     /**
-     * Creates a single instance of the {@link SiteJobProxy} class.
+     * Creates a single instance of the {@link CopySiteJobProxy} class.
      *
-     * @return The {@link SiteJobProxy} class.
+     * @return The {@link CopySiteJobProxy} class.
      */
-    public static SiteJobProxy getSiteJobProxy() {
-        return (SiteJobProxy)getInstance(APIIndex.SITE_JOB_PROXY);
+    public static CopySiteJobProxy getSiteJobProxy() {
+        return (CopySiteJobProxy)getInstance(APIIndex.SITE_JOB_PROXY);
     }
 
 
@@ -96,7 +96,7 @@ public class ProxyLocator extends Locator<ProxyLocator.APIIndex> {
         // NOTE: try to use always reflection to get the singleton instance to avoid compile dependency with ee
         Object create() {
             switch(this) {
-                case SITE_JOB_PROXY: return ReflectionUtils.newInstance("com.dotcms.enterprise.SiteJobProxyImpl");
+                case SITE_JOB_PROXY: return ReflectionUtils.newInstance("com.dotcms.enterprise.CopySiteJobProxyImpl");
             }
             throw new AssertionError("Unknown API Proxy index: " + this);
         }
