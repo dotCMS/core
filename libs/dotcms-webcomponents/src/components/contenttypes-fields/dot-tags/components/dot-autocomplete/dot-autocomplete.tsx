@@ -1,5 +1,5 @@
 import { Component, Prop, Event, EventEmitter, Element, Watch, h } from '@stencil/core';
-import autoComplete from '@tarekraafat/autocomplete.js/dist/js/autoComplete';
+import autoComplete from '@tarekraafat/autocomplete.js';
 
 interface SelectionItem {
     index: number;
@@ -7,7 +7,7 @@ interface SelectionItem {
     match: string;
 }
 
-interface SelectionFeedback {
+export interface SelectionFeedback {
     event: KeyboardEvent | MouseEvent;
     query: string;
     matched: number;
@@ -55,8 +55,11 @@ export class DotAutocompleteComponent {
     lostFocus: EventEmitter<FocusEvent>;
 
     private readonly id = `autoComplete${new Date().getTime()}`;
+    private enteredSuggestionList = false;
 
     private keyEvent = {
+        ArrowDown: this.enteredList.bind(this),
+        ArrowUp: this.enteredList.bind(this),
         Enter: this.emitEnter.bind(this),
         Escape: this.clean.bind(this)
     };
@@ -117,22 +120,22 @@ export class DotAutocompleteComponent {
     private clean(): void {
         this.getInputElement().value = '';
         this.cleanOptions();
+        this.enteredSuggestionList = false;
     }
 
     private cleanOptions(): void {
         this.getResultList().innerHTML = '';
     }
 
-    private emitselect(select: string): void {
-        this.clean();
-        this.selection.emit(select);
+    private enteredList(): void {
+        this.enteredSuggestionList = !this.getResultList().attributes['hidden'];
     }
 
     private emitEnter(select: string): void {
-        if (select) {
-            this.clean();
+        if (select && !this.enteredSuggestionList) {
             this.enter.emit(select);
         }
+        this.clean();
     }
 
     private getInputElement(): HTMLInputElement {
@@ -141,37 +144,33 @@ export class DotAutocompleteComponent {
 
     private initAutocomplete(): void {
         this.clearList();
-        // tslint:disable-next-line:no-unused-expression
+
         new autoComplete({
             data: {
                 src: async () => this.getData()
             },
-            sort: (a, b) => {
-                if (a.match < b.match) {
-                    return -1;
-                }
-                if (a.match > b.match) {
-                    return 1;
-                }
-                return 0;
-            },
-            placeHolder: this.placeholder,
             selector: `#${this.id}`,
             threshold: this.threshold,
             searchEngine: 'strict',
-            highlight: true,
-            maxResults: this.maxResults,
             debounce: this.debounce,
             resultsList: {
-                container: () => this.getResultListId(),
-                destination: this.getInputElement(),
-                position: 'afterend'
+                destination: this.getInputElement.bind(this),
+                id: `list_${this.id}`,
+                position: 'afterend',
+                noResults: false
             },
-            resultItem: ({ match }: SelectionItem) => match,
-            onSelection: ({ event, selection }: SelectionFeedback) => {
-                event.preventDefault();
-                this.focusOnInput();
-                this.emitselect(selection.value);
+            resultItem: {
+                highlight: true,
+                selected: 'autoComplete_highlighted'
+            },
+            events: {
+                input: {
+                    selection: (event) => {
+                        event.preventDefault();
+                        this.focusOnInput();
+                        this.clean();
+                    }
+                }
             }
         });
     }
@@ -192,7 +191,7 @@ export class DotAutocompleteComponent {
     }
 
     private getResultListId(): string {
-        return `${this.id}_results_list`;
+        return `list_${this.id}`;
     }
 
     private async getData(): Promise<string[]> {
