@@ -1,3 +1,2 @@
-<small *ngIf="field.enabled && field.dirty && !field.valid" class="p-invalid">
-    {{ message ? message : ('required' | dm) }}
-</small>
+<small *ngIf="_field.enabled && _field.dirty && !_field.valid" class="p-invalid"
+       data-testId="dotErrorMsg">{{ errorMsg  | dm }}</small>

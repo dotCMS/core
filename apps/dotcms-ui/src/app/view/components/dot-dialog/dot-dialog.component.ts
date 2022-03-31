@@ -1,13 +1,13 @@
 import {
     Component,
-    Input,
-    EventEmitter,
-    Output,
-    HostBinding,
-    ViewChild,
     ElementRef,
+    EventEmitter,
+    HostBinding,
+    Input,
     OnChanges,
-    SimpleChanges
+    Output,
+    SimpleChanges,
+    ViewChild
 } from '@angular/core';
 import { fromEvent, Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
@@ -36,6 +36,9 @@ export class DotDialogComponent implements OnChanges {
     contentStyle: {
         [key: string]: string;
     };
+
+    @Input()
+    isSaving = false;
 
     @Input()
     headerStyle: {

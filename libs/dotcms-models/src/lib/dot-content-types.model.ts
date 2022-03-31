@@ -86,6 +86,32 @@ export interface DotCMSContentTypeFieldVariable {
     value: string;
 }
 
+export interface DotCMSAssetDialogFields {
+    title: string;
+    assetIdentifier: string;
+    baseType: DotCMSBaseTypesContentTypes;
+}
+
+export const enum DotCMSBaseTypesContentTypes {
+    WIDGET = 'WIDGET',
+    CONTENT = 'CONTENT',
+    PERSONA = 'PERSONA',
+    FILEASSET = 'FILEASSET',
+    HTMLPAGE = 'HTMLPAGE',
+    VANITY_URL = 'VANITY_URL',
+    DOTASSET = 'DOTASSET',
+    FORM = 'FORM',
+    KEY_VALUE = 'KEY_VALUE'
+}
+
+export type DotCopyContentTypeDialogFormFields = {
+    name: string;
+    variable: string;
+    folder: string;
+    host: string;
+    icon: string;
+};
+
 /** @private */
 interface Relationships {
     cardinality: number;

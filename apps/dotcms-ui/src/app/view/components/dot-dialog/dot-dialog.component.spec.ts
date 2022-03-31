@@ -1,7 +1,7 @@
-import { DebugElement, Component } from '@angular/core';
+import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { DotDialogComponent, DotDialogActions } from './dot-dialog.component';
+import { DotDialogActions, DotDialogComponent } from './dot-dialog.component';
 import { UiDotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
 import { UiDotIconButtonComponent } from '@components/_common/dot-icon-button/dot-icon-button.component';
 import { ButtonModule } from 'primeng/button';
@@ -32,6 +32,7 @@ const dispatchKeydownEvent = (key: string) => {
             [appendToBody]="appendToBody"
             [hideButtons]="hideButtons"
             [bindEvents]="bindEvents"
+            [isSaving]="isSaving"
         >
             <b>Dialog content</b>
         </dot-dialog>
@@ -46,6 +47,7 @@ class TestHostComponent {
     hideButtons = false;
     appendToBody = false;
     bindEvents = true;
+    isSaving = false;
 }
 
 @Component({
@@ -58,6 +60,7 @@ class TestHostComponent {
 })
 class TestHost2Component {
     show = false;
+
     beforeClose({ close }): void {
         close();
     }
@@ -358,6 +361,19 @@ describe('DotDialogComponent', () => {
                         accept.triggerEventHandler('click', {});
 
                         expect(accceptAction).toHaveBeenCalledTimes(1);
+                    });
+
+                    it('should show loading indicator when is saving', () => {
+                        hostComponent.isSaving = true;
+                        hostFixture.detectChanges();
+
+                        expect(component.isSaving).toEqual(true);
+                    });
+
+                    it("shouldn't show loading indicator when is not saving", () => {
+                        hostComponent.isSaving = false;
+                        hostFixture.detectChanges();
+                        expect(component.isSaving).toEqual(false);
                     });
 
                     it('should call cancel action when is set', () => {

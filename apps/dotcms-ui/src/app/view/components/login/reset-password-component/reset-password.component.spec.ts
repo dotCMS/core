@@ -30,7 +30,6 @@ describe('ResetPasswordComponent', () => {
     let loginService: LoginService;
     let activatedRoute: ActivatedRoute;
     let dotRouterService: DotRouterService;
-    let changePasswordButton;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -59,9 +58,8 @@ describe('ResetPasswordComponent', () => {
         loginService = TestBed.inject(LoginService);
         dotRouterService = TestBed.inject(DotRouterService);
         spyOn(activatedRoute.snapshot.paramMap, 'get').and.returnValue('test@test.com');
-        fixture.detectChanges();
 
-        changePasswordButton = de.query(By.css('button[type="submit"]'));
+        fixture.detectChanges();
     });
 
     it('should load form labels correctly', () => {
@@ -77,15 +75,18 @@ describe('ResetPasswordComponent', () => {
     });
 
     it('should keep change password button disabled until the form is valid', () => {
+        const changePasswordButton: DebugElement = de.query(By.css('[data-testId="submitButton"]'));
         expect(changePasswordButton.nativeElement.disabled).toBe(true);
     });
 
     it('should display message if passwords do not match', () => {
+        const changePasswordButton: DebugElement = de.query(By.css('[data-testId="submitButton"]'));
         spyOn(loginService, 'changePassword').and.callThrough();
         component.resetPasswordForm.setValue({
             password: 'test',
             confirmPassword: 'test2'
         });
+
         changePasswordButton.triggerEventHandler('click', {});
         fixture.detectChanges();
         const errorMessage = de.query(By.css('[data-testid="errorMessage"]'));
@@ -95,6 +96,8 @@ describe('ResetPasswordComponent', () => {
     });
 
     it('should call the change password service and redirect to loging page', () => {
+        const changePasswordButton: DebugElement = de.query(By.css('[data-testId="submitButton"]'));
+
         spyOn(loginService, 'changePassword').and.callThrough();
         component.resetPasswordForm.setValue({
             password: 'test',
@@ -110,6 +113,8 @@ describe('ResetPasswordComponent', () => {
     });
 
     it('should show error message form the service', () => {
+        const changePasswordButton: DebugElement = de.query(By.css('[data-testId="submitButton"]'));
+
         spyOn(loginService, 'changePassword').and.returnValue(
             throwError({ error: { errors: [{ message: 'error message' }] } })
         );
@@ -126,11 +131,19 @@ describe('ResetPasswordComponent', () => {
     });
 
     it('should show error message for required form fields', () => {
-        component.resetPasswordForm.get('password').markAsDirty();
-        component.resetPasswordForm.get('confirmPassword').markAsDirty();
+        const changePasswordButton: DebugElement = de.query(By.css('[data-testId="submitButton"]'));
+
+        component.resetPasswordForm.setValue({
+            password: 'abcd',
+            confirmPassword: 'dcba'
+        });
+
+        changePasswordButton.triggerEventHandler('click', {});
         fixture.detectChanges();
 
-        const errorMessages = de.queryAll(By.css('dot-field-validation-message .p-invalid'));
-        expect(errorMessages.length).toBe(2);
+        const errorMessage = de.query(By.css('[data-testId="errorMessage"]')).nativeElement
+            .innerText;
+
+        expect(errorMessage).toEqual('password do not match');
     });
 });

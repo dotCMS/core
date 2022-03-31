@@ -16,7 +16,16 @@
         top: 0;
         z-index: 1000;
     }
+
+    &.no-overflow {
+        .dialog {
+            .dialog__content {
+                overflow: visible;
+            }
+        }
+    }
 }
+
 
 .dialog {
     background-color: $white;

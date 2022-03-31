@@ -8,41 +8,44 @@
     class="dialog {{ cssClass }}"
 >
     <header
-        class="dialog__header"
         [class.dialog__header--shadowed]="isContentScrolled"
         [ngStyle]="headerStyle"
+        class="dialog__header"
     >
-        <h4 class="dialog__title" [textContent]="header"></h4>
-        <dot-icon-button big icon="close" (click)="close($event)" *ngIf="closeable">
+        <h4 [textContent]="header" class="dialog__title"></h4>
+        <dot-icon-button (click)="close($event)" *ngIf="closeable" big icon="close">
         </dot-icon-button>
     </header>
 
-    <div class="dialog__content" [ngStyle]="contentStyle" (scroll)="onContentScroll($event)">
+    <div (scroll)="onContentScroll($event)" [ngStyle]="contentStyle" class="dialog__content">
         <ng-content></ng-content>
     </div>
 
     <footer
-        class="dialog__footer"
         *ngIf="actions"
         [class.dialog__footer--shadowed]="isContentScrolled"
+        class="dialog__footer"
     >
         <button
-            *ngIf="actions.cancel"
-            pButton
-            class="dialog__button-cancel p-button-secondary"
             (click)="cancelAction()"
+            *ngIf="actions.cancel"
             [disabled]="actions.cancel.disabled"
             [label]="actions.cancel.label"
             [style.display]="hideButtons ? 'none' : 'block'"
+            class="dialog__button-cancel p-button-secondary"
+            data-testId="dotDialogCancelAction"
+            pButton
         ></button>
         <button
+            (click)="acceptAction()"
             *ngIf="actions.accept"
-            class="dialog__button-accept"
-            pButton
             [disabled]="actions.accept.disabled"
             [label]="actions.accept.label"
-            (click)="acceptAction()"
+            [loading]="isSaving"
             [style.display]="hideButtons ? 'none' : 'block'"
+            class="dialog__button-accept"
+            data-testId="dotDialogAcceptAction"
+            pButton
         ></button>
     </footer>
 </div>

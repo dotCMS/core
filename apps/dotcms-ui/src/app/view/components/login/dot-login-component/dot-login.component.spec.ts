@@ -218,8 +218,15 @@ describe('DotLoginComponent', () => {
         });
 
         it('should show error message for required form fields', () => {
-            component.loginForm.get('login').markAsDirty();
-            component.loginForm.get('password').markAsDirty();
+            const loginControl = component.loginForm.get('login');
+            loginControl.setValue('');
+            loginControl.markAsTouched();
+            loginControl.markAsDirty();
+
+            const passwordControl = component.loginForm.get('password');
+            passwordControl.setValue('');
+            passwordControl.markAsTouched();
+            passwordControl.markAsDirty();
 
             fixture.detectChanges();
 
