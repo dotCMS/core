@@ -79,7 +79,7 @@ public class ContentletUtil {
 				hostOrFolderMap.put("folder", "");
 			} else {
 				Folder folder = APILocator.getFolderAPI().find(hostFolderId,user,false);
-				path = APILocator.getIdentifierAPI().find(folder).getPath();
+				path = APILocator.getIdentifierAPI().find(folder.getIdentifier()).getPath();
 				host = APILocator.getHostAPI().find(folder.getHostId(), user, false);
 				hostName = host.getHostname();
 				path.substring(path.length()-1);

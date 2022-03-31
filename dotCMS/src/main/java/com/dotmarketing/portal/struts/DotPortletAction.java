@@ -346,25 +346,10 @@ public class DotPortletAction extends PortletAction {
 
 		if (parentInode != null && parentInode.length() != 0 && !parentInode.equals("")) {
 			// the new parent is being passed through the request
-			Folder parent = (Folder) InodeFactory.getInode(parentInode, Folder.class);
+			final Folder parent = APILocator.getFolderAPI().find(parentInode, user, false);
 
 			// Checking permissions
 			_checkCopyAndMovePermissions(webAsset, parent, user, httpReq, "move");
-
-			// gets old parent
-			Folder oldParent = APILocator.getFolderAPI().findParentFolder(workingWebAsset, user, false);
-			Logger.debug(this, "Old Parent Folder=" + oldParent.getInode());
-			oldParent.deleteChild(workingWebAsset);
-			if ((liveWebAsset != null) && (InodeUtils.isSet(liveWebAsset.getInode()))) {
-				oldParent.deleteChild(liveWebAsset);
-			}
-
-			// Adding to new parent
-			Logger.debug(this, "Parent Folder=" + parent.getInode());
-			parent.addChild(workingWebAsset);
-			if ((liveWebAsset != null) && (InodeUtils.isSet(liveWebAsset.getInode()))) {
-				parent.addChild(liveWebAsset);
-			}
 
 			// gets identifier for this webasset and changes the uri and
 			// persists it
@@ -893,6 +878,43 @@ public class DotPortletAction extends PortletAction {
 		}
 	}
 
+	protected static void _checkUserPermissions(String inode, int permission) throws ActionException {
+		final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+
+		final List<Role> rolesPublish = permissionAPI.getRoles(inode, PermissionAPI.PERMISSION_PUBLISH, "CMS Owner", 0, -1);
+		final List<Role> rolesWrite = permissionAPI.getRoles(inode, PermissionAPI.PERMISSION_WRITE, "CMS Owner", 0, -1);
+
+		Role cmsOwner;
+		try {
+			cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
+		} catch (DotDataException e) {
+			Logger.error(DotPortletAction.class,e.getMessage(),e);
+			throw new ActionException(e);
+		}
+		boolean isCMSOwner = false;
+		if(rolesPublish.size() > 0 || rolesWrite.size() > 0){
+			for (Role role : rolesPublish) {
+				if(role.getId().equals(cmsOwner.getId())){
+					isCMSOwner = true;
+					break;
+				}
+			}
+			if(!isCMSOwner){
+				for (Role role : rolesWrite) {
+					if(role.getId().equals(cmsOwner.getId())){
+						isCMSOwner = true;
+						break;
+					}
+				}
+			}
+			if(!isCMSOwner){
+				Logger.error(DotPortletAction.class, "The user does not have permission to execute this action.");
+				throw new ActionException(WebKeys.USER_PERMISSIONS_EXCEPTION);
+			}
+		}else {
+			throw new ActionException(WebKeys.USER_PERMISSIONS_EXCEPTION);
+		}
+	}
 	/**
 	 * 
 	 * @param webAsset
@@ -902,45 +924,24 @@ public class DotPortletAction extends PortletAction {
 	 * @throws DotDataException
 	 */
 	protected static void _checkUserPermissions(Inode webAsset, User user, int permission) throws ActionException, DotDataException {
-		PermissionAPI perAPI = APILocator.getPermissionAPI();
+		final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 		// Checking permissions
 		if (!InodeUtils.isSet(webAsset.getInode()))
 			return;
-		if (!perAPI.doesUserHavePermission(webAsset, permission, user)) {
-			Logger.debug(DotPortletAction.class, "_checkUserPermissions: user does not have permissions ( " + permission + " ) over this asset: " + webAsset);
-			List<Role> rolesPublish = perAPI.getRoles(webAsset.getInode(), PermissionAPI.PERMISSION_PUBLISH, "CMS Owner", 0, -1);
-			List<Role> rolesWrite = perAPI.getRoles(webAsset.getInode(), PermissionAPI.PERMISSION_WRITE, "CMS Owner", 0, -1);
-			
-			Role cmsOwner;
-			try {
-				cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
-			} catch (DotDataException e) {
-				Logger.error(DotPortletAction.class,e.getMessage(),e);
-				throw new ActionException(e);
-			}
-			boolean isCMSOwner = false;
-			if(rolesPublish.size() > 0 || rolesWrite.size() > 0){
-				for (Role role : rolesPublish) {
-					if(role.getId().equals(cmsOwner.getId())){
-						isCMSOwner = true;
-						break;
-					}
-				}
-				if(!isCMSOwner){
-					for (Role role : rolesWrite) {
-						if(role.getId().equals(cmsOwner.getId())){
-							isCMSOwner = true;
-							break;
-						}
-					}
-				}
-				if(!isCMSOwner){
-					throw new ActionException(WebKeys.USER_PERMISSIONS_EXCEPTION);
-				}
-			}else{
-				throw new ActionException(WebKeys.USER_PERMISSIONS_EXCEPTION);
-			}	
-					
+		if (!permissionAPI.doesUserHavePermission(webAsset, permission, user)) {
+			_checkUserPermissions(webAsset.getInode(), permission);
+		}
+	}
+
+	protected static void _checkUserPermissions(final Folder folder, final User user, final int permission) throws ActionException, DotDataException {
+		final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+		// Checking permissions
+		if (!InodeUtils.isSet(folder.getInode())) {
+			return;
+		}
+
+		if (!permissionAPI.doesUserHavePermission(folder, permission, user)) {
+			_checkUserPermissions(folder.getInode(), permission);
 		}
 	}
 

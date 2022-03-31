@@ -289,7 +289,7 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 						<% if(!InodeUtils.isSet(contentLink.getParent())) { %>
 							<div id="folder" name="parent" onlySelectFolders="true" dojoType="dotcms.dijit.form.HostFolderFilteringSelect" <%= UtilMethods.isSet(hostId)?"hostId=\"" + hostId + "\"":"" %>></div>
 						<% } else { %>
-							<%= APILocator.getIdentifierAPI().find(folder).getPath() %>
+							<%= APILocator.getIdentifierAPI().find(folder.getIdentifier()).getPath() %>
 							<html:hidden styleClass="form-text" property="parent" styleId="parent" />
 						<% } %>
 					</dd>

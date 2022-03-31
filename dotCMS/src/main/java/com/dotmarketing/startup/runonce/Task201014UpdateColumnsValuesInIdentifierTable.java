@@ -213,10 +213,10 @@ public class Task201014UpdateColumnsValuesInIdentifierTable extends AbstractJDBC
 
         return query.append("UPDATE identifier tt SET (tt.owner, tt.create_date) = (SELECT st.iowner, st.idate \n")
                 .append("FROM (SELECT * FROM \n")
-                .append("(SELECT DISTINCT temp.identifier myID, owner iowner, inode.idate idate, \n")
+                .append("(SELECT DISTINCT temp.identifier myID, inode.owner iowner, inode.idate idate, \n")
                 .append("row_number() OVER ( PARTITION BY temp.identifier ORDER BY inode.idate desc ) as r \n")
                 .append("FROM ").append(tableName).append(" temp, inode, \n")
-                .append("(SELECT identifier, MIN(idate) idate FROM ")
+                .append("(SELECT identifier, MIN(inode.idate) idate FROM ")
                 .append(tableName).append(", inode \n")
                 .append("WHERE inode.inode=").append(tableName).append(".inode GROUP BY identifier) custom_select \n")
                 .append("WHERE temp.identifier=custom_select.identifier \n")
@@ -244,9 +244,9 @@ public class Task201014UpdateColumnsValuesInIdentifierTable extends AbstractJDBC
     private String getQueryToUpdateNonContentlets(final String tableName){
         final StringBuilder query = new StringBuilder();
         return query.append("UPDATE identifier SET owner=iowner, create_date=idate FROM\n")
-                .append("(SELECT DISTINCT temp.identifier myID, owner iowner, inode.idate idate from ")
+                .append("(SELECT DISTINCT temp.identifier myID, inode.owner iowner, inode.idate idate from ")
                 .append(tableName).append(" temp, inode,\n")
-                .append("(SELECT identifier, MIN(idate) idate from ")
+                .append("(SELECT identifier, MIN(inode.idate) idate from ")
                 .append(tableName).append(", inode \n")
                 .append("WHERE inode.inode=").append(tableName).append(".inode GROUP BY identifier) custom_select  \n")
                 .append(" WHERE temp.identifier=custom_select.identifier\n")
@@ -257,9 +257,9 @@ public class Task201014UpdateColumnsValuesInIdentifierTable extends AbstractJDBC
     private String getQueryToUpdateNonContentletsMySQL(final String tableName){
         final StringBuilder query = new StringBuilder();
         return query.append("UPDATE identifier ident,\n")
-                .append("(SELECT DISTINCT temp.identifier myID, owner iowner, inode.idate idate  FROM ")
+                .append("(SELECT DISTINCT temp.identifier myID, inode.owner iowner, inode.idate idate  FROM ")
                 .append(tableName).append(" temp, inode,\n")
-                .append("(SELECT identifier, MIN(idate) idate FROM ").append(tableName)
+                .append("(SELECT identifier, MIN(inode.idate) idate FROM ").append(tableName)
                 .append(", inode \n").append("WHERE inode.inode=")
                 .append(tableName).append(".inode GROUP BY identifier) custom_select  \n")
                 .append("WHERE temp.identifier=custom_select.identifier\n")

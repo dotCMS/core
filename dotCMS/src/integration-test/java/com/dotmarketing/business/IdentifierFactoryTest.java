@@ -421,12 +421,12 @@ public class IdentifierFactoryTest {
 
         try {
             //Creates new identifier
-            identifier = factory.createNewIdentifier(newFolder, parentFolder);
+            identifier = factory.createNewIdentifier(newFolder, parentFolder, null);
 
             assertNotNull(identifier.getId());
             assertFalse(identifier.getId().isEmpty());
-            assertNotNull(newFolder.getVersionId());
-            assertFalse(newFolder.getVersionId().isEmpty());
+            assertNotNull(newFolder.getIdentifier());
+            assertFalse(newFolder.getIdentifier().isEmpty());
             assertEquals(parentFolder.getPath(), identifier.getParentPath());
             assertEquals(Identifier.ASSET_TYPE_FOLDER, identifier.getAssetType());
             assertEquals(newFolder.getName(), identifier.getAssetName());
@@ -645,12 +645,12 @@ public class IdentifierFactoryTest {
         newFolder.setOwner(systemUser.getUserId());
         try {
             //Creates new identifier
-            identifier = factory.createNewIdentifier(newFolder, defaultHost);
+            identifier = factory.createNewIdentifier(newFolder, defaultHost, null);
 
             assertNotNull(identifier.getId());
             assertFalse(identifier.getId().isEmpty());
-            assertNotNull(newFolder.getVersionId());
-            assertFalse(newFolder.getVersionId().isEmpty());
+            assertNotNull(newFolder.getIdentifier());
+            assertFalse(newFolder.getIdentifier().isEmpty());
             assertEquals(Identifier.ASSET_TYPE_FOLDER, identifier.getAssetType());
             assertEquals(newFolder.getName(), identifier.getAssetName());
 
@@ -862,7 +862,7 @@ public class IdentifierFactoryTest {
         newFolder.setOwner(systemUser.getUserId());
         try {
             //Creates new identifier
-            identifier = factory.createNewIdentifier(newFolder, defaultHost);
+            identifier = factory.createNewIdentifier(newFolder, defaultHost, null);
 
             assertTrue(UtilMethods.isSet(identifier.getId()));
             assertEquals(newFolder.getName(), identifier.getAssetName());

@@ -31,6 +31,8 @@ import com.liferay.portal.model.User;
 /** @author Hibernate CodeGenerator */
 public class Template extends WebAsset implements Serializable, Comparable, ManifestItem {
 
+	public static final String SYSTEM_TEMPLATE = "SYSTEM_TEMPLATE";
+
 	private static final long serialVersionUID = 1L;
 
 	public static String ANONYMOUS_PREFIX = "anonymous_layout_";
@@ -102,7 +104,7 @@ public class Template extends WebAsset implements Serializable, Comparable, Mani
     public String getURI(Folder folder) {
     	String folderPath = "";
 		try {
-			folderPath = APILocator.getIdentifierAPI().find(folder).getPath();
+			folderPath = APILocator.getIdentifierAPI().find(folder.getIdentifier()).getPath();
 		} catch (Exception e) {
 			Logger.error(this,e.getMessage());
 			throw new DotRuntimeException(e.getMessage(),e);

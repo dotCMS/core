@@ -142,6 +142,12 @@ public class PermissionAjax {
 
 					//try from the cache
 					Permissionable permParent = inodeCache.get(p.getInode());
+
+					if (permParent == null){
+						//let's check if it is a folder
+						permParent = CacheLocator.getFolderCache().getFolder(p.getInode());
+					}
+
 					if(permParent == null) {
 						// because identifiers are not Inodes, we need to do a double lookup
 
@@ -164,7 +170,7 @@ public class PermissionAjax {
 					}
 					if(permParent instanceof Folder) {
 						roleMap.put("inheritedFromType", "folder");
-						roleMap.put("inheritedFromPath", APILocator.getIdentifierAPI().find((Folder)permParent).getPath());
+						roleMap.put("inheritedFromPath", APILocator.getIdentifierAPI().find(((Folder)permParent).getIdentifier()).getPath());
 						roleMap.put("inheritedFromId", ((Folder)permParent).getInode());
 					} else if (permParent instanceof Structure) {
 					    roleMap.put("inheritedFromType", "structure");
@@ -372,6 +378,11 @@ public class PermissionAjax {
 			}
 		}
 
+		if (perm == null) {
+			//we check if it is a folder
+			perm = APILocator.getFolderAPI().find(assetId, user,respectFrontendRoles);
+		}
+
 		if(perm == null) {
 
 			DotConnect dc = new DotConnect();
@@ -383,33 +394,29 @@ public class PermissionAjax {
 			
 			if(assetResult.size()>0){
                 // It could be:
-                //
-                // 1. folder
-                // 2. contentlet
-                // 3. htmlpage
-                // 4. template
-                // 5. links
-                // 6. containers: table has different name: dot_containers
+                // 1. contentlet
+                // 2. htmlpage
+                // 3. template
+                // 4. links
+                // 5. containers: table has different name: dot_containers
                 assetType = (String) ((Map)assetResult.get(0)).get("asset_type");
 			}
 			
 			if(UtilMethods.isSet(assetType)){
 				dc.setSQL("select i.inode, type from inode i," +
-                    Inode.Type.valueOf(assetType.toUpperCase()).getTableName() +
-                    " a where i.inode = a.inode and a.identifier = ?");
+						Inode.Type.valueOf(assetType.toUpperCase()).getTableName() +
+						" a where i.inode = a.inode and a.identifier = ?");
 				dc.addParam(assetId);
 				results = dc.loadResults();
-			}
-			
-			if(results.size() > 0) {
-				String type =  (String) ((Map)results.get(0)).get("type");
-				String inode = (String) ((Map)results.get(0)).get("inode");
-				if(assetType.equals(Identifier.ASSET_TYPE_TEMPLATE)){
-					perm = APILocator.getTemplateAPI().find(inode,user,respectFrontendRoles);
-				} else if (assetType.equals(Identifier.ASSET_TYPE_FOLDER)){
-					perm = APILocator.getFolderAPI().find(inode,user,respectFrontendRoles);
-				}else {
-					perm = InodeFactory.getInode(inode, InodeUtils.getClassByDBType(type));
+
+				if(results.size() > 0) {
+					String type =  (String) ((Map)results.get(0)).get("type");
+					String inode = (String) ((Map)results.get(0)).get("inode");
+					if(assetType.equals(Identifier.ASSET_TYPE_TEMPLATE)){
+						perm = APILocator.getTemplateAPI().find(inode,user,respectFrontendRoles);
+					} else {
+						perm = InodeFactory.getInode(inode, InodeUtils.getClassByDBType(type));
+					}
 				}
 			}
 		}
