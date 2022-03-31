@@ -23,8 +23,7 @@ import { ViewContainerRef } from '@angular/core';
 @Component({
     selector: 'dotcms-block-editor',
     templateUrl: './dot-block-editor.component.html',
-    styleUrls: ['./dot-block-editor.component.scss'],
-    encapsulation: ViewEncapsulation.None
+    styleUrls: ['./dot-block-editor.component.scss']
 })
 export class DotBlockEditorComponent implements OnInit {
     editor: Editor;
