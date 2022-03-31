@@ -65,7 +65,7 @@ public abstract class VanityUrlContentType extends ContentType implements Expire
 		Field siteField = ImmutableHostFolderField.builder().name(SITE_FIELD_NAME)
 				.variable(SITE_FIELD_VAR)
 				.dataType(DataTypes.SYSTEM).fixed(Boolean.TRUE).indexed(Boolean.TRUE)
-				.required(Boolean.TRUE).sortOrder(2).listed(Boolean.FALSE).build();
+				.sortOrder(2).listed(Boolean.FALSE).build();
 		Field uriField = ImmutableTextField.builder().name(URI_FIELD_NAME).variable(URI_FIELD_VAR)
 				.dataType(DataTypes.TEXT).indexed(Boolean.TRUE).searchable(Boolean.TRUE)
 				.required(Boolean.TRUE)

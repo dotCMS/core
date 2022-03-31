@@ -82,7 +82,7 @@ public class VanityUrlDataGen extends ContentletDataGen {
     url.setFolder(folder.getIdentifier());
     url.setSite(this.host.getIdentifier());
     url.setHost(this.host.getIdentifier());
-    url.setProperty("site", host.getIdentifier());
+
     return url;
   }
 
