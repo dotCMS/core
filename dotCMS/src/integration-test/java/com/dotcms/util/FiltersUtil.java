@@ -65,7 +65,7 @@ public class FiltersUtil {
         contentlet.setLanguageId(languageId);
 
         contentlet.setStringProperty(VanityUrlContentType.TITLE_FIELD_VAR, title);
-        contentlet.setStringProperty(VanityUrlContentType.SITE_FIELD_VAR, site);
+        contentlet.setHost(site);
         contentlet.setStringProperty(VanityUrlContentType.URI_FIELD_VAR, uri);
         contentlet.setStringProperty(VanityUrlContentType.FORWARD_TO_FIELD_VAR, forwardTo);
         contentlet.setLongProperty(VanityUrlContentType.ACTION_FIELD_VAR, action);

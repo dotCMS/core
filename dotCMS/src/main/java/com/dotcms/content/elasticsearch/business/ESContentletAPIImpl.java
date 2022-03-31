@@ -893,8 +893,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     .find(contentletVersionInfo.get().getLiveInode(), APILocator.systemUser(),
                             false);
 
-            final String oldHostId = oldLiveVersion.getStringProperty(
-                    VanityUrlContentType.SITE_FIELD_VAR);
+            final String oldHostId = oldLiveVersion.getHost();
 
             if (!oldHostId.equals(contentlet.getHost())) {
                 CacheLocator.getVanityURLCache().remove(oldHostId, oldLiveVersion.getLanguageId());
