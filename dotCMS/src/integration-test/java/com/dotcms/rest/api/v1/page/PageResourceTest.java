@@ -508,7 +508,8 @@ public class PageResourceTest {
     }
 
     @Test
-    public void shouldReturnPageByURLPattern() throws DotDataException, DotSecurityException, InterruptedException {
+    public void shouldReturnPageByURLPattern()
+            throws DotDataException, DotSecurityException, InterruptedException, SystemException, PortalException {
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
         final String baseUrl = String.format("/test%s", System.currentTimeMillis());
@@ -556,7 +557,8 @@ public class PageResourceTest {
      * @throws InterruptedException
      */
     @Test(expected = HTMLPageAssetNotFoundException.class)
-    public void shouldReturn404ForPageWithURLPatternWithNotLIVEContentInAdminMode() throws DotDataException, DotSecurityException, InterruptedException {
+    public void shouldReturn404ForPageWithURLPatternWithNotLIVEContentInAdminMode()
+            throws DotDataException, DotSecurityException, InterruptedException, SystemException, PortalException {
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
         final String baseUrl = String.format("/test%s", System.currentTimeMillis());
@@ -600,7 +602,8 @@ public class PageResourceTest {
      * @throws InterruptedException
      */
     @Test(expected = HTMLPageAssetNotFoundException.class)
-    public void shouldReturn404ForPageWithURLPatternWithNotLIVEContentInLiveMode() throws DotDataException, DotSecurityException, InterruptedException {
+    public void shouldReturn404ForPageWithURLPatternWithNotLIVEContentInLiveMode()
+            throws DotDataException, DotSecurityException, InterruptedException, SystemException, PortalException {
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
         final String baseUrl = String.format("/test%s", System.currentTimeMillis());
@@ -703,7 +706,8 @@ public class PageResourceTest {
      * @throws DotSecurityException
      */
     @Test
-    public void testRenderNotPersonalizationVersion() throws DotDataException, DotSecurityException {
+    public void testRenderNotPersonalizationVersion()
+            throws DotDataException, DotSecurityException, SystemException, PortalException {
         final String modeParam = "PREVIEW_MODE";
         when(request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.get(modeParam));
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(APILocator.systemUser());
@@ -741,7 +745,8 @@ public class PageResourceTest {
      * @throws DotSecurityException
      */
     @Test
-    public void testRenderPersonalizationVersion() throws DotDataException, DotSecurityException {
+    public void testRenderPersonalizationVersion()
+            throws DotDataException, DotSecurityException, SystemException, PortalException {
         final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
         final long languageId = defaultLang.getId();
 
@@ -786,7 +791,8 @@ public class PageResourceTest {
      * @throws DotSecurityException
      */
     @Test
-    public void testShouldRenderContainers() throws DotDataException, DotSecurityException, InterruptedException {
+    public void testShouldRenderContainers()
+            throws DotDataException, DotSecurityException, InterruptedException, SystemException, PortalException {
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(APILocator.systemUser());
 
         final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
@@ -838,7 +844,8 @@ public class PageResourceTest {
      */
 
     @Test()
-    public void shouldReturnLIVE() throws DotDataException, DotSecurityException {
+    public void shouldReturnLIVE()
+            throws DotDataException, DotSecurityException, SystemException, PortalException {
         when(request.getParameter(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.PREVIEW_MODE.toString());
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(APILocator.systemUser());
 
@@ -889,7 +896,8 @@ public class PageResourceTest {
      * @throws Exception
      */
     @Test
-    public void shouldKeepTheAParserContainerContentAfterLayoutSaved() throws DotDataException, DotSecurityException, IOException {
+    public void shouldKeepTheAParserContainerContentAfterLayoutSaved()
+            throws DotDataException, DotSecurityException, IOException, SystemException, PortalException {
         final Folder folder = new FolderDataGen().site(host).nextPersisted();
 
         final User systemUser = APILocator.systemUser();
@@ -981,7 +989,8 @@ public class PageResourceTest {
      * @throws Exception
      */
     @Test
-    public void shouldResponseWith() throws DotDataException, DotSecurityException, IOException {
+    public void shouldResponseWith()
+            throws DotDataException, DotSecurityException, IOException, SystemException, PortalException {
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
         final Folder folder = new FolderDataGen().site(host).nextPersisted();
