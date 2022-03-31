@@ -1,10 +1,8 @@
 package com.dotcms.rest.api.v1.site;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.enterprise.HostAssetsJobProxy;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.proxy.ProxyLocator;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -16,21 +14,17 @@ import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.DotLambdas;
-import com.dotcms.util.I18NUtil;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.SitePaginator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.util.HostNameComparator;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.quartz.QuartzUtils;
-import com.dotmarketing.quartz.SimpleScheduledTask;
 import com.dotmarketing.quartz.job.HostCopyOptions;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -40,17 +34,10 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import java.io.File;
-import java.io.Serializable;
-import java.text.ParseException;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.Future;
-import java.util.stream.Collectors;
+import org.apache.commons.lang.StringUtils;
+import org.glassfish.jersey.server.JSONP;
+import org.quartz.SchedulerException;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
@@ -66,10 +53,17 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.apache.commons.lang.StringUtils;
-import org.glassfish.jersey.server.JSONP;
-import org.quartz.SchedulerException;
-import org.quartz.SimpleTrigger;
+import java.io.File;
+import java.io.Serializable;
+import java.text.ParseException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+
+import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * This resource provides all the different end-points associated to information
@@ -1023,7 +1017,7 @@ public class SiteResource implements Serializable {
                             copySiteForm.isCopyContentOnPages(), copySiteForm.isCopyContentOnSite(),
                             copySiteForm.isCopySiteVariables());
 
-        HostAssetsJobProxy.fireJob(newSite.getIdentifier(), sourceHost.getIdentifier(), hostCopyOptions, user.getUserId());
+        ProxyLocator.getSiteJobProxy().fireJob(newSite.getIdentifier(), sourceHost.getIdentifier(), hostCopyOptions, user.getUserId());
         return Response.ok(new ResponseEntityView(newSite)).build();
     }
 

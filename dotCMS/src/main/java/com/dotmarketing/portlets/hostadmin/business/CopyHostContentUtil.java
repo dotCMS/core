@@ -1,37 +1,20 @@
 package com.dotmarketing.portlets.hostadmin.business;
 
-import com.dotcms.enterprise.HostAssetsJobProxy;
-import com.dotcms.rest.PushPublisherJob;
+import com.dotcms.proxy.ProxyLocator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.quartz.CronScheduledTask;
-import com.dotmarketing.quartz.DotStatefulJob;
-import com.dotmarketing.quartz.QuartzUtils;
-import com.dotmarketing.quartz.ScheduledTask;
-import com.dotmarketing.quartz.SimpleScheduledTask;
 import com.dotmarketing.quartz.job.HostCopyOptions;
-import com.dotmarketing.quartz.job.ResetPermissionsJob;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
-import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
-import org.quartz.SchedulerException;
-import org.quartz.SimpleTrigger;
 
-import java.io.Serializable;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 public class CopyHostContentUtil{
 
@@ -67,7 +50,7 @@ public class CopyHostContentUtil{
 					new HostCopyOptions(copyAll):
 					new HostCopyOptions(copyTemplatesContainers, copyFolders, copyLinks, copyContentOnPages, copyContentOnHost,copyHostVariables);
 
-			    HostAssetsJobProxy.fireJob(newSite.getIdentifier(), sourceHost.getIdentifier(), hostCopyOptions, user.getUserId());
+			ProxyLocator.getSiteJobProxy().fireJob(newSite.getIdentifier(), sourceHost.getIdentifier(), hostCopyOptions, user.getUserId());
 		} catch (Throwable e) {
 
 			Logger.error(this, "Site: " + newSite.getIdentifier() + ", msg: " + e.getMessage(), e);
