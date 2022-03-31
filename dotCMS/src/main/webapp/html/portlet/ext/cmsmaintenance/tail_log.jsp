@@ -177,6 +177,8 @@
             updateLogViewerData();
         })
     }
+    
+    var excludeLogRowsActive = false;
 
     function updateLogViewerData(){
 
@@ -184,7 +186,6 @@
         var dataLogPrintedElem = document.querySelector('.logViewerPrinted');
         var keywordLogInput = document.querySelector('#keywordLogFilterInput');
         var contentLogSize = 0;
-        var excludeLogRowsActive = false;
 
         var debounce = (callback, time = 300, interval) => (...args) => {
             clearTimeout(interval, interval = setTimeout(() => callback(...args), time));
