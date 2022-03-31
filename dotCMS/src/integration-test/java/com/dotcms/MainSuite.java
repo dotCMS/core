@@ -153,6 +153,7 @@ import com.dotmarketing.startup.runonce.Task211103RenameHostNameLabelTest;
 import com.dotmarketing.startup.runonce.Task220203RemoveFolderInodeConstraintTest;
 import com.dotmarketing.startup.runonce.Task220214AddOwnerAndIDateToFolderTableTest;
 import com.dotmarketing.startup.runonce.Task220215MigrateDataFromInodeToFolderTest;
+import com.dotmarketing.startup.runonce.Task220329UpdateDateTimezonesTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -538,7 +539,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task220215MigrateDataFromInodeToFolderTest.class,
         ContentDispositionFileNameParserTest.class,
         SecureFileValidatorTest.class,
-        BoundedBufferedReaderTest.class
+        BoundedBufferedReaderTest.class,
+        Task220329UpdateDateTimezonesTest.class
 })
 public class MainSuite {
 

@@ -46,7 +46,25 @@
 
 
 %>
-
+<script src='/html/js/hrJS/hrJS.custom.min.js'></script>
+<style>
+    #Logging #tailContainer {
+        height: 100%;
+    }
+    span[data-hr]{
+        background-color: yellow;
+        color: #000;
+    }
+    .logViewerPrinted {
+        background-color: #000;
+        color: #d6d6d6;
+        font-family: Andale Mono, monospace;
+        font-size: 12px;
+        overflow: scroll;
+        padding: 1rem;
+        white-space: pre;
+    }
+</style>
 <script type="text/javascript">
 
 	function reloadTail(){
@@ -58,6 +76,11 @@
         } else {
             dijit.byId("downloadLog").attr("disabled", true);
         }
+
+        document.querySelector('.logViewerPrinted').innerHTML = '';
+        setTimeout(() => {
+            attachLogIframeEvents()
+        }, 100);
 	}
 
     function disableFollowOnScrollUp() {
@@ -81,7 +104,7 @@
 	function doPopup(){
 			var x = dijit.byId("fileName").getValue();
 			dijit.byId("fileName").setValue("");
-			var newwin = window.open("/html/portlet/ext/cmsmaintenance/tail_log_popup.jsp?fileName=" + x, "tailwin", "status=1,toolbars=1,resizable=1,scrollbars=1,height=600,width=800");
+			var newwin = window.open("/html/portlet/ext/cmsmaintenance/tail_log_popup.jsp?fileName=" + x, "tailwin", "status=1,toolbars=1,resizable=1,scrollbars=1,height=800,width=1000");
 			newwin.focus();
 	}
 
@@ -229,11 +252,91 @@
         var dialog = dijit.byId("logman_dia");
     	dojo.connect(dialog, "onShow", null, getCurrentLogs);
     	dojo.connect(dialog, "onCancel", null, destroyCheckboxNodes);
-
-
-
-
     });
+
+    /**********************/
+    /* Log Viewer - BEGIN */
+
+    function attachLogIframeEvents() {
+        var dataLogSourceElem = document.getElementById('tailingFrame');
+        var iDoc = dataLogSourceElem.contentWindow || dataLogSourceElem.contentDocument;
+        iDoc.document.addEventListener("logUpdated", (e) => {
+            updateLogViewerData();
+        })
+    }
+
+    function updateLogViewerData(){
+
+        var dataLogSourceElem = document.getElementById('tailingFrame').contentDocument.body;
+        var dataLogPrintedElem = document.querySelector('.logViewerPrinted');
+        var keywordLogInput = document.querySelector('#keywordLogFilterInput');
+        var contentLogSize = 0;
+        var excludeLogRowsActive = false;
+
+        var debounce = (callback, time = 300, interval) => (...args) => {
+            clearTimeout(interval, interval = setTimeout(() => callback(...args), time));
+        }
+
+        function performMark(callback) {
+            var keyword = keywordLogInput.value;
+
+            if (keyword && keyword.length > 1) {
+                new HR(".logViewerPrinted", {
+                    highlight: [keyword]
+                }).hr();
+                
+                if (callback) {
+                    callback();
+                }
+            }
+        }
+
+        function excludeNoMatchingRows() {
+            var filteredData = dataLogPrintedElem.innerHTML.split('<br>');
+            var excludedRows = filteredData.filter((row) => row.includes('data-hr'))
+            dataLogPrintedElem.innerHTML = excludedRows.join('<br>');
+        }
+
+        function filterLog(event) {
+            if (event.key === 'Enter') {
+                performMark(excludeNoMatchingRows);
+                excludeLogRowsActive = true;
+            } else {
+                dataLogPrintedElem.innerHTML = dataLogSourceElem.innerHTML;
+                excludeLogRowsActive = false;
+                performMark();
+            }
+        }
+
+        function scrollLogToBottom() {
+            var dataLogPrintedElem = document.querySelector('.logViewerPrinted');
+            dataLogPrintedElem.scrollTop = dataLogPrintedElem.scrollHeight;
+        }
+
+        function initLogViewer() {
+            var domContent = dataLogSourceElem.innerHTML;
+            var result = dataLogPrintedElem
+
+            if (contentLogSize !== domContent.length) {
+                result.innerHTML = domContent;
+                contentLogSize = domContent.length
+                excludeLogRowsActive ? performMark(excludeNoMatchingRows) : performMark();
+            }
+
+            if (document.querySelector('#scrollMe').checked) {
+                scrollLogToBottom();
+            }
+        }
+
+        keywordLogInput.removeEventListener("keyup", debounce(filterLog, 300));
+        keywordLogInput.addEventListener("keyup", debounce(filterLog, 300));
+
+        initLogViewer()
+    }
+
+
+    /* Log Viewer - END */
+    /********************/
 
 </script>
 
@@ -253,6 +356,7 @@
                     <%=com.liferay.portal.language.LanguageUtil.get(pageContext, "Follow") %>
                 </label>
             </div>
+            <input dojoType="dijit.form.TextBox" id="keywordLogFilterInput" placeholder="<%=com.liferay.portal.language.LanguageUtil.get(pageContext, "Filter")%>" type="text" style="width: 200px">
             <button dojoType="dijit.form.Button" onClick="doPopup()" value="popup" name="popup">
                 <%= com.liferay.portal.language.LanguageUtil.get(pageContext,"popup") %>
             </button>
@@ -270,8 +374,9 @@
     </div>
 </div>
 
-<div id="tailContainer" class="log-files__container">
-    <iframe id="tailingFrame" src="/html/blank.jsp" class="log-files__iframe"></iframe>
+<div id="tailContainer" class="log-files__container" style="display: flex; flex-direction: column;">
+    <iframe id="tailingFrame" src="/html/blank.jsp" style="display:none" class="log-files__iframe"></iframe>
+    <div class="logViewerPrinted" style="flex-grow: 1;"></div>
 </div>
 
 <div id="logman_dia" dojoType="dijit.Dialog">
