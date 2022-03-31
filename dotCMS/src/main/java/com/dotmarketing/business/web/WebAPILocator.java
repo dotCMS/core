@@ -3,6 +3,8 @@ package com.dotmarketing.business.web;
 
 import com.dotcms.personalization.web.PersonalizationWebAPI;
 import com.dotcms.personalization.web.PersonalizationWebAPIImpl;
+import com.dotcms.prerender.PreRenderSEOWebAPI;
+import com.dotcms.prerender.PreRenderSEOWebAPIImpl;
 import com.dotmarketing.business.Locator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPI;
@@ -55,6 +57,10 @@ public class WebAPILocator extends Locator<WebAPIIndex>{
 		return (PersonalizationWebAPI)getInstance(WebAPIIndex.PERSONALIZATION_WEB_API);
 	}
 
+	public static PreRenderSEOWebAPI getPreRenderSEOWebAPI() {
+		return (PreRenderSEOWebAPI)getInstance(WebAPIIndex.PRERENDER_API);
+	}
+
 	private static Object getInstance(WebAPIIndex index) {
 		
 		if(instance == null){
@@ -92,7 +98,8 @@ enum WebAPIIndex
 	LANGUAGE_WEB_API,
 	PERMISSION_WEB_API,
 	HOST_WEB_API,
-	PERSONALIZATION_WEB_API;
+	PERSONALIZATION_WEB_API,
+	PRERENDER_API;
 
 	Object create() {
 		switch(this) {
@@ -110,6 +117,9 @@ enum WebAPIIndex
 
 			case PERSONALIZATION_WEB_API:
 				return new PersonalizationWebAPIImpl();
+
+			case PRERENDER_API:
+				return new PreRenderSEOWebAPIImpl();
 
 		}
 		throw new AssertionError("Unknown API index: " + this);
