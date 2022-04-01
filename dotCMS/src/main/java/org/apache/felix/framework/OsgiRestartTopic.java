@@ -81,13 +81,16 @@ public class OsgiRestartTopic implements DotPubSubTopic {
                     .put(EventType.OGSI_RESTART_RESPONSE.name(), (event) -> {
 
                         Logger.info(this.getClass(),
-                                () -> "Got PUBLISH_CONTENT_RESPONSE from server:" + event.getOrigin() + ". Saving response");
+                                () -> "Got OGSI_RESTART_RESPONSE from server:" + event.getOrigin() + ". Saving response");
 
-                        final String origin = (String) event.getPayload().get("serverId");
-                        Logger.info(this, "Event received: " + event.toString());
+                        final String origin = (String) event.getPayload().get("sourceNode");
+                        Logger.info(this, "Event received: " + event.toString() + ", origin node: " + origin);
 
-                        // Restart the current instance
-                        OSGIUtil.getInstance().restartOsgiOnlyLocal();
+                        // just in case we double check the origin is not itself to avoid double osgi restart
+                        if (!OsgiRestartTopic.this.serverId.equals(origin)) {
+                            // Restart the current instance
+                            OSGIUtil.getInstance().restartOsgiOnlyLocal();
+                        }
                     }).build();
 
 
