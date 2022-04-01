@@ -8,7 +8,7 @@
     #foreach($i in $range)
         #set($listItem = $item.content.get($i))
         #if ($listItem.type == "listItem")
-            <li>
+            <li style="text-align: $listItem.attrs.textAlign">
 
                 #set($start2 = 0)
                 #set($end2 = $listItem.content.length())
