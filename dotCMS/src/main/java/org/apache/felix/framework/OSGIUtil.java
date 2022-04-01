@@ -26,6 +26,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import com.dotcms.dotpubsub.DotPubSubEvent;
+import com.dotcms.dotpubsub.DotPubSubProvider;
+import com.dotcms.dotpubsub.DotPubSubProviderLocator;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.apache.felix.framework.util.FelixConstants;
@@ -81,6 +85,13 @@ public class OSGIUtil {
     private static final String UTF_8 = "utf-8";
     private final TreeSet<String> exportedPackagesSet = new TreeSet<>();
     private final Debouncer debouncer = new Debouncer();
+
+    // PUBSUB
+    private final static  String TOPIC_NAME = OsgiRestartTopic.OSGI_RESTART_TOPIC;
+    private final DotPubSubProvider pubsub;
+    private final OsgiRestartTopic osgiRestartTopic;
+
+    private Framework felixFramework;
     /**
      * Felix directory list
      */
@@ -100,7 +111,15 @@ public class OSGIUtil {
         private static OSGIUtil instance = new OSGIUtil();
     }
 
-    private Framework felixFramework;
+    private OSGIUtil() {
+
+        this.pubsub                = DotPubSubProviderLocator.provider.get();
+        this.osgiRestartTopic = new OsgiRestartTopic();
+        Logger.debug(this.getClass(), "Starting hook with PubSub on OSGI");
+
+        this.pubsub.start();
+        this.pubsub.subscribe(this.osgiRestartTopic);
+    }
 
     /**
      * Loads the default properties
@@ -325,6 +344,38 @@ public class OSGIUtil {
         if (UtilMethods.isSet(pathnames)) {
 
             this.moveNewBundlesToFelixLoadFolder(uploadPath, pathnames);
+
+            this.restartOsgiClusterWide();
+
+            Try.run(()->APILocator.getSystemEventsAPI()
+                    .push(SystemEventType.OSGI_FRAMEWORK_RESTART, new Payload(pathnames)))
+                    .onFailure(e -> Logger.error(OSGIUtil.this, e.getMessage()));
+
+        }
+    }
+
+    /**
+     * Restart the current instance and notify the rest of the nodes in the cluster that restart is needed
+     */
+    public void restartOsgiClusterWide() {
+
+        this.restartOsgiOnlyLocal();
+        Logger.debug(this, ()-> "Sending a PubSub Osgi Restart event");
+
+        final DotPubSubEvent event = new DotPubSubEvent.Builder ()
+                .addPayload("sourceNode", APILocator.getServerAPI().readServerId())
+                .withTopic(TOPIC_NAME)
+                .withType(OsgiRestartTopic.EventType.OGSI_RESTART_REQUEST.name())
+                .build();
+
+        this.pubsub.publish(event);
+    }
+
+    /**
+     * Do the restart only for the current node (locally)
+     */
+    public void restartOsgiOnlyLocal() {
+
             //Remove Portlets in the list
             this.portletIDsStopped.stream().forEach(APILocator.getPortletAPI()::deletePortlet);
             Logger.info(this, "Portlets Removed: " + this.portletIDsStopped.toString());
@@ -342,11 +393,6 @@ public class OSGIUtil {
 
             //Now we need to initialize it
             this.initializeFramework();
-
-            Try.run(()->APILocator.getSystemEventsAPI()					    // CLUSTER WIDE
-                    .push(SystemEventType.OSGI_FRAMEWORK_RESTART, new Payload(pathnames)))
-                    .onFailure(e -> Logger.error(OSGIUtil.this, e.getMessage()));
-        }
     }
 
     /**

@@ -188,7 +188,6 @@ public class OSGIResource  {
                 .filter(file -> file.getName().endsWith(".jar"))
                 .collect(Collectors.toList()));
 
-        // todo: use the second part to would be to take jar from the temp api
         final String felixUploadFolder = OSGIUtil.getInstance().getFelixUploadPath();
         final File felixFolder = new File(felixUploadFolder);
         if (!felixFolder.exists() || !felixFolder.canWrite()) {
