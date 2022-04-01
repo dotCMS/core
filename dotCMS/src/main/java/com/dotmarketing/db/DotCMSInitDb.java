@@ -3,28 +3,36 @@ package com.dotmarketing.db;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.startup.runonce.Task210321RemoveOldMetadataFiles;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ImportStarterUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
+import com.dotmarketing.util.UserUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.File;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import org.apache.commons.lang.StringUtils;
 import org.apache.felix.framework.OSGIUtil;
 
 public class DotCMSInitDb {
 
-	@CloseDBIfOpened
+    static final String INITIAL_ADMIN_PASSWORD = "INITIAL_ADMIN_PASSWORD";
+    static final String ADMIN_DEFAULT_MAIL = "admin@dotcms.com";
+
+    @CloseDBIfOpened
 	private static boolean isConfigured () {
 
 		return new DotConnect()
@@ -40,10 +48,9 @@ public class DotCMSInitDb {
 
             Logger.info(DotCMSInitDb.class, "There are no inodes - initializing db with starter site");
 
-    
-            
-            Try.run(() -> loadStarterSite()).getOrElseThrow(e->new DotRuntimeException(e));
+            Try.run(DotCMSInitDb::loadStarterSite).getOrElseThrow(DotRuntimeException::new);
 
+            Try.run(DotCMSInitDb::setUpInitialPassword).onFailure(DotRuntimeException::new);
 
         } else {
             Logger.info(DotCMSInitDb.class, "inodes exist, skipping initialization of db");
@@ -135,7 +142,41 @@ public class DotCMSInitDb {
                String.format(" `%d` old metadata entries removed and `%d` old content files from the starter." , tuple._1 , + tuple._2)
             );
         }catch (ExecutionException | InterruptedException e){
-            Logger.error(DotCMSInitDb.class,"");
+            Logger.error(DotCMSInitDb.class,"An error occurred removing old metadata ",e);
         }
 	}
+
+    /**
+     * set the initial password to admin user and prints it out
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    static void setUpInitialPassword() throws DotDataException, DotSecurityException {
+        final UserAPI userAPI = APILocator.getUserAPI();
+        final User admin = userAPI
+                .loadByUserByEmail(ADMIN_DEFAULT_MAIL, APILocator.systemUser(), false);
+        if (null == admin) {
+            throw new DotDataException(
+                    "Unable to find admin user by the email: " + ADMIN_DEFAULT_MAIL);
+        }
+        Logger.info(DotCMSInitDb.class, "Setting up initial password.");
+        final String initialPassword = Config
+                .getStringProperty(INITIAL_ADMIN_PASSWORD, UserUtils.generateSecurePassword());
+        admin.setPassword(initialPassword);
+        userAPI.save(admin, APILocator.systemUser(), false);
+        final String message = String
+                .format("NOTICE: %s password set to %s", ADMIN_DEFAULT_MAIL, initialPassword);
+        printNotice(message);
+    }
+
+    /**
+     * inform user the default password set to the admin user
+     * @param message the notice message
+     */
+    static void printNotice(final String message){
+        final int width = 100;
+        Logger.info(DotCMSInitDb.class,StringUtils.rightPad("#", width, "#"));
+        Logger.info(DotCMSInitDb.class,StringUtils.center(StringUtils.center(message, width - 4), width, "##"));
+        Logger.info(DotCMSInitDb.class,StringUtils.rightPad("#", width, "#"));
+    }
 }
