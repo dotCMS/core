@@ -39,6 +39,16 @@ public interface ContainerAPI {
 	String DEFAULT_CONTAINER_LAYOUT = FileAssetContainerUtil.DEFAULT_CONTAINER_LAYOUT;
 
 	/**
+	 * Returns the System Container object. This is a special kind of Container that is meant to render any sort of
+	 * Content Type that exists in the dotCMS repository. It allows Users and/or Content Authors to easily add
+	 * information to a page without having to set up all the required structures for correctly putting an HTML Page
+	 * together.
+	 *
+	 * @return The System {@link Container} instance.
+	 */
+	Container systemContainer();
+
+	/**
 	 * Copies container to the specified host
 	 *
 	 * @param source
@@ -167,19 +177,21 @@ public interface ContainerAPI {
 	 */
 	Container getLiveContainerById(String identifier, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
-
 	/**
+	 * Returns the list of Content Types that are associated to a given Container. Every Container has the ability to be
+	 * related to one or more Content Types depending on how it has been configured. This determines what types of
+	 * Contentlets can be displayed inside a given Container.
 	 *
-	 * Retrieves a list of container-structure relationships by container
+	 * @param container The {@link Container} whose related Content Types will be returned.
 	 *
-	 * @param container
-	 * @return List of ContainerStructure
+	 * @return List of {@link ContainerStructure} objects representing the association between the specified Container
+	 * and one or more Content Types.
+	 *
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 * @throws DotStateException
-	 *
 	 */
-	List<ContainerStructure> getContainerStructures(Container container) throws DotStateException, DotDataException, DotSecurityException;
+	List<ContainerStructure> getContainerStructures(final Container container) throws DotStateException, DotDataException, DotSecurityException;
 
 	/**
 	 *

@@ -4,14 +4,11 @@ import com.dotcms.contenttype.model.event.ContentTypeDeletedEvent;
 import com.dotcms.contenttype.model.event.ContentTypeSavedEvent;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.system.event.local.model.Subscriber;
-import com.dotmarketing.cache.ContentTypeCache;
-import com.dotmarketing.util.UUIDUtil;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.cache.ContentTypeCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -20,22 +17,34 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
-import java.io.File;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.Set;
-
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.File;
+import java.util.*;
+import java.util.stream.Collectors;
+
 /**
- * Subscribe Strategies and get the strategy for a set of arguments if applies
+ * There are different ways of creating Containers in dotCMS. For example:
+ * <ul>
+ *     <li>Default Containers -- added via the dotCMS back-end UI.</li>
+ *     <li>Containers as Files.</li>
+ * </ul>
+ * Because of that, the application must provide a mechanism that can easily retrieve and resolve the appropriate
+ * Container-to-Content Type relationship based on their specific nature. Information from Default Containers is located
+ * in the database, whereas Containers as Files provide all of its information from text files, usually in the form of
+ * JSON or VTL files.
+ * <p>
+ * Therefore, based on the way a Container is referenced in a Template, this {@code ContainerStructureFinderStrategyResolver}
+ * will be able to correctly determine the best way of reading, validating, and retrieving what types of Contentlets can
+ * be added to a given Container. For more information, please refer to: {@link ContainerStructureFinderStrategy}.
+ * </p>
+ *
  * @author jsanca
  */
 public class ContainerStructureFinderStrategyResolver {
@@ -43,6 +52,12 @@ public class ContainerStructureFinderStrategyResolver {
     private volatile ContainerStructureFinderStrategy       defaultOne = null;
     private volatile List<ContainerStructureFinderStrategy> strategies = this.getDefaultStrategies();
 
+    /**
+     * Utility method used to load the list of default strategies for resolving the correct associations between
+     * Containers and one or more Content Types.
+     *
+     * @return The list of {@link ContainerStructureFinderStrategy} objects.
+     */
     private List<ContainerStructureFinderStrategy> getDefaultStrategies() {
 
         final ImmutableList.Builder<ContainerStructureFinderStrategy> builder =
@@ -58,11 +73,24 @@ public class ContainerStructureFinderStrategyResolver {
         return builder.build();
     }
 
+    /**
+     * Returns the default Strategy that dotCMS uses to find the appropriate relationships between a Container and one
+     * or more Content Types. Initially, the default Strategy is the one that uses ID of the Container to resolve its
+     * associated Content Types, but it can be changed if necessary.
+     *
+     * @return The default {@link ContainerStructureFinderStrategy} instance.
+     */
     public ContainerStructureFinderStrategy getDefaultStrategy () {
 
         return defaultOne;
     }
 
+    /**
+     * Sets the default Strategy that will be used by dotCMS to retrieve the relationships between a Container and its
+     * Content Types.
+     *
+     * @param strategy The {@link ContainerStructureFinderStrategy} that will be used by default.
+     */
     public synchronized void setDefaultStrategy (final ContainerStructureFinderStrategy strategy) {
 
         if (null != strategy) {
@@ -70,7 +98,6 @@ public class ContainerStructureFinderStrategyResolver {
             this.defaultOne = strategy;
         }
     }
-
 
     private static class SingletonHolder {
         private static final ContainerStructureFinderStrategyResolver INSTANCE = new ContainerStructureFinderStrategyResolver();
@@ -115,9 +142,13 @@ public class ContainerStructureFinderStrategyResolver {
     }
 
     /**
-     * Get a strategy if applies
-     * @param container
-     * @return Optional ContainerFinderStrategy
+     * Finds the appropriate Container->Content Type Finder Strategy for a given Container. Each Finder Strategy must be
+     * responsible for correctly determining whether it has the ability to find the information for a Container or not.
+     *
+     * @param container The {@link Container} whose Finder Strategy must be determined.
+     *
+     * @return The valid {@link ContainerStructureFinderStrategy} for the specified Container, or an empty {@link
+     * Optional} if it could not be found.
      */
     public Optional<ContainerStructureFinderStrategy> get(final Container container) {
 
@@ -133,23 +164,36 @@ public class ContainerStructureFinderStrategyResolver {
         return Optional.empty();
     }
 
+    /**
+     * Determines whether the specified Container is a Container as File or not.
+     *
+     * @param container The {@link Container} that is being checked.
+     * @return If it is a Container as File, returns {@code true}. Otherwise, returns {@code false}.
+     */
     private boolean isFolderFileAsset (final Container container) {
 
         return null != container && container instanceof FileAssetContainer;
     }
 
-    ///////////
+    /**
+     * This is the Identifier-based implementation of the {@link ContainerStructureFinderStrategy}.
+     * <p>
+     * It allows you to find the metadata of a Container that is being referenced in a Template via its identifier.
+     * These types of Containers are the ones living in the database. This means that all of their information must be
+     * retrieved via SQL queries -- unless they're memory-only objects, such as the System Container.</p>
+     */
     private class IdentifierContainerStructureFinderStrategyImpl implements ContainerStructureFinderStrategy {
 
         @Override
         public boolean test(final Container container) {
+            // If the Container is NOT a file-based Container, then this strategy can be applied
             return !ContainerStructureFinderStrategyResolver.this.isFolderFileAsset(container);
         }
 
         @Override
         public List<ContainerStructure> apply(final Container container) {
 
-            if (null == container) {
+            if (null == container || UtilMethods.isNotSet(container.getIdentifier())) {
 
                 return Collections.emptyList();
             }
@@ -163,33 +207,68 @@ public class ContainerStructureFinderStrategyResolver {
                         new ImmutableList.Builder<>();
 
                 try {
+                    if (Container.SYSTEM_CONTAINER.equals(container.getIdentifier())) {
+                        addAllContentTypesToSystemContainer(builder);
+                        containerStructures = builder.build();
+                    } else {
+                        final HibernateUtil dh = new HibernateUtil(ContainerStructure.class);
+                        dh.setSQLQuery("select {container_structures.*} from container_structures " +
+                                "where container_structures.container_id = ? " +
+                                "and container_structures.container_inode = ?");
+                        dh.setParam(container.getIdentifier());
+                        dh.setParam(container.getInode());
+                        builder.addAll(dh.list());
 
-                    final HibernateUtil dh = new HibernateUtil(ContainerStructure.class);
-                    dh.setSQLQuery("select {container_structures.*} from container_structures " +
-                            "where container_structures.container_id = ? " +
-                            "and container_structures.container_inode = ?");
-                    dh.setParam(container.getIdentifier());
-                    dh.setParam(container.getInode());
-                    builder.addAll(dh.list());
-
-                    //Add the list to cache.
-                    containerStructures = builder.build();
-                    containerStructures = containerStructures.stream().map((cs)-> {
-                        if(cs.getCode()==null) {
-                            cs.setCode(""); 
-                        }
-                        return cs;
-                    }).collect(Collectors.toList());
+                        //Add the list to cache.
+                        containerStructures = builder.build();
+                        containerStructures = containerStructures.stream().map((cs) -> {
+                            if (cs.getCode() == null) {
+                                cs.setCode("");
+                            }
+                            return cs;
+                        }).collect(Collectors.toList());
+                    }
                     CacheLocator.getContentTypeCache().addContainerStructures(containerStructures, container.getIdentifier(), container.getInode());
-                } catch (DotHibernateException e) {
-                    throw new DotStateException("cannot find container structures for : " + container);
+                } catch (final DotHibernateException e) {
+                    final String errorMsg = String.format(
+                            "An error occurred when retrieving Content Types associated to Container '%s' [%s]: %s",
+                            container.getName(), container.getIdentifier(), e.getMessage());
+                    Logger.warn(this, errorMsg);
+                    throw new DotStateException(errorMsg);
                 }
             }
 
             return containerStructures;
         }
+
+        /**
+         * This method allows the System Container to be able to reference every single Content Type in the current
+         * repository. Keep in mind that the System Container s meant to be able to hold Contentlets of any type, and
+         * display them on the page based on its specified source code.
+         *
+         * @param builder The list of Container-to-Content Type references that the system will use to allow Users to
+         *                add any Contentlet to the {@link com.dotmarketing.portlets.containers.model.SystemContainer}.
+         */
+        private void addAllContentTypesToSystemContainer(final ImmutableList.Builder<ContainerStructure> builder) {
+            final List<ContentType> contentTypes =
+                    Try.of(() -> APILocator.getContentTypeAPI(APILocator.systemUser())
+                            .findAll()).getOrElse(Collections.emptyList());
+            for (final ContentType contentType : contentTypes) {
+                final ContainerStructure containerStructure =
+                        new ContainerStructure(APILocator.getContainerAPI().systemContainer(), contentType);
+                builder.add(containerStructure);
+            }
+        }
+
     } // IdentifierContainerStructureFinderStrategyImpl
 
+    /**
+     * This is the Container as File-based implementation of the {@link ContainerStructureFinderStrategy}.
+     * <p>
+     * It allows you to find the metadata of a Container that is being referenced in a Template via File Assets inside
+     * the content repository. These types of Containers are the ones living in the {@code /application/containers/}
+     * folder. This means that all of their metatada and configuration behavior must be set via VTL files.</p>
+     */
     @VisibleForTesting
     class PathContainerStructureFinderStrategyImpl implements ContainerStructureFinderStrategy {
 
@@ -198,6 +277,7 @@ public class ContainerStructureFinderStrategyResolver {
 
         @Override
         public boolean test(final Container container) {
+            // If the Container IS a file-based Container, then this strategy can be applied
             return ContainerStructureFinderStrategyResolver.this.isFolderFileAsset(container);
         }
 
@@ -243,12 +323,11 @@ public class ContainerStructureFinderStrategyResolver {
                                 contentTypesIncludedSet.add(velocityVarName);
                             }
                         } else {
-
-                            Logger.debug(this, "Could find a velocity var for the asset: " + asset);
+                            Logger.debug(this,
+                                    String.format("Could not find a Velocity Var for File Asset '%s'", asset));
                         }
                     } else {
-
-                        Logger.debug(this, "The asset: " + asset + ", does not exists or can not read");
+                        Logger.debug(this, String.format("File asset '%s' does not exist or cannot be read.", asset));
                     }
                 }
 
@@ -262,12 +341,20 @@ public class ContainerStructureFinderStrategyResolver {
             return containerStructures;
         }
 
-        /*
-         * If the  fileAssetContainer has an "useDefaultLayout" will recovery all the non-already included
-         * content types and add them as a container structures with the default_container_layout.vtl as a view
-         * @param cast
-         * @param builder
-         * @param contentTypesIncludedSet
+        /**
+         * If the {@code useDefaultLayout} property in the Container's configuration is present, then all the Content
+         * Types it references will use the {@code default_container.vtl} file to render their contents. The way the
+         * {@code useDefaultLayout} property can reference Content Types is to pass down:
+         * <ul>
+         *     <li>A start ( {@code *} ) -- which will reference ALL Content Types.</li>
+         *     <li>A comma-separated list of Velocity Variable Names for each Content Type.</li>
+         * </ul>
+         *
+         * @param fileAssetContainer      The Container as File.
+         * @param builder                 The list of relationships between the Container and its respective Content
+         *                                Types, in the form of {@link ContainerStructure} objects.
+         * @param contentTypesIncludedSet The list of Content Types that have already been added to the list, so none of
+         *                                them can be duplicated or overwritten.
          */
         private void processDefaultContainerLayout(final FileAssetContainer fileAssetContainer,
                                                    final ImmutableList.Builder<ContainerStructure> builder,
@@ -348,7 +435,7 @@ public class ContainerStructureFinderStrategyResolver {
 
         private Optional<ContentType> findContentTypeByVelocityVarName (final String velocityVarName) {
 
-            ContentType contentType = null;
+            ContentType contentType;
 
             try {
 
@@ -363,8 +450,5 @@ public class ContainerStructureFinderStrategyResolver {
             return Optional.of(contentType);
         }
     } // PathContainerStructureFinderStrategyImpl
-
-
-
 
 } // E:O:F:ContainerStructureFinderStrategyResolver.

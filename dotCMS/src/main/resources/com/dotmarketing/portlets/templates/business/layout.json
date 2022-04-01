@@ -10,7 +10,7 @@
             "width":12,
             "containers":[
               {
-                "identifier":"//default/application/containers/system/",
+                "identifier":"SYSTEM_CONTAINER",
                 "uuid":"1"
               }
             ]
