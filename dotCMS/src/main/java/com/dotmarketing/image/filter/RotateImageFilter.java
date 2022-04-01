@@ -7,6 +7,7 @@ import java.util.Map;
 
 import javax.imageio.ImageIO;
 
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotcms.repackage.com.dotmarketing.jhlabs.image.RotateFilter;
 
@@ -53,8 +54,8 @@ public class RotateImageFilter extends ImageFilter {
 			 */
 			ImageIO.write(dst, "png", resultFile);
 			dst.flush();
-		} catch (IOException e) {
-			Logger.error(this.getClass(), e.getMessage());
+		} catch (Exception e) {
+			throw new DotRuntimeException("unable to convert file:" +file + " : " +  e.getMessage(),e);
 		}
 
 		return resultFile;

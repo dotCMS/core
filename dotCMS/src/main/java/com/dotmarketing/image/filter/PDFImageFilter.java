@@ -14,6 +14,7 @@ import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
 
+import com.dotmarketing.exception.DotRuntimeException;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
@@ -70,10 +71,8 @@ public class PDFImageFilter extends ImageFilter {
       document.close();
 
 
-    } catch (FileNotFoundException e) {
-      Logger.error(this.getClass(), e.getMessage());
-    } catch (IOException e) {
-      Logger.error(this.getClass(), e.getMessage());
+    } catch (Exception e) {
+      throw new DotRuntimeException("unable to convert file:" +file + " : " +  e.getMessage(),e);
     }
 
 

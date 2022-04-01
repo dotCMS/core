@@ -16,6 +16,7 @@ import javax.imageio.ImageWriter;
 import javax.imageio.stream.FileImageOutputStream;
 import javax.imageio.stream.ImageOutputStream;
 
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 
 public class PngImageFilter extends ImageFilter {
@@ -50,10 +51,8 @@ public class PngImageFilter extends ImageFilter {
 			ios.flush();
 			writer.dispose();
 			ios.close();
-		} catch (FileNotFoundException e) {
-			Logger.error(this.getClass(), e.getMessage());
-		} catch (IOException e) {
-			Logger.error(this.getClass(), e.getMessage());
+		} catch (Exception e) {
+			throw new DotRuntimeException("unable to convert file:" +file + " : " +  e.getMessage(),e);
 		}
 		
 		

@@ -11,6 +11,7 @@ import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.FileImageOutputStream;
 
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.luciad.imageio.webp.WebPWriteParam;
 
@@ -48,12 +49,17 @@ public class WebPImageFilter extends ImageFilter {
 	            writeParam.setCompressionQuality(quality);
 	        }
 
-	        writer.setOutput(new FileImageOutputStream(resultFile));
-	        writer.write(null, new IIOImage(ImageIO.read(file), null, null), writeParam);
-	        writer.dispose();
-	    } catch (IOException e) {
-	        Logger.error(this.getClass(), e.getMessage());
-	    }
+			final File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() +".tmp");
+
+
+
+			writer.setOutput(new FileImageOutputStream(tempResultFile));
+			writer.write(null, new IIOImage(ImageIO.read(file), null, null), writeParam);
+			writer.dispose();
+			tempResultFile.renameTo(resultFile);
+		} catch (Exception e) {
+			throw new DotRuntimeException("unable to convert file:" +file + " : " +  e.getMessage(),e);
+		}
 
 	    return resultFile;
 	}

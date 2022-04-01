@@ -128,3 +128,4 @@ This maintenance release includes the following code fixes:
 
 66. https://github.com/dotCMS/core/issues/20655 : DotAsset Title is presented different on two search types #20655
 67. https://github.com/dotCMS/core/issues/21516 : Change to FILE_SYSTEM for Metadata Storage #21516
+68. https://github.com/dotCMS/core/issues/20446 : Unable to load very large images #20446
