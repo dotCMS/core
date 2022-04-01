@@ -125,4 +125,6 @@ This maintenance release includes the following code fixes:
 65. https://github.com/dotCMS/core/issues/21699 : [Push Publishing] : Single quote in content's title breaks JavaScript code in the portlet #21699
 
 **Release-21.06.8**
-66. https://github.com/dotCMS/core/issues/20655 :DotAsset Title is presented different on two search types #20655
+
+66. https://github.com/dotCMS/core/issues/20655 : DotAsset Title is presented different on two search types #20655
+67. https://github.com/dotCMS/core/issues/21516 : Change to FILE_SYSTEM for Metadata Storage #21516
