@@ -161,18 +161,21 @@ public interface HostFactory {
      * Returns all live Sites in dotCMS.
      *
      * @param siteNameFilter       Optional parameter used to filter by Site name.
-     * @param limit                Limit of results returned in the response, for pagination purposes. If set equal or
-     *                             lower than zero, this parameter will be ignored.
+     * @param limit                Limit of results being returned as part of the response, for pagination purposes. If
+     *                             set equal or lower than zero, this parameter will be ignored.
      * @param offset               Expected offset of results in the response, for pagination purposes. If set equal or
      *                             lower than zero, this parameter will be ignored.
+     * @param showSystemHost       If the System Host must be included in the results, set to {@code true}. Otherwise,
+     *                             set to {@code false}.
      * @param user                 The {@link User} performing this action.
      * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
      *                             operation, set to {@code true}. Otherwise, set to {@code false}.
      *
      * @return The resulting list of {@link Host} objects.
      */
-    Optional<List<Host>> findLiveSites(final String siteNameFilter, final int limit, final int offset, final User
-            user, final boolean respectFrontendRoles);
+    Optional<List<Host>> findLiveSites(final String siteNameFilter, final int limit, final int offset,
+                                       final boolean showSystemHost, final User user,
+                                       final boolean respectFrontendRoles);
 
     /**
      * Returns all stopped/un-published Sites in dotCMS.
@@ -180,10 +183,12 @@ public interface HostFactory {
      * @param siteNameFilter       Optional parameter used to filter by Site name.
      * @param includeArchivedSites If archived Sites must be returned, set to {@code true}. Otherwise, set to {@code
      *                             false}.
-     * @param limit                Limit of results returned in the response, for pagination purposes. If set equal or
-     *                             lower than zero, this parameter will be ignored.
+     * @param limit                Limit of results being returned as part of the response, for pagination purposes. If
+     *                             set equal or lower than zero, this parameter will be ignored.
      * @param offset               Expected offset of results in the response, for pagination purposes. If set equal or
      *                             lower than zero, this parameter will be ignored.
+     * @param showSystemHost       If the System Host must be included in the results, set to {@code true}. Otherwise,
+     *                             set to {@code false}.
      * @param user                 The {@link User} performing this action.
      * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
      *                             operation, set to {@code true}. Otherwise, set to {@code false}.
@@ -191,24 +196,27 @@ public interface HostFactory {
      * @return The resulting list of {@link Host} objects.
      */
     Optional<List<Host>> findStoppedSites(final String siteNameFilter, boolean includeArchivedSites, final int limit,
-                                          final int offset, final User user, final boolean respectFrontendRoles);
+                                          final int offset, boolean showSystemHost, final User user,
+                                          final boolean respectFrontendRoles);
 
     /**
      * Returns all stopped/un-published Sites in dotCMS.
      *
      * @param siteNameFilter       Optional parameter used to filter by Site name.
-     * @param limit                Limit of results returned in the response, for pagination purposes. If set equal or
-     *                             lower than zero, this parameter will be ignored.
+     * @param limit                Limit of results being returned as part of the response, for pagination purposes. If
+     *                             set equal or lower than zero, this parameter will be ignored.
      * @param offset               Expected offset of results in the response, for pagination purposes. If set equal or
      *                             lower than zero, this parameter will be ignored.
+     * @param showSystemHost       If the System Host must be included in the results, set to {@code true}. Otherwise,
+     *                             set to {@code false}.
      * @param user                 The {@link User} performing this action.
      * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
      *                             operation, set to {@code true}. Otherwise, set to {@code false}.
      *
      * @return The resulting list of {@link Host} objects.
      */
-    Optional<List<Host>> findArchivedSites(final String siteNameFilter, final int limit, final int offset, final User
-            user, final boolean respectFrontendRoles);
+    Optional<List<Host>> findArchivedSites(final String siteNameFilter, final int limit, final int offset,
+                                           boolean showSystemHost, final User user, final boolean respectFrontendRoles);
 
     /**
      * Returns the total number of Sites that exist in your content repository.
