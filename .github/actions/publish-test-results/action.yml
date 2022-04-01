@@ -1,0 +1,45 @@
+# action.yml
+name: 'Run Unit Tests'
+description: 'Run core unit tests'
+author: 'victoralfaro-dotcms'
+inputs:
+  build_id:
+    description: 'Branch/Commit to reference'
+    required: true
+  build_hash:
+    description: 'Build hash'
+    required: true
+  test_type:
+    description: Test type
+    type: choice
+    options:
+    - unit
+    - integration
+    - postman
+    required: true
+  db_type:
+    description: 'Database type'
+    required: false
+  pull_request:
+    description: 'Pull request'
+    required: true
+  target_project:
+    description: 'Project to store results for'
+    required: true
+    default: core
+  project_root:
+    description: 'Core root folder'
+    required: true
+    default: ${{ github.WORKSPACE }}
+  tests_run_exit_code:
+    description: 'Test run exit code'
+    required: true
+  test_results_location:
+    description: 'Folder where test results are located'
+    required: true
+  cicd_github_token:
+    description: 'Token to use when it comes to push to results repo'
+    required: true
+runs:
+  using: 'docker'
+  image: 'Dockerfile'

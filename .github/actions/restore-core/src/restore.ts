@@ -42,8 +42,8 @@ const RESTORE_CONFIGURATION: RestoreConfiguration = {
   }
 }
 
-const CORE_ROOT = core.getInput('core-root')
-const CACHE_FOLDER = path.join(path.dirname(CORE_ROOT), 'cache')
+const PROJECT_ROOT = core.getInput('project_root')
+const CACHE_FOLDER = path.join(path.dirname(PROJECT_ROOT), 'cache')
 
 /**
  * Restore previously cached locations.
@@ -116,7 +116,7 @@ function relocate(type: string, cacheLocations: string[], configLocations: strin
         return ''
       }
 
-      const newLocation = path.join(CORE_ROOT, foundLocation)
+      const newLocation = path.join(PROJECT_ROOT, foundLocation)
       core.info(`New location for cache: ${newLocation}`)
       const newFolder = path.dirname(newLocation)
       if (!fs.existsSync(newFolder)) {
