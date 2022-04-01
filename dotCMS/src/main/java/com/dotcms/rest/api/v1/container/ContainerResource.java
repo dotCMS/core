@@ -392,9 +392,19 @@ public class ContainerResource implements Serializable {
         velocityUtil.merge(pageKey.path, context);
     }
 
-
+    /**
+     *
+     * @param containerId
+     * @param user
+     * @param host
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     private Container getContainer(final String containerId, final User user, final Host host) throws DotDataException, DotSecurityException {
-
+        if (Container.SYSTEM_CONTAINER.equals(containerId)) {
+            return this.containerAPI.systemContainer();
+        }
         final PageMode mode = PageMode.EDIT_MODE; // todo: ask for this, does not make sense ask for mode.showLive
 
         if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerId)) {
