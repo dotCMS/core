@@ -5034,6 +5034,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             //Existing contentlet getting updated.
             identifier = identifierAPI.find(contentlet);
 
+            if (!UtilMethods.isSet(identifier) || !UtilMethods.isSet(identifier.getId())){
+                throw new DotDataException("The identifier %s does not exists", contentlet.getIdentifier());
+            }
+
             final String oldURI = identifier.getURI();
 
             // make sure the identifier is removed from cache
@@ -5081,7 +5085,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             identifier = identifierAPI.save(identifier);
 
-            return ! oldURI.equals(identifier.getURI());
+            return UtilMethods.isSet(oldURI) && !oldURI.equals(identifier.getURI());
         }
     }
 
