@@ -130,3 +130,4 @@ This maintenance release includes the following code fixes:
 67. https://github.com/dotCMS/core/issues/21516 : Change to FILE_SYSTEM for Metadata Storage #21516
 68. https://github.com/dotCMS/core/issues/20446 : Unable to load very large images #20446
 69. https://github.com/dotCMS/core/issues/21617 : BinaryMap still hits fs #21617
+70. https://github.com/dotCMS/core/issues/21658 : [SASS] : Modification to .SCSS file is not refreshing compiled CSS file. #21658

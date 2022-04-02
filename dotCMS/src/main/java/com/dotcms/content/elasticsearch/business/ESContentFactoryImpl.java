@@ -1994,6 +1994,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 
         contentletCache.remove(content.getInode());
+        contentlet.setInode(content.getInode());
+        final Identifier contentletIdentifier = APILocator.getIdentifierAPI().find(contentlet);
+        CacheLocator.getCSSCache().remove(contentletIdentifier.getHostId(), contentletIdentifier.getPath(), true);
+        CacheLocator.getCSSCache().remove(contentletIdentifier.getHostId(), contentletIdentifier.getPath(), false);
+
         HibernateUtil.evict(content);
 
         return content;
