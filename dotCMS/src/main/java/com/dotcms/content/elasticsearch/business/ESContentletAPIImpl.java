@@ -7967,7 +7967,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(null != task) {
 
             final WorkflowTask newTask = new WorkflowTask();
-            Try.run(()->  BeanUtils.copyProperties(task, newTask));
+            Sneaky.sneaked(()->  BeanUtils.copyProperties(newTask, task));
             newTask.setId(null);
             newTask.setWebasset(copyContentlet.getIdentifier());
             newTask.setLanguageId(copyContentlet.getLanguageId());

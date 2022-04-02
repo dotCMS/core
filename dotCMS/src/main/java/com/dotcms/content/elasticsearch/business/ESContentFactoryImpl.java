@@ -2493,8 +2493,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	                    if(field.getVelocityVarName().equalsIgnoreCase(numberMatch.getGroups().get(1).getMatch())){
 	                        if (field.getFieldContentlet().startsWith("float")) {
 	                            query = query.replace(numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":" + numberMatch.getGroups().get(2).getMatch(),
-	                                    numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":" + NumberUtil.pad(
-	                                                    Float.parseFloat(numberMatch.getGroups().get(2).getMatch())) + " ");
+	                                    numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":" + NumberUtil.pad(Float.parseFloat(numberMatch.getGroups().get(2).getMatch())) + " ");
 	                        }else if(field.getFieldContentlet().startsWith("integer")) {
 	                            query = query.replace(numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":" + numberMatch.getGroups().get(2).getMatch(),
 	                                    numberMatch.getGroups().get(0).getMatch() + "." + numberMatch.getGroups().get(1).getMatch() + ":" + NumberUtil.pad(Long.parseLong((numberMatch.getGroups().get(2).getMatch()))) + " ");
