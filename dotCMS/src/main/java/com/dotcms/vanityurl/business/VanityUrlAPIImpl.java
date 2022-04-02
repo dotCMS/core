@@ -127,6 +127,11 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
   public List<CachedVanityUrl> findInDb(final Host site, final Language language) {
 
     try {
+
+      if (!UtilMethods.isSet(site) || !UtilMethods.isSet(site.getIdentifier())) {
+        return null;
+      }
+
       final List<Map<String, Object>> vanityUrls = new DotConnect().setSQL(
                       SELECT_LIVE_VANITY_URL_INODES)
               .addParam(BaseContentType.VANITY_URL.getType())
@@ -139,8 +144,8 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
       final List<Contentlet> contentlets = this.contentletAPI.findContentlets(vanityUrlInodes)
               .stream()
-              .filter(contentlet -> contentlet.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR)
-                      .equals(site.getIdentifier()))
+              .filter(contentlet ->
+                      site.getIdentifier().equals(contentlet.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR)))
               .collect(Collectors.toList());
 
       return contentlets.stream().map(contentlet -> {
