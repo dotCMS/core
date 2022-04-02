@@ -205,6 +205,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.activation.MimeType;
 import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
@@ -213,7 +214,7 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.springframework.beans.BeanUtils;
+
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -7966,7 +7967,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(null != task) {
 
             final WorkflowTask newTask = new WorkflowTask();
-            BeanUtils.copyProperties(task, newTask);
+            Try.run(()->  BeanUtils.copyProperties(task, newTask));
             newTask.setId(null);
             newTask.setWebasset(copyContentlet.getIdentifier());
             newTask.setLanguageId(copyContentlet.getLanguageId());
