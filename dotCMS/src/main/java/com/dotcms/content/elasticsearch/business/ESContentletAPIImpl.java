@@ -249,7 +249,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private static final String backupPath = ConfigUtils.getBackupPath() + File.separator + "contentlets";
 
     private static final Lazy<Boolean> UNIQUE_PER_SITE_CONFIG = Lazy.of(()->Config
-            .getBooleanProperty("unique_per_site", true));
+            .getBooleanProperty("uniquePerSite", true));
 
     private static Boolean uniquePerSite;
 
