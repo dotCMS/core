@@ -170,9 +170,12 @@ public class DotCMSInitDb {
 
         final Tuple2<Boolean,String> initialPassword = loadInitialPassword();
         if(initialPassword._1){
-            //Only generated passwords are meant to be printed
+            //Only generated passwords are meant to be printed as notice
             printNotice(initialPassword._2);
         }
+
+        admin.setPassword(initialPassword._2);
+        userAPI.save(admin, APILocator.systemUser(), false);
 
     }
 
