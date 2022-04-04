@@ -22,6 +22,7 @@ import {
     getHintId,
     isStringType
 } from '../../../utils';
+import { SelectionFeedback } from './components/dot-autocomplete/dot-autocomplete';
 
 @Component({
     tag: 'dot-tags',
@@ -65,7 +66,7 @@ export class DotTagsComponent {
 
     /** Min characters to start search in the autocomplete input */
     @Prop({ reflect: true })
-    threshold = 0;
+    threshold = 1;
 
     /** Duraction in ms to start search into the autocomplete */
     @Prop({ reflect: true })
@@ -206,8 +207,8 @@ export class DotTagsComponent {
         });
     }
 
-    private onSelectHandler({ detail = '' }: CustomEvent<string>) {
-        const value = detail.replace(',', ' ').replace(/\s+/g, ' ');
+    private onSelectHandler({ detail }: CustomEvent<SelectionFeedback>) {
+        const value = detail.selection.value.replace(',', ' ').replace(/\s+/g, ' ');
         this.addTag(value);
     }
 

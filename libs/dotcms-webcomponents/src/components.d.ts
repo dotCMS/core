@@ -128,6 +128,10 @@ export namespace Components {
          */
         "errorMessage": string;
         /**
+          * (optional) Text that be shown when the file size is not valid
+         */
+        "fileSizeValidationMessage": string;
+        /**
           * (optional) Hint text that suggest a clue of the field
          */
         "hint": string;
@@ -225,6 +229,10 @@ export namespace Components {
           * (optional) Disables field's interaction
          */
         "disabled": boolean;
+        /**
+          * (optional) Set the max file size limit
+         */
+        "maxFileLength": string;
         /**
           * Name that will be used as ID
          */
@@ -1490,6 +1498,10 @@ declare namespace LocalJSX {
          */
         "errorMessage"?: string;
         /**
+          * (optional) Text that be shown when the file size is not valid
+         */
+        "fileSizeValidationMessage"?: string;
+        /**
           * (optional) Hint text that suggest a clue of the field
          */
         "hint"?: string;
@@ -1591,6 +1603,10 @@ declare namespace LocalJSX {
           * (optional) Disables field's interaction
          */
         "disabled"?: boolean;
+        /**
+          * (optional) Set the max file size limit
+         */
+        "maxFileLength"?: string;
         /**
           * Name that will be used as ID
          */

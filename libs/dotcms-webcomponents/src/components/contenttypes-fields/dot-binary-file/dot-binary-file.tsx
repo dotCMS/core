@@ -79,6 +79,10 @@ export class DotBinaryFileComponent {
     @Prop()
     URLValidationMessage = 'The specified URL is not valid';
 
+    /** (optional) Text that be shown when the file size is not valid */
+    @Prop()
+    fileSizeValidationMessage = 'File size is not valid';
+
     /** (optional) Disables field's interaction */
     @Prop({ reflect: true })
     disabled = false;
@@ -180,6 +184,11 @@ export class DotBinaryFileComponent {
     @Watch('URLValidationMessage')
     URLValidationMessageWatch(): void {
         this.errorMessageMap.set(DotBinaryMessageError.URLINVALID, this.URLValidationMessage);
+    }
+
+    @Watch('fileSizeValidationMessage')
+    fileSizeValidationMessageWatch(): void {
+        this.errorMessageMap.set(DotBinaryMessageError.SIZEINVALID, this.fileSizeValidationMessage);
     }
 
     @Watch('accept')
@@ -289,6 +298,7 @@ export class DotBinaryFileComponent {
                                 name={this.name}
                                 accept={this.allowedFileTypes.join(',')}
                                 disabled={this.disabled}
+                                maxFileLength={this.maxFileLength}
                                 required={this.required}
                                 buttonLabel={this.buttonLabel}
                             />
@@ -297,7 +307,6 @@ export class DotBinaryFileComponent {
                 </dot-label>
                 {getTagHint(this.hint)}
                 {getTagError(this.shouldShowErrorMessage(), this.getErrorMessage())}
-                <dot-error-message>{this.errorMessage}</dot-error-message>
             </Host>
         );
     }
@@ -329,13 +338,14 @@ export class DotBinaryFileComponent {
     }
 
     private isValid(): boolean {
-        return !(this.required && !this.file);
+        return !(this.required && !this.file) && !this.errorType;
     }
 
     private setErrorMessageMap(): void {
         this.requiredMessageWatch();
         this.validationMessageWatch();
         this.URLValidationMessageWatch();
+        this.fileSizeValidationMessageWatch();
     }
 
     private setValue(data: File | string = null): void {
@@ -370,12 +380,15 @@ export class DotBinaryFileComponent {
     }
 
     private handleDroppedFile(file: File): void {
-        if (isFileAllowed(file.name, file.type, this.allowedFileTypes.join(','))) {
-            this.setValue(file);
-            this.binaryTextField.value = file.name;
-        } else {
+        if (!isFileAllowed(file.name, file.type, this.allowedFileTypes.join(','))) {
             this.errorType = DotBinaryMessageError.INVALID;
             this.setValue();
+        } else if (this.maxFileLength ? parseInt(this.maxFileLength, 10) <= file.size : false) {
+            this.errorType = DotBinaryMessageError.SIZEINVALID;
+            this.setValue();
+        } else {
+            this.setValue(file);
+            this.binaryTextField.value = file.name;
         }
     }
 

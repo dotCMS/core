@@ -18,7 +18,7 @@
 | `placeholder`     | `placeholder`      | (optional) text to show when no value is set                                   | `string`                              | `''`                       |
 | `required`        | `required`         | (optional) Determine if it is mandatory                                        | `boolean`                             | `false`                    |
 | `requiredMessage` | `required-message` | (optional) Text that be shown when required is set and value is not set        | `string`                              | `'This field is required'` |
-| `threshold`       | `threshold`        | Min characters to start search in the autocomplete input                       | `number`                              | `0`                        |
+| `threshold`       | `threshold`        | Min characters to start search in the autocomplete input                       | `number`                              | `1`                        |
 | `value`           | `value`            | Value formatted splitted with a comma, for example: tag-1,tag-2                | `string`                              | `''`                       |
 
 
