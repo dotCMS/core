@@ -381,8 +381,10 @@ public class OSGIUtil {
             Logger.info(this, "Portlets Removed: " + this.portletIDsStopped.toString());
 
             //Remove Actionlets in the list
-            this.actionletsStopped.stream().forEach(this.workflowOsgiService::removeActionlet);
-            Logger.info(this, "Actionlets Removed: " + this.actionletsStopped.toString());
+            if (null  != this.workflowOsgiService) {
+                this.actionletsStopped.stream().forEach(this.workflowOsgiService::removeActionlet);
+                Logger.info(this, "Actionlets Removed: " + this.actionletsStopped.toString());
+            }
 
             //Cleanup lists
             this.portletIDsStopped.clear();

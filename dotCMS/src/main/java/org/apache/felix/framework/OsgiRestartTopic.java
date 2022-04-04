@@ -56,7 +56,7 @@ public class OsgiRestartTopic implements DotPubSubTopic {
 
     @VisibleForTesting
     public OsgiRestartTopic(final String serverId, final DotPubSubProvider provider) {
-        
+
         this.serverId = StringUtils.shortify(serverId, 10);
         this.provider = provider;
         this.consumerMap =
@@ -75,11 +75,12 @@ public class OsgiRestartTopic implements DotPubSubTopic {
                             Logger.info(this.getClass(),
                                     () -> "Got OGSI_RESTART_RESPONSE from server:" + event.getOrigin());
 
-                            final String origin = (String) event.getPayload().get("sourceNode");
+                            final String origin       = (String) event.getPayload().get("sourceNode");
+                            final String shortyOrigin = StringUtils.shortify(origin, 10);
                             Logger.info(this, "Event received: " + event + ", origin node: " + origin);
 
                             // just in case we double check the origin is not itself to avoid double osgi restart
-                            if (!OsgiRestartTopic.this.serverId.equals(origin)) {
+                            if (!OsgiRestartTopic.this.serverId.equals(shortyOrigin)) {
                                 // Restart the current instance
                                 OSGIUtil.getInstance().restartOsgiOnlyLocal();
                             }
