@@ -126,8 +126,7 @@ public class ByteBuddyFactory {
 
     }
 
-
-    private boolean checkLogLevelRequired(MethodDescription target) {
+    private boolean checkLogLevelRequired(final MethodDescription target) {
         boolean result = false;
         AnnotationDescription.Loadable<LogTime> time = target.getDeclaredAnnotations().ofType(LogTime.class);
         if (time != null) {
