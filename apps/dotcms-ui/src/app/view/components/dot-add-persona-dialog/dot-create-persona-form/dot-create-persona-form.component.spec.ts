@@ -101,12 +101,13 @@ describe('DotCreatePersonaFormComponent', () => {
             const validationMessage: DebugElement = fixture.debugElement.query(
                 By.css('dot-field-validation-message')
             );
+
             const fileUpload: DebugElement = fixture.debugElement.query(By.css('p-fileUpload'));
             expect(hostLabel.nativeElement.innerText).toEqual('Host');
             expect(nameLabel.nativeElement.innerText).toEqual('Name');
             expect(keyTagLabel.nativeElement.innerText).toEqual('Key Tag');
             expect(imageLabel.nativeElement.innerText).toEqual('Upload File');
-            expect(validationMessage.componentInstance.message).toEqual('Name is required');
+            expect(validationMessage.componentInstance.defaultMessage).toEqual('Name is required');
             expect(fileUpload.componentInstance.chooseLabel).toEqual('Choose');
         });
 

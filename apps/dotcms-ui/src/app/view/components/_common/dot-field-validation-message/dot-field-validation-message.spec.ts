@@ -1,11 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Pipe, PipeTransform } from '@angular/core';
+import { DebugElement, Pipe, PipeTransform } from '@angular/core';
 
-import { TestBed, waitForAsync, ComponentFixture } from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { DotFieldValidationMessageComponent } from './dot-field-validation-message';
 import { By } from '@angular/platform-browser';
-import { DebugElement } from '@angular/core';
+import { FormControl, Validators } from '@angular/forms';
+import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 
 @Pipe({
     name: 'dm'
@@ -16,6 +18,11 @@ class DotMessageMockPipe implements PipeTransform {
     }
 }
 
+const messageServiceMock = new MockDotMessageService({
+    'contentType.errors.input.maxlength': 'Value must be no more than {0} characters and has {1}',
+    'contentType.form.variable.placeholder': 'Will be auto-generated if left empty'
+});
+
 describe('FieldValidationComponent', () => {
     let de: DebugElement;
     let el: HTMLElement;
@@ -25,7 +32,13 @@ describe('FieldValidationComponent', () => {
     beforeEach(
         waitForAsync(() => {
             TestBed.configureTestingModule({
-                declarations: [DotFieldValidationMessageComponent, DotMessageMockPipe]
+                declarations: [DotFieldValidationMessageComponent, DotMessageMockPipe],
+                providers: [
+                    {
+                        provide: DotMessageService,
+                        useValue: messageServiceMock
+                    }
+                ]
             }).compileComponents();
         })
     );
@@ -36,48 +49,54 @@ describe('FieldValidationComponent', () => {
     });
 
     it('should hide the message by default', () => {
-        const fakeInput: any = {};
-        component.field = fakeInput;
+        const control = new FormControl('', Validators.required);
+        component.field = control;
         fixture.detectChanges();
-        de = fixture.debugElement.query(By.css('small'));
+        de = fixture.debugElement.query(By.css('[data-testId="dotErrorMsg"]'));
         expect(de).toBeNull();
     });
 
     it('should hide the message when field it is valid', () => {
-        const fakeInput: any = {};
-        fakeInput.valid = true;
-        component.field = fakeInput;
+        const control = new FormControl('valid-content', Validators.required);
+        control.markAsDirty();
+        control.markAsTouched();
+
+        component.field = control;
+
         fixture.detectChanges();
-        de = fixture.debugElement.query(By.css('small'));
+        de = fixture.debugElement.query(By.css('[data-testId="dotErrorMsg"]'));
+
         expect(de).toBeNull();
     });
 
     it('should show the default message when field it is dirty and invalid', () => {
-        component.field = {
-            dirty: true,
-            valid: false,
-            enabled: true
-        } as any;
+        const control = new FormControl('', Validators.required);
+        control.markAsDirty();
+        control.markAsTouched();
+        component.field = control;
+
         fixture.detectChanges();
 
-        de = fixture.debugElement.query(By.css('small'));
+        de = fixture.debugElement.query(By.css('[data-testId="dotErrorMsg"]'));
         el = de.nativeElement;
         expect(el).toBeDefined();
         expect(el.textContent).toContain('Required');
     });
 
     it('should show the message when field it is dirty and invalid', () => {
-        component.field = {
-            dirty: true,
-            valid: false,
-            enabled: true
-        } as any;
-        component.message = 'Error message';
+        const control = new FormControl('', Validators.required);
+        component.defaultMessage = 'Required';
+
+        control.markAsDirty();
+        control.markAsTouched();
+
+        component.field = control;
         fixture.detectChanges();
 
-        de = fixture.debugElement.query(By.css('small'));
+        de = fixture.debugElement.query(By.css('[data-testId="dotErrorMsg"]'));
+
         el = de.nativeElement;
         expect(el).toBeDefined();
-        expect(el.textContent).toContain('Error message');
+        expect(el.textContent).toContain('Required');
     });
 });

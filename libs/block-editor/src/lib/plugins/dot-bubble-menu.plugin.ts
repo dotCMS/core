@@ -168,7 +168,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
     setMenuItems(doc, from) {
         const node = doc.nodeAt(from);
-        const isDotImage = node.type.name == 'dotImage';
+        const isDotImage = node?.type.name == 'dotImage';
 
         this.component.instance.items = isDotImage ? bubbleMenuImageItems : bubbleMenuItems;
     }

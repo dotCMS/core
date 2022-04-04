@@ -1,23 +1,26 @@
 <dot-listing-data-table
-    *ngIf="showTable"
     #listing
     (rowWasClicked)="editContentType($event)"
+    *ngIf="showTable"
     [actionHeaderOptions]="actionHeaderOptions"
-    [paginatorExtraParams]="paginatorExtraParams"
+    [actions]="rowActions"
     [columns]="contentTypeColumns"
+    [paginatorExtraParams]="paginatorExtraParams"
     sortField="modDate"
     sortOrder="DESC"
     url="v1/contenttype"
-    [actions]="rowActions"
 >
     <dot-base-type-selector
-        *ngIf="!filterBy"
         (selected)="changeBaseTypeSelector($event)"
+        *ngIf="!filterBy"
     ></dot-base-type-selector>
 </dot-listing-data-table>
 
 <dot-add-to-bundle
+    (cancel)="addToBundleIdentifier = null"
     *ngIf="addToBundleIdentifier"
     [assetIdentifier]="addToBundleIdentifier"
-    (cancel)="addToBundleIdentifier = null"
 ></dot-add-to-bundle>
+
+
+<ng-template #dotDynamicDialog></ng-template>

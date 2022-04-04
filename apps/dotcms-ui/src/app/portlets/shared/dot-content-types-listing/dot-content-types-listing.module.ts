@@ -7,7 +7,7 @@ import { DotContentTypeService } from '@services/dot-content-type';
 import { DotListingDataTableModule } from '@components/dot-listing-data-table';
 import { DotBaseTypeSelectorModule } from '@components/dot-base-type-selector';
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotContentTypeCopyDialogModule } from '@portlets/shared/dot-content-types-listing/components/dot-content-type-copy-dialog/dot-content-type-copy-dialog.module';
 
 @NgModule({
     imports: [
@@ -15,7 +15,7 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
         DotListingDataTableModule,
         DotBaseTypeSelectorModule,
         DotAddToBundleModule,
-        DotPipesModule
+        DotContentTypeCopyDialogModule
     ],
     declarations: [DotContentTypesPortletComponent],
     exports: [DotContentTypesPortletComponent],

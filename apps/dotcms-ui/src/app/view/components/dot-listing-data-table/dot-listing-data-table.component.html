@@ -1,73 +1,70 @@
 <dot-action-header [options]="actionHeaderOptions">
     <input
         #gf
-        pInputText
-        type="text"
         (input)="dataTable.filterGlobal($event.target.value, 'contains')"
-        placeholder="{{ 'global-search' | dm }}"
-        [(ngModel)]="filter"
         (keydown.arrowdown)="focusFirstRow()"
+        [(ngModel)]="filter"
+        pInputText
+        placeholder="{{ 'global-search' | dm }}"
+        type="text"
     />
     <ng-content></ng-content>
 </dot-action-header>
 <p-table
     #dataTable
-    [responsiveLayout]="'scroll'"
-    [contextMenu]="contextMenu ? cm : null"
+    (onContextMenuSelect)="contextMenuSelect.emit($event.data)"
+    (onFilter)="handleFilter()"
+    (onHeaderCheckboxToggle)="handleRowCheck()"
     (onLazyLoad)="loadDataPaginationEvent($event)"
     (onRowSelect)="handleRowCheck()"
     (onRowUnselect)="handleRowCheck()"
-    (onHeaderCheckboxToggle)="handleRowCheck()"
-    (onFilter)="handleFilter()"
-    (onContextMenuSelect)="contextMenuSelect.emit($event.data)"
+    [(selection)]="selected"
     [columns]="columns"
+    [contextMenu]="contextMenu ? cm : null"
+    [dataKey]="dataKey"
     [lazy]="true"
     [loading]="loading"
-    loadingIcon="fa fa-circle-o-notch fa-spin"
     [pageLinks]="maxLinksPage"
     [paginator]="true"
+    [responsiveLayout]="'scroll'"
     [rows]="paginationPerPage"
+    [selectionMode]="checkbox ? 'multiple' : 'single'"
     [sortOrder]="sortOrder && sortOrder.toLowerCase() === 'desc' ? -1 : 1"
     [totalRecords]="totalRecords"
     [value]="items"
-    [(selection)]="selected"
-    [dataKey]="dataKey"
-    [selectionMode]="checkbox ? 'multiple' : 'single'"
+    loadingIcon="fa fa-circle-o-notch fa-spin"
 >
-    <ng-template pTemplate="header" let-columns>
+    <ng-template let-columns pTemplate="header">
         <tr *ngIf="items?.length">
             <th *ngIf="checkbox" style="width: 5%">
                 <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
             </th>
             <ng-container
-                [ngTemplateOutlet]="headerTemplate || defaultHeaderTemplate"
                 [ngTemplateOutletContext]="{ columns: columns }"
+                [ngTemplateOutlet]="headerTemplate || defaultHeaderTemplate"
             ></ng-container>
         </tr>
     </ng-template>
 
-    <ng-template pTemplate="body" let-rowData let-columns="columns">
+    <ng-template let-columns="columns" let-rowData pTemplate="body">
         <tr
             (click)="handleRowClick(rowData)"
             (keyup.enter)="handleRowClick(rowData)"
-            [pSelectableRow]="rowData"
-            [pContextMenuRow]="rowData"
             [pContextMenuRowDisabled]="rowData.disableInteraction === true"
+            [pContextMenuRow]="rowData"
+            [pSelectableRow]="rowData"
             data-testClass="testTableRow"
         >
             <td *ngIf="checkbox">
                 <p-tableCheckbox
-                    *ngIf="
-                        rowData.disableInteraction === undefined ||
-                        rowData.disableInteraction === false
-                    "
                     (click)="$event.stopPropagation()"
+                    *ngIf="rowData.disableInteraction === undefined || rowData.disableInteraction === false"
                     [value]="rowData"
                 ></p-tableCheckbox>
             </td>
             <ng-container
-                [ngTemplateOutlet]="rowTemplate || defaultRowTemplate"
                 [ngTemplateOutletContext]="{ rowData: rowData }"
+                [ngTemplateOutlet]="rowTemplate || defaultRowTemplate"
             ></ng-container>
         </tr>
     </ng-template>
@@ -85,12 +82,12 @@
     </ng-template>
 </p-table>
 <p-contextMenu #cm [model]="contextMenuItems" appendTo="body"></p-contextMenu>
-<ng-template pTemplate="header" let-columns="columns" #defaultHeaderTemplate>
+<ng-template #defaultHeaderTemplate let-columns="columns" pTemplate="header">
     <th
         *ngFor="let col of columns"
         [ngStyle]="{ width: col.width, 'text-align': getAlign(col) }"
-        [pSortableColumn]="col.fieldName"
         [pSortableColumnDisabled]="!col.sortable"
+        [pSortableColumn]="col.fieldName"
     >
         {{ col.header }}
         <p-sortIcon *ngIf="col.sortable" [field]="col.fieldName"></p-sortIcon>
@@ -98,9 +95,9 @@
     <th style="width: 5%"></th>
 </ng-template>
 
-<ng-template let-rowData="rowData" #defaultRowTemplate>
+<ng-template #defaultRowTemplate let-rowData="rowData">
     <td *ngFor="let col of columns" [ngStyle]="{ width: col.width, 'text-align': getAlign(col) }">
-        <div class="listing-datatable__column-icon" *ngIf="col.icon">
+        <div *ngIf="col.icon" class="listing-datatable__column-icon">
             <dot-icon name="{{ col.icon(rowData) }}"></dot-icon>
             <span>{{ col.textContent || rowData[col.fieldName] }}</span>
         </div>
@@ -110,22 +107,23 @@
         <a
             (click)="$event.stopPropagation()"
             *ngIf="col.fieldName === 'nEntries'"
-            [routerLink]="rowData.variable === 'Host' ? '/c/sites' : '/c/content'"
             [queryParams]="rowData.variable === 'Host' ? {} : { filter: rowData.variable }"
+            [routerLink]="rowData.variable === 'Host' ? '/c/sites' : '/c/content'"
         >
             {{
-                col.textContent
-                    ? (col.textContent | dotStringFormat: [rowData[col.fieldName]])
-                    : rowData[col.fieldName]
+            col.textContent
+                ? (col.textContent | dotStringFormat: [rowData[col.fieldName]])
+                : rowData[col.fieldName]
             }}
         </a>
     </td>
     <td class="listing-datatable__action-column" style="width: 5%">
         <dot-action-menu-button
-            class="listing-datatable__action-button"
             [actions]="actions"
             [item]="rowData"
+            class="listing-datatable__action-button"
         >
         </dot-action-menu-button>
     </td>
 </ng-template>
+

@@ -89,7 +89,7 @@ export class DotContentletWrapperComponent {
                         `${
                             e.detail.data.pageTitle
                                 ? e.detail.data.pageTitle + ' - '
-                                : this.titleService.getTitle()
+                                : `${this.dotMessageService.get('New')} ${this.header} - `
                         } ${this.titleService.getTitle().split(' - ')[1]}`
                     );
                 }

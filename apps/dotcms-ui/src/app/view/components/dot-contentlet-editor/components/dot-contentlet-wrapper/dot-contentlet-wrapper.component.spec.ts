@@ -330,6 +330,25 @@ describe('DotContentletWrapperComponent', () => {
                     expect(component.header).toBe('Blog');
                     expect(titleService.setTitle).toHaveBeenCalledWith('test -  dotCMS platform');
                 });
+
+                it('should set Page title when a new contentlet will be created', () => {
+                    const params = {
+                        detail: {
+                            name: 'edit-contentlet-loaded',
+                            data: {
+                                contentType: 'Blog',
+                                pageTitle: ''
+                            }
+                        }
+                    };
+                    spyOn(titleService, 'getTitle').and.returnValue(' - dotCMS platform');
+                    dotIframeDialog.triggerEventHandler('custom', params);
+
+                    expect(component.header).toBe('Blog');
+                    expect(titleService.setTitle).toHaveBeenCalledWith(
+                        'New Blog -  dotCMS platform'
+                    );
+                });
             });
         });
     });

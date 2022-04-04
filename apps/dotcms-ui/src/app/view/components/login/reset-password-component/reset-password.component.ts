@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { AfterViewChecked, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Observable } from 'rxjs';
 import { take, tap } from 'rxjs/operators';
@@ -14,7 +14,7 @@ import { DotLoginInformation } from '@dotcms/dotcms-models';
     styleUrls: ['./reset-password.component.scss'],
     templateUrl: 'reset-password.component.html'
 })
-export class ResetPasswordComponent implements OnInit {
+export class ResetPasswordComponent implements OnInit, AfterViewChecked {
     resetPasswordForm: FormGroup;
     loginInfo$: Observable<DotLoginInformation>;
     message = '';
@@ -25,8 +25,13 @@ export class ResetPasswordComponent implements OnInit {
         private loginService: LoginService,
         public dotLoginPageStateService: DotLoginPageStateService,
         private dotRouterService: DotRouterService,
-        private route: ActivatedRoute
+        private route: ActivatedRoute,
+        private readonly cd: ChangeDetectorRef
     ) {}
+
+    ngAfterViewChecked() {
+        this.cd.detectChanges();
+    }
 
     ngOnInit(): void {
         this.loginInfo$ = this.dotLoginPageStateService.get().pipe(

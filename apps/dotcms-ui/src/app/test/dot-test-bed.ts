@@ -1,20 +1,20 @@
 import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { DotHttpErrorManagerService } from './../api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotIframeService } from './../view/components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { TestBed, TestModuleMetadata, ComponentFixture } from '@angular/core/testing';
-import { Type, Provider, Injector, ReflectiveInjector, LOCALE_ID } from '@angular/core';
+import { ComponentFixture, TestBed, TestModuleMetadata } from '@angular/core/testing';
+import { Injector, LOCALE_ID, Provider, ReflectiveInjector, Type } from '@angular/core';
 import {
     ApiRoot,
     BrowserUtil,
     CoreWebService,
     DotcmsConfigService,
     DotcmsEventsService,
+    DotEventsSocket,
+    DotEventsSocketURL,
+    DotPushPublishDialogService,
     LoggerService,
     StringUtils,
-    UserModel,
-    DotEventsSocketURL,
-    DotEventsSocket,
-    DotPushPublishDialogService
+    UserModel
 } from '@dotcms/dotcms-js';
 import { ConfirmationService } from 'primeng/api';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -48,6 +48,10 @@ export const dotEventSocketURLFactory = () => {
     );
 };
 
+/**
+ * DOTTestBed its deprecated
+ * @deprecated This class is deprecated
+ */
 export class DOTTestBed {
     private static DEFAULT_CONFIG = {
         imports: [

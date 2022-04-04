@@ -1,11 +1,11 @@
 import { StructureTypeView } from '@models/contentlet/structure-type-view.model';
 import { DotContentTypeService } from './dot-content-type.service';
-import { TestBed, getTestBed } from '@angular/core/testing';
-import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { getTestBed, TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { mockDotContentlet } from '@tests/dot-contentlet.mock';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotCMSContentType, DotCopyContentTypeDialogFormFields } from '@dotcms/dotcms-models';
 import { dotcmsContentTypeBasicMock } from '@tests/dot-content-types.mock';
 
 function isRecentContentType(type: StructureTypeView): boolean {
@@ -110,6 +110,42 @@ describe('DotContentletService', () => {
 
         const req = httpMock.expectOne(`v1/contenttype/id/${id}`);
         expect(req.request.method).toBe('GET');
+        req.flush({ entity: contentTypeExpected });
+    });
+
+    it('should save a copy of content type selected', () => {
+        const variableContentTypeToCopy = 'a1661fbc-9e84-4c00-bd62-76d633170da3';
+        const id = '6dd314fe781cd9c3dc346c5d6fc92c90';
+
+        const dialogFormFields: DotCopyContentTypeDialogFormFields = {
+            name: 'Cloned Content type',
+            variable: 'abcte',
+            host: 'host',
+            folder: 'folder',
+            icon: 'icon'
+        };
+
+        const contentTypeExpected: DotCMSContentType = {
+            ...dotcmsContentTypeBasicMock,
+            clazz: 'clacczz',
+            defaultType: false,
+            fixed: false,
+            id: id,
+            owner: 'user',
+            system: false,
+            ...dialogFormFields
+        };
+
+        dotContentTypeService
+            .saveCopyContentType(variableContentTypeToCopy, dialogFormFields)
+            .subscribe((contentType: DotCMSContentType) => {
+                expect(contentType).toBe(contentTypeExpected);
+            });
+
+        const req = httpMock.expectOne(`/api/v1/contenttype/${variableContentTypeToCopy}/_copy`);
+        expect(req.request.method).toBe('POST');
+        expect(req.request.body).toEqual(dialogFormFields);
+
         req.flush({ entity: contentTypeExpected });
     });
 

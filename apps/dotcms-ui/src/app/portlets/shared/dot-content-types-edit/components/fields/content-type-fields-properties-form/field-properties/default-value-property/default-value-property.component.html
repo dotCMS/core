@@ -1,11 +1,11 @@
 <div [formGroup]="group" class="field">
     <label class="form__label">{{
         'contenttypes.field.properties.default_value.label' | dm
-    }}</label>
-    <input pInputText type="text" [formControlName]="property.name" />
+        }}</label>
+    <input [formControlName]="property.name" pInputText type="text" />
     <dot-field-validation-message
-        [message]="this.errorLabel"
         [field]="group.controls[property.name]"
+        [message]="this.errorLabel"
     >
     </dot-field-validation-message>
 </div>

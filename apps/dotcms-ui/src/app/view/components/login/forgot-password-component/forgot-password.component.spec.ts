@@ -29,7 +29,6 @@ describe('ForgotPasswordComponent', () => {
     let de: DebugElement;
     let dotRouterService: DotRouterService;
     let loginService: LoginService;
-    let requestPasswordButton;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -58,7 +57,6 @@ describe('ForgotPasswordComponent', () => {
         dotRouterService = de.injector.get(DotRouterService);
 
         fixture.detectChanges();
-        requestPasswordButton = de.query(By.css('[data-testid="submitButton"]'));
     });
 
     it('should load form labels correctly', () => {
@@ -74,11 +72,19 @@ describe('ForgotPasswordComponent', () => {
     });
 
     it('should keep recover password button disabled until the form is valid', () => {
+        const requestPasswordButton = de.query(By.css('[data-testid="submitButton"]'));
         expect(requestPasswordButton.nativeElement.disabled).toBe(true);
     });
 
     it('should do the request password correctly and redirect to login', () => {
-        component.forgotPasswordForm.setValue({ login: 'test' });
+        const control = component.forgotPasswordForm.get('login');
+        control.setValue('test');
+        control.markAsTouched();
+        control.markAsDirty();
+        fixture.detectChanges();
+
+        const requestPasswordButton = de.query(By.css('[data-testid="submitButton"]'));
+
         spyOn(loginService, 'recoverPassword').and.returnValue(of(null));
         spyOn(window, 'confirm').and.returnValue(true);
         fixture.detectChanges();
@@ -96,14 +102,22 @@ describe('ForgotPasswordComponent', () => {
     });
 
     it('should show error message for required form fields', () => {
-        component.forgotPasswordForm.get('login').markAsDirty();
+        const control = component.forgotPasswordForm.get('login');
+        control.setValue('');
+        control.markAsTouched();
+        control.markAsDirty();
+
         fixture.detectChanges();
 
-        const errorMessages = de.queryAll(By.css('dot-field-validation-message .p-invalid'));
+        const errorMessages = fixture.debugElement.queryAll(
+            By.css('dot-field-validation-message .p-invalid')
+        );
+
         expect(errorMessages.length).toBe(1);
     });
 
     it('should show error message', () => {
+        const requestPasswordButton = de.query(By.css('[data-testid="submitButton"]'));
         spyOn(window, 'confirm').and.returnValue(true);
         spyOn(loginService, 'recoverPassword').and.returnValue(
             throwError({ error: { errors: [{ message: 'error message' }] } })
@@ -119,6 +133,8 @@ describe('ForgotPasswordComponent', () => {
     });
 
     it('should show go to login if submit is success', () => {
+        const requestPasswordButton = de.query(By.css('[data-testid="submitButton"]'));
+
         spyOn(window, 'confirm').and.returnValue(true);
         spyOn(loginService, 'recoverPassword').and.returnValue(of(null));
         component.forgotPasswordForm.setValue({ login: 'test@test.com' });

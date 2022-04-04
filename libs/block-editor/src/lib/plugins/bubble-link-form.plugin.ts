@@ -103,6 +103,7 @@ export class BubbleLinkFormView {
         }
 
         this.tippy = tippy(editorElement, {
+            appendTo: document.body,
             duration: 250,
             getReferenceClientRect: null,
             content: this.element,
