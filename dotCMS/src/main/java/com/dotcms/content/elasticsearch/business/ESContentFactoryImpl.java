@@ -2021,16 +2021,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     throw new DotRuntimeException(error, e);
                 }
         }
-        final ContentType contentType = contentlet.getContentType();
-        //Now collect all system fields from the content-type so can use them for clean up
-        final List<com.dotcms.contenttype.model.field.Field> systemFields = contentType.fields().stream()
-                .filter(field -> field.dataType() == DataTypes.SYSTEM).collect(Collectors.toList());
 
-        //Remove any system field from the incoming contentlet that could have made it this far.
-        //We need them for the contentlet json representation but down the upsert path they're only nuisance
-        for (final com.dotcms.contenttype.model.field.Field systemField : systemFields) {
-            contentlet.getMap().remove(systemField.variable());
-        }
     }
 
     private void upsertContentlet(final Contentlet contentlet, final String inode) throws DotDataException {

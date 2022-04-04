@@ -65,6 +65,17 @@ public class FileAssetDataGen extends ContentletDataGen {
         return  new FileAssetDataGen(folder, file).nextPersisted();
     }
 
+    public static FileAssetDataGen createFileAssetDataGen(
+            final Folder folder,
+            final String fileName,
+            final String suffix,
+            final String content)
+            throws IOException, DotSecurityException, DotDataException {
+        final File file = getFile(fileName, suffix, content);
+
+        return  new FileAssetDataGen(folder, file);
+    }
+
     @NotNull
     private static File getFile(String fileName, String suffix, String content) throws IOException {
         final File file = File.createTempFile(fileName, suffix);
