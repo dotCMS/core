@@ -43,6 +43,51 @@ public class OsgiRestartTopic implements DotPubSubTopic {
 
     private final DotPubSubProvider provider;
 
+    private final Map<String, Consumer<DotPubSubEvent>> consumerMap;
+
+    public OsgiRestartTopic() {
+        this(APILocator.getServerAPI().readServerId());
+    }
+
+    @VisibleForTesting
+    public OsgiRestartTopic(final String serverId) {
+        this(serverId, DotPubSubProviderLocator.provider.get());
+    }
+
+    @VisibleForTesting
+    public OsgiRestartTopic(final String serverId, final DotPubSubProvider provider) {
+        
+        this.serverId = StringUtils.shortify(serverId, 10);
+        this.provider = provider;
+        this.consumerMap =
+                new ImmutableMap.Builder<String, Consumer<DotPubSubEvent>>()
+                        .put(EventType.OGSI_RESTART_REQUEST.name(),  (event) -> {
+
+                            Logger.info(this.getClass(), () -> "Got OGSI_RESTART_REQUEST from server:" + event.getOrigin() + ". sending response");
+
+                            OsgiRestartTopic.this.provider.publish(new DotPubSubEvent.Builder(event)
+                                    // we set response b/c the nodes subscribed will wait this kind of msg
+                                    .withType(EventType.OGSI_RESTART_RESPONSE.name()).withTopic(OsgiRestartTopic.this)
+                                    .build());
+                        })
+                        .put(EventType.OGSI_RESTART_RESPONSE.name(), (event) -> {
+
+                            Logger.info(this.getClass(),
+                                    () -> "Got OGSI_RESTART_RESPONSE from server:" + event.getOrigin());
+
+                            final String origin = (String) event.getPayload().get("sourceNode");
+                            Logger.info(this, "Event received: " + event + ", origin node: " + origin);
+
+                            // just in case we double check the origin is not itself to avoid double osgi restart
+                            if (!OsgiRestartTopic.this.serverId.equals(origin)) {
+                                // Restart the current instance
+                                OSGIUtil.getInstance().restartOsgiOnlyLocal();
+                            }
+                        }).build();
+
+    }
+
+
     /**
      * Events types to handle
      * request: made on the content api
@@ -65,48 +110,6 @@ public class OsgiRestartTopic implements DotPubSubTopic {
 
             return UNKNOWN;
         }
-    }
-
-    final Map<String, Consumer<DotPubSubEvent>> consumerMap =
-            new ImmutableMap.Builder<String, Consumer<DotPubSubEvent>>()
-                    .put(EventType.OGSI_RESTART_REQUEST.name(),  (event) -> {
-
-                        Logger.info(this.getClass(), () -> "Got OGSI_RESTART_REQUEST from server:" + event.getOrigin() + ". sending response");
-
-                        OsgiRestartTopic.this.provider.publish(new DotPubSubEvent.Builder(event)
-                                // we set response b/c the nodes subscribed will wait this kind of msg
-                                .withType(EventType.OGSI_RESTART_RESPONSE.name()).withTopic(OsgiRestartTopic.this)
-                                .build());
-                    })
-                    .put(EventType.OGSI_RESTART_RESPONSE.name(), (event) -> {
-
-                        Logger.info(this.getClass(),
-                                () -> "Got OGSI_RESTART_RESPONSE from server:" + event.getOrigin());
-
-                        final String origin = (String) event.getPayload().get("sourceNode");
-                        Logger.info(this, "Event received: " + event + ", origin node: " + origin);
-
-                        // just in case we double check the origin is not itself to avoid double osgi restart
-                        if (!OsgiRestartTopic.this.serverId.equals(origin)) {
-                            // Restart the current instance
-                            OSGIUtil.getInstance().restartOsgiOnlyLocal();
-                        }
-                    }).build();
-
-
-    public OsgiRestartTopic() {
-        this(APILocator.getServerAPI().readServerId());
-    }
-
-    @VisibleForTesting
-    public OsgiRestartTopic(String serverId) {
-        this(serverId, DotPubSubProviderLocator.provider.get());
-    }
-
-    @VisibleForTesting
-    public OsgiRestartTopic(String serverId, DotPubSubProvider provider) {
-        this.serverId = StringUtils.shortify(serverId, 10);
-        this.provider = provider;
     }
 
     @Override
