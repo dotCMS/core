@@ -12,13 +12,16 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.startup.runonce.Task210321RemoveOldMetadataFiles;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.ImportStarterUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
+import com.dotmarketing.util.PasswordGenerator;
 import com.dotmarketing.util.UserUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.File;
@@ -152,6 +155,10 @@ public class DotCMSInitDb {
      * @throws DotSecurityException
      */
     static void setUpInitialPassword() throws DotDataException, DotSecurityException {
+        if(ConfigUtils.isDevMode()){
+            Logger.info(DotCMSInitDb.class,"While in DevMode dotCMS will not set an initial password to the admin user.");
+            return;
+        }
         final UserAPI userAPI = APILocator.getUserAPI();
         final User admin = userAPI
                 .loadByUserByEmail(ADMIN_DEFAULT_MAIL, APILocator.systemUser(), false);
@@ -160,23 +167,41 @@ public class DotCMSInitDb {
                     "Unable to find admin user by the email: " + ADMIN_DEFAULT_MAIL);
         }
         Logger.info(DotCMSInitDb.class, "Setting up initial password.");
-        final String initialPassword = Config
-                .getStringProperty(INITIAL_ADMIN_PASSWORD, UserUtils.generateSecurePassword());
-        admin.setPassword(initialPassword);
-        userAPI.save(admin, APILocator.systemUser(), false);
-        final String message = String
-                .format("NOTICE: %s password set to %s", ADMIN_DEFAULT_MAIL, initialPassword);
-        printNotice(message);
+
+        final Tuple2<Boolean,String> initialPassword = loadInitialPassword();
+        if(initialPassword._1){
+            //Only generated passwords are meant to be printed
+            printNotice(initialPassword._2);
+        }
+
+    }
+
+    /**
+     * The first component returned indicates if the passwords was loaded or generated
+     * The Second component it the new password it self
+     * @return
+     */
+    static Tuple2<Boolean,String> loadInitialPassword(){
+        final String preSetPassword = Config.getStringProperty(INITIAL_ADMIN_PASSWORD, null);
+        if(UtilMethods.isSet(preSetPassword)){
+            return Tuple.of(false, preSetPassword);
+        }
+        final PasswordGenerator passwordGenerator = new PasswordGenerator.Builder().withDefaultValues().build();
+        return Tuple.of(true, passwordGenerator.nextPassword());
     }
 
     /**
      * inform user the default password set to the admin user
-     * @param message the notice message
+     * @param initialPassword the notice message
      */
-    static void printNotice(final String message){
+    static void printNotice(final String initialPassword){
+        final String notice = String
+                .format("NOTICE: %s password set to %s", ADMIN_DEFAULT_MAIL, initialPassword);
+        final String warning = "WARNING: Once logged-in. Please change this password.";
         final int width = 100;
         Logger.info(DotCMSInitDb.class,StringUtils.rightPad("#", width, "#"));
-        Logger.info(DotCMSInitDb.class,StringUtils.center(StringUtils.center(message, width - 4), width, "##"));
+        Logger.info(DotCMSInitDb.class,StringUtils.center(StringUtils.center(notice, width - 4), width, "##"));
+        Logger.info(DotCMSInitDb.class,StringUtils.center(StringUtils.center(warning, width - 4), width, "##"));
         Logger.info(DotCMSInitDb.class,StringUtils.rightPad("#", width, "#"));
     }
 }
