@@ -29,6 +29,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.Lists;
+import com.liferay.util.StringPool;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.search.TotalHits;
@@ -2008,6 +2009,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 
         contentletCache.remove(content.getInode());
+        contentlet.setInode(content.getInode());
+        if(null == contentlet.getVersionId()){
+            contentlet.setVersionId(StringPool.BLANK);
+        }
+        final Identifier contentletIdentifier = APILocator.getIdentifierAPI().find(contentlet);
+        CacheLocator.getCSSCache().remove(contentletIdentifier.getHostId(), contentletIdentifier.getPath(), true);
+        CacheLocator.getCSSCache().remove(contentletIdentifier.getHostId(), contentletIdentifier.getPath(), false);
         HibernateUtil.evict(content);
 
         return content;
