@@ -1,5 +1,6 @@
 package com.dotcms.business.bytebuddy;
 
+import com.dotcms.business.CloseDB;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.util.LogTime;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -11,7 +12,10 @@ import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Method;
 
 import static com.dotcms.util.AnnotationUtils.getMethodAnnotation;
-
+/**
+ * This Advice handles the @{@link CloseDBIfOpened} with AspectJ
+ * @author spbolton
+ */
 public class CloseDBIfOpenedAdvice {
 
 

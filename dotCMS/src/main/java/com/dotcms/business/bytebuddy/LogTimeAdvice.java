@@ -1,5 +1,6 @@
 package com.dotcms.business.bytebuddy;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.util.LogTime;
 import com.dotmarketing.util.Logger;
 import net.bytebuddy.asm.Advice;
@@ -8,7 +9,10 @@ import org.apache.logging.log4j.Level;
 
 import java.lang.reflect.Method;
 import java.util.function.Supplier;
-
+/**
+ * This Advice handles the @{@link LogTime} with ByteBuddy
+ * @author spbolton
+ */
 public class LogTimeAdvice {
 
     @Advice.OnMethodEnter

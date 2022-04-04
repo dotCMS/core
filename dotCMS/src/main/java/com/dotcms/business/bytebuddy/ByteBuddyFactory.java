@@ -6,6 +6,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.test.TransactionalTester;
 import com.dotcms.util.LogTime;
 import com.dotcms.util.VoidDelegate;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
@@ -23,12 +24,16 @@ import java.lang.instrument.Instrumentation;
 
 import static net.bytebuddy.matcher.ElementMatchers.*;
 
+/**
+ * Initializes ByteBuddy to handle transactional annotations.  This replaces
+ * AspectJ functionality and injects at runtime.  This should be initialized
+ * as early as possible and before any methods using the annotations are called.
+ *
+ * @author sbolton
+ */
 public class ByteBuddyFactory {
 
     private static final ByteBuddyFactory INSTANCE = new ByteBuddyFactory();
-
-
-
 
     private ByteBuddyFactory() {
         init();
@@ -44,32 +49,13 @@ public class ByteBuddyFactory {
         }
     }
 
-    public static void main(String[] args) {
-        ByteBuddyFactory inst = ByteBuddyFactory.getInstance();
-        System.out.print(inst.getClass().getName());
 
-
-        TransactionalTester ts = new TransactionalTester();
-        try {
-            ts.test(new VoidDelegate() {
-
-                @Override
-                public void execute() throws DotDataException, DotSecurityException {
-                    System.out.println("Excecute called");
-                }
-            });
-        } catch (DotDataException e) {
-            e.printStackTrace();
-        } catch (DotSecurityException e) {
-            e.printStackTrace();
-        }
-    }
     public static ByteBuddyFactory getInstance() {
         return INSTANCE;
     }
 
 
-    public void premain(String arg, Instrumentation inst)  throws Exception  {
+    public void premain(final String arg, final Instrumentation inst)  throws Exception  {
 
         AgentBuilder.LocationStrategy bootFallbackLocationStrategy = new AgentBuilder.LocationStrategy() {
             @Override
@@ -78,11 +64,9 @@ public class ByteBuddyFactory {
             }
         };
 
-        Logger.error(ByteBuddyFactory.class, "Test error message");
     try {
-        new AgentBuilder.Default()
+        AgentBuilder.RedefinitionListenable.WithoutBatchStrategy builder = new AgentBuilder.Default()
 
-                //.disableClassFormatChanges()
                 .ignore(nameEndsWith("LocalTransactionAndCloseDBIfOpenedFactoryTest"))
                 .or(nameStartsWith("net.bytebuddy.")
                         .or(nameStartsWith("sun.reflect."))
@@ -91,17 +75,19 @@ public class ByteBuddyFactory {
                 .with(AgentBuilder.InitializationStrategy.Minimal.INSTANCE)
                 .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
                 .disableClassFormatChanges()
-
-
-                .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
-                //.with(AgentBuilder.RedefinitionStrategy.Listener.StreamWriting.toSystemError())
-                //.with(AgentBuilder.Listener.StreamWriting.toSystemError().withTransformationsOnly())
-                //.with(AgentBuilder.InstallationListener.StreamWriting.toSystemError())
-                .with(bootFallbackLocationStrategy)
+                .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION);
+                /*
+                We do not use Config class for this as we do not want to load classes
+                that may need transformation or require annotation processing.
+                */
+                if (Boolean.parseBoolean(System.getenv("DOTCMS_BYTEBUDDY_DEBUG")))
+                {
+                    builder.with(AgentBuilder.RedefinitionStrategy.Listener.StreamWriting.toSystemError())
+                        .with(AgentBuilder.Listener.StreamWriting.toSystemError().withTransformationsOnly())
+                        .with(AgentBuilder.InstallationListener.StreamWriting.toSystemError());
+                }
+                builder.with(bootFallbackLocationStrategy)
                 .type(ElementMatchers.nameStartsWith("com.dotcms"))
-                
-
-
                 .transform(
                         new AgentBuilder.Transformer.ForAdvice()
                                 .withExceptionHandler(Advice.ExceptionHandler.Default.RETHROWING)
@@ -121,14 +107,12 @@ public class ByteBuddyFactory {
 
                                 .withExceptionHandler(Advice.ExceptionHandler.Default.RETHROWING)
                                 .advice(isMethod().and(isAnnotatedWith(WrapInTransaction.class))
-                                              //  .and(ByteBuddyFactory::matchTest))
                                         , WrapInTransactionAdvice.class.getName())
                 )
 
 
                 .transform(
                         new AgentBuilder.Transformer.ForAdvice()
-                                //  .withExceptionHandler(Advice.ExceptionHandler.Default.RETHROWING)
                                 .advice(isMethod().and(this::checkLogLevelRequired)
                                         , LogTimeAdvice.class.getName())
                 )
@@ -140,11 +124,6 @@ public class ByteBuddyFactory {
         Logger.error(ByteBuddyFactory.class, "Error Initializing ByteBuddy",e);
     }
 
-    }
-
-    private static <U extends MethodDescription> boolean matchTest(U a) {
-        Logger.error(ByteBuddyFactory.class, "Tester=" + a.getDeclaringType().getTypeName() + ":" + a.getName());
-        return true;
     }
 
 
