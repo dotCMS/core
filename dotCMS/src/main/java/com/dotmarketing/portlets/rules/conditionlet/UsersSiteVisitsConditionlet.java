@@ -30,11 +30,11 @@ public class UsersSiteVisitsConditionlet extends Conditionlet<UsersSiteVisitsCon
 	public static final String SITE_VISITS_KEY = "site-visits";
 	
 	private static final ParameterDefinition<NumericType> siteVisitsValue =
-			new ParameterDefinition<>(1,SITE_VISITS_KEY, new NumericInput<>(new NumericType().minValue(0)));
+			new ParameterDefinition<>(2,SITE_VISITS_KEY, new NumericInput<>(new NumericType().minValue(0)));
 	
 	public UsersSiteVisitsConditionlet() {
         super("api.ruleengine.system.conditionlet.SiteVisits",
-              new ComparisonParameterDefinition(2, EQUAL, LESS_THAN, GREATER_THAN, LESS_THAN_OR_EQUAL, GREATER_THAN_OR_EQUAL),
+              new ComparisonParameterDefinition(1, EQUAL, LESS_THAN, GREATER_THAN, LESS_THAN_OR_EQUAL, GREATER_THAN_OR_EQUAL),
               siteVisitsValue);
     }
 

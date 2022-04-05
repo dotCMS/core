@@ -313,3 +313,4 @@ This maintenance release includes the following code fixes:
 156. https://github.com/dotCMS/core/issues/19711 : Lazy load buttons for edit contentlets in the page #19711
 157. https://github.com/dotCMS/core/issues/20655 :DotAsset Title is presented different on two search types #20655
 158. https://github.com/dotCMS/core/issues/21658 : [SASS] : Modification to .SCSS file is not refreshing compiled CSS file. #21658
+159. https://github.com/dotCMS/core/issues/20153 : Editor in rules trying to add a condition for a session attribute #20153

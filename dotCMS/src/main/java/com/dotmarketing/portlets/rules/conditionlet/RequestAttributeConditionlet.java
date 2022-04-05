@@ -47,7 +47,7 @@ public class RequestAttributeConditionlet extends Conditionlet<RequestAttributeC
         1, ATTRIBUTE_NAME_KEY, new TextInput<>(new TextType()));
 
     private static final ParameterDefinition<TextType> attributeValue = new ParameterDefinition<>(
-        2, ATTRIBUTE_VALUE_KEY, new TextInput<>(new TextType())
+        3, ATTRIBUTE_VALUE_KEY, new TextInput<>(new TextType())
     );
 
     public RequestAttributeConditionlet() {

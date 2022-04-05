@@ -97,7 +97,7 @@ public class RequestHeaderConditionlet extends Conditionlet<RequestHeaderConditi
     );
 
     private static final ParameterDefinition<TextType> headerValue = new ParameterDefinition<>(
-        2, HEADER_VALUE_KEY,
+        3, HEADER_VALUE_KEY,
         new TextInput<>(new TextType())
     );
 

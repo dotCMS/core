@@ -34,7 +34,7 @@ public class RequestParameterConditionlet extends Conditionlet<RequestParameterC
         1, PARAMETER_NAME_KEY, new TextInput<>(new TextType()));
 
     private static final ParameterDefinition<TextType> parameterValue = new ParameterDefinition<>(
-        2, PARAMETER_VALUE_KEY, new TextInput<>(new TextType())
+        3, PARAMETER_VALUE_KEY, new TextInput<>(new TextType())
     );
 
     public RequestParameterConditionlet() {
