@@ -937,18 +937,6 @@ public class VanityUrlAPITest {
          Config.setProperty(SAVE_CONTENTLET_AS_JSON, false);
 
         try {
-            //Load the VanityUrl structure  contentlet fields
-            final DotConnect dotConnect = new DotConnect();
-            dotConnect.setSQL(
-                    "select f.velocity_var_name, f.field_contentlet from structure s join field f on s.inode = f.structure_inode where s.velocity_var_name = ?"
-            ).addParam("Vanityurl");
-            final List<Map<String, Object>> maps = dotConnect.loadObjectResults();
-            final Map<String, Object> fieldsToColumns = new HashMap<>();
-            maps.forEach(map -> {
-                fieldsToColumns.put(map.get("velocity_var_name").toString(),
-                        map.get("field_contentlet").toString());
-            });
-
             final Language altLang = new LanguageDataGen().nextPersisted();
 
             final List<Contentlet> vanityUrls = new ArrayList<>();
@@ -957,6 +945,18 @@ public class VanityUrlAPITest {
             vanityUrls.add(createVanity(new SiteDataGen().nextPersisted(), altLang));
             vanityUrls.add(createVanity(new SiteDataGen().nextPersisted(), altLang));
             vanityUrls.add(createVanity(new SiteDataGen().nextPersisted(), altLang));
+
+            //Load the VanityUrl structure  contentlet fields
+            final DotConnect dotConnect = new DotConnect();
+            dotConnect.setSQL(
+                    "select f.velocity_var_name, f.field_contentlet from structure s join field f on s.inode = f.structure_inode where s.velocity_var_name = ?"
+            ).addParam(vanityUrls.get(0).getContentType().variable());
+            final List<Map<String, Object>> maps = dotConnect.loadObjectResults();
+            final Map<String, Object> fieldsToColumns = new HashMap<>();
+            maps.forEach(map -> {
+                fieldsToColumns.put(map.get("velocity_var_name").toString(),
+                        map.get("field_contentlet").toString());
+            });
 
             final List<Tuple2<String, String>> mandatoryFields = new ArrayList<>();
 
