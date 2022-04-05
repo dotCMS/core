@@ -1,5 +1,43 @@
 package org.apache.felix.framework;
 
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.concurrent.Debouncer;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.lock.ClusterLockManager;
+import com.dotcms.dotpubsub.DotPubSubEvent;
+import com.dotcms.dotpubsub.DotPubSubProvider;
+import com.dotcms.dotpubsub.DotPubSubProviderLocator;
+import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.osgi.HostActivator;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.ResourceCollectorUtil;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
+import com.google.common.collect.ImmutableList;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.util.FileUtil;
+import com.liferay.util.MathUtil;
+import com.liferay.util.StringPool;
+import io.vavr.control.Try;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.SuffixFileFilter;
+import org.apache.felix.framework.util.FelixConstants;
+import org.apache.felix.main.AutoProcessor;
+import org.apache.felix.main.Main;
+import org.apache.velocity.tools.view.PrimitiveToolboxManager;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
+import org.osgi.framework.launch.Framework;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -23,49 +61,10 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.concurrent.lock.DotKeyLockManager;
-import com.dotcms.dotpubsub.DotPubSubEvent;
-import com.dotcms.dotpubsub.DotPubSubProvider;
-import com.dotcms.dotpubsub.DotPubSubProviderLocator;
-import com.dotcms.job.system.event.SystemEventsJob;
-import com.dotcms.util.ConversionUtils;
-import com.liferay.util.MathUtil;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.SuffixFileFilter;
-import org.apache.felix.framework.util.FelixConstants;
-import org.apache.felix.main.AutoProcessor;
-import org.apache.felix.main.Main;
-import org.apache.velocity.tools.view.PrimitiveToolboxManager;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
-import org.osgi.framework.launch.Framework;
-import com.dotcms.api.system.event.Payload;
-import com.dotcms.api.system.event.SystemEventType;
-import com.dotcms.api.system.event.message.MessageSeverity;
-import com.dotcms.api.system.event.message.SystemMessageEventUtil;
-import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
-import com.dotcms.concurrent.Debouncer;
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.osgi.HostActivator;
-import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.ResourceCollectorUtil;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
-import com.google.common.collect.ImmutableList;
-import com.liferay.portal.language.LanguageUtil;
-import com.liferay.util.FileUtil;
-import com.liferay.util.StringPool;
-import io.vavr.control.Try;
 
 /**
  * Created by Jonathan Gamba
@@ -97,6 +96,10 @@ public class OSGIUtil {
     private final OsgiRestartTopic osgiRestartTopic;
 
     private Framework felixFramework;
+
+    // count how reads has done to the upload folder
+    private AtomicInteger uploadFolderReadsCount = new AtomicInteger(0);
+    private AtomicInteger currentJobRestartIterationsCount = new AtomicInteger(0);
     /**
      * Felix directory list
      */
@@ -284,7 +287,7 @@ public class OSGIUtil {
         } else {
 
             // use a schedule thread with shad lock
-            final DotKeyLockManager<String> lockManager = DotConcurrentFactory.getInstance().getShedKeyLock("osgi_restart_lock_manager");
+            final ClusterLockManager<String> lockManager = DotConcurrentFactory.getInstance().getClusterLockManager("osgi_restart_lock");
             final long delay = Config.getLongProperty("OSGI_CHECK_UPLOAD_FOLDER_FREQUENCY", 10); // check each 10 seconds
             final long initialDelay = MathUtil.sumAndModule(APILocator.getServerAPI().readServerId().toCharArray(), delay);
             final File uploadFolderFile = new File(uploadFolder);
@@ -295,19 +298,41 @@ public class OSGIUtil {
     }
 
     // this method is called by the schedule to see if jars has been added to the framework
-    private void checkUploadFolder(final File uploadFolderFile, final DotKeyLockManager<String> lockManager) {
+    private void checkUploadFolder(final File uploadFolderFile, final ClusterLockManager<String> lockManager) {
 
-        if (this.anyJarOnUploadFolder(uploadFolderFile)) {
+        Logger.debug(this, ()-> "Checking upload folder job, uploadFolderFile: " +
+                uploadFolderFile + ", currentJobRestartIterationsCount: " + this.currentJobRestartIterationsCount.intValue() +
+                ", uploadFolderReadsCount: " + this.uploadFolderReadsCount.intValue());
+        // we do not want to read every 10 seconds, so we read at 20, 30, 40, etc
+        if (this.currentJobRestartIterationsCount.intValue() >= this.uploadFolderReadsCount.intValue()) {
 
-            try {
+            Logger.debug(this, ()-> "Checking the upload folder for jars");
+            // if enter here, reset the job counts
+            this.currentJobRestartIterationsCount.set(0);
+            if (this.anyJarOnUploadFolder(uploadFolderFile)) {
 
-                Logger.debug(this, ()-> "We found jar on upload folder, trying to lock to start the reload");
-                lockManager.tryLock("osgi_restart_lock", ()-> this.fireReload(uploadFolderFile));
-            } catch (Throwable e) {
+                // if enter here, means there are jars on the upload folder.
+                uploadFolderReadsCount.set(0);
 
-                Logger.error(this, "Error try to adquire the lock, uploadFolder: " + uploadFolderFile +
-                        ", msg: " + e.getMessage(), e);
+                Logger.debug(this, ()-> "Has found jars on upload, folder, arquiring the lock and reloading the OSGI restart");
+
+                try {
+
+                    Logger.debug(this, () -> "We found jar on upload folder, trying to lock to start the reload");
+                    lockManager.tryClusterLock(() -> this.fireReload(uploadFolderFile));
+                } catch (Throwable e) {
+
+                    Logger.error(this, "Error try to adquire the lock, uploadFolder: " + uploadFolderFile +
+                            ", msg: " + e.getMessage(), e);
+                }
+            } else {
+
+                // if not jars we want to wait for the next read of the upload folder
+                this.uploadFolderReadsCount.incrementAndGet();
             }
+        } else {
+
+            this.currentJobRestartIterationsCount.incrementAndGet();
         }
     }
 

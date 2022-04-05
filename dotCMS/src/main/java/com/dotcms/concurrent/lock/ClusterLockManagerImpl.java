@@ -14,29 +14,29 @@ import net.javacrumbs.shedlock.provider.jdbc.JdbcLockProvider;
 import java.time.Instant;
 
 /**
- * Implements a ShedLock (a cluster lock)
+ * Implements a Cluster lock Manager (a shedlock)
  * By default implements lock by database and 600 seconds of timeout
  * @author jsanca
  */
-public class ShedLockImpl<K> implements DotKeyLockManager<K> {
+public class ClusterLockManagerImpl<K> implements ClusterLockManager<K> {
 
     private static final String DEFAULT_SHEDLOCK_TABLE_NAME = "shedlock";
     private static final int DEFAULT_SECONDS_TIMEOUT = 600;
     private final LockingTaskExecutor executor;
     private final long timeOut;
-    private final String name;
+    private final K name;
 
-    ShedLockImpl (final String name) {
+    ClusterLockManagerImpl(final K name) {
 
         this(name, new JdbcLockProvider(DbConnectionFactory.getDataSource(), DEFAULT_SHEDLOCK_TABLE_NAME));
     }
 
-    ShedLockImpl (final String name, final LockProvider lockProvider) {
+    ClusterLockManagerImpl(final K name, final LockProvider lockProvider) {
 
         this(name, lockProvider, DEFAULT_SECONDS_TIMEOUT);
     }
 
-    public ShedLockImpl (final String name, final LockProvider lockProvider, final long timeout) {
+    public ClusterLockManagerImpl(final K name, final LockProvider lockProvider, final long timeout) {
 
         this.name     = name;
         this.executor = new DefaultLockingTaskExecutor(lockProvider);
@@ -70,5 +70,10 @@ public class ShedLockImpl<K> implements DotKeyLockManager<K> {
                 "timeOut=" + timeOut +
                 ", name='" + name + '\'' +
                 '}';
+    }
+
+    @Override
+    public K getName() {
+        return this.name;
     }
 }
