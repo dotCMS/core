@@ -56,7 +56,7 @@ dotCMS/classes
 
 # Changes after gradle migration #
 ###############################
-dist/
+/dist/
 dist-output/
 dotCMS/build/
 dotCMS/.gradle/
@@ -78,3 +78,5 @@ docker/tests/integration/backup
 
 dot-cicd/
 tmp/
+node_modules/
+.github/actions/**/lib/
