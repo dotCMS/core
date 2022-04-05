@@ -61,6 +61,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -98,8 +99,9 @@ public class OSGIUtil {
     private Framework felixFramework;
 
     // count how reads has done to the upload folder
-    private AtomicInteger uploadFolderReadsCount = new AtomicInteger(0);
-    private AtomicInteger currentJobRestartIterationsCount = new AtomicInteger(0);
+    private final AtomicInteger uploadFolderReadsCount = new AtomicInteger(0);
+    private final AtomicInteger currentJobRestartIterationsCount = new AtomicInteger(0);
+    private final AtomicBoolean isStartedOsgiRestartSchedule = new AtomicBoolean(false);
     /**
      * Felix directory list
      */
@@ -272,28 +274,33 @@ public class OSGIUtil {
 
     private void startWatchingUploadFolder(final String uploadFolder) {
 
-        final boolean useFileWatcher = Config.getBooleanProperty("OSGI_USE_FILE_WATCHER", true);
+        final boolean useFileWatcher = Config.getBooleanProperty("OSGI_USE_FILE_WATCHER", false);
 
         if (useFileWatcher) {
             try {
 
+                Logger.debug(this, ()-> "Using file watcher to discover changes on the OSGI upload folder");
                 final File uploadFolderFile = new File(uploadFolder);
-                Logger.debug(APILocator.class, "Start watching OSGI Upload dir: " + uploadFolder);
+                Logger.debug(APILocator.class, ()-> "Start watching OSGI Upload dir: " + uploadFolder);
                 APILocator.getFileWatcherAPI().watchFile(uploadFolderFile,
                         () -> this.fireReload(uploadFolderFile));
             } catch (IOException e) {
                 Logger.error(Config.class, e.getMessage(), e);
             }
-        } else {
+        } else if(!this.isStartedOsgiRestartSchedule.get()) {
 
+            Logger.debug(this, ()->
+                    "Using Schedule fixed job to discover changes on the OSGI upload folder: " + uploadFolder);
             // use a schedule thread with shad lock
             final ClusterLockManager<String> lockManager = DotConcurrentFactory.getInstance().getClusterLockManager("osgi_restart_lock");
             final long delay = Config.getLongProperty("OSGI_CHECK_UPLOAD_FOLDER_FREQUENCY", 10); // check each 10 seconds
             final long initialDelay = MathUtil.sumAndModule(APILocator.getServerAPI().readServerId().toCharArray(), delay);
             final File uploadFolderFile = new File(uploadFolder);
+            Logger.debug(this, ()-> "Starting the schedule fix job");
             DotConcurrentFactory.getScheduledThreadPoolExecutor().scheduleWithFixedDelay(
                     ()-> this.checkUploadFolder(uploadFolderFile, lockManager),
                     initialDelay, delay, TimeUnit.SECONDS);
+            this.isStartedOsgiRestartSchedule.set(true);
         }
     }
 
