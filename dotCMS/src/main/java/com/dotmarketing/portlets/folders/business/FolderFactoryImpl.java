@@ -196,15 +196,25 @@ public class FolderFactoryImpl extends FolderFactory {
 			orderBy.append(order);
 		}
 
-		query.append("SELECT folder.* from folder folder, identifier identifier ").
+		/*query.append("SELECT folder.* from folder folder, identifier identifier ").
 				append("where folder.identifier = identifier.id and ").
-				append("identifier.parent_path = ? and identifier.host_inode = ? ");
+				append("identifier.parent_path = ? and identifier.host_inode = ? ");*/
 
-		query.append((!condition.isEmpty()?" and " + condition:condition) + orderBy);
+		query.append("SELECT distinct(parent_path), CHAR_LENGTH(parent_path) , ")
+				.append("CHAR_LENGTH(REPLACE(parent_path, '/', '')) , ")
+				.append("CHAR_LENGTH(parent_path) - CHAR_LENGTH(REPLACE(parent_path, '/', ''))  ")
+				.append("AS folder_level FROM identifier ")
+				.append("WHERE parent_path like ? AND ")
+				.append("host_inode = ? AND ")
+				.append("CHAR_LENGTH(parent_path) - CHAR_LENGTH(REPLACE(parent_path, '/', '')) = ")
+				.append("(CHAR_LENGTH(?) - CHAR_LENGTH(REPLACE('/', '/', '')))+1");
+
+		//query.append((!condition.isEmpty()?" and " + condition:condition) + orderBy);
 
 		dc.setSQL(query.toString());
-		dc.addParam(path);
+		dc.addParam(path + StringPool.PERCENT);
 		dc.addParam(hostId);
+		dc.addParam(path);
 
 		try{
 

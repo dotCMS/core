@@ -36,10 +36,10 @@ public class FolderTransformer implements DBTransformer {
     private static Folder transform(Map<String, Object> map)  {
         final Folder folder;
         folder = new Folder();
-        folder.setInode((String) map.get("inode"));
+        folder.setInode(map.containsKey("inode")?(String)map.get("inode"):(String)map.get("identifier"));
         folder.setOwner((String) map.get("owner"));
         folder.setIDate((Date) map.get("idate"));
-        folder.setName((String) map.get("name"));
+        folder.setName(map.containsKey("name")?((String)map.get("name")):((String)map.get("parent_path")).replace("/", ""));
         folder.setTitle((String) map.get("title"));
         folder.setShowOnMenu(ConversionUtils.toBooleanFromDb(map.getOrDefault("show_on_menu",false)));
         folder.setSortOrder(ConversionUtils.toInt(map.get("sort_order"),0));
