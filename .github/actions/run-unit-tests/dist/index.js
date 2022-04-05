@@ -1,7 +1,59 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 497:
+/***/ 109:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const core = __importStar(__nccwpck_require__(186));
+const unit = __importStar(__nccwpck_require__(733));
+/**
+ * Main entry point for this action.
+ */
+const run = () => {
+    core.info('Running Core unit tests');
+    unit
+        .runTests(core.getInput('build-env'))
+        .then(returnCode => {
+        if (returnCode != 0) {
+            core.setFailed(`Process executed returned code ${returnCode}`);
+            return;
+        }
+    })
+        .catch(reason => core.setFailed(`Running unit tests failed due to ${reason}`));
+};
+// Run main function
+run();
+
+
+/***/ }),
+
+/***/ 733:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -39,28 +91,28 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.build = void 0;
+exports.runTests = void 0;
 const core = __importStar(__nccwpck_require__(186));
 const exec = __importStar(__nccwpck_require__(514));
 const COMMANDS = {
     gradle: {
         cmd: './gradlew',
-        args: ['createDistPrep', 'compileTestAspect', 'compileTestJava', 'processTestResources', 'testClasses', 'compileIntegrationTestJava', 'prepareIntegrationTests'],
+        args: ['test'],
         workingDir: 'dotCMS'
     },
     maven: {
         cmd: './mvnw',
-        args: ['package', '-DskipTests'],
+        args: ['test'],
         workingDir: 'dotCMS'
     }
 };
 /**
- * Based on a detected build environment, that is gradle or maven, this resolves the command to run in order to build core.
+ * Based on a detected build environment, that is gradle or maven, this resolves the command to run in order to run unit tests.
  *
  * @param buildEnv build environment
  * @returns a number represeting the command exit code
  */
-const build = (buildEnv) => __awaiter(void 0, void 0, void 0, function* () {
+const runTests = (buildEnv) => __awaiter(void 0, void 0, void 0, function* () {
     const cmd = COMMANDS[buildEnv];
     if (!cmd) {
         core.error('Cannot resolve build tool, aborting');
@@ -69,60 +121,7 @@ const build = (buildEnv) => __awaiter(void 0, void 0, void 0, function* () {
     core.info(`Executing command: ${cmd.cmd} ${cmd.args.join(' ')}`);
     return yield exec.exec(cmd.cmd, cmd.args, { cwd: cmd.workingDir });
 });
-exports.build = build;
-
-
-/***/ }),
-
-/***/ 109:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const core = __importStar(__nccwpck_require__(186));
-const builder = __importStar(__nccwpck_require__(497));
-/**
- * Main entry point for this action.
- */
-const run = () => {
-    const buildEnv = core.getInput('build-env');
-    core.info(`Attempting to build core with ${buildEnv}`);
-    builder
-        .build(buildEnv)
-        .then(returnCode => {
-        if (returnCode != 0) {
-            core.setFailed(`Process executed returned code ${returnCode}`);
-            return;
-        }
-    })
-        .catch(reason => core.setFailed(`Build core failed due to ${reason}`));
-};
-// Run main function
-run();
+exports.runTests = runTests;
 
 
 /***/ }),

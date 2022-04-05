@@ -32,15 +32,12 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getCacheLocations = void 0;
 const core = __importStar(__nccwpck_require__(186));
+const fs = __importStar(__nccwpck_require__(147));
 const path = __importStar(__nccwpck_require__(17));
 const CACHE_CONFIGURATION = {
     gradle: {
         dependencies: ['~/.gradle/caches', '~/.gradle/wrapper'],
-        buildOutput: [
-            'dotCMS/.gradle',
-            'dotCMS/build/classes',
-            'dotCMS/build/resources'
-        ]
+        buildOutput: ['dotCMS/.gradle', 'dotCMS/build/classes', 'dotCMS/build/resources']
     },
     maven: {
         dependencies: ['~/.m2/repository'],
@@ -59,29 +56,29 @@ const CACHE_FOLDER = path.join(path.dirname(core.getInput('core-root')), 'cache'
  * @returns a {@link CacheLocation} instance with the information of what is going to be cached
  */
 const getCacheLocations = () => {
-    // Resolves build tool environment
-    const buildToolEnv = core.getInput('build-tool-env');
-    core.info(`Resolving cache locations with buid tool ${buildToolEnv}`);
-    const cacheLocations = CACHE_CONFIGURATION[buildToolEnv];
+    // Resolves build environment
+    const buildEnv = core.getInput('build-env');
+    core.info(`Resolving cache locations with buid env ${buildEnv}`);
+    const cacheLocations = CACHE_CONFIGURATION[buildEnv];
     if (!cacheLocations) {
-        core.warning(`Cannot find cache configuration for build tool ${buildToolEnv}`);
+        core.warning(`Cannot find cache configuration for build env ${buildEnv}`);
         return EMPTY_CACHE_LOCATIONS;
     }
     // For each cache location resolves the location to be cached
-    Object.keys(cacheLocations).forEach(key => resolveLocations(buildToolEnv, cacheLocations, key, key === BUILD_OUTPUT ? decorateBuildOutput : undefined));
+    Object.keys(cacheLocations).forEach(key => resolveLocations(buildEnv, cacheLocations, key, key === BUILD_OUTPUT ? decorateBuildOutput : undefined));
     return cacheLocations;
 };
 exports.getCacheLocations = getCacheLocations;
 /**
  * Adds to a {@link CacheLocation[]} the locations for each lcoation type (key).
  *
- * @param buildToolEnv build tool environtment (gradle or maven)
- * @param cacheLocations cache locations based on the build tool env
+ * @param buildEnv build environtment (gradle or maven)
+ * @param cacheLocations cache locations based on the build env
  * @param key location type (depedencies or buildOutput)
  * @param decorateFn function to do some extra decoration to locations path
 
  */
-const resolveLocations = (buildToolEnv, cacheLocations, key, decorateFn) => {
+const resolveLocations = (buildEnv, cacheLocations, key, decorateFn) => {
     const cacheEnableKey = key.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`);
     const cacheEnable = core.getBooleanInput(`cache-${cacheEnableKey}`);
     if (!cacheEnable) {
@@ -92,11 +89,19 @@ const resolveLocations = (buildToolEnv, cacheLocations, key, decorateFn) => {
     const locationKey = key;
     const locations = cacheLocations[locationKey];
     if (!locations) {
-        core.warning(`Cannot resolve any ${key} locations for build tool ${buildToolEnv}`);
+        core.warning(`Cannot resolve any ${key} locations for build env ${buildEnv}`);
         return;
     }
     core.info(`Found ${key} locations: ${locations}`);
-    const resolvedLocations = locations.map(location => decorateFn ? decorateFn(location) : location);
+    const resolvedLocations = locations.map(location => {
+        const newLocation = decorateFn ? decorateFn(location) : location;
+        if (location !== newLocation) {
+            core.info(`Relocating cache from ${location} to ${newLocation}`);
+            fs.mkdirSync(path.dirname(newLocation), { recursive: true });
+            fs.renameSync(location, newLocation);
+        }
+        return newLocation;
+    });
     core.info(`Resolved ${key} locations: ${resolvedLocations}`);
     cacheLocations[locationKey] = resolvedLocations;
 };
@@ -106,7 +111,7 @@ const resolveLocations = (buildToolEnv, cacheLocations, key, decorateFn) => {
  * @param location location
  * @returns decorated string
  */
-const decorateBuildOutput = (location) => path.join(CACHE_FOLDER, path.basename(location));
+const decorateBuildOutput = (location) => path.join(CACHE_FOLDER, location);
 
 
 /***/ }),
@@ -148,7 +153,7 @@ const cacheLocator = __importStar(__nccwpck_require__(547));
 const run = () => {
     // Call module logic to resolve cache locations
     const cacheLocations = JSON.stringify(cacheLocator.getCacheLocations(), null, 2);
-    core.info(`Found these tags: ${cacheLocations}`);
+    core.info(`Found these cache locations: ${cacheLocations}`);
     core.setOutput('cache-locations', cacheLocations);
 };
 // Run main function
