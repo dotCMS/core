@@ -25,8 +25,12 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import com.dotcms.concurrent.lock.DotKeyLockManager;
 import com.dotcms.concurrent.lock.DotKeyLockManagerBuilder;
+import com.dotcms.concurrent.lock.DotKeyLockManagerFactory;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
+import com.dotcms.concurrent.lock.ShedKeyLockManagerFactory;
 import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.init.DotInitScheduler;
@@ -127,9 +131,16 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
     public static final String SCHEDULER_COREPOOLSIZE = "SCHEDULER_CORE_POOL_SIZE";
 
-
     private final IdentifierStripedLock identifierStripedLock =
            new IdentifierStripedLock(DotKeyLockManagerBuilder.newLockManager(LOCK_MANAGER));
+
+    // Cluster shadLock
+    private final DotKeyLockManagerFactory shedKeyLockManagerFactory =
+            new ShedKeyLockManagerFactory();
+
+    // Stores the shadLocks by name
+    private Map<String, DotKeyLockManager<String>> shedKeyLockManagerMap =
+            new ConcurrentHashMap<>();
 
     private static ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = null;
 
@@ -466,7 +477,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         }
 
         return submitter;
-    } // getBean.
+    } // getSubmitter.
 
     private DotConcurrentImpl createDotConcurrent (final String name) {
 
@@ -495,6 +506,16 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         this.submitterMap.put(name, submitter);
 
         return submitter;
+    }
+
+    /**
+     * Gets or creates a shed key lock
+     * @param name {@link String}
+     * @return DotKeyLockManager
+     */
+    public DotKeyLockManager<String> getShedKeyLock (final String name) {
+
+        return this.shedKeyLockManagerMap.computeIfAbsent(name, key-> this.shedKeyLockManagerFactory.create(name));
     }
 
     /**

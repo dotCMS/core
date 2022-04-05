@@ -4,6 +4,7 @@ dependencies {
     def eeType = dotcmsReleaseVersion.equals("master") ? '-SNAPSHOT' : ''
 
     compile group: 'com.dotcms.enterprise', name: 'ee', version: dotcmsReleaseVersion + eeType, changing: true
+    //compile fileTree(dir: 'src/main/enterprise/build/libs', include: ['ee_clean.jar'])
     compile group: 'com.dotcms', name: 'ant-tooling', version: '1.3.2'
     compile ('io.jsonwebtoken:jjwt:0.6.0'){
         transitive = false
@@ -579,6 +580,10 @@ dependencies {
 
     //XML Tool dependency
     compile group: 'jaxen', name: 'jaxen', version: '1.1.6'
+
+    // https://github.com/lukas-krecan/ShedLock
+    compile group: 'net.javacrumbs.shedlock', name: 'shedlock-core', version: '4.33.0'
+    compile group: 'net.javacrumbs.shedlock', name: 'shedlock-provider-jdbc', version: '4.33.0'
 
     compile ('com.graphql-java-kickstart:graphql-java-servlet:9.1.0'){
         exclude(group: 'com.fasterxml.jackson.core')

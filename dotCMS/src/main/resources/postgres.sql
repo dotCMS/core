@@ -2484,7 +2484,9 @@ create table storage_x_data (
     FOREIGN KEY (data_hash) REFERENCES storage_data (hash_id)
 );
 
-
+-- https://github.com/lukas-krecan/ShedLock
+CREATE TABLE shedlock(name VARCHAR(64) NOT NULL, lock_until TIMESTAMP NOT NULL,
+                      locked_at TIMESTAMP NOT NULL, locked_by VARCHAR(255) NOT NULL, PRIMARY KEY (name));
 
 
 
