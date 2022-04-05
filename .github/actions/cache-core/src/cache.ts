@@ -1,84 +1,74 @@
 import * as cache from '@actions/cache'
 import * as core from '@actions/core'
+import {ReserveCacheError} from '@actions/cache'
 
 export interface CacheLocations {
   dependencies: string[]
   buildOutput: string[]
 }
 
-interface BuildToolCacheKeys {
+interface BuildEnvCacheKeys {
   dependencies: string
   buildOutput: string
 }
 
 interface CacheKeys {
-  gradle: BuildToolCacheKeys
-  maven: BuildToolCacheKeys
+  gradle: BuildEnvCacheKeys
+  maven: BuildEnvCacheKeys
 }
 
-interface CacheMetadata {
+interface CacheLocationMetadata {
   cacheKey: string
+  type: string
   cacheLocations: string[]
   cacheId?: number
 }
-interface CacheResults {
-  buildToolEnv: string
-  metadata: CacheMetadata[]
+
+interface CacheMetadata {
+  buildEnv: string
+  locations: CacheLocationMetadata[]
 }
 
-const EMPTY_CACHE_RESULT: CacheMetadata = {
+const EMPTY_CACHE_RESULT: CacheLocationMetadata = {
   cacheKey: '',
+  type: '',
   cacheLocations: []
 }
 
 /**
  * Uses cache library to cache a provided collection of locations.
  *
- * @returns a {@link Promise<CacheResults>} with data about the cache operation: key, locations and cache id
+ * @returns a {@link Promise<CacheMetadata>} with data about the cache operation: key, locations and cache id
  */
-export const cacheCore = async (): Promise<CacheResults> => {
-  const buildToolEnv: string = core.getInput('build-tool-env')
-  core.info(`Resolving cache locations with buid tool ${buildToolEnv}`)
+export const cacheCore = async (): Promise<CacheMetadata> => {
+  const buildEnv: string = core.getInput('build-env')
+  core.info(`Resolving cache locations with buid env ${buildEnv}`)
 
-  const cacheLocations: CacheLocations = JSON.parse(
-    core.getInput('cache-locations')
-  )
-  core.info(
-    `Attempting to cache core using these locations:\n ${JSON.stringify(
-      cacheLocations,
-      null,
-      2
-    )}`
-  )
+  const cacheLocations: CacheLocations = JSON.parse(core.getInput('cache-locations'))
+  core.info(`Attempting to cache core using these locations:\n ${JSON.stringify(cacheLocations, null, 2)}`)
 
   const availableCacheKeysStr = core.getInput('available-cache-keys')
   core.info(`Available cache keys: ${availableCacheKeysStr}`)
-  const availableCacheKeys: CacheKeys = JSON.parse(
-    core.getInput('available-cache-keys')
-  )
+  const availableCacheKeys: CacheKeys = JSON.parse(core.getInput('available-cache-keys'))
 
-  const cacheKeys = availableCacheKeys[buildToolEnv as keyof CacheKeys]
+  const cacheKeys = availableCacheKeys[buildEnv as keyof CacheKeys]
   core.info(`Cache keys: ${JSON.stringify(cacheKeys, null, 2)}`)
 
-  const locations = Object.keys(cacheLocations)
-  core.info(`Caching these locations: ${locations}`)
-
-  const cacheResults: CacheResults = {
-    buildToolEnv,
-    metadata: []
+  const cacheMetadata: CacheMetadata = {
+    buildEnv: buildEnv,
+    locations: []
   }
-  for (const locationType of locations) {
-    const cacheResult: CacheMetadata = await cacheLocation(
-      cacheLocations,
-      cacheKeys,
-      locationType
-    )
-    if (cacheResult !== EMPTY_CACHE_RESULT) {
-      cacheResults.metadata.push(cacheResult)
+
+  const locationTypes = Object.keys(cacheLocations)
+  core.info(`Caching these locations: ${locationTypes}`)
+  for (const locationType of locationTypes) {
+    const cacheLocationMetadata: CacheLocationMetadata = await cacheLocation(cacheLocations, cacheKeys, locationType)
+    if (cacheLocationMetadata !== EMPTY_CACHE_RESULT) {
+      cacheMetadata.locations.push(cacheLocationMetadata)
     }
   }
 
-  return new Promise<CacheResults>(resolve => resolve(cacheResults))
+  return new Promise<CacheMetadata>(resolve => resolve(cacheMetadata))
 }
 
 /**
@@ -91,14 +81,12 @@ export const cacheCore = async (): Promise<CacheResults> => {
  */
 const cacheLocation = async (
   cacheLocations: CacheLocations,
-  resolvedKeys: BuildToolCacheKeys,
+  resolvedKeys: BuildEnvCacheKeys,
   locationType: string
-): Promise<CacheMetadata> => {
-  const cacheKey = resolvedKeys[locationType as keyof BuildToolCacheKeys]
+): Promise<CacheLocationMetadata> => {
+  const cacheKey = resolvedKeys[locationType as keyof BuildEnvCacheKeys]
   const resolvedLocations = cacheLocations[locationType as keyof CacheLocations]
-  core.info(
-    `Caching locations:\n  [${resolvedLocations}]\n  with key: ${cacheKey}`
-  )
+  core.info(`Caching locations:\n  [${resolvedLocations}]\n  with key: ${cacheKey}`)
 
   let cacheResult = EMPTY_CACHE_RESULT
   try {
@@ -106,13 +94,23 @@ const cacheLocation = async (
     core.info(`Cache id found: ${cacheId}`)
     cacheResult = {
       cacheKey,
+      type: locationType,
       cacheLocations: resolvedLocations,
       cacheId
     }
     core.info(`Resolved cache result ${JSON.stringify(cacheResult)}`)
   } catch (err) {
-    core.warning(`Could not cache using ${cacheKey} due to ${err}`)
+    if (err instanceof ReserveCacheError) {
+      core.info(`${err}, so still considering for cache`)
+      cacheResult = {
+        cacheKey,
+        type: locationType,
+        cacheLocations: resolvedLocations
+      }
+    } else {
+      core.warning(`Could not cache using ${cacheKey} due to ${err}`)
+    }
   }
 
-  return new Promise<CacheMetadata>(resolve => resolve(cacheResult))
+  return new Promise<CacheLocationMetadata>(resolve => resolve(cacheResult))
 }

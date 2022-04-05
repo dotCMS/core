@@ -1,7 +1,58 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 3782:
+/***/ 3109:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const core = __importStar(__nccwpck_require__(2186));
+const restore = __importStar(__nccwpck_require__(9254));
+/**
+ * Main entry point for this action.
+ */
+const run = () => {
+    // Call module logic to restore cache locations
+    const cacheMetadataInput = core.getInput('cache-metadata');
+    core.info(`Using cache metadata ${cacheMetadataInput}`);
+    const cacheMetadata = JSON.parse(cacheMetadataInput);
+    restore.restoreLocations(cacheMetadata).then(cacheLocations => {
+        const cacheLocationsOutput = JSON.stringify(cacheLocations, null, 2);
+        core.info(`Found these cache locations: ${cacheLocationsOutput}`);
+        core.setOutput('cache-locations', cacheLocationsOutput);
+    });
+};
+// Run main function
+run();
+
+
+/***/ }),
+
+/***/ 9254:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -39,131 +90,103 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.cacheCore = void 0;
+exports.restoreLocations = void 0;
 const cache = __importStar(__nccwpck_require__(7799));
 const core = __importStar(__nccwpck_require__(2186));
-const cache_1 = __nccwpck_require__(7799);
-const EMPTY_CACHE_RESULT = {
-    cacheKey: '',
-    type: '',
-    cacheLocations: []
+const fs = __importStar(__nccwpck_require__(7147));
+const path = __importStar(__nccwpck_require__(1017));
+const EMPTY_LOCATIONS = {
+    dependencies: [],
+    buildOutput: []
 };
+const BUILD_OUTPUT = 'buildOutput';
+const RESTORE_CONFIGURATION = {
+    gradle: {
+        dependencies: ['~/.gradle/caches', '~/.gradle/wrapper'],
+        buildOutput: ['dotCMS/.gradle', 'dotCMS/build/classes', 'dotCMS/build/resources']
+    },
+    maven: {
+        dependencies: ['~/.m2/repository'],
+        buildOutput: ['dotCMS/target']
+    }
+};
+const CORE_ROOT = core.getInput('core-root');
+const CACHE_FOLDER = path.join(path.dirname(CORE_ROOT), 'cache');
 /**
- * Uses cache library to cache a provided collection of locations.
+ * Restore previously cached locations.
  *
- * @returns a {@link Promise<CacheMetadata>} with data about the cache operation: key, locations and cache id
+ * @param cacheMetadata {@link CacheMetadata} object that created with cache information.
+ * @returns cache metadata object
  */
-const cacheCore = () => __awaiter(void 0, void 0, void 0, function* () {
-    const buildEnv = core.getInput('build-env');
-    core.info(`Resolving cache locations with buid env ${buildEnv}`);
-    const cacheLocations = JSON.parse(core.getInput('cache-locations'));
-    core.info(`Attempting to cache core using these locations:\n ${JSON.stringify(cacheLocations, null, 2)}`);
-    const availableCacheKeysStr = core.getInput('available-cache-keys');
-    core.info(`Available cache keys: ${availableCacheKeysStr}`);
-    const availableCacheKeys = JSON.parse(core.getInput('available-cache-keys'));
-    const cacheKeys = availableCacheKeys[buildEnv];
-    core.info(`Cache keys: ${JSON.stringify(cacheKeys, null, 2)}`);
-    const cacheMetadata = {
-        buildEnv: buildEnv,
-        locations: []
+const restoreLocations = (cacheMetadata) => __awaiter(void 0, void 0, void 0, function* () {
+    const cacheLocations = {
+        dependencies: [],
+        buildOutput: []
     };
-    const locationTypes = Object.keys(cacheLocations);
-    core.info(`Caching these locations: ${locationTypes}`);
-    for (const locationType of locationTypes) {
-        const cacheLocationMetadata = yield cacheLocation(cacheLocations, cacheKeys, locationType);
-        if (cacheLocationMetadata !== EMPTY_CACHE_RESULT) {
-            cacheMetadata.locations.push(cacheLocationMetadata);
-        }
+    const buildEnv = cacheMetadata.buildEnv;
+    const restoreConfig = RESTORE_CONFIGURATION[buildEnv];
+    if (!restoreConfig) {
+        core.setFailed(`Could not resolve restore configuration from build env ${buildEnv}`);
+        return Promise.resolve(EMPTY_LOCATIONS);
     }
-    return new Promise(resolve => resolve(cacheMetadata));
+    for (const locationMetadata of cacheMetadata.locations) {
+        core.info(`Restoring locations:\n[${locationMetadata.cacheLocations}]\nusing key: ${locationMetadata.cacheKey}`);
+        if (locationMetadata.type === BUILD_OUTPUT) {
+            locationMetadata.cacheLocations.forEach(location => {
+                if (!fs.existsSync(location)) {
+                    core.info(`Location ${location} does not exist, creating it`);
+                    fs.mkdirSync(location, { recursive: true });
+                }
+            });
+        }
+        const cacheKey = yield cache.restoreCache(locationMetadata.cacheLocations, locationMetadata.cacheKey);
+        core.info(`Locations restored with key ${cacheKey}`);
+        const type = locationMetadata.type;
+        const configLocations = restoreConfig[type];
+        if (!configLocations || configLocations.length === 0) {
+            core.setFailed(`Could not resolve config locations from ${type}`);
+            return Promise.resolve(EMPTY_LOCATIONS);
+        }
+        cacheLocations[type] = relocate(type, locationMetadata.cacheLocations, configLocations);
+    }
+    return new Promise(resolve => resolve(cacheLocations));
 });
-exports.cacheCore = cacheCore;
+exports.restoreLocations = restoreLocations;
 /**
- * Do the actual caching of the provided locations
+ * Once cached locations are restored, for every location type that requires to relocate folders it does
  *
- * @param cacheLocations provided locations
- * @param resolvedKeys keys to used for caching
- * @param locationType location type
- * @returns a {@link Promise<CacheResult>} with the caching operation data
+ * @param type location type (dependencies or buildOutput)
+ * @param cacheLocations cache locations arrays
+ * @param configLocations config locations extracted from restore configuration
+ * @returns relocated restored locations
  */
-const cacheLocation = (cacheLocations, resolvedKeys, locationType) => __awaiter(void 0, void 0, void 0, function* () {
-    const cacheKey = resolvedKeys[locationType];
-    const resolvedLocations = cacheLocations[locationType];
-    core.info(`Caching locations:\n  [${resolvedLocations}]\n  with key: ${cacheKey}`);
-    let cacheResult = EMPTY_CACHE_RESULT;
-    try {
-        const cacheId = yield cache.saveCache(resolvedLocations, cacheKey);
-        core.info(`Cache id found: ${cacheId}`);
-        cacheResult = {
-            cacheKey,
-            type: locationType,
-            cacheLocations: resolvedLocations,
-            cacheId
-        };
-        core.info(`Resolved cache result ${JSON.stringify(cacheResult)}`);
+function relocate(type, cacheLocations, configLocations) {
+    if (type !== BUILD_OUTPUT) {
+        core.info(`Not relocating any cache for ${type}`);
+        return cacheLocations;
     }
-    catch (err) {
-        if (err instanceof cache_1.ReserveCacheError) {
-            core.info(`${err}, so still considering for cache`);
-            cacheResult = {
-                cacheKey,
-                type: locationType,
-                cacheLocations: resolvedLocations
-            };
+    core.info(`Caches to relocate: ${cacheLocations}`);
+    return cacheLocations
+        .map(location => {
+        const prefix = CACHE_FOLDER + path.sep;
+        const baseName = location.slice(prefix.length);
+        const foundLocation = configLocations.find(configLocation => configLocation === baseName);
+        if (!foundLocation) {
+            return '';
         }
-        else {
-            core.warning(`Could not cache using ${cacheKey} due to ${err}`);
+        const newLocation = path.join(CORE_ROOT, foundLocation);
+        core.info(`New location for cache: ${newLocation}`);
+        const newFolder = path.dirname(newLocation);
+        if (!fs.existsSync(newFolder)) {
+            core.info(`New location folder ${newFolder} does not exist, creating it`);
+            fs.mkdirSync(newFolder);
         }
-    }
-    return new Promise(resolve => resolve(cacheResult));
-});
-
-
-/***/ }),
-
-/***/ 3109:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const core = __importStar(__nccwpck_require__(2186));
-const cache = __importStar(__nccwpck_require__(3782));
-/**
- * Main entry point for this action.
- */
-const run = () => {
-    cache.cacheCore().then(cacheMetadata => {
-        const cacheMetadataOutput = JSON.stringify(cacheMetadata, null, 2);
-        core.info(`Cache results:\n${cacheMetadataOutput}`);
-        core.setOutput('cache-metadata', cacheMetadataOutput);
-    });
-};
-// Run main function
-run();
+        core.info(`Relocating cache from ${location} to ${newLocation}`);
+        fs.renameSync(location, newLocation);
+        return newLocation;
+    })
+        .filter(location => location !== '');
+}
 
 
 /***/ }),
@@ -980,7 +1003,8 @@ function downloadCacheStorageSDK(archiveLocation, archivePath, options) {
             //
             // If the file exceeds the buffer maximum length (~1 GB on 32-bit systems and ~2 GB
             // on 64-bit systems), split the download into multiple segments
-            const maxSegmentSize = buffer.constants.MAX_LENGTH;
+            // ~2 GB = 2147483647, beyond this, we start getting out of range error. So, capping it accordingly.
+            const maxSegmentSize = Math.min(2147483647, buffer.constants.MAX_LENGTH);
             const downloadProgress = new DownloadProgress(contentLength);
             const fd = fs.openSync(archivePath, 'w');
             try {
@@ -43918,6 +43942,31 @@ exports.baggageEntryMetadataFromString = baggageEntryMetadataFromString;
 
 /***/ }),
 
+/***/ 1109:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+/*
+ * Copyright The OpenTelemetry Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+//# sourceMappingURL=Attributes.js.map
+
+/***/ }),
+
 /***/ 4447:
 /***/ ((__unused_webpack_module, exports) => {
 
@@ -44425,12 +44474,13 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.diag = exports.propagation = exports.trace = exports.context = exports.INVALID_SPAN_CONTEXT = exports.INVALID_TRACEID = exports.INVALID_SPANID = exports.isValidSpanId = exports.isValidTraceId = exports.isSpanContextValid = exports.baggageEntryMetadataFromString = void 0;
+exports.diag = exports.propagation = exports.trace = exports.context = exports.INVALID_SPAN_CONTEXT = exports.INVALID_TRACEID = exports.INVALID_SPANID = exports.isValidSpanId = exports.isValidTraceId = exports.isSpanContextValid = exports.createTraceState = exports.baggageEntryMetadataFromString = void 0;
 __exportStar(__nccwpck_require__(1508), exports);
 var utils_1 = __nccwpck_require__(8136);
 Object.defineProperty(exports, "baggageEntryMetadataFromString", ({ enumerable: true, get: function () { return utils_1.baggageEntryMetadataFromString; } }));
 __exportStar(__nccwpck_require__(4447), exports);
 __exportStar(__nccwpck_require__(2358), exports);
+__exportStar(__nccwpck_require__(1109), exports);
 __exportStar(__nccwpck_require__(1634), exports);
 __exportStar(__nccwpck_require__(865), exports);
 __exportStar(__nccwpck_require__(7492), exports);
@@ -44446,8 +44496,11 @@ __exportStar(__nccwpck_require__(955), exports);
 __exportStar(__nccwpck_require__(8845), exports);
 __exportStar(__nccwpck_require__(6905), exports);
 __exportStar(__nccwpck_require__(8384), exports);
+var utils_2 = __nccwpck_require__(2615);
+Object.defineProperty(exports, "createTraceState", ({ enumerable: true, get: function () { return utils_2.createTraceState; } }));
 __exportStar(__nccwpck_require__(891), exports);
 __exportStar(__nccwpck_require__(3168), exports);
+__exportStar(__nccwpck_require__(1823), exports);
 var spancontext_utils_1 = __nccwpck_require__(9745);
 Object.defineProperty(exports, "isSpanContextValid", ({ enumerable: true, get: function () { return spancontext_utils_1.isSpanContextValid; } }));
 Object.defineProperty(exports, "isValidTraceId", ({ enumerable: true, get: function () { return spancontext_utils_1.isValidTraceId; } }));
@@ -45068,7 +45121,7 @@ var NoopTracer_1 = __nccwpck_require__(7606);
 var NoopTracerProvider = /** @class */ (function () {
     function NoopTracerProvider() {
     }
-    NoopTracerProvider.prototype.getTracer = function (_name, _version) {
+    NoopTracerProvider.prototype.getTracer = function (_name, _version, _options) {
         return new NoopTracer_1.NoopTracer();
     };
     return NoopTracerProvider;
@@ -45106,10 +45159,11 @@ var NOOP_TRACER = new NoopTracer_1.NoopTracer();
  * Proxy tracer provided by the proxy tracer provider
  */
 var ProxyTracer = /** @class */ (function () {
-    function ProxyTracer(_provider, name, version) {
+    function ProxyTracer(_provider, name, version, options) {
         this._provider = _provider;
         this.name = name;
         this.version = version;
+        this.options = options;
     }
     ProxyTracer.prototype.startSpan = function (name, options, context) {
         return this._getTracer().startSpan(name, options, context);
@@ -45126,7 +45180,7 @@ var ProxyTracer = /** @class */ (function () {
         if (this._delegate) {
             return this._delegate;
         }
-        var tracer = this._provider.getDelegateTracer(this.name, this.version);
+        var tracer = this._provider.getDelegateTracer(this.name, this.version, this.options);
         if (!tracer) {
             return NOOP_TRACER;
         }
@@ -45179,9 +45233,9 @@ var ProxyTracerProvider = /** @class */ (function () {
     /**
      * Get a {@link ProxyTracer}
      */
-    ProxyTracerProvider.prototype.getTracer = function (name, version) {
+    ProxyTracerProvider.prototype.getTracer = function (name, version, options) {
         var _a;
-        return ((_a = this.getDelegateTracer(name, version)) !== null && _a !== void 0 ? _a : new ProxyTracer_1.ProxyTracer(this, name, version));
+        return ((_a = this.getDelegateTracer(name, version, options)) !== null && _a !== void 0 ? _a : new ProxyTracer_1.ProxyTracer(this, name, version, options));
     };
     ProxyTracerProvider.prototype.getDelegate = function () {
         var _a;
@@ -45193,9 +45247,9 @@ var ProxyTracerProvider = /** @class */ (function () {
     ProxyTracerProvider.prototype.setDelegate = function (delegate) {
         this._delegate = delegate;
     };
-    ProxyTracerProvider.prototype.getDelegateTracer = function (name, version) {
+    ProxyTracerProvider.prototype.getDelegateTracer = function (name, version, options) {
         var _a;
-        return (_a = this._delegate) === null || _a === void 0 ? void 0 : _a.getTracer(name, version);
+        return (_a = this._delegate) === null || _a === void 0 ? void 0 : _a.getTracer(name, version, options);
     };
     return ProxyTracerProvider;
 }());
@@ -45405,6 +45459,202 @@ function getSpanContext(context) {
 }
 exports.getSpanContext = getSpanContext;
 //# sourceMappingURL=context-utils.js.map
+
+/***/ }),
+
+/***/ 2110:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+/*
+ * Copyright The OpenTelemetry Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.TraceStateImpl = void 0;
+var tracestate_validators_1 = __nccwpck_require__(4864);
+var MAX_TRACE_STATE_ITEMS = 32;
+var MAX_TRACE_STATE_LEN = 512;
+var LIST_MEMBERS_SEPARATOR = ',';
+var LIST_MEMBER_KEY_VALUE_SPLITTER = '=';
+/**
+ * TraceState must be a class and not a simple object type because of the spec
+ * requirement (https://www.w3.org/TR/trace-context/#tracestate-field).
+ *
+ * Here is the list of allowed mutations:
+ * - New key-value pair should be added into the beginning of the list
+ * - The value of any key can be updated. Modified keys MUST be moved to the
+ * beginning of the list.
+ */
+var TraceStateImpl = /** @class */ (function () {
+    function TraceStateImpl(rawTraceState) {
+        this._internalState = new Map();
+        if (rawTraceState)
+            this._parse(rawTraceState);
+    }
+    TraceStateImpl.prototype.set = function (key, value) {
+        // TODO: Benchmark the different approaches(map vs list) and
+        // use the faster one.
+        var traceState = this._clone();
+        if (traceState._internalState.has(key)) {
+            traceState._internalState.delete(key);
+        }
+        traceState._internalState.set(key, value);
+        return traceState;
+    };
+    TraceStateImpl.prototype.unset = function (key) {
+        var traceState = this._clone();
+        traceState._internalState.delete(key);
+        return traceState;
+    };
+    TraceStateImpl.prototype.get = function (key) {
+        return this._internalState.get(key);
+    };
+    TraceStateImpl.prototype.serialize = function () {
+        var _this = this;
+        return this._keys()
+            .reduce(function (agg, key) {
+            agg.push(key + LIST_MEMBER_KEY_VALUE_SPLITTER + _this.get(key));
+            return agg;
+        }, [])
+            .join(LIST_MEMBERS_SEPARATOR);
+    };
+    TraceStateImpl.prototype._parse = function (rawTraceState) {
+        if (rawTraceState.length > MAX_TRACE_STATE_LEN)
+            return;
+        this._internalState = rawTraceState
+            .split(LIST_MEMBERS_SEPARATOR)
+            .reverse() // Store in reverse so new keys (.set(...)) will be placed at the beginning
+            .reduce(function (agg, part) {
+            var listMember = part.trim(); // Optional Whitespace (OWS) handling
+            var i = listMember.indexOf(LIST_MEMBER_KEY_VALUE_SPLITTER);
+            if (i !== -1) {
+                var key = listMember.slice(0, i);
+                var value = listMember.slice(i + 1, part.length);
+                if (tracestate_validators_1.validateKey(key) && tracestate_validators_1.validateValue(value)) {
+                    agg.set(key, value);
+                }
+                else {
+                    // TODO: Consider to add warning log
+                }
+            }
+            return agg;
+        }, new Map());
+        // Because of the reverse() requirement, trunc must be done after map is created
+        if (this._internalState.size > MAX_TRACE_STATE_ITEMS) {
+            this._internalState = new Map(Array.from(this._internalState.entries())
+                .reverse() // Use reverse same as original tracestate parse chain
+                .slice(0, MAX_TRACE_STATE_ITEMS));
+        }
+    };
+    TraceStateImpl.prototype._keys = function () {
+        return Array.from(this._internalState.keys()).reverse();
+    };
+    TraceStateImpl.prototype._clone = function () {
+        var traceState = new TraceStateImpl();
+        traceState._internalState = new Map(this._internalState);
+        return traceState;
+    };
+    return TraceStateImpl;
+}());
+exports.TraceStateImpl = TraceStateImpl;
+//# sourceMappingURL=tracestate-impl.js.map
+
+/***/ }),
+
+/***/ 4864:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+/*
+ * Copyright The OpenTelemetry Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.validateValue = exports.validateKey = void 0;
+var VALID_KEY_CHAR_RANGE = '[_0-9a-z-*/]';
+var VALID_KEY = "[a-z]" + VALID_KEY_CHAR_RANGE + "{0,255}";
+var VALID_VENDOR_KEY = "[a-z0-9]" + VALID_KEY_CHAR_RANGE + "{0,240}@[a-z]" + VALID_KEY_CHAR_RANGE + "{0,13}";
+var VALID_KEY_REGEX = new RegExp("^(?:" + VALID_KEY + "|" + VALID_VENDOR_KEY + ")$");
+var VALID_VALUE_BASE_REGEX = /^[ -~]{0,255}[!-~]$/;
+var INVALID_VALUE_COMMA_EQUAL_REGEX = /,|=/;
+/**
+ * Key is opaque string up to 256 characters printable. It MUST begin with a
+ * lowercase letter, and can only contain lowercase letters a-z, digits 0-9,
+ * underscores _, dashes -, asterisks *, and forward slashes /.
+ * For multi-tenant vendor scenarios, an at sign (@) can be used to prefix the
+ * vendor name. Vendors SHOULD set the tenant ID at the beginning of the key.
+ * see https://www.w3.org/TR/trace-context/#key
+ */
+function validateKey(key) {
+    return VALID_KEY_REGEX.test(key);
+}
+exports.validateKey = validateKey;
+/**
+ * Value is opaque string up to 256 characters printable ASCII RFC0020
+ * characters (i.e., the range 0x20 to 0x7E) except comma , and =.
+ */
+function validateValue(value) {
+    return (VALID_VALUE_BASE_REGEX.test(value) &&
+        !INVALID_VALUE_COMMA_EQUAL_REGEX.test(value));
+}
+exports.validateValue = validateValue;
+//# sourceMappingURL=tracestate-validators.js.map
+
+/***/ }),
+
+/***/ 2615:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+/*
+ * Copyright The OpenTelemetry Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.createTraceState = void 0;
+var tracestate_impl_1 = __nccwpck_require__(2110);
+function createTraceState(rawTraceState) {
+    return new tracestate_impl_1.TraceStateImpl(rawTraceState);
+}
+exports.createTraceState = createTraceState;
+//# sourceMappingURL=utils.js.map
 
 /***/ }),
 
@@ -45739,6 +45989,31 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 
 /***/ }),
 
+/***/ 1823:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+/*
+ * Copyright The OpenTelemetry Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+//# sourceMappingURL=tracer_options.js.map
+
+/***/ }),
+
 /***/ 891:
 /***/ ((__unused_webpack_module, exports) => {
 
@@ -45787,7 +46062,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.VERSION = void 0;
 // this is autogenerated file, see scripts/version-update.js
-exports.VERSION = '1.0.4';
+exports.VERSION = '1.1.0';
 //# sourceMappingURL=version.js.map
 
 /***/ }),
