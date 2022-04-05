@@ -91,6 +91,8 @@ tmp/
 
 /node_modules
 /**/node_modules
+node_modules/
+.github/actions/**/lib/
 
 # compiled output
 /ui/dist
