@@ -30,7 +30,8 @@ public class Task220404RemoveCalendarReminderTest {
     public void Test_Upgrade_Task() throws Exception {
         try {
             final Connection connection = DbConnectionFactory.getConnection();
-
+            connection.setAutoCommit(true);
+            
             DotDatabaseMetaData databaseMetaData = new DotDatabaseMetaData();
             DotConnect dotConnect =  new DotConnect();
             if(!databaseMetaData.tableExists(connection, "calendar_reminder")){
