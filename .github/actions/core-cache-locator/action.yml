@@ -3,8 +3,8 @@ name: 'Core Cache Locator'
 description: 'Locates Core elements to cache'
 author: 'victoralfaro-dotcms'
 inputs:
-  build-tool-env:
-    description: 'Build tool environment to use'
+  build-env:
+    description: 'Build environment to use'
     type: choice
     options:
     - gradle
@@ -13,6 +13,7 @@ inputs:
   core-root:
     description: 'Core root folder'
     required: true
+    default: ${{ github.WORKSPACE }}
   cache-dependencies:
     description: 'Cache depencies flag'
     type: boolean

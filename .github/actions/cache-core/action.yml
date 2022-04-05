@@ -3,8 +3,8 @@ name: 'Cache Core'
 description: 'Caches DotCMS Core dependencies and its build output'
 author: 'victoralfaro-dotcms'
 inputs:
-  build-tool-env:
-    description: 'Build tool environment to use'
+  build-env:
+    description: 'Build environment to use'
     type: choice
     options:
     - gradle
@@ -28,8 +28,8 @@ inputs:
               }
             }
   outputs:
-    cache-results:
-      description: 'Cache results'
+    cache-metadata:
+      description: 'Cache meta data'
 runs:
   using: 'node16'
   main: 'dist/index.js'
