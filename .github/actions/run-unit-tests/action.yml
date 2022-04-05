@@ -1,0 +1,14 @@
+# action.yml
+name: 'Run Unit Tests'
+description: 'Run core unit tests'
+author: 'victoralfaro-dotcms'
+inputs:
+  build-env:
+    description: Build environment
+    required: true
+  cache-data:
+    description: 'Cached information to be restored'
+    required: true
+runs:
+  using: 'node16'
+  main: 'dist/index.js'

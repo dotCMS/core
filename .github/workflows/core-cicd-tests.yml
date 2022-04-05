@@ -29,10 +29,10 @@ jobs:
     if: needs.module-matcher-job.outputs.module_found == 'true'
     env:
       DEBUG: true
+    outputs:
+      build-env: ${{ steps.read-cicd-local-env.outputs.build-env }}
+      cache-metadata: ${{ steps.cache-core.outputs.cache-metadata }}
     steps:
-      - name: GITHUB CONTEXT
-        run: echo "${{ toJson(github) }}"
-        if: env.DEBUG == 'true'
       - id: fetch-core
         name: Fetch Core repo
         uses: actions/checkout@v3
@@ -45,13 +45,13 @@ jobs:
         name: Build Core
         uses: ./.github/actions/build-core
         with:
-          build-tool-env: ${{ env.BUILD_ENV }}
+          build-env: ${{ steps.read-cicd-local-env.outputs.build-env }}
         if: success()
       - id: core-cache-locator
         name: Core Cache Locator
         uses: ./.github/actions/core-cache-locator
         with:
-          build-tool-env: ${{ env.BUILD_ENV }}
+          build-env: ${{ steps.read-cicd-local-env.outputs.build-env }}
           core-root: ${{ github.WORKSPACE }}
           cache-build-output: true
         if: success()
@@ -59,29 +59,31 @@ jobs:
         name: Cache Core
         uses: ./.github/actions/cache-core
         with:
-          build-tool-env: ${{ env.BUILD_ENV }}
+          build-env: ${{ steps.read-cicd-local-env.outputs.build-env }}
           cache-locations: ${{ steps.core-cache-locator.outputs.cache-locations }}
         if: success()
-#  run-unit-tests-job:
-#    name: Run Unit Tests
-#    runs-on: ubuntu-latest
-#    needs: build-core-job
-#    if: success()
-#    env:
-#      DEBUG: true
-#    steps:
-#      - name: GITHUB CONTEXT
-#        run: echo "${{ toJson(github) }}"
-#        if: env.DEBUG == 'true'
-#      - id: fetch-core
-#        name: Fetch Core repo
-#        uses: actions/checkout@v3
-#      - id: run-unit-tests
-#        name: Run unit tests
-#        run: |
-#          source ${GITHUB_WORKSPACE}/cicd/local-lib.sh
-#          runCmd "$(runUnitCmd)"
-#        if: success()
+  run-unit-tests-job:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+    needs: build-core-job
+    if: success()
+    steps:
+      - name: GITHUB CONTEXT
+        run: echo "${{ toJson(github) }}"
+        if: env.DEBUG == 'true'
+      - id: fetch-core
+        name: Fetch Core repo
+        uses: actions/checkout@v3
+      - id: restore-core
+        name: Restore Core cache
+        uses: ./.github/actions/restore-core
+        with:
+          cache-metadata: ${{ needs.build-core-job.outputs.cache-metadata }}
+      - id: run-unit-tests
+        name: Run Unit tests
+        uses: ./.github/actions/run-unit-tests
+        with:
+          build-env: ${{ needs.build-core-job.outputs.build-env }}
 #  run-unit-tests-job:
 #    name: Unit Tests
 #    runs-on: ubuntu-latest

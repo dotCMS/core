@@ -1,0 +1,18 @@
+# action.yml
+name: 'Restore Core Cache'
+description: 'Restores Core cache'
+author: 'victoralfaro-dotcms'
+inputs:
+  cache-metadata:
+    description: 'Cached data'
+    required: true
+  core-root:
+    description: 'Core root folder'
+    required: true
+    default: ${{ github.WORKSPACE }}
+outputs:
+  cache-locations:
+    description: 'Resolved cache locations'
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
