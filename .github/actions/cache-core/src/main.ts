@@ -5,10 +5,10 @@ import * as cache from './cache'
  * Main entry point for this action.
  */
 const run = () => {
-  cache.cacheCore().then(cacheResults => {
-    const cacheOutput = JSON.stringify(cacheResults, null, 2)
-    core.info(`Cache results:\n${cacheOutput}`)
-    core.setOutput('cache-results', cacheOutput)
+  cache.cacheCore().then(cacheMetadata => {
+    const cacheMetadataOutput = JSON.stringify(cacheMetadata, null, 2)
+    core.info(`Cache results:\n${cacheMetadataOutput}`)
+    core.setOutput('cache-metadata', cacheMetadataOutput)
   })
 }
 

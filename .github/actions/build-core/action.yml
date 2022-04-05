@@ -3,8 +3,8 @@ name: 'Build Core'
 description: 'Builds DotCMS Core project'
 author: 'victoralfaro-dotcms'
 inputs:
-  build-tool-env:
-    description: 'Build tool environment to use'
+  build-env:
+    description: 'Build environment to use'
     type: choice
     options:
     - gradle
