@@ -22,13 +22,11 @@ public class VanityUrlDataGen extends ContentletDataGen {
   private int action;
   private int order;
   private String title;
-  private Folder folder;
-  
+
   public VanityUrlDataGen() {
     super(Try.of(()->APILocator.getContentTypeAPI(APILocator.systemUser()).find(VanityUrlAPI.DEFAULT_VANITY_URL_STRUCTURE_VARNAME).id()).getOrElseThrow(e->new DotRuntimeException(e)));
     this.language(Try.of(()->APILocator.getLanguageAPI().getDefaultLanguage().getId()).getOrElseThrow(e->new DotRuntimeException(e)));
     this.host(APILocator.systemHost());
-    this.folder(Try.of(()->APILocator.getFolderAPI().findSystemFolder()).getOrElseThrow(e->new DotRuntimeException(e)));
   }
 
   public VanityUrlDataGen uri(final String uri) {
@@ -79,8 +77,6 @@ public class VanityUrlDataGen extends ContentletDataGen {
     url.setLanguageId(languageId);
     url.setTitle(UtilMethods.isSet(title) ? title : "Vanity Test " + System.currentTimeMillis());
     url.setForwardTo(forwardTo);
-    url.setFolder(folder.getIdentifier());
-    url.setSite(this.host.getIdentifier());
     url.setHost(this.host.getIdentifier());
 
     return url;

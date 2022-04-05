@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.SiteDataGen;
@@ -30,6 +31,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.startup.runonce.Task220330ChangeVanityURLSiteFieldType;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.language.LanguageException;
@@ -84,6 +86,9 @@ public class VanityUrlAPITest {
         /* Default variables */
         defaultHost =  new SiteDataGen().nextPersisted();
         defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+
+        final Task220330ChangeVanityURLSiteFieldType task220330ChangeVanityURLSiteFieldType = new Task220330ChangeVanityURLSiteFieldType();
+        task220330ChangeVanityURLSiteFieldType.executeUpgrade();
     }
 
     
