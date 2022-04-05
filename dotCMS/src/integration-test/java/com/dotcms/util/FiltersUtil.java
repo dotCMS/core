@@ -5,6 +5,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.VanityUrlDataGen;
 import com.dotcms.vanityurl.model.DefaultVanityUrl;
 import com.dotmarketing.beans.Host;
@@ -127,17 +128,9 @@ public class FiltersUtil {
      */
     private ContentType getVanityURLContentType() throws DotDataException, DotSecurityException {
 
-        String query = " velocity_var_name = '" + VANITY_URL_CONTENT_TYPE_VARNAME + "'";
-        List<ContentType> contentTypes = contentTypeAPI.search(query);
-
-        ContentType contentType;
-        if (contentTypes.size() == 0) {
-            contentType = createVanityUrl();
-        } else {
-            contentType = contentTypes.get(0);
-        }
-
-        return contentType;
+        return new ContentTypeDataGen()
+                .baseContentType(BaseContentType.VANITY_URL)
+                .nextPersisted();
     }
 
     /**

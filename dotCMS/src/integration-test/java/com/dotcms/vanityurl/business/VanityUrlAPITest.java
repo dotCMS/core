@@ -86,9 +86,6 @@ public class VanityUrlAPITest {
         /* Default variables */
         defaultHost =  new SiteDataGen().nextPersisted();
         defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
-
-        final Task220330ChangeVanityURLSiteFieldType task220330ChangeVanityURLSiteFieldType = new Task220330ChangeVanityURLSiteFieldType();
-        task220330ChangeVanityURLSiteFieldType.executeUpgrade();
     }
 
     

@@ -1,5 +1,7 @@
 package com.dotcms.datagen;
 
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.vanityurl.business.VanityUrlAPI;
 import com.dotcms.vanityurl.model.DefaultVanityUrl;
 import com.dotmarketing.business.APILocator;
@@ -24,9 +26,15 @@ public class VanityUrlDataGen extends ContentletDataGen {
   private String title;
 
   public VanityUrlDataGen() {
-    super(Try.of(()->APILocator.getContentTypeAPI(APILocator.systemUser()).find(VanityUrlAPI.DEFAULT_VANITY_URL_STRUCTURE_VARNAME).id()).getOrElseThrow(e->new DotRuntimeException(e)));
+    super(Try.of(()-> createVanityURLContentType()).getOrElseThrow(e->new DotRuntimeException(e)));
     this.language(Try.of(()->APILocator.getLanguageAPI().getDefaultLanguage().getId()).getOrElseThrow(e->new DotRuntimeException(e)));
     this.host(APILocator.systemHost());
+  }
+
+  private static ContentType createVanityURLContentType() {
+    return new ContentTypeDataGen()
+            .baseContentType(BaseContentType.VANITY_URL)
+            .nextPersisted();
   }
 
   public VanityUrlDataGen uri(final String uri) {

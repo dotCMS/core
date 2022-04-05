@@ -32,6 +32,14 @@ public class Task220330ChangeVanityURLSiteFieldTypeTest {
         IntegrationTestInitService.getInstance().init();
     }
 
+    /**
+     * Method to test: {@link Task220330ChangeVanityURLSiteFieldType#executeUpgrade}
+     * When: you hace a Vanity URl COntent Type with the site field as a {@link CustomField}
+     * Should: CHange the field type to {@link HostFolderField}
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Test
     public void test_upgradeTask_success() throws DotDataException, DotSecurityException {
         final ContentType contentType = new ContentTypeDataGen()
