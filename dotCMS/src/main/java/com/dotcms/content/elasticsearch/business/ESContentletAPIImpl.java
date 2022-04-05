@@ -35,6 +35,7 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
+import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
@@ -249,7 +250,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private static final String backupPath = ConfigUtils.getBackupPath() + File.separator + "contentlets";
 
     private static final Lazy<Boolean> UNIQUE_PER_SITE_CONFIG = Lazy.of(()->Config
-            .getBooleanProperty("unique_per_site", true));
+            .getBooleanProperty("uniquePerSite", true));
 
     private static Boolean uniquePerSite;
 
@@ -839,6 +840,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         canLock(contentlet, user, respectFrontendRoles);
 
+        if(contentlet.isVanityUrl()) {
+            removeOldHostVanityURLCache(contentlet);
+        }
+
         //Set contentlet to live and unlocked
         APILocator.getVersionableAPI().setLive(contentlet);
 
@@ -862,7 +867,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         if(contentlet.isVanityUrl()) {
-
             APILocator.getVanityUrlAPI().invalidateVanityUrl(contentlet);
         }
 
@@ -877,6 +881,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
         // by now, the publish event is making a duplicate reload events on the site browser
         // so we decided to comment it out by now, and
         //contentletSystemEventUtil.pushPublishEvent(contentlet);
+    }
+
+    private void removeOldHostVanityURLCache(Contentlet contentlet) throws DotDataException, DotSecurityException {
+        final Optional<ContentletVersionInfo> contentletVersionInfo = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(contentlet.getIdentifier(),
+                        contentlet.getLanguageId());
+
+        if (contentletVersionInfo.isPresent() && UtilMethods.isSet(contentletVersionInfo.get().getLiveInode())) {
+            final Contentlet oldLiveVersion = APILocator.getContentletAPI()
+                    .find(contentletVersionInfo.get().getLiveInode(), APILocator.systemUser(),
+                            false);
+
+            final String oldHostId = oldLiveVersion.getStringProperty(
+                    VanityUrlContentType.SITE_FIELD_VAR);
+
+            if (!oldHostId.equals(contentlet.getHost())) {
+                CacheLocator.getVanityURLCache().remove(oldHostId, oldLiveVersion.getLanguageId());
+            }
+        }
     }
 
     @Override
@@ -4719,7 +4742,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     existingInode=contentlet.getInode();
                     contentlet.setInode(null);
 
-                    Identifier ident=APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
+                        Identifier ident=APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
                     if(ident==null || !UtilMethods.isSet(ident.getId())) {
                         existingIdentifier=contentlet.getIdentifier();
                         contentlet.setIdentifier(null);
@@ -4839,6 +4862,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             boolean changedURI = addOrUpdateContentletIdentifier(contentlet, contentletRaw, existingIdentifier, existingInode, htmlPageURL);
 
             contentlet = applyNullProperties(contentlet);
+
             //This is executed first hand to create the inode-contentlet relationship.
             if(InodeUtils.isSet(existingInode)) {
                 contentlet = contentFactory.save(contentlet, existingInode);
@@ -5044,7 +5068,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // because changes here may affect URI then IdentifierCache
             // can't remove it
             CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
-
             // Once the contentlet is saved, it gets refresh from the db. for which the incoming data gets lost.
             // Therefore here we need to make sure we use the original contentlet that comes with the info passed from the ui.
             final String hostId = UtilMethods.isSet(contentletRaw.getHost()) ? contentletRaw.getHost() : contentlet.getHost();
@@ -5078,8 +5101,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             if(UtilMethods.isSet(contentletRaw.getFolder()) && !contentletRaw.getFolder().equals(FolderAPI.SYSTEM_FOLDER)){
                 final Folder folder = folderAPI.find(contentletRaw.getFolder(), systemUser, false);
-                Identifier folderIdent = identifierAPI.find(folder.getIdentifier());
-                identifier.setParentPath(folderIdent.getPath());
+                if (null != folder) {
+                    Identifier folderIdent = identifierAPI.find(folder.getIdentifier());
+                    identifier.setParentPath(folderIdent.getPath());
+                }
             } else {
                 identifier.setParentPath(StringPool.FORWARD_SLASH);
             }
