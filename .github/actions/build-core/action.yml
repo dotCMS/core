@@ -1,0 +1,15 @@
+# action.yml
+name: 'Build Core'
+description: 'Builds DotCMS Core project'
+author: 'victoralfaro-dotcms'
+inputs:
+  build-tool-env:
+    description: 'Build tool environment to use'
+    type: choice
+    options:
+    - gradle
+    - maven
+    required: true
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
