@@ -136,7 +136,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
     // Cluster shadLock
     private final DotKeyLockManagerFactory shedKeyLockManagerFactory =
-            new ShedKeyLockManagerFactory();
+            new ShedKeyLockManagerFactory(); // todo: this should be overridable by osgi.
 
     // Stores the shadLocks by name
     private Map<String, DotKeyLockManager<String>> shedKeyLockManagerMap =

@@ -27,9 +27,14 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.lock.DotKeyLockManager;
 import com.dotcms.dotpubsub.DotPubSubEvent;
 import com.dotcms.dotpubsub.DotPubSubProvider;
 import com.dotcms.dotpubsub.DotPubSubProviderLocator;
+import com.dotcms.job.system.event.SystemEventsJob;
+import com.dotcms.util.ConversionUtils;
+import com.liferay.util.MathUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.apache.felix.framework.util.FelixConstants;
@@ -264,18 +269,58 @@ public class OSGIUtil {
 
     private void startWatchingUploadFolder(final String uploadFolder) {
 
-        try {
+        final boolean useFileWatcher = Config.getBooleanProperty("OSGI_USE_FILE_WATCHER", true);
 
+        if (useFileWatcher) {
+            try {
+
+                final File uploadFolderFile = new File(uploadFolder);
+                Logger.debug(APILocator.class, "Start watching OSGI Upload dir: " + uploadFolder);
+                APILocator.getFileWatcherAPI().watchFile(uploadFolderFile,
+                        () -> this.fireReload(uploadFolderFile));
+            } catch (IOException e) {
+                Logger.error(Config.class, e.getMessage(), e);
+            }
+        } else {
+
+            // use a schedule thread with shad lock
+            final DotKeyLockManager<String> lockManager = DotConcurrentFactory.getInstance().getShedKeyLock("osgi_restart_lock_manager");
+            final long delay = Config.getLongProperty("OSGI_CHECK_UPLOAD_FOLDER_FREQUENCY", 10); // check each 10 seconds
+            final long initialDelay = MathUtil.sumAndModule(APILocator.getServerAPI().readServerId().toCharArray(), delay);
             final File uploadFolderFile = new File(uploadFolder);
-            Logger.debug(APILocator.class, "Start watching OSGI Upload dir: " + uploadFolder);
-            APILocator.getFileWatcherAPI().watchFile(uploadFolderFile,
-                    ()->this.fireReload(uploadFolderFile));
-        } catch (IOException e) {
-            Logger.error(Config.class, e.getMessage(), e);
+            DotConcurrentFactory.getScheduledThreadPoolExecutor().scheduleWithFixedDelay(
+                    ()-> this.checkUploadFolder(uploadFolderFile, lockManager),
+                    initialDelay, delay, TimeUnit.SECONDS);
         }
     }
 
+    // this method is called by the schedule to see if jars has been added to the framework
+    private void checkUploadFolder(final File uploadFolderFile, final DotKeyLockManager<String> lockManager) {
+
+        if (this.anyJarOnUploadFolder(uploadFolderFile)) {
+
+            try {
+
+                Logger.debug(this, ()-> "We found jar on upload folder, trying to lock to start the reload");
+                lockManager.tryLock("osgi_restart_lock", ()-> this.fireReload(uploadFolderFile));
+            } catch (Throwable e) {
+
+                Logger.error(this, "Error try to adquire the lock, uploadFolder: " + uploadFolderFile +
+                        ", msg: " + e.getMessage(), e);
+            }
+        }
+    }
+
+    private boolean anyJarOnUploadFolder(final File uploadFolderFile) {
+
+        Logger.debug(this, ()-> "Check if any jar on the upload folder");
+
+        return false;
+    }
+
     private void fireReload(final File uploadFolderFile) {
+
+        Logger.debug(this, ()-> "Starting the osgi reload on folder: " + uploadFolderFile);
 
         APILocator.getLocalSystemEventsAPI().asyncNotify(
                 new OSGIUploadBundleEvent(Instant.now(), uploadFolderFile));
