@@ -6,6 +6,7 @@ interface Command {
   args: string[]
   workingDir?: string
 }
+
 interface Commands {
   gradle: Command
   maven: Command
@@ -14,31 +15,23 @@ interface Commands {
 const COMMANDS: Commands = {
   gradle: {
     cmd: './gradlew',
-    args: [
-      'createDistPrep',
-      'compileTestAspect',
-      'compileTestJava',
-      'processTestResources',
-      'testClasses',
-      'compileIntegrationTestJava',
-      'prepareIntegrationTests'
-    ],
+    args: ['test'],
     workingDir: 'dotCMS'
   },
   maven: {
     cmd: './mvnw',
-    args: ['package', '-DskipTests'],
+    args: ['test'],
     workingDir: 'dotCMS'
   }
 }
 
 /**
- * Based on a detected build environment, that is gradle or maven, this resolves the command to run in order to build core.
+ * Based on a detected build environment, that is gradle or maven, this resolves the command to run in order to run unit tests.
  *
  * @param buildEnv build environment
  * @returns a number represeting the command exit code
  */
-export const build = async (buildEnv: string): Promise<number> => {
+export const runTests = async (buildEnv: string): Promise<number> => {
   const cmd = COMMANDS[buildEnv as keyof Commands]
   if (!cmd) {
     core.error('Cannot resolve build tool, aborting')

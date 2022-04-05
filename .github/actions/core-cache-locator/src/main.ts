@@ -6,12 +6,8 @@ import * as cacheLocator from './cache-locator'
  */
 const run = () => {
   // Call module logic to resolve cache locations
-  const cacheLocations = JSON.stringify(
-    cacheLocator.getCacheLocations(),
-    null,
-    2
-  )
-  core.info(`Found these tags: ${cacheLocations}`)
+  const cacheLocations = JSON.stringify(cacheLocator.getCacheLocations(), null, 2)
+  core.info(`Found these cache locations: ${cacheLocations}`)
   core.setOutput('cache-locations', cacheLocations)
 }
 
