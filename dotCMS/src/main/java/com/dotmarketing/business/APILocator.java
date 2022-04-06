@@ -102,8 +102,6 @@ import com.dotmarketing.image.focalpoint.FocalPointAPI;
 import com.dotmarketing.image.focalpoint.FocalPointAPIImpl;
 import com.dotmarketing.plugin.business.PluginAPI;
 import com.dotmarketing.plugin.business.PluginAPIImpl;
-import com.dotmarketing.portlets.calendar.business.CalendarReminderAPI;
-import com.dotmarketing.portlets.calendar.business.CalendarReminderAPIImpl;
 import com.dotmarketing.portlets.calendar.business.EventAPI;
 import com.dotmarketing.portlets.calendar.business.EventAPIImpl;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
@@ -460,15 +458,6 @@ public class APILocator extends Locator<APIIndex>{
 	 */
 	public static FormAPI getFormAPI(){
 		return (FormAPI)getInstance(APIIndex.FORM_API);
-	}
-
-	/**
-	 * Creates a single instance of the {@link CalendarReminderAPI} class.
-	 *
-	 * @return The {@link CalendarReminderAPI} class.
-	 */
-	public static CalendarReminderAPI getCalendarReminderAPI(){
-		return (CalendarReminderAPI) getInstance(APIIndex.CALENDAR_REMINDER_API);
 	}
 
 	/**
@@ -1172,7 +1161,6 @@ enum APIIndex
 	PORTLET_API,
 	WIDGET_API,
 	CHAIN_API,
-	CALENDAR_REMINDER_API,
 	PLUGIN_API,
 	LANGUAGE_API,
 	POLL_API,
@@ -1261,7 +1249,6 @@ enum APIIndex
     		case FIELD_API: return new com.dotmarketing.portlets.structure.business.FieldAPIImpl();
     		case PORTLET_API: return new PortletAPIImpl();
     		case WIDGET_API: return new WidgetAPIImpl();
-    		case CALENDAR_REMINDER_API: return new CalendarReminderAPIImpl();
     		case PLUGIN_API: return new PluginAPIImpl();
     		case LANGUAGE_API: return new LanguageAPIImpl();
     		case REINDEX_QUEUE_API : return new ReindexQueueAPIImpl();

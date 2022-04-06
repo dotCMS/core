@@ -30,8 +30,6 @@ import com.dotmarketing.common.reindex.ReindexQueueFactory;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.plugin.business.PluginFactory;
 import com.dotmarketing.plugin.business.PluginFactoryDBImpl;
-import com.dotmarketing.portlets.calendar.business.CalendarReminderFactory;
-import com.dotmarketing.portlets.calendar.business.CalendarReminderFactoryImpl;
 import com.dotmarketing.portlets.calendar.business.EventFactory;
 import com.dotmarketing.portlets.calendar.business.EventFactoryImpl;
 import com.dotmarketing.portlets.categories.business.CategoryFactory;
@@ -129,10 +127,6 @@ public class FactoryLocator extends Locator<FactoryIndex>{
     @Deprecated
     public static UserFactoryLiferay getUserFactoryLiferay(){
         return (UserFactoryLiferay) getInstance(FactoryIndex.USER_FACTORY_LIFERAY);
-    }
-
-    public static CalendarReminderFactory getCalendarReminderFactory(){
-    	return (CalendarReminderFactory) getInstance(FactoryIndex.CALENDAR_REMINDER_FACTORY);
     }
 
        public static TemplateFactory getTemplateFactory(){
@@ -287,7 +281,6 @@ enum FactoryIndex
 	USER_FACTORY,
     USER_FACTORY_LIFERAY,
 	CHAIN_FACTORY,
-	CALENDAR_REMINDER_FACTORY,
 	USER_PROXY_FACTORY,
 	TEMPLATE_FACTORY,
 	ROLE_FACTORY,
@@ -331,7 +324,6 @@ enum FactoryIndex
             case DISTRIBUTED_JOURNAL_FACTORY: return new ReindexQueueFactory();
             case USER_FACTORY : return new UserFactoryImpl();
             case USER_FACTORY_LIFERAY : return new UserFactoryLiferayImpl();
-            case CALENDAR_REMINDER_FACTORY: return new CalendarReminderFactoryImpl();
             case TEMPLATE_FACTORY: return new TemplateFactoryImpl();
             case HOST_VARIABLE_FACTORY: return new HostVariableFactoryImpl();
             case LAYOUT_FACTORY : return new LayoutFactoryImpl();
