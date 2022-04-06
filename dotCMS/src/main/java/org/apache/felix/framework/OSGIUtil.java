@@ -98,9 +98,17 @@ public class OSGIUtil {
 
     private Framework felixFramework;
 
-    // count how reads has done to the upload folder
+    //// When the strategy to discover jars on the upload folder is not by folder watcher (watchers do not work on docker)
+    /// we have a job that runs every 10 seconds (it is configurable) and checks if there is any jars in the upload folder
+    /// if they are; runs a process to reload (copy the jars to load folder and so on)
+    /// Does not make sense to spend the I/O every 10 seconds reading the folder, so these counters helps to balance
+    // hits to that folder. So as soon as the job starts the first read will be in 10 seconds, the next will be in 20 seconds, 30 sec, 40 sec
+    // etc, until 100 seconds; here will be reset to 10 seconds again. It helps to balance a bit the I/O time.
+    // if some of the reads to the upload folder founds a jar, the counts are reset to the initial values again and the cycle begins one more time.
     private final AtomicInteger uploadFolderReadsCount = new AtomicInteger(0);
     private final AtomicInteger currentJobRestartIterationsCount = new AtomicInteger(0);
+
+    // Indicates the job were already started, so next restart of the OSGI framework won't create a new one job.
     private final AtomicBoolean isStartedOsgiRestartSchedule = new AtomicBoolean(false);
     /**
      * Felix directory list
@@ -304,6 +312,20 @@ public class OSGIUtil {
         }
     }
 
+    // fi the job counts is great or equals to the upload folder reads, allow to do a new retry to read the upload folder for jar
+    private boolean allowedToReadUploadFolder () {
+
+        if (this.currentJobRestartIterationsCount.intValue() >= this.uploadFolderReadsCount.intValue()) {
+
+            // if gonna enter then reset the job counts
+            this.currentJobRestartIterationsCount.set(0);
+            return true;
+        }
+
+        this.currentJobRestartIterationsCount.incrementAndGet();
+        return false;
+    }
+
     // this method is called by the schedule to see if jars has been added to the framework
     private void checkUploadFolder(final File uploadFolderFile, final ClusterLockManager<String> lockManager) {
 
@@ -311,11 +333,9 @@ public class OSGIUtil {
                 uploadFolderFile + ", currentJobRestartIterationsCount: " + this.currentJobRestartIterationsCount.intValue() +
                 ", uploadFolderReadsCount: " + this.uploadFolderReadsCount.intValue());
         // we do not want to read every 10 seconds, so we read at 20, 30, 40, etc
-        if (this.currentJobRestartIterationsCount.intValue() >= this.uploadFolderReadsCount.intValue()) {
+        if (this.allowedToReadUploadFolder()) {
 
             Logger.debug(this, ()-> "Checking the upload folder for jars");
-            // if enter here, reset the job counts
-            this.currentJobRestartIterationsCount.set(0);
             if (this.anyJarOnUploadFolder(uploadFolderFile)) {
 
                 // if enter here, means there are jars on the upload folder.
@@ -329,25 +349,27 @@ public class OSGIUtil {
                     lockManager.tryClusterLock(() -> this.fireReload(uploadFolderFile));
                 } catch (Throwable e) {
 
-                    Logger.error(this, "Error try to adquire the lock, uploadFolder: " + uploadFolderFile +
+                    Logger.error(this, "Error try to acquire the lock, uploadFolder: " + uploadFolderFile +
                             ", msg: " + e.getMessage(), e);
                 }
             } else {
 
                 // if not jars we want to wait for the next read of the upload folder
                 this.uploadFolderReadsCount.incrementAndGet();
-            }
-        } else {
+                if (this.uploadFolderReadsCount.intValue() >= 10) {
 
-            this.currentJobRestartIterationsCount.incrementAndGet();
+                    // no more than 10, if so, reset to zero
+                    uploadFolderReadsCount.set(0);
+                }
+            }
         }
     }
 
     private boolean anyJarOnUploadFolder(final File uploadFolderFile) {
 
         Logger.debug(this, ()-> "Check if any jar on the upload folder");
-
-        return false;
+        final String[] pathnames = uploadFolderFile.list(new SuffixFileFilter(".jar"));
+        return UtilMethods.isSet(pathnames) && pathnames.length > 0;
     }
 
     private void fireReload(final File uploadFolderFile) {
