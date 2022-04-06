@@ -974,6 +974,8 @@ public class VanityUrlAPITest {
                 dotConnect.setSQL(statement).addParam(vanity.getInode()).loadResult();
                 //Then find it via db. This only works if cache has been cleared.
                 vanityURLCache.remove(vanity);
+                CacheLocator.getContentletCache().remove(vanity);
+
                 final Host site = hostAPI.find(vanity, systemUser, false);
                 List<CachedVanityUrl> inDb = vanityUrlAPI.findInDb(site, altLang);
                 assertTrue(

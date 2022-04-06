@@ -397,7 +397,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			//add workflow to map
 			contentletMap.putAll(getWorkflowInfoForContentlet(contentlet));
 
-			if(UtilMethods.isSet(contentIdentifier.getSysPublishDate())) {
+            if(UtilMethods.isSet(contentIdentifier.getSysPublishDate())) {
 				contentletMap.put(ESMappingConstants.PUBLISH_DATE, elasticSearchDateTimeFormat.format(contentIdentifier.getSysPublishDate()));
 				contentletMap.put(ESMappingConstants.PUBLISH_DATE + TEXT,
 						datetimeFormat.format(contentIdentifier.getSysPublishDate()));

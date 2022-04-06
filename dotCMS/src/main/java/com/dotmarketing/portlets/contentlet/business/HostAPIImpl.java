@@ -805,8 +805,9 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     public PaginatedArrayList<Host> searchByStopped(final String filter, final boolean showStopped, final boolean
             showSystemHost, final int limit, final int offset, final User user, final boolean respectFrontendRoles) {
         PaginatedArrayList<Host> paginatedSiteList = new PaginatedArrayList<>();
-        final Optional<List<Host>> siteListOpt = showStopped ? this.getHostFactory().findStoppedSites(filter, true, limit, offset, user,
-                respectFrontendRoles) : this.getHostFactory().findLiveSites(filter, limit, offset, user, respectFrontendRoles);
+        final Optional<List<Host>> siteListOpt = showStopped ? this.getHostFactory()
+                .findStoppedSites(filter, true, limit, offset, showSystemHost, user, respectFrontendRoles) :
+                this.getHostFactory().findLiveSites(filter, limit, offset, showSystemHost, user, respectFrontendRoles);
         if (siteListOpt.isPresent()) {
             if (showStopped) {
                 return convertToSitePaginatedList(siteListOpt.get());
@@ -836,7 +837,8 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         Optional<List<Host>> siteListOpt;
         if (!showStopped && !showArchived) {
             // Return live Sites
-            siteListOpt = this.getHostFactory().findLiveSites(filter, limit, offset, user, respectFrontendRoles);
+            siteListOpt = this.getHostFactory()
+                    .findLiveSites(filter, limit, offset, showSystemHost, user, respectFrontendRoles);
             if (siteListOpt.isPresent()) {
                 try {
                     // Permissions can only be checked on LIVE contents
@@ -855,14 +857,16 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         }
         if (showStopped && !showArchived) {
             // Return stopped Sites
-            siteListOpt = this.getHostFactory().findStoppedSites(filter, false, limit, offset, user, respectFrontendRoles);
+            siteListOpt = this.getHostFactory()
+                    .findStoppedSites(filter, false, limit, offset, showSystemHost, user, respectFrontendRoles);
             if (siteListOpt.isPresent()) {
                 paginatedSiteList = convertToSitePaginatedList(siteListOpt.get());
             }
         }
         if (showStopped && showArchived) {
             // Return archived Sites
-            siteListOpt = this.getHostFactory().findArchivedSites(filter, limit, offset, user, respectFrontendRoles);
+            siteListOpt = this.getHostFactory()
+                    .findArchivedSites(filter, limit, offset, showSystemHost, user, respectFrontendRoles);
             if (siteListOpt.isPresent()) {
                 paginatedSiteList = convertToSitePaginatedList(siteListOpt.get());
             }
@@ -874,7 +878,8 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     @Override
     public PaginatedArrayList<Host> search(String filter, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles){
         PaginatedArrayList<Host> paginatedSiteList = new PaginatedArrayList<>();
-        final Optional<List<Host>> siteListOpt = this.getHostFactory().findLiveSites(filter, limit, offset, user, respectFrontendRoles);
+        final Optional<List<Host>> siteListOpt =
+                this.getHostFactory().findLiveSites(filter, limit, offset, showSystemHost, user, respectFrontendRoles);
         if (siteListOpt.isPresent()) {
             try {
                 List<Host> filteredSiteList = APILocator.getPermissionAPI().filterCollection(siteListOpt.get(), PermissionAPI
@@ -896,8 +901,9 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     public PaginatedArrayList<Host> search(final String filter, boolean showArchived, boolean showSystemHost, int
             limit, int offset, User user, boolean respectFrontendRoles) {
         PaginatedArrayList<Host> paginatedSiteList = new PaginatedArrayList<>();
-        final Optional<List<Host>> siteListOpt = showArchived ? this.getHostFactory().findArchivedSites(filter, limit, offset, user,
-                respectFrontendRoles) : this.getHostFactory().findLiveSites(filter, limit, offset, user, respectFrontendRoles);
+        final Optional<List<Host>> siteListOpt = showArchived ? this.getHostFactory()
+                .findArchivedSites(filter, limit, offset, showSystemHost, user, respectFrontendRoles) :
+                this.getHostFactory().findLiveSites(filter, limit, offset, showSystemHost, user, respectFrontendRoles);
         if (siteListOpt.isPresent()) {
             if (showArchived) {
                 return convertToSitePaginatedList(siteListOpt.get());
