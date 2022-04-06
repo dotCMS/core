@@ -126,6 +126,11 @@ public class ContentTypeResource implements Serializable {
 
 		try {
 
+			if (null == copyContentTypeForm) {
+
+				return ExceptionMapperUtil.createResponse(null, "The Request needs a POST body");
+			}
+
 			Logger.debug(this, ()->String.format("Creating new content type '%s' based from  '%s' ", baseVariableName,  copyContentTypeForm.getName()));
 			final HttpSession session = req.getSession(false);
 

@@ -1065,7 +1065,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      * When:
      * - Create a ContentType with a unique field
      * - Create two Contentlet with the same value in the unique field in the same host
-     * - set the unique_per_site properties to false
+     * - set the uniquePerSite properties to false
      *
      * Should: Throw a RuntimeException with the message: "Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s)."
      * @throws DotDataException
@@ -1168,7 +1168,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      * When:
      * - Create a {@link ContentType} with a unique field
      * - Create two  {@link Contentlet} with the same value in the unique field in different hosts
-     * - set the unique_per_site properties to false
+     * - set the uniquePerSite properties to false
      *
      * Should: Throw a RuntimeException with the message: "Contentlet with id:`Unknown/New` and title:`` has invalid / missing field(s)."
      * @throws DotDataException

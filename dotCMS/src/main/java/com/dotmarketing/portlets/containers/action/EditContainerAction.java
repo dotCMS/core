@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.containers.action;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
@@ -484,6 +485,7 @@ public class EditContainerAction extends DotPortletAction implements
     /**
      * Method called to save container in the system
      */
+	@WrapInTransaction
 	public void _saveWebAsset(ActionRequest req, ActionResponse res,
 			PortletConfig config, ActionForm form, User user) throws Exception {
 
@@ -578,10 +580,6 @@ public class EditContainerAction extends DotPortletAction implements
 				.getAttribute(WebKeys.CONTAINER_FORM_EDIT));
 
 		APILocator.getVersionableAPI().setWorking(container);
-
-
-
-
 		HibernateUtil.flush();
 	}
 
