@@ -101,7 +101,11 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
      * @memberof SuggestionsComponent
      */
     execCommand() {
-        this.list.execCommand();
+        if (this.items.length) {
+            this.list.execCommand();
+        } else {
+            this.handleBackButton(new MouseEvent('click'));
+        }
     }
 
     /**
