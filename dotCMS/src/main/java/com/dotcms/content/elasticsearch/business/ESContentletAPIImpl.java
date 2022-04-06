@@ -318,18 +318,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     public Object loadField(final String inode, final com.dotcms.contenttype.model.field.Field field) throws DotDataException{
-        final ContentletJsonAPI contentletJsonAPI = APILocator.getContentletJsonAPI();
         if(APILocator.getContentletJsonAPI().isPersistContentAsJson()){
           final Object value = contentFactory.loadJsonField(inode, field);
           if(null != value){
               return value;
           }
-          //If nothing was fetched from the json-column
-          //We check if we explicitly indicated that no values should be written into the columns
-          if(!contentletJsonAPI.isPersistContentletInColumns()){
-             return null;
-          }
-          //But if passed this check then we should also give a try fetching the field from the columns.
         }
         return contentFactory.loadField(inode, field.dbColumn());
     }

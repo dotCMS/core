@@ -22,28 +22,43 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.BaseRuntimeInternationalizationException;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.google.common.collect.ImmutableList;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.ContentTypeUtil;
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionLevel;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.quartz.job.IdentifierDateJob;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
-import java.util.stream.Collectors;
 import org.elasticsearch.action.search.SearchResponse;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class ContentTypeAPIImpl implements ContentTypeAPI {
 
@@ -201,8 +216,15 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @Override
   public ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean) throws DotDataException, DotSecurityException {
 
+    if (LicenseManager.getInstance().isCommunity()) {
+
+      throw new InvalidLicenseException("An enterprise license is required to copy content type");
+    }
+
     final ContentType sourceContentType = copyContentTypeBean.getSourceContentType();
-    final ContentTypeBuilder builder = ContentTypeBuilder.builder(sourceContentType).name(copyContentTypeBean.getName()).id(null).modDate(new Date()).variable(null);
+    final ContentTypeBuilder builder = ContentTypeBuilder.builder(sourceContentType).name(copyContentTypeBean.getName())
+            .fixed(false).system(false)
+            .id(null).modDate(new Date()).variable(null);
 
     if (UtilMethods.isSet(copyContentTypeBean.getNewVariable())) {
       builder.variable(copyContentTypeBean.getNewVariable());
