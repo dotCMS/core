@@ -7466,7 +7466,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         testLoadFieldWontReturnNull(false);
     }
 
-    public void testLoadFieldWontReturnNull(final boolean saveAsJson) throws DotDataException, DotSecurityException {
+    private void testLoadFieldWontReturnNull(final boolean saveAsJson) throws DotDataException, DotSecurityException {
 
         final DotConnect dotConnect = new DotConnect();
 
