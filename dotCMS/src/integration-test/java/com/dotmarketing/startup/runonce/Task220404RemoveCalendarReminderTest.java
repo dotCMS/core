@@ -35,21 +35,30 @@ public class Task220404RemoveCalendarReminderTest {
             DotDatabaseMetaData databaseMetaData = new DotDatabaseMetaData();
             DotConnect dotConnect =  new DotConnect();
             if(!databaseMetaData.tableExists(connection, "calendar_reminder")){
-                dotConnect.executeStatement("create table calendar_reminder (\n"
-                        + "   user_id varchar2(255) not null,\n"
-                        + "   event_id varchar2(36) not null,\n"
-                        + "   send_date date not null,\n"
-                        + "   primary key (user_id, event_id, send_date)\n"
-                        + ");");
-
-            }
-
-            if(DbConnectionFactory.isMsSql()){
-                dotConnect.setSQL("INSERT INTO dotcms.dbo.calendar_reminder(user_id, event_id, send_date) VALUES ('0', '0', GETDATE())").loadResult();
+                if(DbConnectionFactory.isPostgres()) {
+                    dotConnect.executeStatement("create table calendar_reminder (\n"
+                            + "   user_id varchar(255) not null,\n"
+                            + "   event_id varchar(36) not null,\n"
+                            + "   send_date timestamptz not null,\n"
+                            + "   primary key (user_id, event_id, send_date)\n"
+                            + ")");
+                }
+                if(DbConnectionFactory.isMsSql()){
+                    dotConnect.executeStatement("create table calendar_reminder (\n"
+                                    + "   user_id NVARCHAR(255) not null,\n"
+                                    + "   event_id NVARCHAR(36) not null,\n"
+                                    + "   send_date datetimeoffset(3) not null,\n"
+                                    + "   primary key (user_id, event_id, send_date)\n"
+                                    + ")");
+                }
             }
 
             if(DbConnectionFactory.isPostgres()){
                 dotConnect.setSQL("INSERT INTO calendar_reminder(user_id, event_id, send_date) VALUES ('0', '0', now());").loadResult();
+            }
+
+            if(DbConnectionFactory.isMsSql()){
+                dotConnect.setSQL("INSERT INTO dotcms.dbo.calendar_reminder(user_id, event_id, send_date) VALUES ('0', '0', GETDATE())").loadResult();
             }
 
             final Task220404RemoveCalendarReminder task =  new Task220404RemoveCalendarReminder();
