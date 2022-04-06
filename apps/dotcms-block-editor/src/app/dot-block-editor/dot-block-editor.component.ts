@@ -1,4 +1,4 @@
-import { Component, OnInit, Injector, ViewEncapsulation } from '@angular/core';
+import { Component, OnInit, Injector } from '@angular/core';
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 
@@ -9,8 +9,7 @@ import {
     DotBubbleMenuExtension,
     DragHandler,
     ImageBlock,
-    ImageUpload,
-    BubbleMenuComponent
+    ImageUpload
 } from '@dotcms/block-editor';
 
 // Marks Extensions
@@ -42,11 +41,11 @@ export class DotBlockEditorComponent implements OnInit {
                 DragHandler(this.viewContainerRef),
                 ImageUpload(this.injector, this.viewContainerRef),
                 BubbleLinkFormExtension(this.injector, this.viewContainerRef),
-                DotBubbleMenuExtension(BubbleMenuComponent, this.viewContainerRef),
+                DotBubbleMenuExtension(this.viewContainerRef),
                 // Marks Extensions
                 Underline,
                 TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'dotImage'] }),
-                Highlight.configure({ HTMLAttributes: { class: 'highlighted' } }),
+                Highlight.configure({ HTMLAttributes: { style: 'background: #accef7;' } }),
                 Link.configure({ openOnClick: true })
             ]
         });

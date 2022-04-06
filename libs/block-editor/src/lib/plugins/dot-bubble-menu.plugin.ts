@@ -2,11 +2,18 @@ import { EditorView } from 'prosemirror-view';
 import { isNodeSelection, posToDOMRect } from '@tiptap/core';
 import { PluginKey, Plugin, EditorState } from 'prosemirror-state';
 import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
+import tippy, { Instance } from 'tippy.js';
 
 // Utils
 import { getNodePosition, suggestionOptions } from '@dotcms/block-editor';
 import { ComponentRef } from '@angular/core';
-import { bubbleMenuItems, bubbleMenuImageItems, isListNode } from '../utils/bubble-menu.utils';
+import { SuggestionsComponent } from '../extensions/components/suggestions/suggestions.component';
+import {
+    bubbleMenuItems,
+    bubbleMenuImageItems,
+    isListNode,
+    popperModifiers
+} from '../utils/bubble-menu.utils';
 
 // Model
 import {
@@ -18,6 +25,7 @@ import {
 
 export const DotBubbleMenuPlugin = (options: DotBubbleMenuPluginProps) => {
     const component = options.component.instance;
+    const changeTo = options.changeToComponent.instance;
 
     return new Plugin({
         key:
@@ -35,19 +43,17 @@ export const DotBubbleMenuPlugin = (options: DotBubbleMenuPluginProps) => {
              */
             handleKeyDown(view: EditorView, event: KeyboardEvent) {
                 const { key } = event;
-                if (component.dropdown.showSuggestions) {
+                if (changeTo.isOpen) {
                     if (key === 'Escape') {
-                        component.dropdown.toggleSuggestions();
+                        component.toggleChangeTo.emit();
                         return true;
                     }
-
                     if (key === 'Enter') {
-                        component.dropdown.execCommand();
+                        changeTo.execCommand();
                         return true;
                     }
-
                     if (key === 'ArrowDown' || key === 'ArrowUp') {
-                        component.dropdown.updateSelection(event);
+                        changeTo.updateSelection(event);
                         return true;
                     }
                 }
@@ -59,15 +65,35 @@ export const DotBubbleMenuPlugin = (options: DotBubbleMenuPluginProps) => {
 
 export class DotBubbleMenuPluginView extends BubbleMenuView {
     public component: ComponentRef<BubbleMenuComponentProps>;
+    public changeTo: ComponentRef<SuggestionsComponent>;
+    public changeToElement: HTMLElement;
+
+    public tippyChangeTo: Instance | undefined;
 
     /* @Overrrider */
     constructor(props: DotBubbleMenuViewProps) {
         // Inherit the parent class
         super(props);
 
+        const { component, changeToComponent } = props;
+
         // New Properties
-        this.component = props.component;
+        this.component = component;
+        this.changeTo = changeToComponent;
+        this.changeToElement = this.changeTo.location.nativeElement;
+
+        // Subscriptions
         this.component.instance.command.subscribe(this.exeCommand.bind(this));
+        this.component.instance.toggleChangeTo.subscribe(this.toggleChangeTo.bind(this));
+
+        // Load ChangeTo Options
+        this.changeTo.instance.items = this.setChangeToOptions();
+        this.changeTo.instance.title = 'Change To';
+        this.changeToElement.remove();
+        this.changeTo.changeDetectorRef.detectChanges();
+
+        // We need to also react to page scrolling.
+        document.body.addEventListener('scroll', this.hanlderScroll.bind(this), true);
     }
 
     /* @Overrrider */
@@ -81,6 +107,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         }
 
         this.createTooltip();
+        this.createChangeToTooltip();
 
         // support for CellSelections
         const { ranges } = selection;
@@ -98,7 +125,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
         if (!shouldShow) {
             this.hide();
-
+            this.tippyChangeTo?.hide();
             return;
         }
 
@@ -116,26 +143,33 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                 return posToDOMRect(view, from, to);
             }
         });
-        this.setMenuItems(doc, from);
-        this.updateComponent();
-        this.show();
-    }
 
-    show() {
-        this.setSelectedDropDownItem();
-        this.component.instance.dropdown.showSuggestions = false;
-        this.tippy?.show();
+        this.tippyChangeTo?.setProps({
+            getReferenceClientRect: () => this.tippy?.popper.getBoundingClientRect()
+        });
+
+        this.updateComponent();
+        this.setMenuItems(doc, from);
+        this.show();
     }
 
     /* @Overrrider */
     destroy() {
         this.tippy?.destroy();
+        this.tippyChangeTo?.destroy();
+
         this.element.removeEventListener('mousedown', this.mousedownHandler, { capture: true });
         this.view.dom.removeEventListener('dragstart', this.dragstartHandler);
+
         this.editor.off('focus', this.focusHandler);
         this.editor.off('blur', this.blurHandler);
+
         this.component.instance.command.unsubscribe();
+        this.component.instance.toggleChangeTo.unsubscribe();
         this.component.destroy();
+        this.changeTo.destroy();
+
+        document.body.removeEventListener('scroll', this.hanlderScroll.bind(this), true);
     }
 
     /* Update Component */
@@ -143,7 +177,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         const { items } = this.component.instance;
         const aligment: string[] = ['left', 'center', 'right'];
         const activeMarks = this.setActiveMarks(aligment);
-        this.setDropdownOptions();
+        this.setSelectedNodeItem();
         this.component.instance.items = this.updateActiveItems(items, activeMarks);
         this.component.changeDetectorRef.detectChanges();
     }
@@ -232,9 +266,9 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         }
     }
 
-    setDropdownOptions() {
-        const dropdownOptions = suggestionOptions.filter((item) => item.id != 'horizontalLine');
-        const dropDownOptionsCommand = {
+    setChangeToOptions() {
+        const changeToOptions = suggestionOptions.filter((item) => item.id != 'horizontalLine');
+        const changeTopCommands = {
             heading1: () => {
                 this.editor.chain().focus().clearNodes().setHeading({ level: 1 }).run();
             },
@@ -261,29 +295,73 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
             }
         };
 
-        dropdownOptions.forEach((option) => {
+        changeToOptions.forEach((option) => {
             option.isActive = () => {
                 return option.id.includes('heading')
                     ? this.editor.isActive('heading', option.attributes)
                     : this.editor.isActive(option.id);
             };
             option.command = () => {
-                dropDownOptionsCommand[option.id]();
-                this.component.instance.dropdown.showSuggestions = false;
-                this.setSelectedDropDownItem();
+                changeTopCommands[option.id]();
+                this.tippyChangeTo.hide();
+                this.setSelectedNodeItem();
             };
         });
-        this.component.instance.dropdown.options = dropdownOptions;
-        this.setSelectedDropDownItem();
+        return changeToOptions;
     }
 
-    setSelectedDropDownItem() {
-        const activeMarks = this.component.instance.dropdown.options.filter((option) =>
-            option.isActive()
-        );
+    setSelectedNodeItem() {
+        const items = this.changeTo.instance.items;
+        const activeMarks = items.filter((option) => option?.isActive());
         // Needed because in some scenarios, paragraph and other mark (ex: blockquote)
-        // can be active at the same time.
-        this.component.instance.dropdown.selected =
-            activeMarks.length > 1 ? activeMarks[1] : activeMarks[0];
+        // can be active at the same time
+        const activeNode = activeMarks.length > 1 ? activeMarks[1] : activeMarks[0];
+        // Set Active on Change To List
+        this.changeTo.instance.updateActiveItem(items.findIndex((item) => item === activeNode));
+        // Set button label on Bubble Menu
+        this.component.instance.selected = activeNode?.label || '';
+    }
+
+    // Tippy Change To
+    createChangeToTooltip() {
+        const { element: editorElement } = this.editor.options;
+
+        if (this.tippyChangeTo || !editorElement) {
+            return;
+        }
+
+        this.tippyChangeTo = tippy(editorElement, {
+            ...this.tippyOptions,
+            appendTo: document.body,
+            getReferenceClientRect: null,
+            content: this.changeToElement,
+            placement: 'bottom-start',
+            duration: 0,
+            hideOnClick: false,
+            popperOptions: {
+                modifiers: popperModifiers
+            },
+            onHide: () => {
+                this.changeTo.instance.isOpen = false;
+            },
+            onShow: () => {
+                this.changeTo.instance.isOpen = true;
+                this.setSelectedNodeItem();
+            }
+        });
+    }
+
+    toggleChangeTo() {
+        if (this.tippyChangeTo.state.isVisible) {
+            this.tippyChangeTo?.hide();
+        } else {
+            this.tippyChangeTo?.show();
+        }
+    }
+
+    hanlderScroll() {
+        if (this.tippyChangeTo?.state.isVisible) {
+            this.tippyChangeTo?.hide();
+        }
     }
 }

@@ -1,4 +1,4 @@
-import { Editor, posToDOMRect, isNodeSelection } from '@tiptap/core';
+import { Editor, posToDOMRect } from '@tiptap/core';
 import { EditorState, Plugin, PluginKey, Transaction } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import tippy, { Instance, Props } from 'tippy.js';
@@ -8,9 +8,6 @@ import { BubbleMenuLinkFormComponent } from '../extensions/components/bubble-men
 
 // Interface
 import { PluginStorage } from '../extensions/bubble-link-form.extension';
-
-// Utils
-import { getNodePosition } from '@dotcms/block-editor';
 
 interface PluginState {
     toggle: boolean;
@@ -70,6 +67,9 @@ export class BubbleLinkFormView {
 
         this.editor.on('focus', this.focusHandler);
         this.setComponentEvents();
+
+        // We need to also react to page scrolling.
+        document.body.addEventListener('scroll', this.hanlderScroll.bind(this), true);
     }
 
     update(view: EditorView, prevState?: EditorState): void {
@@ -109,7 +109,7 @@ export class BubbleLinkFormView {
             content: this.element,
             interactive: true,
             trigger: 'manual',
-            placement: 'bottom',
+            placement: 'bottom-start',
             hideOnClick: 'toggle',
             ...this.tippyOptions
         });
@@ -120,7 +120,7 @@ export class BubbleLinkFormView {
         // Afther show the component set values
         this.setInputValues();
         this.focusInput();
-        this.setTippyPosition();
+        this.tippy?.setProps({ getReferenceClientRect: () => this.setTippyPosition() });
     }
 
     hide() {
@@ -130,26 +130,30 @@ export class BubbleLinkFormView {
         this.editor.commands.unsetHighlight();
     }
 
-    setTippyPosition() {
+    setTippyPosition(): ClientRect {
+        // Get Node Position
         const { view } = this.editor;
         const { state } = view;
         const { doc, selection } = state;
         const { ranges } = selection;
         const from = Math.min(...ranges.map((range) => range.$from.pos));
         const to = Math.max(...ranges.map((range) => range.$to.pos));
-        this.tippy.setProps({
-            getReferenceClientRect: () => {
-                if (isNodeSelection(selection)) {
-                    const node = view.nodeDOM(from) as HTMLElement;
-                    const type = doc.nodeAt(from).type.name;
+        const nodeClientRect = posToDOMRect(view, from, to);
 
-                    if (node) {
-                        return getNodePosition(node, type);
-                    }
-                }
-                return posToDOMRect(view, from, to);
-            }
-        });
+        // Get Editor Container Position
+        const { element: editorElement } = this.editor.options;
+        const editorClientRect = editorElement.parentElement.getBoundingClientRect();
+        const bubbleMenuRect = document.querySelector('#bubble-menu').getBoundingClientRect();
+
+        // Check for an overflow in the content
+        const isOverflow = editorClientRect.bottom < nodeClientRect.bottom;
+
+        // Check if the node is a dotImage
+        const node = doc?.nodeAt(from);
+        const isNodeImage = node.type.name === 'dotImage';
+
+        // If there is an overflow, use bubble menu position as a reference.
+        return isOverflow || isNodeImage ? bubbleMenuRect : nodeClientRect;
     }
 
     addLink(link: string) {
@@ -224,6 +228,12 @@ export class BubbleLinkFormView {
     destroy() {
         this.tippy?.destroy();
         this.editor.off('focus', this.focusHandler);
+    }
+
+    hanlderScroll() {
+        if (this.tippy?.state.isVisible) {
+            this.tippy?.hide();
+        }
     }
 }
 

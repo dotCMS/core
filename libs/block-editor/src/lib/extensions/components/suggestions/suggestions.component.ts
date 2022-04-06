@@ -43,9 +43,9 @@ export class SuggestionsComponent implements OnInit, AfterViewInit {
 
     @Input() items: DotMenuItem[] = [];
     @Input() title = 'Select a block';
+    @Input() isOpen = false;
 
-    mouseMove = true;
-
+    private mouseMove = true;
     private dotLang: Languages;
 
     @HostListener('mousemove', ['$event'])

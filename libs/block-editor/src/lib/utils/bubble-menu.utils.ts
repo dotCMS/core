@@ -20,7 +20,7 @@ export const shouldShowBubbleMenu = ({ editor, state, from, to }: ShouldShowProp
     const isEmptyTextBlock = !doc.textBetween(from, to).length && isTextSelection(state.selection);
 
     // If it's empty or the current node is type dotContent, it will not open.
-    if (empty || isEmptyTextBlock || node?.type.name == 'dotContent') {
+    if (!editor.isFocused || empty || isEmptyTextBlock || node.type.name == 'dotContent') {
         return false;
     }
 
@@ -134,5 +134,28 @@ export const bubbleMenuImageItems = [
         icon: 'link',
         markAction: 'link',
         active: false
+    }
+];
+
+// Tippy Modifiers
+export const popperModifiers = [
+    {
+        name: 'offset',
+        options: {
+            offset: [0, 5]
+        }
+    },
+    {
+        name: 'flip',
+        options: {
+            fallbackPlacements: ['bottom-start', 'top-start']
+        }
+    },
+    {
+        name: 'preventOverflow',
+        options: {
+            altAxis: true,
+            tether: true
+        }
     }
 ];
