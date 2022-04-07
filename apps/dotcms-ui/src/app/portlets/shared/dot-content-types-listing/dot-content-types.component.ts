@@ -60,6 +60,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
     @ViewChild('dotDynamicDialog', { read: ViewContainerRef, static: true })
     public dotDynamicDialog: ViewContainerRef;
     private destroy$: Subject<boolean> = new Subject<boolean>();
+    private dialogDestroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         private contentTypesInfoService: DotContentTypesInfoService,
@@ -340,11 +341,11 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
         });
 
         componentRef.instance.isSaving$ = this.dotContentTypeStore.isSaving$;
-        componentRef.instance.cancelBtn.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            this.dotDynamicDialog.clear();
+        componentRef.instance.cancelBtn.pipe(takeUntil(this.dialogDestroy$)).subscribe(() => {
+            this.closeCopyContentTypeDialog();
         });
         componentRef.instance.validFormFields
-            .pipe(takeUntil(this.destroy$))
+            .pipe(takeUntil(this.dialogDestroy$))
             .subscribe((formValues) => {
                 this.saveCloneContentTypeDialog(formValues);
             });
@@ -352,5 +353,11 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
 
     private addToBundleContentType(item: DotCMSContentType) {
         this.addToBundleIdentifier = item.id;
+    }
+
+    private closeCopyContentTypeDialog() {
+        this.dialogDestroy$.next(true);
+        this.dialogDestroy$.complete();
+        this.dotDynamicDialog.clear();
     }
 }
