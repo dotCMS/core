@@ -16,7 +16,10 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.map;
@@ -27,6 +30,7 @@ import static com.dotcms.util.CollectionsUtils.map;
 public class ContainerPaginator implements PaginatorOrdered<ContainerView> {
 
     public static final String HOST_PARAMETER_ID = "host";
+    public static final String SYSTEM_PARAMETER_NAME = "system";
 
     private final ContainerAPI containerAPI;
     private final HostWebAPI hostWebAPI;
@@ -46,10 +50,11 @@ public class ContainerPaginator implements PaginatorOrdered<ContainerView> {
     public PaginatedArrayList<ContainerView> getItems(final User user, final String filter, final int limit, final int offset,
                                                   final String orderby, final OrderDirection direction,
                                                   final Map<String, Object> extraParams) {
-        String hostId = null;
-
+        String siteId = null;
+        boolean showSystemContainer = Boolean.FALSE;
         if (extraParams != null) {
-            hostId = (String) extraParams.get(HOST_PARAMETER_ID);
+            siteId = (String) extraParams.get(HOST_PARAMETER_ID);
+            showSystemContainer = Boolean.valueOf(String.valueOf(extraParams.get(SYSTEM_PARAMETER_NAME)));
         }
 
         final Map<String, Object> params = map("title", filter);
@@ -62,15 +67,22 @@ public class ContainerPaginator implements PaginatorOrdered<ContainerView> {
         }
 
         try {
+            final ContainerAPI.SearchParams searchParams = ContainerAPI.SearchParams.newBuilder()
+                    .setIncludeArchived(false)
+                    .setIncludeSystemContainer(showSystemContainer)
+                    .setFilteringCriteria(params)
+                    .setSiteId(siteId)
+                    .setOffset(offset)
+                    .setLimit(limit)
+                    .setOrderBy(orderByDirection).build();
             final PaginatedArrayList<Container> allContainers =
-                    (PaginatedArrayList<Container>) containerAPI.findContainers(user, false, params, hostId,
-                    null, null, null, offset, limit, orderByDirection);
+                    (PaginatedArrayList<Container>) containerAPI.findContainers(user, searchParams);
 
-            final PaginatedArrayList<Container> containers = !UtilMethods.isSet(hostId)
+            final PaginatedArrayList<Container> containers = !UtilMethods.isSet(siteId)
                     ? sortByTypeAndHost(direction, allContainers) : allContainers;
 
             return createContainerView(containers);
-        } catch (DotSecurityException | DotDataException e) {
+        } catch (final DotSecurityException | DotDataException e) {
             throw new PaginationException(e);
         }
     }

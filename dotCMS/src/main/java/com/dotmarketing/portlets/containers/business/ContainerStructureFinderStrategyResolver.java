@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 /**
  * There are different ways of creating Containers in dotCMS. For example:
  * <ul>
- *     <li>Default Containers -- added via the dotCMS back-end UI.</li>
+ *     <li>Default Containers -- added via the <b>Containers</b> portlet in the back-end.</li>
  *     <li>Containers as Files.</li>
  * </ul>
  * Because of that, the application must provide a mechanism that can easily retrieve and resolve the appropriate
@@ -267,7 +267,7 @@ public class ContainerStructureFinderStrategyResolver {
      * <p>
      * It allows you to find the metadata of a Container that is being referenced in a Template via File Assets inside
      * the content repository. These types of Containers are the ones living in the {@code /application/containers/}
-     * folder. This means that all of their metatada and configuration behavior must be set via VTL files.</p>
+     * folder. This means that all of their metadata and configuration behavior must be set via VTL files.</p>
      */
     @VisibleForTesting
     class PathContainerStructureFinderStrategyImpl implements ContainerStructureFinderStrategy {
@@ -346,8 +346,8 @@ public class ContainerStructureFinderStrategyResolver {
          * Types it references will use the {@code default_container.vtl} file to render their contents. The way the
          * {@code useDefaultLayout} property can reference Content Types is to pass down:
          * <ul>
-         *     <li>A start ( {@code *} ) -- which will reference ALL Content Types.</li>
-         *     <li>A comma-separated list of Velocity Variable Names for each Content Type.</li>
+         *     <li>A start ( {@code *} ) -- which will reference ALL Content Types in the repository.</li>
+         *     <li>A comma-separated list of specific Velocity Variable Names for each allowed Content Type.</li>
          * </ul>
          *
          * @param fileAssetContainer      The Container as File.

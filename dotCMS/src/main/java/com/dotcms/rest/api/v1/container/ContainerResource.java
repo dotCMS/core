@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.container;
 
-
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
@@ -119,8 +118,8 @@ public class ContainerResource implements Serializable {
      *
      * <code> { contentTypes: array of Container total: total number of Containers } <code/>
      *
-     * Url sintax:
-     * api/v1/container?filter=filter-string&page=page-number&per_page=per-page&ordeby=order-field-name&direction=order-direction&host=host-id
+     * Url syntax:
+     * api/v1/container?filter=filter-string&page=page-number&per_page=per-page&ordeby=order-field-name&direction=order-direction&host=host-id&system=true|false
      *
      * where:
      *
@@ -131,6 +130,7 @@ public class ContainerResource implements Serializable {
      * <li>ordeby: field to order by</li>
      * <li>direction: asc for upward order and desc for downward order</li>
      * <li>host: filter by host's id</li>
+     * <li>system: If the System Container object must be returned, set to {@code true}. Otherwise, set to {@code false}.</li>
      * </ul>
      *
      * Url example: v1/container?filter=test&page=2&orderby=title
@@ -150,7 +150,8 @@ public class ContainerResource implements Serializable {
             @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
             @DefaultValue("title") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
             @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION)  final String direction,
-            @QueryParam(ContainerPaginator.HOST_PARAMETER_ID)           final String hostId) {
+            @QueryParam(ContainerPaginator.HOST_PARAMETER_ID)           final String hostId,
+            @QueryParam(ContainerPaginator.SYSTEM_PARAMETER_NAME)       final Boolean showSystemContainer) {
 
         final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true, null);
         final User user = initData.getUser();
@@ -162,9 +163,10 @@ public class ContainerResource implements Serializable {
             if (checkedHostId.isPresent()) {
                 extraParams.put(ContainerPaginator.HOST_PARAMETER_ID, checkedHostId.get());
             }
+            extraParams.put(ContainerPaginator.SYSTEM_PARAMETER_NAME, showSystemContainer);
             return this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy, OrderDirection.valueOf(direction),
                     extraParams);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             Logger.error(this, e.getMessage(), e);
             return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
@@ -561,6 +563,5 @@ public class ContainerResource implements Serializable {
             throw new ForbiddenException(e);
         }
     }
-
 
 }
