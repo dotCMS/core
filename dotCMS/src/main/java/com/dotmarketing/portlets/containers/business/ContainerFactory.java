@@ -47,10 +47,11 @@ public interface ContainerFactory {
      * @throws DotDataException 
      */
     List<Container> findAllContainers(final Host currentHost) throws DotDataException;
-	
+
 	/**
-	 * Retrieves a paginated list of containers the user can use
-	 * It will retrieve first the db container and them the folder containers.
+	 * Retrieves a paginated list of containers the user can use It will retrieve first the db container and them the
+	 * folder containers.
+	 *
 	 * @param user
 	 * @param includeArchived
 	 * @param params
@@ -61,11 +62,30 @@ public interface ContainerFactory {
 	 * @param offset
 	 * @param limit
 	 * @param orderBy
+	 *
 	 * @return List of Containers
+	 *
 	 * @throws DotSecurityException
 	 * @throws DotDataException
+	 * @deprecated Use method {@link #findContainers(User, ContainerAPI.SearchParams)} instead, which allows you to set
+	 * the same query parameters in the method's signature via the {@link com.dotmarketing.portlets.containers.business.ContainerAPI.SearchParams}
+	 * object more easily.
 	 */
+	@Deprecated
 	List<Container> findContainers(User user, boolean includeArchived, Map<String,Object> params, String hostId, String inode, String identifier, String parent, int offset, int limit, String orderBy) throws DotSecurityException, DotDataException;
+
+	/**
+	 * Returns a list of Containers in the system, based on the specified search criteria.
+	 *
+	 * @param user        The {@link User} executing this action.
+	 * @param queryParams The {@link ContainerAPI.SearchParams} object containing the different combinations of search terms.
+	 *
+	 * @return The list of {@link Container} objects that match the search criteria.
+	 *
+	 * @throws DotSecurityException The specified user cannot perform this action.
+	 * @throws DotDataException     An error occurred when interacting with the data source.
+	 */
+	List<Container> findContainers(final User user, final ContainerAPI.SearchParams queryParams) throws DotSecurityException, DotDataException;
 
 	/**
 	 * Retur all tyhe continers under the folder in patf

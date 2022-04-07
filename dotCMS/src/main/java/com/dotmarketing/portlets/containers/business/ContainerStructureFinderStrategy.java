@@ -10,7 +10,7 @@ import java.util.List;
  * given Container can be related to one or more Content Types in dotCMS. There are different ways of creating
  * Containers in the system. For example:
  * <ul>
- *    <li>Default Containers -- added via the dotCMS back-end UI.</li>
+ *    <li>Default Containers -- added via the <b>Containers</b> portlet in the back-end.</li>
  *    <li>Containers as Files.</li>
  * </ul>
  * <p>This means that the metadata for each of them comes from different data sources. In that case, specific strategies

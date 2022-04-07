@@ -11,11 +11,9 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Supplier;
 
 /**
@@ -318,7 +316,6 @@ public interface ContainerAPI {
 	Host getParentHost(Container cont, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
-	 * Retrieves a paginated list of containers the user can use
 	 * @param user
 	 * @param includeArchived
 	 * @param params
@@ -329,11 +326,29 @@ public interface ContainerAPI {
 	 * @param offset
 	 * @param limit
 	 * @param orderBy
+	 *
 	 * @return
+	 *
 	 * @throws DotSecurityException
 	 * @throws DotDataException
+	 * @deprecated Use method {@link #findContainers(User, SearchParams)} instead, which allows you to set the same
+	 * query parameters in the method's signature via the {@link SearchParams} object more easily.
 	 */
+	@Deprecated
 	List<Container> findContainers(User user, boolean includeArchived, Map<String,Object> params, String hostId, String inode, String identifier, String parent, int offset, int limit, String orderBy) throws DotSecurityException, DotDataException;
+
+	/**
+	 * Returns a list of Containers in the system, based on the specified search criteria.
+	 *
+	 * @param user        The {@link User} executing this action.
+	 * @param queryParams The {@link SearchParams} object containing the different combinations of search terms.
+	 *
+	 * @return The list of {@link Container} objects that match the search criteria.
+	 *
+	 * @throws DotSecurityException The specified user cannot perform this action.
+	 * @throws DotDataException     An error occurred when interacting with the data source.
+	 */
+	List<Container> findContainers(final User user, final SearchParams queryParams) throws DotSecurityException, DotDataException;
 
 	/**
 	 * Retrieves containers using the specified structure
@@ -396,5 +411,339 @@ public interface ContainerAPI {
 	 * @throws DotDataException
 	 */
 	List<ContentType> getContentTypesInContainer(User user, Container container) throws DotStateException, DotDataException;
+
+	/**
+	 * Utility class that allows users to specify different filtering parameters when retrieving Containers from the
+	 * dotCMS content repository. This keeps API methods from having extremely long signatures, which makes it simpler
+	 * and cleaner as users just need to add the ones they really need.
+	 *
+	 * @author Jose Castro
+	 * @since Apr 5th, 2022
+	 */
+	class SearchParams {
+
+		private final String containerIdentifier;
+		private final String containerInode;
+		private final String siteId;
+
+		private final boolean includeArchived;
+		private final boolean includeSystemContainer;
+
+		private final Map<String, Object> filteringCriteria;
+		private final String contentTypeIdOrVar;
+		private final int offset;
+		private final int limit;
+		private final String orderBy;
+
+		/**
+		 * Private class constructor which creates an instance of this class based on information from its Builder
+		 * class
+		 *
+		 * @param builder The {@link Builder} object containing the search criteria for Containers.
+		 */
+		private SearchParams(final Builder builder) {
+			this.containerIdentifier = builder.containerIdentifier;
+			this.containerInode = builder.containerInode;
+			this.siteId = builder.siteId;
+			this.includeArchived = builder.includeArchived;
+			this.includeSystemContainer = builder.includeSystemContainer;
+			this.filteringCriteria = builder.filteringCriteria;
+			this.contentTypeIdOrVar = builder.contentTypeIdOrVar;
+			this.offset = builder.offset;
+			this.limit = builder.limit;
+			this.orderBy = builder.orderBy;
+		}
+
+		/**
+		 * Finds information for a specific Container based on its Identifier.
+		 *
+		 * @return The ID of the Container you need to retrieve information from.
+		 */
+		public String containerIdentifier() {
+			return this.containerIdentifier;
+		}
+
+		/**
+		 * Finds information for a specific Container based on its Inode.
+		 *
+		 * @return The Inode of the Container you need to retrieve information from.
+		 */
+		public String containerInode() {
+			return this.containerInode;
+		}
+
+		/**
+		 * The Identifier of the Site where the API will search for Containers. If not specified, Containers from any
+		 * Site will be returned.
+		 *
+		 * @return The ID of the Site.
+		 */
+		public String siteId() {
+			return this.siteId;
+		}
+
+		/**
+		 * Determines whether archived Containers must be included in the result set or not.
+		 *
+		 * @return If archived Containers must be retrieved, set to {@code true}. Otherwise, set to {@code false}.
+		 */
+		public boolean includeArchived() {
+			return this.includeArchived;
+		}
+
+		/**
+		 * Determines whether the System Container must be included in the result set or not.
+		 *
+		 * @return If the System Container must be retrieved, set to {@code true}. Otherwise, set to {@code false}.
+		 */
+		public boolean includeSystemContainer() {
+			return this.includeSystemContainer;
+		}
+
+		/**
+		 * Finds information based on one or more fields of a Container. If a given criterion is an Identifier, Inode,
+		 * or any String, a LIKE-type clause will be used to look for matches.
+		 *
+		 * @return A {@link Map} with the different optional filtering criteria.
+		 */
+		public Map<String, Object> filteringCriteria() {
+			return this.filteringCriteria;
+		}
+
+		/**
+		 * Finds information based on one specific field in a Container. If a given criterion is an Identifier, Inode,
+		 * or any String, a LIKE-type clause will be used to look for matches.
+		 *
+		 * @param key The name of the filtering parameter -- usually the database column name
+		 *
+		 * @return The value of such a filtering parameter.
+		 */
+		public <T> T filteringCriterion(final String key) {
+			return (T) this.filteringCriteria.get(key);
+		}
+
+		/**
+		 * Finds information for Containers that are related to a specific Content Type.
+		 *
+		 * @return The ID of Velocity Variable Name of the Content Type that must be associated to the Containers that
+		 * will be returned.
+		 */
+		public String contentTypeIdOrVar() {
+			return this.contentTypeIdOrVar;
+		}
+
+		/**
+		 * The result set offset -- for pagination purposes. Defaults to zero.
+		 * @return The result set's offset.
+		 */
+		public int offset() {
+			return this.offset;
+		}
+
+		/**
+		 * the maximum number of results that will be returned -- usually for pagination purposes. Defaults to 500.
+		 *
+		 * @return The result set's limit.
+		 */
+		public int limit() {
+			return this.limit;
+		}
+
+		/**
+		 * The ordering criterion for the results. Defaults to {@code "mod_date desc"}.
+		 *
+		 * @return The order-by clause for the result set.
+		 */
+		public String orderBy() {
+			return this.orderBy;
+		}
+
+		/**
+		 * Creates a new instance of the Builder object that will instantiate the {@link SearchParams} class.
+		 *
+		 * @return The Builder instance.
+		 */
+		public static Builder newBuilder() {
+			return new Builder();
+		}
+
+		/**
+		 * Builder class used to set up user-specified search criteria for Containers in the system.
+		 */
+		public static final class Builder {
+
+			private String containerIdentifier = StringPool.BLANK;
+			private String containerInode = StringPool.BLANK;
+			private String siteId = StringPool.BLANK;
+
+			private boolean includeArchived = Boolean.FALSE;
+			private boolean includeSystemContainer = Boolean.FALSE;
+
+			private Map<String, Object> filteringCriteria;
+			private String contentTypeIdOrVar = StringPool.BLANK;
+			private int offset = 0;
+			private int limit = 500;
+			private String orderBy = "mod_date desc";
+
+			private Builder() {
+
+			}
+
+			/**
+			 * Creates an instance of the Query Params object with user-specified criteria that will be used to retrieve
+			 * Containers from the content repository.
+			 *
+			 * @return An instance of the {@link SearchParams} class.
+			 */
+			public SearchParams build() {
+				return new SearchParams(this);
+			}
+
+			/**
+			 * Finds information for a specific Container based on its Identifier.
+			 *
+			 * @param containerIdentifier The ID of the Container you need to retrieve information from.
+			 *
+			 * @return The {@link SearchParams.Builder} object.
+			 */
+			public Builder setContainerIdentifier(final String containerIdentifier) {
+				this.containerIdentifier = containerIdentifier;
+				return this;
+			}
+
+			/**
+			 * Finds information for a specific Container based on its Inode.
+			 *
+			 * @param containerInode The Inode of the Container you need to retrieve information from.
+			 *
+			 * @return The {@link SearchParams.Builder} object.
+			 */
+			public Builder setContainerInode(final String containerInode) {
+				this.containerInode = containerInode;
+				return this;
+			}
+
+			/**
+			 * The Identifier of the Site where the API will search for Containers. If not specified, Containers from
+			 * any Site will be returned.
+			 *
+			 * @param siteId The ID of the Site.
+			 *
+			 * @return The {@link SearchParams.Builder} object.
+			 */
+			public Builder setSiteId(final String siteId) {
+				this.siteId = siteId;
+				return this;
+			}
+
+			/**
+			 * Determines whether archived Containers must be included in the result set or not.
+			 *
+			 * @param includeArchived If archived Containers must be retrieved, set to {@code true}. Otherwise, set to
+			 *                        {@code false}.
+			 *
+			 * @return The {@link SearchParams.Builder} object.
+			 */
+			public Builder setIncludeArchived(final boolean includeArchived) {
+				this.includeArchived = includeArchived;
+				return this;
+			}
+
+			/**
+			 * Determines whether the System Container must be included in the result set or not.
+			 *
+			 * @param includeSystemContainer If the System Container must be retrieved, set to {@code true}. Otherwise,
+			 *                               set to {@code false}.
+			 *
+			 * @return The {@link SearchParams.Builder} object.
+			 */
+			public Builder setIncludeSystemContainer(final boolean includeSystemContainer) {
+				this.includeSystemContainer = includeSystemContainer;
+				return this;
+			}
+
+			/**
+			 * Finds information based on one or more fields of a Container. If a given criterion is an Identifier,
+			 * Inode, or any String, a LIKE-type clause will be used to look for matches.
+			 *
+			 * @param filteringCriteria A {@link Map} with the different optional filtering criteria.
+			 *
+			 * @return The {@link SearchParams.Builder} object.
+			 */
+			public Builder setFilteringCriteria(final Map<String, Object> filteringCriteria) {
+				this.filteringCriteria = filteringCriteria;
+				return this;
+			}
+
+			/**
+			 * Finds information based on one specific field in a Container. If a given criterion is an Identifier,
+			 * Inode, or any String, a LIKE-type clause will be used to look for matches.
+			 *
+			 * @param key   The name of the filtering parameter -- usually the database column name
+			 * @param value The value of the filtering parameter.
+			 *
+			 * @return The {@link SearchParams.Builder} object.
+			 */
+			public Builder addOptionalFilteringCriteria(final String key, final Object value) {
+				if (null == this.filteringCriteria) {
+					this.filteringCriteria = new HashMap<>();
+				}
+				this.filteringCriteria.put(key, value);
+				return this;
+			}
+
+			/**
+			 * Finds information for Containers that are related to a specific Content Type.
+			 *
+			 * @param contentTypeIdOrVar The ID of Velocity Variable Name of the Content Type that must be associated to
+			 *                           the Containers that will be returned.
+			 *
+			 * @return The {@link SearchParams.Builder} object.
+			 */
+			public Builder setContentTypeIdOrVar(final String contentTypeIdOrVar) {
+				this.contentTypeIdOrVar = contentTypeIdOrVar;
+				return this;
+			}
+
+			/**
+			 * Sets the result offset -- for pagination purposes. Defaults to zero.
+			 *
+			 * @param offset The result set's offset.
+			 *
+			 * @return The {@link SearchParams.Builder} object.
+			 */
+			public Builder setOffset(final int offset) {
+				this.offset = offset;
+				return this;
+			}
+
+			/**
+			 * Sets the maximum number of results that will be returned -- usually for pagination purposes. Defaults to
+			 * 500.
+			 *
+			 * @param limit The result set's limit.
+			 *
+			 * @return The {@link SearchParams.Builder} object.
+			 */
+			public Builder setLimit(final int limit) {
+				this.limit = limit;
+				return this;
+			}
+
+			/**
+			 * The ordering criterion for the results. Defaults to {@code "mod_date desc"}.
+			 *
+			 * @param orderBy The order-by clause for the result set.
+			 *
+			 * @return The {@link SearchParams.Builder} object.
+			 */
+			public Builder setOrderBy(final String orderBy) {
+				this.orderBy = orderBy;
+				return this;
+			}
+
+		}
+
+	}
 
 }
