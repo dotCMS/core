@@ -218,6 +218,10 @@ public class OSGIResource  {
             }
         }
 
+        // since we already upload jar, we would like to try to run the upload folder when the
+        // refresh strategy is running by schedule job
+        OSGIUtil.getInstance().tryUploadFolderReload();
+
         return Response.ok(new ResponseEntityView(
                 files.stream().map(File::getName).collect(Collectors.toSet())))
                 .build();

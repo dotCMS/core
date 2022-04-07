@@ -74,6 +74,13 @@ import java.util.stream.Stream;
 public class OSGIUtil {
 
     private static final String OSGI_EXTRA_CONFIG_FILE_PATH_KEY = "OSGI_EXTRA_CONFIG_FILE_PATH_KEY";
+    private static final String OSGI_USE_FILE_WATCHER = "OSGI_USE_FILE_WATCHER";
+    private static final String OSGI_RESTART_LOCK_KEY = "osgi_restart_lock";
+    private static final String OSGI_CHECK_UPLOAD_FOLDER_FREQUENCY = "OSGI_CHECK_UPLOAD_FOLDER_FREQUENCY";
+    // by default the upload folder checker is 10 seconds
+    private static final int OSGI_CHECK_UPLOAD_FOLDER_FREQUENCY_DEFAULT_VAL = 10;
+    // by default the max number of count for upload folder read is 10, after that the cycle reinits.
+    private static final int MAX_UPLOAD_FOLDER_COUNT_VAL = 10;
 
     //List of jar prefixes of the jars to be included in the osgi-extra.conf file
     private List<String> dotCMSJarPrefixes = ImmutableList.of("dotcms", "ee-");
@@ -282,25 +289,26 @@ public class OSGIUtil {
 
     private void startWatchingUploadFolder(final String uploadFolder) {
 
-        final boolean useFileWatcher = Config.getBooleanProperty("OSGI_USE_FILE_WATCHER", false);
+        final boolean useFileWatcher = Config.getBooleanProperty(OSGI_USE_FILE_WATCHER, false);
 
         if (useFileWatcher) {
 
             this.runFileWatcher(uploadFolder);
         } else if(!this.isStartedOsgiRestartSchedule.get()) {
 
-            this.runReloadJob(uploadFolder);
+            this.runUploadFolderCheckerJob(uploadFolder);
             this.isStartedOsgiRestartSchedule.set(true);
         }
     }
 
-    private void runReloadJob(final String uploadFolder) {
+    private void runUploadFolderCheckerJob(final String uploadFolder) {
+
         Logger.debug(this, ()->
                 "Using Schedule fixed job to discover changes on the OSGI upload folder: " + uploadFolder);
         // use a schedule thread with shad lock
-        final ClusterLockManager<String> lockManager = DotConcurrentFactory.getInstance().getClusterLockManager("osgi_restart_lock");
+        final ClusterLockManager<String> lockManager = DotConcurrentFactory.getInstance().getClusterLockManager(OSGI_RESTART_LOCK_KEY);
         final String serverId = APILocator.getServerAPI().readServerId();
-        final long delay = Config.getLongProperty("OSGI_CHECK_UPLOAD_FOLDER_FREQUENCY", 10); // check each 10 seconds
+        final long delay = Config.getLongProperty(OSGI_CHECK_UPLOAD_FOLDER_FREQUENCY, OSGI_CHECK_UPLOAD_FOLDER_FREQUENCY_DEFAULT_VAL); // check each 10 seconds
         final long initialDelay = MathUtil.sumAndModule(serverId.toCharArray(), delay);
         final File uploadFolderFile = new File(uploadFolder);
         Logger.debug(this, ()-> "Starting the schedule fix job, serverId: " + serverId
@@ -337,6 +345,15 @@ public class OSGIUtil {
         return false;
     }
 
+    /**
+     * Tries to run the upload folder now
+     */
+    public void tryUploadFolderReload() {
+
+        this.uploadFolderReadsCount.set(0);
+        this.currentJobRestartIterationsCount.set(0);
+    }
+
     // this method is called by the schedule to see if jars has been added to the framework
     private void checkUploadFolder(final File uploadFolderFile, final ClusterLockManager<String> lockManager) {
 
@@ -369,7 +386,7 @@ public class OSGIUtil {
                 Logger.debug(this, ()-> "Not jars on upload folder");
                 // if not jars we want to wait for the next read of the upload folder
                 this.uploadFolderReadsCount.incrementAndGet();
-                if (this.uploadFolderReadsCount.intValue() >= 10) {
+                if (this.uploadFolderReadsCount.intValue() >= MAX_UPLOAD_FOLDER_COUNT_VAL) {
 
                     // no more than 10, if so, reset to zero
                     uploadFolderReadsCount.set(0);
