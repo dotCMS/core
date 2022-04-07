@@ -14,6 +14,10 @@
     ::ng-deep {
         .p-datatable {
             position: initial;
+
+            &.p-datatable-responsive-scroll > .p-datatable-wrapper {
+                overflow-x: visible;
+            }
         }
 
         .p-datatable,
